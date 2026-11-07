@@ -4,3 +4,4 @@
 @media(prefers-reduced-motion:reduce){.feedback,.meter span{transition:none}}
 
 @media(max-width:650px){.dpad button{width:44px;height:44px;top:31px}.cue{font-size:12px}.mission p{font-size:10px}.legend{font-size:8px}}
+@media(max-width:650px){.overlay.centered{overflow-y:auto;display:block;overscroll-behavior:contain}.overlay.centered .modal-card{margin:8px auto}.victory .modal-card{padding-bottom:8px}}

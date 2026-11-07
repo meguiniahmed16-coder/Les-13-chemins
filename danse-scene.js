@@ -4,11 +4,11 @@ import {BEAT} from './danse-core.js';
 const palette={purple:0x8736e8,mint:0x8fffd1,pink:0xff5aaf,gold:0xffca6e};
 const mats=new Map();function material(color,metal=.0){const key=color+':'+metal;if(!mats.has(key))mats.set(key,new T.MeshStandardMaterial({color,roughness:metal?.32:.65,metalness:metal}));return mats.get(key);}
 function mesh(g,m,parent,x=0,y=0,z=0){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
-function box(p,w,h,d,c,x=0,y=0,z=0){return mesh(new T.BoxGeometry(w,h,d,w>9?10:1,h>3?8:1,d>8?8:1),material(c),p,x,y,z);}
+function box(p,w,h,d,c,x=0,y=0,z=0){const o=mesh(new T.BoxGeometry(w,h,d,w>9?10:1,h>3?8:1,d>8?8:1),material(c),p,x,y,z);if(w>9)o.userData.layer=h<1?-6:-7;else if(h>3)o.userData.layer=-5;else if(h<.05)o.userData.layer=-3;return o;}
 function ellipsoid(p,x,y,z,sx,sy,sz,c){const o=mesh(new T.SphereGeometry(1,12,8),material(c),p,x,y,z);o.scale.set(sx,sy,sz);return o;}
 function cylinder(p,r1,r2,h,c,x=0,y=0,z=0){return mesh(new T.CylinderGeometry(r1,r2,h,12),material(c),p,x,y,z);}
 function neon(p,w,h,d,c,x,y,z){return mesh(new T.BoxGeometry(w,h,d),new T.MeshBasicMaterial({color:c}),p,x,y,z);}
-function sign(p,text,w,h,x,y,z,bg='#34214d',fg='#f5e7ff',size=80){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);ctx.fillStyle=fg;ctx.font=`700 ${size}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,132);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const m=mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex}),p,x,y,z);m.userData.sign=true;return m;}
+function sign(p,text,w,h,x,y,z,bg='#34214d',fg='#f5e7ff',size=80){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);ctx.fillStyle=fg;ctx.font=`700 ${size}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,132);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const m=mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex}),p,x,y,z);m.userData.sign=y>3;return m;}
 function human({shirt=palette.purple,skin=0xc58c69,pants=0x251c35,hair=false,female=false,simple=false}={}){
  const group=new T.Group(),hip=new T.Group(),body=new T.Group();hip.position.y=1.1;group.add(hip);hip.add(body);
  const waist=cylinder(body,.23,.19,.62,shirt,0,.35,0);waist.scale.z=.64;
@@ -46,7 +46,7 @@ export class DanceScene{
  const ring=mesh(new T.TorusGeometry(2.9,.055,6,60,Math.PI),new T.MeshBasicMaterial({color:palette.pink}),s,0,3.5,-6.15);ring.scale.set(1.7,.7,1);
  this.candidates=[];const colors=[0x6bb7ba,0xe7b564,0xac729e,0x92a38a,0xb9816d];for(let i=0;i<5;i++){const x=(i-2)*1.7;const h=human({shirt:colors[i],skin:i%2?0xdca788:0xb17a58,hair:true,simple:true});h.group.position.set(x,.14,-4.8);h.group.scale.setScalar(.85);s.add(h.group);this.candidates.push(h);box(s,1.35,1.1,.75,0x6e4593,x,.55,-4.25);box(s,1.48,.1,.88,0xb7a0d1,x,1.14,-4.25);neon(s,1.06,.06,.02,palette.mint,x,.32,-3.86);sign(s,String(i+1),.36,.3,x,.73,-3.86,'#573674','#d6fff1',130);}
  // Soft oval pools place each performer on the polished stage.
- for(const [x,z,r] of [[0,.45,1.3],[-2.1,-.7,.8],[2.1,-.7,.8],[-3.6,-1.9,.7],[3.6,-1.9,.7]]){const disk=mesh(new T.CircleGeometry(r,32),new T.MeshBasicMaterial({color:x<0?0xbd73a1:x>0?0x6aada5:0xa985c7}),s,x,.025,z);disk.rotation.x=-Math.PI/2;}
+ for(const [x,z,r] of [[0,.45,1.3],[-2.1,-.7,.8],[2.1,-.7,.8],[-3.6,-1.9,.7],[3.6,-1.9,.7]]){const disk=mesh(new T.CircleGeometry(r,32),new T.MeshBasicMaterial({color:x<0?0xbd73a1:x>0?0x6aada5:0xa985c7}),s,x,.025,z);disk.rotation.x=-Math.PI/2;disk.userData.layer=-2;}
  this.hero=human();this.hero.group.position.set(0,.04,.45);this.hero.group.scale.setScalar(1.2);s.add(this.hero.group);
  this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){const h=human({shirt:i%2?palette.mint:palette.pink,skin:i%2?0x9e664b:0xe0aa88,female:true,hair:true});h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;s.add(h.group);this.dancers.push(h);}
  this.lionel=human({shirt:0xadc1c2,pants:0x2b253a,skin:0xd1a084,hair:true});this.lionel.group.position.set(5.5,.04,-.15);this.lionel.group.scale.setScalar(.92);s.add(this.lionel.group);sign(s,'LIONEL',1.2,.3,5.5,2.35,-.1,'#30233f','#b6ffdc',78);
