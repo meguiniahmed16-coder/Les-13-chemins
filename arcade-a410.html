@@ -13,7 +13,19 @@
 
 html.embedded .mast,html.embedded .intro,html.embedded .rules,html.embedded .bottom{display:none}html.embedded .wrap{padding:14px;max-width:1100px}html.embedded .grid{gap:15px}html.embedded .panel{padding:18px}@media(max-width:760px){html.embedded .wrap{padding:9px}html.embedded .machine{scroll-margin-top:5px}}
 </style>
-<style>.npc-speech{position:absolute;z-index:5;transform:translateX(-50%);max-width:44%;padding:6px 8px;background:#fff1cf;color:#203a35;border:2px solid #304c43;box-shadow:3px 3px #16392f55;font:bold clamp(9px,1.3vw,14px)/1.2 ui-monospace,monospace;white-space:nowrap;pointer-events:none}.npc-speech:after{content:"";position:absolute;left:50%;bottom:-7px;border:6px solid transparent;border-bottom:0;border-top-color:#304c43}.voice-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:10px;color:#c3cfb7;margin:10px 0}.voice-controls button{font:inherit;color:inherit;background:#203b32;border:1px solid #819174;padding:8px;min-height:36px}.npc-speech[hidden]{display:none}.voice-controls span{flex:1;min-width:140px}</style></head>
+<style>.npc-speech{position:absolute;z-index:5;transform:translateX(-50%);max-width:44%;padding:6px 8px;background:#fff1cf;color:#203a35;border:2px solid #304c43;box-shadow:3px 3px #16392f55;font:bold clamp(9px,1.3vw,14px)/1.2 ui-monospace,monospace;white-space:nowrap;pointer-events:none}.npc-speech:after{content:"";position:absolute;left:50%;bottom:-7px;border:6px solid transparent;border-bottom:0;border-top-color:#304c43}.voice-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:10px;color:#c3cfb7;margin:10px 0}.voice-controls button{font:inherit;color:inherit;background:#203b32;border:1px solid #819174;padding:8px;min-height:36px}.npc-speech[hidden]{display:none}.voice-controls span{flex:1;min-width:140px}</style><style>.screen-entry{display:none}
+@media(max-width:760px){
+ .screen-entry:not([hidden]){position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;padding:12px;pointer-events:none}
+ .screen-entry[data-kind=start]{justify-content:center;background:#102b29a8}
+ .screen-entry small{color:#fff8df;font:700 11px/1.3 system-ui,sans-serif;letter-spacing:.1em;text-shadow:0 1px 3px #000}
+ .screen-entry button{pointer-events:auto;border:2px solid #fff2bd;background:#ffdb70;color:#253a2e;font:800 16px/1.2 system-ui,sans-serif;padding:13px 20px;min-height:52px;min-width:190px;border-radius:9px;box-shadow:0 4px 0 #7d633a;touch-action:manipulation}
+ .screen-entry button:disabled{opacity:.6}.screen-entry button:focus-visible{outline:3px solid white;outline-offset:3px}
+ .grid{grid-template-columns:1fr!important}html.embedded .wrap{padding:7px}.panel{min-height:0!important}.machine{scroll-margin-top:0}.screen{scroll-margin-top:0}
+ .has-screen-action .panel .primary{display:none}
+ .marquee{padding-top:7px;padding-bottom:7px}.cabinet-tools{padding-top:6px;padding-bottom:6px}.control-caption{font-size:10px}
+}
+@media(max-width:760px) and (max-height:550px){.screen-entry{padding:7px!important}.screen-entry small{display:none}.screen-entry button{min-height:44px;padding:9px 16px}.screen{min-height:160px}}
+</style></head>
 <body>
 <div class="wrap">
 <header class="mast"><a class="brand" href="index.html" target="_blank" rel="noopener"><span>✦</span>Les Treize Chemins</a><span class="edition">Arcade · niveau 1</span></header>
@@ -231,7 +243,7 @@ let integrationId=null;
 if(embedded)document.documentElement.classList.add('embedded');
 const sendToPlateau=type=>{if(embedded)window.parent.postMessage({type,id:integrationId},location.origin);};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let phase='question',run=null,correct=false,score=0,questionAwarded=false,bonusAwarded=false,attempts=0;
+let phase='question',run=null,correct=false,score=0,questionAwarded=false,bonusAwarded=false,attempts=0,previousBonus=false;
 let soundOn=true,audio=null,lastFrame=0,lastShout=-9,shoutUntil=0,uiClock=0,lastStep=0,victoryTime=0;
 const announce=s=>$('announcement').textContent=s;
 function tone(frequency,duration=.09,type='square',volume=.035){
@@ -246,7 +258,7 @@ function controls(){
  $('pauseLayer').hidden=phase!=='paused';$('score').textContent=score;
  $('joystick').disabled=phase!=='running'; updateSpecial();
  $('victory').hidden=phase!=='escaped';document.querySelector('.screen').classList.toggle('won',phase==='escaped');
- $('screenReward').textContent=correct?'+10 POINTS':'SECONDE CHANCE !';
+ $('screenReward').textContent=previousBonus?'BRAVO !':correct?'+10 POINTS':'SECONDE CHANCE !';
 }
 function panel(){
  controls();
@@ -264,6 +276,8 @@ function panel(){
   $('content').innerHTML=tag('A410 · arrivée')+(correct?`<h2>Félicitations !</h2><div class="result-number">+10 <span style="font-size:20px">points</span></div><p class="copy">Bonne réponse et fuite réussie. Ton bonus est ajouté : <strong>${score} points</strong> au total.</p><div class="mini-reward"><div class="walkman" aria-hidden="true"></div><div><strong>Le baladeur</strong><br>Le casque sur les oreilles. Et le rire qui revient.</div></div><button class="secondary" data-action="reset">Tester une nouvelle partie</button>`:`<h2>Une seconde chance.</h2><p class="copy">Tu as atteint l’autoroute. Tu gagnes le droit de <strong>répondre à nouveau à la même question</strong>.</p><button class="primary" data-action="question">Répondre à nouveau →</button><p class="fine">Cette fuite ne donne pas de points : elle débloque ta nouvelle tentative.</p>`);
  }
  if(embedded&&phase==='escaped'){$('content').innerHTML=tag('A410 · arrivée')+(correct?`<h2>Félicitations !</h2><div class="result-number">+10 <span style="font-size:20px">points</span></div><p class="copy">Le bonus est ajouté à ton score du plateau : <strong>${score} points</strong>.</p>`:'<h2>Une seconde chance.</h2><p class="copy">La même question t’attend sur le plateau. Tu peux y répondre à nouveau.</p>')+`<button class="primary" data-action="return">${correct?'Retour au plateau →':'Répondre à nouveau →'}</button>`;}
+ if(embedded&&previousBonus&&phase==='ready'){$('content').querySelector('.status-tag').textContent='Partie libre · bonus déjà acquis';$('content').querySelector('h2').textContent='Une nouvelle fuite.';$('content').querySelector('.copy').textContent='Rejoue pour le plaisir. Ton score et les dix points déjà gagnés restent conservés.';}
+ if(embedded&&previousBonus&&phase==='escaped'){$('content').querySelector('.result-number').textContent='Bravo !';$('content').querySelector('.copy').textContent='Fuite réussie. Les dix points étaient déjà acquis ; ton score est conservé.';}
  if(embedded&&phase==='caught')$('content').querySelector('[data-action="reset"]')?.remove();
 }
 function answer(index){
@@ -371,7 +385,7 @@ window.addEventListener('message',event=>{
  if(!embedded||event.source!==window.parent||event.origin!==location.origin)return;
  const data=event.data;if(!data||typeof data.id!=='string')return;
  if(data.type==='a410:init'&&data.id!==integrationId&&typeof data.correct==='boolean'){
-  integrationId=data.id;correct=data.correct;score=Number.isFinite(data.score)?data.score:0;questionAwarded=true;bonusAwarded=false;attempts=1;
+  integrationId=data.id;correct=data.correct;score=Number.isFinite(data.score)?data.score:0;questionAwarded=true;bonusAwarded=!!data.bonusWon;previousBonus=!!data.bonusWon;attempts=1;
   run=newRun(correct);phase='ready';panel();updateHud();
  }
  if(data.type==='a410:credited'&&data.id===integrationId&&Number.isFinite(data.score)){score=data.score;panel();}
@@ -380,4 +394,12 @@ panel();updateHud();requestAnimationFrame(frame);
 if(embedded)sendToPlateau('a410:ready');
 
 </script>
-</body></html>
+<script>(function(){
+ const content=document.getElementById('content'),screen=document.querySelector('.screen');if(!content||!screen)return;
+ const overlay=document.createElement('div');overlay.className='screen-entry';overlay.hidden=true;
+ const hint=document.createElement('small'),button=document.createElement('button');button.type='button';overlay.append(hint,button);screen.append(overlay);
+ let target=null;
+ function sync(){target=content.querySelector('[data-action="start"],#start,#retry,#return,#again,[data-action="return"],[data-action="question"]');overlay.hidden=!target;document.documentElement.classList.toggle('has-screen-action',!!target);if(!target)return;const retry=target.id==='retry'||target.id==='again'||/Retenter|Rejouer/.test(target.textContent);const start=target.id==='start'||target.dataset.action==='start';overlay.dataset.kind=start&&!retry?'start':'result';hint.textContent=start&&!retry?'PRÊT À JOUER ?':'';button.textContent=start&&!retry?'COMMENCER':retry?'↻ RÉESSAYER':target.textContent;button.disabled=target.disabled;}
+ button.onclick=()=>target?.click();new MutationObserver(sync).observe(content,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});sync();
+})();
+</script></body></html>

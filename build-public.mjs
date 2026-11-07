@@ -18,6 +18,8 @@ const publicFiles = [
   'arcade-marmousets.html',
   'jeu-bosnie.html',
   'bosnie-runtime.js',
+  'plateau-mobile.webp',
+  'plateau-large.webp',
 ];
 
 if (process.env.CONTEXT === 'production' && process.env.BRANCH !== 'main') {
@@ -32,7 +34,7 @@ for (const name of publicFiles) {
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('Fichier public non régulier : ' + name);
   }
-  if (name.endsWith('.mp3')) continue;
+  if (/\.(?:mp3|webp)$/.test(name)) continue;
   const content = await readFile(source, 'utf8');
   if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(content)) {
     throw new Error('Lien vers un document de travail interdit dans : ' + name);
