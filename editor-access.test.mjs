@@ -120,3 +120,39 @@ test('Owner login and editor login share a strict rate limit under concurrency',
  assert.equal(responses.filter(r=>r.status===401).length,12);assert.equal(responses.filter(r=>r.status===429).length,12);
  assert.equal([...x.records.keys()].filter(k=>k.startsWith('attempt-slot')).length,12);
 });
+
+test('Owner can choose a short PIN: old code and old sessions stop, editor grants remain valid',async()=>{
+ const x=setup(),c=await ownerCookie(x),second=await ownerCookie(x);
+ const grant=await(await command(x,c,'create-code',{label:'Maison',days:30})).json();
+ const reader=(await editorLogin(x,grant.code)).headers.get('set-cookie').split(';')[0];
+ await x.store.setJSON('catalog-v1',{files:[]});
+ const changed=await command(x,c,'change-owner-code',{currentCode:'admin-test-secret',newCode:'4268513970',confirmCode:'4268513970'});
+ assert.equal(changed.status,200);const fresh=changed.headers.get('set-cookie').split(';')[0];
+ assert.equal((await ownerLogin(x)).status,401);
+ for(const cookie of [c,second])assert.equal((await x.request('admin-state',{headers:{Cookie:cookie}})).status,401);
+ assert.equal((await x.request('admin-state',{headers:{Cookie:fresh}})).status,200);
+ assert.equal((await x.request('list',{headers:{Cookie:reader}})).status,200);
+ assert.equal((await editorLogin(x,grant.code)).status,200);
+ assert.ok(!JSON.stringify([...x.records]).includes('4268513970'));
+ const r=await x.request('admin-login',{method:'POST',headers:{Origin:origin},body:'{"code":"42685 13970"}'});assert.equal(r.status,200);
+ assert.equal((await command(x,fresh,'change-owner-code',{currentCode:'4268513970',newCode:'6179042385',confirmCode:'6179042385'})).status,200);
+ assert.equal((await x.request('admin-state',{headers:{Cookie:fresh}})).status,401);
+});
+test('PIN changes require owner session, current code, matching confirmation and exact length',async()=>{
+ const x=setup(),c=await ownerCookie(x),reader=(await x.login()).headers.get('set-cookie').split(';')[0];
+ const valid={currentCode:'admin-test-secret',newCode:'4268513970',confirmCode:'4268513970'};
+ assert.equal((await command(x,reader,'change-owner-code',valid)).status,401);
+ for(const body of [{...valid,currentCode:'wrong'},{...valid,confirmCode:'0000000000'},{...valid,newCode:'1234',confirmCode:'1234'},{...valid,newCode:'abcdefghij',confirmCode:'abcdefghij'}])assert.equal((await command(x,c,'change-owner-code',body)).status,400);
+ for(const Origin of [undefined,'https://evil.example'])assert.equal((await x.request('change-owner-code',{method:'POST',headers:{Cookie:c,...(Origin?{Origin}:{})},body:JSON.stringify(valid)})).status,403);
+ assert.equal((await x.request('change-owner-code',{headers:{Cookie:c,Origin:origin}})).status,403);
+ assert.equal((await ownerLogin(x)).status,200);
+});
+test('Concurrent owner code changes do not overwrite each other',async()=>{
+ const x=setup(),c=await ownerCookie(x);
+ const changes=await Promise.all(['4268513970','6179042385'].map(newCode=>command(x,c,'change-owner-code',{currentCode:'admin-test-secret',newCode,confirmCode:newCode})));
+ assert.deepEqual(changes.map(r=>r.status).sort(),[200,409]);
+});
+test('Owner PIN guessing is globally limited even across distinct IPs',async()=>{
+ const x=setup();const results=await Promise.all(Array.from({length:40},(_,i)=>x.request('admin-login',{method:'POST',headers:{Origin:origin},body:'{"code":"wrong"}'},{ip:'192.0.2.'+i})));
+ assert.equal(results.filter(r=>r.status===401).length,30);assert.equal(results.filter(r=>r.status===429).length,10);
+});

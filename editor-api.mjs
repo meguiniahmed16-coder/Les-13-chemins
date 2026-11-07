@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual, scryptSync } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
 
 // This module is deployed as a server function, never copied into dist/.
@@ -24,6 +24,18 @@ const matches = (value, expected) => typeof expected === 'string' && HEX.test(ex
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8', ...extra } });
 const cookie = (value, age, name = COOKIE) => `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
 const cookieToken = (request, name = COOKIE) => (request.headers.get('cookie') || '').split(';').map(s => s.trim()).find(s => s.startsWith(name + '='))?.slice(name.length + 1) || '';
+const normalizeOwnerCode = code => typeof code === 'string' ? code.replace(/\s/g, '') : '';
+function ownerCodeMatches(code, credential, fallbackHash) {
+  if (!credential) return matches(normalizeOwnerCode(code), fallbackHash);
+  if (!ID.test(credential.salt || '') || !HEX.test(credential.hash || '')) return false;
+  return timingSafeEqual(scryptSync(normalizeOwnerCode(code), credential.salt, 32), Buffer.from(credential.hash, 'hex'));
+}
+async function claimAttempt(store, key, limit) {
+  for (let slot = 0; slot < limit; slot++) {
+    if ((await store.setJSON(key + '/' + slot, { used: true }, { onlyIfNew: true })).modified) return true;
+  }
+  return false;
+}
 async function smallJSON(request, limit = 150000) {
   if (Number(request.headers.get('content-length') || 0) > limit) throw new Error('body');
   const body = await request.text();
@@ -87,8 +99,12 @@ export function createHandler({ openStore, configuration, now = Date.now } = {})
       // The owner gets a separate server-side session. An editor code can never
       // create codes, revoke access, upload documents or become an administrator.
       const ownerToken = cookieToken(request, ADMIN_COOKIE);
+      const credentialKey = 'owner-credential/' + cfg.adminHash;
+      const credentialSnapshot = (HEX.test(ownerToken) || action === 'admin-login') ? await store.getWithMetadata(credentialKey, { type: 'json' }) : null;
+      const credential = credentialSnapshot?.data || null;
+      const ownerRevision = credential?.revision || cfg.adminHash;
       const ownerSession = HEX.test(ownerToken) ? await store.get('owner-sessions/' + digest(ownerToken), { type: 'json' }) : null;
-      const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === cfg.adminHash;
+      const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === ownerRevision;
       const grantActive = async id => {
         if (!HEX.test(id || '')) return null;
         const [grant, revoked] = await Promise.all([store.get('grants/' + id, { type: 'json' }), store.get('revocations/' + id, { type: 'json' })]);
@@ -114,7 +130,8 @@ export function createHandler({ openStore, configuration, now = Date.now } = {})
         const isOwner = action === 'admin-login';
         let grant = null, legacy = false;
         if (isOwner) {
-          if (!matches(code.trim(), cfg.adminHash)) return json({ error: 'Code administrateur incorrect.' }, 401);
+          if (!(await claimAttempt(store, `owner-attempts/${cfg.adminHash}/${Math.floor(now() / 900000)}`, 30))) return json({ error: 'Trop de tentatives. Réessaie dans quinze minutes.' }, 429);
+          if (!ownerCodeMatches(code, credential, cfg.adminHash)) return json({ error: 'Code administrateur incorrect.' }, 401);
         } else {
           const normalized = code.replace(/[\s-]/g, '').toUpperCase();
           legacy = matches(normalized, cfg.accessHash) && !(await legacyDisabled());
@@ -123,12 +140,12 @@ export function createHandler({ openStore, configuration, now = Date.now } = {})
         }
         const token = randomBytes(32).toString('hex');
         const expires = Math.min(now() + SESSION_SECONDS * 1000, grant?.expiresAt ?? Infinity);
-        const session = isOwner ? { expires, revision: cfg.adminHash } : grant ? { expires, grantId: grant.id, revision: cfg.adminHash } : { expires, revision: cfg.accessHash };
+        const session = isOwner ? { expires, revision: ownerRevision } : grant ? { expires, grantId: grant.id, revision: cfg.adminHash } : { expires, revision: cfg.accessHash };
         await store.setJSON((isOwner ? 'owner-sessions/' : 'sessions/') + digest(token), session);
         return json({ ok: true }, 200, { 'Set-Cookie': cookie(token, Math.floor((expires - now()) / 1000), isOwner ? ADMIN_COOKIE : COOKIE) });
       }
 
-      if (['admin-state', 'create-code', 'revoke-code', 'disable-legacy'].includes(action)) {
+      if (['admin-state', 'create-code', 'revoke-code', 'disable-legacy', 'change-owner-code'].includes(action)) {
         if (!owner) return json({ error: 'Connecte-toi à l’espace administrateur.' }, 401);
         if (action === 'admin-state') {
           if (request.method !== 'GET') return json({ error: 'Méthode refusée.' }, 405);
@@ -153,6 +170,21 @@ export function createHandler({ openStore, configuration, now = Date.now } = {})
         }
         let body;
         try { body = await smallJSON(request, 1000); } catch { return json({ error: 'Demande invalide.' }, 400); }
+        if (action === 'change-owner-code') {
+          if (typeof body?.currentCode !== 'string' || body.currentCode.length > 100 || typeof body.newCode !== 'string' || !/^\d{10}$/.test(normalizeOwnerCode(body.newCode)) || body.newCode !== body.confirmCode) return json({ error: 'Choisis un code de 10 chiffres et saisis-le deux fois à l’identique.' }, 400);
+          if (!(await claimAttempt(store, `owner-attempts/${cfg.adminHash}/${Math.floor(now() / 900000)}`, 30))) return json({ error: 'Trop de tentatives. Réessaie dans quinze minutes.' }, 429);
+          if (!ownerCodeMatches(body.currentCode, credential, cfg.adminHash)) return json({ error: 'Le code actuel est incorrect.' }, 400);
+          if (normalizeOwnerCode(body.currentCode) === normalizeOwnerCode(body.newCode)) return json({ error: 'Choisis un code différent du code actuel.' }, 400);
+          const salt = randomBytes(16).toString('hex'), revision = randomBytes(32).toString('hex');
+          const next = { salt, hash: scryptSync(normalizeOwnerCode(body.newCode), salt, 32).toString('hex'), revision, updatedAt: now() };
+          const changed = await store.setJSON(credentialKey, next, credentialSnapshot ? { onlyIfMatch: credentialSnapshot.etag } : { onlyIfNew: true });
+          if (!changed.modified) return json({ error: 'Ton code vient déjà d’être modifié. Reconnecte-toi avec le nouveau code.' }, 409);
+          // Rotating the owner's login never changes the separately issued editor grants.
+          const token = randomBytes(32).toString('hex');
+          await store.setJSON('owner-sessions/' + digest(token), { expires: now() + SESSION_SECONDS * 1000, revision });
+          await store.delete('owner-sessions/' + digest(ownerToken));
+          return json({ ok: true }, 200, { 'Set-Cookie': cookie(token, SESSION_SECONDS, ADMIN_COOKIE) });
+        }
         if (action === 'create-code') {
           if (typeof body?.label !== 'string' || !body.label.trim() || body.label.trim().length > 80 || /[\x00-\x1f]/.test(body.label) || ![7,30,90,180].includes(body.days)) return json({ error: 'Indique un destinataire et une durée proposée.' }, 400);
           const raw = randomBytes(16).toString('hex').toUpperCase(), id = digest(raw);

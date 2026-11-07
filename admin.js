@@ -20,7 +20,7 @@
   function hideCode() { latest = null; byId('generated-code').value = ''; byId('new-code').hidden = true; byId('new-code-info').textContent = ''; status('copy-status',''); byId('create-code').disabled = false; }
   function clear() {
     hideCode(); byId('owner-dashboard').hidden = true; byId('owner-login').hidden = false;
-    byId('codes-list').replaceChildren(); byId('owner-code').value = ''; byId('recipient').value = '';
+    byId('codes-list').replaceChildren(); byId('owner-code').value = ''; byId('recipient').value = ''; byId('password-form').reset(); status('password-status','');
     pendingRevoke = null; if (byId('revoke-dialog').open) byId('revoke-dialog').close();
   }
   function askRevoke(id, label, trigger) {
@@ -84,6 +84,24 @@
     finally { byId('confirm-revoke').disabled = false; }
   };
   byId('owner-logout').onclick = async () => { try { await post('logout'); clear(); status('login-status','Tu es déconnecté.'); byId('owner-code').focus(); } catch (e) { status('codes-status',e.message,true); } };
+  byId('show-owner-codes').onclick = () => {
+    const show = byId('current-code').type === 'password';
+    for (const id of ['current-code','new-owner-code','confirm-owner-code']) byId(id).type = show ? 'text' : 'password';
+    byId('show-owner-codes').textContent = show ? 'Masquer les codes' : 'Afficher les codes'; byId('show-owner-codes').setAttribute('aria-pressed',String(show));
+  };
+  byId('password-form').onsubmit = async event => {
+    event.preventDefault();
+    if (byId('new-owner-code').value !== byId('confirm-owner-code').value) { status('password-status','Les deux nouveaux codes ne correspondent pas.',true); return; }
+    byId('save-owner-code').disabled = true; status('password-status','Enregistrement…');
+    try {
+      await post('change-owner-code',{currentCode:byId('current-code').value,newCode:byId('new-owner-code').value,confirmCode:byId('confirm-owner-code').value});
+      byId('password-form').reset();
+      for (const id of ['current-code','new-owner-code','confirm-owner-code']) byId(id).type = 'password';
+      byId('show-owner-codes').textContent = 'Afficher les codes'; byId('show-owner-codes').setAttribute('aria-pressed','false');
+      status('password-status','Ton nouveau code est enregistré. Tu restes connecté ici ; ton ancien code ne fonctionne plus.');
+    } catch (e) { status(e.status === 401 ? 'login-status' : 'password-status',e.message,true); }
+    finally { byId('save-owner-code').disabled = false; }
+  };
   window.addEventListener('pagehide',clear);
   window.addEventListener('pageshow',event => { if (event.persisted) refresh().catch(() => clear()); });
   refresh().catch(e => { if (e.status !== 401) status('login-status',e.message,true); });
