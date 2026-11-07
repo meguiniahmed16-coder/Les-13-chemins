@@ -5,6 +5,8 @@ import { getStore } from '@netlify/blobs';
 // Documents and their catalogue live exclusively in private Netlify Blobs.
 const ORIGIN = 'https://tectonique-des-ames.netlify.app';
 const COOKIE = '__Host-editor';
+const ADMIN_COOKIE = '__Host-editor-admin';
+const DAY = 86400000;
 const SESSION_SECONDS = 4 * 60 * 60;
 const PART_BYTES = 3 * 1024 * 1024;
 const HEX = /^[a-f0-9]{64}$/;
@@ -20,8 +22,8 @@ const headers = {
 export const digest = value => createHash('sha256').update(value).digest('hex');
 const matches = (value, expected) => typeof expected === 'string' && HEX.test(expected) && timingSafeEqual(Buffer.from(digest(value), 'hex'), Buffer.from(expected, 'hex'));
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8', ...extra } });
-const cookie = (value, age) => `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
-const cookieToken = request => (request.headers.get('cookie') || '').split(';').map(s => s.trim()).find(s => s.startsWith(COOKIE + '='))?.slice(COOKIE.length + 1) || '';
+const cookie = (value, age, name = COOKIE) => `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
+const cookieToken = (request, name = COOKIE) => (request.headers.get('cookie') || '').split(';').map(s => s.trim()).find(s => s.startsWith(name + '='))?.slice(name.length + 1) || '';
 async function smallJSON(request, limit = 150000) {
   if (Number(request.headers.get('content-length') || 0) > limit) throw new Error('body');
   const body = await request.text();
@@ -82,35 +84,103 @@ export function createHandler({ openStore, configuration, now = Date.now } = {})
         return json({ ok: true, count: catalog.files.length });
       }
 
-      if (action === 'login') {
+      // The owner gets a separate server-side session. An editor code can never
+      // create codes, revoke access, upload documents or become an administrator.
+      const ownerToken = cookieToken(request, ADMIN_COOKIE);
+      const ownerSession = HEX.test(ownerToken) ? await store.get('owner-sessions/' + digest(ownerToken), { type: 'json' }) : null;
+      const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === cfg.adminHash;
+      const grantActive = async id => {
+        if (!HEX.test(id || '')) return null;
+        const [grant, revoked] = await Promise.all([store.get('grants/' + id, { type: 'json' }), store.get('revocations/' + id, { type: 'json' })]);
+        return grant && grant.issuedBy === cfg.adminHash && grant.expiresAt > now() && !revoked ? grant : null;
+      };
+      const legacyDisabled = () => store.get('legacy-disabled/' + cfg.accessHash, { type: 'json' });
+
+      if (action === 'login' || action === 'admin-login') {
         if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
-        const { code } = await smallJSON(request, 1000);
-        if (typeof code !== 'string' || code.length > 100) return json({ error: 'Code incorrect.' }, 401);
-        // Atomic conditional writes make the rate limit shared across instances.
-        const key = `attempts/${digest(cfg.adminHash + (context.ip || 'unknown'))}/${Math.floor(now() / 900000)}`;
+        // Claim twelve independent slots instead of updating a shared counter.
+        // Both logins share the limit, across instances and simultaneous requests.
+        const key = `attempt-slots/${digest(cfg.adminHash + (context.ip || 'unknown'))}/${Math.floor(now() / 900000)}`;
         let allowed = false;
-        for (let attempt = 0; attempt < 6; attempt++) {
-          const entry = await store.getWithMetadata(key, { type: 'json' });
-          const count = entry?.data?.count || 0;
-          if (count >= 12) return json({ error: 'Trop de tentatives. Réessaie dans quinze minutes.' }, 429, { 'Retry-After': '900' });
-          const result = await store.setJSON(key, { count: count + 1 }, entry ? { onlyIfMatch: entry.etag } : { onlyIfNew: true });
+        for (let slot = 0; slot < 12; slot++) {
+          const result = await store.setJSON(key + '/' + slot, { at: now() }, { onlyIfNew: true });
           if (result.modified) { allowed = true; break; }
         }
-        if (!allowed) return json({ error: 'Réessaie dans quelques instants.' }, 429);
-        const normalized = code.replace(/[\s-]/g, '').toUpperCase();
-        if (!matches(normalized, cfg.accessHash)) return json({ error: 'Code incorrect.' }, 401);
+        if (!allowed) return json({ error: 'Trop de tentatives. Réessaie dans quinze minutes.' }, 429, { 'Retry-After': '900' });
+        let payload;
+        try { payload = await smallJSON(request, 1000); } catch { return json({ error: 'Code incorrect.' }, 400); }
+        const code = payload?.code;
+        if (typeof code !== 'string' || code.length > 100) return json({ error: 'Code incorrect.' }, 401);
+        const isOwner = action === 'admin-login';
+        let grant = null, legacy = false;
+        if (isOwner) {
+          if (!matches(code.trim(), cfg.adminHash)) return json({ error: 'Code administrateur incorrect.' }, 401);
+        } else {
+          const normalized = code.replace(/[\s-]/g, '').toUpperCase();
+          legacy = matches(normalized, cfg.accessHash) && !(await legacyDisabled());
+          if (!legacy) grant = await grantActive(digest(normalized));
+          if (!legacy && !grant) return json({ error: 'Code incorrect, expiré ou révoqué.' }, 401);
+        }
         const token = randomBytes(32).toString('hex');
-        await store.setJSON('sessions/' + digest(token), { expires: now() + SESSION_SECONDS * 1000, revision: cfg.accessHash });
-        return json({ ok: true }, 200, { 'Set-Cookie': cookie(token, SESSION_SECONDS) });
+        const expires = Math.min(now() + SESSION_SECONDS * 1000, grant?.expiresAt ?? Infinity);
+        const session = isOwner ? { expires, revision: cfg.adminHash } : grant ? { expires, grantId: grant.id, revision: cfg.adminHash } : { expires, revision: cfg.accessHash };
+        await store.setJSON((isOwner ? 'owner-sessions/' : 'sessions/') + digest(token), session);
+        return json({ ok: true }, 200, { 'Set-Cookie': cookie(token, Math.floor((expires - now()) / 1000), isOwner ? ADMIN_COOKIE : COOKIE) });
+      }
+
+      if (['admin-state', 'create-code', 'revoke-code', 'disable-legacy'].includes(action)) {
+        if (!owner) return json({ error: 'Connecte-toi à l’espace administrateur.' }, 401);
+        if (action === 'admin-state') {
+          if (request.method !== 'GET') return json({ error: 'Méthode refusée.' }, 405);
+          const [{ blobs }, catalog, disabled] = await Promise.all([store.list({ prefix: 'grants/' }), store.get('catalog-v1', { type: 'json' }), legacyDisabled()]);
+          const codes = [];
+          for (let i = 0; i < blobs.length; i += 12) {
+            const batch = await Promise.all(blobs.slice(i, i + 12).map(async b => {
+              const g = await store.get(b.key, { type: 'json' });
+              if (!g || g.issuedBy !== cfg.adminHash) return null;
+              const revoked = await store.get('revocations/' + g.id, { type: 'json' });
+              return { id: g.id, label: g.label, createdAt: g.createdAt, expiresAt: g.expiresAt, status: revoked ? 'revoked' : g.expiresAt <= now() ? 'expired' : 'active' };
+            }));
+            codes.push(...batch.filter(Boolean));
+          }
+          codes.sort((a,b) => b.createdAt - a.createdAt);
+          return json({ codes, legacyEnabled: !disabled, documents: catalog?.files?.length || 0, updatedAt: catalog?.updatedAt || null });
+        }
+        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (action === 'disable-legacy') {
+          await store.setJSON('legacy-disabled/' + cfg.accessHash, { at: now() });
+          return json({ ok: true });
+        }
+        let body;
+        try { body = await smallJSON(request, 1000); } catch { return json({ error: 'Demande invalide.' }, 400); }
+        if (action === 'create-code') {
+          if (typeof body?.label !== 'string' || !body.label.trim() || body.label.trim().length > 80 || /[\x00-\x1f]/.test(body.label) || ![7,30,90,180].includes(body.days)) return json({ error: 'Indique un destinataire et une durée proposée.' }, 400);
+          const raw = randomBytes(16).toString('hex').toUpperCase(), id = digest(raw);
+          const grant = { id, label: body.label.trim(), createdAt: now(), expiresAt: now() + body.days * DAY, issuedBy: cfg.adminHash };
+          const result = await store.setJSON('grants/' + id, grant, { onlyIfNew: true });
+          if (!result.modified) return json({ error: 'Réessaie de générer le code.' }, 409);
+          // No plaintext code is stored. Independent grant and revocation records
+          // prevent concurrent issuance/revocation from resurrecting an old code.
+          return json({ id, code: raw.match(/.{1,4}/g).join('-'), label: grant.label, expiresAt: grant.expiresAt }, 201);
+        }
+        if (!HEX.test(body?.id || '') || !(await store.get('grants/' + body.id, { type: 'json' }))) return json({ error: 'Code introuvable.' }, 404);
+        await store.setJSON('revocations/' + body.id, { at: now() });
+        return json({ ok: true });
       }
 
       const token = cookieToken(request);
       const session = HEX.test(token) ? await store.get('sessions/' + digest(token), { type: 'json' }) : null;
-      const authenticated = !!session && session.expires > now() && session.revision === cfg.accessHash;
+      let authenticated = owner;
+      if (!authenticated && session?.expires > now()) {
+        authenticated = session.grantId ? session.revision === cfg.adminHash && !!(await grantActive(session.grantId)) : session.revision === cfg.accessHash && !(await legacyDisabled());
+      }
       if (action === 'logout') {
         if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
-        if (authenticated) await store.delete('sessions/' + digest(token));
-        return json({ ok: true }, 200, { 'Set-Cookie': cookie('', 0) });
+        if (HEX.test(token)) await store.delete('sessions/' + digest(token));
+        if (HEX.test(ownerToken)) await store.delete('owner-sessions/' + digest(ownerToken));
+        const response = json({ ok: true }, 200, { 'Set-Cookie': cookie('', 0) });
+        response.headers.append('Set-Cookie', cookie('', 0, ADMIN_COOKIE));
+        return response;
       }
       if (!authenticated) return json({ error: 'Connecte-toi avec le code transmis par l’auteur.' }, 401);
       if (request.method !== 'GET') return json({ error: 'Méthode refusée.' }, 405);
