@@ -1,0 +1,8 @@
+# Configuration du site existant tectonique-des-ames.netlify.app.
+# La liaison GitHub et la branche de production main se règlent dans Netlify.
+[build]
+  command = "node build-public.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
