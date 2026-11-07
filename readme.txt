@@ -1,0 +1,1 @@
+Atlas littéraire V5. Ouvrir index.html. Le module lecture.html relie les treize niveaux à des chapitres et à cinq courts extraits vérifiés de la V17. Les autres renvois sont provisoires. Ne pas publier le dossier privé. Pour Netlify, déployer le dossier PUBLIC seulement.
