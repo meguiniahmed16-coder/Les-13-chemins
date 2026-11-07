@@ -6,7 +6,7 @@ Construction : npm ci puis npm run build. Le dossier dist contient uniquement le
 
 Lecture : treize extraits du livre, avec titres de chapitre et pagination du PDF de lecture du 7 novembre 2026. Les titres de scènes sont propres au jeu.
 
-Espace éditeur : editeurs.html et editeurs.js appellent une fonction serveur construite depuis editor-api.mjs. Le catalogue et les documents sont dans le stockage privé Netlify Blobs, jamais dans ce dépôt ni dans dist. Les téléchargements sont découpés en parties et vérifiés par SHA-256. La copie du dossier est datée ; aucune synchronisation automatique avec Google Drive n’est programmée.
+Espace éditeur : intégré à contact.html (onglet unique « Contacter l’auteur ») avec editeurs.js appellent une fonction serveur construite depuis editor-api.mjs. Le catalogue et les documents sont dans le stockage privé Netlify Blobs, jamais dans ce dépôt ni dans dist. Les téléchargements sont découpés en parties et vérifiés par SHA-256. L’ancienne adresse /editeurs redirige vers la rubrique protégée de la page de contact. La copie du dossier est datée ; aucune synchronisation automatique avec Google Drive n’est programmée.
 
 La variable secrète EDITOR_CONFIG est définie uniquement dans le contexte de production Netlify. Elle contient les empreintes SHA-256 accessHash et adminHash de codes aléatoires de forte entropie. Aucun code ni jeton ne doit être ajouté au dépôt. Les sessions sont côté serveur, expirent après quatre heures et sont révoquées à la déconnexion ; modifier accessHash invalide les sessions existantes. Les tentatives de connexion sont limitées par adresse IP et par fenêtre de quinze minutes.
 

@@ -19,3 +19,12 @@ Referrer-Policy = "no-referrer"
 X-Frame-Options = "DENY"
 X-Content-Type-Options = "nosniff"
 Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+
+[[headers]]
+for = "/contact*"
+[headers.values]
+Cache-Control = "private, no-store"
+Referrer-Policy = "no-referrer"
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
