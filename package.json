@@ -1,1 +1,12 @@
-{"name":"les-treize-chemins","private":true,"type":"module","scripts":{"build":"node build-public.mjs","test":"node --test tests/*.test.mjs"},"dependencies":{"@netlify/blobs":"11.1.8"}}
+{
+  "name": "les-treize-chemins",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build-public.mjs",
+    "test": "node --test editor-access.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "11.1.8"
+  }
+}

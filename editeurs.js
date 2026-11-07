@@ -7,7 +7,8 @@
   const sha = async data => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join('');
   async function api(action, options = {}) {
     const response = await fetch(`${endpoint}?action=${action}`, { credentials: 'same-origin', cache: 'no-store', ...options });
-    const data = await response.json();
+    let data;
+    try { data = await response.json(); } catch { throw new Error('L’espace éditeur est momentanément indisponible. Réessaie dans quelques instants.'); }
     if (!response.ok) { const error = new Error(data.error || 'La demande n’a pas abouti.'); error.status = response.status; throw error; }
     return data;
   }
