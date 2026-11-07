@@ -7,6 +7,7 @@ const output = join(root, 'dist');
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
   'index.html',
+  'presentation.html',
   'carte.html',
   'jeu.html',
   'lecture.html',
