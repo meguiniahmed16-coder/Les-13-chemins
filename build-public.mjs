@@ -16,6 +16,8 @@ const publicFiles = [
   'arcade-a410.html',
   'arcade-catalogne.html',
   'arcade-marmousets.html',
+  'jeu-bosnie.html',
+  'bosnie-runtime.js',
 ];
 
 if (process.env.CONTEXT === 'production' && process.env.BRANCH !== 'main') {
