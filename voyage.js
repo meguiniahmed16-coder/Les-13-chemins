@@ -40,6 +40,7 @@
    if(!diceDone||!ready||started||closed)return;
    started=true;modal.dataset.phase='overview';heading.textContent='Tous les chemins';status.textContent='Les lieux du récit se rassemblent…';
    frame.contentWindow.postMessage({type:'journey:start',session},location.origin);
+   later(finish,11000);
   }
   function message(e){
    if(e.origin!==location.origin||e.source!==frame.contentWindow||e.data?.session!==session||closed)return;
@@ -62,9 +63,9 @@
   later(()=>{status.textContent=faces.join(' et ')+' · En route !';},reduced?150:1200);
   later(()=>{
    diceDone=true;modal.classList.add('journey-open');frame.hidden=false;heading.textContent='La carte du voyage';status.textContent='Les chemins se dessinent…';beginMap();
-   later(()=>{if(!started)finish();},5000);
+   later(()=>{if(!started)finish();},12000);
   },reduced?350:1550);
-  later(finish,20000);
+  later(finish,25000);
   return finish;
  }
  function initMap({map,points,centers,titles,places}){
