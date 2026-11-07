@@ -13,6 +13,10 @@ const publicFiles = [
   'mode_emploi.html',
   'mode_emploi_treize_chemins.html',
   'passages.json',
+  'contact.html',
+  'editeurs.html',
+  'editeurs.js',
+  'editorial.css',
   'arcade-a410.html',
   'arcade-catalogne.html',
   'arcade-marmousets.html',
@@ -48,3 +52,7 @@ for (const name of publicFiles) {
   await copyFile(join(root, name), join(output, name));
 }
 console.log('Build public : ' + publicFiles.length + ' fichiers vérifiés dans dist/.');
+
+// Server code is packaged separately; private documents are never build inputs.
+await mkdir(join(root, '.netlify/functions'), { recursive: true });
+await copyFile(join(root, 'editor-api.mjs'), join(root, '.netlify/functions/editor.mjs'));
