@@ -15,6 +15,7 @@ const publicFiles = [
   'passages.json',
   'arcade-a410.html',
   'arcade-catalogne.html',
+  'arcade-marmousets.html',
 ];
 
 if (process.env.CONTEXT === 'production' && process.env.BRANCH !== 'main') {
