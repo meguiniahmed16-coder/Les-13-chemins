@@ -22,6 +22,8 @@ const publicFiles = [
   'arcade-marmousets.html',
   'jeu-bosnie.html',
   'bosnie-runtime.js',
+  'jeu-danse.html',
+  'danse-runtime.js',
   'voyage.js',
   'plateau-mobile.webp',
   'plateau-large.webp',

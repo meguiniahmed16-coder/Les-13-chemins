@@ -4,9 +4,15 @@
   "type": "module",
   "scripts": {
     "build": "node build-public.mjs",
-    "test": "node --test editor-access.test.mjs"
+    "test": "node --test editor-access.test.mjs",
+    "build:danse": "node build-danse.mjs",
+    "test:danse": "node --test danse.test.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "11.1.8"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.11",
+    "three": "0.180.0"
   }
 }

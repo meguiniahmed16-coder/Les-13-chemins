@@ -1,0 +1,13 @@
+import {build} from 'esbuild';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+import fs from 'node:fs';import path from 'node:path';
+const root=import.meta.dirname;
+await build({entryPoints:[path.join(root,'danse-app.js')],bundle:true,minify:true,format:'iife',target:'es2020',outfile:path.join(root,'danse-runtime.js'),legalComments:'inline',banner:{js:'/*\n'+fs.readFileSync(path.resolve(path.dirname(require.resolve('three')),'../LICENSE'),'utf8')+'\n*/'}});
+fs.writeFileSync(path.join(root,'jeu-danse.html'),fs.readFileSync(path.join(root,'danse-source.html'),'utf8').replace('<link rel="stylesheet" href="danse-style.css">','<style>'+fs.readFileSync(path.join(root,'danse-style.css'),'utf8')+'</style>'));
+let page=fs.readFileSync(path.join(root,'jeu.html'),'utf8').replace(/<!-- DANSE START -->[\s\S]*?<!-- DANSE END -->/g,'');
+let css=page.match(/<style>(#arcadeDialog[\s\S]*?)<\/style>/)[1].replaceAll('arcadeDialog','danseDialog').replaceAll('arcadeClose','danseClose').replaceAll('arcadeFrame','danseFrame').replaceAll('arcadeLaunch','danseLaunch');
+css+='#danseDialog{width:min(1190px,98vw);max-width:98vw;background:#191026;border-color:#a07cc8}#danseFrame{background:#191026}';
+const block='<!-- DANSE START --><style>'+css+'</style><script>'+fs.readFileSync(path.join(root,'danse-score.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'danse-plateau.js'),'utf8')+'</script><!-- DANSE END -->';
+page=page.replace('<!-- MOBILE ENTRY START -->',block+'<!-- MOBILE ENTRY START -->');page=page.replace("4:'Entre les rafales'}","4:'Entre les rafales',5:'Danse pour sauver Lionel !'}");fs.writeFileSync(path.join(root,'jeu.html'),page);
+console.log('Jeu de danse 3D assemblé et intégré à l’étape 5.');
