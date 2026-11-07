@@ -14,6 +14,7 @@ const publicFiles = [
   'mode_emploi_treize_chemins.html',
   'passages.json',
   'arcade-a410.html',
+  'arcade-catalogne.html',
 ];
 
 if (process.env.CONTEXT === 'production' && process.env.BRANCH !== 'main') {
