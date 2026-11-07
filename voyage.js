@@ -85,7 +85,7 @@
   const distance=map.distance(origin,destination),travelZoom=distance>500000?6:distance>100000?8:distance>10000?10:13;
   const trace=L.polyline([],{color:'#a9773d',weight:3,dashArray:'6 7',opacity:.85,interactive:false});
   const at=t=>[origin[0]+(destination[0]-origin[0])*t+Math.sin(Math.PI*t)*Math.min(1.2,Math.abs(destination[1]-origin[1])*.08),origin[1]+(destination[1]-origin[1])*t];
-  function arrive(){cancelAnimationFrame(raf);pointer.setLatLng(destination);map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});phase('arrival',places[to-1]+' · '+titles[to-1]);later(()=>send('journey:done'),reduced?350:1000);}
+  function arrive(){cancelAnimationFrame(raf);pointer.setLatLng(destination);map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});phase('arrival',(root.TreizeEscale?.getStage(to)?.city||places[to-1])+' · '+titles[to-1]);root.TreizeEscale?.addCharacters(map,to);later(()=>send('journey:done'),2400);}
   function travel(){
    phase('travel',places[from-1]+' → '+places[to-1]);stops.forEach((m,i)=>{if(i!==from-1&&i!==to-1)marks.removeLayer(m);});trace.addTo(map);
    if(reduced){trace.setLatLngs([origin,destination]);later(arrive,350);return;}

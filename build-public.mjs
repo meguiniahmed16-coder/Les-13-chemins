@@ -1,4 +1,4 @@
-import { copyFile, lstat, mkdir, readFile, rm } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 
@@ -26,6 +26,7 @@ const publicFiles = [
   'jeu-danse.html',
   'danse-runtime.js',
   'voyage.js',
+  'escale.js',
   'plateau-mobile.webp',
   'plateau-large.webp',
 ];
@@ -49,12 +50,29 @@ for (const name of publicFiles) {
   }
 }
 
+// Build one coherent arrival dataset from the approved public passages.
+const stops = JSON.parse(await readFile(join(root, 'lieux-etapes.json'), 'utf8'));
+const passages = JSON.parse(await readFile(join(root, 'passages.json'), 'utf8'));
+// Only this reader-facing selection is public, never the source workshop documents.
+const workshops = JSON.parse(await readFile(join(root, 'ateliers-publics.json'), 'utf8'));
+for (const profile of workshops) {
+  if (!profile.id || !profile.name || !profile.paragraphs?.length || !profile.paragraphs.every(p => typeof p === 'string' && p.trim()) || !profile.levels?.every(n => Number.isInteger(n) && n >= 1 && n <= 13)) throw new Error('Atelier public incomplet.');
+}
+if (stops.length !== 13 || passages.length !== 13) throw new Error('Treize étapes sont requises.');
+const arrivalData = stops.map((stop, i) => {
+  const passage = passages.find(p => p.level === stop.level);
+  if (stop.level !== i + 1 || !passage?.quote || stop.coordinates.length !== 2 || !stop.coordinates.every(Number.isFinite) || !Number.isFinite(stop.altitude) || !Array.isArray(stop.characters) || !stop.characters.every(name => typeof name === 'string' && name.trim())) throw new Error('Étape incomplète : ' + (i + 1));
+  const characters = workshops.filter(profile => profile.levels.includes(stop.level));
+  if (characters.some(profile => !stop.characters.includes(profile.name))) throw new Error('Atelier sans personnage correspondant : ' + stop.level);
+  return {...stop, passage, workshops: characters};
+});
 await mkdir(output);
+await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
   await copyFile(join(root, name), join(output, name));
 }
-console.log('Build public : ' + publicFiles.length + ' fichiers vérifiés dans dist/.');
+console.log('Build public : ' + (publicFiles.length + 1) + ' fichiers vérifiés dans dist/.');
 
 // Server code is packaged separately; private documents are never build inputs.
 await mkdir(join(root, '.netlify/functions'), { recursive: true });

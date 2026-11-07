@@ -1,0 +1,233 @@
+[
+  {
+    "level": 1,
+    "city": "La Roche-sur-Foron",
+    "area": "Éteaux · Haute-Savoie",
+    "coordinates": [
+      46.067,
+      6.312
+    ],
+    "altitude": 550,
+    "characters": [
+      "Le responsable de cycle",
+      "Le directeur"
+    ],
+    "history": "La cité conserve la tour des comtes de Genève et des traces de ses anciennes enceintes : le Moyen Âge reste présent dans ses rues.",
+    "historySource": {
+      "url": "https://larochesurforon.fr/infos-pratiques/la-roche-sur-foron/",
+      "label": "Ville de La Roche-sur-Foron"
+    }
+  },
+  {
+    "level": 2,
+    "city": "Barcelone",
+    "area": "Place de Catalogne",
+    "coordinates": [
+      41.387,
+      2.17
+    ],
+    "altitude": 20,
+    "characters": [
+      "Michel le Belge"
+    ],
+    "history": "Inaugurée en 1927, la place de Catalogne relie la vieille ville à l’Eixample, le quartier né de l’extension de Barcelone.",
+    "historySource": {
+      "url": "https://bid.barcelonaturisme.com/wv3/en/page/5069/placa-de-catalunya.html",
+      "label": "Turisme de Barcelona"
+    }
+  },
+  {
+    "level": 3,
+    "city": "Ferney-Voltaire",
+    "area": "Les Marmousets · Prévessin-Moëns",
+    "coordinates": [
+      46.258,
+      6.108
+    ],
+    "altitude": 435,
+    "characters": [
+      "Mustapha",
+      "Ma mère",
+      "Mon père"
+    ],
+    "history": "Voltaire a passé les vingt dernières années de sa vie à Ferney. Son château est devenu un lieu de mémoire du siècle des Lumières.",
+    "historySource": {
+      "url": "https://www.chateau-ferney-voltaire.fr/decouvrir/histoire-du-chateau-de-voltaire",
+      "label": "Centre des monuments nationaux"
+    }
+  },
+  {
+    "level": 4,
+    "city": "Sarajevo",
+    "area": "L’arrivée en Bosnie",
+    "coordinates": [
+      43.856,
+      18.413
+    ],
+    "altitude": 545,
+    "characters": [],
+    "history": "En 1984, Sarajevo accueille les Jeux olympiques d’hiver. Huit ans plus tard, la guerre bouleverse cette ville olympique.",
+    "historySource": {
+      "url": "https://www.olympics.com/ioc/news/sarajevo-84-the-human-legacy-that-has-stood-the-test-of-time",
+      "label": "Comité international olympique"
+    }
+  },
+  {
+    "level": 5,
+    "city": "Paris",
+    "area": "Place des Fêtes",
+    "coordinates": [
+      48.876,
+      2.39
+    ],
+    "altitude": 110,
+    "characters": [
+      "Lionel"
+    ],
+    "history": "Créée en 1836 dans la commune de Belleville, la place des Fêtes accueillait les réjouissances populaires, bien avant les tours qui la bordent aujourd’hui.",
+    "historySource": {
+      "url": "https://www.paris.fr/pages/place-des-fetes-deux-siecles-de-transformation-7290",
+      "label": "Ville de Paris"
+    }
+  },
+  {
+    "level": 6,
+    "city": "Paris",
+    "area": "Rue Pierre-Leroux · repère du chapitre",
+    "coordinates": [
+      48.85,
+      2.315
+    ],
+    "altitude": 40,
+    "characters": [
+      "Ma fille",
+      "Marianne"
+    ],
+    "history": "Mentionnée dès 1672, cette voie porte depuis 1885 le nom de Pierre Leroux, penseur du XIXe siècle lié au saint-simonisme.",
+    "historySource": {
+      "url": "https://regles-urbanisme.paris.fr/plu-bioclimatique/servlet/plugins/document/resource?id=447&id_attribute=93&working_content=true",
+      "label": "Ville de Paris — histoire du quartier"
+    }
+  },
+  {
+    "level": 7,
+    "city": "Chartres",
+    "area": "Sur les chemins depuis Paris · repère de l’étape",
+    "coordinates": [
+      48.447,
+      1.489
+    ],
+    "altitude": 160,
+    "characters": [],
+    "history": "Après l’incendie de 1194, la cathédrale est reconstruite en vingt-six ans. Ses vitraux médiévaux éclairent encore le passage des visiteurs et des pèlerins.",
+    "historySource": {
+      "url": "https://whc.unesco.org/fr/list/81/",
+      "label": "UNESCO"
+    }
+  },
+  {
+    "level": 8,
+    "city": "Onzain",
+    "area": "La Loire · face à Chaumont-sur-Loire",
+    "coordinates": [
+      47.499,
+      1.176
+    ],
+    "altitude": 65,
+    "characters": [
+      "Le prêtre"
+    ],
+    "history": "Sur l’autre rive de la Loire, Catherine de Médicis acquiert le château de Chaumont en 1550. Elle l’échange ensuite avec Diane de Poitiers contre Chenonceau.",
+    "historySource": {
+      "url": "https://www.domaine-chaumont.fr/le-chateau-3/de-catherine-de-medicis-a-diane-de-poitiers-1133",
+      "label": "Domaine de Chaumont-sur-Loire"
+    }
+  },
+  {
+    "level": 9,
+    "city": "Contis-Plage",
+    "area": "Saint-Julien-en-Born · Landes",
+    "coordinates": [
+      44.084,
+      -1.31
+    ],
+    "altitude": 20,
+    "characters": [
+      "Le patron de la pizzeria"
+    ],
+    "history": "Le phare de Contis s’allume pour la première fois en 1863. Entre océan et forêt, il devient un repère pour les navigateurs de la côte landaise.",
+    "historySource": {
+      "url": "https://www.saint-julien-en-born.fr/decouvrir-saint-julien/le-phare-de-contis",
+      "label": "Commune de Saint-Julien-en-Born"
+    }
+  },
+  {
+    "level": 10,
+    "city": "Logroño",
+    "area": "Vers Burgos, puis le retour",
+    "coordinates": [
+      42.466,
+      -2.445
+    ],
+    "altitude": 385,
+    "characters": [
+      "La jeune éditrice",
+      "Son mari"
+    ],
+    "history": "En 1095, le roi Alphonse VI accorde une charte à Logroño. Le passage de l’Èbre et le chemin de Saint-Jacques favorisent son essor médiéval.",
+    "historySource": {
+      "url": "https://logrono.es/la-ciudad-amurallada",
+      "label": "Ville de Logroño"
+    }
+  },
+  {
+    "level": 11,
+    "city": "León",
+    "area": "Départ du Camino San Salvador",
+    "coordinates": [
+      42.598,
+      -5.568
+    ],
+    "altitude": 845,
+    "characters": [],
+    "history": "La ville s’est développée sur l’emplacement de camps romains. Le nom de León garde la mémoire de la légion qui y était établie.",
+    "historySource": {
+      "url": "https://tesauros.cultura.gob.es/tesauros/toponimiahistorica/1212557.html?desplegar=823290227&replegar=",
+      "label": "Ministère espagnol de la Culture"
+    }
+  },
+  {
+    "level": 12,
+    "city": "Estella-Lizarra",
+    "area": "La halte près du Lidl",
+    "coordinates": [
+      42.671,
+      -2.032
+    ],
+    "altitude": 430,
+    "characters": [],
+    "history": "En 1090, Sancho Ramírez accorde à Estella un statut destiné à attirer de nouveaux habitants. La ville grandit avec le pèlerinage vers Saint-Jacques.",
+    "historySource": {
+      "url": "https://estellaturismo.com/fr/la-ville-de-estella/histoire-estella-lizarra.php",
+      "label": "Office de tourisme d’Estella-Lizarra"
+    }
+  },
+  {
+    "level": 13,
+    "city": "La Rochelle",
+    "area": "Le port · Le Marucca",
+    "coordinates": [
+      46.16,
+      -1.151
+    ],
+    "altitude": 10,
+    "characters": [
+      "Raphaël"
+    ],
+    "history": "Au XIVe siècle, une lourde chaîne tendue entre les tours Saint-Nicolas et de la Chaîne pouvait fermer l’entrée du port aux navires.",
+    "historySource": {
+      "url": "https://www.larochelle.fr/annuaires/lieux/annuaire/tour-de-la-chaine-1",
+      "label": "Ville de La Rochelle"
+    }
+  }
+]

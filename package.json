@@ -6,7 +6,8 @@
     "build": "node build-public.mjs",
     "test": "node --test editor-access.test.mjs",
     "build:danse": "node build-danse.mjs",
-    "test:danse": "node --test danse.test.mjs"
+    "test:danse": "node --test danse.test.mjs",
+    "test:arrival": "node build-public.mjs && node --test arrival.test.mjs journey.test.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "11.1.8"

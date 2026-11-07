@@ -1,0 +1,68 @@
+/* The arrival reader uses only the thirteen public, approved excerpts. */
+(function(root){
+ 'use strict';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const getStage=n=>(root.TreizeEtapesData||[]).find(s=>s.level===Number(n));
+ const gps=([lat,lon])=>`${Math.abs(lat).toFixed(3)}° ${lat<0?'S':'N'} · ${Math.abs(lon).toFixed(3)}° ${lon<0?'O':'E'}`;
+ const css=`
+ html.arrival-reading,html.characters-reading{overflow:hidden}
+ :is(#arrivalReader,#characterReader){width:min(850px,96vw);max-width:96vw;max-height:92dvh;padding:0;border:2px solid #ac8a53;border-radius:8px;background:#fff9ec;color:#293f3b;box-shadow:0 20px 80px #10282266;overflow:auto;overscroll-behavior:contain;text-align:left}
+ :is(#arrivalReader,#characterReader)::backdrop{background:#19332cd9}
+ :is(#arrivalReader,#characterReader) .arrival-bar{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:15px;padding:12px 20px;background:#263e3a;color:#fff3dc;font:600 12px/1.4 'DM Sans',sans-serif;border:0}
+ :is(#arrivalReader,#characterReader) .arrival-close{border:1px solid #c9b28b;background:transparent;color:#fff3dc;min-width:44px;min-height:44px;border-radius:4px;font-size:24px;cursor:pointer}
+ :is(#arrivalReader,#characterReader) .arrival-body{padding:30px clamp(20px,5vw,52px) 38px}
+ :is(#arrivalReader,#characterReader) .arrival-kicker{font:600 11px/1.5 'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#88673d;margin:0 0 8px}
+ :is(#arrivalReader,#characterReader) h2{font:600 clamp(32px,5vw,47px)/1.08 'Cormorant Garamond',Georgia,serif;margin:0 0 9px}
+ :is(#arrivalReader,#characterReader) .arrival-area{font:16px/1.6 'DM Sans',sans-serif;margin:0 0 18px}
+ :is(#arrivalReader,#characterReader) .arrival-facts{display:flex;gap:12px 26px;flex-wrap:wrap;margin:0 0 6px;font:14px/1.6 'DM Sans',sans-serif}
+ :is(#arrivalReader,#characterReader) .arrival-facts div{display:flex;gap:8px}:is(#arrivalReader,#characterReader) dt{font-weight:700}:is(#arrivalReader,#characterReader) dd{margin:0}
+ :is(#arrivalReader,#characterReader) .arrival-note{font:12px/1.5 'DM Sans',sans-serif;color:#756c5e;margin:0 0 18px}
+ :is(#arrivalReader,#characterReader) .arrival-history{border-left:3px solid #ac8a53;padding:10px 16px;background:#f1e7d1;font:16px/1.7 Georgia,serif;margin:0 0 24px}
+ :is(#arrivalReader,#characterReader) .arrival-characters{display:flex;gap:7px;flex-wrap:wrap;list-style:none;padding:0;margin:0 0 28px;font:12px/1.5 'DM Sans',sans-serif}
+ :is(#arrivalReader,#characterReader) .arrival-characters li{border:1px solid #c9b48f;padding:5px 9px;border-radius:20px}
+ :is(#arrivalReader,#characterReader) h3{font:600 clamp(28px,4vw,38px)/1.15 'Cormorant Garamond',Georgia,serif;margin:20px 0 10px}
+ :is(#arrivalReader,#characterReader) .arrival-reference{font:14px/1.6 'DM Sans',sans-serif;margin:0 0 6px}
+ :is(#arrivalReader,#characterReader) .arrival-excerpt{font:20px/1.85 Georgia,serif;margin:26px 0 30px;white-space:normal}
+ :is(#arrivalReader,#characterReader) .arrival-excerpt p{margin:0 0 1.1em}
+ :is(#arrivalReader,#characterReader) .arrival-challenge{display:block;width:100%;min-height:64px;padding:18px 24px;background:#345448;color:#fff8e9;border:1px solid #345448;border-radius:5px;cursor:pointer;text-align:center;font:700 20px/1.3 'DM Sans',sans-serif}
+ :is(#arrivalReader,#characterReader) .arrival-challenge:hover{background:#476e59}:is(#arrivalReader,#characterReader) button:focus-visible,:is(#arrivalReader,#characterReader) a:focus-visible{outline:3px solid #b58037;outline-offset:3px}
+ :is(#arrivalReader,#characterReader) .arrival-sources{font:12px/1.6 'DM Sans',sans-serif;color:#756c5e;margin:18px 0}:is(#arrivalReader,#characterReader) .arrival-sources a{color:#3b5f4c;text-underline-offset:3px}
+ .journey-characters{z-index:2000!important}.journey-character-card{position:absolute;bottom:24px;left:0;transform:translateX(-50%);width:280px;max-width:75vw;padding:13px;border:1px solid #ac8a53;border-radius:8px;background:#fff8e8f5;color:#29453c;box-shadow:0 5px 24px #1a332b33;font:12px/1.5 'DM Sans',sans-serif;text-align:center}
+ .journey-character-card strong{display:block;font:600 23px/1.2 'Cormorant Garamond',Georgia,serif;margin-bottom:8px}.journey-character-names{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}.journey-character-name{display:inline-block;border:1px solid #c4b18d;border-radius:16px;padding:4px 8px;background:#f3e8d1;animation:arrival-name .45s both;animation-delay:var(--delay,0s)}
+ .character-more{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 16px;margin:0 0 22px;border:1px solid #9f8356;border-radius:5px;background:#f1e7d1;color:#294f3e;cursor:pointer;font:600 14px/1.4 'DM Sans',sans-serif;text-align:left}
+ .character-more:hover{background:#e7d8b9}.character-more:focus-visible{outline:3px solid #b58037;outline-offset:3px}
+ #characterReader .arrival-body{padding-top:25px}#characterReader article+article{border-top:1px solid #c9b48f;margin-top:30px;padding-top:20px}
+ @keyframes arrival-name{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+ @media(prefers-reduced-motion:reduce){.journey-character-name{animation:none}}
+ @media(max-width:600px){:is(#arrivalReader,#characterReader){width:100vw;max-width:100vw;max-height:100dvh;height:100dvh;border:0;border-radius:0}:is(#arrivalReader,#characterReader) .arrival-body{padding:25px 22px 35px}:is(#arrivalReader,#characterReader) .arrival-excerpt{font-size:19px;line-height:1.8}:is(#arrivalReader,#characterReader) .arrival-facts{font-size:13px}:is(#arrivalReader,#characterReader) .arrival-challenge{font-size:19px}}
+ `;
+ function install(){if(document.getElementById('arrivalStyles'))return;const s=document.createElement('style');s.id='arrivalStyles';s.textContent=css;document.head.append(s);}
+ function namesHTML(stage){return `<div class="journey-character-card"><strong>${esc(stage.city)}</strong><div class="journey-character-names">${stage.characters.map((name,i)=>`<span class="journey-character-name" style="--delay:${i*.16}s">${esc(name)}</span>`).join('')}</div></div>`;}
+ function addCharacters(map,n){const s=getStage(n);if(!s?.characters.length)return null;install();return L.marker(s.coordinates,{interactive:false,zIndexOffset:2000,icon:L.divIcon({className:'journey-characters',html:namesHTML(s),iconSize:[0,0],iconAnchor:[0,0]})}).addTo(map);}
+ function characterButton(n){const s=getStage(n);return s?.workshops?.length?`<button type="button" class="character-more" data-character-stage="${s.level}" aria-haspopup="dialog">En savoir plus sur les personnages <span aria-hidden="true">↗</span></button>`:'';}
+ function bindCharacters(container){container.querySelectorAll('[data-character-stage]').forEach(button=>{button.onclick=()=>openCharacters(Number(button.dataset.characterStage),button);});}
+ function charactersHTML(s){return `<div class="arrival-bar"><span>LES PERSONNAGES · ATELIER DE CONTINUITÉ</span><button class="arrival-close" type="button" aria-label="Revenir au passage">×</button></div><div class="arrival-body"><h2 id="charactersTitle" tabindex="-1">De l’autre côté du personnage</h2><p class="arrival-history">Ces voix d’atelier mêlent souvenirs et création littéraire. Elles donnent à entendre les personnages au-delà du passage.</p>${s.workshops.map(p=>`<article><h3>${esc(p.name)}</h3><p class="arrival-reference">Sélection de l’atelier de continuité ${esc(p.atelier)}</p><div class="arrival-excerpt">${p.paragraphs.map(text=>`<p>${esc(text)}</p>`).join('')}</div></article>`).join('')}<button class="arrival-challenge" type="button">← Revenir au passage</button></div>`;}
+ let characterDialog=null;
+ function openCharacters(n,trigger){
+  const stage=getStage(n);if(!stage?.workshops?.length)return null;if(characterDialog)return characterDialog;
+  install();const modal=document.createElement('dialog');modal.id='characterReader';modal.setAttribute('aria-labelledby','charactersTitle');modal.innerHTML=charactersHTML(stage);document.body.append(modal);characterDialog=modal;
+  let closed=false;function finish(){if(closed)return;closed=true;characterDialog=null;document.documentElement.classList.remove('characters-reading');modal.remove();trigger?.focus({preventScroll:true});}
+  const back=()=>{if(modal.open)modal.close();else finish();};modal.querySelector('.arrival-close').onclick=back;modal.querySelector('.arrival-challenge').onclick=back;modal.addEventListener('close',finish,{once:true});
+  try{modal.showModal();document.documentElement.classList.add('characters-reading');modal.scrollTop=0;modal.querySelector('h2').focus({preventScroll:true});}catch{finish();}
+  return modal;
+ }
+ function readerHTML(s){return `<div class="arrival-bar"><span>LES TREIZE CHEMINS · ÉTAPE ${String(s.level).padStart(2,'0')}</span><button class="arrival-close" type="button" aria-label="Fermer le passage">×</button></div><div class="arrival-body"><p class="arrival-kicker">Vous êtes arrivé à</p><h2 id="arrivalTitle" tabindex="-1">${esc(s.city)}</h2><p class="arrival-area">${esc(s.area)}</p><dl class="arrival-facts"><div><dt>GPS</dt><dd>${esc(gps(s.coordinates))}</dd></div><div><dt>Altitude</dt><dd>≈ ${s.altitude} m</dd></div></dl><p class="arrival-note">Coordonnées indicatives · altitude estimée au repère.</p><p class="arrival-history">${esc(s.history)}</p>${s.characters.length?`<ul class="arrival-characters" aria-label="Les personnages de cette étape">${s.characters.map(name=>`<li>${esc(name)}</li>`).join('')}</ul>`:''}${characterButton(s.level)}<h3>${esc(s.passage.scene)}</h3><p class="arrival-reference">Extrait du chapitre ${Number(s.passage.chapter)} — <em>« ${esc(s.passage.title)} »</em>, ${esc(s.passage.pageLabel)}.</p><p class="arrival-note">Le titre de ce passage a été choisi pour le jeu.</p><div class="arrival-excerpt">${s.passage.quote.split(/\n\s*\n/).map(p=>`<p>${esc(p)}</p>`).join('')}</div><p class="arrival-reference">${esc(s.passage.source)}</p><details class="arrival-sources"><summary>Repères et sources du lieu</summary><p>Histoire : <a href="${esc(s.historySource.url)}" target="_blank" rel="noopener noreferrer">${esc(s.historySource.label)}</a>.<br>Altitude : <a href="https://open-meteo.com/en/docs/elevation-api" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · Copernicus DEM GLO-90, arrondie à 5 m. Le point situe l’étape, sans désigner une adresse privée ni l’emplacement exact de chaque scène.</p></details><button class="arrival-challenge" type="button">Relevez le défi <span aria-hidden="true">→</span></button></div>`;}
+ let active=null;
+ function openReader(n,{onChallenge=()=>{}}={}){
+  const stage=getStage(n);if(!stage){onChallenge();return null;}if(active)return active;
+  install();const modal=document.createElement('dialog');modal.id='arrivalReader';modal.setAttribute('aria-labelledby','arrivalTitle');modal.dataset.level=stage.level;modal.innerHTML=readerHTML(stage);document.body.append(modal);active=modal;bindCharacters(modal);
+  let finished=false;function finish(){if(finished)return;finished=true;active=null;document.documentElement.classList.remove('arrival-reading');modal.remove();onChallenge();}
+  const close=()=>{if(modal.open)modal.close();else finish();};
+  modal.querySelector('.arrival-close').onclick=close;modal.querySelector('.arrival-challenge').onclick=close;
+  modal.addEventListener('close',finish,{once:true});
+  try{modal.showModal();document.documentElement.classList.add('arrival-reading');modal.scrollTop=0;modal.querySelector('h2').focus({preventScroll:true});}catch{finish();}
+  return modal;
+ }
+ root.TreizeEscale={getStage,gps,readerHTML,namesHTML,addCharacters,openReader,characterButton,bindCharacters,charactersHTML,openCharacters};
+ if(typeof document!=='undefined')install();
+})(typeof window==='undefined'?globalThis:window);

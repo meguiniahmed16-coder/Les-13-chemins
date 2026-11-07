@@ -1,0 +1,43 @@
+[
+  {
+    "id": "michel",
+    "name": "Michel le Belge",
+    "atelier": "01",
+    "levels": [
+      2
+    ],
+    "paragraphs": [
+      "Je suis grand, blond, déjà dégarni. Je garde mes inquiétudes derrière des gestes ordinaires : vérifier mes poches, regarder la rue, proposer à manger. Je compte mon argent, mais j’aime partager un repas. Cela donne une raison simple d’être ensemble.",
+      "Je peux rire franchement et surveiller une porte dans le même instant. Je voudrais être tranquille, retrouver un travail régulier, pouvoir donner mon adresse sans réfléchir. Pour l’instant, je remets cela à plus tard. Je dis souvent que ça va. J’aimerais parfois qu’on attende un peu avant de me croire."
+    ]
+  },
+  {
+    "id": "mustapha",
+    "name": "Mustapha",
+    "atelier": "05",
+    "levels": [
+      3
+    ],
+    "paragraphs": [
+      "À l’école, je travaillais bien. J’avais des facilités, mais je ne comptais pas seulement dessus. Je faisais mes devoirs, je préparais les contrôles, je voulais comprendre ce qui était attendu. Une bonne note avait quelque chose de reposant : elle venait récompenser un effort que je pouvais recommencer. Les règles tenaient mieux sur une feuille que dans une maison.",
+      "Très tôt, j’ai décidé que je deviendrais riche. J’ai choisi mes études en regardant les métiers auxquels elles conduisaient, les revenus possibles, les occasions d’avancer. Je n’avais pas envie de remettre mon avenir au hasard. Quand une voie ne menait nulle part, je préférais le savoir avant d’y consacrer plusieurs années.",
+      "Je travaille beaucoup. Je gagne de l’argent, puis je cherche où l’investir. Une somme qui dort me donne l’impression de perdre du temps. Je compare, je calcule, je recommence. J’aime voir un projet devenir solide. Je peux passer une soirée sur des chiffres sans trouver cela triste. J’ai parfois du mal à comprendre qu’on choisisse une vie dont on ne peut pas assurer les lendemains.",
+      "Je suis capable de patience, de fidélité, de beaucoup de travail pour les miens. Je sais moins bien m’arrêter. Il reste toujours une précaution à prendre, une réserve à constituer. Je voudrais leur transmettre de la sécurité. Je me demande parfois si je leur apprends aussi à profiter de ce qu’ils ont déjà."
+    ]
+  },
+  {
+    "id": "lionel",
+    "name": "Lionel",
+    "atelier": "09",
+    "levels": [
+      5
+    ],
+    "paragraphs": [
+      "J’ai commencé des études de cinéma. J’aime monter des images : déplacer un plan suffit parfois à faire mentir tout ce qui précède. Sur un tournage, je peux être patient pendant deux heures pour une lumière, puis perdre mon calme parce qu’un câble manque. J’ai des idées plus grandes que mon argent. Je garde les tickets de cinéma, les adresses de salles, des numéros griffonnés sur des paquets.",
+      "L’armée interrompt ce mouvement sans me l’enlever. Je fais ce qu’on me demande, je regarde les autres faire, et je compte les jours avant la permission. Chez moi, quelqu’un peut toujours dormir. Je sais où trouver une fête, qui possède une voiture, qui ne voudra pas rentrer à minuit. J’aime entraîner quelqu’un dans un endroit qu’il ne connaît pas et attendre le moment où il oublie sa réserve.",
+      "Je danse, je prends des risques, je néglige le lendemain. Puis je veux travailler avec une précision maniaque. Je n’ai pas choisi entre ces deux façons de vivre. Ce que je supporte le moins, c’est qu’on décide à ma place que ma vie sera petite.",
+      "Après l’armée, je travaille à Paris pour une maison de production de Qui est qui ?, l’émission présentée par Marie-Ange Nardi. Je suis chargé de trouver les participants pour les émissions quotidiennes. Je suis très bien payé, mais je m’ennuie ; ce travail ne ressemble pas vraiment à ce que j’espérais faire après l’armée.",
+      "Ahmed m’a perdu de vue après son rapatriement de Bosnie. À Paris, une intuition lui fait chercher mon nom dans le bottin. Il me trouve, m’appelle et me laisse un message. Nous nous donnons rendez-vous en terrasse au Café Charbon, rue Oberkampf. Il me raconte son travail de chauffeur-livreur et le dispositif de la mission locale, « Action de mobilisation par le théâtre », au cours Florent. Les autres élèves paient deux mille francs par mois ; lui reçoit cette somme pour suivre les mêmes cours. Ça me fait rire. Nous sommes heureux de nous retrouver."
+    ]
+  }
+]
