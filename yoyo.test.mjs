@@ -255,3 +255,22 @@ test('The hand reaches through a gap and the two weighted bags colour the buildi
  assert.match(scene,/prisoner\(3\.2,1\.65,4\)/);
  assert.match(scene,/outfits=\[/,'prisoners should wear varied civilian clothes');
 });
+
+test('Both deliveries preserve their vivid colours through the win scene, and the hanger turns edge-on',()=>{
+ const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
+ const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
+ assert.ok(app.includes('cinema.render(filmTime,mode,g)'),'finale must pass actual delivered bags to renderer');
+ assert.match(scene,/ropeGroup\.rotation\.y=g\.hooked\?Math\.sin\(Math\.PI\*pull\)\*Math\.PI\/2/,
+  'wide hanger must rotate edge-on to cross the bars');
+ assert.match(scene,/recolorWorld\(g\.bags\?\?/);
+ assert.match(scene,/bagRoot\.rotation\.z=/,'plastic bag must sway with the weight');
+ const src=fs.readFileSync(new URL('./yoyo-core.js',import.meta.url),'utf8');
+ assert.match(src,/g\.bags=Math\.max\(0,g\.part-1\)/,
+  'finding the brush must not colour the prison');
+ const two=createGame();startGame(two);aimAt(two,BRUSH.x);actionDown(two);
+ assert.equal(two.bags,0);
+ continueGame(two);aimAt(two,ropePosition(two));actionDown(two);intoOpening(two);tick(two,6);
+ assert.equal(two.bags,1,'first bag changes building');
+ continueGame(two);aimAt(two,ropePosition(two));actionDown(two);intoOpening(two);tick(two,6);
+ assert.equal(two.bags,2,'second bag makes the finale saturated');
+});
