@@ -46,6 +46,7 @@ const publicFiles = [
   'jeu-yoyo.html',
   'yoyo-runtime.js',
   'main_ouverte_fixee.webp',
+  'main-ouverte-dos-v10.avif',
   'main_brosse_dos_fixee.webp',
   'hand-right.glb',
   'hand-right-LICENSE.txt',
@@ -69,7 +70,7 @@ for (const name of publicFiles) {
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('Fichier public non régulier : ' + name);
   }
-  if (/\.(?:mp3|webp|glb)$/.test(name)) continue;
+  if (/\.(?:mp3|webp|avif|glb)$/.test(name)) continue;
   const content = await readFile(source, 'utf8');
   if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(content)) {
     throw new Error('Lien vers un document de travail interdit dans : ' + name);
