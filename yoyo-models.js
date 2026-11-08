@@ -12,6 +12,14 @@ export const ANATOMICAL_GRIPS=Object.freeze({
  smoke:[[.08,.12,.04],[.08,.11,.06],[.06,.11,.06],[.42,.69,.36],[.52,.74,.40]]
 });
 export const PALMAR_FLEXION_SIGN=-1;
+// Calibrated against the original 25-joint WEBXR hand, not a second hand mesh.
+// XYZ rotations close the thumb ON THE CUP, against the four fingers.
+// Rotations are specified in the source model's native world axes (radians).
+export const CUP_THUMB_ROTATIONS=Object.freeze([
+ [-.233,.349,-.223],
+ [-.039,.291,.036],
+ [-.028,.087,.105]
+]);
 
 // Use a real anatomically sculpted right-hand surface for the pre-pickup hand,
 // not the five capsule sweeps used for other preliminary game poses.
@@ -153,15 +161,27 @@ export function models(){
     joint.quaternion.premultiply(new T.Quaternion().setFromAxisAngle(localAxis,angle));
     joint.updateMatrixWorld(true);
    }
+   // The thumb has three rotation axes, unlike the four fingers. A single Z
+   // rotation left the thumb floating outside the cup instead of opposing it.
+   function flexThumbOnCup(joint,[x,y,z]){
+    if(!joint)return;
+    joint.parent.updateMatrixWorld(true);
+    const pq=joint.parent.getWorldQuaternion(new T.Quaternion());
+    // Extrinsic XYZ native-axis rotation = Qz * Qy * Qx.
+    const q=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),z)
+      .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),y))
+      .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),x));
+    joint.quaternion.premultiply(pq.clone().invert().multiply(q).multiply(pq));
+    joint.updateMatrixWorld(true);
+   }
    for(let i=0;i<fingers.length;i++){
     const name=fingers[i],parts=name==='thumb'
       ? ['metacarpal','phalanx-proximal','phalanx-distal']
       : ['phalanx-proximal','phalanx-intermediate','phalanx-distal'];
     parts.forEach((part,j)=>{
-     const magnitude=bends[i]?.[j]||0;
-     // Thumb joints have a different natural axis; they are NOT inverted
-     // along with the four parallel fingers.
-     flex(map.get(name+'-'+part),i===0?magnitude:PALMAR_FLEXION_SIGN*magnitude);
+     const joint=map.get(name+'-'+part),magnitude=bends[i]?.[j]||0;
+     if(i===0&&pose==='cup')flexThumbOnCup(joint,CUP_THUMB_ROTATIONS[j]);
+     else flex(joint,i===0?magnitude:PALMAR_FLEXION_SIGN*magnitude);
     });
    }
    mount.add(cloned);
@@ -180,7 +200,15 @@ export function models(){
  }
  function heldBrush(){const p=new T.Group(),arm=anatomicalHand('brush');arm.position.set(.047,0,.006);arm.rotation.y=-Math.PI/2;p.add(arm);p.add(brush());return p;}
  function cupHand(){
-  const p=new T.Group(),arm=anatomicalHand('cup');arm.position.set(.073,0,.012);arm.rotation.y=-Math.PI/2;p.add(arm);lathe(p,[[0,-.060],[.031,-.060],[.034,-.046],[.044,.091],[.046,.098],[.043,.101],[.041,.093],[.030,-.045],[0,-.045]],plastic);
+  const p=new T.Group(),arm=anatomicalHand('cup');
+  // Corrected from -90°: the palm must face the cup's curved wall.
+  // Former rotation moved all fingertips AWAY from the cup.
+  arm.position.set(.103,0,.012);
+  arm.rotation.y=Math.PI/2;
+  arm.scale.x=.72; // natural transverse spread: four fingertips line the cup wall
+  p.add(arm);
+  const cup=lathe(p,[[0,-.060],[.031,-.060],[.034,-.046],[.044,.091],[.046,.098],[.043,.101],[.041,.093],[.030,-.045],[0,-.045]],plastic);
+  cup.userData.object='coffee-cup-gripped-by-same-hand';
   const coffee=mesh(new T.CircleGeometry(.040,48),material('#36281d',.25),p);coffee.rotation.x=-Math.PI/2;coffee.position.set(0,.086,0);
   for(let n=0;n<7;n++){const ring=mesh(new T.TorusGeometry(.034+n*.0014,.0008,6,40),plastic,p);ring.rotation.x=Math.PI/2;ring.position.set(0,-.034+n*.016,0);}return p;
  }
