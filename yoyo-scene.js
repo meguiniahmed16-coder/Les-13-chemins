@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {softwareRenderer} from './yoyo-software.js';
 import {models} from './yoyo-models.js';
-import {ropePosition} from './yoyo-core.js';
+import {ropePosition,slitCenters,betweenBars,setWindowAspect} from './yoyo-core.js';
 const mix=(a,b,t)=>a+(b-a)*t, smooth=t=>t*t*(3-2*t);
 export function makeCinema(host){
  let renderer;try{renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});}catch{renderer=softwareRenderer();}
@@ -40,49 +40,175 @@ export function makeCinema(host){
  const hingeL=new T.Group(),hingeR=new T.Group();hingeL.position.set(-.78,.94,-1.42);hingeR.position.set(.78,.94,-1.42);scene.add(hingeL,hingeR);const glass=mat('#8db2bd',.18,{transparent:true,opacity:.16,side:T.DoubleSide,depthWrite:false});
  for(const [h,side] of [[hingeL,1],[hingeR,-1]]){box(.73,.035,.035,side*.365,0,0,metal,h);box(.73,.035,.035,side*.365,1.35,0,metal,h);for(const x of [0,side*.73])box(.035,1.35,.035,x,.675,0,metal,h);box(.68,1.3,.008,side*.365,.675,0,glass,h);rod([side*.65,.57,.04],[side*.65,.7,.04],.013,white,h);}
  for(let x=-.63;x<.7;x+=.21){rod([x,.95,-1.63],[x,2.3,-1.63],.018,metal);for(const y of [1.09,2.15])ell(.024,.025,.022,x,y,-1.63,rust);}for(const y of [1.09,2.15])rod([-.78,y,-1.63],[.78,y,-1.63],.015,metal);
- // A nearer opposite wing: deep reveals, separate bars and a few inhabited cells.
- const facade=mat('#b8baad',.96,{map:texture('facade')}),stone=mat('#929c94',.89),recess=mat('#303c3c',.95),barPaint=mat('#53615e',.62,{metalness:.35});
+ // Opposite wing: independent windows, lived-in civilian clothing and finer figures.
+ const facade=mat('#b8baad',.96,{map:texture('facade')}),stone=mat('#929c94',.89),
+  recess=mat('#303c3c',.95),barPaint=mat('#53615e',.62,{metalness:.35});
+ const tintables=[];
+ const tint=(material,first,second)=>{tintables.push({material,gray:material.color.clone(),first:new T.Color(first),second:new T.Color(second)});return material;};
+ tint(facade,'#9abebc','#f0a661');tint(stone,'#a9c8b3','#e8da94');tint(recess,'#384e62','#27356b');
+ tint(plaster,'#dfe4d7','#fff1bd');tint(floor,'#adb9a4','#b4cdd2');tint(fabric,'#8d9c9a','#bf7fac');
  const front=-5.85,winW=.88,winH=1.16,pitch=1.6,rows=[0,1.65,3.3,4.95],columns=[-3.2,-1.6,0,1.6,3.2];
  box(9,8,.15,0,2.5,front-.66,recess);
  for(let x=-4;x<=4;x+=pitch)box(pitch-winW,8,.24,x,2.4,front,facade);
  for(let y=-.825;y<6;y+=1.65)box(8.8,1.65-winH,.24,0,y,front,facade);
- for(const x of columns)for(const y of rows){
-  const inset=mat('#7c8980',.91);
+ const curtainColors=['#eebc5e','#7bd0c6','#dc7da1','#8da5ef','#9fc679'];
+ for(let col=0;col<columns.length;col++)for(let row=0;row<rows.length;row++){
+  const x=columns[col],y=rows[row],n=(col+row*2)%curtainColors.length;
+  const inset=tint(mat('#7c8980',.91),'#829ba8',curtainColors[n]);
+  const trim=tint(mat('#9da69a',.87),'#99b9a6',curtainColors[(n+2)%5]);
   box(.075,winH,.42,x-winW/2,y,front-.12,inset);box(.075,winH,.42,x+winW/2,y,front-.12,inset);
   box(winW+.16,.065,.48,x,y-winH/2,front-.08,stone);box(winW+.16,.09,.30,x,y+winH/2,front,stone);
   box(winW-.10,.026,.026,x,y+.40,front-.38,barPaint);box(.025,winH-.12,.025,x,y,front-.38,barPaint);
+  // Occasional fabric curtains and coloured objects: not a military or institutional uniform.
+  if((col+row)%3===0)box(.11,.32,.018,x-.29,y+.16,front-.45,trim);
+  if((col+2*row)%4===1)box(.12,.13,.12,x+.23,y-.46,front-.39,tint(mat('#78847e'),'#769390',curtainColors[(n+1)%5]));
   for(let dx=-.33;dx<=.34;dx+=.165)rod([x+dx,y-.55,front+.10],[x+dx,y+.55,front+.10],.012,barPaint);
   for(const dy of [-.39,.38])rod([x-.44,y+dy,front+.1],[x+.44,y+dy,front+.1],.012,barPaint);
-  // Interior ceiling and floor give the openings depth instead of black stickers.
   box(winW,.035,.52,x,y+.55,front-.38,recess);box(winW,.035,.52,x,y-.54,front-.38,recess);
  }
- for(const x of [-2.4,2.4]){rod([x,-1.4,front+.18],[x,6,front+.18],.035,mat('#6c7973',.8));for(let y=0;y<6;y+=1.5)rod([x-.045,y,front+.18],[x+.045,y,front+.18],.012,metal);}
+ for(const x of [-2.4,2.4]){
+  rod([x,-1.4,front+.18],[x,6,front+.18],.035,mat('#6c7973',.8));
+  for(let y=0;y<6;y+=1.5)rod([x-.045,y,front+.18],[x+.045,y,front+.18],.012,metal);
+ }
  const prisoners=[];
+ const outfits=[
+  {shade:'#59666e',first:'#66879c',vivid:'#dd6264',hair:'#302722',face:'#b58b6f',type:'tshirt'},
+  {shade:'#85887e',first:'#829891',vivid:'#e9af45',hair:'#6a4d38',face:'#9c6e52',type:'sweat'},
+  {shade:'#747b7c',first:'#6d91a5',vivid:'#50c9ae',hair:'#33363b',face:'#d7a78e',type:'hoodie'},
+  {shade:'#777777',first:'#978d9b',vivid:'#738fec',hair:'#242321',face:'#8b664f',type:'stripes'},
+  {shade:'#6b7572',first:'#8aa5a4',vivid:'#d677aa',hair:'#7d694d',face:'#bb987b',type:'jacket'}
+ ];
  function prisoner(x,windowY,style){
+  const profile=outfits[style];
   const root=new T.Group();root.position.set(x,windowY,front-.15);scene.add(root);
-  const face=mat(style===1?'#9d7156':'#bb9677',.9),hair=mat(style===2?'#776b5d':'#33352f',.95),shirt=mat(['#646c71','#6c7770','#7b7165'][style],.96),eye=mat('#2a332e',.8);
-  ell(.195,.235,.095,0,-.30,-.045,shirt,root);rod([-.16,-.25,-.03],[-.22,-.40,.06],.055,shirt,root,.045);rod([.16,-.23,-.03],[.23,-.39,.06],.055,shirt,root,.042);
-  rod([0,-.13,0],[0,.015,0],.036,face,root,.043);
-  const head=new T.Group();head.position.set(0,.055,.012);root.add(head);
-  ell(.072,.103,.069,0,0,0,face,head);ell(.060,.054,.061,0,-.065,.004,face,head);ell(.076,.065,.073,0,.054,-.014,hair,head);
-  ell(.016,.030,.013,-.073,-.006,0,face,head);ell(.016,.030,.013,.073,-.006,0,face,head);
-  ell(.015,.025,.025,0,-.015,.065,face,head);for(const dx of [-.028,.028]){ell(.015,.008,.004,dx,.017,.061,eye,head);rod([dx-.015,.032,.062],[dx+.013,.033,.063],.003,hair,head);}
-  curve([[-.022,-.056,.056],[0,-.060,.065],[.021,-.055,.056]],.0025,mat('#6c5446'),head);
-  // One inmate rests a hand around a bar; the others lean or turn in their cells.
-  if(style===0){rod([.16,-.24,0],[.24,-.13,.12],.036,shirt,root);rod([.24,-.13,.12],[.16,.01,.24],.026,face,root,.021);ell(.025,.039,.018,.16,.04,.24,face,root);for(let f=0;f<4;f++)curve([[.142,.02+f*.013,.24],[.146,.025+f*.013,.269],[.174,.025+f*.013,.27]],.005,face,root);}
-  root.rotation.y=[-.12,.26,-.24][style];prisoners.push({root,head,angle:root.rotation.y,phase:style*2});
+  const face=mat(profile.face,.91),hair=mat(profile.hair,.96);
+  const shirt=tint(mat(profile.shade,.94),profile.first,profile.vivid);
+  const seams=mat('#dad5c3',.9),eyes=mat('#2c302d',.8);
+  const shoulder=style===2?.139:style===4?.131:.124;
+  ell(shoulder,.189,.079,0,-.31,-.035,shirt,root);
+  ell(.095,.065,.075,0,-.16,-.021,shirt,root);
+  const sleeve=style===0?.032:.070;
+  for(const side of [-1,1]){
+   rod([side*.105,-.215,-.025],[side*.159,-.285,-.008],sleeve,shirt,root,.030);
+   rod([side*.159,-.285,-.008],[side*.178,-.383,.048],.023,face,root,.019);
+  }
+  if(profile.type==='jacket'){
+   box(.006,.26,.004,0,-.30,.047,seams,root);
+   for(const yy of [-.22,-.29,-.36])ell(.004,.004,.003,0,yy,.052,seams,root);
+  }else if(profile.type==='stripes'){
+   for(let yy=-.42;yy<-.18;yy+=.045)box(.20,.009,.004,0,yy,.049,seams,root);
+  }else if(profile.type==='hoodie'){
+   curve([[-.070,-.185,.039],[-.056,-.112,.019],[.0,-.105,-.028],[.055,-.123,.014],[.068,-.19,.040]],.009,shirt,root);
+   rod([-.022,-.172,.056],[-.026,-.265,.057],.0025,seams,root);
+   rod([.022,-.172,.056],[.026,-.256,.058],.0025,seams,root);
+  }else{curve([[-.050,-.183,.039],[0,-.192,.072],[.050,-.183,.039]],.006,seams,root);}
+  rod([0,-.15,0],[0,-.042,0],.028,face,root,.030);
+  const head=new T.Group();head.position.set(0,.028,.013);root.add(head);
+  ell(.068,.088,.066,0,0,0,face,head);
+  ell(.060,.054,.050,0,-.051,.013,face,head);
+  ell(.069,.036,.061,0,.055,-.014,hair,head);
+  for(const side of [-1,1]){
+   ell(.009,.021,.013,side*.068,-.008,0,face,head);
+   ell(.013,.008,.008,side*.025,.009,.061,seams,head);
+   ell(.006,.006,.007,side*.025,.010,.066,eyes,head);
+   rod([side*.013,.029,.062],[side*.039,.028,.058],.003,hair,head);
+  }
+  ell(.009,.015,.013,0,-.014,.063,face,head);
+  curve([[-.021,-.039,.058],[0,-.045,.066],[.021,-.039,.058]],.002,mat('#795b4d'),head);
+  if(style===1||style===3){
+   for(const xx of [-.027,0,.027])ell(.008,.007,.003,xx,-.062,.052,mat('#4b413a'),head);
+  }
+  // Every visible hand, even on a distant prisoner, uses the same anatomical mesh.
+  // Thin wrists remain aligned with civilian sleeves; one prisoner reaches for a bar.
+  for(const side of [-1,1]){
+   const hand=props.anatomicalHand('relaxed');
+   const reaching=(style===0||style===4)&&side===1;
+   hand.scale.setScalar(reaching?.29:.20);
+   hand.position.set(side*.178,reaching?-.36:-.395,reaching?.100:.048);
+   hand.rotation.set(reaching?.23:.09,side*(reaching?-.23:.12),side*(reaching?-.24:.06));
+   root.add(hand);
+  }
+  root.rotation.y=[-.12,.22,-.16,.13,-.27][style];
+  root.scale.setScalar(style===3?.89:style===4?1.03:1);
+  prisoners.push({root,head,angle:root.rotation.y,phase:style*1.7});
  }
  prisoner(-1.6,1.65,0);prisoner(1.6,1.65,1);prisoner(0,3.3,2);
- // The hanger is inverted: the sheet wraps its long bar; its hook carries the bag handle.
+ prisoner(-3.2,3.3,3);prisoner(3.2,1.65,4);
+ // A progressive, visible change of the whole world after each real delivery.
+ const originalSky=new T.Color('#63787e'),firstSky=new T.Color('#88bcca'),secondSky=new T.Color('#3c8cc2');
+ function recolorWorld(bags){
+  const level=Math.min(2,Math.max(0,bags||0)),fraction=level===0?0:level===1?.54:1;
+  for(const entry of tintables){
+   const target=level===2?entry.second:entry.first;
+   entry.material.color.copy(entry.gray).lerp(target,fraction);
+  }
+  scene.background.copy(originalSky).lerp(level===2?secondSky:firstSky,fraction);
+  scene.fog.color.set('#718086').lerp(new T.Color(level===2?'#5f9cbb':'#86a5ae'),fraction);
+  renderer.toneMappingExposure=1.18+fraction*.16;
+ }
+ // Real inverted wire hanger: a drap wraps the long bar, the hook carries
+ // both handles of a small, translucent shopping bag. 11.6cm compressed width.
  const ropeGroup=new T.Group();scene.add(ropeGroup);const cloth=mat('#c6bfab',1);
- for(let n=0;n<24;n++){rod([Math.sin(n*.7)*.008,n*.11+.035,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11+.035,0],.014,cloth,ropeGroup,.012);if(n%3===0){ell(.023,.031,.019,0,n*.11+.04,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11,0,cloth,ropeGroup);tail.rotation.z=-.3;}}
+ for(let n=0;n<24;n++){
+  rod([Math.sin(n*.7)*.008,n*.11+.035,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11+.035,0],.014,cloth,ropeGroup,.012);
+  if(n%3===0){ell(.023,.031,.019,0,n*.11+.04,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11,0,cloth,ropeGroup);tail.rotation.z=-.3;}
+ }
  curve([[-.18,0,0],[-.16,.004,0],[.16,.004,0],[.18,0,0],[.15,-.03,0],[0,-.21,0],[-.15,-.03,0],[-.18,0,0]],.0055,metal,ropeGroup);
  curve([[0,-.20,0],[0,-.28,0],[.013,-.327,0],[.050,-.343,0],[.081,-.32,0],[.077,-.287,0]],.006,metal,ropeGroup);
- const wraps=[];for(let n=0;n<=80;n++){const u=n/80,a=u*Math.PI*10;wraps.push([-.034+u*.068,Math.cos(a)*.014,Math.sin(a)*.014]);}curve(wraps,.005,cloth,ropeGroup);ell(.019,.024,.019,0,.034,0,cloth,ropeGroup);
- const bagmat=mat('#d4d5bb',.6,{transparent:true,opacity:.85,side:T.DoubleSide});
- const bag=ell(.17,.19,.075,.043,-.60,0,bagmat,ropeGroup);
- for(let n=-3;n<=3;n++)curve([[.043+n*.027,-.43,.025],[.043+n*.038,-.59,.074],[.043+n*.029,-.77,.025]],.0017,white,ropeGroup);
- for(const z of [-.018,.018])curve([[-.055,-.465,z],[-.010,-.39,z],[.044,-.343,z],[.096,-.39,z],[.14,-.465,z]],.008,bagmat,ropeGroup);
+ const wraps=[];for(let n=0;n<=80;n++){
+  const u=n/80,a=u*Math.PI*10;wraps.push([-.034+u*.068,Math.cos(a)*.014,Math.sin(a)*.014]);
+ }
+ curve(wraps,.005,cloth,ropeGroup);ell(.019,.024,.019,0,.034,0,cloth,ropeGroup);
+
+ const bagRoot=new T.Group();bagRoot.position.set(0,-.415,0);ropeGroup.add(bagRoot);
+ const bagPlastic=mat('#f0f1e9',.37,{transparent:true,opacity:.57,side:T.DoubleSide,depthWrite:false,metalness:.04});
+ const seam=mat('#dedfd4',.42,{transparent:true,opacity:.68,depthWrite:false});
+ // Sewn (heat-sealed) bag shell: two thin, creased skins and rounded, weighted bottom.
+ // No ellipsoid masquerading as plastic. Each skin has actual thickness and folds.
+ function bagHalf(sign){
+  const rows=22,cols=18,positions=[],uvs=[],indices=[];
+  for(let iy=0;iy<=rows;iy++)for(let ix=0;ix<=cols;ix++){
+   const v=iy/rows,u=ix/cols,xBase=u*2-1;
+   const width=(.052+.006*Math.sin(v*Math.PI)+.002*v);
+   const x=xBase*width;
+   const belly=(.005+.029*Math.sin(Math.PI*v)**1.3)*(1-xBase*xBase)**.6;
+   const crinkle=Math.sin(xBase*24+v*13)*.0028*(.2+v*.8);
+   positions.push(x,-.29*v+(1-xBase*xBase)*.004*(v>.77?1:0),sign*(belly+crinkle));
+   uvs.push(u,v);
+  }
+  for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
+   const a=iy*(cols+1)+ix,b=a+1,c=a+(cols+1),d=c+1;
+   indices.push(a,c,b,b,c,d);
+  }
+  const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+  geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();
+  return mesh(geo,bagPlastic,bagRoot);
+ }
+ bagHalf(1);bagHalf(-1);
+ for(const z of [-.012,.012]){
+  // Two unmistakable flexible handles with open negative space.
+  curve([[-.052,-.006,z],[-.030,.035,z],[.020,.090,z],[.079,.095,z],[.070,.074,z],[.053,.005,z]],.0063,bagPlastic,bagRoot);
+  curve([[-.052,-.008,z],[-.047,-.12,z],[-.056,-.24,z],[-.039,-.287,z]],.0015,seam,bagRoot);
+  curve([[.052,-.008,z],[.045,-.13,z],[.053,-.24,z],[.036,-.287,z]],.0015,seam,bagRoot);
+  curve([[-.038,-.29,z],[0,-.296,z],[.039,-.29,z]],.0026,seam,bagRoot);
+ }
+ // Soft highlights and pleats in the film, leading into the weighted packet.
+ for(const x of [-.037,-.020,-.005,.021,.039])for(const side of [-1,1]){
+  curve([[x*.8,-.025,side*.011],[x*.95,-.13,side*.020],[x*.65,-.24,side*.026],[x*.75,-.285,side*.006]],.0010,seam,bagRoot);
+ }
+ // Visible weight: paper tobacco packet for the first delivery and coffee sachet for the second.
+ const parcels=[];
+ const tobacco=new T.Group(),tobaccoPaper=mat('#94744a',.93);
+ const packet=mesh(new T.BoxGeometry(.065,.065,.031),tobaccoPaper,tobacco);
+ packet.position.set(0,-.236,0);packet.rotation.z=.12;
+ box(.065,.010,.034,0,-.206,0,mat('#e2c38a'),tobacco);
+ for(const z of [-.017,.017])box(.048,.004,.004,0,-.22,z,mat('#6f5541'),tobacco);
+ bagRoot.add(tobacco);parcels.push(tobacco);
+ const coffee=new T.Group(),coffeePaper=mat('#867057',.84);
+ const sachet=mesh(new T.CylinderGeometry(.029,.031,.085,12),coffeePaper,coffee);
+ sachet.rotation.z=Math.PI/2;sachet.position.set(.003,-.244,0);
+ box(.065,.018,.025,0,-.222,0,mat('#cdb493'),coffee);
+ bagRoot.add(coffee);parcels.push(coffee);
  // Posed hands grip their own props; a single continuous forearm rises from below frame.
  const reaching=props.openHand();scene.add(reaching);reaching.rotation.set(-.3,0,-.5);
  const searching=props.openHand(),held=props.heldBrush(),drink=props.cupHand(),cigarette=props.smokingHand();
@@ -93,6 +219,9 @@ export function makeCinema(host){
  let width=0,height=0;
  function render(t,mode='intro',g={aim:.5,part:0,pull:0,partTime:0}){
   const w=host.clientWidth,h=host.clientHeight;if(w!==width||h!==height){width=w;height=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  setWindowAspect(g,camera.aspect);
+  recolorWorld(g.bags??Math.max(0,(g.part||0)-1));
+  parcels[0].visible=(g.part||0)!==2;parcels[1].visible=(g.part||0)===2;
   for(const m of [drink,cigarette,searching,held,reaching,ropeGroup])m.visible=false;
   steam.forEach(p=>p.visible=false);storedBrush.visible=true;
   const life=mode==='window'?g.partTime:t;for(const person of prisoners){person.head.rotation.y=Math.sin(life*.24+person.phase)*.11;person.root.rotation.y=person.angle+Math.sin(life*.17+person.phase)*.035;}
@@ -117,9 +246,23 @@ export function makeCinema(host){
    if(g.hidden){searching.visible=false;camera.position.y=.55;camera.lookAt(1,.25,.05);}
   }else if(mode==='window'){
    camera.position.set(0,1.56,-.75);camera.lookAt(0,1.56,-4);storedBrush.visible=false;
+   anchors.slits=slitCenters(camera.aspect);
+   anchors.gapClear=betweenBars(g);
    const pull=g.pull||0,depth=1.19-pull*.64,rx=ropePosition(g),horizontal=(rx-.5)*2*half(depth)*camera.aspect;
-   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74+pull*.16,-.75-depth);ropeGroup.scale.set(1-pull*.2,1,1);ropeGroup.rotation.z=g.hooked?-.04:Math.sin(g.partTime)*.045;
-   held.visible=!g.hidden;held.position.set(...atScreen(g.hooked?rx:g.aim,.82,.58));held.rotation.set(-.04,0,0);
+   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74+pull*.16,-.75-depth);
+   ropeGroup.scale.set(1-pull*.12,1,1);
+   ropeGroup.rotation.z=g.hooked?-.025:Math.sin(g.partTime)*.045;
+   // The horizontal hanger itself is wider than a gap: turn it edge-on at the steel plane.
+   ropeGroup.rotation.y=g.hooked?Math.sin(Math.PI*pull)*Math.PI/2:Math.sin(g.partTime*.4)*.08;
+   bagRoot.rotation.z=Math.sin(g.partTime*2)*.028+Math.sin(pull*Math.PI)*.04;
+   bagRoot.rotation.x=Math.sin(g.partTime*.9)*.025;
+   held.visible=!g.hidden;
+   // The arm reaches through the window only when aligned between real bars.
+   // The wrist crosses the steel plane (depth .88m) as soon as the line is hooked, then retracts.
+   const reach=g.hooked&&betweenBars(g)?(.35*(1-pull)+.08*Math.sin(Math.PI*pull)):0;
+   const armDepth=.66+reach;
+   held.position.set(...atScreen(g.hooked?rx:g.aim,.82-pull*.06,armDepth));
+   held.rotation.set(-.10+reach*.35,0,-.035);
    anchors.head=project(held.localToWorld(new T.Vector3(0,.365,0)));anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
    if(g.hidden){held.visible=false;camera.position.y=.62;camera.lookAt(0,.64,-4);}
   }else{

@@ -4,18 +4,19 @@ import vm from 'node:vm';
 import fs from 'node:fs';
 import * as T from 'three';
 import {models} from './yoyo-models.js';
-import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned} from './yoyo-core.js';
+import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned,slitCenters,openingTolerance,betweenBars,setWindowAspect,ropeReachable} from './yoyo-core.js';
 const tick=(g,seconds)=>{for(let i=0;i<seconds*60;i++)advance(g,1/60);};
-test('Three separate objects are required for 30 points, misses do not award points',()=>{const g=createGame();startGame(g);actionDown(g);assert.equal(g.points,0);tick(g,1);aimAt(g,BRUSH.x);actionDown(g);assert.equal(g.points,10);assert.equal(g.phase,'between');continueGame(g);aimAt(g,ropePosition(g));actionDown(g);assert.ok(g.hooked);tick(g,2);actionUp(g);const pulled=g.pull;tick(g,1);assert.equal(g.pull,pulled);actionDown(g);tick(g,4);assert.equal(g.points,20);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);tick(g,6);assert.equal(g.phase,'victory');assert.equal(g.points,30);assert.deepEqual(g.events.filter(e=>e.type==='part').map(e=>e.part),[1,2,3]);});
+const intoOpening=g=>aimAt(g,slitCenters(g.aspect).reduce((a,b)=>Math.abs(a-g.aim)<Math.abs(b-g.aim)?a:b));
+test('Three separate objects are required for 30 points, misses do not award points',()=>{const g=createGame();startGame(g);actionDown(g);assert.equal(g.points,0);tick(g,1);aimAt(g,BRUSH.x);actionDown(g);assert.equal(g.points,10);assert.equal(g.phase,'between');continueGame(g);aimAt(g,ropePosition(g));actionDown(g);assert.ok(g.hooked);intoOpening(g);tick(g,2);actionUp(g);const pulled=g.pull;tick(g,1);assert.equal(g.pull,pulled);actionDown(g);tick(g,4);assert.equal(g.points,20);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);intoOpening(g);tick(g,6);assert.equal(g.phase,'victory');assert.equal(g.points,30);assert.deepEqual(g.events.filter(e=>e.type==='part').map(e=>e.part),[1,2,3]);});
 test('The warning is fair, hiding prevents capture and inspection pauses retrieval',()=>{const g=createGame();startGame(g);tick(g,10);assert.equal(g.guard,'approaching');hide(g);tick(g,3.2);assert.equal(g.guard,'watching');assert.equal(g.phase,'playing');move(g,1);tick(g,.8);assert.equal(g.phase,'caught');startGame(g);assert.equal(g.points,0);assert.equal(g.part,0);});
 test('Pause freezes guard, rope, score and controls',()=>{const g=createGame();startGame(g);tick(g,2);pauseGame(g);const old=JSON.stringify(g);tick(g,100);move(g,1);actionDown(g);assert.equal(JSON.stringify(g),old);pauseGame(g);tick(g,1);assert.ok(g.time>2);});
-test('A retry cannot accumulate points and hiding always drops the action',()=>{const g=createGame();startGame(g);aimAt(g,BRUSH.x);actionDown(g);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);tick(g,2);hide(g);assert.equal(g.holding,false);const p=g.pull;tick(g,3);assert.equal(g.pull,p);startGame(g);assert.equal(g.points,0);});
+test('A retry cannot accumulate points and hiding always drops the action',()=>{const g=createGame();startGame(g);aimAt(g,BRUSH.x);actionDown(g);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);intoOpening(g);tick(g,2);hide(g);assert.equal(g.holding,false);const p=g.pull;tick(g,3);assert.equal(g.pull,p);startGame(g);assert.equal(g.points,0);});
 function score(){const c=vm.createContext({TreizeEtapesData:[{level:5,plateaux:[{},{}]}]});vm.runInContext(fs.readFileSync(new URL('./plateaux-core.js',import.meta.url),'utf8'),c);return c.TreizePlateaux;}
 test('Old dance progress is preserved without unlocking the next level before Strasbourg',()=>{const api=score(),s={points:510,unlocked:6,completed:[1,2,3,4,5],danseFinished:true};api.migrate(s);assert.equal(s.points,510);assert.equal(s.unlocked,5);assert.deepEqual(s.completed,[1,2,3,4]);assert.equal(api.progress(s,5).index,2);assert.equal(s.quizPassed[5],true);api.migrate(s);assert.equal(s.points,510);});
 test('Existing later levels remain accessible; a fresh win is awarded once with session validation',()=>{const api=score(),s={points:600,unlocked:8,completed:[1,2,3,4,5,6,7],danseFinished:true};api.migrate(s);assert.equal(s.unlocked,8);api.beginYoyo(s,'current');assert.equal(api.finishYoyo(s,'stale'),null);assert.equal(api.finishYoyo(s,'current').bonus,30);assert.ok(s.completed.includes(5));assert.equal(s.points,630);assert.equal(api.finishYoyo(s,'current'),null);api.beginYoyo(s,'replay');assert.equal(api.finishYoyo(s,'replay').bonus,0);assert.equal(s.points,630);});
 test('The prison game cannot bypass the first board',()=>{const api=score(),s={points:0,unlocked:5,completed:[]};api.migrate(s);assert.equal(api.beginYoyo(s,'bad'),null);assert.equal(api.complete(s,5),false);});
 
-test('The hand targets the brush where it is actually projected, and the caught rope remains in the grip',()=>{const g=createGame();startGame(g);g.brushX=.58;aimAt(g,.58);assert.ok(aligned(g));actionDown(g);assert.equal(g.points,10);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);const caught=ropePosition(g);actionUp(g);tick(g,2);assert.equal(ropePosition(g),caught);assert.equal(g.pull,0);actionDown(g);tick(g,6);assert.equal(g.points,20);});
+test('The hand targets the brush where it is actually projected, and the caught rope remains in the grip',()=>{const g=createGame();startGame(g);g.brushX=.58;aimAt(g,.58);assert.ok(aligned(g));actionDown(g);assert.equal(g.points,10);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);const caught=ropePosition(g);actionUp(g);tick(g,2);assert.equal(ropePosition(g),caught);assert.equal(g.pull,0);actionDown(g);intoOpening(g);tick(g,6);assert.equal(g.points,20);});
 
 test('Each posed hand is one connected skin surface and the right cup grip is not reversed',async()=>{
  const {handData}=await import('./yoyo-hands-data.js');
@@ -207,4 +208,81 @@ test('Stage 1 uses an anatomical skinned hand asset, not four tubes joined to a 
  const builder=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
  assert.match(builder,/['"]hand-right\.glb['"]/,'Netlify must publish the binary asset');
  assert.match(builder,/['"]hand-right-LICENSE\.txt['"]/,'the legal permission must accompany the model');
+});
+
+test('A real bag and arm cannot pass through a steel bar, only through a clear gap',()=>{
+ const g=createGame();startGame(g);aimAt(g,BRUSH.x);actionDown(g);
+ assert.equal(g.points,10);continueGame(g);
+ setWindowAspect(g,1.16);const phone=slitCenters(g.aspect),wide=slitCenters(16/9);
+ assert.equal(phone.length,4);assert.ok(phone[1]<phone[2]);assert.notDeepEqual(phone,wide);
+ assert.ok(openingTolerance(1.16)>openingTolerance(16/9),'mobile opening scales with perspective');
+ aimAt(g,ropePosition(g));actionDown(g);
+ assert.equal(g.hooked,true);
+ const steel=.5; // the middle bar is actually at x=0, normalized x=0.5
+ aimAt(g,steel);assert.equal(betweenBars(g),false);
+ tick(g,3);assert.equal(g.pull,0,'pull must be blocked by solid steel');
+ intoOpening(g);assert.equal(betweenBars(g),true);
+ tick(g,2);const started=g.pull;assert.ok(started>.2);
+ aimAt(g,.5);tick(g,1);assert.equal(g.pull,started,'the bag freezes at the bar, not through it');
+ intoOpening(g);tick(g,5.3);assert.equal(g.points,20);assert.equal(g.bags,1);
+ continueGame(g);aimAt(g,ropePosition(g));actionDown(g);intoOpening(g);
+ tick(g,5.5);assert.equal(g.points,30);assert.equal(g.bags,2);
+});
+test('Every gameplay hand now comes from the same anatomical mesh with distinct poses',()=>{
+ const src=fs.readFileSync(new URL('./yoyo-models.js',import.meta.url),'utf8');
+ for(const pose of ["brush","cup","smoke"])
+   assert.match(src,new RegExp("anatomicalHand\\('"+pose+"'\\)"));
+ for(const [kind,group] of [
+  ['brush',models().heldBrush().children[0]],
+  ['cup',models().cupHand().children[0]],
+  ['smoke',models().smokingHand().children[0].children[0]]
+ ]) {
+  assert.equal(group.userData.handModel,'webxr-anatomical-right',kind);
+  assert.equal(group.userData.pose,kind);
+ }
+ const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
+ assert.match(scene,/props\.anatomicalHand\('relaxed'\)/,'prisoner hands must also share the anatomical model');
+});
+test('The hand reaches through a gap and the two weighted bags colour the building in stages',()=>{
+ const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
+ assert.match(scene,/const reach=g\.hooked&&betweenBars\(g\)\?\(\.35\*\(1-pull\)/,
+ 'the arm must advance past the bars during retrieval rather than stay glued to the camera');
+ assert.match(fs.readFileSync(new URL('./yoyo-core.js',import.meta.url),'utf8'),/if\(clear\)\{g\.pull=/);
+ assert.match(scene,/bagHalf\(1\);bagHalf\(-1\)/,
+ 'the carrier must be a folded translucent bag, not a solid ellipsoid');
+ assert.match(scene,/parcels\[0\]\.visible/);
+ assert.match(scene,/recolorWorld\(g\.bags/);
+ assert.match(scene,/prisoner\(3\.2,1\.65,4\)/);
+ assert.match(scene,/outfits=\[/,'prisoners should wear varied civilian clothes');
+});
+
+test('Both deliveries preserve their vivid colours through the win scene, and the hanger turns edge-on',()=>{
+ const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
+ const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
+ assert.ok(app.includes('cinema.render(filmTime,mode,g)'),'finale must pass actual delivered bags to renderer');
+ assert.match(scene,/ropeGroup\.rotation\.y=g\.hooked\?Math\.sin\(Math\.PI\*pull\)\*Math\.PI\/2/,
+  'wide hanger must rotate edge-on to cross the bars');
+ assert.match(scene,/recolorWorld\(g\.bags\?\?/);
+ assert.match(scene,/bagRoot\.rotation\.z=/,'plastic bag must sway with the weight');
+ const src=fs.readFileSync(new URL('./yoyo-core.js',import.meta.url),'utf8');
+ assert.match(src,/g\.bags=Math\.max\(0,g\.part-1\)/,
+  'finding the brush must not colour the prison');
+ const two=createGame();startGame(two);aimAt(two,BRUSH.x);actionDown(two);
+ assert.equal(two.bags,0);
+ continueGame(two);aimAt(two,ropePosition(two));actionDown(two);intoOpening(two);tick(two,6);
+ assert.equal(two.bags,1,'first bag changes building');
+ continueGame(two);aimAt(two,ropePosition(two));actionDown(two);intoOpening(two);tick(two,6);
+ assert.equal(two.bags,2,'second bag makes the finale saturated');
+});
+
+test('The player must wait for the rope to pass a bar opening before hooking',()=>{
+ const g=createGame();startGame(g);aimAt(g,BRUSH.x);actionDown(g);continueGame(g);
+ tick(g,.26);aimAt(g,ropePosition(g));
+ assert.ok(Math.abs(ropePosition(g)-.5)<.015,'rope is presently in front of the central steel bar');
+ assert.equal(ropeReachable(g),false);
+ actionDown(g);assert.equal(g.hooked,false,'hook cannot pass through steel');
+ assert.ok(g.events.some(e=>e.type==='bar-miss'),'player gets an understandable collision cue');
+ tick(g,2.08);aimAt(g,ropePosition(g));
+ assert.equal(ropeReachable(g),true,'oscillating rope is now crossing an opening');
+ actionDown(g);assert.equal(g.hooked,true,'brush may catch rope through a real gap');
 });
