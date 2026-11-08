@@ -1,4 +1,31 @@
 import * as T from 'three';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+// Use a real anatomically sculpted right-hand surface for the pre-pickup hand,
+// not the five capsule sweeps used for other preliminary game poses.
+// WebXR generic right hand (MIT, ©2019 Amazon): hand-right.glb, bundled locally.
+let anatomicalGeometryPromise;
+function anatomyGeometry(){
+ if(typeof window==='undefined')return null; // gameplay tests can run in Node
+ if(!anatomicalGeometryPromise)anatomicalGeometryPromise=new GLTFLoader().loadAsync('hand-right.glb').then(glb=>{
+  glb.scene.updateMatrixWorld(true);
+  const geometries=[];
+  glb.scene.traverse(part=>{
+   if(!part.isMesh)return;
+   const geo=part.geometry.clone();
+   geo.applyMatrix4(part.matrixWorld); // rest pose, no artificial capsule fingers
+   geo.deleteAttribute('skinIndex');
+   geo.deleteAttribute('skinWeight');
+   if(geo.getAttribute('position').count<1000)throw Error('Anatomical hand has too few vertices');
+   geometries.push(geo);
+  });
+  if(!geometries.length)throw Error('Anatomical hand mesh was not found in the GLB');
+  return geometries;
+ });
+ return anatomicalGeometryPromise;
+}
+// Preload during the introduction, before the player can reach the brush.
+if(typeof window!=='undefined')anatomyGeometry().catch(e=>console.error('Chargement de la main anatomique :',e));
 import {handData} from './yoyo-hands-data.js';
 // All grips and their objects share one coordinate system. Forearms extend below the view.
 export function models(){
@@ -33,7 +60,43 @@ export function models(){
   bone(p,cuff,end,.048,.078,cloth);bone(p,[cuff[0],cuff[1]+.012,cuff[2]],[cuff[0]+.003,cuff[1]-.022,cuff[2]+.008],.049,.050,cloth);
   return p;
  }
- function openHand(){return hand('open');}
+ function openHand(){
+  const p=new T.Group();
+  p.userData.handModel='webxr-anatomical-right';
+  p.userData.ready=false;
+
+  // Wrist continuity into the arm: the anatomical mesh finishes near y=-0.08.
+  // A skin-coloured tapered forearm overlaps under the wrist surface.
+  const forearm=bone(p,[.011,-.061,.005],[.022,-.247,.037],.025,.039,skin);
+  forearm.scale.z=.76;
+  const sleeveEnd=[.108,-.785,.265];
+  bone(p,[.022,-.232,.037],sleeveEnd,.039,.078,cloth);
+
+  const anatomical=new T.Group();
+  anatomical.position.set(0,-.002,-.035);
+  anatomical.scale.setScalar(1.05);
+  // glTF joints point down -Y, thumb points -Z and hand thickness is X.
+  // Rotating the entire anatomical mesh keeps handedness and finger anatomy.
+  anatomical.quaternion.setFromRotationMatrix(new T.Matrix4().set(
+    0,0,1,0,
+    0,-1,0,0,
+    1,0,0,0,
+    0,0,0,1
+  ));
+  p.add(anatomical);
+  const pending=anatomyGeometry();
+  if(pending)pending.then(geometries=>{
+    for(const geometry of geometries)mesh(geometry,skin,anatomical);
+    p.userData.ready=true;
+  }).catch(err=>{
+    console.error('Main WebXR indisponible, affichage de secours :',err);
+    // The game remains playable if an asset request is blocked.
+    const backup=hand('open');
+    p.add(backup);
+    p.userData.fallback=true;
+  });
+  return p;
+ }
  function brush(){const p=new T.Group();bone(p,[0,-.08,0],[0,.305,0],.009,.007,plastic);bone(p,[0,-.075,0],[0,.045,0],.013,.012,rubber);for(let n=0;n<8;n++){const ring=mesh(new T.TorusGeometry(.0126,.0015,5,14),rubber,p);ring.rotation.x=Math.PI/2;ring.position.y=-.06+n*.012;}
   oval(p,[0,.315,0],[.025,.024,.025],plastic);oval(p,[0,.365,0],[.033,.052,.033],material('#b5b29b',.97));
   const bristle=material('#c6c1a6',.95),tips=material('#e1d9bf',.9);for(let row=0;row<9;row++){const y=.325+row*.010;for(let n=0;n<24;n++){const a=n*Math.PI/12+row*.29,r=.034+Math.sin(row/8*Math.PI)*.018;const b=[Math.cos(a)*r,y+(.4-row/8)*.012,Math.sin(a)*r];bone(p,[Math.cos(a)*.029,y,Math.sin(a)*.029],b,.0018,.0011,n%4?bristle:tips);}}
