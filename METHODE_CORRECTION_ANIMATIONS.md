@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.6 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 1.7 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -109,3 +109,13 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 - Contrôler le geste complet dans la scène sur mobile, les collisions visibles et la progression des teintes sur les deux livraisons.
 - Inspecter séparément les poses de la brosse, du café et de la cigarette : compilation verte ne signifie pas validation anatomique.
 - Vérifier également le rendu en mode logiciel, la lisibilité des indicateurs et la difficulté des espaces sur un écran étroit.
+
+## C018 — Alignement physique, projection et geste complet
+
+**Constat des tests :** une première simulation utilisait par erreur la tangente du quart de l'angle de champ au lieu de la tangente de sa moitié. Les coordonnées d'ouverture calculées pour le joueur ne correspondaient pas aux barreaux rendus par Three.js. Corrigé : `Math.tan(63*Math.PI/360)`, avec le rapport largeur/hauteur de la caméra de jeu.
+
+**Règle :** une corde ne peut être accrochée que lorsqu'elle passe devant une **ouverture réelle**. Une fois accrochée, le joueur déplace le sac par la manette jusqu'à cette ouverture ; il est alors autorisé à tirer. Si le sac quitte l'ouverture, toute progression se fige jusqu'au réalignement. Les tests couvrent ce blocage et la réussite après correction.
+
+**Geste 3D :** le bras passe derrière le plan des barreaux dès l'accrochage, entre deux cylindres, puis recule en ramenant le sac. Le cintre est plus large que l'ouverture : il tourne **de profil** lors du franchissement. Le sac est étroit et centré sur l'ouverture, avec des anses asymétriques qui remontent réellement jusqu'au crochet.
+
+**Contrôles :** comparer les ouvertures projetées dans le gameplay et les espaces 3D depuis un téléphone et un écran large. Vérifier le même principe dans le rendu de secours 2D. Ne pas considérer une animation validée uniquement parce que le joueur a réussi l'épreuve.
