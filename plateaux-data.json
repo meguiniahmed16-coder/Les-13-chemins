@@ -1,0 +1,40 @@
+[
+  {
+    "level": 5,
+    "plateau": 2,
+    "city": "Strasbourg",
+    "area": "La cellule des arrivants",
+    "coordinates": [
+      48.5734,
+      7.7521
+    ],
+    "altitude": 140,
+    "characters": [
+      "Le voisin du dessus"
+    ],
+    "workshops": [],
+    "history": "Ancienne ville libre du Saint-Empire, Strasbourg devient française en 1681. Depuis 1949, elle accueille le Conseil de l’Europe, symbole de la réconciliation européenne.",
+    "historySource": {
+      "url": "https://www.strasbourg.eu/strasbourg",
+      "label": "Ville de Strasbourg"
+    },
+    "altitudeSource": {
+      "url": "https://www.paysages.alsace.developpement-durable.gouv.fr/IMG/pdf/Agglomeration_Strasbourgeoise_1.pdf",
+      "label": "Atlas des paysages d’Alsace · altitude moyenne du centre"
+    },
+    "passage": {
+      "level": 5,
+      "plateau": 2,
+      "chapter": 4,
+      "title": "Drapeau rouge",
+      "scene": "Un fil entre les barreaux",
+      "pages": [
+        67,
+        69
+      ],
+      "pageLabel": "pages 67–69",
+      "quote": "Puis j’arrive en prison. On me donne un numéro d’écrou. Ça me rappelle immédiatement le matricule qu’on m’avait donné à l’armée. Et, comme à l’armée, commence un circuit. Un surveillant marche devant moi, ouvrant les portes à mesure que nous avançons.\n\nLes grilles s’ouvrent et se referment derrière moi à intervalles réguliers. Il y a quelque chose de presque théâtral dans cette succession de portes. Une scénographie fantastique destinée à te faire comprendre que tu pénètres de plus en plus profondément dans les organes digestifs du système. On me donne des couvertures. Des draps. Un paquetage. Incapable de connecter ce qui se passe avec la réalité. À un moment, le surveillant s’arrête pour discuter avec un collègue dans une espèce de kiosque. Un détenu s’approche de moi.\n\n— Ici, tu dois savoir deux choses.\n\nJe tends l’oreille. Je viens d’arriver en prison et je suis en panique. Le type va peut-être m’apprendre quelque chose d’essentiel pour ma survie. Je l’écoute.\n\n— Tupac et tout passe.\n\nJe le regarde. Tupac, comme le rappeur. Et « tout passe ». Je découvrirai vite que cette expression revient souvent en prison : quand quelqu’un évoque sa peine ou les mois qu’il lui reste, il conclut par un soupir, puis :\n\n— Tout passe.\n\nJe viens d’entrer dans le royaume du temps qui passe. On m’enferme dans une cellule. Je ne sais pas encore que ça s’appelle la cellule arrivants. Je vais l’apprendre assez rapidement. Il y a un autre type avec moi. Il ne parle pas. Puis quelqu’un se met à gueuler :\n\n— L’arrivant ! L’arrivant !\n\nÇa dure, mais mon compagnon de cellule et moi n’y prêtons pas attention.\n\nAu bout d’un moment, je me demande s’il s’adresse à moi et m’approche des barreaux de la fenêtre.\n\n— Quoi ?\n\n— Mais pourquoi tu réponds pas ?\n\n— C’est moi, l’arrivant ?\n\n— Ben, tu viens d’arriver ?\n\n— Oui.\n\n— T’es dans la cellule arrivants ?\n\n— Apparemment.\n\n— Alors t’es l’arrivant.\n\n— Oui. Ça a du sens.\n\nLa voix vient de la cellule située au-dessus de la mienne.\n\n— Tu veux un café ?\n\nJe crois qu’il se moque de moi, mais je joue le jeu.\n\n— Oui.\n\n— Tu veux des clopes ?\n\n— Oui.\n\nQuelques minutes passent. Soudain, devant ma fenêtre, je vois descendre une corde faite avec des draps. Au bout, un sac plastique ; entre les deux, un cintre transformé en crochet. La voix reprend :\n\n— Prends le balai à chiottes. Ton bras sera trop court. Passe-le entre les barreaux, attrape la corde avec et ramène le sac vers toi.\n\nJe m’exécute. J’attrape la corde et ramène le sac. À l’intérieur, une bouteille en plastique rabougrie par la chaleur du café, un gobelet, du sucre, du tabac, des feuilles et une boîte d’allumettes. Je suis profondément ému, même si je ne le lui montre pas. Ce geste est gratuit : nous ne nous reverrons probablement jamais. Il m’explique que je suis dans la cellule des arrivants et que, dès le lendemain, je serai transféré dans un autre bâtiment. Même si je voulais lui rendre quelque chose, la gravité elle-même m’en empêcherait.\n\nAlors nous parlons. Je bois un café, puis un deuxième, et je fume quelques cigarettes. Dans cet endroit où je viens d’entrer persuadé que tout est hostile, un inconnu que je ne vois même pas prend soin de moi.",
+      "source": "La Tectonique des âmes, chapitre 4 — Drapeau rouge, pages 67–69"
+    }
+  }
+]

@@ -29,6 +29,10 @@ const publicFiles = [
   'bosnie-runtime.js',
   'jeu-danse.html',
   'danse-runtime.js',
+  'jeu-yoyo.html',
+  'yoyo-runtime.js',
+  'plateaux-core.js',
+  'plateaux.js',
   'voyage.js',
   'escale.js',
   'plateau-mobile.webp',
@@ -63,12 +67,20 @@ for (const profile of workshops) {
   if (!profile.id || !profile.name || !profile.paragraphs?.length || !profile.paragraphs.every(p => typeof p === 'string' && p.trim()) || !profile.levels?.every(n => Number.isInteger(n) && n >= 1 && n <= 13)) throw new Error('Atelier public incomplet.');
 }
 if (stops.length !== 13 || passages.length !== 13) throw new Error('Treize étapes sont requises.');
+const extraBoards = JSON.parse(await readFile(join(root, 'plateaux-data.json'), 'utf8'));
+if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(JSON.stringify(extraBoards))) throw new Error('Document privé dans les plateaux.');
+for (const b of extraBoards) {
+ if (!stops.some(s => s.level === b.level) || !Number.isInteger(b.plateau) || b.plateau < 2 || !b.passage?.quote || b.coordinates?.length !== 2 || !b.coordinates.every(Number.isFinite)) throw new Error('Plateau incomplet.');
+}
 const arrivalData = stops.map((stop, i) => {
   const passage = passages.find(p => p.level === stop.level);
   if (stop.level !== i + 1 || !passage?.quote || stop.coordinates.length !== 2 || !stop.coordinates.every(Number.isFinite) || !Number.isFinite(stop.altitude) || !Array.isArray(stop.characters) || !stop.characters.every(name => typeof name === 'string' && name.trim())) throw new Error('Étape incomplète : ' + (i + 1));
   const characters = workshops.filter(profile => profile.levels.includes(stop.level));
   if (characters.some(profile => !stop.characters.includes(profile.name))) throw new Error('Atelier sans personnage correspondant : ' + stop.level);
-  return {...stop, passage, workshops: characters};
+  const base = {...stop, passage, workshops: characters};
+  const extra = extraBoards.filter(b => b.level === stop.level).sort((a,b) => a.plateau-b.plateau);
+  if (extra.some((b,i) => b.plateau !== i+2)) throw new Error('Plateaux non consécutifs.');
+  return {...base, plateaux:[{...base,plateau:1},...extra]};
 });
 await mkdir(output);
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');

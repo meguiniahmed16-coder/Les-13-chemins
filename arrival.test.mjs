@@ -56,5 +56,5 @@ test('Opening a continuity over the passage preserves reading, score flow and re
 });
 test('Continuity links use only explicit identities and are available on the reading page',()=>{
  const h=harness();for(const [level,name] of [[2,'Michel le Belge'],[3,'Mustapha'],[5,'Lionel']]){const stage=h.api.getStage(level);assert.equal(stage.workshops.length,1);assert.equal(stage.workshops[0].name,name);assert.ok(h.api.readerHTML(stage).includes('En savoir plus sur les personnages'));}
- const lecture=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');assert.ok(lecture.includes('TreizeEscale.characterButton(d.level)'));assert.ok(lecture.includes('TreizeEscale.bindCharacters'));
+ const lecture=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');assert.ok(lecture.includes('TreizeEscale.characterButton(d.level,d.plateau)'));assert.ok(lecture.includes('TreizeEscale.bindCharacters'));
 });

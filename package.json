@@ -7,7 +7,9 @@
     "test": "node --test editor-access.test.mjs",
     "build:danse": "node build-danse.mjs",
     "test:danse": "node --test danse.test.mjs",
-    "test:arrival": "node build-public.mjs && node --test arrival.test.mjs journey.test.mjs"
+    "test:arrival": "node build-public.mjs && node --test arrival.test.mjs journey.test.mjs",
+    "build:yoyo": "node build-yoyo.mjs",
+    "test:yoyo": "node --test yoyo.test.mjs plateaux.test.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "11.1.8"

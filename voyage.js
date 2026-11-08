@@ -28,7 +28,7 @@
  function install(){if(document.getElementById('journeyStyles'))return;const s=document.createElement('style');s.id='journeyStyles';s.textContent=styles;document.head.append(s);}
  // Shared by the controller and tests: every exit settles once, including timeouts.
  function onceFinish(complete,cleanup){let done=false;return ()=>{if(done)return;done=true;cleanup();complete();};}
- function start({from,to,title,onFinish}){
+ function start({from,to,fromPlateau=1,toPlateau=1,title,onFinish}){
   install();const modal=document.getElementById('diceDialog'),status=document.getElementById('diceStatus'),heading=document.getElementById('diceTitle');
   const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches,session=crypto.randomUUID();
   const frame=document.createElement('iframe');frame.id='journeyFrame';frame.title='Voyage sur la carte des treize chemins';frame.hidden=true;
@@ -54,7 +54,7 @@
   addEventListener('message',message);modal.addEventListener('close',finish);
   heading.textContent='En route…';status.textContent='Les dés roulent…';document.getElementById('diceDestination').textContent=title;modal.dataset.phase='dice';
   document.getElementById('skipDice').textContent='Passer l’animation →';
-  frame.src='carte.html?voyage=1&depart='+from+'&arrivee='+to+'&session='+encodeURIComponent(session);
+  frame.src='carte.html?voyage=1&depart='+from+'&arrivee='+to+'&plateauDepart='+fromPlateau+'&plateauArrivee='+toPlateau+'&session='+encodeURIComponent(session);
   try{modal.showModal();}catch{finish();return finish;}
   // Start clocks immediately: a suspended animation frame cannot trap navigation.
   const dice=[...modal.querySelectorAll('.die-cube')],faces=[0,0].map(()=>Math.floor(Math.random()*6)+1),angles=[[0,0],[0,-90],[-90,0],[90,0],[0,90],[0,180]];
@@ -69,12 +69,16 @@
   return finish;
  }
  function initMap({map,points,centers,titles,places}){
-  const params=new URLSearchParams(location.search);if(params.get('voyage')!=='1')return;
+  const params=new URLSearchParams(location.search);
+  if(params.get('voyage')!=='1'){const stage=root.TreizeEscale?.getStage(Number(params.get('niveau')),Number(params.get('plateau'))||1);if(stage?.plateau>1){map.setView(stage.coordinates,12);root.TreizeEscale.addCharacters(map,stage.level,stage.plateau);const ribbon=document.querySelector('.map-ribbon');if(ribbon)ribbon.textContent=stage.city+' · '+stage.passage.scene;}return;}
   const from=Number(params.get('depart')),to=Number(params.get('arrivee')),session=params.get('session');
-  if(!Number.isInteger(from)||from<1||to!==from+1||to>13||!session||parent===root)return;
+  const fromPlateau=Number(params.get('plateauDepart'))||1,toPlateau=Number(params.get('plateauArrivee'))||1;
+  const fromStage=root.TreizeEscale?.getStage(from,fromPlateau),toStage=root.TreizeEscale?.getStage(to,toPlateau);
+  const within=from===to&&toPlateau===fromPlateau+1&&toStage?.plateau===toPlateau;
+  if(!Number.isInteger(from)||from<1||(!within&&to!==from+1)||to>13||!session||parent===root)return;
   install();document.documentElement.classList.add('journey-map');
   const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  const origin=centers[from-1],destination=centers[to-1],ribbon=document.querySelector('.map-ribbon');
+  const origin=fromStage?.coordinates||centers[from-1],destination=toStage?.coordinates||centers[to-1],ribbon=document.querySelector('.map-ribbon');
   let started=false,raf=0;const timers=[];
   const send=(type,extra={})=>parent.postMessage({type,session,...extra},location.origin);
   const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
@@ -85,16 +89,16 @@
   const distance=map.distance(origin,destination),travelZoom=distance>500000?6:distance>100000?8:distance>10000?10:13;
   const trace=L.polyline([],{color:'#a9773d',weight:3,dashArray:'6 7',opacity:.85,interactive:false});
   const at=t=>[origin[0]+(destination[0]-origin[0])*t+Math.sin(Math.PI*t)*Math.min(1.2,Math.abs(destination[1]-origin[1])*.08),origin[1]+(destination[1]-origin[1])*t];
-  function arrive(){cancelAnimationFrame(raf);pointer.setLatLng(destination);map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});phase('arrival',(root.TreizeEscale?.getStage(to)?.city||places[to-1])+' · '+titles[to-1]);root.TreizeEscale?.addCharacters(map,to);later(()=>send('journey:done'),2400);}
+  function arrive(){cancelAnimationFrame(raf);pointer.setLatLng(destination);map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});phase('arrival',(toStage?.city||places[to-1])+' · '+(toStage?.passage?.scene||titles[to-1]));root.TreizeEscale?.addCharacters(map,to,toPlateau);later(()=>send('journey:done'),2400);}
   function travel(){
-   phase('travel',places[from-1]+' → '+places[to-1]);stops.forEach((m,i)=>{if(i!==from-1&&i!==to-1)marks.removeLayer(m);});trace.addTo(map);
+   phase('travel',(fromStage?.city||places[from-1])+' → '+(toStage?.city||places[to-1]));stops.forEach((m,i)=>{if(i!==from-1&&i!==to-1)marks.removeLayer(m);});trace.addTo(map);
    if(reduced){trace.setLatLngs([origin,destination]);later(arrive,350);return;}
    const duration=3500,began=performance.now();let lastPan=0;
    function tick(now){const raw=Math.min(1,(now-began)/duration),t=raw*raw*(3-2*raw),p=at(t),count=Math.ceil(t*60)+1;pointer.setLatLng(p);trace.setLatLngs(Array.from({length:count},(_,i)=>at(t*i/Math.max(1,count-1))));if(now-lastPan>45){map.panTo(p,{animate:false});lastPan=now;}if(raw<1)raf=requestAnimationFrame(tick);}
    raf=requestAnimationFrame(tick);later(arrive,duration+80);
   }
   function depart(){
-   phase('departure',places[from-1]+' · '+titles[from-1]);pointer.addTo(map);
+   phase('departure',(fromStage?.city||places[from-1])+' · '+(fromStage?.passage?.scene||titles[from-1]));pointer.addTo(map);
    if(reduced)map.setView(origin,travelZoom,{animate:false});else map.flyTo(origin,travelZoom,{duration:1.15});
    later(()=>{map.stop();map.setView(origin,travelZoom,{animate:false});travel();},reduced?350:1550);
   }
