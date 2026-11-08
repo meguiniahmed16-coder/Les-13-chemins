@@ -301,6 +301,43 @@ function ellipsoid(p,x,y,z,sx,sy,sz,c){const o=mesh(new T.SphereGeometry(1,16,12
 function cylinder(p,r1,r2,h,c,x=0,y=0,z=0){return mesh(new T.CylinderGeometry(r1,r2,h,16),material(c),p,x,y,z);}
 function neon(p,w,h,d,c,x,y,z){return mesh(new T.BoxGeometry(w,h,d),new T.MeshBasicMaterial({color:c}),p,x,y,z);}
 function sign(p,text,w,h,x,y,z,bg='#34214d',fg='#f5e7ff',size=80){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);ctx.fillStyle=fg;ctx.font=`700 ${size}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,132);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const m=mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex}),p,x,y,z);m.userData.sign=y>3;return m;}
+// High-resolution chapter banner: the literary title, not a game-show question.
+function chapterBanner(stage){
+ const canvas=document.createElement('canvas');
+ canvas.width=4096;canvas.height=512;
+ const ctx=canvas.getContext('2d');
+ const bg=ctx.createLinearGradient(0,0,4096,512);
+ bg.addColorStop(0,'#28123b');bg.addColorStop(.6,'#40205b');bg.addColorStop(1,'#191a3b');
+ ctx.fillStyle=bg;ctx.fillRect(0,0,4096,512);
+ ctx.save();
+ ctx.shadowColor='#5ceadf';ctx.shadowBlur=28;
+ ctx.strokeStyle='#7df9e7';ctx.lineWidth=11;ctx.strokeRect(28,25,4040,462);
+ ctx.shadowBlur=0;ctx.strokeStyle='#ee80c9';ctx.lineWidth=5;
+ ctx.strokeRect(47,43,4002,426);ctx.restore();
+ const heading='Chapitre 3 — Le coup du bus';
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ let size=224;
+ ctx.font='bold '+size+'px Arial, sans-serif';
+ const measured=ctx.measureText(heading).width;
+ if(measured>3590){size=Math.floor(size*3590/measured);ctx.font='bold '+size+'px Arial, sans-serif';}
+ ctx.shadowColor='#59e5dc';ctx.shadowBlur=17;ctx.fillStyle='#f2fffc';
+ ctx.fillText(heading,2048,198);
+ ctx.shadowBlur=12;ctx.shadowColor='#ff78c5';
+ ctx.font='bold 138px Arial, sans-serif';ctx.fillStyle='#ffd0ef';
+ ctx.fillText('P 54-56',2048,373);
+ ctx.shadowBlur=0;
+ const texture=new T.CanvasTexture(canvas);
+ texture.colorSpace=T.SRGBColorSpace;
+ texture.anisotropy=4;
+ const panel=mesh(new T.PlaneGeometry(7.8,.975),
+    new T.MeshBasicMaterial({map:texture,toneMapped:false}),stage,0,3.45,-6.4);
+ panel.name='BanderoleChapitre3';
+ panel.userData.sign=true;
+ panel.userData.chapterTitle=heading;
+ panel.userData.pages='P 54-56';
+ panel.userData.textureSize=[4096,512];
+ return panel;
+}
 const faceMaps=new Map();
 // The face is one continuous surface: no floating eyeballs or polygonal mouth.
 function faceMap(skin,female=false){const key=skin+':'+female;if(faceMaps.has(key))return faceMaps.get(key);
@@ -387,7 +424,7 @@ export class DanceScene{
  for(const z of [-5.8,3.1])neon(s,15,.04,.04,palette.pink,0,.03,z);for(const x of [-7.5,7.5])neon(s,.04,.04,9,palette.mint,x,.03,-1.35);
  box(s,22,8,.5,0x2e173f,0,3.7,-7);for(let x=-10;x<=10;x+=1.3){box(s,.28,7,.15,x%2?0x543174:0x402351,x,3.3,-6.65);}
  for(const x of [-7.2,-5.2,5.2,7.2]){cylinder(s,.22,.22,6.7,0x775498,x,3.1,-5.8);neon(s,.09,6.2,.09,x<0?palette.pink:palette.mint,x,3,-5.55);}
- sign(s,'QUI EST LE DANSEUR ?',7.8,.88,0,3.45,-6.4,'#4e2578','#d2ffe9',67);sign(s,'LE GRAND JEU  •  STUDIO 13',6,.3,0,2.85,-6.25,'#322043','#d6b8ef',43);
+ chapterBanner(s);sign(s,'LE GRAND JEU  •  STUDIO 13',6,.3,0,2.85,-6.25,'#322043','#d6b8ef',43);
  const ring=mesh(new T.TorusGeometry(2.9,.055,6,60,Math.PI),new T.MeshBasicMaterial({color:palette.pink}),s,0,3.05,-6.15);ring.scale.set(1.7,.7,1);
  this.candidates=[];const colors=[0x6bb7ba,0xe7b564,0xac729e,0x92a38a,0xb9816d];for(let i=0;i<5;i++){const x=(i-2)*1.7;const h=human({shirt:colors[i],skin:i%2?0xdca788:0xb17a58,hair:true,simple:true});h.group.position.set(x,.14,-4.8);h.group.scale.setScalar(.85);s.add(h.group);this.candidates.push(h);box(s,1.35,1.1,.75,0x6e4593,x,.55,-4.25);box(s,1.48,.1,.88,0xb7a0d1,x,1.14,-4.25);neon(s,1.06,.06,.02,palette.mint,x,.32,-3.86);sign(s,String(i+1),.36,.3,x,.73,-3.86,'#573674','#d6fff1',130);}
  // Soft oval pools place each performer on the polished stage.

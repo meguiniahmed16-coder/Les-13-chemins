@@ -93,10 +93,15 @@ jobs:
                 femaleRigCounts:scene.dancers.map(d=>d.pilot?.bones?.size||0),
                 candidateModels:scene.candidates.filter(c=>c.quaternius?.root).length,
                 candidateRigBones:scene.candidates.map(c=>Object.keys(c.quaternius?.bones||{}).length),
+                banner:scene.scene.getObjectByName('BanderoleChapitre3')?.userData||null,
                 spectatorCount:scene.public.length,
                 otherHairstyles:scene.dancers.slice(1).map(d=>d.head.userData.hairStyle)};
             });
             console.log('ETAT_DANSEUSE',width,JSON.stringify(state));
+            if(state.banner?.chapterTitle!=='Chapitre 3 — Le coup du bus'||
+               state.banner?.pages!=='P 54-56'||
+               state.banner?.textureSize?.[0]!==4096)
+              throw Error('Banderole littéraire 4K absente ou incorrecte');
             if(state.render!=='WebGL 2')throw Error('Le personnage a besoin du vrai rendu WebGL');
             if(!state.smile||state.bones<60)throw Error('Visage ou squelette manquant');
             if(!state.iris||state.irisVertices<16||state.faceCorners!==2)
@@ -118,6 +123,7 @@ jobs:
             await capture(680,740,'/tmp/danse-pilot.png');
             await capture(390,740,'/tmp/danse-pilot-mobile.png');
             await capture(960,650,'/tmp/danse-pilot-ensemble.png','?ensemble=1');
+            await capture(1280,720,'/tmp/danse-banderole-chapitre3.png','?ensemble=1');
           }finally{await browser.close();}
           JS
       - uses: actions/upload-artifact@v4
@@ -128,4 +134,5 @@ jobs:
             /tmp/danse-pilot.png
             /tmp/danse-pilot-mobile.png
             /tmp/danse-pilot-ensemble.png
+            /tmp/danse-banderole-chapitre3.png
           retention-days: 5

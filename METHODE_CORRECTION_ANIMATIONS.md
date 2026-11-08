@@ -179,3 +179,8 @@ Le panel au fond du mini-jeu ne doit plus présenter les anciens personnages en 
 ## C023 — Les quatre danseuses ont le même vrai corps Quaternius (8 novembre 2026)
 
 **Erreur corrigée :** seule la première danseuse avait été dotée d'un véritable corps féminin articulé. Changer les couleurs et coiffures des trois autres sur leurs vieux corps procéduraux ne satisfaisait pas la demande. Désormais, le même GLB féminin CC0 est chargé **une seule fois**, puis cloné par SkeletonUtils pour les trois autres femmes, avec un maillage skinné de plus de 5 000 sommets et un squelette d'au moins 60 os chacune. Les anciennes silhouettes ne sont cachées qu'une fois les trois copies prêtes. L'originale noire conserve intégralement sa coiffure afro et son visage validés ; les copies ont respectivement les cheveux longs blonds, la queue-de-cheval rousse et le carré brun, avec les différentes couleurs de vêtements déjà choisies. Pas de nouveau téléchargement, ni de refonte du mini-jeu. Vérifier sur la capture de la piste que les quatre silhouettes articulées sont bien présentes ; l'ancien corps doit être caché pour chacune.
+
+
+## C024 — Banderole littéraire haute résolution
+
+Remplacer « QUI EST LE DANSEUR ? » par « Chapitre 3 — Le coup du bus » et « P 54-56 » (exactement : P majuscule, un espace, 54-56 avec trait d’union ; pas de « PAGE » en capitales ni de barre oblique). Texture Canvas 4096 × 512 avec fin cadre néon de plateau télé, sans nouvel asset ni modification des corps et règles du mini-jeu. Vérifier une capture du vrai rendu, conserver le travail dans la branche de test sans publier.

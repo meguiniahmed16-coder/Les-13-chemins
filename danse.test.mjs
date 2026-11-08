@@ -99,3 +99,14 @@ test('All FOUR dance women reuse the skinned female model, without changing the 
  assert.ok(src.includes('dancer.pilot=pilot'), 'replace each simplified dancer');
  for(const style of ['long','ponytail','bob'])assert.ok(src.includes("look.hairStyle==='"+style+"'"));
 });
+
+test('Large 4K chapter banner uses literary wording, compact page reference, and neon',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ assert.ok(src.includes('function chapterBanner(stage)'));
+ assert.ok(src.includes('canvas.width=4096;canvas.height=512'));
+ assert.ok(src.includes("Chapitre 3 — Le coup du bus"));
+ assert.ok(src.includes("'P 54-56'"));
+ assert.ok(src.includes("ctx.shadowColor='#5ceadf'"));
+ assert.ok(src.includes("chapterBanner(s);"));
+ assert.ok(!src.includes("sign(s,'QUI EST LE DANSEUR ?"));
+});
