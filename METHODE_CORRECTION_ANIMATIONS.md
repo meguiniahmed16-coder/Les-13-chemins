@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.8 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 2.0 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -133,3 +133,17 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 **Réutilisation :** appliquer cette règle aux prises de brosse et de gobelet, ainsi qu'aux autres personnes, sans copier aveuglément la même flexion. Déplacer seulement la cigarette ne saurait réparer un doigt plié à l'envers.
 
 **État :** « Yo-yo v7 — flexion palmaire » ; contrôle utilisateur encore requis.
+
+## C019 — Deux images fixes du véritable geste, sans aucune articulation animée
+
+**Décision utilisateur :** le personnage ne fléchit jamais les doigts devant la caméra pendant l'épreuve. L'action est composée de **deux états discrets** : la main ouverte qui approche de la brosse, puis la même main vue de dos qui tient fermement le manche. Après la saisie, le geste est **figé** ; la main entière peut se déplacer avec la manette, mais ses doigts ne sont plus animés.
+
+**Sources retenues :** une illustration réaliste de la main ouverte et, pour la seconde image, la **vue de dos de la main tenant la vraie brosse**, explicitement choisie par l'auteur. Les deux silhouettes possèdent un canal alpha, sans décor : elles peuvent être superposées aux scènes du jeu.
+
+**Intégration v9 :** conserver la visite de la cellule et les façades existantes ; remplacer uniquement les mains visibles dans les états interactifs search, pickup et window par deux WebP fixes. Remplacer l'image à la saisie, au moment précis où la brosse posée au sol disparaît. Dans toutes les étapes suivantes, la même image du dos et de la brosse suit la position horizontale du joueur. Les gestes de la fin (café et cigarette) appartiennent à la scène finale et ne doivent pas faire réapparaître la brosse.
+
+**Interdictions :** plus de rotation de phalanges, pas de squelette 3D utilisé pour la brosse dans les phases interactives, pas de nouveau graphisme procédural qui s'éloigne de la prise approuvée, pas de remplacement du décor par une réécriture rudimentaire en 2D.
+
+**Performance :** images de taille réduite (environ 16 Ko pour la main ouverte et 21 Ko pour le dos avec brosse), aucune texture 3D supplémentaire, même jeu et mêmes collisions avec les barreaux.
+
+**Contrôle obligatoire :** inspecter le rendu réellement publié dans l'orientation du téléphone, confirmer la lisibilité du pouce et des quatre doigts, le positionnement de la tête de la brosse et l'absence de doublons. Les tests techniques sont nécessaires mais ne valent pas validation visuelle par l'auteur.
