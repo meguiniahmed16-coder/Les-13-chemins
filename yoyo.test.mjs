@@ -331,7 +331,7 @@ test('Two illustrated static hand states remain visible and light, with no finge
  const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
  const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
- assert.match(page,/Main fixe v9/);
+ assert.match(page,/Main fixe v10/);
  assert.match(page,/id="handOpen2D"[^>]*main_ouverte_fixee\.webp/);
  assert.match(page,/id="handGrip2D"[^>]*main_brosse_dos_fixee\.webp/);
  assert.match(app,/const picking=view==='pickup'/);
