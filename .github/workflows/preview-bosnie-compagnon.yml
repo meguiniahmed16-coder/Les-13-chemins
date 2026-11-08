@@ -1,0 +1,71 @@
+name: Contrôle Bosnie — soldat, compagnon et ciel
+on:
+  push:
+    branches: [prototype/bosnie-soldat-compagnon-ciel-20261108]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Reconstruire la plateforme et tester les cinq passages
+        run: npm run build
+      - name: Captures réelles desktop et mobile avec deux soldats riggés
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright-core@1.57.0
+          python3 -m http.server 8191 --directory dist > /tmp/bosnie-server.log 2>&1 &
+          sleep 2
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright-core';
+          import fs from 'node:fs';
+          const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(x=>fs.existsSync(x));
+          if(!chrome)throw Error('Chrome/Chromium introuvable sur le runner');
+          const browser=await chromium.launch({headless:true,executablePath:chrome,args:[
+            '--no-sandbox','--disable-dev-shm-usage','--enable-webgl',
+            '--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'
+          ]});
+          async function preview(width,height,file){
+            const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+            page.on('pageerror',error=>console.log('PAGE_ERROR',error.message));
+            page.on('console',msg=>{if(msg.type()==='error'||msg.type()==='warning')console.log('CONSOLE',msg.text().slice(0,350));});
+            await page.goto('http://127.0.0.1:8191/jeu-bosnie.html',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>{
+              const c=document.getElementById('world');
+              return c?.dataset.bosnieCompanion==='quaternius-deux-soldats';
+            },null,{timeout:32000});
+            await page.waitForFunction(()=>document.getElementById('world')?.dataset.bosnieSky==='nuages-3d');
+            await page.locator('#start').click();
+            await page.waitForTimeout(800);
+            const state=await page.evaluate(()=>window.__bosnieCompanionState);
+            const renderer=await page.locator('#world').evaluate(el=>el.dataset.renderer);
+            console.log('BOSNIE_PREVIEW',width,renderer,JSON.stringify(state));
+            if(!state||!state.modelLoaded||!state.sky||!state.invulnerable)
+              throw Error('Soldat humain, compagnon et ciel doivent être chargés');
+            if(state.stage!==0||state.companionX<=state.playerX)
+              throw Error('Le compagnon doit partir avant le joueur');
+            await page.screenshot({path:file,fullPage:false});
+            await page.close();
+          }
+          try {
+            await preview(1100,770,'/tmp/bosnie-desktop.png');
+            await preview(390,844,'/tmp/bosnie-mobile.png');
+          }finally{await browser.close();}
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-bosnie-compagnon
+          path: |
+            /tmp/bosnie-desktop.png
+            /tmp/bosnie-mobile.png
+          retention-days: 5
