@@ -229,3 +229,8 @@ Sur la branche expérimentale du mini-jeu « Entre les rafales », éclaircir mo
 
 
 **Contrôle visuel C030 :** la première capture des jumelles plaçait effectivement le tireur au centre d'une fenêtre, mais sa silhouette trop petite était difficile à reconnaître sur téléphone. Réduire le champ optique des jumelles à 15,5°, renforcer légèrement la silhouette et ajouter une courte identification « TIREUR REPÉRÉ À LA FENÊTRE » dans le masque existant, sans toucher à la cadence des tirs ni au déplacement du joueur. Retester une capture de la véritable fenêtre visée.
+
+
+## C031 — Tireur à la fenêtre : même véritable corps humain 3D
+
+Le tireur découvert aux jumelles doit réutiliser le **même modèle Quaternius humanoïde articulé** que les deux soldats du joueur, chargé une seule fois depuis le dépôt. Le vieux buste cylindrique et la tête sphérique restent uniquement comme repli jusqu'au chargement de l'asset. Une fois le rig prêt, ils sont cachés ; l'arme en travers de la fenêtre reste visible, mais le tireur conserve sa peau humaine continue, son casque et sa tenue discrète sans écussons français ou OTAN. Les jambes de la figurine sont masquées par le seuil grâce à un plan de coupe, pour qu'elle ne traverse pas le mur. Aucun changement dans les tirs, les jumelles, les scores ou les cinq fenêtres. Tests obligatoires dans le vrai navigateur : présence d'au moins 60 os, ancienne silhouette masquée et capture avec jumelles activées.

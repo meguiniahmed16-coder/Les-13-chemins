@@ -92,3 +92,20 @@ test('Binoculars zoom close enough to distinguish the window shooter',()=>{
  assert.ok(addon.includes('new RoundedBoxGeometry(.44,.62,.27,3,.08)'));
  assert.ok(addon.includes('shooterInFrame='));
 });
+
+test('The enemy visible through binoculars has the SAME rigged Quaternius body',()=>{
+ const s=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ assert.ok(s.includes('function upgradeWindowShooter(enemy,template,renderer)'));
+ assert.ok(s.includes('const avatar=makeSoldier(template,1)'));
+ assert.ok(s.includes("avatar.root.name='TireurFenetreQuaternius'"));
+ assert.ok(s.includes("enemy.userData.windowRig=avatar"));
+ assert.ok(s.includes("renderer.localClippingEnabled=true"));
+ assert.ok(s.includes("material.clone()"),'clipping must affect only this model');
+ assert.ok(s.includes("object.visible=object.name==='ArmeVisibleTireur'"),'original body hidden, weapon still visible');
+ assert.ok(s.includes("getObjectByName('EcussonOTAN')")===false || s.includes("'EcussonOTAN','DrapeauFrance'"),
+  'shooter on the other side must not show NATO/French badge');
+ assert.ok(s.includes('shooterRigBones:'));
+ assert.ok(s.includes('shooterReal:'));
+ const wf=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
+ assert.ok(wf.includes("shooterRigBones<60"));
+});

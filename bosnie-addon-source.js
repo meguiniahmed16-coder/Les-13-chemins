@@ -173,6 +173,47 @@ function makeWindowShooter(game){
  }
  return shooter;
 }
+
+function upgradeWindowShooter(enemy,template,renderer){
+ // Reuse EXACTLY the same Quaternius 65-bone body as both existing soldiers.
+ // The little sphere/cylinder silhouette stays only as a loading fallback.
+ const avatar=makeSoldier(template,1);
+ avatar.root.name='TireurFenetreQuaternius';
+ avatar.group.name='Corps3DTireur';
+ avatar.group.scale.setScalar(.77);
+ // No French or NATO insignia on the shooter on the opposing side.
+ for(const name of ['EcussonOTAN','DrapeauFrance','FusilEnBandouliere']){
+  const item=avatar.root.getObjectByName(name);
+  if(item)item.visible=false;
+ }
+ const outerHelmet=avatar.root.getObjectByName('CouvreCasqueCamouflage');
+ if(outerHelmet?.material?.color)outerHelmet.material.color.setHex(0x495246);
+ // The body is continuous and rigged. Clip the feet/legs BELOW the broken
+ // window ledge, rather than making them pass through the masonry.
+ const clipping=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+ avatar.root.traverse(obj=>{
+  if(!obj.isMesh&&!obj.isSkinnedMesh)return;
+  const materials=Array.isArray(obj.material)?obj.material:[obj.material];
+  const variants=materials.map(material=>{
+   const mat=material.clone();
+   mat.clippingPlanes=[clipping];mat.clipIntersection=false;
+   return mat;
+  });
+  obj.material=Array.isArray(obj.material)?variants:variants[0];
+  obj.frustumCulled=false;
+ });
+ renderer.localClippingEnabled=true;
+ const previous=enemy.children.slice();
+ enemy.add(avatar.group);
+ // The old rifle across the opening remains visible; everything else
+ // simplified is hidden after the complete skinned avatar is ready.
+ for(const object of previous)object.visible=object.name==='ArmeVisibleTireur';
+ enemy.userData.windowRig=avatar;
+ enemy.userData.windowClip=clipping;
+ enemy.userData.oldShooterHidden=previous
+   .filter(o=>o.name!=='ArmeVisibleTireur').every(o=>!o.visible);
+ return avatar;
+}
 function positionWindowShooter(game,enemy,run){
  const index=Math.max(0,Math.min(game.shooters.length-1,run.passed?.length??0));
  const windowPos=game.shooters[index];
@@ -180,7 +221,15 @@ function positionWindowShooter(game,enemy,run){
  enemy.rotation.y=0;
  enemy.visible=!!run.binoculars&&run.phase==='playing';
  if(enemy.visible)enemy.position.y+=Math.sin((run.time||0)*1.2)*.012;
- return {index:index+1,visible:enemy.visible};
+ if(enemy.userData.windowRig){
+  const cameraY=enemy.position.y;
+  enemy.userData.windowClip.constant=-(windowPos.y-.51);
+  if(enemy.visible)poseHuman(enemy.userData.windowRig,{
+   x:0,y:-1.04,z:0,facing:0,crouched:false,running:false
+  },run.time||0,'shooter');
+ }
+ return {index:index+1,visible:enemy.visible,
+         rig:!!enemy.userData.windowRig};
 }
 
 function fieldCamouflage(x,y,z,variation){
@@ -443,7 +492,11 @@ function attach(game){
     daylight:game.canvas.dataset.bosnieDaylight==='plus-clair',
     damagedFacades:cityDetails?.fractures??0,
     visibleWindowShooter:shooterState.visible,
-    shooterWindowIndex:shooterState.index};
+    shooterWindowIndex:shooterState.index,
+    shooterReal:!!windowShooter?.userData.windowRig,
+    shooterRigBones:Object.keys(windowShooter?.userData.windowRig?.bones||{}).length,
+    shooterSkinned:!!windowShooter?.userData.windowRig?.root.getObjectByName('Superhero_Male')?.isSkinnedMesh,
+    shooterOriginalHidden:!!windowShooter?.userData.oldShooterHidden};
   window.__bosnieCompanionState=snap; // Read-only diagnostic for screenshot tests.
   const result=originalDraw(run,dt);
   if(windowShooter?.visible){
@@ -460,6 +513,10 @@ function attach(game){
  new GLTFLoader().loadAsync('danse-quaternius-hero.glb').then(gltf=>{
   const nextHero=makeSoldier(gltf.scene,0),nextAlly=makeSoldier(gltf.scene,1);
   game.scene.add(nextHero.group,nextAlly.group);
+  if(windowShooter){
+   try{upgradeWindowShooter(windowShooter,gltf.scene,game.renderer);}
+   catch(err){console.warn('Tireur humain indisponible, ancienne silhouette conservée.',err);}
+  }
   hero=nextHero;ally=nextAlly;
   oldAlly.group.visible=false;
   game.scene.remove(oldAlly.group);
