@@ -31,7 +31,7 @@ function events(){for(const e of g.events.splice(0)){
  else if(e.type==='won')win();else if(e.type==='caught'){sound.cue('caught');caught();}
  else if(e.type==='part'){$('score').textContent=g.points+' / 30';sound.cue('part');}
  else if(e.type==='hook'){sound.cue('hook');announce('Corde attrapée ! Déplace la manette pour placer le sac entre deux barreaux, puis maintiens le rouge.');}
- else if(e.type==='miss'||e.type==='search-miss'){sound.cue('miss');announce(e.type==='search-miss'?'Rapproche la main du manche. Le cercle doit devenir vert.':'Attends le cercle vert autour de la tête de la brosse, puis appuie.');}
+ else if(e.type==='miss'||e.type==='search-miss'||e.type==='bar-miss'){sound.cue('miss');announce(e.type==='search-miss'?'Rapproche la main du manche. Le cercle doit devenir vert.':e.type==='bar-miss'?'La corde passe devant un barreau. Attends un intervalle pour glisser la brosse.':'Attends le cercle vert autour de la tête de la brosse, puis appuie.');}
  else if(e.type==='bar-blocked')announce('Le métal bloque le sac. Déplace doucement la manette vers un espace entre les barreaux.');
  else if(e.type==='warning')announce('Le surveillant regarde ! Manette vers le bas.');
 }}
