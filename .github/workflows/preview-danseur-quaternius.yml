@@ -98,6 +98,13 @@ jobs:
                 spectatorForeground:scene.public.filter(p=>p.realBody?.root).length,
                 spectatorForegroundNames:scene.public.filter(p=>p.realBody).map(p=>p.realBody.root.name),
                 spectatorForegroundOldHidden:scene.public.filter(p=>p.realBody).every(p=>p.group.children.filter(c=>c!==p.realBody.root).every(c=>!c.visible)),
+                spectatorArmsDown:scene.public.filter(p=>p.realBody).map(p=>{
+                  p.realBody.root.updateMatrixWorld(true);
+                  const b=p.realBody.bones;
+                  const y=n=>b[n].getWorldPosition(new (p.realBody.root.position.constructor)()).y;
+                  return {left:y('upperarm_l')-y('lowerarm_l'),
+                          right:y('upperarm_r')-y('lowerarm_r')};
+                }),
                 spectatorCount:scene.public.length,
                 otherHairstyles:scene.dancers.slice(1).map(d=>d.head.userData.hairStyle)};
             });
@@ -110,6 +117,8 @@ jobs:
             if(!state.smile||state.bones<60)throw Error('Visage ou squelette manquant');
             if(!state.iris||state.irisVertices<16||state.faceCorners!==2)
               throw Error('Les vrais yeux doivent être peints et le sourire sans double bouche');
+            if(state.spectatorArmsDown?.some(a=>a.left<.18||a.right<.18))
+              throw Error('Les bras des trois spectateurs doivent rester bas, sous les épaules');
             if(state.spectatorForeground!==3||!state.spectatorForegroundOldHidden||
                state.spectatorForegroundNames.join(',')!=='PublicPremierPlan3D1,PublicPremierPlan3D2,PublicPremierPlan3D3')
               throw Error('Les trois spectateurs visibles doivent utiliser les nouveaux corps 3D');

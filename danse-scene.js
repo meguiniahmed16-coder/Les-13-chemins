@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {loadQuaterniusDancer,poseQuaterniusDancer} from './danse-quaternius.js';
+import {loadQuaterniusDancer,poseQuaterniusDancer,poseQuaterniusSpectator} from './danse-quaternius.js';
 // Pilot only: real CC0 Quaternius Superhero Female from the free Standard pack.
 // Preserve the old stage and dancers until this single replacement is approved.
 const PILOT_MODEL='assets/danse/quaternius-superhero-female.glb';
@@ -573,7 +573,7 @@ export class DanceScene{
  // Independent but restrained audience reactions: clapping, cheering and nodding.
  for(const p of this.public){
   if(p.realBody){
-   poseQuaterniusDancer(p.realBody,t+p.phase*.1,'cross',.09,false);
+   poseQuaterniusSpectator(p.realBody,t,p.phase);
    continue;
   }
   const pulse=Math.sin(t*5.4+p.phase),cheer=active&&p.reaction===1;

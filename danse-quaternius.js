@@ -177,3 +177,25 @@ export function poseQuaterniusDancer(avatar,t,action='cross',power=1,won=false,h
  smile.scale.y=1+(won?.18:0);
  root.updateMatrixWorld(true);
 }
+
+
+// Spectateurs au premier plan : on NE LEUR FAIT PAS DANSER la chorégraphie du héros.
+// Même vrai squelette 3D, mais position calme, bras le long du corps et léger hochement.
+export function poseQuaterniusSpectator(avatar,t,phase=0){
+ const {root,bones,rest,basePosition}=avatar;
+ for(const [name,q]of Object.entries(rest))bones[name].quaternion.copy(q);
+ root.position.copy(basePosition);
+ root.rotation.set(0,0,0);
+ root.updateMatrixWorld(true);
+ const nod=Math.sin(t*1.25+phase);
+ worldBend(bones.spine_02,Y,.012*nod);
+ worldBend(bones.Head,Z,.025*nod);
+ // Partir de la pose en T et ramener les bras à la verticale, sans lever les mains.
+ worldBend(bones.upperarm_l,Z,-1.40+.018*nod);
+ worldBend(bones.upperarm_r,Z,1.40-.018*nod);
+ worldBend(bones.upperarm_l,X,-.09);
+ worldBend(bones.upperarm_r,X,-.09);
+ worldBend(bones.lowerarm_l,X,-.12);
+ worldBend(bones.lowerarm_r,X,-.12);
+ root.updateMatrixWorld(true);
+}

@@ -136,7 +136,19 @@ test('The 3 foreground audience silhouettes use the existing rigged Quaternius b
  assert.ok(src.includes('spectator.realBody=pilot'));
  assert.ok(src.includes('if(child!==root)child.visible=false'), 'old silhouettes must be hidden');
  assert.ok(src.includes('if(p.realBody){'), 'the new body must be animated');
- assert.ok(src.includes('poseQuaterniusDancer(p.realBody'), 'animate using the original armature');
+ assert.ok(src.includes('poseQuaterniusSpectator(p.realBody,t,p.phase)'), 'quiet spectating animation, not dancing');
  assert.ok(src.includes('const FOREGROUND_AUDIENCE_SLOTS=Object.freeze([3,4,5])'), 'change exactly three foreground viewers');
  assert.ok(src.includes('this.public.push({group:g,head,arms,reaction:index%4,phase:index*.79})'), 'other spectators remain intact');
+});
+
+test('The three foreground spectators have calm arms, never the hero dance pose',()=>{
+ const scene=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ const module=fs.readFileSync(new URL('./danse-quaternius.js',import.meta.url),'utf8');
+ assert.ok(scene.includes('poseQuaterniusSpectator(p.realBody,t,p.phase)'));
+ assert.ok(!scene.includes("poseQuaterniusDancer(p.realBody"), 'do not apply player choreography to spectators');
+ assert.ok(module.includes('export function poseQuaterniusSpectator('));
+ assert.ok(module.includes("worldBend(bones.upperarm_l,Z,-1.40"));
+ assert.ok(module.includes("worldBend(bones.upperarm_r,Z,1.40"));
+ assert.ok(module.includes('worldBend(bones.Head,Z,.025*nod)'));
+ assert.ok(module.includes("root.position.copy(basePosition)"), 'stay in place');
 });

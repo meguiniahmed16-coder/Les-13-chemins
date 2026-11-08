@@ -194,3 +194,8 @@ Seize spectateurs restent installés sur deux rangées devant la piste : vêteme
 ## C026 — Les trois spectateurs visibles de l’autre côté
 
 Les trois têtes au premier plan dans la capture d’ensemble (sièges 3, 4 et 5 de la rangée avant) avaient conservé un aspect ancien, en volumes primitifs. Remplacer **uniquement ces trois figurants** par trois copies du corps Quaternius 3D déjà chargé pour le personnage principal (squelette conservé, couleurs de peau, vêtements et cheveux adaptés), sans aucun nouvel asset à télécharger. Les anciens volumes sont cachés seulement après création des trois nouveaux. Conserver les treize autres spectateurs, les quatre danseuses, le héros, les cinq candidats, les règles et la banderole littéraire. Tester aussi le rendu général réel avant approbation.
+
+
+## C027 — Les spectateurs ne sont pas des danseurs
+
+Les trois figurants Quaternius au premier plan ont été incorrectement animés par la chorégraphie du héros, d'où les bras levés. Ils doivent simplement observer : bras le long du corps, légère inclinaison de tête, aucune danse ni célébration systématique. Garder leurs trois vrais corps 3D, leurs emplacements et tous les autres éléments. Vérifier dans le vrai navigateur que les coudes se situent sous les épaules avant de valider la capture.
