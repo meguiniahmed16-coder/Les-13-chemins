@@ -202,3 +202,14 @@ Les trois figurants Quaternius au premier plan ont été incorrectement animés 
 
 
 **Correction C027, orientation des spectateurs :** les personnages sont retournés d’un demi-tour vers la scène. Les angles monde utilisés pour le héros abaissent les bras dans sa direction, mais les lèvent une fois réutilisés sur les figurants tournés. Adapter les signes des rotations d’épaules au repère de ces spectateurs et contrôler les coordonnées verticales des coudes depuis le navigateur (les coudes doivent être sous les épaules).
+
+
+## C028 — Mini-jeu Bosnie : un compagnon autonome et le ciel ouvert (8 novembre 2026)
+
+**Règle validée de l'auteur :** ajouter un second soldat qui fait chaque traversée avant le héros, en sécurité, rejoint le muret suivant et y attend. Lorsque le joueur réussit, il dépasse le compagnon ; celui-ci repart en éclaireur pour le passage suivant. Il ne peut jamais être touché, ne modifie pas les tirs ni les collisions, ne rapporte aucun point et n'a pas d'influence sur l'échec du personnage principal.
+
+**Choix technique :** le personnage principal et le compagnon chargent une seule fois le modèle humain riggé CC0 « Superhero Male » de Quaternius déjà présent pour le jeu de danse (danse-quaternius-hero.glb) ; deux copies du rig reçoivent des tenues vert olive et un casque simple. Les animations sont reconstituées à partir des quaternions de repos pour éviter les articulations brisées. Pour garder le mini-jeu court, les objets sont intégrés par bosnie-addon-source.js, compilé dans bosnie-addon.js, sans modifier la logique des cinq passages du fichier existant. Si le modèle ne charge pas ou si WebGL n'est pas disponible, le personnage jouable original reste en place et un compagnon de secours apparaît.
+
+**Ciel :** dôme panoramique 3D procédural, gris-bleu, nuages diffus et brouillard conservé pour l'ambiance. C'est une amélioration de décor sans nouvelle archive ni abonnement. Vérification obligatoire sur capture réelle desktop/mobile, d'une traversée et de l'apparition du soldat supplémentaire. Les autres scènes de la plateforme littéraire et les règles du jeu restent inchangées.
+
+**Précaution :** s'appuyer sur la branche d'essai, jamais publier directement sans contrôle d'image et de comportement.

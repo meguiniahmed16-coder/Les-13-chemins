@@ -13,6 +13,8 @@ for (const args of [
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
   ['build-yoyo.mjs'],
+  ['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs'],
+  ['build-bosnie-addon.mjs'],
   ['build-danse.mjs'], // compile true stage characters from sources, never reuse stale runtime
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
@@ -42,6 +44,7 @@ const publicFiles = [
   'arcade-marmousets.html',
   'jeu-bosnie.html',
   'bosnie-runtime.js',
+  'bosnie-addon.js',
   'jeu-danse.html',
   'danse-runtime.js',
   'assets/danse/quaternius-superhero-female.glb',
