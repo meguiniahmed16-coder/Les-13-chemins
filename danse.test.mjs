@@ -10,3 +10,14 @@ test('Pause freezes clock and input; resume keeps the timing window',()=>{const 
 test('Parent credits once, rejects stale sessions/out-of-order milestones, and replay adds nothing',()=>{const s={points:500};score.begin(s,true,'one');assert.equal(s.dansePending.level,5);assert.equal(score.record(s,'other',1),null);assert.equal(score.record(s,'one',3),null);assert.equal(score.finish(s,'one'),null);for(let i=1;i<=5;i++){assert.equal(score.record(s,'one',i).added,true);assert.equal(score.record(s,'one',i).added,false);}assert.equal(s.points,510);assert.equal(score.finish(s,'one').retryQuestion,false);score.begin(s,true,'two');assert.equal(s.dansePending.replay,true);assert.equal(score.record(s,'two',1),null);assert.equal(score.finish(s,'two').replay,true);assert.equal(s.points,510);});
 test('Wrong question answer allows retry after dance; progress survives reload',()=>{let s={points:90};score.begin(s,false,'one');score.record(s,'one',1);s=JSON.parse(JSON.stringify(s));assert.equal(score.begin(s,true,'two').id,'one');for(let i=2;i<=5;i++)score.record(s,'one',i);assert.equal(score.finish(s,'one').retryQuestion,true);assert.equal(s.points,100);assert.equal(s.dansePending,null);});
 test('Published excerpt includes the complete evening through the dance, with correct pages',()=>{const data=JSON.parse(fs.readFileSync(new URL('./passages.json',import.meta.url),'utf8'));const d=data[4];assert.equal(d.level,5);assert.deepEqual(d.pages,[54,56]);assert.match(d.quote,/chemise violette électrique/);assert.match(d.quote,/Alors je danse/);assert.match(d.quote,/Soixante-dix pour cent du public/);const reading=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');assert.match(reading,/TreizeEtapesData.flatMap/);const publicData=fs.readFileSync(new URL('./dist/etapes-data.js',import.meta.url),'utf8');const embedded=JSON.parse(publicData.slice(publicData.indexOf('=')+1).trim().slice(0,-1));assert.deepEqual(embedded[4].plateaux[0].passage,d);});
+
+test('Quaternius pilot remains isolated to first dancer and preserves current game until model is installed',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ assert.match(src,/import \{GLTFLoader\} from 'three\/examples\/jsm\/loaders\/GLTFLoader\.js'/);
+ assert.match(src,/const PILOT_MODEL='assets\/danse\/quaternius-regular-female\.glb'/);
+ assert.match(src,/if\(i===0\)loadPilotDancer\(h,s\)/);
+ assert.match(src,/if\(i===0\)animatePilotDancer\(h,t,dt,active\)/);
+ assert.match(src,/target\.group\.children\.forEach\(child=>\{if\(child!==root\)child\.visible=false;\}\)/);
+ assert.match(src,/morphTargetInfluences\[index\]=smile/);
+ assert.match(src,/original dancer retained/);
+});
