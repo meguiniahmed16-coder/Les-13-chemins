@@ -109,7 +109,14 @@ export class DanceScene{
  box(s,19,.16,.2,0x8c719e,0,6.1,-2.8);for(let i=-3;i<=3;i++){box(s,.5,.35,.65,0x2b2434,i*2.3,5.9,-2.8);const lens=cylinder(s,.18,.18,.04,i%2?palette.pink:palette.mint,i*2.3,5.65,-2.53);lens.rotation.x=Math.PI/4;}
  this.confetti=[];for(let i=0;i<40;i++){const o=mesh(new T.PlaneGeometry(.07,.17),new T.MeshBasicMaterial({color:[palette.pink,palette.mint,palette.gold,0xc69aff][i%4],side:T.DoubleSide}),s,(i%10-4.5)*1.1,4+(i%7)*.3,(i%5)*.6);o.visible=false;this.confetti.push(o);}
  }
- resize(){const b=this.canvas.parentElement.getBoundingClientRect();this.renderer.setSize(b.width,b.height,false);this.camera.aspect=b.width/b.height;const narrow=this.camera.aspect<1.3;this.camera.fov=narrow?44:38;this.camera.position.set(narrow?.1:1.3,narrow?3.1:3.5,narrow?6.8:7.2);this.camera.lookAt(0,1.15,-.4);this.camera.updateProjectionMatrix();}
+ resize(){const b=this.canvas.parentElement.getBoundingClientRect();this.renderer.setSize(b.width,b.height,false);this.camera.aspect=b.width/b.height;const narrow=this.camera.aspect<1.3;this.camera.fov=narrow?44:38;this.camera.position.set(narrow?.1:1.3,narrow?3.1:3.5,narrow?6.8:7.2);this.camera.lookAt(0,1.15,-.4);
+  // Optional private inspection camera. Default gameplay perspective is untouched.
+  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('inspectFace')==='1'){
+   this.camera.position.set(0,2.10,1.65);
+   this.camera.lookAt(0,2.12,.57);
+   this.camera.fov=23;
+  }
+  this.camera.updateProjectionMatrix();}
  update(r,dt){const t=r.clock,active=['playing','practice','break','countdown','won'].includes(r.phase),recent=t-r.actionAt<1.1;const action=recent?r.action:'cross';const power=active?1:.25;pose(this.hero,t,action,power);this.hero.group.position.x=recent&&(action==='left'||action==='right')?(action==='left'?-.35:.35)*Math.sin(Math.min(1,(t-r.actionAt)/1.1)*Math.PI):0;
  if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;});pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
  for(const [i,p]of this.public.entries()){p.arms.forEach((a,j)=>{a.rotation.z=(j?1:-1)*(.4+Math.sin(t*6+i)*.15);a.rotation.x=active?-.8:0;});}
