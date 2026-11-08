@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHandler, digest } from './editor-api.mjs';
 const origin='https://tectonique-des-ames.netlify.app';
-function setup() {
+function setup(options={}) {
  const records=new Map(); let version=0, time=10000000;
  const store={
   async get(key){return records.get(key)?.data??null},
@@ -14,7 +14,7 @@ function setup() {
   async delete(key){records.delete(key)}
  };
  const cfg={accessHash:digest('AABBCCDDEEFF001122334455'),adminHash:digest('admin-test-secret')};
- const handler=createHandler({openStore:()=>store,configuration:()=>cfg,now:()=>time});
+ const handler=createHandler({openStore:()=>store,configuration:()=>cfg,now:()=>time,...options});
  const request=(action,options={},context={ip:'192.0.2.1'})=>handler(new Request(origin+'/.netlify/functions/editor?action='+action,options),context);
  const login=()=>request('login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({code:'aabb-ccdd-eeff-0011-2233-4455'})});
  return{records,cfg,store,request,login,setTime:v=>time=v};
@@ -155,4 +155,62 @@ test('Concurrent owner code changes do not overwrite each other',async()=>{
 test('Owner PIN guessing is globally limited even across distinct IPs',async()=>{
  const x=setup();const results=await Promise.all(Array.from({length:40},(_,i)=>x.request('admin-login',{method:'POST',headers:{Origin:origin},body:'{"code":"wrong"}'},{ip:'192.0.2.'+i})));
  assert.equal(results.filter(r=>r.status===401).length,30);assert.equal(results.filter(r=>r.status===429).length,10);
+});
+
+function recoveryMock({email='meguiniahmed16@gmail.com',confirmed=true,enabled=true,valid=true,sendOk=true}={}){
+ const calls=[];
+ return {calls,fetch:async(url,options={})=>{
+  calls.push({path:new URL(url).pathname,options});
+  const path=new URL(url).pathname.split('/').pop();
+  if(path==='settings')return new Response(JSON.stringify({disable_signup:enabled,autoconfirm:false}));
+  if(path==='recover')return new Response('{}',{status:sendOk?200:503});
+  if(path==='verify')return new Response(JSON.stringify(valid?{access_token:'private-provider-session'}:{error:'expired'}),{status:valid?200:400});
+  if(path==='user')return new Response(JSON.stringify({email,confirmed_at:confirmed?'2026-11-08':null}));
+  if(path==='logout')return new Response('{}');
+  throw Error('Unexpected identity endpoint');
+ }};
+}
+const resetBody={token:'test-recovery-token-0000000000',type:'recovery',newCode:'4268513970',confirmCode:'4268513970'};
+test('Email recovery sends only to the owner, hides other addresses and reports delivery failure',async()=>{
+ const mock=recoveryMock(),x=setup({identityFetch:mock.fetch});
+ assert.equal((await command(x,'','request-owner-reset',{email:'someone@example.com'})).status,200);
+ assert.equal(mock.calls.filter(c=>c.path.endsWith('/recover')).length,0);
+ assert.equal((await command(x,'','request-owner-reset',{email:'MEGUINIAHMED16@gmail.com'})).status,200);
+ const call=mock.calls.find(c=>c.path.endsWith('/recover'));assert.deepEqual(JSON.parse(call.options.body),{email:'meguiniahmed16@gmail.com'});
+ const failed=recoveryMock({sendOk:false}),y=setup({identityFetch:failed.fetch});assert.equal((await command(y,'','request-owner-reset',{email:'meguiniahmed16@gmail.com'})).status,502);
+});
+test('Recovery link rotates owner access, blocks reuse, and preserves editor grants',async()=>{
+ const mock=recoveryMock(),x=setup({identityFetch:mock.fetch}),old=await ownerCookie(x);
+ const grant=await(await command(x,old,'create-code',{label:'Maison',days:30})).json();
+ const r=await command(x,'','recover-owner-code',resetBody);assert.equal(r.status,200);
+ assert.equal((await x.request('admin-state',{headers:{Cookie:old}})).status,401);
+ const fresh=r.headers.get('set-cookie').split(';')[0];assert.equal((await x.request('admin-state',{headers:{Cookie:fresh}})).status,200);
+ assert.equal((await command(x,'','recover-owner-code',resetBody)).status,400);
+ assert.equal((await ownerLogin(x)).status,401);assert.equal((await editorLogin(x,grant.code)).status,200);
+ const pinLogin=await x.request('admin-login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({code:resetBody.newCode})});assert.equal(pinLogin.status,200);
+ assert.ok(!JSON.stringify([...x.records]).includes(resetBody.token));assert.ok(!JSON.stringify([...x.records]).includes(resetBody.newCode));
+ assert.ok(!JSON.stringify(await r.json()).includes('private-provider-session'));
+});
+test('Invalid, expired, unconfirmed and foreign-account links cannot reset owner access',async()=>{
+ for(const options of [{valid:false},{email:'other@example.com'},{confirmed:false},{enabled:false}]){
+  const mock=recoveryMock(options),x=setup({identityFetch:mock.fetch});
+  const r=await command(x,'','recover-owner-code',resetBody);assert.ok([400,503].includes(r.status));
+  assert.equal(await x.store.get('owner-credential/'+x.cfg.adminHash),null);
+ }
+});
+test('Recovery requires correct origin, matching codes and bounded requests',async()=>{
+ const mock=recoveryMock(),x=setup({identityFetch:mock.fetch});
+ for(const action of ['request-owner-reset','recover-owner-code']){
+  assert.equal((await x.request(action)).status,403);
+  assert.equal((await x.request(action,{method:'POST',headers:{Origin:'https://evil.example'},body:JSON.stringify(resetBody)})).status,403);
+ }
+ assert.equal(mock.calls.length,0);
+ assert.equal((await command(x,'','recover-owner-code',{...resetBody,confirmCode:'0000000000'})).status,400);
+ for(let i=0;i<3;i++)assert.equal((await command(x,'','request-owner-reset',{email:'other@example.com'})).status,200);
+ assert.equal((await command(x,'','request-owner-reset',{email:'other@example.com'})).status,429);
+});
+test('Recovery stays unavailable until Identity is invite-only with confirmation required',async()=>{
+ const x=setup({identityFetch:async()=>new Response(JSON.stringify({disable_signup:false,autoconfirm:true}))});
+ assert.deepEqual(await(await x.request('recovery-status')).json(),{enabled:false});
+ assert.equal((await command(x,'','request-owner-reset',{email:'meguiniahmed16@gmail.com'})).status,503);
 });

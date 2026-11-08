@@ -4,6 +4,11 @@
   const byId = id => document.getElementById(id);
   const formatDate = value => new Date(value).toLocaleString('fr-FR', { dateStyle:'long', timeStyle:'short' });
   let latest = null, pendingRevoke = null;
+  const params = new URLSearchParams(location.hash.slice(1));
+  let recoveryToken = params.get('recovery_token') || params.get('invite_token') || '';
+  const recoveryType = params.has('invite_token') ? 'signup' : 'recovery';
+  if (recoveryToken) history.replaceState(null,'',location.pathname);
+
   async function api(action, options = {}) {
     const response = await fetch(`${endpoint}?action=${action}`, { credentials:'same-origin', cache:'no-store', ...options });
     let data;
@@ -20,7 +25,7 @@
   function hideCode() { latest = null; byId('generated-code').value = ''; byId('new-code').hidden = true; byId('new-code-info').textContent = ''; status('copy-status',''); byId('create-code').disabled = false; }
   function clear() {
     hideCode(); byId('owner-dashboard').hidden = true; byId('owner-login').hidden = false;
-    byId('codes-list').replaceChildren(); byId('owner-code').value = ''; byId('recipient').value = ''; byId('password-form').reset(); status('password-status','');
+    byId('codes-list').replaceChildren(); byId('owner-code').value = ''; byId('recipient').value = ''; byId('reset-form').reset(); byId('password-form').reset(); status('password-status','');
     pendingRevoke = null; if (byId('revoke-dialog').open) byId('revoke-dialog').close();
   }
   function askRevoke(id, label, trigger) {
@@ -30,7 +35,7 @@
     byId('revoke-dialog').showModal(); byId('cancel-revoke').focus();
   }
   function display(data) {
-    byId('owner-login').hidden = true; byId('owner-dashboard').hidden = false;
+    byId('owner-login').hidden = true; byId('owner-dashboard').hidden = false; byId('reset-panel').hidden = true;
     byId('document-count').textContent = data.documents ? `${data.documents} documents · Dossier actualisé le ${formatDate(data.updatedAt)}. Ton accès personnel est déjà ouvert.` : 'Le dossier est en cours de préparation.';
     const active = data.codes.filter(c => c.status === 'active').length;
     byId('codes-summary').textContent = data.codes.length ? `${active} accès actif${active > 1 ? 's' : ''} · ${data.codes.length} code${data.codes.length > 1 ? 's' : ''} créé${data.codes.length > 1 ? 's' : ''}` : 'Tu n’as pas encore créé de code individuel.';
@@ -102,7 +107,27 @@
     } catch (e) { status(e.status === 401 ? 'login-status' : 'password-status',e.message,true); }
     finally { byId('save-owner-code').disabled = false; }
   };
+  window.addEventListener('hashchange',() => { const hash = new URLSearchParams(location.hash.slice(1)); if (hash.has('recovery_token') || hash.has('invite_token')) location.reload(); });
   window.addEventListener('pagehide',clear);
   window.addEventListener('pageshow',event => { if (event.persisted) refresh().catch(() => clear()); });
-  refresh().catch(e => { if (e.status !== 401) status('login-status',e.message,true); });
+  byId('forgot-code').onclick = () => { byId('forgot-form').hidden = !byId('forgot-form').hidden; if (!byId('forgot-form').hidden) byId('recovery-email').focus(); };
+  byId('forgot-form').onsubmit = async event => {
+    event.preventDefault(); byId('request-reset').disabled = true; status('recovery-status','Envoi de la demande…');
+    try { const result = await post('request-owner-reset',{email:byId('recovery-email').value}); status('recovery-status',result.message); }
+    catch (e) { status('recovery-status',e.message,true); }
+    finally { byId('request-reset').disabled = false; }
+  };
+  byId('reset-form').onsubmit = async event => {
+    event.preventDefault();
+    if (byId('reset-code').value !== byId('reset-confirm').value) { status('reset-status','Les deux codes ne correspondent pas.',true); return; }
+    byId('finish-reset').disabled = true; status('reset-status','Vérification du lien…');
+    try {
+      await post('recover-owner-code',{token:recoveryToken,type:recoveryType,newCode:byId('reset-code').value,confirmCode:byId('reset-confirm').value});
+      recoveryToken = ''; byId('reset-form').reset(); await refresh(); status('password-status','Ton code a été réinitialisé. Tu es connecté à ton espace auteur.');
+    } catch (e) { status('reset-status',e.message,true); }
+    finally { byId('finish-reset').disabled = false; }
+  };
+  if (recoveryToken) { byId('owner-login').hidden = true; byId('reset-panel').hidden = false; byId('reset-code').focus(); }
+  else refresh().catch(e => { if (e.status !== 401) status('login-status',e.message,true); });
+  api('recovery-status').then(data => { byId('forgot-code').hidden = !data.enabled; }).catch(() => {});
 })();

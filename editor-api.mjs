@@ -4,6 +4,8 @@ import { getStore } from '@netlify/blobs';
 // This module is deployed as a server function, never copied into dist/.
 // Documents and their catalogue live exclusively in private Netlify Blobs.
 const ORIGIN = 'https://tectonique-des-ames.netlify.app';
+const OWNER_EMAIL = 'meguiniahmed16@gmail.com';
+const IDENTITY = ORIGIN + '/.netlify/identity';
 const COOKIE = '__Host-editor';
 const ADMIN_COOKIE = '__Host-editor-admin';
 const DAY = 86400000;
@@ -57,7 +59,7 @@ function cleanCatalog(value) {
   return { updatedAt: new Date().toISOString(), files };
 }
 
-export function createHandler({ openStore, configuration, now = Date.now } = {}) {
+export function createHandler({ openStore, configuration, now = Date.now, identityFetch = fetch } = {}) {
   return async (request, context = {}) => {
     try {
       const url = new URL(request.url);
@@ -69,6 +71,54 @@ export function createHandler({ openStore, configuration, now = Date.now } = {})
       if (origin && origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
       const store = openStore ? openStore() : getStore({ name: 'editorial-private-v1', consistency: 'strong' });
       const admin = matches(request.headers.get('x-editor-admin') || '', cfg.adminHash);
+      const identityRequest = (path, options = {}) => identityFetch(IDENTITY + path, { ...options, redirect: 'error', signal: AbortSignal.timeout(12000) });
+      const identityReady = async () => {
+        try { const response = await identityRequest('/settings'); if (!response.ok) return false; const settings = await response.json(); return settings.disable_signup === true && settings.autoconfirm === false; } catch { return false; }
+      };
+      if (action === 'recovery-status') {
+        if (request.method !== 'GET') return json({ error: 'Méthode refusée.' }, 405);
+        return json({ enabled: await identityReady() });
+      }
+      if (action === 'request-owner-reset' || action === 'recover-owner-code') {
+        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        let body;
+        try { body = await smallJSON(request, 4000); } catch { return json({ error: 'Demande invalide.' }, 400); }
+        const window = Math.floor(now() / 900000), ip = digest(context.ip || 'unknown');
+        if (!(await claimAttempt(store, `recovery-attempts/${action}/${ip}/${window}`, action === 'request-owner-reset' ? 3 : 10))) return json({ error: 'Trop de demandes. Réessaie dans quinze minutes.' }, 429);
+        if (!(await identityReady())) return json({ error: 'La récupération par mail n’est pas encore disponible.' }, 503);
+        if (action === 'request-owner-reset') {
+          const message = { ok: true, message: 'Si cette adresse correspond à ton espace auteur, tu recevras un lien. Vérifie aussi les courriers indésirables.' };
+          if (typeof body?.email !== 'string' || body.email.trim().toLowerCase() !== OWNER_EMAIL) return json(message);
+          if (!(await claimAttempt(store, `recovery-mail/${cfg.adminHash}/${window}`, 5))) return json({ error: 'Un lien a déjà été demandé. Vérifie tes mails ou réessaie dans quinze minutes.' }, 429);
+          const response = await identityRequest('/recover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: OWNER_EMAIL }) });
+          if (!response.ok) return json({ error: response.status === 429 ? 'Un lien vient déjà d’être envoyé. Vérifie tes mails.' : 'Le mail n’a pas pu être envoyé. Réessaie dans quelques instants.' }, response.status === 429 ? 429 : 502);
+          return json(message);
+        }
+        if (!body || !['recovery','signup'].includes(body.type) || typeof body.token !== 'string' || !/^[A-Za-z0-9._~-]{16,2048}$/.test(body.token) || typeof body.newCode !== 'string' || !/^\d{10}$/.test(body.newCode) || body.newCode !== body.confirmCode) return json({ error: 'Saisis deux fois le même nouveau code de 10 chiffres.' }, 400);
+        const key = 'owner-credential/' + cfg.adminHash, previous = await store.getWithMetadata(key, { type: 'json' });
+        const invalid = () => json({ error: 'Ce lien est expiré, déjà utilisé ou invalide. Demande un nouveau lien.' }, 400);
+        const usedKey = 'owner-recovery-used/' + digest(body.token);
+        if (await store.get(usedKey, { type: 'json' })) return invalid();
+        const verified = await identityRequest('/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: body.type, token: body.token, password: randomBytes(32).toString('hex') }) });
+        if (!verified.ok) return invalid();
+        const session = await verified.json();
+        if (typeof session.access_token !== 'string') return invalid();
+        const userResponse = await identityRequest('/user', { headers: { Authorization: 'Bearer ' + session.access_token } });
+        if (!userResponse.ok) return invalid();
+        const user = await userResponse.json();
+        if (user.email?.toLowerCase() !== OWNER_EMAIL || !user.confirmed_at) return invalid();
+        if (!(await store.setJSON(usedKey, { at: now() }, { onlyIfNew: true })).modified) return invalid();
+        const salt = randomBytes(16).toString('hex'), revision = randomBytes(32).toString('hex');
+        const credential = { salt, hash: scryptSync(body.newCode, salt, 32).toString('hex'), revision, updatedAt: now() };
+        const changed = await store.setJSON(key, credential, previous ? { onlyIfMatch: previous.etag } : { onlyIfNew: true });
+        if (!changed.modified) return json({ error: 'Le code vient déjà d’être modifié. Demande un nouveau lien si nécessaire.' }, 409);
+        // Email proves ownership; Identity tokens never reach the browser or logs.
+        try { await identityRequest('/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token } }); } catch {}
+        const token = randomBytes(32).toString('hex');
+        await store.setJSON('owner-sessions/' + digest(token), { expires: now() + SESSION_SECONDS * 1000, revision });
+        return json({ ok: true }, 200, { 'Set-Cookie': cookie(token, SESSION_SECONDS, ADMIN_COOKIE) });
+      }
+
 
       if (action === 'upload' || action === 'publish') {
         if (!admin || request.method !== 'POST') return json({ error: 'Accès refusé.' }, 403);

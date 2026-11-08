@@ -17,6 +17,7 @@ const publicFiles = [
   'contact.html',
   'admin.html',
   'admin.js',
+  'identity-callback.js',
   'admin.css',
   'editeurs.html',
   'editeurs.js',
