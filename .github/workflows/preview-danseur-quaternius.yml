@@ -24,9 +24,11 @@ jobs:
           const scene=new DanceScene(document.querySelector('#stage'));
           scene.observer.disconnect();
           const face=location.search.includes('visage=1');
-          scene.camera.position.set(-2.10,face?1.68:1.72,face?.28:2.86);
-          scene.camera.lookAt(-2.1,face?1.55:1.1,-.7);
-          scene.camera.fov=face?26:33;
+          // Face crop: include forehead, eyes, lips and chin (previous framing
+          // cut the top of the face, hiding the actual expression).
+          scene.camera.position.set(-2.10,face?1.75:1.72,face?.72:2.86);
+          scene.camera.lookAt(-2.1,face?1.68:1.1,-.7);
+          scene.camera.fov=face?28:33;
           scene.camera.updateProjectionMatrix();
           const r={phase:'playing',clock:0,time:0,actionAt:-10,action:'cross'};
           function frame(){
@@ -77,11 +79,16 @@ jobs:
               return {render:scene.canvas.dataset.renderer,bones:p.bones.size,
                 leftDrop:coord('upperarm_l').y-coord('lowerarm_l').y,
                 rightDrop:coord('upperarm_r').y-coord('lowerarm_r').y,
-                smile:!!p.smile};
+                smile:!!p.smile,
+                iris:p.eyes?.userData.irisPainted===true,
+                irisVertices:p.eyes?.userData.irisVertexCount||0,
+                faceCorners:p.smile?.children?.length||0};
             });
             console.log('ETAT_DANSEUSE',width,JSON.stringify(state));
             if(state.render!=='WebGL 2')throw Error('Le personnage a besoin du vrai rendu WebGL');
             if(!state.smile||state.bones<60)throw Error('Visage ou squelette manquant');
+            if(!state.iris||state.irisVertices<16||state.faceCorners!==2)
+              throw Error('Les vrais yeux doivent être peints et le sourire sans double bouche');
             if(state.leftDrop<.10||state.rightDrop<.10)
               throw Error('Bras encore en T-pose : les coudes doivent tomber sous les épaules');
             await page.screenshot({path});
