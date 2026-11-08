@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
+import {bakeBrushSkin,brushMount,BRUSH_GRIP_ROOT} from './yoyo-brush-grip.js';
 
 // Positive entries are anatomical flexion MAGNITUDES, not raw Euler angles.
 // This GLB's native hand hangs toward -Y; flexion toward the PALM (-X) is
@@ -178,7 +179,31 @@ export function models(){
   const bristle=material('#c6c1a6',.95),tips=material('#e1d9bf',.9);for(let row=0;row<9;row++){const y=.325+row*.010;for(let n=0;n<24;n++){const a=n*Math.PI/12+row*.29,r=.034+Math.sin(row/8*Math.PI)*.018;const b=[Math.cos(a)*r,y+(.4-row/8)*.012,Math.sin(a)*r];bone(p,[Math.cos(a)*.029,y,Math.sin(a)*.029],b,.0018,.0011,n%4?bristle:tips);}}
   for(let n=0;n<15;n++){const a=n*2.4,r=Math.sqrt(n/15)*.024;bone(p,[Math.cos(a)*r,.409,Math.sin(a)*r],[Math.cos(a)*r*1.4,.435,Math.sin(a)*r*1.4],.0018,.001,bristle);}return p;
  }
- function heldBrush(){const p=new T.Group(),arm=anatomicalHand('brush');arm.position.set(.047,0,.006);arm.rotation.y=-Math.PI/2;p.add(arm);p.add(brush());return p;}
+ function heldBrush(){
+  const p=new T.Group(),arm=new T.Group();p.add(arm);
+  arm.userData.handModel='webxr-anatomical-right';
+  arm.userData.pose='brush';
+  arm.userData.geometryMode='fixed-contact-skin';
+  arm.userData.ready=false;
+
+  // The true rest wrist after native-to-game rotation is at (.136,-.009,.049).
+  // A diagonal arm rises from the lower-right edge of the first-person camera,
+  // and meets the actual wrist instead of stopping behind the brush.
+  bone(arm,[.136,-.009,.049],[.240,-.190,.095],.027,.044,skin);
+  bone(arm,[.227,-.174,.094],[.384,-.530,.230],.049,.075,cloth);
+  const mount=brushMount();arm.add(mount);
+  const pending=anatomySource();
+  if(pending)pending.then(gltf=>{
+    const geometry=bakeBrushSkin(gltf.scene);
+    mesh(geometry,skin,mount);
+    arm.userData.ready=true;
+  }).catch(err=>{
+    console.error('La vraie prise de brosse ne s’est pas chargée :',err);
+    const backup=hand('brush');arm.add(backup);arm.userData.fallback=true;
+  });
+  p.add(brush());
+  return p;
+ }
  function cupHand(){
   const p=new T.Group(),arm=anatomicalHand('cup');arm.position.set(.073,0,.012);arm.rotation.y=-Math.PI/2;p.add(arm);lathe(p,[[0,-.060],[.031,-.060],[.034,-.046],[.044,.091],[.046,.098],[.043,.101],[.041,.093],[.030,-.045],[0,-.045]],plastic);
   const coffee=mesh(new T.CircleGeometry(.040,48),material('#36281d',.25),p);coffee.rotation.x=-Math.PI/2;coffee.position.set(0,.086,0);
