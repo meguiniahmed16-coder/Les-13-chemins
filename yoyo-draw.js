@@ -41,9 +41,9 @@ export function makeOverlay(canvas){
    c.setLineDash([]);c.restore();
   }
   if(a){c.strokeStyle=good?'#b7edb1':'#f3ddaa';c.lineWidth=good?3:2;c.setLineDash(good?[]:[4,5]);c.beginPath();c.arc(a.x*W,a.y*H,W<600?13:22,0,Math.PI*2);c.stroke();c.setLineDash([]);}
-  if(g.part===0)pill(good?'La brosse est à portée · Appuie sur le rouge':'Déplace la main jusqu’à la brosse',H*.83,good?'#315c43':'#203934ed');
-  else if(g.hooked){pill(g.blocked||!betweenBars(g)?'LE SAC TOUCHE LE BARREAU · Déplace la manette vers une ouverture':'ENTRE DEUX BARREAUX · Maintiens pour ramener',H*.74,g.blocked||!betweenBars(g)?'#7d3c2d':'#315c43');const x=W*.22,y=H*.9,w=W*.56;c.fillStyle='#17332fe8';c.beginPath();c.roundRect(x,y,w,9,4);c.fill();c.fillStyle='#d8ba76';c.beginPath();c.roundRect(x,y,Math.max(9,w*g.pull),9,4);c.fill();c.font='600 12px system-ui';c.fillStyle='#f1e9d3';c.textAlign='center';c.fillText('Le sac revient : '+Math.round(g.pull*100)+' %',W/2,H*.98);}
-  else pill(good?'ACCROCHE LA CORDE · Puis vise une ouverture':'Aligne la tête de la brosse avec la corde',H*.83,good?'#315c43':'#203934ed');
+  if(g.part===0)pill(good?'La brosse est à portée · Appuie sur le rouge':'Déplace la main jusqu’à la brosse',H*.90,good?'#315c43':'#203934ed');
+  else if(g.hooked){pill(g.blocked||!betweenBars(g)?'LE SAC TOUCHE LE BARREAU · Déplace la manette vers une ouverture':'ENTRE DEUX BARREAUX · Maintiens pour ramener',H*.84,g.blocked||!betweenBars(g)?'#7d3c2d':'#315c43');const x=W*.22,y=H*.9,w=W*.56;c.fillStyle='#17332fe8';c.beginPath();c.roundRect(x,y,w,9,4);c.fill();c.fillStyle='#d8ba76';c.beginPath();c.roundRect(x,y,Math.max(9,w*g.pull),9,4);c.fill();c.font='600 12px system-ui';c.fillStyle='#f1e9d3';c.textAlign='center';c.fillText('Le sac revient : '+Math.round(g.pull*100)+' %',W/2,H*.98);}
+  else pill(good?'ACCROCHE LA CORDE · Puis vise une ouverture':'Aligne la tête de la brosse avec la corde',H*.90,good?'#315c43':'#203934ed');
   if(g.guard==='approaching')pill('DES CLÉS, DES PAS… Manette vers le bas !',12,'#72552af5','#fff0d1');
   if(g.guard==='watching')pill('LE SURVEILLANT REGARDE · Cache-toi !',12,'#853c31f5','#fff0d1');
   if(mode==='demo')pill('DÉMONSTRATION · Aucun point ni risque',12,'#192e34ee','#c5d5cc');
