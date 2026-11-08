@@ -39,8 +39,8 @@ export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200
  // Both sprites show the BACK of the same anatomical right hand.
  // No animated phalanges, no live 3D grip, no 360deg mesh in gameplay.
  const handImages={open:new Image(),grip:new Image()};
- handImages.open.src='main-ouverte-dos-v9.webp';
- handImages.grip.src='main-brosse-dos-v9.webp';
+ handImages.open.src='main-ouverte-dos-v9.avif';
+ handImages.grip.src='main-brosse-dos-v9.avif';
  function hand(x,y,pose='grip'){
   const open=pose==='open',img=handImages[pose]||handImages.grip;
   const h=open?340:355,w=h*(open?217/411:180/345);
