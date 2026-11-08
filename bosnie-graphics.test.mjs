@@ -57,3 +57,29 @@ test('The exact same two military meshes can be inspected at close range',()=>{
  assert.ok(workflow.includes('bosnie-uniform-inspection.html'));
  assert.ok(workflow.includes('bosnie-uniforme-gros-plan.png'));
 });
+
+test('Brighter Bosnian ruins and recognizable window shooter keep gameplay intact',()=>{
+ const s=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ assert.ok(s.includes('function improveBosnianDaylight(game)'));
+ assert.ok(s.includes('toneMappingExposure=1.37'));
+ assert.ok(s.includes("game.canvas.dataset.bosnieDaylight='plus-clair'"));
+ assert.ok(s.includes("name='FacadeGuerreRuines'"));
+ assert.ok(s.includes("name='ImpactsBallesFacade'"));
+ assert.ok(s.includes("name='GravatsDeRue'"));
+ assert.ok(s.includes("function makeWindowShooter(game)"));
+ assert.ok(s.includes("name='TireurFenetreJumelles'"));
+ assert.ok(s.includes("name='TeteTireur'"));
+ assert.ok(s.includes("name='ArmeVisibleTireur'"));
+ assert.ok(s.includes("game.shooters.entries()"));
+ assert.ok(s.includes('enemy.visible=!!run.binoculars'));
+ assert.ok(s.includes('shooterInFrame='));
+ assert.ok(s.includes("part(rifle,'CanonVisible'"));
+ assert.ok(s.includes("armedHero:!!hero?.root.getObjectByName('CanonVisible')"));
+ assert.ok(s.includes("armedAlly:!!ally?.root.getObjectByName('CanonVisible')"));
+ assert.ok(s.includes('return originalDraw(run,dt)')===false,'projection must be checked after the actual render');
+ const original=fs.readFileSync(new URL('./bosnie-runtime.js',import.meta.url),'utf8');
+ assert.ok(original.includes('this.shooters[r]'), 'keep firing positions and camera target');
+ const workflow=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
+ assert.ok(workflow.includes("page.keyboard.down('b')"),'test the real binocular controls');
+ assert.ok(workflow.includes("bosnie-jumelles-tireur.png"),'capture the actual observed window');
+});

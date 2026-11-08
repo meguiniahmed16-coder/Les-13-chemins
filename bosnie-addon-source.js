@@ -443,7 +443,13 @@ function attach(game){
     visibleWindowShooter:shooterState.visible,
     shooterWindowIndex:shooterState.index};
   window.__bosnieCompanionState=snap; // Read-only diagnostic for screenshot tests.
-  return originalDraw(run,dt);
+  const result=originalDraw(run,dt);
+  if(windowShooter?.visible){
+   const p=windowShooter.getWorldPosition(new THREE.Vector3()).project(game.camera);
+   snap.shooterInFrame=Math.abs(p.x)<.9&&Math.abs(p.y)<.9&&p.z<1;
+   snap.shooterProjection={x:p.x,y:p.y,z:p.z};
+  }
+  return result;
  };
  if(software){
   game.canvas.dataset.bosnieCompanion='secours-3d';
