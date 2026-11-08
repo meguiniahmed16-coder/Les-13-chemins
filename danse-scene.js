@@ -6,7 +6,7 @@ const PILOT_MODEL='assets/danse/quaternius-superhero-female.glb';
 function colourPilotActor(actor){
  const skin=new T.Color('#ca9279'),shirt=new T.Color('#70bdb6'),
   sleeve=new T.Color('#91d5cc'),pants=new T.Color('#333c58'),
-  shoes=new T.Color('#252b3a'),contrast=new T.Color('#e9c996');
+  shoes=new T.Color('#252b3a'),contrast=new T.Color('#448f8b');
  const pos=actor.geometry.getAttribute('position');
  if(!pos||pos.count<1000)throw Error('Quaternius skin geometry missing');
  const colours=new Float32Array(pos.count*3);
@@ -85,26 +85,41 @@ function animatePilotDancer(h,t,dt,active){
  const p=h.pilot;if(!p)return;
  const energy=active?1:.22,beat=t/BEAT*Math.PI*2;
  const sn=Math.sin(beat),co=Math.cos(beat);
- const q=new T.Quaternion();
- const rotate=(name,x=0,y=0,z=0)=>{
-  const bone=p.bones.get(name),base=p.rest.get(name);if(!bone||!base)return;
-  q.setFromEuler(new T.Euler(x*energy,y*energy,z*energy,'XYZ'));
-  bone.quaternion.copy(base).multiply(q); // additive relative to imported bind pose
- };
- rotate('spine_02',-.025*sn,.07*co,.065*sn);
- rotate('spine_03',.02*co,.06*sn,-.04*sn);
- rotate('head',.04*co,.045*sn,-.05*sn);
- rotate('upperarm_l',-.24-.18*sn,0,.2+.13*co);
- rotate('upperarm_r',-.24+.18*sn,0,-.2+.13*co);
- rotate('lowerarm_l',-.24-.18*co,0,.02);
- rotate('lowerarm_r',-.24+.18*co,0,-.02);
- rotate('thigh_l', .20*sn,0,.045*co);
- rotate('thigh_r',-.20*sn,0,-.045*co);
- rotate('calf_l',.16*Math.max(0,-sn));
- rotate('calf_r',.16*Math.max(0,sn));
+ // Reset all imported bones to their original rest quaternions each frame:
+ // absolute dance poses, no accumulated twisting or broken joints.
+ for(const [name,bone] of p.bones)bone.quaternion.copy(p.rest.get(name));
  p.root.position.y=p.baseY+Math.abs(sn)*.032*energy;
  p.root.rotation.z=.027*sn*energy;
- if(p.smile)p.smile.scale.y=.40+.60*(active?.9:.30);
+ p.root.updateMatrixWorld(true);
+ // Apply bends about STAGE/WORLD axes rather than the arbitrary local axes
+ // of the imported armature. The female avatar begins in a T-pose.
+ const X=new T.Vector3(1,0,0),Y=new T.Vector3(0,1,0),Z=new T.Vector3(0,0,1);
+ function worldBend(name,axis,angle){
+  const bone=p.bones.get(name);if(!bone?.parent||!Number.isFinite(angle))return;
+  bone.parent.updateMatrixWorld(true);
+  const parentQuat=bone.parent.getWorldQuaternion(new T.Quaternion());
+  const localAxis=axis.clone().applyQuaternion(parentQuat.invert()).normalize();
+  bone.quaternion.premultiply(new T.Quaternion().setFromAxisAngle(localAxis,angle));
+  bone.updateMatrixWorld(true);
+ }
+ worldBend('pelvis',Y,.028*sn*energy);
+ worldBend('spine_02',Y,.08*co*energy);
+ worldBend('spine_03',Z,.035*sn*energy);
+ worldBend('head',Z,-.05*sn*energy);
+ // Lower the outstretched arms before adding rhythmic swing. The sign is
+ // deliberately mirrored: both wrists should end below the shoulders.
+ worldBend('upperarm_l',Z,-1.18+.18*sn*energy);
+ worldBend('upperarm_r',Z, 1.18-.18*Math.sin(beat+.65)*energy);
+ worldBend('upperarm_l',X,-.12+.15*co*energy);
+ worldBend('upperarm_r',X,-.12-.15*co*energy);
+ worldBend('lowerarm_l',X,-.23-.10*Math.max(0,sn)*energy);
+ worldBend('lowerarm_r',X,-.23-.10*Math.max(0,-sn)*energy);
+ worldBend('thigh_l',X,.17*sn*energy);
+ worldBend('thigh_r',X,-.17*sn*energy);
+ worldBend('calf_l',X,.19*Math.max(0,-sn)*energy);
+ worldBend('calf_r',X,.19*Math.max(0,sn)*energy);
+ if(p.smile)p.smile.scale.y=.82+.18*energy+.10*Math.max(0,sn);
+ p.root.updateMatrixWorld(true);
 }
 
 import {SoftwareRenderer} from './danse-software.js';
