@@ -142,12 +142,16 @@ test('The held toilet brush uses five anatomical digits wrapped around its real 
 
 test('The OPEN hand shown during stage 1 search has five naturally curved, complete fingers',async()=>{
  // Regression from user screenshot: "1 / 3 · Trouver la brosse", BEFORE pickup.
- // The previous patches accidentally changed heldBrush instead of this openHand.
+ // This legacy pose is still used in the 3D introduction only.
+ // Stage 1 of the actual game now uses a fixed photographic hand image.
  const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
- assert.match(scene,/const searching=props\.openHand\(\)/,
-  'stage 1 searching model must be explicitly identified before any repair');
- assert.match(scene,/searching\.visible=!g\.hidden&&pick<\.42/,
-  'openHand is the visible hand prior to taking the brush');
+ const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
+ assert.match(scene,/const searching=new T\.Group\(\),held=new T\.Group\(\)/,
+  'interactive stages must no longer instantiate the 3D hands');
+ assert.match(app,/view==='search'/,
+  'stage 1 must use the fixed open-hand drawing');
+ assert.match(app,/openHandSprite=/,
+  'the open-hand sprite must exist');
  const {handData}=await import('./yoyo-hands-data.js');
  const skin=handData.open, digits=skin.digits;
  assert.equal(digits.length,5,'index, middle, ring, little, thumb');
