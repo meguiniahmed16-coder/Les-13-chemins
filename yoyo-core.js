@@ -4,6 +4,9 @@ export const BRUSH = {x:.733, y:.70};
 export const BAR_X = [-.63,-.42,-.21,0,.21,.42,.63];
 export const SLIT_X = [-.315,-.105,.105,.315];
 const BAR_DEPTH=.88, FOV_HALF=Math.tan(63*Math.PI/360/2);
+export function barCenters(aspect=16/9){
+ return BAR_X.map(x=>.5+x/(2*BAR_DEPTH*FOV_HALF*Math.max(.85,aspect)));
+}
 export function slitCenters(aspect=16/9){
  return SLIT_X.map(x=>.5+x/(2*BAR_DEPTH*FOV_HALF*Math.max(.85,aspect)));
 }
@@ -25,9 +28,9 @@ export function createGame(){return {phase:'ready',part:0,points:0,time:0,partTi
 export function startGame(g){Object.assign(g,createGame(),{phase:'playing'});}
 export function aligned(g){return Math.abs(g.aim-(g.part===0?(g.brushX??BRUSH.x):ropePosition(g)))<(g.part===0?.065:.057);}
 export function ropePosition(g){if(g.hooked&&Number.isFinite(g.hookX))return g.hookX;return .5 + Math.sin(g.partTime*(g.part===2?1.31:1.08)+(g.part===2?.8:0))*(g.part===2?.245:.225);}
-export function move(g,x,y=0,dt=1/30){if(g.phase!=='playing')return;if(y>.45){hide(g);return;}if(Math.abs(x)>.15){g.hidden=false;g.aim=clamp(g.aim+x*dt*.38,.12,.88);if(g.hooked)g.hookX=g.aim;}if(y<-.45)g.hidden=false;}
+export function move(g,x,y=0,dt=1/30){if(g.phase!=='playing')return;if(y>.45){hide(g);return;}if(Math.abs(x)>.15){g.hidden=false;g.aim=clamp(g.aim+x*dt*.38,.12,.88);if(g.hooked){g.hookX=g.aim;g.blocked=!betweenBars(g);}}if(y<-.45)g.hidden=false;}
 export function hide(g){g.hidden=true;g.holding=false;g.exposed=0;g.blocked=false;}
-export function aimAt(g,x){if(g.phase==='playing'){g.aim=clamp(x,.12,.88);if(g.hooked)g.hookX=g.aim;g.hidden=false;}}
+export function aimAt(g,x){if(g.phase==='playing'){g.aim=clamp(x,.12,.88);if(g.hooked){g.hookX=g.aim;g.blocked=!betweenBars(g);}g.hidden=false;}}
 function award(g){g.part++;g.points=g.part*10;g.holding=false;g.hooked=false;g.hookX=null;g.pull=0;g.blocked=false;g.bags=Math.max(0,g.part-1);g.partTime=0;g.events.push({type:'part',part:g.part,points:g.points});if(g.part===3){g.phase='victory';g.events.push({type:'won',points:30});}else{g.phase='between';g.events.push({type:'between',part:g.part});}}
 export function continueGame(g){if(g.phase!=='between')return;g.phase='playing';g.hidden=false;g.aim=.5;g.guard='away';g.nextGuard=g.time+8.8+g.part*.8;g.exposed=0;}
 export function actionDown(g){if(g.phase!=='playing'||g.cooldown>0)return;g.hidden=false;g.holding=true;if(g.guard==='watching'){g.events.push({type:'warning'});return;}if(g.part===0){if(aligned(g)){award(g);}else{g.cooldown=.55;g.events.push({type:'search-miss'});}return;}if(!g.hooked){if(aligned(g)){g.hookX=ropePosition(g);g.hooked=true;g.blocked=!betweenBars(g);g.events.push({type:'hook'});}else{g.misses++;g.cooldown=.55;g.events.push({type:'miss'});}}}
