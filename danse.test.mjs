@@ -37,7 +37,11 @@ test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a 
  assert.match(src,/target\.group\.children\.forEach\(child=>\{if\(child!==root\)child\.visible=false;\}\)/);
  assert.match(src,/colourPilotActor\(o\)/,'cloth colours must come from the true skinned mesh');
  assert.match(src,/head\.attach\(mouthGroup\)/,'smile must follow head bone, not float in the air');
- assert.match(src,/bone\.quaternion\.copy\(base\)\.multiply\(q\)/,'pose must preserve original reference bone rotations');
+ assert.match(src,/bone\\.quaternion\\.copy\\(p\\.rest\\.get\\(name\\)\\)/,'all original reference bone rotations must be restored each frame');
+ assert.match(src,/bone\\.quaternion\\.premultiply\\(/,'world-axis animation must preserve parent joint hierarchy');
+ assert.match(src,/worldBend\\('upperarm_l',Z,-1\\.18/,'left arm must lower from T-pose');
+ assert.match(src,/worldBend\\('upperarm_r',Z, 1\\.18/,'right arm must lower from T-pose');
+ assert.doesNotMatch(src,/contrast=new T\\.Color\\('#e9c996'\\)/,'clothing must not have a beige waistline');
  assert.match(src,/original dancer retained/,'fallback retains a playable character');
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
  assert.match(build,/\['--test','danse\.test\.mjs'\]/,'the actual dance tests must run in the public build');
