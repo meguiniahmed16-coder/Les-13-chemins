@@ -330,7 +330,8 @@ test('Two illustrated static hand states remain visible and light, with no finge
  assert.match(page,/Main fixe v9/);
  assert.match(page,/id="handOpen2D"[^>]*main_ouverte_fixee\.webp/);
  assert.match(page,/id="handGrip2D"[^>]*main_brosse_dos_fixee\.webp/);
- assert.match(app,/view==='pickup'&&t>=\.56/);
+ assert.match(app,/const picking=view==='pickup'/);
+ assert.match(app,/picking&&t>=\.56/);
  assert.match(app,/view==='window'/);
  assert.match(app,/const holding=view==='window'/);
  assert.match(app,/img\.hidden=false/);
