@@ -44,7 +44,7 @@ jobs:
           ground.rotation.x=-Math.PI/2;ground.position.y=-.075;scene.add(ground);
           const camera=new THREE.PerspectiveCamera(34,980/620,.1,40);
           camera.position.set(0,1.55,3.65);camera.lookAt(0,.95,0);
-          try{
+          (async()=>{try{
             const loaded=await new GLTFLoader().loadAsync('./danse-quaternius-hero.glb');
             const main=makeSoldier(loaded.scene,0);
             const ally=makeSoldier(loaded.scene,1);
@@ -64,7 +64,7 @@ jobs:
           }catch(err){
             window.__uniformError=String(err.stack||err);
             console.error(err);
-          }
+          }})();
           UNIFORM
           npx esbuild bosnie-uniform-inspection.mjs --bundle --format=iife --target=es2020 --outfile=dist/bosnie-uniform-inspection.js
           cat > dist/bosnie-uniform-inspection.html <<'HTML'
