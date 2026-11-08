@@ -142,16 +142,69 @@ export function makeCinema(host){
   scene.fog.color.copy(new T.Color('#718086')).lerp(level===2?'#5f9cbb':'#86a5ae',fraction);
   renderer.toneMappingExposure=1.18+fraction*.16;
  }
- // The hanger is inverted: the sheet wraps its long bar; its hook carries the bag handle.
+ // Real inverted wire hanger: a drap wraps the long bar, the hook carries
+ // both handles of a small, translucent shopping bag. 11.6cm compressed width.
  const ropeGroup=new T.Group();scene.add(ropeGroup);const cloth=mat('#c6bfab',1);
- for(let n=0;n<24;n++){rod([Math.sin(n*.7)*.008,n*.11+.035,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11+.035,0],.014,cloth,ropeGroup,.012);if(n%3===0){ell(.023,.031,.019,0,n*.11+.04,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11,0,cloth,ropeGroup);tail.rotation.z=-.3;}}
+ for(let n=0;n<24;n++){
+  rod([Math.sin(n*.7)*.008,n*.11+.035,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11+.035,0],.014,cloth,ropeGroup,.012);
+  if(n%3===0){ell(.023,.031,.019,0,n*.11+.04,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11,0,cloth,ropeGroup);tail.rotation.z=-.3;}
+ }
  curve([[-.18,0,0],[-.16,.004,0],[.16,.004,0],[.18,0,0],[.15,-.03,0],[0,-.21,0],[-.15,-.03,0],[-.18,0,0]],.0055,metal,ropeGroup);
  curve([[0,-.20,0],[0,-.28,0],[.013,-.327,0],[.050,-.343,0],[.081,-.32,0],[.077,-.287,0]],.006,metal,ropeGroup);
- const wraps=[];for(let n=0;n<=80;n++){const u=n/80,a=u*Math.PI*10;wraps.push([-.034+u*.068,Math.cos(a)*.014,Math.sin(a)*.014]);}curve(wraps,.005,cloth,ropeGroup);ell(.019,.024,.019,0,.034,0,cloth,ropeGroup);
- const bagmat=mat('#d4d5bb',.6,{transparent:true,opacity:.85,side:T.DoubleSide});
- const bag=ell(.17,.19,.075,.043,-.60,0,bagmat,ropeGroup);
- for(let n=-3;n<=3;n++)curve([[.043+n*.027,-.43,.025],[.043+n*.038,-.59,.074],[.043+n*.029,-.77,.025]],.0017,white,ropeGroup);
- for(const z of [-.018,.018])curve([[-.055,-.465,z],[-.010,-.39,z],[.044,-.343,z],[.096,-.39,z],[.14,-.465,z]],.008,bagmat,ropeGroup);
+ const wraps=[];for(let n=0;n<=80;n++){
+  const u=n/80,a=u*Math.PI*10;wraps.push([-.034+u*.068,Math.cos(a)*.014,Math.sin(a)*.014]);
+ }
+ curve(wraps,.005,cloth,ropeGroup);ell(.019,.024,.019,0,.034,0,cloth,ropeGroup);
+
+ const bagRoot=new T.Group();bagRoot.position.set(.044,-.415,0);ropeGroup.add(bagRoot);
+ const bagPlastic=mat('#f0f1e9',.37,{transparent:true,opacity:.57,side:T.DoubleSide,depthWrite:false,metalness:.04});
+ const seam=mat('#dedfd4',.42,{transparent:true,opacity:.68,depthWrite:false});
+ // Sewn (heat-sealed) bag shell: two thin, creased skins and rounded, weighted bottom.
+ // No ellipsoid masquerading as plastic. Each skin has actual thickness and folds.
+ function bagHalf(sign){
+  const rows=22,cols=18,positions=[],uvs=[],indices=[];
+  for(let iy=0;iy<=rows;iy++)for(let ix=0;ix<=cols;ix++){
+   const v=iy/rows,u=ix/cols,xBase=u*2-1;
+   const width=(.052+.006*Math.sin(v*Math.PI)+.002*v);
+   const x=xBase*width;
+   const belly=(.005+.029*Math.sin(Math.PI*v)**1.3)*(1-xBase*xBase)**.6;
+   const crinkle=Math.sin(xBase*24+v*13)*.0028*(.2+v*.8);
+   positions.push(x,-.29*v+(1-xBase*xBase)*.004*(v>.77?1:0),sign*(belly+crinkle));
+   uvs.push(u,v);
+  }
+  for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
+   const a=iy*(cols+1)+ix,b=a+1,c=a+(cols+1),d=c+1;
+   indices.push(a,c,b,b,c,d);
+  }
+  const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+  geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();
+  return mesh(geo,bagPlastic,bagRoot);
+ }
+ bagHalf(1);bagHalf(-1);
+ for(const z of [-.012,.012]){
+  // Two unmistakable flexible handles with open negative space.
+  curve([[-.052,-.006,z],[-.055,.030,z],[-.028,.076,z],[.004,.083,z],[.036,.068,z],[.053,.005,z]],.0063,bagPlastic,bagRoot);
+  curve([[-.052,-.008,z],[-.047,-.12,z],[-.056,-.24,z],[-.039,-.287,z]],.0015,seam,bagRoot);
+  curve([[.052,-.008,z],[.045,-.13,z],[.053,-.24,z],[.036,-.287,z]],.0015,seam,bagRoot);
+  curve([[-.038,-.29,z],[0,-.296,z],[.039,-.29,z]],.0026,seam,bagRoot);
+ }
+ // Soft highlights and pleats in the film, leading into the weighted packet.
+ for(const x of [-.037,-.020,-.005,.021,.039])for(const side of [-1,1]){
+  curve([[x*.8,-.025,side*.011],[x*.95,-.13,side*.020],[x*.65,-.24,side*.026],[x*.75,-.285,side*.006]],.0010,seam,bagRoot);
+ }
+ // Visible weight: paper tobacco packet for the first delivery and coffee sachet for the second.
+ const parcels=[];
+ const tobacco=new T.Group(),tobaccoPaper=mat('#94744a',.93);
+ const packet=mesh(new T.BoxGeometry(.065,.065,.031),tobaccoPaper,tobacco);
+ packet.position.set(0,-.236,0);packet.rotation.z=.12;
+ box(.065,.010,.034,0,-.206,0,mat('#e2c38a'),tobacco);
+ for(const z of [-.017,.017])box(.048,.004,.004,0,-.22,z,mat('#6f5541'),tobacco);
+ bagRoot.add(tobacco);parcels.push(tobacco);
+ const coffee=new T.Group(),coffeePaper=mat('#867057',.84);
+ const sachet=mesh(new T.CylinderGeometry(.029,.031,.085,12),coffeePaper,coffee);
+ sachet.rotation.z=Math.PI/2;sachet.position.set(.003,-.244,0);
+ box(.065,.018,.025,0,-.222,0,mat('#cdb493'),coffee);
+ bagRoot.add(coffee);parcels.push(coffee);
  // Posed hands grip their own props; a single continuous forearm rises from below frame.
  const reaching=props.openHand();scene.add(reaching);reaching.rotation.set(-.3,0,-.5);
  const searching=props.openHand(),held=props.heldBrush(),drink=props.cupHand(),cigarette=props.smokingHand();
