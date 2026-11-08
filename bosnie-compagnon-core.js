@@ -14,7 +14,7 @@ export function updateCompanion(companion,game){
   const completed=Math.min(PASSAGES.length,Math.max(0,game.passed?.length??0));
   const now=Number.isFinite(game.time)?game.time:0;
   if(completed>=PASSAGES.length){
-    const x=PASSAGES[PASSAGES.length-1].end-.38;
+    const x=PASSAGES[PASSAGES.length-1].end+.12;
     companion.stage=completed;companion.x=x;
     return {x,y:0,z:-.27,running:false,invulnerable:true,
       playerAhead:(game.x??0)>x,stage:completed,visible:!game.binoculars};
@@ -22,8 +22,8 @@ export function updateCompanion(companion,game){
   if(companion.stage!==completed || now<companion.stageTime-.2){
     companion.stage=completed;
     companion.stageTime=now;
-    companion.startX=completed===0?3.75:PASSAGES[completed-1].end-.38;
-    companion.targetX=PASSAGES[completed].end-.38;
+    companion.startX=completed===0?3.75:PASSAGES[completed-1].end+.12;
+    companion.targetX=PASSAGES[completed].end+.12;
     companion.x=companion.startX;
   }
   // The comrade leaves first; he crosses safely and stops just before the
