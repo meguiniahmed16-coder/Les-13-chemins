@@ -11,13 +11,34 @@ test('Parent credits once, rejects stale sessions/out-of-order milestones, and r
 test('Wrong question answer allows retry after dance; progress survives reload',()=>{let s={points:90};score.begin(s,false,'one');score.record(s,'one',1);s=JSON.parse(JSON.stringify(s));assert.equal(score.begin(s,true,'two').id,'one');for(let i=2;i<=5;i++)score.record(s,'one',i);assert.equal(score.finish(s,'one').retryQuestion,true);assert.equal(s.points,100);assert.equal(s.dansePending,null);});
 test('Published excerpt includes the complete evening through the dance, with correct pages',()=>{const data=JSON.parse(fs.readFileSync(new URL('./passages.json',import.meta.url),'utf8'));const d=data[4];assert.equal(d.level,5);assert.deepEqual(d.pages,[54,56]);assert.match(d.quote,/chemise violette électrique/);assert.match(d.quote,/Alors je danse/);assert.match(d.quote,/Soixante-dix pour cent du public/);const reading=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');assert.match(reading,/TreizeEtapesData.flatMap/);const publicData=fs.readFileSync(new URL('./dist/etapes-data.js',import.meta.url),'utf8');const embedded=JSON.parse(publicData.slice(publicData.indexOf('=')+1).trim().slice(0,-1));assert.deepEqual(embedded[4].plateaux[0].passage,d);});
 
-test('Quaternius pilot remains isolated to first dancer and preserves current game until model is installed',()=>{
+test('The Quaternius CC0 female model is real, rigged, small and in the public build',()=>{
+ const bytes=fs.readFileSync(new URL('./assets/danse/quaternius-superhero-female.glb',import.meta.url));
+ assert.equal(bytes.toString('ascii',0,4),'glTF');
+ assert.ok(bytes.length>300000&&bytes.length<2000000,'the playable model should be 0.3–2 MB');
+ const length=bytes.readUInt32LE(12);assert.equal(bytes.toString('ascii',16,20),'JSON');
+ const data=JSON.parse(bytes.subarray(20,20+length).toString('utf8'));
+ assert.ok(data.skins?.[0]?.joints?.length>=60,'must use a complete humanoid rig, not capsule limbs');
+ assert.ok(data.meshes?.some(m=>m.name==='Superhero_Female'),'actual female body is missing');
+ assert.ok(data.accessors[data.meshes.find(m=>m.name==='Superhero_Female').primitives[0].attributes.POSITION].count>5000,'detailed body surface is missing');
+ assert.ok(data.skins[0].joints.some(i=>data.nodes[i].name==='Head'),'head bone for smile is missing');
+ const license=fs.readFileSync(new URL('./assets/danse/QUATERNIUS-LICENSE.txt',import.meta.url),'utf8');
+ assert.match(license,/CC0-1\.0/);
+ assert.match(license,/Quaternius/);
+ const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ assert.match(build,/'assets\/danse\/quaternius-superhero-female\.glb'/);
+ assert.match(build,/\['build-danse\.mjs'\]/,'stage source must actually be rebuilt for publishing');
+});
+test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a head-attached smile',()=>{
  const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
  assert.match(src,/import \{GLTFLoader\} from 'three\/examples\/jsm\/loaders\/GLTFLoader\.js'/);
- assert.match(src,/const PILOT_MODEL='assets\/danse\/quaternius-regular-female\.glb'/);
- assert.match(src,/if\(i===0\)loadPilotDancer\(h,s\)/);
+ assert.match(src,/const PILOT_MODEL='assets\/danse\/quaternius-superhero-female\.glb'/);
+ assert.match(src,/if\(i===0\)loadPilotDancer\(h\)/);
  assert.match(src,/if\(i===0\)animatePilotDancer\(h,t,dt,active\)/);
  assert.match(src,/target\.group\.children\.forEach\(child=>\{if\(child!==root\)child\.visible=false;\}\)/);
- assert.match(src,/morphTargetInfluences\[index\]=smile/);
- assert.match(src,/original dancer retained/);
+ assert.match(src,/colourPilotActor\(o\)/,'cloth colours must come from the true skinned mesh');
+ assert.match(src,/head\.attach\(mouthGroup\)/,'smile must follow head bone, not float in the air');
+ assert.match(src,/bone\.quaternion\.copy\(base\)\.multiply\(q\)/,'pose must preserve original reference bone rotations');
+ assert.match(src,/original dancer retained/,'fallback retains a playable character');
+ const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ assert.match(build,/\['--test','danse\.test\.mjs'\]/,'the actual dance tests must run in the public build');
 });
