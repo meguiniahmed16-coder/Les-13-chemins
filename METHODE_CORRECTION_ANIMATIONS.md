@@ -147,3 +147,20 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 **Performance :** images de taille réduite (environ 16 Ko pour la main ouverte et 21 Ko pour le dos avec brosse), aucune texture 3D supplémentaire, même jeu et mêmes collisions avec les barreaux.
 
 **Contrôle obligatoire :** inspecter le rendu réellement publié dans l'orientation du téléphone, confirmer la lisibilité du pouce et des quatre doigts, le positionnement de la tête de la brosse et l'absence de doublons. Les tests techniques sont nécessaires mais ne valent pas validation visuelle par l'auteur.
+
+
+## C020 — Danseuse Quaternius : ne pas confondre squelette, compilation et danse
+
+**Jeu :** L'Amitié retrouvée / Danse pour sauver Lionel, branche expérimentale prototype/danseur-humain-quaternius-v1 (8 novembre 2026). Modèle Superhero Female de Quaternius (CC0), avec peau articulée et 65 os. Un seul personnage est remplacé ; les autres silhouettes et la version publique restent intactes.
+
+**Constat sur une vraie capture :** le GLB se charge, le visage est visible et les tests de structure passent, mais les bras restent presque horizontaux en **T-pose**. Ajouter de faibles oscillations aux quaternions de repos ne constitue pas une vraie chorégraphie. Une pose anatomiquement valide au repos peut être visuellement inacceptable dans la danse.
+
+**Règle du rig :** à chaque trame, repartir des quaternions d'origine de TOUS les os. Déterminer dans le repère mondial le sens de descente de chaque bras, puis transformer cet axe dans le repère de l'os parent avant de tourner. Ne pas réutiliser aveuglément les axes locaux d'un autre personnage ; les signes des épaules droite et gauche diffèrent. Mesurer les articulations réelles dans la capture : en pose de danse de base, les coudes doivent descendre sous les épaules. Contrôler les coudes, mains, genoux, pieds et torsions sur plusieurs instants.
+
+**Visage et vêtements :** le modèle Standard gratuit n'a pas de morph targets faciales. Le sourire léger doit suivre l'os Head ; un simple trait ne vaut pas validation visuelle de l'expression. La coloration par sommet ne doit pas créer de bande beige à la taille ; examiner les coutures de face, de profil et en mouvement.
+
+**Vérification obligatoire :** capturer le personnage VRAIMENT chargé dans Chromium en largeur ordinateur et sur écran étroit, contrôler la présence des os, du sourire et les hauteurs réelles des deux coudes par rapport aux épaules. Produire les deux images en artefact. La CI verte n'est pas une validation graphique ; une dépendance Python de traitement d'image manquante n'est pas une défaillance du jeu. Distinguer chaque type d'erreur (build, chargement, navigateur, aspect, animation).
+
+**Sécurité :** conserver l'ancien danseur tant que le modèle ne se charge pas. Ne jamais fusionner dans le jeu public sans inspection des captures et accord de l'auteur. Corriger et RECAPTURER chaque anomalie, plutôt qu'affirmer que le rendu est bon sans l'avoir vu.
+
+**Statut :** correction des bras en cours sur branche d'essai ; validation graphique par l'auteur restant à faire.
