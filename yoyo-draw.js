@@ -108,9 +108,41 @@ export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200
    }else text(aligned(g)?'ACCROCHE LA CORDE':'VISE LA CORDE ENTRE DEUX BARREAUX',600,642,18,'#eee4c7','center');
   }
  }
- function draw(g,{mode='game',time=0}={}){c.clearRect(0,0,W,H);if(mode==='intro'||mode==='ready'){room(time);const zoom=1+Math.min(time/27,.12);if(mode==='intro'){c.save();c.globalAlpha=.08;rect(0,0,W,H,'#eee1bb');c.restore();}}else if(mode==='victory'){windowView({...g,hidden:true,pull:1,partTime:0});hand(765,560);ellipse(741,524,69,20,'#d9deca');rect(675,525,132,75,'#c5cfbb');ellipse(741,598,66,17,'#a6b9a6');ellipse(741,525,60,15,'#392f25');path(c=>c.ellipse(823,563,27,25,0,0,Math.PI*2),null,'#d2d5c1',12);hand(384,577);line(378,536,341,487,'#e2dac2',8);ellipse(339,485,4,4,'#ad7251');for(let i=0;i<7;i++){const y=480-((time*15+i*20)%100);path(c=>{c.moveTo(731,y);c.bezierCurveTo(700,y-19,752,y-34,731,y-58);},null,'#e2e2ce22',3);}}else if(g.part===0){room();if(!g.hidden){const x=g.aim*W;ellipse(x,475,23,9,'#ffd58e66');line(x,405,x,510,'#ffda8e',4);path(c=>{c.moveTo(x-15,401);c.lineTo(x,411);c.lineTo(x+15,401);},null,'#f1d48e',3);text('Cherche près du coin sanitaire',600,623,21,'#e6e2c9','center');}}else windowView(g);
- if(g.hidden&&mode==='game'){rect(0,0,W,H,'#142724e0');rect(99,428,1003,26,'#57746b');for(let i=0;i<6;i++)rect(179+i*160,450,17,225,'#263e37');text('À L’ABRI',600,288,37,'#e5d6b2','center');text('Attends que les pas s’éloignent.',600,333,22,'#b9c6b7','center');text('Gauche ou droite pour te relever',600,378,18,'#a2b7ac','center');}
- if(g.guard==='approaching'||g.guard==='watching'){rect(0,0,W,57,g.guard==='watching'?'#842c26ed':'#705121ed');text(g.guard==='watching'?'LE SURVEILLANT REGARDE — RESTE CACHÉ':'DES PAS ET DES CLÉS… JOYSTICK VERS LE BAS',600,37,22,'#fff0cc','center');}rect(0,0,W,H,pattern);const vignette=c.createRadialGradient(600,300,150,600,330,700);vignette.addColorStop(0,'#0000');vignette.addColorStop(1,'#0b171b77');rect(0,0,W,H,vignette);}
+
+ function draw(g,{mode='game',time=0}={}){
+  c.clearRect(0,0,W,H);
+  if(mode==='intro'||mode==='ready'){room(time);}
+  else if(mode==='pickup'){
+   room();const k=Math.max(0,Math.min(1,time/1.25)),x=((1-k)*(g.aim||BRUSH.x)+k*BRUSH.x)*W;
+   hand(x,477,k<.4?'open':'grip');text(k<.4?'LA MAIN APPROCHE':'LA BROSSE EST SAISIE',600,637,19,'#f1e2c6','center');
+  }else if(mode==='victory'){
+   windowView({...g,hidden:true,pull:1,partTime:0});
+   ellipse(762,525,66,18,'#d9deca');rect(696,525,132,72,'#c5cfbb');
+   ellipse(762,590,64,15,'#a6b9a6');ellipse(762,524,60,13,'#392f25');
+   path(p=>p.ellipse(831,562,24,22,0,0,Math.PI*2),null,'#d2d5c1',10);
+   line(349,533,318,472,'#e2dac2',8);ellipse(318,472,5,5,'#ad7251');
+  }else if(mode==='search'||g.part===0){
+   room();
+   if(!g.hidden){
+    const x=g.aim*W,target=BRUSH.x*W,good=aligned(g);
+    hand(x,486,'open');
+    path(p=>p.arc(target,455,good?26:23,0,Math.PI*2),null,good?'#9feab1':'#f1d48e',good?4:3);
+    text(good?'APPUIE POUR SAISIR LE MANCHE':'APPROCHE LA MAIN DE LA BROSSE',600,635,18,'#e6e2c9','center');
+   }
+  }else{windowView(g);}
+  if(g.hidden&&(mode==='search'||mode==='game'||mode==='window')){
+   rect(0,0,W,H,'#142724d5');text('A L ABRI',600,288,37,'#e5d6b2','center');
+   text('Attends que les pas s eloignent.',600,333,22,'#b9c6b7','center');
+  }
+  if(g.guard==='approaching'||g.guard==='watching'){
+   rect(0,0,W,57,g.guard==='watching'?'#842c26ed':'#705121ed');
+   text(g.guard==='watching'?'LE SURVEILLANT REGARDE':'DES PAS ET DES CLES - CACHE-TOI',600,37,22,'#fff0cc','center');
+  }
+  rect(0,0,W,H,pattern);
+  const vignette=c.createRadialGradient(600,300,150,600,330,700);
+  vignette.addColorStop(0,'#0000');vignette.addColorStop(1,'#0b171b77');
+  rect(0,0,W,H,vignette);
+ }
  return{draw};
 }
 export function makeOverlay(canvas){
