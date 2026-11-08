@@ -118,11 +118,15 @@ export function makeCinema(host){
   if(style===1||style===3){
    for(const xx of [-.027,0,.027])ell(.008,.007,.003,xx,-.062,.052,mat('#4b413a'),head);
   }
-  // A hand by a bar uses the exact same anatomical source as the player's hands.
-  if(style===0||style===4){
+  // Every visible hand, even on a distant prisoner, uses the same anatomical mesh.
+  // Thin wrists remain aligned with civilian sleeves; one prisoner reaches for a bar.
+  for(const side of [-1,1]){
    const hand=props.anatomicalHand('relaxed');
-   hand.scale.setScalar(.38);hand.position.set(.180,-.34,.095);
-   hand.rotation.set(.22,-.25,-.28);root.add(hand);
+   const reaching=(style===0||style===4)&&side===1;
+   hand.scale.setScalar(reaching?.29:.20);
+   hand.position.set(side*.178,reaching?-.36:-.395,reaching?.100:.048);
+   hand.rotation.set(reaching?.23:.09,side*(reaching?-.23:.12),side*(reaching?-.24:.06));
+   root.add(hand);
   }
   root.rotation.y=[-.12,.22,-.16,.13,-.27][style];
   root.scale.setScalar(style===3?.89:style===4?1.03:1);
