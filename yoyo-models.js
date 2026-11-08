@@ -2,6 +2,17 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
 
+// Positive entries are anatomical flexion MAGNITUDES, not raw Euler angles.
+// This GLB's native hand hangs toward -Y; flexion toward the PALM (-X) is
+// a NEGATIVE rotation about native +Z. Positive +Z bends fingers dorsally.
+export const ANATOMICAL_GRIPS=Object.freeze({
+ relaxed:[[0,.04,.02],[.05,.11,.04],[.05,.11,.04],[.07,.13,.06],[.07,.14,.06]],
+ brush:[[.25,.42,.18],[.38,.65,.34],[.42,.71,.36],[.45,.75,.36],[.43,.70,.31]],
+ cup:[[.20,.32,.16],[.32,.60,.29],[.37,.62,.31],[.40,.66,.31],[.42,.66,.30]],
+ smoke:[[.08,.12,.04],[.08,.11,.06],[.06,.11,.06],[.42,.69,.36],[.52,.74,.40]]
+});
+export const PALMAR_FLEXION_SIGN=-1;
+
 // Use a real anatomically sculpted right-hand surface for the pre-pickup hand,
 // not the five capsule sweeps used for other preliminary game poses.
 // WebXR generic right hand (MIT, ©2019 Amazon): hand-right.glb, bundled locally.
@@ -130,14 +141,10 @@ export function models(){
     let parent=wrist;
     for(const key of names){const joint=map.get(key);if(!joint)throw Error('Articulation absente: '+key);joint.updateMatrixWorld(true);parent.attach(joint);parent=joint;}
    }
-   const bends={
-    relaxed:[[0,.06,.03],[.06,.10,.04],[.05,.11,.05],[.07,.13,.06],[.07,.14,.06]],
-    brush:[[.25,.42,.18],[.38,.65,.34],[.42,.71,.36],[.45,.75,.36],[.43,.70,.31]],
-    cup:[[.20,.32,.16],[.32,.60,.29],[.37,.62,.31],[.40,.66,.31],[.42,.66,.30]],
-    smoke:[[.25,.30,.12],[.08,.11,.06],[.06,.11,.06],[.42,.69,.36],[.52,.74,.40]]
-   }[pose]||[];
-   // +Z is the metacarpal flexion axis in the native glTF bind frame.
-   // Rotate about a shared anatomical world axis rather than arbitrary local axes.
+   const bends=ANATOMICAL_GRIPS[pose]||ANATOMICAL_GRIPS.relaxed;
+   // Native +Z is the flexion axis. Its positive direction was the bug:
+   // it curled the ring and little fingers backwards toward the hand's DORSUM.
+   // Apply PALMAR_FLEXION_SIGN to fingers, and keep the thumb separately tuned.
    function flex(joint,angle){
     if(!joint||!angle)return;
     joint.parent.updateMatrixWorld(true);
@@ -150,7 +157,12 @@ export function models(){
     const name=fingers[i],parts=name==='thumb'
       ? ['metacarpal','phalanx-proximal','phalanx-distal']
       : ['phalanx-proximal','phalanx-intermediate','phalanx-distal'];
-    parts.forEach((part,j)=>flex(map.get(name+'-'+part),bends[i]?.[j]||0));
+    parts.forEach((part,j)=>{
+     const magnitude=bends[i]?.[j]||0;
+     // Thumb joints have a different natural axis; they are NOT inverted
+     // along with the four parallel fingers.
+     flex(map.get(name+'-'+part),i===0?magnitude:PALMAR_FLEXION_SIGN*magnitude);
+    });
    }
    mount.add(cloned);
    p.userData.ready=true;
@@ -173,7 +185,9 @@ export function models(){
   for(let n=0;n<7;n++){const ring=mesh(new T.TorusGeometry(.034+n*.0014,.0008,6,40),plastic,p);ring.rotation.x=Math.PI/2;ring.position.set(0,-.034+n*.016,0);}return p;
  }
  function smokingHand(){
-  const p=new T.Group(),gripPoint=new T.Vector3(-.015,.096,-.016);
+  // This pivot lies BETWEEN index and middle phalanges of the actual WebXR skin,
+  // not on the thumb. Derived from the original 25-joint rest geometry.
+  const p=new T.Group(),gripPoint=new T.Vector3(-.002,.087,-.003);
   // The actor sees the PALM while smoking, not the back of a hand turned inside out.
   // Rotate only the skin around the actual cigarette pinch: the cigarette must not rotate away from the lips.
   const palmRig=new T.Group();palmRig.position.copy(gripPoint);palmRig.rotation.y=Math.PI;
