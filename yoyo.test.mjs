@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import fs from 'node:fs';
 import * as T from 'three';
 import {models} from './yoyo-models.js';
-import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned,slitCenters,openingTolerance,betweenBars,setWindowAspect} from './yoyo-core.js';
+import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned,slitCenters,openingTolerance,betweenBars,setWindowAspect,ropeReachable} from './yoyo-core.js';
 const tick=(g,seconds)=>{for(let i=0;i<seconds*60;i++)advance(g,1/60);};
 const intoOpening=g=>aimAt(g,slitCenters(g.aspect).reduce((a,b)=>Math.abs(a-g.aim)<Math.abs(b-g.aim)?a:b));
 test('Three separate objects are required for 30 points, misses do not award points',()=>{const g=createGame();startGame(g);actionDown(g);assert.equal(g.points,0);tick(g,1);aimAt(g,BRUSH.x);actionDown(g);assert.equal(g.points,10);assert.equal(g.phase,'between');continueGame(g);aimAt(g,ropePosition(g));actionDown(g);assert.ok(g.hooked);intoOpening(g);tick(g,2);actionUp(g);const pulled=g.pull;tick(g,1);assert.equal(g.pull,pulled);actionDown(g);tick(g,4);assert.equal(g.points,20);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);intoOpening(g);tick(g,6);assert.equal(g.phase,'victory');assert.equal(g.points,30);assert.deepEqual(g.events.filter(e=>e.type==='part').map(e=>e.part),[1,2,3]);});
@@ -273,4 +273,16 @@ test('Both deliveries preserve their vivid colours through the win scene, and th
  assert.equal(two.bags,1,'first bag changes building');
  continueGame(two);aimAt(two,ropePosition(two));actionDown(two);intoOpening(two);tick(two,6);
  assert.equal(two.bags,2,'second bag makes the finale saturated');
+});
+
+test('The player must wait for the rope to pass a bar opening before hooking',()=>{
+ const g=createGame();startGame(g);aimAt(g,BRUSH.x);actionDown(g);continueGame(g);
+ tick(g,.26);aimAt(g,ropePosition(g));
+ assert.ok(Math.abs(ropePosition(g)-.5)<.015,'rope is presently in front of the central steel bar');
+ assert.equal(ropeReachable(g),false);
+ actionDown(g);assert.equal(g.hooked,false,'hook cannot pass through steel');
+ assert.ok(g.events.some(e=>e.type==='bar-miss'),'player gets an understandable collision cue');
+ tick(g,2.08);aimAt(g,ropePosition(g));
+ assert.equal(ropeReachable(g),true,'oscillating rope is now crossing an opening');
+ actionDown(g);assert.equal(g.hooked,true,'brush may catch rope through a real gap');
 });
