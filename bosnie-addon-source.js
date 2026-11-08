@@ -177,7 +177,7 @@ function equipMilitary(avatar,variation=0){
  avatar.userData={uniform:'treillis-camouflage-otan',helmet:helmet.name,
    vest:vest.name,patches:2,boots:2,rucksack:pack.name};
 }
-function makeSoldier(template,variation=0){
+export function makeSoldier(template,variation=0){
  const root=cloneSkeleton(template),group=new THREE.Group();
  root.name=variation?'CompagnonQuaternius':'SoldatJoueurQuaternius';
  group.add(root);group.scale.setScalar(variation?.86:.91);
@@ -210,7 +210,7 @@ function worldBend(avatar,name,rootAxis,angle){
  bone.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(axis,angle));
  bone.updateMatrixWorld(true);
 }
-function poseHuman(avatar,info,clock,mode='player'){
+export function poseHuman(avatar,info,clock,mode='player'){
  const {group,bones,rest}=avatar;
  for(const [name,q] of Object.entries(rest))bones[name].quaternion.copy(q);
  const sprint=info.running;

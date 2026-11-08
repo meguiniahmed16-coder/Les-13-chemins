@@ -49,3 +49,11 @@ test('Both soldiers wear recognizable 1990s French NATO field uniforms, not danc
  assert.match(source,/heroUniform:hero\?\.userData\?\.uniform/);
  assert.ok(!source.includes("Simple historically restrained helmet follows"),'old civilian cap must be gone');
 });
+
+test('The exact same two military meshes can be inspected at close range',()=>{
+ assert.match(source,/export function makeSoldier\(template,variation=0\)/);
+ assert.match(source,/export function poseHuman\(avatar,info,clock,mode='player'\)/);
+ const workflow=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
+ assert.ok(workflow.includes('bosnie-uniform-inspection.html'));
+ assert.ok(workflow.includes('bosnie-uniforme-gros-plan.png'));
+});
