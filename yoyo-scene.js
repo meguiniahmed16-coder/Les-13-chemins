@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {softwareRenderer} from './yoyo-software.js';
 import {models} from './yoyo-models.js';
-import {ropePosition} from './yoyo-core.js';
+import {ropePosition,slitCenters,betweenBars,setWindowAspect} from './yoyo-core.js';
 const mix=(a,b,t)=>a+(b-a)*t, smooth=t=>t*t*(3-2*t);
 export function makeCinema(host){
  let renderer;try{renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});}catch{renderer=softwareRenderer();}
@@ -40,39 +40,108 @@ export function makeCinema(host){
  const hingeL=new T.Group(),hingeR=new T.Group();hingeL.position.set(-.78,.94,-1.42);hingeR.position.set(.78,.94,-1.42);scene.add(hingeL,hingeR);const glass=mat('#8db2bd',.18,{transparent:true,opacity:.16,side:T.DoubleSide,depthWrite:false});
  for(const [h,side] of [[hingeL,1],[hingeR,-1]]){box(.73,.035,.035,side*.365,0,0,metal,h);box(.73,.035,.035,side*.365,1.35,0,metal,h);for(const x of [0,side*.73])box(.035,1.35,.035,x,.675,0,metal,h);box(.68,1.3,.008,side*.365,.675,0,glass,h);rod([side*.65,.57,.04],[side*.65,.7,.04],.013,white,h);}
  for(let x=-.63;x<.7;x+=.21){rod([x,.95,-1.63],[x,2.3,-1.63],.018,metal);for(const y of [1.09,2.15])ell(.024,.025,.022,x,y,-1.63,rust);}for(const y of [1.09,2.15])rod([-.78,y,-1.63],[.78,y,-1.63],.015,metal);
- // A nearer opposite wing: deep reveals, separate bars and a few inhabited cells.
- const facade=mat('#b8baad',.96,{map:texture('facade')}),stone=mat('#929c94',.89),recess=mat('#303c3c',.95),barPaint=mat('#53615e',.62,{metalness:.35});
+ // Opposite wing: independent windows, lived-in civilian clothing and finer figures.
+ const facade=mat('#b8baad',.96,{map:texture('facade')}),stone=mat('#929c94',.89),
+  recess=mat('#303c3c',.95),barPaint=mat('#53615e',.62,{metalness:.35});
+ const tintables=[];
+ const tint=(material,first,second)=>{tintables.push({material,gray:material.color.clone(),first:new T.Color(first),second:new T.Color(second)});return material;};
+ tint(facade,'#9abebc','#f0a661');tint(stone,'#a9c8b3','#e8da94');tint(recess,'#384e62','#27356b');
+ tint(plaster,'#dfe4d7','#fff1bd');tint(floor,'#adb9a4','#b4cdd2');tint(fabric,'#8d9c9a','#bf7fac');
  const front=-5.85,winW=.88,winH=1.16,pitch=1.6,rows=[0,1.65,3.3,4.95],columns=[-3.2,-1.6,0,1.6,3.2];
  box(9,8,.15,0,2.5,front-.66,recess);
  for(let x=-4;x<=4;x+=pitch)box(pitch-winW,8,.24,x,2.4,front,facade);
  for(let y=-.825;y<6;y+=1.65)box(8.8,1.65-winH,.24,0,y,front,facade);
- for(const x of columns)for(const y of rows){
-  const inset=mat('#7c8980',.91);
+ const curtainColors=['#eebc5e','#7bd0c6','#dc7da1','#8da5ef','#9fc679'];
+ for(let col=0;col<columns.length;col++)for(let row=0;row<rows.length;row++){
+  const x=columns[col],y=rows[row],n=(col+row*2)%curtainColors.length;
+  const inset=tint(mat('#7c8980',.91),'#829ba8',curtainColors[n]);
+  const trim=tint(mat('#9da69a',.87),'#99b9a6',curtainColors[(n+2)%5]);
   box(.075,winH,.42,x-winW/2,y,front-.12,inset);box(.075,winH,.42,x+winW/2,y,front-.12,inset);
   box(winW+.16,.065,.48,x,y-winH/2,front-.08,stone);box(winW+.16,.09,.30,x,y+winH/2,front,stone);
   box(winW-.10,.026,.026,x,y+.40,front-.38,barPaint);box(.025,winH-.12,.025,x,y,front-.38,barPaint);
+  // Occasional fabric curtains and coloured objects: not a military or institutional uniform.
+  if((col+row)%3===0)box(.11,.32,.018,x-.29,y+.16,front-.45,trim);
+  if((col+2*row)%4===1)box(.12,.13,.12,x+.23,y-.46,front-.39,tint(mat('#78847e'),'#769390',curtainColors[(n+1)%5]));
   for(let dx=-.33;dx<=.34;dx+=.165)rod([x+dx,y-.55,front+.10],[x+dx,y+.55,front+.10],.012,barPaint);
   for(const dy of [-.39,.38])rod([x-.44,y+dy,front+.1],[x+.44,y+dy,front+.1],.012,barPaint);
-  // Interior ceiling and floor give the openings depth instead of black stickers.
   box(winW,.035,.52,x,y+.55,front-.38,recess);box(winW,.035,.52,x,y-.54,front-.38,recess);
  }
- for(const x of [-2.4,2.4]){rod([x,-1.4,front+.18],[x,6,front+.18],.035,mat('#6c7973',.8));for(let y=0;y<6;y+=1.5)rod([x-.045,y,front+.18],[x+.045,y,front+.18],.012,metal);}
+ for(const x of [-2.4,2.4]){
+  rod([x,-1.4,front+.18],[x,6,front+.18],.035,mat('#6c7973',.8));
+  for(let y=0;y<6;y+=1.5)rod([x-.045,y,front+.18],[x+.045,y,front+.18],.012,metal);
+ }
  const prisoners=[];
+ const outfits=[
+  {shade:'#59666e',first:'#66879c',vivid:'#dd6264',hair:'#302722',face:'#b58b6f',type:'tshirt'},
+  {shade:'#85887e',first:'#829891',vivid:'#e9af45',hair:'#6a4d38',face:'#9c6e52',type:'sweat'},
+  {shade:'#747b7c',first:'#6d91a5',vivid:'#50c9ae',hair:'#33363b',face:'#d7a78e',type:'hoodie'},
+  {shade:'#777777',first:'#978d9b',vivid:'#738fec',hair:'#242321',face:'#8b664f',type:'stripes'},
+  {shade:'#6b7572',first:'#8aa5a4',vivid:'#d677aa',hair:'#7d694d',face:'#bb987b',type:'jacket'}
+ ];
  function prisoner(x,windowY,style){
+  const profile=outfits[style];
   const root=new T.Group();root.position.set(x,windowY,front-.15);scene.add(root);
-  const face=mat(style===1?'#9d7156':'#bb9677',.9),hair=mat(style===2?'#776b5d':'#33352f',.95),shirt=mat(['#646c71','#6c7770','#7b7165'][style],.96),eye=mat('#2a332e',.8);
-  ell(.195,.235,.095,0,-.30,-.045,shirt,root);rod([-.16,-.25,-.03],[-.22,-.40,.06],.055,shirt,root,.045);rod([.16,-.23,-.03],[.23,-.39,.06],.055,shirt,root,.042);
-  rod([0,-.13,0],[0,.015,0],.036,face,root,.043);
-  const head=new T.Group();head.position.set(0,.055,.012);root.add(head);
-  ell(.072,.103,.069,0,0,0,face,head);ell(.060,.054,.061,0,-.065,.004,face,head);ell(.076,.065,.073,0,.054,-.014,hair,head);
-  ell(.016,.030,.013,-.073,-.006,0,face,head);ell(.016,.030,.013,.073,-.006,0,face,head);
-  ell(.015,.025,.025,0,-.015,.065,face,head);for(const dx of [-.028,.028]){ell(.015,.008,.004,dx,.017,.061,eye,head);rod([dx-.015,.032,.062],[dx+.013,.033,.063],.003,hair,head);}
-  curve([[-.022,-.056,.056],[0,-.060,.065],[.021,-.055,.056]],.0025,mat('#6c5446'),head);
-  // One inmate rests a hand around a bar; the others lean or turn in their cells.
-  if(style===0){rod([.16,-.24,0],[.24,-.13,.12],.036,shirt,root);rod([.24,-.13,.12],[.16,.01,.24],.026,face,root,.021);ell(.025,.039,.018,.16,.04,.24,face,root);for(let f=0;f<4;f++)curve([[.142,.02+f*.013,.24],[.146,.025+f*.013,.269],[.174,.025+f*.013,.27]],.005,face,root);}
-  root.rotation.y=[-.12,.26,-.24][style];prisoners.push({root,head,angle:root.rotation.y,phase:style*2});
+  const face=mat(profile.face,.91),hair=mat(profile.hair,.96);
+  const shirt=tint(mat(profile.shade,.94),profile.first,profile.vivid);
+  const seams=mat('#dad5c3',.9),eyes=mat('#2c302d',.8);
+  const shoulder=style===2?.139:style===4?.131:.124;
+  ell(shoulder,.189,.079,0,-.31,-.035,shirt,root);
+  ell(.095,.065,.075,0,-.16,-.021,shirt,root);
+  const sleeve=style===0?.032:.070;
+  for(const side of [-1,1]){
+   rod([side*.105,-.215,-.025],[side*.159,-.285,-.008],sleeve,shirt,root,.030);
+   rod([side*.159,-.285,-.008],[side*.178,-.383,.048],.023,face,root,.019);
+  }
+  if(profile.type==='jacket'){
+   box(.006,.26,.004,0,-.30,.047,seams,root);
+   for(const yy of [-.22,-.29,-.36])ell(.004,.004,.003,0,yy,.052,seams,root);
+  }else if(profile.type==='stripes'){
+   for(let yy=-.42;yy<-.18;yy+=.045)box(.20,.009,.004,0,yy,.049,seams,root);
+  }else if(profile.type==='hoodie'){
+   curve([[-.070,-.185,.039],[-.056,-.112,.019],[.0,-.105,-.028],[.055,-.123,.014],[.068,-.19,.040]],.009,shirt,root);
+   rod([-.022,-.172,.056],[-.026,-.265,.057],.0025,seams,root);
+   rod([.022,-.172,.056],[.026,-.256,.058],.0025,seams,root);
+  }else{curve([[-.050,-.183,.039],[0,-.192,.072],[.050,-.183,.039]],.006,seams,root);}
+  rod([0,-.15,0],[0,-.042,0],.028,face,root,.030);
+  const head=new T.Group();head.position.set(0,.028,.013);root.add(head);
+  ell(.068,.088,.066,0,0,0,face,head);
+  ell(.060,.054,.050,0,-.051,.013,face,head);
+  ell(.069,.036,.061,0,.055,-.014,hair,head);
+  for(const side of [-1,1]){
+   ell(.009,.021,.013,side*.068,-.008,0,face,head);
+   ell(.013,.008,.008,side*.025,.009,.061,seams,head);
+   ell(.006,.006,.007,side*.025,.010,.066,eyes,head);
+   rod([side*.013,.029,.062],[side*.039,.028,.058],.003,hair,head);
+  }
+  ell(.009,.015,.013,0,-.014,.063,face,head);
+  curve([[-.021,-.039,.058],[0,-.045,.066],[.021,-.039,.058]],.002,mat('#795b4d'),head);
+  if(style===1||style===3){
+   for(const xx of [-.027,0,.027])ell(.008,.007,.003,xx,-.062,.052,mat('#4b413a'),head);
+  }
+  // A hand by a bar uses the exact same anatomical source as the player's hands.
+  if(style===0||style===4){
+   const hand=props.anatomicalHand('relaxed');
+   hand.scale.setScalar(.38);hand.position.set(.180,-.34,.095);
+   hand.rotation.set(.22,-.25,-.28);root.add(hand);
+  }
+  root.rotation.y=[-.12,.22,-.16,.13,-.27][style];
+  root.scale.setScalar(style===3?.89:style===4?1.03:1);
+  prisoners.push({root,head,angle:root.rotation.y,phase:style*1.7});
  }
  prisoner(-1.6,1.65,0);prisoner(1.6,1.65,1);prisoner(0,3.3,2);
+ prisoner(-3.2,3.3,3);prisoner(3.2,1.65,4);
+ // A progressive, visible change of the whole world after each real delivery.
+ const originalSky=new T.Color('#63787e'),firstSky=new T.Color('#88bcca'),secondSky=new T.Color('#3c8cc2');
+ function recolorWorld(bags){
+  const level=Math.min(2,Math.max(0,bags||0)),fraction=level===0?0:level===1?.54:1;
+  for(const entry of tintables){
+   const target=level===2?entry.second:entry.first;
+   entry.material.color.copy(entry.gray).lerp(target,fraction);
+  }
+  scene.background.copy(originalSky).lerp(level===2?secondSky:firstSky,fraction);
+  scene.fog.color.copy(new T.Color('#718086')).lerp(level===2?'#5f9cbb':'#86a5ae',fraction);
+  renderer.toneMappingExposure=1.18+fraction*.16;
+ }
  // The hanger is inverted: the sheet wraps its long bar; its hook carries the bag handle.
  const ropeGroup=new T.Group();scene.add(ropeGroup);const cloth=mat('#c6bfab',1);
  for(let n=0;n<24;n++){rod([Math.sin(n*.7)*.008,n*.11+.035,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11+.035,0],.014,cloth,ropeGroup,.012);if(n%3===0){ell(.023,.031,.019,0,n*.11+.04,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11,0,cloth,ropeGroup);tail.rotation.z=-.3;}}
