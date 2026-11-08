@@ -27,9 +27,9 @@ function addSmile(avatar, head) {
  smile.quaternion.copy(headWorld.invert().multiply(front));
  // Soft, curved, readable smile, positioned ON the face not floating away.
  const curve=new T.Shape();
- curve.moveTo(-.034,.004);
- curve.quadraticCurveTo(0,-.006,.034,.004);
- curve.quadraticCurveTo(0,-.003,-.034,.004);
+ curve.moveTo(-.036,.012);
+ curve.quadraticCurveTo(0,-.012,.036,.012);
+ curve.quadraticCurveTo(0,-.005,-.036,.012);
  const lips=new T.Mesh(
   new T.ShapeGeometry(curve,10),
   new T.MeshBasicMaterial({color:0x794c43,side:T.DoubleSide,depthWrite:false})
@@ -60,7 +60,7 @@ function dressOriginalSkin(body){
   const x=Math.abs(pos.getX(i)),y=pos.getY(i);
   if(y<.155)col.copy(shoes);
   else if(y<1.00&&x<.35)col.copy(pants);
-  else if(y>1.12&&y<1.50&&x<.52)col.copy(shirt);
+  else if(y>=1.03&&y<1.52&&x<.52)col.copy(shirt);
   else col.copy(skin);
   const highlight=1+Math.sin(i*17.1)*.015;
   rgb[3*i]=Math.min(1,col.r*highlight);
@@ -123,7 +123,7 @@ export async function loadQuaterniusDancer(scene, originalPosition) {
   if(obj.isSkinnedMesh)skinned++;
   if(obj.isSkinnedMesh&&geo.getAttribute('position')?.count>5000) dressOriginalSkin(obj);
   else if(obj.name==='Eyes')obj.material=new T.MeshStandardMaterial({color:0xf0e5d8,roughness:.6});
-  else if(obj.name==='Eyebrows')obj.material=new T.MeshStandardMaterial({color:0x46332e,roughness:.9});
+  else if(obj.name==='Eyebrows')obj.material=new T.MeshStandardMaterial({color:0x624838,roughness:.9});
  });
  if(skinned<1||triangles<3000||triangles>35000)throw new Error('Modèle Quaternius non optimisé ou désarticulé');
  scene.add(avatar);
