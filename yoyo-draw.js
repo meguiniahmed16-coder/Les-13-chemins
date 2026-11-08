@@ -24,7 +24,18 @@ export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200
  for(const y of [245,437]){rect(49,y,325,22,'#334441');rect(65,y-25,293,30,'#a3a99b');path(c=>{c.moveTo(65,y-28);c.bezierCurveTo(168,y-40,252,y-14,358,y-27);c.lineTo(358,y-2);c.lineTo(65,y-2);},'#647f7c');ellipse(105,y-32,38,13,'#d5d1ba');for(let n=0;n<7;n++)line(149+n*27,y-27,154+n*27,y-2,'#879e8c',2);}for(const x of [49,366])rect(x,145,13,409,'#2c3c39');for(let n=0;n<6;n++)rect(317,222+n*51,54,7,'#52625b');rect(316,192,8,361,'#293a34');rect(727,368,156,12,'#72634c');for(const x of [738,867])rect(x,380,8,160,'#3c4037');rect(755,445,75,10,'#7c6b50');rect(760,455,7,90,'#343b34');rect(819,455,7,90,'#343b34');rect(999,125,159,412,'#6b6452');rect(1006,134,143,391,'#8a7d60');line(1078,136,1078,525,'#554d3d',3);rect(1062,329,7,32,'#c0b99d');rect(1087,329,7,32,'#c0b99d');
  ellipse(929,399,53,15,'#c8cbb9');path(c=>{c.moveTo(881,400);c.quadraticCurveTo(929,470,978,400);},'#abbcad');ellipse(929,398,42,9,'#5c7872');line(929,416,929,534,'#8c9f92',9);path(c=>{c.moveTo(954,398);c.lineTo(954,371);c.quadraticCurveTo(944,357,932,372);},null,'#d7dbc9',8);
  rect(891,463,69,54,'#c7d1bf');ellipse(927,553,29,34,'#a5b4a4');ellipse(926,530,49,24,'#d2d4bf');ellipse(926,530,32,13,'#48615b');brush(BRUSH.x*W,BRUSH.y*H+16,true);rect(856,511,34,40,'#526153');text('9 m²',W-29,40,14,'#d3decd','right');}
- function bag(x,y,pull,part){c.save();c.translate(x,y);c.scale(.68+pull*.05,.94+pull*.05);path(c=>{c.moveTo(-6,-25);c.bezierCurveTo(22,-48,26,-12,4,-11);c.lineTo(-48,32);c.quadraticCurveTo(0,40,48,32);c.lineTo(6,-11);},null,'#a4a8a0',5);path(c=>{c.moveTo(-34,35);c.quadraticCurveTo(-46,67,-48,121);c.quadraticCurveTo(2,142,48,121);c.lineTo(36,36);c.quadraticCurveTo(25,12,13,34);c.lineTo(18,56);c.lineTo(-17,56);c.lineTo(-12,35);c.quadraticCurveTo(-24,15,-34,35);},'#cdd6bfbb','#e0ddc688',2);if(part===1){rect(-21,77,42,28,'#806b3cc2');text('TABAC',0,95,10,'#e0dab7','center');}else{path(c=>{c.moveTo(-14,67);c.lineTo(-11,51);c.lineTo(8,51);c.lineTo(12,67);c.quadraticCurveTo(24,80,20,119);c.lineTo(-21,119);c.quadraticCurveTo(-25,80,-14,67);},'#6a523b99','#a6b5a39c',2);rect(-11,48,20,6,'#b4b5a3');}for(let n=0;n<6;n++)path(c=>{c.moveTo(-34+n*14,49);c.quadraticCurveTo(-47+n*16,92,-30+n*12,125);},null,'#edf0d84d',2);c.restore();}
+ // Lightweight original 2D plastic bags. The player can see the real
+ // translucent shell, two open handles and the weight at the bottom.
+ const bags2D={tabac:new Image(),cafe:new Image()};
+ bags2D.tabac.src='sac-tabac-2d.svg';bags2D.cafe.src='sac-cafe-2d.svg';
+ function bag(x,y,pull,part){
+  const sprite=part===2?bags2D.cafe:bags2D.tabac;
+  if(sprite.complete&&sprite.naturalWidth>0){
+   c.save();c.translate(x,y);c.scale(1+pull*.05,1+pull*.05);
+   c.drawImage(sprite,-80,-50,160,204);c.restore();return;
+  }
+  // Only used during initial sprite loading; never show a flat opaque blob.
+  c.save();c.translate(x,y);c.scale(.68+pull*.05,.94+pull*.05);path(c=>{c.moveTo(-6,-25);c.bezierCurveTo(22,-48,26,-12,4,-11);c.lineTo(-48,32);c.quadraticCurveTo(0,40,48,32);c.lineTo(6,-11);},null,'#a4a8a0',5);path(c=>{c.moveTo(-34,35);c.quadraticCurveTo(-46,67,-48,121);c.quadraticCurveTo(2,142,48,121);c.lineTo(36,36);c.quadraticCurveTo(25,12,13,34);c.lineTo(18,56);c.lineTo(-17,56);c.lineTo(-12,35);c.quadraticCurveTo(-24,15,-34,35);},'#cdd6bfbb','#e0ddc688',2);if(part===1){rect(-21,77,42,28,'#806b3cc2');text('TABAC',0,95,10,'#e0dab7','center');}else{path(c=>{c.moveTo(-14,67);c.lineTo(-11,51);c.lineTo(8,51);c.lineTo(12,67);c.quadraticCurveTo(24,80,20,119);c.lineTo(-21,119);c.quadraticCurveTo(-25,80,-14,67);},'#6a523b99','#a6b5a39c',2);rect(-11,48,20,6,'#b4b5a3');}for(let n=0;n<6;n++)path(c=>{c.moveTo(-34+n*14,49);c.quadraticCurveTo(-47+n*16,92,-30+n*12,125);},null,'#edf0d84d',2);c.restore();}
  // Original 2D illustrations. Static poses, not skinned 3D meshes.
  const handImages={open:new Image(),grip:new Image()};
  handImages.open.src='main-ouverte-2d.svg';handImages.grip.src='main-prise-2d.svg';
@@ -143,7 +154,7 @@ export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200
   vignette.addColorStop(0,'#0000');vignette.addColorStop(1,'#0b171b77');
   rect(0,0,W,H,vignette);
  }
- return{draw};
+ return{draw,clear(){c.clearRect(0,0,W,H);}};
 }
 export function makeOverlay(canvas){
  const c=canvas.getContext('2d');let W=1200,H=675;
