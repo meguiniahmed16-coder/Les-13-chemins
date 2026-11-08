@@ -74,7 +74,7 @@ function createWarDamage(game){
  // Decals and jagged fragments are cosmetic only. Collision geometry stays put.
  const stone=new THREE.MeshStandardMaterial({color:0x93998f,roughness:1,side:THREE.DoubleSide});
  const broken=new THREE.MeshStandardMaterial({color:0x666e68,roughness:1,side:THREE.DoubleSide});
- const soot=new THREE.MeshBasicMaterial({color:0x343a35,roughness:1,side:THREE.DoubleSide});
+ const soot=new THREE.MeshBasicMaterial({color:0x343a35,side:THREE.DoubleSide});
  const randomSeed=()=>{let seed=18419;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};};
  const rnd=randomSeed();
  const group=new THREE.Group();group.name='FacadeGuerreRuines';
@@ -558,7 +558,7 @@ function attach(game){
     windowGunFiring:shooterState.firing??false,
     windowGunFlash:shooterState.flashVisible??false,
     daylightExposure:game.renderer.toneMappingExposure,
-    daylight:game.canvas.dataset.bosnieDaylight==='plus-clair',
+    daylight:game.canvas.dataset.bosnieDaylight==='clair-jour',
     damagedFacades:cityDetails?.fractures??0,
     visibleWindowShooter:shooterState.visible,
     shooterWindowIndex:shooterState.index,
