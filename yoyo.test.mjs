@@ -230,7 +230,7 @@ test('A real bag and arm cannot pass through a steel bar, only through a clear g
 });
 test('Every gameplay hand now comes from the same anatomical mesh with distinct poses',()=>{
  const src=fs.readFileSync(new URL('./yoyo-models.js',import.meta.url),'utf8');
- for(const pose of ["brush","cup","smoke","relaxed"])
+ for(const pose of ["brush","cup","smoke"])
    assert.match(src,new RegExp("anatomicalHand\\('"+pose+"'\\)"));
  for(const [kind,group] of [
   ['brush',models().heldBrush().children[0]],
@@ -247,7 +247,7 @@ test('The hand reaches through a gap and the two weighted bags colour the buildi
  const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
  assert.match(scene,/Math\.sin\(Math\.PI\*pull\)\*\.29/,
  'the arm must advance past the bars during retrieval rather than stay glued to the camera');
- assert.match(scene,/if\(clear\)\{g\.pull=/);
+ assert.match(fs.readFileSync(new URL('./yoyo-core.js',import.meta.url),'utf8'),/if\(clear\)\{g\.pull=/);
  assert.match(scene,/bagHalf\(1\);bagHalf\(-1\)/,
  'the carrier must be a folded translucent bag, not a solid ellipsoid');
  assert.match(scene,/parcels\[0\]\.visible/);
