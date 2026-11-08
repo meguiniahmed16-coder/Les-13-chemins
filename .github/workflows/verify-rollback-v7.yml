@@ -1,0 +1,31 @@
+name: Vérifier restauration du jeu Yo-yo v7 sur Netlify
+on:
+  push:
+    branches:
+      - verification/retour-yoyo-v7-20261108
+
+permissions:
+  contents: read
+
+jobs:
+  verify-restored-live-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Vérifier que la version publique est revenue à Yo-yo v7
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://tectonique-des-ames.netlify.app/jeu-yoyo.html"
+          for n in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fLsS --max-time 15 "$url?rollback_v7_check=$n" -o /tmp/game.html; then
+              if grep -q 'Yo-yo v7' /tmp/game.html && ! grep -q 'Jeu 2D v8' /tmp/game.html; then
+                echo 'CONFIRMÉ : site Netlify affiche Yo-yo v7 ; Jeu 2D v8 absent.'
+                exit 0
+              fi
+            fi
+            echo "Version publique encore en cours de retour à v7 : tentative $n/10"
+            sleep 7
+          done
+          echo 'ERREUR : Yo-yo v7 non confirmée sur Netlify.'
+          exit 1
