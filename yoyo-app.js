@@ -1,4 +1,4 @@
-import {createGame,startGame,continueGame,move,actionDown,actionUp,advance,pauseGame,PARTS,clamp,slitCenters} from './yoyo-core.js';
+import {createGame,startGame,continueGame,move,actionDown,actionUp,advance,pauseGame,PARTS,BRUSH,clamp,slitCenters} from './yoyo-core.js';
 import {makeCinema} from './yoyo-scene.js';
 import {makeDrawing,makeOverlay} from './yoyo-draw.js';
 import {makeAudio} from './yoyo-audio.js';
