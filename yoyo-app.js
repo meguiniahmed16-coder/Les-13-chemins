@@ -10,15 +10,43 @@ function announce(s){$('notice').textContent=s;$('live').textContent=s;}
 function overlay(html){$('overlay').innerHTML='<div class="card">'+html+'</div>';$('overlay').hidden=false;}
 function enableCinema(){if(!cinema){try{cinema=makeCinema($('cinema'));}catch{cinema=null;$('cinema').replaceChildren();}}$('cinema').hidden=!cinema;}
 function resetInput(){keys.clear();stickX=stickY=0;actionUp(g);$('fire').classList.remove('pressed');$('stick').style.transform='';}
+const openHandSprite=$('handOpen2D'),gripHandSprite=$('handGrip2D');
+// Two fixed illustrated states; the whole illustration may move with the joystick,
+// but NO FINGER JOINTS are animated. The 3D room and opposite building remain unchanged.
+function hideHandSprites(){openHandSprite.hidden=true;gripHandSprite.hidden=true;}
+function showHandSprite(view,state,t,anchors={}){
+ hideHandSprites();
+ if(state.hidden)return;
+ const picking=view==='pickup';
+ const holding=view==='window'||(picking&&t>=.56);
+ if(view!=='search'&&view!=='window'&&!picking)return;
+ const img=holding?gripHandSprite:openHandSprite;
+ if(picking){
+  const progress=Math.min(1,Math.max(0,t/1.25));
+  const f=progress*progress*(3-2*progress);
+  const target=anchors.brush?.x??state.aim;
+  img.style.left=((state.aim+(target-state.aim)*f)*100).toFixed(2)+'%';
+ }else{
+  img.style.left=((view==='window'&&state.hooked?state.hookX??state.aim:state.aim)*100).toFixed(2)+'%';
+ }
+ img.hidden=false;
+}
 function world(view,s=g,time=0){
- if(cinema){const anchors=cinema.render(time,view,s);if(view==='search'&&anchors.brush)g.brushX=anchors.brush.x;hud.draw(s,anchors,mode==='demo'?'demo':mode,time);}
- else drawing.draw(s,{mode:view==='search'?'game':view,time});
+ if(cinema){
+  const anchors=cinema.render(time,view,s);
+  if(view==='search'&&anchors.brush)g.brushX=anchors.brush.x;
+  showHandSprite(view,s,time,anchors);
+  hud.draw(s,anchors,mode==='demo'?'demo':mode,time);
+ }else{
+  showHandSprite(view,s,time);
+  drawing.draw(s,{mode:view==='search'?'game':view,time});
+ }
 }
 const captions=[[0,'Les grilles s’ouvrent. Et se referment.'],[4,'Neuf mètres carrés. Deux lits. Une table.'],[8,'Une armoire. Quelques affaires.'],[12,'Les toilettes et le lavabo, dans la même pièce.'],[16,'À la fenêtre, l’air du dehors. Les barreaux restent.'],[21,'Une corde de drap. Un cintre. Un sac.'],[24,'Quelqu’un, au-dessus, a pensé à toi.']];
 function guide(){mode='guide';$('skip').hidden=true;$('caption').textContent='';$('overlay').hidden=true;$('guide').hidden=false;$('objective').textContent='Avant de jouer : le yo-yo';$('guard').textContent='Un moyen de communication entre cellules';announce('Lis les trois étapes, puis appuie sur « Jouer les trois épreuves ».');$('play').scrollIntoView({behavior:'smooth',block:'nearest'});}
-function begin(){sound.init();sound.door();enableCinema();mode='intro';filmTime=0;hud.clear();$('overlay').hidden=true;$('skip').hidden=false;$('filmLabel').textContent='STRASBOURG · NEUF MÈTRES CARRÉS';}
+function begin(){hideHandSprites();sound.init();sound.door();enableCinema();mode='intro';filmTime=0;hud.clear();$('overlay').hidden=true;$('skip').hidden=false;$('filmLabel').textContent='STRASBOURG · NEUF MÈTRES CARRÉS';}
 function play(){sound.init();sound.setMusic(true);enableCinema();startGame(g);mode='game';paused=false;wonSent=false;resetInput();$('caption').textContent='';$('filmLabel').hidden=true;$('guide').hidden=true;$('lesson').hidden=true;$('overlay').hidden=true;$('console').hidden=false;$('keys').hidden=false;$('help').hidden=true;$('pause').textContent='Pause';announce('Déplace la main vers le manche de la brosse. Cercle vert : appuie sur le rouge pour la saisir.');$('screen').scrollIntoView({behavior:'smooth',block:'start'});}
-function win(){mode='victory';filmTime=0;resetInput();enableCinema();hud.clear();sound.setMusic(false);sound.cue('won');$('console').hidden=true;$('keys').hidden=true;$('help').hidden=true;$('filmLabel').hidden=false;$('filmLabel').textContent='UN GESTE GRATUIT';$('caption').innerHTML='<span>Un inconnu que je ne vois même pas prend soin de moi.</span>';$('score').textContent='30 / 30';$('objective').textContent='Les trois épreuves sont réussies';$('guard').textContent='Le café, le tabac et un peu d’humanité.';announce('30 points. Prends le temps de souffler.');if(!wonSent){wonSent=true;send('yoyo:won',{points:30});}}
+function win(){hideHandSprites();mode='victory';filmTime=0;resetInput();enableCinema();hud.clear();sound.setMusic(false);sound.cue('won');$('console').hidden=true;$('keys').hidden=true;$('help').hidden=true;$('filmLabel').hidden=false;$('filmLabel').textContent='UN GESTE GRATUIT';$('caption').innerHTML='<span>Un inconnu que je ne vois même pas prend soin de moi.</span>';$('score').textContent='30 / 30';$('objective').textContent='Les trois épreuves sont réussies';$('guard').textContent='Le café, le tabac et un peu d’humanité.';announce('30 points. Prends le temps de souffler.');if(!wonSent){wonSent=true;send('yoyo:won',{points:30});}}
 function victoryCard(){overlay('<div class="eyebrow">Les trois épreuves sont réussies</div><h2>De l’autre côté,<br>quelqu’un.</h2><div class="score-pop">'+(session?.replay?'30 / 30':'+30 points')+'</div><p>Un café. Une cigarette. Et ce geste qu’on n’oublie pas.</p><button class="primary" id="return">Continuer le voyage →</button><button class="secondary" id="replay">Rejouer</button><button class="secondary" id="filmAgain">Revoir la scène finale</button>');$('return').onclick=()=>{if(embedded)send('yoyo:close');else location.href='jeu.html?niveau=5';};$('replay').onclick=()=>{if(embedded)send('yoyo:replay');else play();};$('filmAgain').onclick=()=>{filmTime=0;$('overlay').hidden=true;};}
 function pause(){if(['ready','guide'].includes(mode))return;paused=!paused;resetInput();sound.pause(paused);if(mode==='game')pauseGame(g);$('pause').textContent=paused?'Reprendre':'Pause';if(paused){overlay('<div class="eyebrow">Le temps est suspendu</div><h2>Pause</h2><p>La corde et le surveillant attendent.</p><button class="primary" id="resume">Reprendre →</button>');$('resume').onclick=pause;}else{$('overlay').hidden=true;if(mode==='game'&&g.phase==='between')between();if(g.phase==='caught')caught();if(mode==='victory'&&filmTime>=16)victoryCard();}}
 function lesson(){resetInput();filmTime=0;mode='demo';$('overlay').hidden=true;$('lesson').hidden=false;$('help').hidden=true;$('lessonPlay').textContent=g.phase==='between'?'J’ai compris · Attraper le tabac →':'Reprendre ma livraison →';$('objective').textContent='Regarde le geste';$('guard').textContent='Démonstration sans surveillant';announce('La brosse accroche la corde. Déplace ensuite la manette pour guider le sac ENTRE deux barreaux avant de tirer.');$('screen').scrollIntoView({behavior:'smooth',block:'start'});}
@@ -37,11 +65,11 @@ function events(){for(const e of g.events.splice(0)){
 }}
 function tick(now){const elapsed=Math.min(.3,(now-last)/1000),dt=Math.min(.1,elapsed);last=now;
  if(!paused){
-  if(mode==='intro'||mode==='victory'){filmTime+=elapsed;hud.clear();if(cinema)cinema.render(filmTime,mode,g);else drawing.draw(g,{mode,time:filmTime});if(mode==='intro'){let text=captions[0][1];for(const [t,s]of captions)if(filmTime>=t)text=s;$('caption').innerHTML='<span>'+text+'</span>';if(filmTime>=27)guide();}else if(filmTime>=16&&$('overlay').hidden){$('caption').textContent='';victoryCard();}}
+  if(mode==='intro'||mode==='victory'){hideHandSprites();filmTime+=elapsed;hud.clear();if(cinema)cinema.render(filmTime,mode,g);else drawing.draw(g,{mode,time:filmTime});if(mode==='intro'){let text=captions[0][1];for(const [t,s]of captions)if(filmTime>=t)text=s;$('caption').innerHTML='<span>'+text+'</span>';if(filmTime>=27)guide();}else if(filmTime>=16&&$('overlay').hidden){$('caption').textContent='';victoryCard();}}
   else if(mode==='pickup'){filmTime+=elapsed;world('pickup',{...g,part:0,aim:pickupAim},filmTime);if(filmTime>1.35){mode='game';between();}}
   else if(mode==='demo'){filmTime+=elapsed;const t=filmTime%9;const d={...createGame(),part:1,aim:.32+Math.min(1,t/2)*.18,partTime:t-3,hooked:t>3.15,hookX:slitCenters(16/9)[1],pull:clamp((t-3.15)/3.7,0,1),hidden:t>7.1,guard:t>7.1?'approaching':'away'};world('window',d,t);$('fire').classList.toggle('pressed',t>3.15&&t<7.1);}
   else if(mode==='game'){const x=keys.has('ArrowLeft')?-1:keys.has('ArrowRight')?1:stickX,y=keys.has('ArrowDown')?1:keys.has('ArrowUp')?-1:stickY;move(g,x,y,dt);advance(g,dt);events();if(mode==='game'){world(g.part===0?'search':'window');$('objective').textContent=(Math.min(3,g.part+1))+' / 3 · '+(PARTS[g.part]||'Terminé');$('score').textContent=g.points+' / 30';const labels={away:'Couloir calme',approaching:'Des pas et des clés — cache-toi',watching:'Le surveillant regarde',leaving:'Les pas s’éloignent…'};$('guard').textContent=labels[g.guard];$('guard').className='guard '+(g.guard==='watching'?'danger':g.guard==='approaching'?'warn':'');}}
-  else if(mode==='ready'){if(cinema){cinema.render(0,'search',g);hud.clear();}else drawing.draw(g,{mode:'ready'});}
+  else if(mode==='ready'){hideHandSprites();if(cinema){cinema.render(0,'search',g);hud.clear();}else drawing.draw(g,{mode:'ready'});}
  }
  requestAnimationFrame(tick);
 }
