@@ -1,0 +1,35 @@
+SOURCE DU PERSONNAGE 3D (prototype de L'Amitié retrouvée)
+
+Superhero Male — Universal Base Characters [Standard], Quaternius (août 2025)
+Source officielle : https://quaternius.com/packs/universalbasecharacters.html
+Archive gratuite : https://quaternius.itch.io/universal-base-characters
+Licence : CC0 1.0 Universal (domaine public) https://creativecommons.org/publicdomain/zero/1.0/
+
+Ce fichier .glb provient d'une conversion du modèle source réalisée par :
+https://github.com/programasweights/avatar/blob/main/ASSETS.md
+Le maillage, ses poids de peau et son armature humaine sont conservés.
+Personnage provisoire : une seule silhouette sur la piste, sans remplacement des quatre danseurs.
+
+--- NOTICE DU KIT D'ORIGINE ---
+This is the standard FREE version of the Universal Base Characters Kit, which only contains 
+a portion of the models . You can buy the SOURCE version which has all the models with rigged .blends,
+and Unity(URP), Unreal Engine and Godot projects
+with custom shaders already set up.
+
+You can get the other version from the website https://quaternius.com
+
+-------------------------------------------------------
+License:
+CC0 1.0 Universal (CC0 1.0) 
+Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+------------------------------------------------------
+Models by @Quaternius
+Consider supporting me on Patreon!
+
+https://www.patreon.com/quaternius
+
+-------------------------------------------------------
+Join the Discord Server:
+https://discord.gg/vJqnRUYRfT

@@ -1,0 +1,71 @@
+name: Prévisualisation du premier danseur Quaternius
+on:
+  push:
+    branches: [prototype/danse-quaternius-sourire-20261108]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Contrôler le rendu WebGL avec un navigateur réel
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright-core@1.57.0
+          python3 -m http.server 8173 --directory dist >/tmp/http.log 2>&1 &
+          sleep 2
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright-core';
+          import fs from 'node:fs';
+          const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(x=>fs.existsSync(x));
+          if(!chrome)throw Error('Aucun navigateur Chromium disponible');
+          const browser=await chromium.launch({
+            executablePath:chrome,headless:true,
+            args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']
+          });
+          const page=await browser.newPage({viewport:{width:1200,height:800},deviceScaleFactor:1});
+          page.on('pageerror',e=>console.log('PAGE_ERROR:',e.message));
+          page.on('console',msg=>{if(msg.type()==='error')console.log('JS_ERROR:',msg.text().slice(0,450));});
+          await page.goto('http://127.0.0.1:8173/jeu-danse.html',{waitUntil:'domcontentloaded'});
+          try{
+            await page.waitForFunction(()=>document.getElementById('world')?.dataset.featuredDancer==='quaternius-cc0',null,{timeout:28000});
+          }catch(err){
+            console.log('CANVAS_STATE',await page.locator('#world').evaluate(el=>JSON.stringify(el.dataset)));
+            throw err;
+          }
+          await page.locator('#start').evaluate(el=>{el.disabled=false;el.click();});
+          await page.waitForTimeout(900);
+          const bounds=await page.locator('.screen').boundingBox();
+          if(!bounds)throw Error('La scène principale est invisible');
+          const full=await page.screenshot({type:'jpeg',quality:64,clip:bounds});
+          const crop=await page.screenshot({type:'jpeg',quality:84,clip:{
+            x:bounds.x+bounds.width*.365,y:bounds.y+bounds.height*.245,
+            width:bounds.width*.27,height:bounds.height*.68
+          }});
+          console.log('PREVIEW_WIDE_BEGIN'+full.toString('base64')+'PREVIEW_WIDE_END');
+          console.log('PREVIEW_CLOSE_BEGIN'+crop.toString('base64')+'PREVIEW_CLOSE_END');
+          console.log('APERÇU_OK : vrai danseur Quaternius et sourire chargés dans le navigateur');
+
+          // Inspect the actual smile at close range without changing the public game camera.
+          const facePage=await browser.newPage({viewport:{width:1200,height:800},deviceScaleFactor:1});
+          facePage.on('pageerror',e=>console.log('FACE_PAGE_ERROR:',e.message));
+          await facePage.goto('http://127.0.0.1:8173/jeu-danse.html?inspectFace=1',{waitUntil:'domcontentloaded'});
+          await facePage.waitForFunction(()=>document.getElementById('world')?.dataset.featuredDancer==='quaternius-cc0',null,{timeout:28000});
+          await facePage.locator('#start').evaluate(el=>{el.disabled=false;el.click();});
+          await facePage.waitForTimeout(500);
+          const faceBounds=await facePage.locator('.screen').boundingBox();
+          const faceImage=await facePage.screenshot({type:'jpeg',quality:86,clip:faceBounds});
+          console.log('PREVIEW_FACE_BEGIN'+faceImage.toString('base64')+'PREVIEW_FACE_END');
+          console.log('VISAGE_OK : plan proche du modèle articulé');
+          await browser.close();
+          JS

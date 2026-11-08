@@ -13,6 +13,9 @@ for (const args of [
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
   ['build-yoyo.mjs'],
+  // Rebuild the dancing game from its source; do not publish stale 3D silhouettes.
+  ['build-danse.mjs'],
+  ['--test', 'danse-avatar.test.mjs'],
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
   if (stdout.trim()) console.log(stdout.trim());
@@ -43,6 +46,8 @@ const publicFiles = [
   'bosnie-runtime.js',
   'jeu-danse.html',
   'danse-runtime.js',
+  'danse-quaternius-hero.glb',
+  'danse-quaternius-LICENSE.txt',
   'jeu-yoyo.html',
   'yoyo-runtime.js',
   'main_ouverte_fixee.webp',
