@@ -1,0 +1,77 @@
+name: Vérification visuelle du danseur Quaternius
+on:
+  push:
+    branches: [prototype/danseur-humain-quaternius-v1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Préparer une vue rapprochée du vrai danseur (hors site public)
+        run: |
+          cat > pilot-visual.mjs <<'JS'
+          import {DanceScene} from './danse-scene.js';
+          const el=document.querySelector('#stage'),scene=new DanceScene(el);
+          scene.observer.disconnect();
+          scene.camera.position.set(-2.10,1.72,2.86);
+          scene.camera.lookAt(-2.1,1.1,-.7);
+          scene.camera.fov=33;
+          scene.camera.updateProjectionMatrix();
+          const r={phase:'playing',clock:0,time:0,actionAt:-10,action:'cross'};
+          function frame(){
+            r.clock+=1/60;
+            r.time+=1/60;
+            scene.update(r,1/60);
+            requestAnimationFrame(frame);
+          }
+          frame();
+          window.__pilot=scene;
+          JS
+          npx esbuild pilot-visual.mjs --bundle --format=iife --target=es2020 --outfile=dist/pilot-visual.js
+          cat > dist/pilot-visual.html <<'HTML'
+          <!doctype html><html lang="fr"><meta charset="utf-8">
+          <style>html,body{margin:0;background:#171020;overflow:hidden}
+          #wrap{width:640px;height:650px;position:relative}
+          canvas{width:100%;height:100%;display:block}</style>
+          <div id="wrap"><canvas id="stage"></canvas></div>
+          <script src="pilot-visual.js"></script></html>
+          HTML
+      - name: Rendre l'image réelle du personnage dans Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8123 --directory dist >/tmp/danse-http.log 2>&1 &
+          sleep 2
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then echo "Navigateur Chromium non installé"; exit 1; fi
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --enable-unsafe-swiftshader \
+             --use-gl=angle --use-angle=swiftshader --window-size=680,740 \
+             --virtual-time-budget=6500 --screenshot=/tmp/danse-pilot.png \
+             http://localhost:8123/pilot-visual.html >/tmp/chrome.log 2>&1 || { tail -80 /tmp/chrome.log; exit 1; }
+          python3 - <<'PY'
+          from PIL import Image
+          import base64,io
+          image=Image.open('/tmp/danse-pilot.png').convert('RGB')
+          image.thumbnail((430,480))
+          b=io.BytesIO();image.save(b,'JPEG',quality=64,optimize=True)
+          print('PILOT_JPG_B64_START')
+          print(base64.b64encode(b.getvalue()).decode('ascii'))
+          print('PILOT_JPG_B64_END')
+          print('Rendered image size:',len(b.getvalue()),'bytes')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prototype-danseur-une-personne
+          path: /tmp/danse-pilot.png
+          retention-days: 2
