@@ -23,9 +23,10 @@ jobs:
           import {DanceScene} from './danse-scene.js';
           const scene=new DanceScene(document.querySelector('#stage'));
           scene.observer.disconnect();
-          scene.camera.position.set(-2.10,1.72,2.86);
-          scene.camera.lookAt(-2.1,1.1,-.7);
-          scene.camera.fov=33;
+          const face=location.search.includes('visage=1');
+          scene.camera.position.set(-2.10,face?1.68:1.72,face?.28:2.86);
+          scene.camera.lookAt(-2.1,face?1.55:1.1,-.7);
+          scene.camera.fov=face?26:33;
           scene.camera.updateProjectionMatrix();
           const r={phase:'playing',clock:0,time:0,actionAt:-10,action:'cross'};
           function frame(){
@@ -60,10 +61,10 @@ jobs:
           const browser=await chromium.launch({executablePath:chrome,headless:true,
             args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=angle',
                   '--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-          async function capture(width,height,path){
+          async function capture(width,height,path,query=''){
             const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
             page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));
-            await page.goto('http://127.0.0.1:8123/pilot-visual.html',{waitUntil:'domcontentloaded'});
+            await page.goto('http://127.0.0.1:8123/pilot-visual.html'+query,{waitUntil:'domcontentloaded'});
             await page.waitForFunction(()=>window.__pilot?.dancers?.[0]?.pilot?.bones?.size>=60,null,{timeout:28000});
             await page.waitForTimeout(650);
             const state=await page.evaluate(()=>{
@@ -90,6 +91,7 @@ jobs:
           try{
             await capture(680,740,'/tmp/danse-pilot.png');
             await capture(390,740,'/tmp/danse-pilot-mobile.png');
+            await capture(680,640,'/tmp/danse-pilot-visage.png','?visage=1');
           }finally{await browser.close();}
           JS
       - uses: actions/upload-artifact@v4
@@ -99,4 +101,5 @@ jobs:
           path: |
             /tmp/danse-pilot.png
             /tmp/danse-pilot-mobile.png
+            /tmp/danse-pilot-visage.png
           retention-days: 5
