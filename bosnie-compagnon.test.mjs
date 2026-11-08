@@ -16,7 +16,7 @@ test('A second soldier runs ahead through all five passages without changing gam
     assert(midway.x>start.x,'companion must run first');
     const safe=updateCompanion(ally,{...initial,time:10*i+2.1,x:PASSAGES[i].start});
     assert.equal(safe.running,false);
-    assert(safe.x>PASSAGES[i].start&&safe.x<PASSAGES[i].end,'ally waits near shelter');
+    assert(safe.x>PASSAGES[i].end&&safe.x<PASSAGES[i].end+.35,'ally waits near shelter');
     assert.equal(safe.playerAhead,false);
     const overtaken=updateCompanion(ally,{...initial,time:10*i+2.2,x:PASSAGES[i].end+.5});
     assert.equal(overtaken.playerAhead,true,'player overtakes comrade');
