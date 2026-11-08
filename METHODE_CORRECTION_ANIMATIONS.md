@@ -213,3 +213,8 @@ Les trois figurants Quaternius au premier plan ont été incorrectement animés 
 **Ciel :** dôme panoramique 3D procédural, gris-bleu, nuages diffus et brouillard conservé pour l'ambiance. C'est une amélioration de décor sans nouvelle archive ni abonnement. Vérification obligatoire sur capture réelle desktop/mobile, d'une traversée et de l'apparition du soldat supplémentaire. Les autres scènes de la plateforme littéraire et les règles du jeu restent inchangées.
 
 **Précaution :** s'appuyer sur la branche d'essai, jamais publier directement sans contrôle d'image et de comportement.
+
+
+## C029 — Deux soldats en tenue militaire et non en tenue de danse
+
+La première tentative affichait de simples corps humanoïdes Quaternius repeints en kaki : inadmissible, ils ressemblaient à des danseurs. Respecter le texte du chapitre « Même pas mal », Sarajevo après passage du mandat ONU au mandat OTAN : veste et pantalon treillis camouflage, gilet pare-balles, pochettes et ceinturon, rangers, paquetage, écusson « OTAN », casque lourd bleu recouvert de camouflage, jugulaire. Les accessoires sont attachés aux **vrais os** pour suivre course, flexion et tête ; ne pas coller un gros rectangle statique sur l'écran. Modèles Quaternius existants sous CC0, pas de nouvel achat ou téléchargement. Le compagnon reste invulnérable et part en premier. Contrôles : les deux modèles doivent posséder leurs équipements avant le rendu et la capture mobile doit montrer une silhouette militaire reconnaissable. Les éléments ne sont qu'une évocation visuelle, pas une reproduction certifiée au millimètre.

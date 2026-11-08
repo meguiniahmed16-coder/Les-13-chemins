@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
+import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {createCompanionState,updateCompanion} from './bosnie-compagnon-core.js';
 
 const UP=new THREE.Vector3(0,1,0),X=new THREE.Vector3(1,0,0),Y=new THREE.Vector3(0,1,0),Z=new THREE.Vector3(0,0,1);
@@ -44,25 +45,137 @@ function createOvercastSky(game){
  game.scene.background=new THREE.Color('#89979b');
  return mesh;
 }
+// French camouflage field uniform (OTAN, post-UN mandate) rather than solid
+// civilian-looking purple/green clothes. The source mesh is fully skinned.
+function fieldCamouflage(x,y,z,variation){
+ const wav=Math.sin(x*32+y*15+z*23)*.46
+  +Math.cos(x*19-y*27+z*17)*.35
+  +Math.sin(x*42+y*35-z*21)*.19;
+ const swatches=variation?
+  ['#303b2e','#526247','#8a8667','#756a51']:
+  ['#313d2f','#5f6b50','#a49b79','#685e49'];
+ return new THREE.Color(wav<-.38?swatches[0]:
+   wav<.01?swatches[1]:wav<.38?swatches[2]:swatches[3]);
+}
 function colorUniform(mesh,variation=0){
  const src=mesh.geometry.getAttribute('position');
  if(!src||src.count<5000)throw Error('Quaternius real skin geometry missing');
  const colors=new Float32Array(src.count*3);
  const skin=new THREE.Color(variation?'#b3997b':'#c49b77');
- const jacket=new THREE.Color(variation?'#64715b':'#535f4d');
- const sleeves=new THREE.Color(variation?'#69725e':'#606e53');
- const trousers=new THREE.Color(variation?'#444c3d':'#485342');
- const boots=new THREE.Color('#262926');
+ const gloves=new THREE.Color('#353c30'),boots=new THREE.Color('#272c28');
  for(let v=0;v<src.count;v++){
-  const x=Math.abs(src.getX(v)),y=src.getY(v);
-  const color=y<.17?boots:y<1.03?trousers:y<1.53&&x<.48?jacket:y<1.53&&x<.61?sleeves:skin;
-  color.toArray(colors,v*3);
+  const x=src.getX(v),y=src.getY(v),z=src.getZ(v);
+  const ax=Math.abs(x);
+  // Head stays human. Hands are dark field gloves; all sleeves and trousers
+  // wear the same mottled camouflage instead of painted solid-color clothes.
+  let col=y<.18?boots:
+    y>1.53?skin:
+    ax>.63&&y>.82?gloves:fieldCamouflage(x,y,z,variation);
+  col.toArray(colors,v*3);
  }
  const geometry=mesh.geometry.clone();
  geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
  mesh.geometry=geometry;
- mesh.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,metalness:0});
+ mesh.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});
  mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
+}
+function equipMilitary(avatar,variation=0){
+ const {root,bones}=avatar;
+ const green=variation?0x59694f:0x57624b, trim=0x374638, dark=0x303930;
+ const olive=new THREE.MeshStandardMaterial({color:green,roughness:.94,metalness:0});
+ const edging=new THREE.MeshStandardMaterial({color:trim,roughness:.94});
+ const leather=new THREE.MeshStandardMaterial({color:dark,roughness:.96});
+ const pouchMat=new THREE.MeshStandardMaterial({color:0x717459,roughness:.94});
+ function part(group,name,w,h,d,x,y,z,material=olive,r=.012){
+  const obj=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,2,r),material);
+  obj.name=name;obj.position.set(x,y,z);
+  obj.castShadow=true;obj.receiveShadow=true;group.add(obj);
+  return obj;
+ }
+ function pin(group,bone,x,y,z){
+  root.add(group);group.position.set(x,y,z);
+  root.updateMatrixWorld(true);bone.attach(group);
+  return group;
+ }
+ const vest=new THREE.Group();vest.name='GiletPareBalles';
+ pin(vest,bones.spine_02,0,1.22,.01);
+ part(vest,'GiletPareBallesAvant',.43,.49,.28,0,.015,.04,olive,.045);
+ part(vest,'PlaqueProtectionPoitrine',.36,.31,.048,0,.095,.191,edging,.025);
+ part(vest,'CeinturonMilitaire',.455,.075,.335,0,-.225,.008,leather,.015);
+ part(vest,'BoucleCeinture',.075,.059,.012,0,-.228,.189,pouchMat,.006);
+ for(const side of [-1,1]){
+  const strap=part(vest,'BretelleProtection',.072,.41,.035,side*.16,.108,.185,pouchMat,.009);
+  strap.rotation.z=-side*.09;
+  part(vest,'PocheLateral',.092,.18,.13,side*.237,-.123,.011,olive,.02);
+ }
+ for(let i=0;i<3;i++){
+  const pouch=part(vest,'PorteChargeur',.10,.138,.071,(i-1)*.123,-.115,.203,pouchMat,.014);
+  part(vest,'PattePoche',.079,.028,.006,(i-1)*.123,-.071,.241,edging,.003);
+ }
+ // Pack gives a combat silhouette, not the thin profile of the base dancer.
+ const pack=new THREE.Group();pack.name='SacPatrouille';pin(pack,bones.spine_02,0,1.25,-.17);
+ part(pack,'SacADos',.345,.39,.24,0,-.012,-.065,olive,.045);
+ part(pack,'RouleauSuperieur',.295,.115,.24,0,.235,-.045,pouchMat,.036);
+ part(pack,'SangleDos',.035,.43,.02,-.115,-.015,.079,edging,.008);
+ part(pack,'SangleDos',.035,.43,.02,.115,-.015,.079,edging,.008);
+ // A small slung rifle is scenery-only, never an interactive weapon.
+ const rifle=new THREE.Group();rifle.name='FusilEnBandouliere';
+ pin(rifle,bones.spine_03,-.025,1.25,.31);
+ rifle.rotation.z=.40;
+ part(rifle,'ArmeSilhouette',.075,.49,.057,0,0,0,leather,.01);
+ part(rifle,'PoigneeTransport',.13,.032,.04,-.013,.123,.016,leather,.008);
+ part(rifle,'BoitierArme',.13,.17,.080,.025,-.135,.018,leather,.014);
+ part(rifle,'SangleArme',.024,.58,.025,.075,-.03,-.025,edging,.008);
+ // The shoulder NATO insignia belongs to the sleeve, not the face.
+ for(const side of [-1,1]){
+  const shoulder=new THREE.Group();
+  pin(shoulder,bones[side<0?'upperarm_l':'upperarm_r'],
+      side*.285,1.455,.014);
+  part(shoulder,'RenfortEpaule',.185,.183,.22,0,0,0,olive,.035);
+  const badge=document.createElement('canvas');
+  badge.width=256;badge.height=128;
+  const ctx=badge.getContext('2d');
+  ctx.fillStyle='#29425c';ctx.fillRect(0,0,256,128);
+  ctx.lineWidth=12;ctx.strokeStyle='#d6e2de';ctx.strokeRect(8,8,240,112);
+  ctx.font='bold 66px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#f5f6ed';ctx.fillText('OTAN',128,68);
+  const texture=new THREE.CanvasTexture(badge);texture.colorSpace=THREE.SRGBColorSpace;
+  const patch=new THREE.Mesh(new THREE.PlaneGeometry(.15,.076),
+       new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
+  patch.position.set(0,.015,.12);patch.name='EcussonOTAN';
+  shoulder.add(patch);
+ }
+ for(const side of [-1,1]){
+  const thigh=new THREE.Group();
+  pin(thigh,bones[side<0?'thigh_l':'thigh_r'],side*.17,.72,.05);
+  part(thigh,'PocheCargo',.13,.18,.07,0,0,.063,olive,.018);
+  const ankle=new THREE.Group();pin(ankle,bones[side<0?'calf_l':'calf_r'],side*.145,.115,.028);
+  part(ankle,'Rangers',.17,.20,.27,0,0,.065,leather,.025);
+ }
+ const helmet=new THREE.Group();helmet.name='CasqueLourdCouvreCasqueCamouflage';
+ pin(helmet,bones.Head,0,1.737,-.014);
+ const shellBlue=new THREE.Mesh(new THREE.SphereGeometry(.145,24,14,0,Math.PI*2,0,Math.PI*.59),
+   new THREE.MeshStandardMaterial({color:0x598ca1,roughness:.92,metalness:0}));
+ shellBlue.name='AncienCasqueBleuSousCouvreCasque';
+ shellBlue.scale.set(1.07,.94,1.09);shellBlue.castShadow=true;helmet.add(shellBlue);
+ // In the author's scene the blue UN helmet is COVERED for the NATO mandate.
+ const coverGeometry=new THREE.SphereGeometry(.152,24,14,0,Math.PI*2,0,Math.PI*.60);
+ const p=coverGeometry.getAttribute('position'),rgb=new Float32Array(p.count*3);
+ for(let i=0;i<p.count;i++)fieldCamouflage(p.getX(i),p.getY(i)+1.7,p.getZ(i),variation).toArray(rgb,i*3);
+ coverGeometry.setAttribute('color',new THREE.BufferAttribute(rgb,3));
+ const cover=new THREE.Mesh(coverGeometry,new THREE.MeshStandardMaterial({
+   vertexColors:true,roughness:.98,side:THREE.DoubleSide
+ }));
+ cover.name='CouvreCasqueCamouflage';cover.scale.set(1.06,.97,1.09);
+ cover.castShadow=true;helmet.add(cover);
+ const brow=part(helmet,'BordCasque',.30,.026,.17,0,-.018,.052,edging,.011);
+ // Webbing straps follow the same head joint.
+ for(const side of [-1,1]){
+  const chin=part(helmet,'Jugulaire',.018,.15,.018,side*.105,-.075,.058,leather,.004);
+  chin.rotation.z=side*.24;
+ }
+ avatar.userData={uniform:'treillis-camouflage-otan',helmet:helmet.name,
+   vest:vest.name,patches:2,boots:2,rucksack:pack.name};
 }
 function makeSoldier(template,variation=0){
  const root=cloneSkeleton(template),group=new THREE.Group();
@@ -82,24 +195,11 @@ function makeSoldier(template,variation=0){
  });
  head=bones.Head;
  if(!body||!head||Object.keys(bones).length<60)throw Error('Complete humanoid body or 65-bone rig missing');
- // Simple historically restrained helmet follows the imported head bone.
- root.updateMatrixWorld(true);
- const pos=root.localToWorld(new THREE.Vector3(0,1.73,-.018));
- const helmet=new THREE.Group();helmet.name='Casque';
- helmet.position.copy(head.worldToLocal(pos));
- head.add(helmet);
- const olive=variation?0x636f54:0x59674d;
- const cap=new THREE.Mesh(new THREE.SphereGeometry(.122,18,10,0,Math.PI*2,0,Math.PI*.61),
-       new THREE.MeshStandardMaterial({color:olive,roughness:.94}));
- cap.position.y=.012;cap.scale.set(1.06,.78,1.07);
- cap.castShadow=true;helmet.add(cap);
- const brim=new THREE.Mesh(new THREE.TorusGeometry(.114,.008,5,25,Math.PI),
-       new THREE.MeshStandardMaterial({color:0x343d33,roughness:.96}));
- brim.position.set(0,-.018,.002);brim.rotation.x=Math.PI/2;
- helmet.add(brim);
  const avatar={root,group,bones,rest,height:variation?.86:.91};
+ equipMilitary(avatar,variation);
  return avatar;
 }
+
 function worldBend(avatar,name,rootAxis,angle){
  const bone=avatar.bones[name];
  if(!bone?.parent||!angle)return;
@@ -181,7 +281,12 @@ function attach(game){
   }
   const snap={stage:current.stage,companionX:current.x,playerX:run.x,
     playerAhead:current.playerAhead,invulnerable:current.invulnerable,
-    running:current.running,modelLoaded:!!hero,sky:!!sky};
+    running:current.running,modelLoaded:!!hero,sky:!!sky,
+    heroUniform:hero?.userData?.uniform||'fallback',
+    allyUniform:ally?.userData?.uniform||'fallback',
+    armoredGear:!!hero?.root.getObjectByName('GiletPareBalles'),
+    camoHelmet:!!ally?.root.getObjectByName('CouvreCasqueCamouflage'),
+    natoBadge:!!hero?.root.getObjectByName('EcussonOTAN')};
   window.__bosnieCompanionState=snap; // Read-only diagnostic for screenshot tests.
   return originalDraw(run,dt);
  };

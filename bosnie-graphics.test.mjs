@@ -31,3 +31,21 @@ test('The sky has cloud banks, and the old game remains callable as fallback',()
  assert.ok(build.includes("'bosnie-addon.js'"));
  assert.ok(build.includes("['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs']"));
 });
+
+
+test('Both soldiers wear recognizable 1990s French NATO field uniforms, not dancer clothing',()=>{
+ assert.match(source,/function equipMilitary\(avatar,variation=0\)/);
+ assert.match(source,/function fieldCamouflage\(x,y,z,variation\)/);
+ assert.match(source,/GiletPareBalles/);
+ assert.match(source,/PorteChargeur/);
+ assert.match(source,/Rangers/);
+ assert.match(source,/PocheCargo/);
+ assert.match(source,/SacPatrouille/);
+ assert.match(source,/FusilEnBandouliere/);
+ assert.match(source,/EcussonOTAN/);
+ assert.match(source,/CouvreCasqueCamouflage/);
+ assert.match(source,/AncienCasqueBleuSousCouvreCasque/);
+ assert.match(source,/equipMilitary\(avatar,variation\)/);
+ assert.match(source,/heroUniform:hero\?\.userData\?\.uniform/);
+ assert.ok(!source.includes("Simple historically restrained helmet follows"),'old civilian cap must be gone');
+});

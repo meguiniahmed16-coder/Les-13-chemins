@@ -49,6 +49,10 @@ jobs:
             const state=await page.evaluate(()=>window.__bosnieCompanionState);
             const renderer=await page.locator('#world').evaluate(el=>el.dataset.renderer);
             console.log('BOSNIE_PREVIEW',width,renderer,JSON.stringify(state));
+            if(state?.heroUniform!=='treillis-camouflage-otan'||
+               state?.allyUniform!=='treillis-camouflage-otan'||
+               !state?.armoredGear||!state?.camoHelmet||!state?.natoBadge)
+              throw Error('Les deux soldats doivent porter la tenue militaire et le gilet OTAN');
             if(!state||!state.modelLoaded||!state.sky||!state.invulnerable)
               throw Error('Soldat humain, compagnon et ciel doivent être chargés');
             if(state.stage!==0||state.companionX<=state.playerX)
