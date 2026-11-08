@@ -1,0 +1,154 @@
+name: Vérification de la piste de danse et des cinq personnages
+on:
+  push:
+    branches: [prototype/danseur-humain-quaternius-v1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Préparer le vrai personnage féminin dans une scène isolée
+        run: |
+          cat > pilot-visual.mjs <<'JS'
+          import {DanceScene} from './danse-scene.js';
+          const scene=new DanceScene(document.querySelector('#stage'));
+          scene.observer.disconnect();
+          const face=location.search.includes('visage=1');
+          const ensemble=location.search.includes('ensemble=1');
+          if(!ensemble){ // keep the normal full-stage camera for the ensemble
+           scene.camera.position.set(-2.10,face?1.75:1.72,face?.72:2.86);
+           scene.camera.lookAt(-2.1,face?1.68:1.1,-.7);
+           scene.camera.fov=face?28:33;
+           scene.camera.updateProjectionMatrix();
+          }
+          const r={phase:'playing',clock:0,time:0,actionAt:-10,action:'cross'};
+          function frame(){
+            r.clock+=1/60;r.time+=1/60;
+            scene.update(r,1/60);
+            requestAnimationFrame(frame);
+          }
+          window.__pilot=scene;
+          frame();
+          JS
+          npx esbuild pilot-visual.mjs --bundle --format=iife --target=es2020 --outfile=dist/pilot-visual.js
+          cat > dist/pilot-visual.html <<'HTML'
+          <!doctype html><html lang="fr"><meta charset="utf-8">
+          <style>html,body{margin:0;background:#171020;overflow:hidden}
+          #wrap{width:100vw;height:100vh;position:relative}
+          canvas{width:100%;height:100%;display:block}</style>
+          <div id="wrap"><canvas id="stage"></canvas></div>
+          <script src="pilot-visual.js"></script></html>
+          HTML
+      - name: Vérifier le rig dans Chromium et produire deux vraies captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright-core@1.57.0
+          python3 -m http.server 8123 --directory dist >/tmp/danse-http.log 2>&1 &
+          sleep 2
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright-core';
+          import fs from 'node:fs';
+          const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(p=>fs.existsSync(p));
+          if(!chrome)throw Error('Chromium non installé');
+          const browser=await chromium.launch({executablePath:chrome,headless:true,
+            args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=angle',
+                  '--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+          async function capture(width,height,path,query=''){
+            const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+            page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));
+            await page.goto('http://127.0.0.1:8123/pilot-visual.html'+query,{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.__pilot?.dancers?.every(d=>d.pilot?.bones?.size>=60),null,{timeout:28000});
+            await page.waitForFunction(()=>window.__pilot?.featuredDancer?.bones?.Head,null,{timeout:28000});
+            await page.waitForFunction(()=>window.__pilot?.candidates?.filter(c=>c.quaternius).length===5,null,{timeout:28000});
+            await page.waitForFunction(()=>window.__pilot?.public?.filter(p=>p.realBody).length===3,null,{timeout:28000});
+            await page.waitForTimeout(650);
+            const state=await page.evaluate(()=>{
+              const scene=window.__pilot,p=scene.dancers[0].pilot;
+              p.root.updateMatrixWorld(true);
+              const coord=name=>{
+                const bone=p.bones.get(name);if(!bone)throw Error('Os absent : '+name);
+                const e=bone.matrixWorld.elements;return {x:e[12],y:e[13],z:e[14]};
+              };
+              return {render:scene.canvas.dataset.renderer,bones:p.bones.size,
+                leftDrop:coord('upperarm_l').y-coord('lowerarm_l').y,
+                rightDrop:coord('upperarm_r').y-coord('lowerarm_r').y,
+                smile:!!p.smile,
+                iris:p.eyes?.userData.irisPainted===true,
+                irisVertices:p.eyes?.userData.irisVertexCount||0,
+                faceCorners:p.smile?.children?.length||0,
+                protagonist:!!scene.featuredDancer,
+                femaleCount:scene.dancers.length,
+                femaleReal:scene.dancers.map(d=>d.pilot?.root?.getObjectByName('Superhero_Female')?.isSkinnedMesh===true),
+                femaleOriginalHidden:scene.dancers.map(d=>d.group.children.filter(c=>c!==d.pilot?.root).every(c=>!c.visible)),
+                femaleRigCounts:scene.dancers.map(d=>d.pilot?.bones?.size||0),
+                candidateModels:scene.candidates.filter(c=>c.quaternius?.root).length,
+                candidateRigBones:scene.candidates.map(c=>Object.keys(c.quaternius?.bones||{}).length),
+                banner:scene.scene.getObjectByName('BanderoleChapitre3')?.userData||null,
+                spectatorForeground:scene.public.filter(p=>p.realBody?.root).length,
+                spectatorForegroundNames:scene.public.filter(p=>p.realBody).map(p=>p.realBody.root.name),
+                spectatorForegroundOldHidden:scene.public.filter(p=>p.realBody).every(p=>p.group.children.filter(c=>c!==p.realBody.root).every(c=>!c.visible)),
+                spectatorArmsDown:scene.public.filter(p=>p.realBody).map(p=>{
+                  p.realBody.root.updateMatrixWorld(true);
+                  const b=p.realBody.bones;
+                  const y=n=>b[n].getWorldPosition(new (p.realBody.root.position.constructor)()).y;
+                  return {left:y('upperarm_l')-y('lowerarm_l'),
+                          right:y('upperarm_r')-y('lowerarm_r')};
+                }),
+                spectatorCount:scene.public.length,
+                otherHairstyles:scene.dancers.slice(1).map(d=>d.head.userData.hairStyle)};
+            });
+            console.log('ETAT_DANSEUSE',width,JSON.stringify(state));
+            if(state.banner?.chapterTitle!=='Chapitre 3 — Le coup du bus'||
+               state.banner?.pages!=='P 54-56'||
+               state.banner?.textureSize?.[0]!==4096)
+              throw Error('Banderole littéraire 4K absente ou incorrecte');
+            if(state.render!=='WebGL 2')throw Error('Le personnage a besoin du vrai rendu WebGL');
+            if(!state.smile||state.bones<60)throw Error('Visage ou squelette manquant');
+            if(!state.iris||state.irisVertices<16||state.faceCorners!==2)
+              throw Error('Les vrais yeux doivent être peints et le sourire sans double bouche');
+            if(state.spectatorArmsDown?.some(a=>a.left<.18||a.right<.18))
+              throw Error('Les bras des trois spectateurs doivent rester bas, sous les épaules');
+            if(state.spectatorForeground!==3||!state.spectatorForegroundOldHidden||
+               state.spectatorForegroundNames.join(',')!=='PublicPremierPlan3D1,PublicPremierPlan3D2,PublicPremierPlan3D3')
+              throw Error('Les trois spectateurs visibles doivent utiliser les nouveaux corps 3D');
+            if(state.candidateModels!==5||state.candidateRigBones.some(n=>n<14))
+              throw Error('Le panel doit contenir cinq vrais modèles humains riggés');
+            if(state.femaleReal.some(v=>!v)||state.femaleOriginalHidden.some(v=>!v)||state.femaleRigCounts.some(n=>n<60))
+              throw Error('Les quatre danseuses doivent avoir le vrai corps féminin articulé');
+            if(!state.protagonist||state.femaleCount!==4||state.spectatorCount!==16||
+               state.otherHairstyles.join(',')!=='long,ponytail,bob')
+              throw Error('Le héros masculin et les quatre danseuses doivent être présents');
+            if(state.leftDrop<.10||state.rightDrop<.10)
+              throw Error('Bras encore en T-pose : les coudes doivent tomber sous les épaules');
+            await page.screenshot({path});
+            console.log('CAPTURE_VERIFIEE',path,fs.statSync(path).size);
+            await page.close();
+          }
+          try{
+            await capture(680,740,'/tmp/danse-pilot.png');
+            await capture(390,740,'/tmp/danse-pilot-mobile.png');
+            await capture(960,650,'/tmp/danse-pilot-ensemble.png','?ensemble=1');
+            await capture(1280,720,'/tmp/danse-banderole-chapitre3.png','?ensemble=1');
+          }finally{await browser.close();}
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prototype-danseuse-desktop-mobile
+          path: |
+            /tmp/danse-pilot.png
+            /tmp/danse-pilot-mobile.png
+            /tmp/danse-pilot-ensemble.png
+            /tmp/danse-banderole-chapitre3.png
+          retention-days: 5

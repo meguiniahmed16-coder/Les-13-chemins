@@ -147,3 +147,58 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 **Performance :** images de taille réduite (environ 16 Ko pour la main ouverte et 21 Ko pour le dos avec brosse), aucune texture 3D supplémentaire, même jeu et mêmes collisions avec les barreaux.
 
 **Contrôle obligatoire :** inspecter le rendu réellement publié dans l'orientation du téléphone, confirmer la lisibilité du pouce et des quatre doigts, le positionnement de la tête de la brosse et l'absence de doublons. Les tests techniques sont nécessaires mais ne valent pas validation visuelle par l'auteur.
+
+
+## C020 — Danseuse Quaternius : ne pas confondre squelette, compilation et danse
+
+**Jeu :** L'Amitié retrouvée / Danse pour sauver Lionel, branche expérimentale prototype/danseur-humain-quaternius-v1 (8 novembre 2026). Modèle Superhero Female de Quaternius (CC0), avec peau articulée et 65 os. Un seul personnage est remplacé ; les autres silhouettes et la version publique restent intactes.
+
+**Constat sur une vraie capture :** le GLB se charge, le visage est visible et les tests de structure passent, mais les bras restent presque horizontaux en **T-pose**. Ajouter de faibles oscillations aux quaternions de repos ne constitue pas une vraie chorégraphie. Une pose anatomiquement valide au repos peut être visuellement inacceptable dans la danse.
+
+**Règle du rig :** à chaque trame, repartir des quaternions d'origine de TOUS les os. Déterminer dans le repère mondial le sens de descente de chaque bras, puis transformer cet axe dans le repère de l'os parent avant de tourner. Ne pas réutiliser aveuglément les axes locaux d'un autre personnage ; les signes des épaules droite et gauche diffèrent. Mesurer les articulations réelles dans la capture : en pose de danse de base, les coudes doivent descendre sous les épaules. Contrôler les coudes, mains, genoux, pieds et torsions sur plusieurs instants.
+
+**Visage et vêtements :** le modèle Standard gratuit n'a pas de morph targets faciales. Le sourire léger doit suivre l'os Head ; un simple trait ne vaut pas validation visuelle de l'expression. La coloration par sommet ne doit pas créer de bande beige à la taille ; examiner les coutures de face, de profil et en mouvement.
+
+**Vérification obligatoire :** capturer le personnage VRAIMENT chargé dans Chromium en largeur ordinateur et sur écran étroit, contrôler la présence des os, du sourire et les hauteurs réelles des deux coudes par rapport aux épaules. Produire les deux images en artefact. La CI verte n'est pas une validation graphique ; une dépendance Python de traitement d'image manquante n'est pas une défaillance du jeu. Distinguer chaque type d'erreur (build, chargement, navigateur, aspect, animation).
+
+**Sécurité :** conserver l'ancien danseur tant que le modèle ne se charge pas. Ne jamais fusionner dans le jeu public sans inspection des captures et accord de l'auteur. Corriger et RECAPTURER chaque anomalie, plutôt qu'affirmer que le rendu est bon sans l'avoir vu.
+
+**Statut :** correction des bras en cours sur branche d'essai ; validation graphique par l'auteur restant à faire.
+
+
+## C021 — Fidélité au roman et sobriété du mini-jeu (8 novembre 2026)
+
+**Instruction de l'auteur :** le personnage jouable principal est un **homme** tiré du roman *La Tectonique des âmes*. Quatre femmes dansent autour de lui : une femme noire avec sa coiffure afro déjà validée, une blonde aux cheveux longs lisses, une rousse avec queue-de-cheval et une brune au carré. Seules les coiffures et couleurs des trois personnages secondaires doivent être différenciées, sans rouvrir le travail sur les visages. Conserver la scène, les règles, les cinq personnages et le public existants. Il s'agit d'un petit jeu inséré dans une plateforme littéraire, pas d'un développement autonome coûteux. Tester rapidement une vraie vue complète et mobile ; rester sur branche d'essai jusqu'à validation.
+
+
+## C022 — Panel des cinq candidats : mêmes corps 3D que le héros (8 novembre 2026)
+
+Le panel au fond du mini-jeu ne doit plus présenter les anciens personnages en tubes et sphères quand le vrai danseur 3D fonctionne. Les cinq candidats utilisent des copies de **la même géométrie masculine Quaternius CC0, avec le vrai squelette 65 os**, chargée une seule fois pour le héros. Les copies possèdent des chemises, carnations, couleurs de cheveux et proportions légèrement différentes ; elles conservent les cinq emplacements, numéros et petites réactions en arrière-plan. Les silhouettes simplifiées ne servent que de secours si WebGL ou le chargement du modèle échoue. Ne pas toucher à la coiffure afro validée de la danseuse ni aux visages et règles du jeu. Ne pas télécharger d'assets supplémentaires, créer de sous-jeu ou publier avant contrôle visuel.
+
+
+## C023 — Les quatre danseuses ont le même vrai corps Quaternius (8 novembre 2026)
+
+**Erreur corrigée :** seule la première danseuse avait été dotée d'un véritable corps féminin articulé. Changer les couleurs et coiffures des trois autres sur leurs vieux corps procéduraux ne satisfaisait pas la demande. Désormais, le même GLB féminin CC0 est chargé **une seule fois**, puis cloné par SkeletonUtils pour les trois autres femmes, avec un maillage skinné de plus de 5 000 sommets et un squelette d'au moins 60 os chacune. Les anciennes silhouettes ne sont cachées qu'une fois les trois copies prêtes. L'originale noire conserve intégralement sa coiffure afro et son visage validés ; les copies ont respectivement les cheveux longs blonds, la queue-de-cheval rousse et le carré brun, avec les différentes couleurs de vêtements déjà choisies. Pas de nouveau téléchargement, ni de refonte du mini-jeu. Vérifier sur la capture de la piste que les quatre silhouettes articulées sont bien présentes ; l'ancien corps doit être caché pour chacune.
+
+
+## C024 — Banderole littéraire haute résolution
+
+Remplacer « QUI EST LE DANSEUR ? » par « Chapitre 3 — Le coup du bus » et « P 54-56 » (exactement : P majuscule, un espace, 54-56 avec trait d’union ; pas de « PAGE » en capitales ni de barre oblique). Texture Canvas 4096 × 512 avec fin cadre néon de plateau télé, sans nouvel asset ni modification des corps et règles du mini-jeu. Vérifier une capture du vrai rendu, conserver le travail dans la branche de test sans publier.
+
+
+## C025 — Public de l’émission (novembre 2026)
+
+Seize spectateurs restent installés sur deux rangées devant la piste : vêtements et carnations variés, coiffures courtes, carrés, chignons, boucles, quelques crânes dégarnis. Réactions discrètes et décalées (applaudir, encourager, hocher la tête), sans mouvement uniforme ni modification du gameplay. Les figurants demeurent volontairement simples et légers car ils sont au premier plan mais secondaires dans ce mini-jeu de la plateforme littéraire. Ne pas toucher au danseur principal masculin, aux quatre danseuses articulées ni à la banderole « Chapitre 3 — Le coup du bus » / « P 54-56 ». Validation nécessaire sur vue réelle, mobile et écran large.
+
+
+## C026 — Les trois spectateurs visibles de l’autre côté
+
+Les trois têtes au premier plan dans la capture d’ensemble (sièges 3, 4 et 5 de la rangée avant) avaient conservé un aspect ancien, en volumes primitifs. Remplacer **uniquement ces trois figurants** par trois copies du corps Quaternius 3D déjà chargé pour le personnage principal (squelette conservé, couleurs de peau, vêtements et cheveux adaptés), sans aucun nouvel asset à télécharger. Les anciens volumes sont cachés seulement après création des trois nouveaux. Conserver les treize autres spectateurs, les quatre danseuses, le héros, les cinq candidats, les règles et la banderole littéraire. Tester aussi le rendu général réel avant approbation.
+
+
+## C027 — Les spectateurs ne sont pas des danseurs
+
+Les trois figurants Quaternius au premier plan ont été incorrectement animés par la chorégraphie du héros, d'où les bras levés. Ils doivent simplement observer : bras le long du corps, légère inclinaison de tête, aucune danse ni célébration systématique. Garder leurs trois vrais corps 3D, leurs emplacements et tous les autres éléments. Vérifier dans le vrai navigateur que les coudes se situent sous les épaules avant de valider la capture.
+
+
+**Correction C027, orientation des spectateurs :** les personnages sont retournés d’un demi-tour vers la scène. Les angles monde utilisés pour le héros abaissent les bras dans sa direction, mais les lèvent une fois réutilisés sur les figurants tournés. Adapter les signes des rotations d’épaules au repère de ces spectateurs et contrôler les coordonnées verticales des coudes depuis le navigateur (les coudes doivent être sous les épaules).
