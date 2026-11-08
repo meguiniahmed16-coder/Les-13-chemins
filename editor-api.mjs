@@ -155,6 +155,34 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       const ownerRevision = credential?.revision || cfg.adminHash;
       const ownerSession = HEX.test(ownerToken) ? await store.get('owner-sessions/' + digest(ownerToken), { type: 'json' }) : null;
       const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === ownerRevision;
+      // Owner-authenticated updates append or replace one small private document.
+      // The catalogue is updated atomically; unrelated documents are preserved.
+      if (action === 'owner-save-document') {
+        if (!owner) return json({ error: 'Connecte-toi à l’espace administrateur.' }, 401);
+        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        let body;
+        try { body = await smallJSON(request, 1500000); } catch { return json({ error: 'Document invalide.' }, 400); }
+        if (!body || typeof body.base64 !== 'string' || !/^[A-Za-z0-9+/]+={0,2}$/.test(body.base64)) return json({ error: 'Document invalide.' }, 400);
+        const bytes = Buffer.from(body.base64, 'base64');
+        if (!bytes.length || bytes.length > 1048576 || bytes.toString('base64') !== body.base64) return json({ error: 'Document trop volumineux ou invalide.' }, 400);
+        const snapshot = await store.getWithMetadata('catalog-v1', { type: 'json' });
+        if (!snapshot?.data?.files) return json({ error: 'Catalogue indisponible.' }, 409);
+        const previous = snapshot.data.files.find(f => f.name === body.name);
+        if (previous && body.expectedSha256 !== previous.sha256 || !previous && body.expectedSha256) return json({ error: 'Le document a changé. Recharge sa version actuelle.' }, 409);
+        const sha256 = digest(bytes), id = randomBytes(16).toString('hex');
+        let catalog;
+        try {
+          const file = { id, name: body.name, title: body.title, category: body.category, mime: body.mime, bytes: bytes.length, parts: [sha256], sha256, updatedAt: new Date(now()).toISOString() };
+          catalog = cleanCatalog({ files: previous ? snapshot.data.files.map(f => f.id === previous.id ? file : f) : [...snapshot.data.files, file] });
+        } catch { return json({ error: 'Référence du document invalide.' }, 400); }
+        await store.set(`files/${id}/0`, bytes, { metadata: { sha256, bytes: bytes.length } });
+        const saved = await store.setJSON('catalog-v1', catalog, { onlyIfMatch: snapshot.etag });
+        if (!saved.modified) {
+          await store.delete(`files/${id}/0`);
+          return json({ error: 'Le catalogue a changé. Recharge sa version actuelle.' }, 409);
+        }
+        return json({ ok: true, id, sha256, count: catalog.files.length });
+      }
       const grantActive = async id => {
         if (!HEX.test(id || '')) return null;
         const [grant, revoked] = await Promise.all([store.get('grants/' + id, { type: 'json' }), store.get('revocations/' + id, { type: 'json' })]);

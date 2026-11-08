@@ -64,6 +64,22 @@ const ownerLogin=x=>x.request('admin-login',{method:'POST',headers:{Origin:origi
 const ownerCookie=async x=>(await ownerLogin(x)).headers.get('set-cookie').split(';')[0];
 const command=(x,c,action,body)=>x.request(action,{method:'POST',headers:{Cookie:c,Origin:origin},body:JSON.stringify(body)});
 const editorLogin=(x,code)=>x.request('login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({code})});
+test('Owner private document updates preserve catalogue, reject readers and stale writes',async()=>{
+ const x=setup(),owner=await ownerCookie(x),reader=(await x.login()).headers.get('set-cookie').split(';')[0];
+ const existing={id:'a'.repeat(32),name:'Existing.txt',title:'Existing',category:'Méthodes et révisions',mime:'text/plain',bytes:3,parts:[digest('old')],sha256:digest('old')};
+ await x.store.setJSON('catalog-v1',{files:[existing]});
+ const body={name:'Method.txt',title:'Method',category:'Méthodes et révisions',mime:'text/plain',base64:Buffer.from('method').toString('base64')};
+ for(const cookie of ['',reader])assert.equal((await command(x,cookie,'owner-save-document',body)).status,401);
+ assert.equal((await x.request('owner-save-document',{method:'POST',headers:{Cookie:owner},body:JSON.stringify(body)})).status,403);
+ assert.equal((await command(x,owner,'owner-save-document',{...body,name:'../bad.txt'})).status,400);
+ assert.equal((await command(x,owner,'owner-save-document',body)).status,200);
+ const catalog=await x.store.get('catalog-v1');assert.equal(catalog.files.length,2);assert.equal(catalog.files[0].sha256,existing.sha256);
+ assert.equal((await command(x,owner,'owner-save-document',body)).status,409);
+ const old=catalog.files[1];assert.equal((await command(x,owner,'owner-save-document',{...body,expectedSha256:old.sha256,base64:Buffer.from('new method').toString('base64')})).status,200);
+ const saved=await x.store.get('catalog-v1');assert.equal(saved.files.length,2);assert.equal(saved.files[1].sha256,digest('new method'));
+ const r=await x.request('part&id='+saved.files[1].id+'&part=0',{headers:{Cookie:reader}});assert.equal(r.status,200);assert.equal(Buffer.from(await r.arrayBuffer()).toString(),'new method');
+ assert.equal((await x.request('part&id='+saved.files[1].id+'&part=0')).status,401);
+});
 test('Owner login is separate: readers, forged roles and admin headers cannot manage codes',async()=>{
  const x=setup(),reader=(await x.login()).headers.get('set-cookie').split(';')[0];
  for(const action of ['admin-state','create-code','revoke-code','disable-legacy']){
