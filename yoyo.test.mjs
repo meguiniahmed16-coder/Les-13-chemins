@@ -245,7 +245,7 @@ test('Every gameplay hand now comes from the same anatomical mesh with distinct 
 });
 test('The hand reaches through a gap and the two weighted bags colour the building in stages',()=>{
  const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
- assert.match(scene,/Math\.sin\(Math\.PI\*pull\)\*\.29/,
+ assert.match(scene,/const reach=g\.hooked&&betweenBars\(g\)\?\(\.35\*\(1-pull\)/,
  'the arm must advance past the bars during retrieval rather than stay glued to the camera');
  assert.match(fs.readFileSync(new URL('./yoyo-core.js',import.meta.url),'utf8'),/if\(clear\)\{g\.pull=/);
  assert.match(scene,/bagHalf\(1\);bagHalf\(-1\)/,
