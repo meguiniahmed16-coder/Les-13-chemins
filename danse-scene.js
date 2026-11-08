@@ -1,4 +1,61 @@
 import * as T from 'three';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+// One-person isolated pilot. The licensed Quaternius GLB is supplied only
+// after its Standard CC0 archive has been obtained and validated.
+const PILOT_MODEL='assets/danse/quaternius-regular-female.glb';
+function loadPilotDancer(target,scene){
+ const loader=new GLTFLoader();
+ loader.load(PILOT_MODEL,gltf=>{
+  const root=gltf.scene;
+  const bounds=new T.Box3().setFromObject(root),size=bounds.getSize(new T.Vector3());
+  if(size.y<.01||!Number.isFinite(size.y))throw Error('Invalid Quaternius pilot model bounds');
+  const offset=bounds.min.y;
+  root.scale.setScalar(1.78/size.y);
+  root.position.y=-offset*root.scale.y;
+  root.traverse(o=>{
+   if(o.isMesh||o.isSkinnedMesh){
+    o.castShadow=true;o.receiveShadow=true;
+    if(o.material)o.material=o.material.clone();
+   }
+  });
+  // Preserve the existing body until a real GLB is loaded; never show a blank dancer.
+  target.group.add(root);
+  target.group.children.forEach(child=>{if(child!==root)child.visible=false;});
+  const bones=new Map();
+  root.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o);});
+  const mixer=gltf.animations.length?new T.AnimationMixer(root):null;
+  const clip=gltf.animations.find(c=>/dance|idle|groove/i.test(c.name));
+  if(mixer&&clip)mixer.clipAction(clip).play();
+  const smiles=[];
+  root.traverse(o=>{
+   if(!o.morphTargetDictionary||!o.morphTargetInfluences)return;
+   const entry=Object.entries(o.morphTargetDictionary).find(([name])=>/smile|happy|mouth.?smile/i.test(name));
+   if(entry)smiles.push({mesh:o,index:entry[1]});
+  });
+  target.pilot={root,bones,mixer,smiles,animated:!!clip};
+ },undefined,err=>{
+  // Free archive not yet installed: keep current character intact.
+  console.warn('Quaternius pilot model not installed; original dancer retained.',err);
+ });
+}
+function animatePilotDancer(h,t,dt,active){
+ const p=h.pilot;if(!p)return;
+ if(p.mixer)p.mixer.update(dt);
+ const energy=active?1:.2;
+ if(!p.animated){
+  const find=(...names)=>{for(const [name,bone] of p.bones)if(names.some(n=>name.includes(n)))return bone;return null;};
+  const left=find('leftupperarm','upperarm_l'),right=find('rightupperarm','upperarm_r');
+  const hip=find('hips','pelvis'),head=find('head');
+  const wave=Math.sin(t*5);
+  if(left)left.rotation.z=.3+.2*wave*energy;
+  if(right)right.rotation.z=-.3-.2*wave*energy;
+  if(hip)hip.rotation.z=.045*Math.sin(t*2.5)*energy;
+  if(head)head.rotation.z=.055*Math.sin(t*2.5+.6)*energy;
+ }
+ const smile=active?.85:.25;
+ for(const {mesh,index} of p.smiles)mesh.morphTargetInfluences[index]=smile;
+}
+
 import {SoftwareRenderer} from './danse-software.js';
 import {BEAT} from './danse-core.js';
 const palette={purple:0x8736e8,mint:0x8fffd1,pink:0xff5aaf,gold:0xffca6e};
@@ -86,7 +143,7 @@ export class DanceScene{
  // Soft oval pools place each performer on the polished stage.
  for(const [x,z,r] of [[0,.45,1.3],[-2.1,-.7,.8],[2.1,-.7,.8],[-3.6,-1.9,.7],[3.6,-1.9,.7]]){const disk=mesh(new T.CircleGeometry(r,32),new T.MeshBasicMaterial({color:x<0?0xbd73a1:x>0?0x6aada5:0xa985c7}),s,x,.025,z);disk.rotation.x=-Math.PI/2;disk.userData.layer=-2;}
  this.hero=human();this.hero.group.position.set(0,.04,.45);this.hero.group.scale.setScalar(1.2);s.add(this.hero.group);
- this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){const h=human({shirt:i%2?palette.mint:palette.pink,skin:i%2?0x9e664b:0xe0aa88,female:true,hair:true});h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;s.add(h.group);this.dancers.push(h);}
+ this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){const h=human({shirt:i%2?palette.mint:palette.pink,skin:i%2?0x9e664b:0xe0aa88,female:true,hair:true});h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;s.add(h.group);this.dancers.push(h);if(i===0)loadPilotDancer(h,s);}
  this.lionel=human({shirt:0xadc1c2,pants:0x2b253a,skin:0xd1a084,hair:true});this.lionel.group.position.set(4.7,.04,-.5);this.lionel.group.scale.setScalar(.92);s.add(this.lionel.group);sign(s,'LIONEL',1.2,.3,4.7,2.35,-.45,'#30233f','#b6ffdc',78);
  // The audience faces the performers, seen from behind along the front of frame.
  this.public=[];for(let row=0;row<2;row++)for(let i=0;i<8;i++){const x=(i-3.5)*1.16;const z=4.2+row*1.4;box(s,1,.58,.85,0x46274f,x,.1+row*.22,z);const g=new T.Group();g.position.set(x,.25+row*.22,z);g.rotation.y=Math.PI;s.add(g);ellipsoid(g,0,.68,0,.25,.35,.17,[0x92719b,0x5f7c88,0xa9836c,0x7c8a6b][i%4]);ellipsoid(g,0,1.15,0,.16,.21,.16,[0xbf8b67,0xdbb191,0x93664e][i%3]);ellipsoid(g,0,1.27,-.04,.17,.12,.16,0x372c36);const arms=[];for(const a of [-1,1]){const arm=new T.Group();arm.position.set(a*.23,.85,0);g.add(arm);cylinder(arm,.06,.045,.45,0xa67f6a,0,-.2,0);arms.push(arm);}this.public.push({group:g,arms});}
@@ -97,7 +154,7 @@ export class DanceScene{
  }
  resize(){const b=this.canvas.parentElement.getBoundingClientRect();this.renderer.setSize(b.width,b.height,false);this.camera.aspect=b.width/b.height;const narrow=this.camera.aspect<1.3;this.camera.fov=narrow?44:38;this.camera.position.set(narrow?.1:1.3,narrow?3.1:3.5,narrow?6.8:7.2);this.camera.lookAt(0,1.15,-.4);this.camera.updateProjectionMatrix();}
  update(r,dt){const t=r.clock,active=['playing','practice','break','countdown','won'].includes(r.phase),recent=t-r.actionAt<1.1;const action=recent?r.action:'cross';const power=active?1:.25;pose(this.hero,t,action,power);this.hero.group.position.x=recent&&(action==='left'||action==='right')?(action==='left'?-.35:.35)*Math.sin(Math.min(1,(t-r.actionAt)/1.1)*Math.PI):0;
- if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;});pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
+ if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(i===0)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;});pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
  for(const [i,p]of this.public.entries()){p.arms.forEach((a,j)=>{a.rotation.z=(j?1:-1)*(.4+Math.sin(t*6+i)*.15);a.rotation.x=active?-.8:0;});}
  if(r.phase==='won'){this.hero.arms[0].shoulder.rotation.z=-1.4;this.hero.arms[1].shoulder.rotation.z=1.4;this.hero.head.rotation.x=-.15;this.confetti.forEach((o,i)=>{o.visible=!this.reduced;o.position.y=5.5-((r.time*.8+i*.19)%5.7);o.rotation.z=t+i;});}else this.confetti.forEach(o=>o.visible=false);
  this.renderer.render(this.scene,this.camera);}
