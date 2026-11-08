@@ -1,4 +1,4 @@
-import {ropePosition,BRUSH,aligned} from './yoyo-core.js';
+import {ropePosition,BRUSH,aligned,slitCenters,betweenBars} from './yoyo-core.js';
 export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200,H=675;let grain=document.createElement('canvas');grain.width=240;grain.height=135;const gx=grain.getContext('2d');for(let i=0;i<3000;i++){gx.fillStyle=i%2?'#ffffff07':'#0000000a';gx.fillRect((i*71)%240,(i*37)%135,1,1);}const pattern=c.createPattern(grain,'repeat');
  const rect=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};const path=(a,col,stroke,width=1)=>{c.beginPath();a(c);if(col){c.fillStyle=col;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=width;c.stroke();}};const line=(x,y,X,Y,col,w=1)=>path(c=>{c.moveTo(x,y);c.lineTo(X,Y);},null,col,w);const ellipse=(x,y,rx,ry,col)=>path(c=>c.ellipse(x,y,rx,ry,0,0,Math.PI*2),col);function text(s,x,y,size=22,color='#e3dfca',align='left'){c.font=`${size}px system-ui`;c.fillStyle=color;c.textAlign=align;c.fillText(s,x,y);}
  function wall(){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#abb2a3');g.addColorStop(.56,'#879c94');g.addColorStop(.57,'#657f77');g.addColorStop(1,'#354946');rect(0,0,W,H,g);rect(0,0,W,H,pattern);for(let n=0;n<17;n++){const x=(n*193)%W,y=(n*87)%450;path(c=>{c.moveTo(x,y);c.lineTo(x+4,y+18);c.lineTo(x-3,y+37);c.lineTo(x+9,y+59);},null,'#324d4239',1);}}
@@ -29,10 +29,21 @@ export function makeOverlay(canvas){
   fit();c.clearRect(0,0,W,H);if(mode==='pickup'){pill('La main se referme sur le manche…',H*.86);return;}
   if(g.hidden){c.fillStyle='#0e24265c';c.fillRect(0,0,W,H);pill('À L’ABRI · Attends que les pas s’éloignent',H*.4);pill('Gauche ou droite pour te relever',H*.4+59,'#172e2ccc','#c1d3c8');return;}
   const good=aligned(g),a=g.part===0?anchors.brush:anchors.head;
+  if(g.part>0){
+   const gaps=anchors.slits||slitCenters(g.aspect);
+   c.save();
+   for(const x of gaps){
+    const active=g.hooked&&Math.abs((g.hookX??g.aim)-x)<.026;
+    c.strokeStyle=active&&betweenBars(g)?'#b5f0bc':'#ecce8a86';
+    c.lineWidth=active?4:2;c.setLineDash(active?[]:[5,7]);
+    c.beginPath();c.moveTo(x*W,H*.27);c.lineTo(x*W,H*.66);c.stroke();
+   }
+   c.setLineDash([]);c.restore();
+  }
   if(a){c.strokeStyle=good?'#b7edb1':'#f3ddaa';c.lineWidth=good?3:2;c.setLineDash(good?[]:[4,5]);c.beginPath();c.arc(a.x*W,a.y*H,W<600?13:22,0,Math.PI*2);c.stroke();c.setLineDash([]);}
   if(g.part===0)pill(good?'La brosse est à portée · Appuie sur le rouge':'Déplace la main jusqu’à la brosse',H*.83,good?'#315c43':'#203934ed');
-  else if(g.hooked){pill('CORDE ATTRAPÉE · Maintiens le bouton rouge',H*.74,'#315c43');const x=W*.22,y=H*.9,w=W*.56;c.fillStyle='#17332fe8';c.beginPath();c.roundRect(x,y,w,9,4);c.fill();c.fillStyle='#d8ba76';c.beginPath();c.roundRect(x,y,Math.max(9,w*g.pull),9,4);c.fill();c.font='600 12px system-ui';c.fillStyle='#f1e9d3';c.textAlign='center';c.fillText('Le sac revient : '+Math.round(g.pull*100)+' %',W/2,H*.98);}
-  else pill(good?'C’EST LE MOMENT · Appuie et garde le rouge enfoncé':'Aligne la tête de la brosse avec la corde',H*.83,good?'#315c43':'#203934ed');
+  else if(g.hooked){pill(g.blocked||!betweenBars(g)?'LE SAC TOUCHE LE BARREAU · Déplace la manette vers une ouverture':'ENTRE DEUX BARREAUX · Maintiens pour ramener',H*.74,g.blocked||!betweenBars(g)?'#7d3c2d':'#315c43');const x=W*.22,y=H*.9,w=W*.56;c.fillStyle='#17332fe8';c.beginPath();c.roundRect(x,y,w,9,4);c.fill();c.fillStyle='#d8ba76';c.beginPath();c.roundRect(x,y,Math.max(9,w*g.pull),9,4);c.fill();c.font='600 12px system-ui';c.fillStyle='#f1e9d3';c.textAlign='center';c.fillText('Le sac revient : '+Math.round(g.pull*100)+' %',W/2,H*.98);}
+  else pill(good?'ACCROCHE LA CORDE · Puis vise une ouverture':'Aligne la tête de la brosse avec la corde',H*.83,good?'#315c43':'#203934ed');
   if(g.guard==='approaching')pill('DES CLÉS, DES PAS… Manette vers le bas !',12,'#72552af5','#fff0d1');
   if(g.guard==='watching')pill('LE SURVEILLANT REGARDE · Cache-toi !',12,'#853c31f5','#fff0d1');
   if(mode==='demo')pill('DÉMONSTRATION · Aucun point ni risque',12,'#192e34ee','#c5d5cc');
