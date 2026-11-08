@@ -94,3 +94,47 @@ test('Smoking gesture presents the palm and pinches cigarette between extended f
  const cigarCenter=prop.getWorldPosition(new T.Vector3());
  assert.ok(pinchCenter.distanceTo(cigarCenter)<1e-8,'skin and cigarette share one gripping pivot');
 });
+
+
+test('The held toilet brush uses five anatomical digits wrapped around its real shaft',async()=>{
+ const {handData}=await import('./yoyo-hands-data.js');
+ const brush=handData.brush, fingers=brush.digits,handle=brush.grip;
+ assert.equal(handle.object,'toilet-brush');
+ assert.deepEqual(handle.axis,[0,1,0]);
+ assert.ok(handle.handleRadius>.012 && handle.handleRadius<.014);
+ assert.equal(fingers.length,5,'four fingers and an opposing thumb');
+ const lengths=fingers.map(d=>segmentLength(d.points));
+ for(const [i,d] of fingers.entries()){
+  assert.ok(lengths[i]>.070 && lengths[i]<.095,'finger '+i+' has realistic length '+lengths[i]);
+  const joints=d.points.slice(1).map((point,j)=>new T.Vector3(...point).sub(new T.Vector3(...d.points[j])).normalize());
+  for(let j=0;j<joints.length-1;j++)
+   assert.ok(joints[j].angleTo(joints[j+1])<1.24,'finger '+i+' twists abruptly at joint '+j);
+  for(const [j,p] of d.points.entries()){
+   const radial=Math.hypot(p[0],p[2]);
+   assert.ok(radial>=handle.handleRadius+d.radius*.77-.004,
+    'finger '+i+' penetrates the toilet brush shaft at joint '+j);
+  }
+  const tip=d.points.at(-1),distance=Math.hypot(tip[0],tip[2]);
+  const padDistance=distance-handle.handleRadius-d.radius*.77;
+  assert.ok(padDistance>-.005 && padDistance<.005,'finger '+i+' must contact handle, not hover or fuse');
+  assert.ok(tip[1]>=-.075 && tip[1]<=.045,'finger '+i+' must grip the rubber handle, not the bristles');
+ }
+ for(let i=0;i<3;i++) {
+  assert.ok(fingers[i].points[0][1]-fingers[i+1].points[0][1]>.019,
+   'knuckles must be physically separated');
+  assert.ok(fingers[i].points.at(-1)[1]>fingers[i+1].points.at(-1)[1],
+   'fingers must not cross each other');
+ }
+ for(let i=0;i<4;i++){
+  assert.ok(fingers[i].points[0][0]>.03,'the fingers start at the back of the handle');
+  assert.ok(fingers[i].points.at(-1)[0]<0 && fingers[i].points.at(-1)[2]<0,
+    'each finger must actually wrap around the other side of the handle');
+ }
+ assert.ok(fingers[4].points.at(-1)[2]>0,
+  'thumb pulp must oppose the four fingers on the FRONT of the handle');
+ // The game pose must include the actual brush at its unshifted geometric origin.
+ const held=models().heldBrush(),item=held.children.at(-1);
+ assert.equal(item.type,'Group');
+ assert.ok(item.position.length()<1e-9,'the brush must remain centred in the hand pose');
+ assert.equal(brush.nails.length,5);
+});
