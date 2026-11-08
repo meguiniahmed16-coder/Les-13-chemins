@@ -343,7 +343,7 @@ test('Two illustrated static hand states remain visible and light, with no finge
  assert.match(app,/hideHandSprites\(\);mode='victory'/);
  assert.match(scene,/const searching=new T\.Group\(\),held=new T\.Group\(\)/);
  assert.doesNotMatch(scene,/searching=props\.openHand\(\),held=props\.heldBrush\(\)/);
- assert.match(scene,/anchors\.head=\{x:g\.hooked\?rx:g\.aim,y:\.46\}/);
+ assert.match(scene,/anchors\.head=\{x:g\.hooked\?rx:g\.aim,y:\.34\}/);
  for(const name of ['main_ouverte_fixee.webp','main_brosse_dos_fixee.webp']){
   const bytes=fs.readFileSync(new URL('./'+name,import.meta.url));
   assert.equal(bytes.toString('ascii',0,4),'RIFF',name+' missing WebP header');
