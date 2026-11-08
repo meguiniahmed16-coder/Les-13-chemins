@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
 import * as T from 'three';
-import {models} from './yoyo-models.js';
+import {models,ANATOMICAL_GRIPS,PALMAR_FLEXION_SIGN} from './yoyo-models.js';
 import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned,slitCenters,openingTolerance,betweenBars,setWindowAspect,ropeReachable} from './yoyo-core.js';
 const tick=(g,seconds)=>{for(let i=0;i<seconds*60;i++)advance(g,1/60);};
 const intoOpening=g=>aimAt(g,slitCenters(g.aspect).reduce((a,b)=>Math.abs(a-g.aim)<Math.abs(b-g.aim)?a:b));
@@ -91,7 +91,7 @@ test('Smoking gesture presents the palm and pinches cigarette between extended f
  assert.ok(filter.z>ember.z,'filter must face the actor, ember must face away');
  // Rotating the skin must not pull it away from the cigarette.
  const hand=skinPivot.children[0];
- const pinchCenter=hand.localToWorld(new T.Vector3(...grip));
+ const pinchCenter=hand.localToWorld(new T.Vector3(-.002,.087,-.003));
  const cigarCenter=prop.getWorldPosition(new T.Vector3());
  assert.ok(pinchCenter.distanceTo(cigarCenter)<1e-8,'skin and cigarette share one gripping pivot');
 });
@@ -285,4 +285,39 @@ test('The player must wait for the rope to pass a bar opening before hooking',()
  tick(g,2.08);aimAt(g,ropePosition(g));
  assert.equal(ropeReachable(g),true,'oscillating rope is now crossing an opening');
  actionDown(g);assert.equal(g.hooked,true,'brush may catch rope through a real gap');
+});
+
+test('All four fingers fold towards the real PALM of the 25-joint WebXR hand',()=>{
+ // This checks the SIGN of each flexion in the asset's native coordinates.
+ // Its four fingers extend along -Y; the palmar side is -X, not +X.
+ const file=fs.readFileSync(new URL('./hand-right.glb',import.meta.url));
+ const jsonSize=file.readUInt32LE(12);
+ const gltf=JSON.parse(file.subarray(20,20+jsonSize).toString('utf8'));
+ const node=name=>{const j=gltf.nodes.find(n=>n.name===name);assert.ok(j,'missing '+name);return new T.Vector3(...j.translation);};
+ assert.equal(PALMAR_FLEXION_SIGN,-1,'positive native Z bends towards the back of the hand');
+ const names=['index-finger','middle-finger','ring-finger','pinky-finger'];
+ for(const pose of ['relaxed','brush','cup','smoke']){
+  const entries=ANATOMICAL_GRIPS[pose];assert.equal(entries.length,5);
+  for(let n=0;n<4;n++){
+   const finger=names[n],base=node(finger+'-phalanx-proximal'),tip=node(finger+'-tip');
+   const angle=PALMAR_FLEXION_SIGN*entries[n+1][0];
+   assert.ok(angle<0,'dorsal rather than palmar bend for '+finger+' in '+pose);
+   const palmBentTip=tip.clone().sub(base).applyAxisAngle(new T.Vector3(0,0,1),angle).add(base);
+   assert.ok(palmBentTip.x<tip.x-.003,
+    pose+' '+finger+' bends the fingertip toward the back of the hand');
+  }
+ }
+ // Cigarette must be BETWEEN index and middle in the actual rig's bind pose.
+ const pinch=new T.Vector3(-.002,.087,-.003);
+ const index=node('index-finger-phalanx-intermediate');
+ const middle=node('middle-finger-phalanx-intermediate');
+ const xPositions=[index.z*1.05,middle.z*1.05].sort((a,b)=>a-b);
+ assert.ok(pinch.x>xPositions[0]&&pinch.x<xPositions[1],
+  'cigarette is not between index and middle fingers');
+ for(const joint of [index,middle]){
+  assert.ok(Math.abs(pinch.y-(-joint.y*1.05-.002))<.025,
+   'cigarette must touch the middle phalanges, not the fingertips or thumb');
+  assert.ok(Math.abs(pinch.z-(joint.x*1.05-.035))<.018,
+   'cigarette is floating away from the fingers');
+ }
 });
