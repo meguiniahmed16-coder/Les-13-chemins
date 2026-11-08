@@ -13,6 +13,7 @@ for (const args of [
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
   ['build-yoyo.mjs'],
+  ['build-danse.mjs'], // compile true stage characters from sources, never reuse stale runtime
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
   if (stdout.trim()) console.log(stdout.trim());
@@ -43,6 +44,8 @@ const publicFiles = [
   'bosnie-runtime.js',
   'jeu-danse.html',
   'danse-runtime.js',
+  'assets/danse/quaternius-superhero-female.glb',
+  'assets/danse/QUATERNIUS-LICENSE.txt',
   'jeu-yoyo.html',
   'yoyo-runtime.js',
   'main_ouverte_fixee.webp',
@@ -108,6 +111,9 @@ for (const name of publicFiles) {
   await copyFile(join(root, name), join(output, name));
 }
 console.log('Build public : ' + (publicFiles.length + 1) + ' fichiers vérifiés dans dist/.');
+const danseChecks=await run(process.execPath,['--test','danse.test.mjs'],{cwd:root,maxBuffer:4*1024*1024});
+if(danseChecks.stdout.trim())console.log(danseChecks.stdout.trim());
+if(danseChecks.stderr.trim())console.error(danseChecks.stderr.trim());
 
 // Server code is packaged separately; private documents are never build inputs.
 await mkdir(join(root, '.netlify/functions'), { recursive: true });
