@@ -36,7 +36,7 @@ export function makeOverlay(canvas){
     const active=g.hooked&&Math.abs((g.hookX??g.aim)-x)<.026;
     c.strokeStyle=active&&betweenBars(g)?'#b5f0bc':'#ecce8a86';
     c.lineWidth=active?4:2;c.setLineDash(active?[]:[5,7]);
-    c.beginPath();c.moveTo(x*W,H*.27);c.lineTo(x*W,H*.66);c.stroke();
+    c.beginPath();c.moveTo(x*W,H*.24);c.lineTo(x*W,H*.91);c.stroke();
    }
    c.setLineDash([]);c.restore();
   }
