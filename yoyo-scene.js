@@ -139,7 +139,7 @@ export function makeCinema(host){
    entry.material.color.copy(entry.gray).lerp(target,fraction);
   }
   scene.background.copy(originalSky).lerp(level===2?secondSky:firstSky,fraction);
-  scene.fog.color.copy(new T.Color('#718086')).lerp(level===2?'#5f9cbb':'#86a5ae',fraction);
+  scene.fog.color.set('#718086').lerp(new T.Color(level===2?'#5f9cbb':'#86a5ae'),fraction);
   renderer.toneMappingExposure=1.18+fraction*.16;
  }
  // Real inverted wire hanger: a drap wraps the long bar, the hook carries
@@ -215,6 +215,9 @@ export function makeCinema(host){
  let width=0,height=0;
  function render(t,mode='intro',g={aim:.5,part:0,pull:0,partTime:0}){
   const w=host.clientWidth,h=host.clientHeight;if(w!==width||h!==height){width=w;height=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  setWindowAspect(g,camera.aspect);
+  recolorWorld(g.bags??Math.max(0,(g.part||0)-1));
+  parcels[0].visible=(g.part||0)!==2;parcels[1].visible=(g.part||0)===2;
   for(const m of [drink,cigarette,searching,held,reaching,ropeGroup])m.visible=false;
   steam.forEach(p=>p.visible=false);storedBrush.visible=true;
   const life=mode==='window'?g.partTime:t;for(const person of prisoners){person.head.rotation.y=Math.sin(life*.24+person.phase)*.11;person.root.rotation.y=person.angle+Math.sin(life*.17+person.phase)*.035;}
@@ -239,9 +242,21 @@ export function makeCinema(host){
    if(g.hidden){searching.visible=false;camera.position.y=.55;camera.lookAt(1,.25,.05);}
   }else if(mode==='window'){
    camera.position.set(0,1.56,-.75);camera.lookAt(0,1.56,-4);storedBrush.visible=false;
+   anchors.slits=slitCenters(camera.aspect);
+   anchors.gapClear=betweenBars(g);
    const pull=g.pull||0,depth=1.19-pull*.64,rx=ropePosition(g),horizontal=(rx-.5)*2*half(depth)*camera.aspect;
-   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74+pull*.16,-.75-depth);ropeGroup.scale.set(1-pull*.2,1,1);ropeGroup.rotation.z=g.hooked?-.04:Math.sin(g.partTime)*.045;
-   held.visible=!g.hidden;held.position.set(...atScreen(g.hooked?rx:g.aim,.82,.58));held.rotation.set(-.04,0,0);
+   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74+pull*.16,-.75-depth);
+   ropeGroup.scale.set(1-pull*.12,1,1);
+   ropeGroup.rotation.z=g.hooked?-.025:Math.sin(g.partTime)*.045;
+   bagRoot.rotation.z=Math.sin(g.partTime*2)*.028+Math.sin(pull*Math.PI)*.04;
+   bagRoot.rotation.x=Math.sin(g.partTime*.9)*.025;
+   held.visible=!g.hidden;
+   // The arm reaches through the window only when aligned between real bars.
+   // At mid-haul the wrist crosses the steel plane (depth .88m); then retracts.
+   const reach=g.hooked&&betweenBars(g)?Math.sin(Math.PI*pull)*.29:0;
+   const armDepth=.66+reach;
+   held.position.set(...atScreen(g.hooked?rx:g.aim,.82-pull*.06,armDepth));
+   held.rotation.set(-.10+reach*.35,0,-.035);
    anchors.head=project(held.localToWorld(new T.Vector3(0,.365,0)));anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
    if(g.hidden){held.visible=false;camera.position.y=.62;camera.lookAt(0,.64,-4);}
   }else{
