@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
 import * as T from 'three';
-import {models,ANATOMICAL_GRIPS,PALMAR_FLEXION_SIGN} from './yoyo-models.js';
+import {models,ANATOMICAL_GRIPS,PALMAR_FLEXION_SIGN,CUP_THUMB_ROTATIONS} from './yoyo-models.js';
 import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned,slitCenters,openingTolerance,betweenBars,setWindowAspect,ropeReachable} from './yoyo-core.js';
 const tick=(g,seconds)=>{for(let i=0;i<seconds*60;i++)advance(g,1/60);};
 const intoOpening=g=>aimAt(g,slitCenters(g.aspect).reduce((a,b)=>Math.abs(a-g.aim)<Math.abs(b-g.aim)?a:b));
@@ -356,4 +356,64 @@ test('Two illustrated static hand states remain visible and light, with no finge
  assert.doesNotMatch(section,/(?:finger|phalange|quaternion|\.rotation)/);
  assert.match(section,/img\.style\.left=/);
  assert.match(app,/if\(mode==='intro'\|\|mode==='victory'\)\{hideHandSprites\(\)/);
+});
+
+test('Coffee cup uses SAME WebXR hand, turned toward the wall with thumb opposing visible fingers',()=>{
+ const group=models().cupHand();
+ const arm=group.children[0];
+ assert.equal(arm.userData.handModel,'webxr-anatomical-right');
+ assert.equal(arm.userData.pose,'cup');
+ assert.ok(Math.abs(arm.rotation.y-Math.PI/2)<1e-8,'the old -90° made all four fingers move away from the coffee cup');
+ assert.ok(Math.abs(arm.scale.x-.72)<1e-8,'the hand must not spread outside the cup');
+ assert.ok(Math.abs(arm.position.x-.103)<1e-8);
+ assert.equal(CUP_THUMB_ROTATIONS.length,3,'thumb needs distinct 3-axis rotations');
+ assert.ok(group.children.some(m=>m.userData.object==='coffee-cup-gripped-by-same-hand'));
+ // Test the REAL 25-joint GLB rest positions rather than counting visual fingers.
+ const file=fs.readFileSync(new URL('./hand-right.glb',import.meta.url));
+ const jsonSize=file.readUInt32LE(12),gltf=JSON.parse(file.subarray(20,20+jsonSize).toString('utf8'));
+ const nodes=new Map(gltf.nodes.filter(n=>n.name).map(n=>[n.name,n]));
+ const around=(matrix,point,q)=>{
+  const t=new T.Matrix4().makeTranslation(...point);
+  const inv=new T.Matrix4().makeTranslation(...point.map(x=>-x));
+  matrix.multiply(t).multiply(new T.Matrix4().makeRotationFromQuaternion(q)).multiply(inv);
+ };
+ const names=['thumb','index-finger','middle-finger','ring-finger','pinky-finger'];
+ const radial=[];
+ for(let i=0;i<names.length;i++){
+  const name=names[i],parts=name==='thumb'
+   ? ['metacarpal','phalanx-proximal','phalanx-distal']
+   : ['phalanx-proximal','phalanx-intermediate','phalanx-distal'];
+  const pose=new T.Matrix4().identity();
+  for(let j=0;j<parts.length;j++){
+   const node=nodes.get(name+'-'+parts[j]);assert.ok(node);
+   const q=i===0?(()=>{
+    const [x,y,z]=CUP_THUMB_ROTATIONS[j];
+    return new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),z)
+      .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),y))
+      .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),x));
+   })():new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-ANATOMICAL_GRIPS.cup[i][j]);
+   around(pose,node.translation,q);
+  }
+  const tip=new T.Vector3(...nodes.get(name+'-tip').translation).applyMatrix4(pose);
+  const local=new T.Vector3(tip.z*1.05,-tip.y*1.05-.002,tip.x*1.05-.035);
+  local.x*=.72;
+  const world=local.applyAxisAngle(new T.Vector3(0,1,0),Math.PI/2).add(new T.Vector3(.103,0,.012));
+  const distance=Math.hypot(world.x,world.z);
+  radial.push(distance);
+  assert.ok(distance>.042 && distance<.068, name+' is detached from the coffee cup wall or penetrates it: '+distance);
+  assert.ok(world.y>-.06 && world.y<.101, name+' does not grasp the vertical cup');
+  if(i===0)assert.ok(world.z>.025,'the thumb must press from the opposing/front side');
+ }
+ assert.ok(radial.slice(1).every(r=>Math.abs(r-.044)<.025),'four fingers actually surround the cup');
+});
+test('At startup the game loads the approved DORSAL hand instead of its palm',()=>{
+ const page=fs.readFileSync(new URL('./jeu-yoyo.html',import.meta.url),'utf8');
+ const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ assert.match(page,/id="handOpen2D" src="main-ouverte-dos-v10\.avif"/);
+ assert.match(page,/Main fixe v10/);
+ assert.match(build,/'main-ouverte-dos-v10\.avif'/);
+ assert.match(build,/\(\?:mp3\|webp\|avif\|glb\)/,'build must not parse AVIF binary as UTF-8');
+ const r=fs.readFileSync(new URL('./main-ouverte-dos-v10.avif',import.meta.url));
+ assert.equal(r.toString('ascii',4,8),'ftyp');
+ assert.match(r.toString('ascii',8,24),/avif|avis/);
 });
