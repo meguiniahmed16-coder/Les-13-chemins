@@ -52,8 +52,8 @@ function fieldCamouflage(x,y,z,variation){
   +Math.cos(x*19-y*27+z*17)*.35
   +Math.sin(x*42+y*35-z*21)*.19;
  const swatches=variation?
-  ['#303b2e','#526247','#8a8667','#756a51']:
-  ['#313d2f','#5f6b50','#a49b79','#685e49'];
+  ['#303b2e','#4f6046','#807e65','#74644e']:
+  ['#313b2f','#536449','#8e896f','#655c47'];
  return new THREE.Color(wav<-.38?swatches[0]:
    wav<.01?swatches[1]:wav<.38?swatches[2]:swatches[3]);
 }
@@ -99,58 +99,63 @@ function equipMilitary(avatar,variation=0){
  }
  const vest=new THREE.Group();vest.name='GiletPareBalles';
  pin(vest,bones.spine_02,0,1.22,.01);
- part(vest,'GiletPareBallesAvant',.43,.49,.28,0,.015,.04,olive,.045);
- part(vest,'PlaqueProtectionPoitrine',.36,.31,.048,0,.095,.191,edging,.025);
- part(vest,'CeinturonMilitaire',.455,.075,.335,0,-.225,.008,leather,.015);
- part(vest,'BoucleCeinture',.075,.059,.012,0,-.228,.189,pouchMat,.006);
+ part(vest,'GiletPareBallesAvant',.405,.45,.245,0,.022,.036,olive,.062);
+ part(vest,'PlaqueProtectionPoitrine',.325,.285,.04,0,.090,.166,edging,.034);
+ part(vest,'CeinturonMilitaire',.42,.069,.29,0,-.219,.008,leather,.017);
+ part(vest,'BoucleCeinture',.07,.05,.012,0,-.225,.172,pouchMat,.006);
  for(const side of [-1,1]){
-  const strap=part(vest,'BretelleProtection',.072,.41,.035,side*.16,.108,.185,pouchMat,.009);
+  const strap=part(vest,'BretelleProtection',.053,.36,.029,side*.145,.098,.164,pouchMat,.009);
   strap.rotation.z=-side*.09;
-  part(vest,'PocheLateral',.092,.18,.13,side*.237,-.123,.011,olive,.02);
+  part(vest,'PocheLateral',.074,.125,.087,side*.211,-.118,.006,olive,.019);
  }
  for(let i=0;i<3;i++){
-  const pouch=part(vest,'PorteChargeur',.10,.138,.071,(i-1)*.123,-.115,.203,pouchMat,.014);
-  part(vest,'PattePoche',.079,.028,.006,(i-1)*.123,-.071,.241,edging,.003);
+  const pouch=part(vest,'PorteChargeur',.087,.11,.057,(i-1)*.114,-.116,.173,pouchMat,.014);
+  part(vest,'PattePoche',.067,.022,.006,(i-1)*.114,-.077,.204,edging,.003);
  }
  // Pack gives a combat silhouette, not the thin profile of the base dancer.
  const pack=new THREE.Group();pack.name='SacPatrouille';pin(pack,bones.spine_02,0,1.25,-.17);
- part(pack,'SacADos',.345,.39,.24,0,-.012,-.065,olive,.045);
- part(pack,'RouleauSuperieur',.295,.115,.24,0,.235,-.045,pouchMat,.036);
- part(pack,'SangleDos',.035,.43,.02,-.115,-.015,.079,edging,.008);
- part(pack,'SangleDos',.035,.43,.02,.115,-.015,.079,edging,.008);
+ part(pack,'SacADos',.29,.34,.18,0,-.012,-.052,olive,.055);
+ part(pack,'RouleauSuperieur',.26,.086,.19,0,.194,-.038,pouchMat,.032);
+ part(pack,'SangleDos',.029,.36,.02,-.103,-.015,.045,edging,.008);
+ part(pack,'SangleDos',.029,.36,.02,.103,-.015,.045,edging,.008);
  // A small slung rifle is scenery-only, never an interactive weapon.
  const rifle=new THREE.Group();rifle.name='FusilEnBandouliere';
  pin(rifle,bones.spine_03,-.025,1.25,.31);
  rifle.rotation.z=.40;
- part(rifle,'ArmeSilhouette',.075,.49,.057,0,0,0,leather,.01);
+ part(rifle,'ArmeSilhouette',.068,.42,.052,0,0,0,leather,.011);
  part(rifle,'PoigneeTransport',.13,.032,.04,-.013,.123,.016,leather,.008);
- part(rifle,'BoitierArme',.13,.17,.080,.025,-.135,.018,leather,.014);
+ part(rifle,'BoitierArme',.105,.14,.07,.022,-.118,.013,leather,.014);
  part(rifle,'SangleArme',.024,.58,.025,.075,-.03,-.025,edging,.008);
  // The shoulder NATO insignia belongs to the sleeve, not the face.
  for(const side of [-1,1]){
   const shoulder=new THREE.Group();
-  pin(shoulder,bones[side<0?'upperarm_l':'upperarm_r'],
-      side*.285,1.455,.014);
-  part(shoulder,'RenfortEpaule',.185,.183,.22,0,0,0,olive,.035);
+  pin(shoulder,bones.spine_03,
+      side*.248,1.425,.015);
+  part(shoulder,'RenfortEpaule',.127,.135,.164,0,0,0,olive,.038);
   const badge=document.createElement('canvas');
   badge.width=256;badge.height=128;
   const ctx=badge.getContext('2d');
-  ctx.fillStyle='#29425c';ctx.fillRect(0,0,256,128);
+  if(side<0){ctx.fillStyle='#29425c';ctx.fillRect(0,0,256,128);}
+  else{
+   ctx.fillStyle='#204a85';ctx.fillRect(0,0,86,128);
+   ctx.fillStyle='#f3f4ef';ctx.fillRect(86,0,85,128);
+   ctx.fillStyle='#a74d4b';ctx.fillRect(171,0,85,128);
+  }
   ctx.lineWidth=12;ctx.strokeStyle='#d6e2de';ctx.strokeRect(8,8,240,112);
   ctx.font='bold 66px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='#f5f6ed';ctx.fillText('OTAN',128,68);
+  if(side<0){ctx.fillStyle='#f5f6ed';ctx.fillText('OTAN',128,68);}
   const texture=new THREE.CanvasTexture(badge);texture.colorSpace=THREE.SRGBColorSpace;
-  const patch=new THREE.Mesh(new THREE.PlaneGeometry(.15,.076),
+  const patch=new THREE.Mesh(new THREE.PlaneGeometry(.105,.056),
        new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
-  patch.position.set(0,.015,.12);patch.name='EcussonOTAN';
+  patch.position.set(0,.012,.085);patch.name=side<0?'EcussonOTAN':'DrapeauFrance';
   shoulder.add(patch);
  }
  for(const side of [-1,1]){
   const thigh=new THREE.Group();
   pin(thigh,bones[side<0?'thigh_l':'thigh_r'],side*.17,.72,.05);
-  part(thigh,'PocheCargo',.13,.18,.07,0,0,.063,olive,.018);
+  part(thigh,'PocheCargo',.095,.12,.054,0,0,.052,olive,.025);
   const ankle=new THREE.Group();pin(ankle,bones[side<0?'calf_l':'calf_r'],side*.145,.115,.028);
-  part(ankle,'Rangers',.17,.20,.27,0,0,.065,leather,.025);
+  part(ankle,'Rangers',.12,.145,.19,0,0,.045,leather,.031);
  }
  const helmet=new THREE.Group();helmet.name='CasqueLourdCouvreCasqueCamouflage';
  pin(helmet,bones.Head,0,1.737,-.014);
@@ -216,7 +221,7 @@ export function poseHuman(avatar,info,clock,mode='player'){
  const sprint=info.running;
  const stride=sprint?Math.sin(clock*11+(mode==='companion'?1:0)):.05*Math.sin(clock*2);
  group.position.set(info.x,info.y??0,info.z??.45);
- group.rotation.set(0,mode==='companion'?Math.PI/2:info.facing??Math.PI/2,0);
+ group.rotation.set(0,info.facing??Math.PI/2,0);
  group.position.y+=(sprint?Math.abs(stride)*.029:0);
  group.updateMatrixWorld(true);
  worldBend(avatar,'upperarm_l',Z,-1.24+.22*stride);
