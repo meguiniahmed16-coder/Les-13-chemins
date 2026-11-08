@@ -1,0 +1,26 @@
+PERSONNAGE D'ESSAI — AMITIÉ RETROUVÉE
+
+Nom du fichier: quaternius-superhero-female.glb
+Original: Quaternius, Universal Base Characters — Standard (gratuit)
+Fichier d'origine: Base Characters/Godot - UE/Superhero_Female_FullBody.gltf (+ .bin)
+Page officielle: https://quaternius.itch.io/universal-base-characters
+Licence: Creative Commons Zero 1.0 Universal (CC0-1.0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Une conversion autonome de ce modèle féminin a été distribuée dans:
+https://github.com/glanderness/BeefTV
+Chemin source: web/public/canvas/models/quaternius-standard-female.glb
+SHA Git blob source: 7bb366b4ea08607fa614dcf23320e3fcbc126546
+
+Ce GLB de 1 012 184 octets conserve le maillage, les poids de peau
+et les 65 os humains. Il ne contient ni matériaux ni textures :
+les vêtements colorés, les cheveux simples, le sourire et la
+chorégraphie du prototype sont créés dans danse-scene.js.
+
+Note : les visages du modèle gratuit n'ont PAS de morph targets.
+Le sourire du prototype est une courbe 3D légère attachée au véritable
+os de la tête, pas une expression faciale native déjà présente.
+
+Le modèle appartient à Quaternius et est distribué sous la licence
+CC0 du pack Standard gratuit. Ce fichier documente sa provenance
+sans prétendre que nous l'avons sculpté.
