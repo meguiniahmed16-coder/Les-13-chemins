@@ -1,0 +1,33 @@
+name: Vérifier le site public v10 — main dorsale et café
+on:
+  push:
+    branches: [verification/jeu-v10-dos-cafe-20261108]
+permissions:
+  contents: read
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Contrôler la page et les fichiers réellement déployés
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://tectonique-des-ames.netlify.app"
+          for n in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if curl -fLsS --max-time 20 "$root/jeu-yoyo.html?version=v10-$n" -o /tmp/jeu.html &&
+              grep -q 'Main fixe v10' /tmp/jeu.html &&
+              grep -q 'src="main-ouverte-dos-v10.avif"' /tmp/jeu.html &&
+              curl -fLsS --max-time 20 "$root/main-ouverte-dos-v10.avif" -o /tmp/main.avif &&
+              [ "$(od -An -t c -j 4 -N 4 /tmp/main.avif | tr -d ' \n')" = "ftyp" ] &&
+              curl -fLsS --max-time 20 "$root/yoyo-runtime.js?v=20261108-dos-cafe-v10" -o /tmp/runtime.js &&
+              grep -q 'coffee-cup-gripped-by-same-hand' /tmp/runtime.js
+            then
+              echo 'CONFIRMÉ : Netlify expose la v10, le dos de main, et le nouveau code de prise du café.'
+              exit 0
+            fi
+            echo "Publication v10 en cours : tentative $n/12"
+            sleep 7
+          done
+          echo 'ÉCHEC: version v10 non entièrement disponible sur Netlify'
+          exit 1
