@@ -243,3 +243,8 @@ Le tireur découvert aux jumelles doit réutiliser le **même modèle Quaternius
 
 
 **Amélioration de lisibilité C031 :** dans la capture des jumelles, le tireur humanoïde 65 os était présent mais sa tenue trop petite pour être reconnaissable. Utiliser un champ optique de 10° lors de l'observation (au lieu de 15,5°), et une échelle du même modèle de 0,86. Conserver l'orientation des coudes validée et revérifier la présence du tireur dans les deux optiques. Aucun changement aux tirs ou à la sécurité des cinq traversées.
+
+
+## C032 — Trois armes réellement visibles et scène diurne lisible (9 novembre 2026)
+
+L'auteur a confirmé que la scène demeurait trop sombre et que les armes étaient invisibles ou non utilisées. Ne plus se satisfaire de vérifications sur les seuls noms d'objets 3D : inspecter les captures. Les deux soldats français portent chacun un fusil en bandoulière clairement reconnaissable, au-devant du gilet, sans capacité de tir ajoutée. Le tireur à la fenêtre possède une arme identifiable : flash lumineux et très léger recul synchronisés **exclusivement** avec les rafales déjà présentes dans la mécanique des cinq fenêtres ; aucun nouveau tir ni blessure. Une capture en vraie vue jumelles pendant un coup de feu est obligatoire. Sur la scène entière, exposition 1,68, palette de post-traitement gris-clair, brouillard moins dense, éclairage supérieur et vignettage du cadre réduit : ne pas transformer l'ambiance de guerre en journée ensoleillée, mais rendre les bâtiments, abris et soldats nettement visibles sur téléphone. Conserver le compagnon invulnérable, les contrôles, scores et continuités précédentes.

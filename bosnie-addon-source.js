@@ -50,20 +50,25 @@ function createOvercastSky(game){
 
 function improveBosnianDaylight(game){
  // Keep the period atmosphere while lifting the former very dark green grade.
- game.renderer.toneMappingExposure=1.37;
- game.scene.fog.color.set('#a9b1aa');
- game.scene.fog.density=.014;
+ game.renderer.toneMappingExposure=1.68;
+ game.scene.fog.color.set('#bdc8c3');
+ game.scene.fog.density=.0105;
+ if(game.sun)game.sun.intensity=4.1;
+ const hemisphere=game.scene.children.find(o=>o.isHemisphereLight);
+ if(hemisphere)hemisphere.intensity=3.0;
  const material=game.postMaterial;
  if(material?.fragmentShader){
   const original=material.fragmentShader;
   material.fragmentShader=original
    .replace('l=pow(clamp(l*1.28,0.,1.),.82)',
-            'l=pow(clamp(l*1.42,0.,1.),.79)')
+            'l=pow(clamp(l*1.78,0.,1.),.72)')
    .replace('vec3 dark=vec3(.025,.075,.045),mid=vec3(.26,.43,.19),light=vec3(.82,.94,.56)',
-            'vec3 dark=vec3(.09,.13,.115),mid=vec3(.38,.45,.37),light=vec3(.87,.91,.79)');
+            'vec3 dark=vec3(.22,.26,.235),mid=vec3(.53,.59,.54),light=vec3(.97,.96,.87)')
+   .replace('1.-.24*pow(length((vUv-.5)*1.3),2.)',
+            '1.-.10*pow(length((vUv-.5)*1.3),2.)');
   material.needsUpdate=material.fragmentShader!==original;
  }
- game.canvas.dataset.bosnieDaylight='plus-clair';
+ game.canvas.dataset.bosnieDaylight='clair-jour';
 }
 function createWarDamage(game){
  // Decals and jagged fragments are cosmetic only. Collision geometry stays put.
@@ -129,6 +134,22 @@ function createWarDamage(game){
  game.scene.add(group);
  return {group,fractures,impacts:155,rocks:92};
 }
+// Same visual firing rhythm as the five existing, unchanged Bosnian game gaps.
+// These values only animate a muzzle flash; they never trigger or alter a shot.
+const WINDOW_SHOT_RHYTHM=Object.freeze([
+ {burst:2.15,quiet:2.7,offset:0},
+ {burst:2.6,quiet:2.5,offset:1.2},
+ {burst:1.9,quiet:2.25,offset:.6},
+ {burst:2.8,quiet:2.2,offset:1.7},
+ {burst:2.3,quiet:2.05,offset:.3}
+]);
+export function windowShotAt(time,index){
+ const rhythm=WINDOW_SHOT_RHYTHM[Math.min(4,Math.max(0,index))];
+ const cycle=rhythm.burst+rhythm.quiet;
+ const p=((time+rhythm.offset)%cycle+cycle)%cycle;
+ return p<rhythm.burst&&p%.28<.075;
+}
+
 function makeWindowShooter(game){
  // Only a distant figure in the window; no additional shooting mechanics.
  const shooter=new THREE.Group();shooter.name='TireurFenetreJumelles';
@@ -157,6 +178,21 @@ function makeWindowShooter(game){
  const stock=new THREE.Mesh(new THREE.BoxGeometry(.16,.11,.052),steel);
  stock.position.set(-.32,-.12,0);rifle.add(stock);
  rifle.position.set(0,-.04,.17);shooter.add(rifle);
+ const fire=new THREE.Group();fire.name='EclairDeBoucheDuFusil';
+ fire.position.set(.68,-.09,.03);
+ const fireMat=new THREE.MeshBasicMaterial({color:0xffe6a3,transparent:true,
+  opacity:.93,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
+ const core=new THREE.Mesh(new THREE.SphereGeometry(.069,8,7),fireMat);
+ core.name='NoyauDeFlamme';fire.add(core);
+ const cone=new THREE.Mesh(new THREE.ConeGeometry(.060,.23,7),fireMat);
+ cone.position.x=.13;cone.rotation.z=-Math.PI/2;cone.name='FlammeDeCanon';fire.add(cone);
+ const glow=new THREE.PointLight(0xffbb68,1.7,1.6);
+ glow.position.set(.05,0,.02);fire.add(glow);
+ fire.visible=false;rifle.add(fire);
+ shooter.userData.windowMuzzle=fire;
+ shooter.userData.windowGun=rifle;
+ shooter.userData.windowFlashUntil=-1;
+ shooter.userData.lastShotStage=-1;
  shooter.visible=false;game.scene.add(shooter);
  // Recesses are anchored to the actual five windows already used by the firing code.
  const recessMaterial=new THREE.MeshBasicMaterial({color:0x202722,side:THREE.DoubleSide});
@@ -227,6 +263,21 @@ function positionWindowShooter(game,enemy,run){
  enemy.rotation.y=0;
  enemy.visible=!!run.binoculars&&run.phase==='playing';
  if(enemy.visible)enemy.position.y+=Math.sin((run.time||0)*1.2)*.012;
+ const seconds=Number.isFinite(run.time)?run.time:0;
+ if(enemy.userData.lastShotStage!==index||seconds<enemy.userData.lastShotTime){
+  enemy.userData.windowFlashUntil=-1;
+  enemy.userData.lastShotStage=index;
+ }
+ enemy.userData.lastShotTime=seconds;
+ const firing=run.phase==='playing'&&windowShotAt(seconds,index);
+ if(firing)enemy.userData.windowFlashUntil=seconds+.17;
+ const flashVisible=enemy.visible&&seconds<enemy.userData.windowFlashUntil;
+ const muzzle=enemy.userData.windowMuzzle,gun=enemy.userData.windowGun;
+ if(muzzle){
+  muzzle.visible=flashVisible;
+  muzzle.scale.setScalar(.93+.10*Math.sin(seconds*49));
+ }
+ if(gun)gun.position.x=firing?-.025:0;
  if(enemy.userData.windowRig){
   const cameraY=enemy.position.y;
   enemy.userData.windowClip.constant=-(windowPos.y-.51);
@@ -235,7 +286,8 @@ function positionWindowShooter(game,enemy,run){
   },run.time||0,'shooter');
  }
  return {index:index+1,visible:enemy.visible,
-         rig:!!enemy.userData.windowRig};
+         rig:!!enemy.userData.windowRig,
+         firing:enemy.visible&&firing,flashVisible};
 }
 
 function fieldCamouflage(x,y,z,variation){
@@ -276,7 +328,7 @@ function equipMilitary(avatar,variation=0){
  const olive=new THREE.MeshStandardMaterial({color:green,roughness:.94,metalness:0});
  const edging=new THREE.MeshStandardMaterial({color:trim,roughness:.94});
  const leather=new THREE.MeshStandardMaterial({color:dark,roughness:.96});
- const gunMetal=new THREE.MeshStandardMaterial({color:0x444b46,roughness:.77,metalness:.14});
+ const gunMetal=new THREE.MeshStandardMaterial({color:0x58605b,roughness:.75,metalness:.18});
  const pouchMat=new THREE.MeshStandardMaterial({color:0x717459,roughness:.94});
  function part(group,name,w,h,d,x,y,z,material=olive,r=.012){
   const obj=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,2,r),material);
@@ -312,12 +364,14 @@ function equipMilitary(avatar,variation=0){
  part(pack,'SangleDos',.029,.36,.02,.103,-.015,.045,edging,.008);
  // A small slung rifle is scenery-only, never an interactive weapon.
  const rifle=new THREE.Group();rifle.name='FusilEnBandouliere';
- pin(rifle,bones.spine_03,-.025,1.25,.31);
- rifle.rotation.z=.40;
+ pin(rifle,bones.spine_03,-.025,1.25,.335);
+ rifle.rotation.z=.49;
  part(rifle,'ArmeSilhouette',.077,.56,.067,0,.042,0,gunMetal,.012);
  part(rifle,'CanonVisible',.031,.29,.032,0,.45,.008,gunMetal,.006);
  part(rifle,'CrosseFusil',.125,.20,.072,-.012,-.235,.002,leather,.018);
  part(rifle,'GardeMainFusil',.104,.20,.074,0,.16,.007,edging,.013);
+ part(rifle,'ChargeurVisible',.087,.14,.073,.013,-.146,.055,leather,.013);
+ part(rifle,'HausseVisible',.078,.032,.044,0,.307,.044,gunMetal,.006);
  part(rifle,'PoigneeTransport',.13,.032,.04,-.013,.123,.016,leather,.008);
  part(rifle,'BoitierArme',.105,.14,.07,.022,-.118,.013,leather,.014);
  part(rifle,'SangleArme',.024,.58,.025,.075,-.03,-.025,edging,.008);
@@ -498,6 +552,12 @@ function attach(game){
     natoBadge:!!hero?.root.getObjectByName('EcussonOTAN'),
     armedHero:!!hero?.root.getObjectByName('CanonVisible'),
     armedAlly:!!ally?.root.getObjectByName('CanonVisible'),
+    groundHeroSlungRifle:!!hero?.root.getObjectByName('ChargeurVisible'),
+    groundAllySlungRifle:!!ally?.root.getObjectByName('ChargeurVisible'),
+    windowRiflePresent:!!windowShooter?.getObjectByName('ArmeVisibleTireur'),
+    windowGunFiring:shooterState.firing??false,
+    windowGunFlash:shooterState.flashVisible??false,
+    daylightExposure:game.renderer.toneMappingExposure,
     daylight:game.canvas.dataset.bosnieDaylight==='plus-clair',
     damagedFacades:cityDetails?.fractures??0,
     visibleWindowShooter:shooterState.visible,

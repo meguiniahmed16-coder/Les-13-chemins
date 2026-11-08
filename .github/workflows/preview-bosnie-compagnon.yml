@@ -106,8 +106,10 @@ jobs:
                state?.allyUniform!=='treillis-camouflage-otan'||
                !state?.armoredGear||!state?.camoHelmet||!state?.natoBadge)
               throw Error('Les deux soldats doivent porter la tenue militaire et le gilet OTAN');
-            if(!state?.daylight||state?.damagedFacades<20||!state?.armedHero||!state?.armedAlly)
-              throw Error('Décor éclairci, façades détruites et les deux armes doivent être présents');
+            if(!state?.daylight||state?.damagedFacades<20||!state?.armedHero||!state?.armedAlly||
+               !state?.groundHeroSlungRifle||!state?.groundAllySlungRifle||
+               !state?.windowRiflePresent||state?.daylightExposure<1.6)
+              throw Error('Décor clairement éclairci et trois fusils visibles obligatoires');
             if(!state||!state.modelLoaded||!state.sky||!state.invulnerable)
               throw Error('Soldat humain, compagnon et ciel doivent être chargés');
             if(state.stage!==0||state.companionX<=state.playerX)
@@ -130,6 +132,12 @@ jobs:
               if(await page.locator('#binocularMask').isHidden())
                 throw Error('Le masque de jumelles doit être affiché');
               await page.screenshot({path:'/tmp/bosnie-jumelles-tireur.png'});
+              await page.waitForFunction(()=>window.__bosnieCompanionState?.windowGunFlash===true,null,{timeout:14000});
+              const firing=await page.evaluate(()=>window.__bosnieCompanionState);
+              console.log('TIR_VISIBLE_JUMELLES',JSON.stringify(firing));
+              if(!firing?.windowRiflePresent||!firing?.windowGunFiring&&!firing?.windowGunFlash)
+                throw Error('Le tireur doit tirer visiblement avec son arme');
+              await page.screenshot({path:'/tmp/bosnie-jumelles-coup-de-feu.png'});
               await page.keyboard.up('b');
             }
             await page.close();
@@ -159,4 +167,5 @@ jobs:
             /tmp/bosnie-mobile.png
             /tmp/bosnie-uniforme-gros-plan.png
             /tmp/bosnie-jumelles-tireur.png
+            /tmp/bosnie-jumelles-coup-de-feu.png
           retention-days: 5

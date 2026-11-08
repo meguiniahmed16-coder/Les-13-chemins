@@ -61,8 +61,8 @@ test('The exact same two military meshes can be inspected at close range',()=>{
 test('Brighter Bosnian ruins and recognizable window shooter keep gameplay intact',()=>{
  const s=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
  assert.ok(s.includes('function improveBosnianDaylight(game)'));
- assert.ok(s.includes('toneMappingExposure=1.37'));
- assert.ok(s.includes("game.canvas.dataset.bosnieDaylight='plus-clair'"));
+ assert.ok(s.includes('toneMappingExposure=1.68'));
+ assert.ok(s.includes("game.canvas.dataset.bosnieDaylight='clair-jour'"));
  assert.ok(s.includes("name='FacadeGuerreRuines'"));
  assert.ok(s.includes("name='ImpactsBallesFacade'"));
  assert.ok(s.includes("name='GravatsDeRue'"));
@@ -122,4 +122,37 @@ test('Shooter uses a dense skinned body and calm guarded arms rather than a T po
  const wf=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
  assert.ok(wf.includes('binocular.shooterSkinned'));
  assert.ok(wf.includes('binocular.shooterElbowDrop'));
+});
+
+test('Visually armed soldiers and synchronized muzzle fire in the active window',async()=>{
+ const {windowShotAt}=await import('./bosnie-addon-source.js');
+ // Synchronization with the ORIGINAL 5-passage firing rhythm.
+ for(let index=0;index<5;index++){
+  const details=[
+   {burst:2.15,quiet:2.7,offset:0},
+   {burst:2.6,quiet:2.5,offset:1.2},
+   {burst:1.9,quiet:2.25,offset:.6},
+   {burst:2.8,quiet:2.2,offset:1.7},
+   {burst:2.3,quiet:2.05,offset:.3}
+  ][index];
+  for(const t of [0,.10,.24,.32,.68,1.27,2.03,3.6,6.7]){
+   const phase=((t+details.offset)%(details.burst+details.quiet)+details.burst+details.quiet)%(details.burst+details.quiet);
+   assert.equal(windowShotAt(t,index),phase<details.burst&&phase%.28<.075,`window ${index+1}, time ${t}`);
+  }
+ }
+ const addon=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ const html=fs.readFileSync(new URL('./jeu-bosnie.html',import.meta.url),'utf8');
+ assert.ok(addon.includes("name='EclairDeBoucheDuFusil'"));
+ assert.ok(addon.includes("name='FlammeDeCanon'"));
+ assert.ok(addon.includes('enemy.userData.windowFlashUntil=seconds+.17'));
+ assert.ok(addon.includes('firing:enemy.visible&&firing'));
+ assert.ok(addon.includes('windowGunFlash:shooterState.flashVisible'));
+ assert.ok(addon.includes("part(rifle,'ChargeurVisible'"));
+ assert.ok(addon.includes("groundHeroSlungRifle:"));
+ assert.ok(addon.includes("groundAllySlungRifle:"));
+ assert.ok(addon.includes('material.fragmentShader=original'));
+ assert.ok(html.includes("inset 0 0 48px #0310062c"));
+ const workflow=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
+ assert.ok(workflow.includes("bosnie-jumelles-coup-de-feu.png"));
+ assert.ok(workflow.includes("windowGunFlash===true"));
 });
