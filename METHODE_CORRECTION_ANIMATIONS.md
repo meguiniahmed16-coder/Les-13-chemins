@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.3 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 1.4 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -57,3 +57,15 @@ Dans la pose v2, la cigarette est tenue entre les phalanges de l'index et du maj
 **Révision « Brosse v3 » :** quatre doigts dessinés séparément avec une courbure progressive, des longueurs différenciées et un pouce qui s'oppose au manche. La nouvelle méthode de vérification mesure la distance de chaque doigt au manche, la flexion des articulations et le croisement éventuel. Un rendu de diagnostic multi-vues de la prise entière a été examiné *hors du jeu*, mais la version publique n'est pas validée visuellement avant contrôle réel sur le téléphone.
 
 **État :** correction reconstruite en cours de déploiement / validation utilisateur à venir. Conserver la distinction entre tests automatiques verts et résultat jugé anatomiquement correct.
+
+## C012 — Vérifier le véritable modèle affiché AVANT toute modification
+
+**Preuve :** capture du 8 novembre 2026, étape « 1 / 3 — Trouver la brosse », marqueur « Brosse v3 ». Les doigts tordus visibles appartiennent à `searching = props.openHand()`, et non à `held = props.heldBrush()`. Les essais v1–v3 ont traité, entre autres, la mauvaise pose.
+
+**Erreur de méthode :** valider une correction de `heldBrush` en s'appuyant sur les tests de maillage alors que l'utilisateur regarde encore `openHand` pendant l'approche.
+
+**Nouvelle règle absolue :** lier chaque capture réelle à l'état du jeu, au modèle actif et à sa condition d'affichage dans `yoyo-scene.js`. Ne jamais corriger « la main de la brosse » sans distinguer `searching` (avant la saisie) de `held` (après la saisie). Vérifier l'expression de visibilité et les coordonnées de la caméra.
+
+**Nouvelle pose « Main ouverte v4 » :** cinq doigts complets, trajectoires articulaires progressives, index/majeur/annulaire/auriculaire de longueurs naturelles, pouce déployé sans torsion inverse. Ongles réduits et mieux placés contre la peau. Un rendu hors jeu est inspecté de face, dos, profil et trois quarts. Tests spécifiques sur l'état `search`, la longueur de chaque doigt, les angles et le pouce. **Validation visuelle dans le jeu à confirmer par l'utilisateur.**
+
+**Statut :** les corrections v3 ne sont pas considérées comme une validation de la main ouverte ; le correctif ciblé v4 doit être observé sur le site.

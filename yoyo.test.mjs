@@ -138,3 +138,46 @@ test('The held toilet brush uses five anatomical digits wrapped around its real 
  assert.ok(item.position.length()<1e-9,'the brush must remain centred in the hand pose');
  assert.equal(brush.nails.length,5);
 });
+
+test('The OPEN hand shown during stage 1 search has five naturally curved, complete fingers',async()=>{
+ // Regression from user screenshot: "1 / 3 · Trouver la brosse", BEFORE pickup.
+ // The previous patches accidentally changed heldBrush instead of this openHand.
+ const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
+ assert.match(scene,/const searching=props\.openHand\(\)/,
+  'stage 1 searching model must be explicitly identified before any repair');
+ assert.match(scene,/searching\.visible=!g\.hidden&&pick<\.42/,
+  'openHand is the visible hand prior to taking the brush');
+ const {handData}=await import('./yoyo-hands-data.js');
+ const skin=handData.open, digits=skin.digits;
+ assert.equal(digits.length,5,'index, middle, ring, little, thumb');
+ assert.equal(skin.nails.length,5,'all five complete fingertips exist');
+ const bounds=[[.078,.092],[.088,.105],[.078,.098],[.066,.088],[.070,.095]];
+ for(let i=0;i<5;i++){
+  const points=digits[i].points;
+  assert.equal(points.length,5,'four connected, visible phalanx control segments per digit');
+  const length=segmentLength(points);
+  assert.ok(length>bounds[i][0]&&length<bounds[i][1],
+   'finger '+i+' has improbable full length: '+length);
+  const bones=points.slice(1).map((p,j)=>new T.Vector3(...p).sub(new T.Vector3(...points[j])).normalize());
+  for(let j=0;j<bones.length-1;j++)
+   assert.ok(bones[j].angleTo(bones[j+1])<.90,
+    'finger '+i+' reverses/twists sharply at segment '+j);
+  for(let j=1;j<points.length;j++)
+   assert.ok(points[j][1]>points[j-1][1],
+    'finger '+i+' is folded backwards in the camera view');
+ }
+ const tipX=digits.slice(0,4).map(d=>d.points.at(-1)[0]);
+ for(let i=1;i<tipX.length;i++)
+  assert.ok(tipX[i]-tipX[i-1]>.014,
+   'open-hand fingertips must stay separate without crossing');
+ assert.ok(digits[1].points.at(-1)[1]>digits[0].points.at(-1)[1],
+  'middle finger is longer than index');
+ assert.ok(digits[3].points.at(-1)[1]<digits[2].points.at(-1)[1],
+  'little finger is shorter than ring');
+ const thumb=digits[4].points;
+ for(let i=1;i<thumb.length;i++)
+  assert.ok(thumb[i][0]<thumb[i-1][0],'thumb points outward, never curls back into a hook');
+ assert.ok(thumb.at(-1)[2]>.009,'thumb sits in visible relief from the palm');
+ const hand=models().openHand();
+ assert.ok(hand.children.some(c=>c.type==='Mesh'),'real first-person open hand mesh exists');
+});

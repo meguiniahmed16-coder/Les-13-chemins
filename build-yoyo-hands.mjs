@@ -7,11 +7,11 @@ const specs={};
 function spec(){return {shapes:[],nails:[],digits:[],wrist:[0,-.075,0],cuff:[.018,-.235,.035]};}
 function ell(s,p,r){s.shapes.push({kind:'ell',p,r});}
 function cap(s,a,b,r0,r1=r0){s.shapes.push({kind:'cap',a,b,r0,r1});}
-function digit(s,pts,r,dorsal=[0,0,1]){
+function digit(s,pts,r,dorsal=[0,0,1],taper=.23){
  // Keep real phalanx control points for anatomical regression checks; do not validate tips alone.
  s.digits.push({points:pts.map(p=>[...p]),radius:r});
  const curve=new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)),false,'centripetal');const points=curve.getPoints(12);
- for(let i=0;i<12;i++)cap(s,points[i].toArray(),points[i+1].toArray(),r*(1-i/12*.23),r*(1-(i+1)/12*.23));
+ for(let i=0;i<12;i++)cap(s,points[i].toArray(),points[i+1].toArray(),r*(1-i/12*taper),r*(1-(i+1)/12*taper));
  s.nails.push({tip:pts.at(-1),previous:pts.at(-2),normal:dorsal,r:r*.77});
 }
 function base(s){
@@ -20,10 +20,19 @@ function base(s){
  cap(s,[0,-.057,0],[.008,-.14,.012],.026,.035);cap(s,[.008,-.14,.012],[.018,-.25,.034],.035,.047);
 }
 const roots=[[-.030,.031,0],[-.009,.041,0],[.012,.036,0],[.031,.024,0]],radii=[.0098,.0104,.0095,.0082];
+// Search stage, before the toilet brush is taken: searching uses openHand(), NOT heldBrush().
+// Relaxed reaching pose modelled with MCP/PIP/DIP and separate naturally curved fingertips.
+// Never spread the index and little finger into crooked hooks to simulate a grasp.
 let s=spec();base(s);
-const ends=[[-.039,.111,-.009],[-.009,.132,-.014],[.018,.121,-.018],[.046,.092,-.015]];
-roots.forEach((a,i)=>{const e=ends[i];digit(s,[a,[a[0],a[1]+(e[1]-a[1])*.43,.001],[e[0]-.002,e[1]-.022,-.004],e],radii[i]);});
-digit(s,[[-.030,-.031,-.003],[-.052,-.016,-.004],[-.066,.007,-.005],[-.068,.032,-.008]],.0142,[0,0,1]);
+const reachingDigits=[
+ [[-.030,.031,0],[-.032,.060,.001],[-.032,.085,-.006],[-.029,.106,-.015],[-.028,.110,-.020]], // index
+ [[-.009,.041,0],[-.010,.071,.001],[-.010,.103,-.008],[-.008,.124,-.020],[-.007,.129,-.024]], // middle
+ [[.012,.036,0],[.014,.066,.001],[.017,.094,-.010],[.021,.112,-.020],[.020,.114,-.024]], // ring
+ [[.031,.024,0],[.034,.052,0],[.038,.073,-.010],[.043,.088,-.017],[.042,.090,-.021]], // little
+];
+reachingDigits.forEach((points,i)=>digit(s,points,radii[i]*[.97,.98,1,1][i],[0,0,1],.34));
+// Thumb is splayed beside the palm but NOT hyperextended or curled back into a hook.
+digit(s,[[-.030,-.031,-.003],[-.046,-.015,.004],[-.062,.003,.013],[-.072,.020,.016],[-.076,.032,.011]],.0128,[0,0,1],.29);
 specs.open=s;
 s=spec();base(s);
 // Two long, softly flexed fingers flank the cigarette at the middle phalanges.
