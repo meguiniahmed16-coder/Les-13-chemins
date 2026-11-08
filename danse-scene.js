@@ -86,7 +86,7 @@ function makePilotSmile(root,head){
   corner.name=side<0?'CoinGauche':'CoinDroit';smile.add(corner);
  }
  // A small existing hairstyle cap, correctly attached to the same head bone.
- const hair=new T.Group();root.add(hair);
+ const hair=new T.Group();hair.name='CoiffureOriginaleQuaternius';root.add(hair);
  hair.position.set(0,1.733,-.017);
  root.updateMatrixWorld(true);head.attach(hair);
  const cap=new T.Mesh(new T.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI*.54),
@@ -116,6 +116,8 @@ function loadPilotDancer(target){
   target.group.add(root);
   target.group.children.forEach(child=>{if(child!==root)child.visible=false;});
   target.pilot={root,bones,rest,smile,eyes,baseY:root.position.y};
+  // Une seule ressource féminine GLB : trois copies articulées dans la même scène.
+  if(target.otherDancers)upgradeFemaleDancers(target.otherDancers,target.pilot);
  },undefined,err=>{
   // If the model cannot load, preserve the current character, not an empty gap.
   console.warn('Quaternius pilot unavailable; original dancer retained.',err);
@@ -168,6 +170,85 @@ function upgradeCandidatePanel(scene,candidates,source){
  // Replace the entire panel only AFTER all five genuine rigged bodies exist.
  for(const copy of copies)scene.add(copy.root);
  candidates.forEach((candidate,i)=>{candidate.quaternius=copies[i];candidate.group.visible=false;});
+}
+
+function dressFemaleClone(body,look){
+ const geometry=body.geometry.clone(),pos=geometry.getAttribute('position');
+ if(!body.isSkinnedMesh||!pos||pos.count<5000)throw Error('Vrai maillage féminin Quaternius absent');
+ const skin=new T.Color(look.skin),top=new T.Color(look.shirt);
+ const sleeves=new T.Color(look.shirt).offsetHSL(0,-.03,.08);
+ const pants=new T.Color(0x34354c),shoes=new T.Color(0x292d37);
+ const colors=new Float32Array(pos.count*3);
+ for(let v=0;v<pos.count;v++){
+  const y=pos.getY(v),x=Math.abs(pos.getX(v));
+  const color=y<.105?shoes:y<1.015?pants:y<1.49&&x<.46?top:y<1.49&&x<.57?sleeves:skin;
+  color.toArray(colors,v*3);
+ }
+ geometry.setAttribute('color',new T.BufferAttribute(colors,3));
+ body.geometry=geometry;
+ body.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.83,metalness:0});
+ body.frustumCulled=false;
+}
+function dressFemaleHair(root,head,look){
+ // The afro of dancer 1 is NEVER changed. These three clones hide only
+ // their own copy of the afro and use simple, distinct anchored hairstyles.
+ const oldHair=root.getObjectByName('CoiffureOriginaleQuaternius');
+ if(!oldHair)throw Error('Coiffure source Quaternius introuvable');
+ oldHair.visible=false;
+ const group=new T.Group();group.name='Coiffure_'+look.hairStyle;
+ root.add(group);group.position.set(0,1.733,-.017);
+ root.updateMatrixWorld(true);head.attach(group);
+ const mat=new T.MeshStandardMaterial({color:look.hairColor,roughness:.95});
+ const add=(x,y,z,sx,sy,sz)=>{
+  const mesh=new T.Mesh(new T.SphereGeometry(1,12,9),mat);
+  mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);group.add(mesh);
+ };
+ const cap=new T.Mesh(new T.SphereGeometry(1,22,10,0,Math.PI*2,0,Math.PI*.54),mat);
+ cap.scale.set(.121,.082,.112);group.add(cap);
+ if(look.hairStyle==='long'){ // blonde : cheveux longs, droits
+  for(const side of [-1,1])add(side*.104,-.15,-.025,.026,.145,.034);
+  add(0,-.125,-.115,.095,.14,.025);
+ }else if(look.hairStyle==='ponytail'){ // rousse : queue de cheval
+  add(0,-.035,-.121,.099,.07,.035);
+  add(-.04,-.16,-.155,.031,.13,.030);
+ }else if(look.hairStyle==='bob'){ // brune : carré court
+  for(const side of [-1,1])add(side*.105,-.095,-.025,.030,.095,.038);
+  add(0,-.06,-.117,.100,.077,.028);
+ }else throw Error('Coiffure secondaire non reconnue : '+look.hairStyle);
+}
+function upgradeFemaleDancers(dancers,source){
+ // Exactly three copies, from the same imported 65-bone *female* 3D body.
+ // Prepare all clones before hiding any old simplified dancer.
+ const prepared=dancers.slice(1).map((dancer,i)=>{
+  const look=dancer.avatarLook;
+  const root=cloneSkeleton(source.root);
+  root.name='DanseuseQuaternius'+(i+2);
+  root.position.set(0,source.baseY,0);
+  root.rotation.set(0,0,0);
+  const body=root.getObjectByName('Superhero_Female');
+  const head=root.getObjectByName('Head');
+  if(!body?.isSkinnedMesh||!head?.isBone)throw Error('Corps féminin articulé incomplet');
+  const bones=new Map(),rest=new Map();
+  root.traverse(node=>{
+   if(node.isBone){
+    const name=node.name.toLowerCase();
+    const original=source.rest.get(name);
+    if(original)node.quaternion.copy(original);
+    bones.set(name,node);rest.set(name,node.quaternion.clone());
+   }
+  });
+  if(bones.size<60)throw Error('Squelette féminin incomplet');
+  dressFemaleClone(body,look);
+  dressFemaleHair(root,head,look);
+  const smile=root.getObjectByName('SourireSculpte');
+  if(!smile)throw Error('Sourire original féminin absent');
+  return {dancer,root,pilot:{root,bones,rest,smile,eyes:root.getObjectByName('Eyes'),baseY:root.position.y}};
+ });
+ for(const {dancer,root,pilot} of prepared){
+  dancer.group.add(root);
+  dancer.group.children.forEach(child=>{if(child!==root)child.visible=false;});
+  dancer.pilot=pilot;
+ }
 }
 function animatePilotDancer(h,t,dt,active){
  const p=h.pilot;if(!p)return;
@@ -336,8 +417,9 @@ export class DanceScene{
  this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){
   const h=human({...danceLooks[i],female:true,hair:true});
   h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;
+  h.avatarLook=danceLooks[i];
   s.add(h.group);this.dancers.push(h);
-  if(i===0)loadPilotDancer(h); // Conserver l'afro originale de la première danseuse
+  if(i===0){h.otherDancers=this.dancers;loadPilotDancer(h);} // Une afro, trois autres coiffures
  }
  this.lionel=human({shirt:0xadc1c2,pants:0x2b253a,skin:0xd1a084,hair:true});this.lionel.group.position.set(4.7,.04,-.5);this.lionel.group.scale.setScalar(.92);s.add(this.lionel.group);sign(s,'LIONEL',1.2,.3,4.7,2.35,-.45,'#30233f','#b6ffdc',78);
  // The audience faces the performers, seen from behind along the front of frame.
@@ -349,7 +431,7 @@ export class DanceScene{
  }
  resize(){const b=this.canvas.parentElement.getBoundingClientRect();this.renderer.setSize(b.width,b.height,false);this.camera.aspect=b.width/b.height;const narrow=this.camera.aspect<1.3;this.camera.fov=narrow?44:38;this.camera.position.set(narrow?.1:1.3,narrow?3.1:3.5,narrow?6.8:7.2);this.camera.lookAt(0,1.15,-.4);this.camera.updateProjectionMatrix();}
  update(r,dt){const t=r.clock,active=['playing','practice','break','countdown','won'].includes(r.phase),recent=t-r.actionAt<1.1;const action=recent?r.action:'cross';const power=active?1:.25;pose(this.hero,t,action,power);this.hero.group.position.x=recent&&(action==='left'||action==='right')?(action==='left'?-.35:.35)*Math.sin(Math.min(1,(t-r.actionAt)/1.1)*Math.PI):0;
- if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(i===0)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{
+ if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(h.pilot)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{
   if(h.quaternius)poseQuaterniusDancer(h.quaternius,t+i*.3,'cross',.12,false,h.group.position,(i-2)*.04);
   else{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;}
  });pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}

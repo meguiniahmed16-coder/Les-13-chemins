@@ -32,8 +32,8 @@ test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a 
  const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
  assert.match(src,/import \{GLTFLoader\} from 'three\/examples\/jsm\/loaders\/GLTFLoader\.js'/);
  assert.match(src,/const PILOT_MODEL='assets\/danse\/quaternius-superhero-female\.glb'/);
- assert.match(src,/if\(i===0\)loadPilotDancer\(h\)/);
- assert.match(src,/if\(i===0\)animatePilotDancer\(h,t,dt,active\)/);
+ assert.match(src,/if\\(i===0\\)\\{h\\.otherDancers=this\\.dancers;loadPilotDancer\\(h\\);\\}/);
+ assert.match(src,/if\\(h\\.pilot\\)animatePilotDancer\\(h,t,dt,active\\)/);
  assert.match(src,/target\.group\.children\.forEach\(child=>\{if\(child!==root\)child\.visible=false;\}\)/);
  assert.match(src,/colourPilotActor\(o\)/,'cloth colours must come from the true skinned mesh');
  assert.ok(src.includes("root.updateMatrixWorld(true);head.attach(smile)"),'smile details must follow actual head bone');
@@ -61,7 +61,7 @@ test('The playable protagonist is male; four distinct women surround him; afro u
  assert.match(helper,/Superhero Male/);
  assert.ok(src.includes("loadQuaterniusDancer(s,this.hero.group.position)"),'the playable protagonist must be a man');
  assert.ok(src.includes("poseQuaterniusDancer(this.featuredDancer"),'player commands must animate the male 3D model');
- assert.ok(src.includes("if(i===0)loadPilotDancer(h)"),'preserve the existing afro dancer');
+ assert.ok(src.includes("if(i===0){h.otherDancers=this.dancers;loadPilotDancer(h);}"),'load original afro dancer first');
  assert.ok(src.includes("hairStyle:'afro'"));
  for(const style of ["hairStyle:'long'","hairStyle:'ponytail'","hairStyle:'bob'"])assert.ok(src.includes(style),'missing distinct hairstyle '+style);
  assert.ok(src.includes("if(hairStyle==='long')")&&src.includes("if(hairStyle==='ponytail')")&&src.includes("if(hairStyle==='bob')"));
@@ -85,4 +85,17 @@ test('Five background candidates reuse the real 65-bone male model, not cylinder
  assert.ok(src.includes('const CANDIDATE_HAIR='));
  assert.match(src,/candidates\.map\(\(candidate,i\)=>/);
  assert.ok(src.includes('try{upgradeCandidatePanel('), 'keep fallback if upgrade fails');
+});
+
+test('All FOUR dance women reuse the skinned female model, without changing the validated afro',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ assert.ok(src.includes('function upgradeFemaleDancers(dancers,source)'));
+ assert.ok(src.includes('const root=cloneSkeleton(source.root)'), 'reuse imported female body, no separate assets');
+ assert.ok(src.includes("root.getObjectByName('Superhero_Female')"), 'use real skinned female mesh');
+ assert.ok(src.includes('if(bones.size<60)'), 'retain complete original human skeleton');
+ assert.ok(src.includes('if(h.pilot)animatePilotDancer(h,t,dt,active)'), 'all four original rigs animate');
+ assert.ok(src.includes("hair.name='CoiffureOriginaleQuaternius'"), 'original hair is unchanged, just named');
+ assert.ok(src.includes('oldHair.visible=false'), 'hide afro ONLY on the three clones');
+ assert.ok(src.includes('dancer.pilot=pilot'), 'replace each simplified dancer');
+ for(const style of ['long','ponytail','bob'])assert.ok(src.includes("look.hairStyle==='"+style+"'"));
 });

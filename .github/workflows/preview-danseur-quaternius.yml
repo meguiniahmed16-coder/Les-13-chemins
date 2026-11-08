@@ -68,7 +68,7 @@ jobs:
             const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
             page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));
             await page.goto('http://127.0.0.1:8123/pilot-visual.html'+query,{waitUntil:'domcontentloaded'});
-            await page.waitForFunction(()=>window.__pilot?.dancers?.[0]?.pilot?.bones?.size>=60,null,{timeout:28000});
+            await page.waitForFunction(()=>window.__pilot?.dancers?.every(d=>d.pilot?.bones?.size>=60),null,{timeout:28000});
             await page.waitForFunction(()=>window.__pilot?.featuredDancer?.bones?.Head,null,{timeout:28000});
             await page.waitForFunction(()=>window.__pilot?.candidates?.filter(c=>c.quaternius).length===5,null,{timeout:28000});
             await page.waitForTimeout(650);
@@ -88,6 +88,9 @@ jobs:
                 faceCorners:p.smile?.children?.length||0,
                 protagonist:!!scene.featuredDancer,
                 femaleCount:scene.dancers.length,
+                femaleReal:scene.dancers.map(d=>d.pilot?.root?.getObjectByName('Superhero_Female')?.isSkinnedMesh===true),
+                femaleOriginalHidden:scene.dancers.map(d=>d.group.children.filter(c=>c!==d.pilot?.root).every(c=>!c.visible)),
+                femaleRigCounts:scene.dancers.map(d=>d.pilot?.bones?.size||0),
                 candidateModels:scene.candidates.filter(c=>c.quaternius?.root).length,
                 candidateRigBones:scene.candidates.map(c=>Object.keys(c.quaternius?.bones||{}).length),
                 spectatorCount:scene.public.length,
@@ -100,6 +103,8 @@ jobs:
               throw Error('Les vrais yeux doivent être peints et le sourire sans double bouche');
             if(state.candidateModels!==5||state.candidateRigBones.some(n=>n<14))
               throw Error('Le panel doit contenir cinq vrais modèles humains riggés');
+            if(state.femaleReal.some(v=>!v)||state.femaleOriginalHidden.some(v=>!v)||state.femaleRigCounts.some(n=>n<60))
+              throw Error('Les quatre danseuses doivent avoir le vrai corps féminin articulé');
             if(!state.protagonist||state.femaleCount!==4||state.spectatorCount!==16||
                state.otherHairstyles.join(',')!=='long,ponytail,bob')
               throw Error('Le héros masculin et les quatre danseuses doivent être présents');
