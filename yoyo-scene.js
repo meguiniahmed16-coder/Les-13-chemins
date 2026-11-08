@@ -160,7 +160,7 @@ export function makeCinema(host){
  }
  curve(wraps,.005,cloth,ropeGroup);ell(.019,.024,.019,0,.034,0,cloth,ropeGroup);
 
- const bagRoot=new T.Group();bagRoot.position.set(.044,-.415,0);ropeGroup.add(bagRoot);
+ const bagRoot=new T.Group();bagRoot.position.set(0,-.415,0);ropeGroup.add(bagRoot);
  const bagPlastic=mat('#f0f1e9',.37,{transparent:true,opacity:.57,side:T.DoubleSide,depthWrite:false,metalness:.04});
  const seam=mat('#dedfd4',.42,{transparent:true,opacity:.68,depthWrite:false});
  // Sewn (heat-sealed) bag shell: two thin, creased skins and rounded, weighted bottom.
@@ -187,7 +187,7 @@ export function makeCinema(host){
  bagHalf(1);bagHalf(-1);
  for(const z of [-.012,.012]){
   // Two unmistakable flexible handles with open negative space.
-  curve([[-.052,-.006,z],[-.055,.030,z],[-.028,.076,z],[.004,.083,z],[.036,.068,z],[.053,.005,z]],.0063,bagPlastic,bagRoot);
+  curve([[-.052,-.006,z],[-.030,.035,z],[.020,.090,z],[.079,.095,z],[.070,.074,z],[.053,.005,z]],.0063,bagPlastic,bagRoot);
   curve([[-.052,-.008,z],[-.047,-.12,z],[-.056,-.24,z],[-.039,-.287,z]],.0015,seam,bagRoot);
   curve([[.052,-.008,z],[.045,-.13,z],[.053,-.24,z],[.036,-.287,z]],.0015,seam,bagRoot);
   curve([[-.038,-.29,z],[0,-.296,z],[.039,-.29,z]],.0026,seam,bagRoot);
