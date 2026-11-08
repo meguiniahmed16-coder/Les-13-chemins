@@ -110,3 +110,18 @@ test('Large 4K chapter banner uses literary wording, compact page reference, and
  assert.ok(src.includes("chapterBanner(s);"));
  assert.ok(!src.includes("sign(s,'QUI EST LE DANSEUR ?"));
 });
+
+test('The 16 TV spectators have independent hair, clothing and unobtrusive reactions',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ assert.ok(src.includes('const audienceClothes='));
+ assert.ok(src.includes('const audienceSkins='));
+ assert.ok(src.includes('const audienceHair='));
+ assert.ok(src.includes('for(let row=0;row<2;row++)for(let i=0;i<8;i++)'));
+ assert.ok(src.includes('this.public.push({group:g,head,arms,reaction:index%4,phase:index*.79})'));
+ assert.ok(src.includes("if(hairStyle!==4)"));
+ assert.ok(src.includes("const clap=active&&p.reaction===0"));
+ assert.ok(src.includes("cheer=active&&p.reaction===1"));
+ assert.ok(src.includes('p.head.rotation.y='));
+ assert.ok(src.includes('chapterBanner(s)'), 'do not alter the literary banner');
+ assert.ok(src.includes('upgradeFemaleDancers(dancers,source)'), 'keep the four real female bodies');
+});

@@ -459,8 +459,52 @@ export class DanceScene{
   if(i===0){h.otherDancers=this.dancers;loadPilotDancer(h);} // Une afro, trois autres coiffures
  }
  this.lionel=human({shirt:0xadc1c2,pants:0x2b253a,skin:0xd1a084,hair:true});this.lionel.group.position.set(4.7,.04,-.5);this.lionel.group.scale.setScalar(.92);s.add(this.lionel.group);sign(s,'LIONEL',1.2,.3,4.7,2.35,-.45,'#30233f','#b6ffdc',78);
- // The audience faces the performers, seen from behind along the front of frame.
- this.public=[];for(let row=0;row<2;row++)for(let i=0;i<8;i++){const x=(i-3.5)*1.16;const z=4.2+row*1.4;box(s,1,.58,.85,0x46274f,x,.1+row*.22,z);const g=new T.Group();g.position.set(x,.25+row*.22,z);g.rotation.y=Math.PI;s.add(g);ellipsoid(g,0,.68,0,.25,.35,.17,[0x92719b,0x5f7c88,0xa9836c,0x7c8a6b][i%4]);ellipsoid(g,0,1.15,0,.16,.21,.16,[0xbf8b67,0xdbb191,0x93664e][i%3]);ellipsoid(g,0,1.27,-.04,.17,.12,.16,0x372c36);const arms=[];for(const a of [-1,1]){const arm=new T.Group();arm.position.set(a*.23,.85,0);g.add(arm);cylinder(arm,.06,.045,.45,0xa67f6a,0,-.2,0);arms.push(arm);}this.public.push({group:g,arms});}
+ // Sixteen varied TV-studio spectators: background detail, not another game.
+ // Retain the two rows and all seats; vary only clothes, skin, hair and reactions.
+ const audienceClothes=[0x8f629c,0x4f98a9,0xbf8557,0x659077,0xa45182,0x6679b8,0xba9b66,0x58858b];
+ const audienceSkins=[0xb47b58,0xe0b28e,0x94644c,0xf0c6a5,0xc78d65,0xb37b5b,0xe8bd99,0x805443];
+ const audienceHair=[0x2f262c,0x714c35,0x3f3135,0x997141,0x27252c,0x59362c,0x312c2b,0xb17a4c];
+ this.public=[];
+ for(let row=0;row<2;row++)for(let i=0;i<8;i++){
+  const index=row*8+i,x=(i-3.5)*1.16,z=4.2+row*1.4;
+  box(s,1,.58,.85,0x46274f,x,.1+row*.22,z);
+  const g=new T.Group();
+  g.position.set(x,.25+row*.22,z);
+  g.rotation.y=Math.PI;
+  s.add(g);
+  const shirt=audienceClothes[(i+row*3)%audienceClothes.length];
+  const skin=audienceSkins[(i+row*5)%audienceSkins.length];
+  const hair=audienceHair[(i+row*2)%audienceHair.length];
+  const height=.94+(index%5)*.026,build=.9+(index%4)*.07;
+  const torso=ellipsoid(g,0,.70,0,.255*build,.33*height,.18,shirt);
+  const neck=ellipsoid(g,0,1.015,0,.063,.060,.065,skin);
+  const head=new T.Group();head.position.set(0,1.17,0);g.add(head);
+  ellipsoid(head,0,0,0,.146,.189,.143,skin);
+  const hairStyle=index%5;
+  if(hairStyle!==4){ // A few spectators are bald; no artificial hair cap.
+   const cap=ellipsoid(head,0,.12,-.017,.153,.095,.15,hair);
+   if(hairStyle===0){ // short crop
+    cap.scale.y*=.72;
+   }else if(hairStyle===1){ // straight bob
+    ellipsoid(head,-.124,-.054,-.038,.036,.112,.053,hair);
+    ellipsoid(head,.124,-.054,-.038,.036,.112,.053,hair);
+   }else if(hairStyle===2){ // bun
+    ellipsoid(head,0,.177,-.115,.068,.063,.071,hair);
+   }else{ // loose curls, small irregular silhouette
+    for(const side of [-1,1])ellipsoid(head,side*.107,.070,-.05,.068,.083,.07,hair);
+   }
+  }
+  const arms=[];
+  for(const side of [-1,1]){
+   const arm=new T.Group();arm.position.set(side*.235,.85,0);g.add(arm);
+   cylinder(arm,.06,.051,.24,shirt,0,-.115,0);
+   const elbow=new T.Group();elbow.position.y=-.235;arm.add(elbow);
+   cylinder(elbow,.045,.034,.23,skin,0,-.115,0);
+   ellipsoid(elbow,0,-.245,0,.039,.051,.040,skin);
+   arms.push({arm,elbow});
+  }
+  this.public.push({group:g,head,arms,reaction:index%4,phase:index*.79});
+ }
  // Studio cameras, rails, speaker stacks and lighting rig.
  for(const x of [-6.3,6.3]){box(s,.8,1.5,.7,0x191622,x,.75,3.5);for(const y of [.45,1.05]){const sp=cylinder(s,.24,.24,.05,0x3f354e,x,y,3.88);sp.rotation.x=Math.PI/2;}cylinder(s,.05,.05,1.1,0x4a4057,x,1.95,3.5);box(s,.65,.4,.7,0x252233,x,2.65,3.5);const lens=cylinder(s,.16,.2,.24,0x1a1723,x,2.65,3.02);lens.rotation.x=Math.PI/2;for(const side of [-1,1]){const leg=cylinder(s,.025,.025,1.7,0x625669,x+side*.3,.8,3.5);leg.rotation.z=side*-.35;}}
  box(s,19,.16,.2,0x8c719e,0,6.1,-2.8);for(let i=-3;i<=3;i++){box(s,.5,.35,.65,0x2b2434,i*2.3,5.9,-2.8);const lens=cylinder(s,.18,.18,.04,i%2?palette.pink:palette.mint,i*2.3,5.65,-2.53);lens.rotation.x=Math.PI/4;}
@@ -472,7 +516,20 @@ export class DanceScene{
   if(h.quaternius)poseQuaterniusDancer(h.quaternius,t+i*.3,'cross',.12,false,h.group.position,(i-2)*.04);
   else{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;}
  });pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
- for(const [i,p]of this.public.entries()){p.arms.forEach((a,j)=>{a.rotation.z=(j?1:-1)*(.4+Math.sin(t*6+i)*.15);a.rotation.x=active?-.8:0;});}
+ // Independent but restrained audience reactions: clapping, cheering and nodding.
+ for(const p of this.public){
+  const pulse=Math.sin(t*5.4+p.phase),cheer=active&&p.reaction===1;
+  const clap=active&&p.reaction===0;
+  p.group.rotation.z=(active?.018:.006)*Math.sin(t*2.6+p.phase);
+  p.head.rotation.y=.12*Math.sin(t*1.4+p.phase);
+  p.head.rotation.z=(active?.07:.02)*Math.sin(t*2.9+p.phase);
+  p.arms.forEach(({arm,elbow},j)=>{
+   const side=j===0?-1:1;
+   arm.rotation.z=cheer?side*(2.12+.18*pulse):clap?side*(.75+.18*pulse):side*(.17+.13*Math.max(0,pulse));
+   arm.rotation.x=cheer?-.48:clap?-.35:active?-.22:-.04;
+   elbow.rotation.x=clap?-.72-.16*pulse:cheer?-.32:-.13;
+  });
+ }
  if(r.phase==='won'){this.hero.arms[0].shoulder.rotation.z=-1.4;this.hero.arms[1].shoulder.rotation.z=1.4;this.hero.head.rotation.x=-.15;this.confetti.forEach((o,i)=>{o.visible=!this.reduced;o.position.y=5.5-((r.time*.8+i*.19)%5.7);o.rotation.z=t+i;});}else this.confetti.forEach(o=>o.visible=false);
  if(this.featuredDancer){
   poseQuaterniusDancer(this.featuredDancer,t,action,power,r.phase==='won',this.hero.group.position,this.hero.group.rotation.y);

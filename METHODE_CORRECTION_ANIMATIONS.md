@@ -184,3 +184,8 @@ Le panel au fond du mini-jeu ne doit plus présenter les anciens personnages en 
 ## C024 — Banderole littéraire haute résolution
 
 Remplacer « QUI EST LE DANSEUR ? » par « Chapitre 3 — Le coup du bus » et « P 54-56 » (exactement : P majuscule, un espace, 54-56 avec trait d’union ; pas de « PAGE » en capitales ni de barre oblique). Texture Canvas 4096 × 512 avec fin cadre néon de plateau télé, sans nouvel asset ni modification des corps et règles du mini-jeu. Vérifier une capture du vrai rendu, conserver le travail dans la branche de test sans publier.
+
+
+## C025 — Public de l’émission (novembre 2026)
+
+Seize spectateurs restent installés sur deux rangées devant la piste : vêtements et carnations variés, coiffures courtes, carrés, chignons, boucles, quelques crânes dégarnis. Réactions discrètes et décalées (applaudir, encourager, hocher la tête), sans mouvement uniforme ni modification du gameplay. Les figurants demeurent volontairement simples et légers car ils sont au premier plan mais secondaires dans ce mini-jeu de la plateforme littéraire. Ne pas toucher au danseur principal masculin, aux quatre danseuses articulées ni à la banderole « Chapitre 3 — Le coup du bus » / « P 54-56 ». Validation nécessaire sur vue réelle, mobile et écran large.
