@@ -211,7 +211,9 @@ export function makeCinema(host){
  bagRoot.add(coffee);parcels.push(coffee);
  // Posed hands grip their own props; a single continuous forearm rises from below frame.
  const reaching=props.openHand();scene.add(reaching);reaching.rotation.set(-.3,0,-.5);
- const searching=props.openHand(),held=props.heldBrush(),drink=props.cupHand(),cigarette=props.smokingHand();
+ // The player sees two FIXED 2D images over the first-person backdrop.
+ // Do not construct skinned 3D hands for the playable search/pickup/window scenes.
+ const searching=new T.Group(),held=new T.Group(),drink=props.cupHand(),cigarette=props.smokingHand();
  for(const m of [searching,held,drink,cigarette])camera.add(m);
  const steam=[];for(let i=0;i<16;i++){const p=ell(.013,.026,.013,0,0,0,new T.MeshBasicMaterial({color:'#d0d7cb',transparent:true,opacity:.1,depthWrite:false}),camera);steam.push(p);}
  const hemi=new T.HemisphereLight('#c2dcdf','#4a483c',2.3);scene.add(hemi);const sun=new T.DirectionalLight('#e5e3cd',3.4);sun.position.set(-3,5,-7);sun.target.position.set(1,.2,.8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:.1,far:15});sun.shadow.bias=-.0007;scene.add(sun,sun.target);const fill=new T.PointLight('#b4c6c4',3,6,1.5);fill.position.set(0,2.4,-1.1);scene.add(fill);
@@ -263,7 +265,8 @@ export function makeCinema(host){
    const armDepth=.66+reach;
    held.position.set(...atScreen(g.hooked?rx:g.aim,.82-pull*.06,armDepth));
    held.rotation.set(-.10+reach*.35,0,-.035);
-   anchors.head=project(held.localToWorld(new T.Vector3(0,.365,0)));anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
+   // 2D brush head is anchored 45% down the screen; crosshair follows the sprite, not an invisible 3D bone.
+   anchors.head={x:g.hooked?rx:g.aim,y:.34};anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
    if(g.hidden){held.visible=false;camera.position.y=.62;camera.lookAt(0,.64,-4);}
   }else{
    let a=frames[0],b=frames[1];for(let i=0;i<frames.length-1;i++)if(t>=frames[i].t){a=frames[i];b=frames[i+1];}

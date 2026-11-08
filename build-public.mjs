@@ -45,6 +45,8 @@ const publicFiles = [
   'danse-runtime.js',
   'jeu-yoyo.html',
   'yoyo-runtime.js',
+  'main_ouverte_fixee.webp',
+  'main_brosse_dos_fixee.webp',
   'hand-right.glb',
   'hand-right-LICENSE.txt',
   'plateaux-core.js',

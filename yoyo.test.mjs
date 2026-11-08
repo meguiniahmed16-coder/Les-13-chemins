@@ -142,12 +142,16 @@ test('The held toilet brush uses five anatomical digits wrapped around its real 
 
 test('The OPEN hand shown during stage 1 search has five naturally curved, complete fingers',async()=>{
  // Regression from user screenshot: "1 / 3 · Trouver la brosse", BEFORE pickup.
- // The previous patches accidentally changed heldBrush instead of this openHand.
+ // This legacy pose is still used in the 3D introduction only.
+ // Stage 1 of the actual game now uses a fixed photographic hand image.
  const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
- assert.match(scene,/const searching=props\.openHand\(\)/,
-  'stage 1 searching model must be explicitly identified before any repair');
- assert.match(scene,/searching\.visible=!g\.hidden&&pick<\.42/,
-  'openHand is the visible hand prior to taking the brush');
+ const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
+ assert.match(scene,/const searching=new T\.Group\(\),held=new T\.Group\(\)/,
+  'interactive stages must no longer instantiate the 3D hands');
+ assert.match(app,/view==='search'/,
+  'stage 1 must use the fixed open-hand drawing');
+ assert.match(app,/openHandSprite=/,
+  'the open-hand sprite must exist');
  const {handData}=await import('./yoyo-hands-data.js');
  const skin=handData.open, digits=skin.digits;
  assert.equal(digits.length,5,'index, middle, ring, little, thumb');
@@ -320,4 +324,36 @@ test('All four fingers fold towards the real PALM of the 25-joint WebXR hand',()
   assert.ok(Math.abs(pinch.z-(joint.x*1.05-.035))<.018,
    'cigarette is floating away from the fingers');
  }
+});
+
+test('Two illustrated static hand states remain visible and light, with no finger animation',()=>{
+ const page=fs.readFileSync(new URL('./jeu-yoyo.html',import.meta.url),'utf8');
+ const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
+ const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
+ const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ assert.match(page,/Main fixe v9/);
+ assert.match(page,/id="handOpen2D"[^>]*main_ouverte_fixee\.webp/);
+ assert.match(page,/id="handGrip2D"[^>]*main_brosse_dos_fixee\.webp/);
+ assert.match(app,/const picking=view==='pickup'/);
+ assert.match(app,/picking&&t>=\.56/);
+ assert.match(app,/view==='window'/);
+ assert.match(app,/const holding=view==='window'/);
+ assert.match(app,/img\.hidden=false/);
+ assert.match(app,/state\.hidden/);
+ assert.match(app,/hideHandSprites\(\);mode='victory'/);
+ assert.match(scene,/const searching=new T\.Group\(\),held=new T\.Group\(\)/);
+ assert.doesNotMatch(scene,/searching=props\.openHand\(\),held=props\.heldBrush\(\)/);
+ assert.match(scene,/anchors\.head=\{x:g\.hooked\?rx:g\.aim,y:\.34\}/);
+ for(const name of ['main_ouverte_fixee.webp','main_brosse_dos_fixee.webp']){
+  const bytes=fs.readFileSync(new URL('./'+name,import.meta.url));
+  assert.equal(bytes.toString('ascii',0,4),'RIFF',name+' missing WebP header');
+  assert.equal(bytes.toString('ascii',8,12),'WEBP',name+' invalid format');
+  assert.ok(bytes.byteLength>9000&&bytes.byteLength<35000,name+' must be lightweight but detailed');
+  assert.ok(build.includes("'"+name+"'"),'Netlify deployment missing '+name);
+ }
+ // Only x positioning and whole-sprite switching: no bones/finger rotations during gameplay.
+ const section=app.slice(app.indexOf('function showHandSprite('),app.indexOf('function world('));
+ assert.doesNotMatch(section,/(?:finger|phalange|quaternion|\.rotation)/);
+ assert.match(section,/img\.style\.left=/);
+ assert.match(app,/if\(mode==='intro'\|\|mode==='victory'\)\{hideHandSprites\(\)/);
 });
