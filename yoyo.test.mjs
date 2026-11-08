@@ -181,3 +181,30 @@ test('The OPEN hand shown during stage 1 search has five naturally curved, compl
  const hand=models().openHand();
  assert.ok(hand.children.some(c=>c.type==='Mesh'),'real first-person open hand mesh exists');
 });
+
+test('Stage 1 uses an anatomical skinned hand asset, not four tubes joined to a primitive palm',()=>{
+ const binary=fs.readFileSync(new URL('./hand-right.glb',import.meta.url));
+ assert.equal(binary.toString('ascii',0,4),'glTF','locally served asset must be a real glTF binary');
+ const jsonSize=binary.readUInt32LE(12);
+ assert.equal(binary.toString('ascii',16,20),'JSON');
+ const gltf=JSON.parse(binary.subarray(20,20+jsonSize).toString('utf8'));
+ assert.ok(gltf.meshes.length>=1,'hand asset must have a real polygon mesh');
+ const pos=gltf.meshes[0].primitives[0].attributes.POSITION;
+ assert.ok(gltf.accessors[pos].count>1000,'hand must have detailed geometry across fingers, thumb and palm');
+ assert.equal(gltf.skins[0].joints.length,25,'WebXR real hand should have 25 articulated joints');
+ const ids=gltf.skins[0].joints.map(i=>gltf.nodes[i].name);
+ for(const id of ['wrist','thumb-metacarpal','index-finger-metacarpal','middle-finger-phalanx-proximal','ring-finger-tip','pinky-finger-tip'])
+  assert.ok(ids.includes(id),'anatomical skeleton is missing '+id);
+ const code=fs.readFileSync(new URL('./yoyo-models.js',import.meta.url),'utf8');
+ assert.match(code,/new GLTFLoader\(\)\.loadAsync\('hand-right\.glb'\)/);
+ assert.match(code,/p\.userData\.handModel='webxr-anatomical-right'/);
+ assert.ok(code.slice(code.indexOf(' function openHand(){'),code.indexOf(' function brush(){')).includes('anatomyGeometry()'),
+  'the rendered pre-pickup hand must use the anatomical reference rather than the old capsule pose');
+ const hand=models().openHand();
+ assert.equal(hand.userData.handModel,'webxr-anatomical-right');
+ assert.ok(hand.children.some(c=>c.isGroup),'the anatomical hand has a mounted transform pivot');
+ assert.ok(hand.children.some(c=>c.isMesh),'the wrist continues into a visible forearm');
+ const builder=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ assert.match(builder,/['"]hand-right\.glb['"]/,'Netlify must publish the binary asset');
+ assert.match(builder,/['"]hand-right-LICENSE\.txt['"]/,'the legal permission must accompany the model');
+});
