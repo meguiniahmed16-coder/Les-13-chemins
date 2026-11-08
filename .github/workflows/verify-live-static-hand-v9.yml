@@ -1,0 +1,35 @@
+name: Vérifier le vrai site — mains fixes v9
+on:
+  push:
+    branches: [verification/netlify-mainfixe-v9-20261108]
+permissions:
+  contents: read
+jobs:
+  public-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Contrôler la page et les deux images réellement servies par Netlify
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://tectonique-des-ames.netlify.app"
+          for n in $(seq 1 12); do
+            if curl -fsSL --max-time 20 "$url/jeu-yoyo.html?hand_version=v9-$n" -o game.html &&
+               grep -q 'Main fixe v9' game.html &&
+               grep -q 'handGrip2D' game.html &&
+               grep -q 'handOpen2D' game.html; then
+              curl -fsSL --max-time 20 "$url/main_ouverte_fixee.webp" -o open.webp
+              curl -fsSL --max-time 20 "$url/main_brosse_dos_fixee.webp" -o grip.webp
+              test "$(git hash-object open.webp)" = dc3d7cd3de81a3d24291970d81ffbfd2b17d4b28
+              test "$(git hash-object grip.webp)" = 3c516e8be506bc0b25104b2442cd20095024a1b2
+              curl -fsSL --max-time 20 "$url/yoyo-runtime.js?v=20261108-spritesfixes9" -o runtime.js
+              grep -q 'handGrip2D' runtime.js
+              echo 'CONFIRMÉ : Netlify sert Main fixe v9, les deux WebP originaux et le script de permutation.'
+              exit 0
+            fi
+            echo "Attente de publication Main fixe v9 ($n/12)"
+            sleep 8
+          done
+          echo 'ÉCHEC : Main fixe v9 non visible publiquement.'
+          exit 1
