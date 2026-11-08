@@ -87,7 +87,8 @@ test('Brighter Bosnian ruins and recognizable window shooter keep gameplay intac
 test('Binoculars zoom close enough to distinguish the window shooter',()=>{
  const runtime=fs.readFileSync(new URL('./bosnie-runtime.js',import.meta.url),'utf8');
  const addon=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
- assert.ok(runtime.includes('this.camera.fov=is.damp(this.camera.fov,15.5,7,t)'));
+ assert.ok(runtime.includes('this.camera.fov=is.damp(this.camera.fov,10,7,t)'));
+ assert.ok(addon.includes('avatar.group.scale.setScalar(.86)'),'real shooter must be large enough to identify in the window');
  assert.ok(addon.includes("'TIREUR REPÉRÉ À LA FENÊTRE'"));
  assert.ok(addon.includes('new RoundedBoxGeometry(.44,.62,.27,3,.08)'));
  assert.ok(addon.includes('shooterInFrame='));

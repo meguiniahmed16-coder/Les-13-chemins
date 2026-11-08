@@ -240,3 +240,6 @@ Le tireur découvert aux jumelles doit réutiliser le **même modèle Quaternius
 
 
 **Correction d'orientation C031 :** un premier signe appliqué au squelette importé levait les coudes de 0,18 m malgré un calcul intuitif fondé sur l'axe géométrique. Se fier à la hauteur mesurée des os réels dans Chromium (épaule moins coude doit être positive) et non à l'impression qu'un signe de rotation devrait être correct. Revenir aux signes natifs de l'armature et recapturer.
+
+
+**Amélioration de lisibilité C031 :** dans la capture des jumelles, le tireur humanoïde 65 os était présent mais sa tenue trop petite pour être reconnaissable. Utiliser un champ optique de 10° lors de l'observation (au lieu de 15,5°), et une échelle du même modèle de 0,86. Conserver l'orientation des coudes validée et revérifier la présence du tireur dans les deux optiques. Aucun changement aux tirs ou à la sécurité des cinq traversées.

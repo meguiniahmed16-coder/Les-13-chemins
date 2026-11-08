@@ -180,7 +180,7 @@ function upgradeWindowShooter(enemy,template,renderer){
  const avatar=makeSoldier(template,1);
  avatar.root.name='TireurFenetreQuaternius';
  avatar.group.name='Corps3DTireur';
- avatar.group.scale.setScalar(.77);
+ avatar.group.scale.setScalar(.86);
  // No French or NATO insignia on the shooter on the opposing side.
  for(const name of ['EcussonOTAN','DrapeauFrance','FusilEnBandouliere']){
   const item=avatar.root.getObjectByName(name);
