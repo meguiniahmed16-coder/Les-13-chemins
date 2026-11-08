@@ -155,10 +155,10 @@ function equipMilitary(avatar,variation=0){
   pin(thigh,bones[side<0?'thigh_l':'thigh_r'],side*.17,.72,.05);
   part(thigh,'PocheCargo',.095,.12,.054,0,0,.052,olive,.025);
   const ankle=new THREE.Group();pin(ankle,bones[side<0?'calf_l':'calf_r'],side*.145,.115,.028);
-  part(ankle,'Rangers',.12,.145,.19,0,0,.045,leather,.031);
+  part(ankle,'Rangers',.104,.120,.166,0,-.006,.050,leather,.026);
  }
  const helmet=new THREE.Group();helmet.name='CasqueLourdCouvreCasqueCamouflage';
- pin(helmet,bones.Head,0,1.737,-.014);
+ pin(helmet,bones.Head,0,1.782,-.014);
  const shellBlue=new THREE.Mesh(new THREE.SphereGeometry(.145,24,14,0,Math.PI*2,0,Math.PI*.59),
    new THREE.MeshStandardMaterial({color:0x598ca1,roughness:.92,metalness:0}));
  shellBlue.name='AncienCasqueBleuSousCouvreCasque';
