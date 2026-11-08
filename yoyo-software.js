@@ -18,5 +18,5 @@ export function softwareRenderer(){
   }
   opaque.forEach(t=>raster(t));transparent.sort((a,b)=>a.z-b.z).forEach(t=>raster(t,true));ctx.putImageData(frame,0,0);
  }
- return{domElement:canvas,shadowMap:{},setPixelRatio(){},setSize(w,h){width=Math.max(1,Math.round(Math.min(760,w)));height=Math.max(1,Math.round(width*h/w));canvas.width=width;canvas.height=height;canvas.style.width='100%';canvas.style.height='100%';frame=ctx.createImageData(width,height);depth=new Float32Array(width*height);},render,dispose(){canvas.remove();}};
+ return{domElement:canvas,shadowMap:{},setPixelRatio(){},setSize(w,h){width=Math.max(1,Math.round(Math.min(1024,w*(w<600?1.5:1))));height=Math.max(1,Math.round(width*h/w));canvas.width=width;canvas.height=height;canvas.style.width='100%';canvas.style.height='100%';frame=ctx.createImageData(width,height);depth=new Float32Array(width*height);},render,dispose(){canvas.remove();}};
 }

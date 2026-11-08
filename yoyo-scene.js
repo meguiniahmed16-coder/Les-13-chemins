@@ -40,10 +40,49 @@ export function makeCinema(host){
  const hingeL=new T.Group(),hingeR=new T.Group();hingeL.position.set(-.78,.94,-1.42);hingeR.position.set(.78,.94,-1.42);scene.add(hingeL,hingeR);const glass=mat('#8db2bd',.18,{transparent:true,opacity:.16,side:T.DoubleSide,depthWrite:false});
  for(const [h,side] of [[hingeL,1],[hingeR,-1]]){box(.73,.035,.035,side*.365,0,0,metal,h);box(.73,.035,.035,side*.365,1.35,0,metal,h);for(const x of [0,side*.73])box(.035,1.35,.035,x,.675,0,metal,h);box(.68,1.3,.008,side*.365,.675,0,glass,h);rod([side*.65,.57,.04],[side*.65,.7,.04],.013,white,h);}
  for(let x=-.63;x<.7;x+=.21){rod([x,.95,-1.63],[x,2.3,-1.63],.018,metal);for(const y of [1.09,2.15])ell(.024,.025,.022,x,y,-1.63,rust);}for(const y of [1.09,2.15])rod([-.78,y,-1.63],[.78,y,-1.63],.015,metal);
- box(9,9,.4,0,2,-9,mat('#7c8986'));for(let x=-3;x<=3;x+=1.4)for(let y=.3;y<6;y+=1.5){box(.66,.93,.05,x,y,-8.76,dark);for(let b=-.24;b<=.24;b+=.16)rod([x+b,y-.43,-8.7],[x+b,y+.43,-8.7],.013,metal);box(.8,.08,.12,x,y-.48,-8.7,white);}
- const ropeGroup=new T.Group();scene.add(ropeGroup);const cloth=mat('#c6bfab',1);for(let n=0;n<24;n++){rod([Math.sin(n*.7)*.008,n*.11,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11,0],.014,cloth,ropeGroup,.012);if(n%3===0){ell(.023,.031,.019,0,n*.11,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11-.04,0,cloth,ropeGroup);tail.rotation.z=-.3;}}
- curve([[0,0,0],[.045,-.04,0],[.045,-.1,0],[0,-.13,0],[-.18,-.29,0],[.2,-.29,0],[.035,-.13,0]],.007,metal,ropeGroup);
- const bagmat=mat('#d4d5bb',.4,{transparent:true,opacity:.74,side:T.DoubleSide});const bag=ell(.17,.22,.1,0,-.48,0,bagmat,ropeGroup);for(let n=-3;n<=3;n++){curve([[n*.035,-.29,.04],[n*.04+.01,-.46,.095],[n*.03,-.67,.04]],.002,white,ropeGroup);}curve([[-.1,-.31,0],[-.06,-.2,0],[.07,-.2,0],[.1,-.31,0]],.012,bagmat,ropeGroup);
+ // A nearer opposite wing: deep reveals, separate bars and a few inhabited cells.
+ const facade=mat('#b8baad',.96,{map:texture('facade')}),stone=mat('#929c94',.89),recess=mat('#303c3c',.95),barPaint=mat('#53615e',.62,{metalness:.35});
+ const front=-5.85,winW=.88,winH=1.16,pitch=1.6,rows=[0,1.65,3.3,4.95],columns=[-3.2,-1.6,0,1.6,3.2];
+ box(9,8,.15,0,2.5,front-.66,recess);
+ for(let x=-4;x<=4;x+=pitch)box(pitch-winW,8,.24,x,2.4,front,facade);
+ for(let y=-.825;y<6;y+=1.65)box(8.8,1.65-winH,.24,0,y,front,facade);
+ for(const x of columns)for(const y of rows){
+  const inset=mat('#7c8980',.91);
+  box(.075,winH,.42,x-winW/2,y,front-.12,inset);box(.075,winH,.42,x+winW/2,y,front-.12,inset);
+  box(winW+.16,.065,.48,x,y-winH/2,front-.08,stone);box(winW+.16,.09,.30,x,y+winH/2,front,stone);
+  box(winW-.10,.026,.026,x,y+.40,front-.38,barPaint);box(.025,winH-.12,.025,x,y,front-.38,barPaint);
+  for(let dx=-.33;dx<=.34;dx+=.165)rod([x+dx,y-.55,front+.10],[x+dx,y+.55,front+.10],.012,barPaint);
+  for(const dy of [-.39,.38])rod([x-.44,y+dy,front+.1],[x+.44,y+dy,front+.1],.012,barPaint);
+  // Interior ceiling and floor give the openings depth instead of black stickers.
+  box(winW,.035,.52,x,y+.55,front-.38,recess);box(winW,.035,.52,x,y-.54,front-.38,recess);
+ }
+ for(const x of [-2.4,2.4]){rod([x,-1.4,front+.18],[x,6,front+.18],.035,mat('#6c7973',.8));for(let y=0;y<6;y+=1.5)rod([x-.045,y,front+.18],[x+.045,y,front+.18],.012,metal);}
+ const prisoners=[];
+ function prisoner(x,windowY,style){
+  const root=new T.Group();root.position.set(x,windowY,front-.15);scene.add(root);
+  const face=mat(style===1?'#9d7156':'#bb9677',.9),hair=mat(style===2?'#776b5d':'#33352f',.95),shirt=mat(['#646c71','#6c7770','#7b7165'][style],.96),eye=mat('#2a332e',.8);
+  ell(.195,.235,.095,0,-.30,-.045,shirt,root);rod([-.16,-.25,-.03],[-.22,-.40,.06],.055,shirt,root,.045);rod([.16,-.23,-.03],[.23,-.39,.06],.055,shirt,root,.042);
+  rod([0,-.13,0],[0,.015,0],.036,face,root,.043);
+  const head=new T.Group();head.position.set(0,.055,.012);root.add(head);
+  ell(.072,.103,.069,0,0,0,face,head);ell(.060,.054,.061,0,-.065,.004,face,head);ell(.076,.065,.073,0,.054,-.014,hair,head);
+  ell(.016,.030,.013,-.073,-.006,0,face,head);ell(.016,.030,.013,.073,-.006,0,face,head);
+  ell(.015,.025,.025,0,-.015,.065,face,head);for(const dx of [-.028,.028]){ell(.015,.008,.004,dx,.017,.061,eye,head);rod([dx-.015,.032,.062],[dx+.013,.033,.063],.003,hair,head);}
+  curve([[-.022,-.056,.056],[0,-.060,.065],[.021,-.055,.056]],.0025,mat('#6c5446'),head);
+  // One inmate rests a hand around a bar; the others lean or turn in their cells.
+  if(style===0){rod([.16,-.24,0],[.24,-.13,.12],.036,shirt,root);rod([.24,-.13,.12],[.16,.01,.24],.026,face,root,.021);ell(.025,.039,.018,.16,.04,.24,face,root);for(let f=0;f<4;f++)curve([[.142,.02+f*.013,.24],[.146,.025+f*.013,.269],[.174,.025+f*.013,.27]],.005,face,root);}
+  root.rotation.y=[-.12,.26,-.24][style];prisoners.push({root,head,angle:root.rotation.y,phase:style*2});
+ }
+ prisoner(-1.6,1.65,0);prisoner(1.6,1.65,1);prisoner(0,3.3,2);
+ // The hanger is inverted: the sheet wraps its long bar; its hook carries the bag handle.
+ const ropeGroup=new T.Group();scene.add(ropeGroup);const cloth=mat('#c6bfab',1);
+ for(let n=0;n<24;n++){rod([Math.sin(n*.7)*.008,n*.11+.035,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11+.035,0],.014,cloth,ropeGroup,.012);if(n%3===0){ell(.023,.031,.019,0,n*.11+.04,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11,0,cloth,ropeGroup);tail.rotation.z=-.3;}}
+ curve([[-.18,0,0],[-.16,.004,0],[.16,.004,0],[.18,0,0],[.15,-.03,0],[0,-.21,0],[-.15,-.03,0],[-.18,0,0]],.0055,metal,ropeGroup);
+ curve([[0,-.20,0],[0,-.28,0],[.013,-.327,0],[.050,-.343,0],[.081,-.32,0],[.077,-.287,0]],.006,metal,ropeGroup);
+ const wraps=[];for(let n=0;n<=80;n++){const u=n/80,a=u*Math.PI*10;wraps.push([-.034+u*.068,Math.cos(a)*.014,Math.sin(a)*.014]);}curve(wraps,.005,cloth,ropeGroup);ell(.019,.024,.019,0,.034,0,cloth,ropeGroup);
+ const bagmat=mat('#d4d5bb',.6,{transparent:true,opacity:.85,side:T.DoubleSide});
+ const bag=ell(.17,.19,.075,.043,-.60,0,bagmat,ropeGroup);
+ for(let n=-3;n<=3;n++)curve([[.043+n*.027,-.43,.025],[.043+n*.038,-.59,.074],[.043+n*.029,-.77,.025]],.0017,white,ropeGroup);
+ for(const z of [-.018,.018])curve([[-.055,-.465,z],[-.010,-.39,z],[.044,-.343,z],[.096,-.39,z],[.14,-.465,z]],.008,bagmat,ropeGroup);
  // Posed hands grip their own props; a single continuous forearm rises from below frame.
  const reaching=props.openHand();scene.add(reaching);reaching.rotation.set(-.3,0,-.5);
  const searching=props.openHand(),held=props.heldBrush(),drink=props.cupHand(),cigarette=props.smokingHand();
@@ -56,15 +95,16 @@ export function makeCinema(host){
   const w=host.clientWidth,h=host.clientHeight;if(w!==width||h!==height){width=w;height=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
   for(const m of [drink,cigarette,searching,held,reaching,ropeGroup])m.visible=false;
   steam.forEach(p=>p.visible=false);storedBrush.visible=true;
+  const life=mode==='window'?g.partTime:t;for(const person of prisoners){person.head.rotation.y=Math.sin(life*.24+person.phase)*.11;person.root.rotation.y=person.angle+Math.sin(life*.17+person.phase)*.035;}
   const clamp01=v=>Math.min(1,Math.max(0,v)),project=v=>{camera.updateMatrixWorld();const p=v.clone().project(camera);return {x:(p.x+1)/2,y:(1-p.y)/2};};
   const half=depth=>depth*Math.tan(camera.fov*Math.PI/360),atScreen=(x,y,depth)=>[(x-.5)*2*half(depth)*camera.aspect,(.5-y)*2*half(depth),-depth];
   let anchors={},opened=1;
   if(mode==='victory'){
    camera.position.set(.02,1.45,-.54);camera.lookAt(.02,1.45,-4);
    const sip=Math.sin(clamp01((t-.6)/5.7)*Math.PI),lower=smooth(clamp01((t-6.3)/1.4));
-   drink.visible=t<7.8;drink.position.set(.16-sip*.105,-.31+sip*.20-lower*.75,-.47+sip*.16);drink.rotation.set(sip*.40,.08,-.10);
+   drink.visible=t<7.8;drink.position.set(.12-sip*.075,-.29+sip*.16-lower*.75,-.48+sip*.14);drink.rotation.set(sip*.28,-.26,-.08);
    const rise=smooth(clamp01((t-8)/1.3)),inhale=Math.sin(clamp01((t-9.8)/4)*Math.PI);
-   cigarette.visible=t>8;cigarette.position.set(.12-inhale*.075,-.76+rise*.47+inhale*.17,-.43+inhale*.15);cigarette.rotation.set(-.12-inhale*.2,-.12,.12);
+   cigarette.visible=t>8;cigarette.position.set(.12-inhale*.075,-.76+rise*.47+inhale*.17,-.43+inhale*.15);cigarette.rotation.set(-.10-inhale*.12,-.58,.08);
    steam.forEach((p,i)=>{const smoke=t>10,age=(t*.15+i/16)%1;p.visible=smoke||t<6.5;const base=smoke?cigarette.position:drink.position;p.position.set(base.x+Math.sin(t*.7+i)*(.012+age*.018),base.y+.14+age*.22,base.z+(smoke?-.04:.015));p.scale.set(.008+age*.02,.022+age*.03,.008);p.material.opacity=(1-age)*(smoke?.075:.045);});
   }else if(mode==='search'||mode==='pickup'){
    camera.position.set(-.43,1.22,1.31);camera.lookAt(1.05,.56,.05);
@@ -78,9 +118,9 @@ export function makeCinema(host){
   }else if(mode==='window'){
    camera.position.set(0,1.56,-.75);camera.lookAt(0,1.56,-4);storedBrush.visible=false;
    const pull=g.pull||0,depth=1.19-pull*.64,rx=ropePosition(g),horizontal=(rx-.5)*2*half(depth)*camera.aspect;
-   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74-pull*.1,-.75-depth);ropeGroup.scale.set(1-pull*.2,1,1);ropeGroup.rotation.z=g.hooked?-.04:Math.sin(g.partTime)*.045;
+   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74+pull*.16,-.75-depth);ropeGroup.scale.set(1-pull*.2,1,1);ropeGroup.rotation.z=g.hooked?-.04:Math.sin(g.partTime)*.045;
    held.visible=!g.hidden;held.position.set(...atScreen(g.hooked?rx:g.aim,.82,.58));held.rotation.set(-.04,0,0);
-   anchors.head=project(held.localToWorld(new T.Vector3(0,.365,0)));anchors.rope=project(new T.Vector3(horizontal,1.73-pull*.1,-.75-depth));
+   anchors.head=project(held.localToWorld(new T.Vector3(0,.365,0)));anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
    if(g.hidden){held.visible=false;camera.position.y=.62;camera.lookAt(0,.64,-4);}
   }else{
    let a=frames[0],b=frames[1];for(let i=0;i<frames.length-1;i++)if(t>=frames[i].t){a=frames[i];b=frames[i+1];}

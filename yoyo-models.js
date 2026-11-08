@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {handData} from './yoyo-hands-data.js';
 // All grips and their objects share one coordinate system. Forearms extend below the view.
 export function models(){
  const material=(c,r=.7,more={})=>new T.MeshStandardMaterial({color:c,roughness:r,...more});
@@ -9,27 +10,41 @@ export function models(){
  function tube(p,points,r,mat=chrome){return mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(a=>new T.Vector3(...a))),28,r,8,false),mat,p);}
  function lathe(p,points,mat=ceramic,scale=[1,1,1]){const m=mesh(new T.LatheGeometry(points.map(a=>new T.Vector2(...a)),40),mat,p);m.scale.set(...scale);return m;}
  function roundedBox(p,w,h,d,at,mat=ceramic){const r=Math.min(w,h)*.1,s=new T.Shape();s.moveTo(-w/2+r,-h/2);s.lineTo(w/2-r,-h/2);s.quadraticCurveTo(w/2,-h/2,w/2,-h/2+r);s.lineTo(w/2,h/2-r);s.quadraticCurveTo(w/2,h/2,w/2-r,h/2);s.lineTo(-w/2+r,h/2);s.quadraticCurveTo(-w/2,h/2,-w/2,h/2-r);s.lineTo(-w/2,-h/2+r);s.quadraticCurveTo(-w/2,-h/2,-w/2+r,-h/2);const m=mesh(new T.ExtrudeGeometry(s,{depth:d,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:2,steps:1,curveSegments:5}),mat,p);m.position.set(at[0],at[1],at[2]-d/2);return m;}
- function finger(p,pts,r=.011){for(let i=0;i<pts.length-1;i++){const a=r*(1-i*.14),b=r*(.9-i*.14);bone(p,pts[i],pts[i+1],a,b);oval(p,pts[i+1],[b,b,b]);}const tip=pts.at(-1),prev=pts.at(-2),v=new T.Vector3(...tip).sub(new T.Vector3(...prev)).normalize();const n=oval(p,[tip[0]-v.x*.006,tip[1]-v.y*.006,tip[2]+.007],[r*.55,r*.72,.0016],nail);n.rotation.z=-Math.atan2(v.x,v.y);}
- function arm(p,x=0,z=0){
-  oval(p,[x,-.075,z],[.032,.043,.026]);
-  // A continuous wrist, tapered forearm and cuff. No visible detached stump.
-  bone(p,[x,-.08,z],[x+.018,-.34,z+.06],.034,.054);bone(p,[x+.018,-.34,z+.06],[x+.08,-.82,z+.25],.054,.075);
-  bone(p,[x+.032,-.43,z+.10],[x+.10,-.95,z+.29],.062,.084,cloth);bone(p,[x+.026,-.40,z+.09],[x+.034,-.45,z+.11],.061,.064,cloth);
-  for(let i=0;i<3;i++)tube(p,[[x-.025,-.085-i*.008,z+.028],[x,-.09-i*.008,z+.033],[x+.025,-.085-i*.008,z+.028]],.0007,crease);
+ function hand(name){
+  const data=handData[name],p=new T.Group();
+  const decode=(s,Type)=>{const bytes=Uint8Array.from(atob(s),c=>c.charCodeAt(0));return new Type(bytes.buffer);};
+  const raw=decode(data.p,Int16Array),positions=Float32Array.from(raw,v=>v/100000),geo=new T.BufferGeometry();
+  geo.setAttribute('position',new T.BufferAttribute(positions,3));geo.setAttribute('normal',new T.BufferAttribute(decode(data.n,Int8Array),3,true));geo.setIndex(new T.BufferAttribute(decode(data.i,Uint16Array),1));geo.computeBoundingSphere();mesh(geo,skin,p);
+  // The back of each fingertip determines its nail plane; nails never float on the palm.
+  for(const a of data.nails){
+   const tip=new T.Vector3(...a.tip),direction=tip.clone().sub(new T.Vector3(...a.previous)).normalize(),out=new T.Vector3(...a.normal);out.addScaledVector(direction,-out.dot(direction)).normalize();
+   const at=tip.clone().addScaledVector(direction,-.005).addScaledVector(out,a.r*1.18),n=oval(p,at.toArray(),[a.r*.58,a.r*.83,.0008],nail);
+   const side=new T.Vector3().crossVectors(direction,out).normalize();n.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(side,direction,out));
+  }
+  if(name==='open'||name==='smoke'){
+   const fold=material('#96725f',.95,{transparent:true,opacity:.24});
+   const fingers=name==='smoke'?[[-.029,.072,.008],[-.028,.105,.002],[-.002,.079,.008],[-.002,.110,.002]]:[[-.032,.068,.013],[-.009,.082,.013],[.015,.076,.012],[.038,.058,.011]];
+   for(const [x,y,z] of fingers)tube(p,[[x-.006,y,z-.003],[x,y-.001,z+.002],[x+.006,y,z-.003]],.0006,fold);
+  }
+  const cuff=data.cuff,end=[cuff[0]+.09,cuff[1]-.55,cuff[2]+.23];
+  bone(p,cuff,end,.048,.078,cloth);bone(p,[cuff[0],cuff[1]+.012,cuff[2]],[cuff[0]+.003,cuff[1]-.022,cuff[2]+.008],.049,.050,cloth);
+  return p;
  }
- function openHand(){const p=new T.Group();arm(p);oval(p,[0,-.005,0],[.048,.079,.024]);for(let i=0;i<4;i++){const x=-.034+i*.025,l=[.103,.124,.113,.088][i];finger(p,[[x,.045,0],[x,.045+l*.45,-.002],[x+.003,.045+l*.78,.01],[x+.004,.045+l,.02]],.0105-i*.0005);}finger(p,[[-.04,-.035,0],[-.075,-.004,.012],[-.086,.026,.02]],.016);return p;}
- function grip(radius=.015){const p=new T.Group();const x=radius+.026;arm(p,x,.014);oval(p,[x,-.01,.014],[.029,.071,.027]);for(let i=0;i<4;i++){const y=.049-i*.027;finger(p,[[x-.006,y,.014],[radius*.7,y+.006,radius+.018],[-radius*.35,y+.003,radius+.030],[-radius-.006,y-.006,radius+.012]],.011-i*.0006);}finger(p,[[x-.005,.045,-.004],[radius*.55,.078,-radius*.55],[-radius*.4,.071,-radius*.8]],.015);return p;}
+ function openHand(){return hand('open');}
  function brush(){const p=new T.Group();bone(p,[0,-.08,0],[0,.305,0],.009,.007,plastic);bone(p,[0,-.075,0],[0,.045,0],.013,.012,rubber);for(let n=0;n<8;n++){const ring=mesh(new T.TorusGeometry(.0126,.0015,5,14),rubber,p);ring.rotation.x=Math.PI/2;ring.position.y=-.06+n*.012;}
   oval(p,[0,.315,0],[.025,.024,.025],plastic);oval(p,[0,.365,0],[.033,.052,.033],material('#b5b29b',.97));
   const bristle=material('#c6c1a6',.95),tips=material('#e1d9bf',.9);for(let row=0;row<9;row++){const y=.325+row*.010;for(let n=0;n<24;n++){const a=n*Math.PI/12+row*.29,r=.034+Math.sin(row/8*Math.PI)*.018;const b=[Math.cos(a)*r,y+(.4-row/8)*.012,Math.sin(a)*r];bone(p,[Math.cos(a)*.029,y,Math.sin(a)*.029],b,.0018,.0011,n%4?bristle:tips);}}
   for(let n=0;n<15;n++){const a=n*2.4,r=Math.sqrt(n/15)*.024;bone(p,[Math.cos(a)*r,.409,Math.sin(a)*r],[Math.cos(a)*r*1.4,.435,Math.sin(a)*r*1.4],.0018,.001,bristle);}return p;
  }
- function heldBrush(){const p=grip(.014);p.add(brush());return p;}
- function cupHand(){const p=grip(.056);const cup=lathe(p,[[0,-.063],[.041,-.063],[.044,-.05],[.057,.105],[.059,.11],[.056,.113],[.053,.105],[.04,-.05],[0,-.05]],plastic);cup.position.z=.015;const coffee=mesh(new T.CircleGeometry(.052,36),material('#36281d',.25),p);coffee.rotation.x=-Math.PI/2;coffee.position.set(0,.098,.015);for(let n=0;n<7;n++){const ring=mesh(new T.TorusGeometry(.043+n*.0017,.0011,5,30),plastic,p);ring.rotation.x=Math.PI/2;ring.position.set(0,-.035+n*.017,.015);}return p;}
- function smokingHand(){const p=new T.Group();arm(p);oval(p,[0,-.015,0],[.045,.073,.025]);finger(p,[[-.019,.041,0],[-.020,.087,.013],[-.018,.119,.014],[-.018,.145,.010]],.011);finger(p,[[.012,.043,0],[.014,.089,.012],[.013,.121,.014],[.013,.153,.008]],.011);
-  finger(p,[[.037,.031,0],[.044,.065,.025],[.040,.041,.054],[.031,.012,.054]],.010);finger(p,[[.055,.007,0],[.068,.035,.024],[.061,.013,.051],[.046,-.007,.043]],.0085);finger(p,[[-.039,-.035,.007],[-.052,.001,.042],[-.022,.027,.058]],.015);
-  const cigarette=new T.Group();p.add(cigarette);cigarette.position.set(-.0025,.119,.014);
-  bone(cigarette,[0,0,.047],[0,0,.019],.0042,.0042,material('#bca381'));bone(cigarette,[0,0,.019],[0,0,-.061],.0042,.0042,material('#eee9d8'));bone(cigarette,[0,0,-.061],[0,0,-.066],.0043,.004,material('#5d5b50'));bone(cigarette,[0,0,-.066],[0,0,-.067],.0039,.0036,material('#b15d35',.8,{emissive:'#57200b'}));
+ function heldBrush(){const p=hand('brush');p.add(brush());return p;}
+ function cupHand(){
+  const p=hand('cup');lathe(p,[[0,-.060],[.031,-.060],[.034,-.046],[.044,.091],[.046,.098],[.043,.101],[.041,.093],[.030,-.045],[0,-.045]],plastic);
+  const coffee=mesh(new T.CircleGeometry(.040,48),material('#36281d',.25),p);coffee.rotation.x=-Math.PI/2;coffee.position.set(0,.086,0);
+  for(let n=0;n<7;n++){const ring=mesh(new T.TorusGeometry(.034+n*.0014,.0008,6,40),plastic,p);ring.rotation.x=Math.PI/2;ring.position.set(0,-.034+n*.016,0);}return p;
+ }
+ function smokingHand(){
+  const p=hand('smoke'),cigarette=new T.Group();p.add(cigarette);cigarette.position.set(-.014,.111,-.015);
+  bone(cigarette,[0,0,.044],[0,0,.016],.004,.004,material('#bca381'));bone(cigarette,[0,0,.016],[0,0,-.060],.004,.004,material('#eee9d8'));bone(cigarette,[0,0,-.060],[0,0,-.065],.0041,.0038,material('#5d5b50'));bone(cigarette,[0,0,-.065],[0,0,-.066],.0037,.0034,material('#b15d35',.8,{emissive:'#57200b'}));
   return p;
  }
  function sanitary(){const toilet=new T.Group();lathe(toilet,[[0,0],[.11,0],[.13,.04],[.095,.21],[.13,.28],[.13,.30]],ceramic,[1,1,1.25]);const bowl=lathe(toilet,[[.09,.22],[.14,.25],[.20,.32],[.225,.40],[.225,.425],[.207,.44],[.186,.421],[.163,.36],[.10,.29],[.065,.28]],ceramic,[1,1,1.32]);bowl.position.z=.06;

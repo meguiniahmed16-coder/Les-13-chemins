@@ -14,3 +14,16 @@ test('Existing later levels remain accessible; a fresh win is awarded once with 
 test('The prison game cannot bypass the first board',()=>{const api=score(),s={points:0,unlocked:5,completed:[]};api.migrate(s);assert.equal(api.beginYoyo(s,'bad'),null);assert.equal(api.complete(s,5),false);});
 
 test('The hand targets the brush where it is actually projected, and the caught rope remains in the grip',()=>{const g=createGame();startGame(g);g.brushX=.58;aimAt(g,.58);assert.ok(aligned(g));actionDown(g);assert.equal(g.points,10);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);const caught=ropePosition(g);actionUp(g);tick(g,2);assert.equal(ropePosition(g),caught);assert.equal(g.pull,0);actionDown(g);tick(g,6);assert.equal(g.points,20);});
+
+test('Each posed hand is one connected skin surface and the right cup grip is not reversed',async()=>{
+ const {handData}=await import('./yoyo-hands-data.js');
+ for(const [name,data]of Object.entries(handData)){
+  const bytes=Buffer.from(data.i,'base64'),index=new Uint16Array(bytes.buffer,bytes.byteOffset,bytes.length/2);
+  const parent=Array.from({length:data.vertices},(_,i)=>i);
+  const root=v=>{while(parent[v]!==v){parent[v]=parent[parent[v]];v=parent[v];}return v;};
+  for(let i=0;i<index.length;i+=3){for(let n=0;n<3;n++)assert.ok(index[i+n]<data.vertices);parent[root(index[i+1])]=root(index[i]);parent[root(index[i+2])]=root(index[i]);}
+  assert.equal(new Set(parent.map((_,i)=>root(i))).size,1,name+' has no detached finger or wrist');assert.equal(data.nails.length,5);
+ }
+ assert.ok(handData.cup.nails[4].tip[2]>0,'thumb lies on the near side of the cup');
+ assert.ok(handData.cup.nails.slice(0,4).every(n=>n.tip[2]<0),'four fingers curl around the far side');
+});
