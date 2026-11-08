@@ -1,0 +1,33 @@
+name: Contrôle public Netlify — jeu 2D
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-netlify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la version réellement publiée sur Netlify
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://tectonique-des-ames.netlify.app"
+          for attempt in 1 2 3 4 5; do
+            if curl -fL --retry 2 --max-time 20 -sS "$url/jeu-yoyo.html" -o game.html &&
+               grep -q 'Jeu 2D v8' game.html; then
+              for file in main-ouverte-2d.svg main-prise-2d.svg sac-tabac-2d.svg sac-cafe-2d.svg; do
+                curl -fL --max-time 15 -sS "$url/$file" -o "$file"
+                grep -q '<svg' "$file"
+              done
+              echo 'Version 2D v8 et ses quatre sprites réellement disponibles sur Netlify.'
+              exit 0
+            fi
+            echo "Le site n'a pas encore la v8 (essai $attempt/5)."
+            sleep 8
+          done
+          echo 'ÉCHEC : Jeu 2D v8 pas visible sur le site Netlify.'
+          exit 1
