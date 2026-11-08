@@ -3,7 +3,7 @@ export const BRUSH = {x:.733, y:.70};
 // Seven fixed steel bars with 21 cm pitch. Only openings can receive a bag.
 export const BAR_X = [-.63,-.42,-.21,0,.21,.42,.63];
 export const SLIT_X = [-.315,-.105,.105,.315];
-const BAR_DEPTH=.88, FOV_HALF=Math.tan(63*Math.PI/360/2);
+const BAR_DEPTH=.88, FOV_HALF=Math.tan(63*Math.PI/360); // tan(vertical FOV/2), matching Three.js camera
 export function barCenters(aspect=16/9){
  return BAR_X.map(x=>.5+x/(2*BAR_DEPTH*FOV_HALF*Math.max(.85,aspect)));
 }
