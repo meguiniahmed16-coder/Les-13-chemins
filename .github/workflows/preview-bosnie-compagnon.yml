@@ -102,6 +102,10 @@ jobs:
             const state=await page.evaluate(()=>window.__bosnieCompanionState);
             const renderer=await page.locator('#world').evaluate(el=>el.dataset.renderer);
             console.log('BOSNIE_PREVIEW',width,renderer,JSON.stringify(state));
+            if(state?.chapterGraffitiCount!==2||
+               state?.chapterGraffitiText!=='Chapitre 2 — « Même pas mal », p 25–26.'||
+               state?.graffitiResolution?.[0]!==2048)
+              throw Error('Graffiti littéraire du chapitre 2 absent ou incorrect');
             if(state?.heroUniform!=='treillis-camouflage-otan'||
                state?.allyUniform!=='treillis-camouflage-otan'||
                !state?.armoredGear||!state?.camoHelmet||!state?.natoBadge)
@@ -115,6 +119,8 @@ jobs:
             if(state.stage!==0||state.companionX<=state.playerX)
               throw Error('Le compagnon doit partir avant le joueur');
             await page.screenshot({path:file,fullPage:false});
+            if(width===1100)await page.screenshot({path:'/tmp/bosnie-graffiti-chapitre2.png'});
+
             // Same visual state, actual binocular key held: enemy visible in target window.
             if(width===1100){
               await page.keyboard.down('b');
@@ -164,6 +170,7 @@ jobs:
           name: captures-bosnie-compagnon
           path: |
             /tmp/bosnie-desktop.png
+            /tmp/bosnie-graffiti-chapitre2.png
             /tmp/bosnie-mobile.png
             /tmp/bosnie-uniforme-gros-plan.png
             /tmp/bosnie-jumelles-tireur.png

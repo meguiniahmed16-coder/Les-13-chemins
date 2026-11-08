@@ -70,6 +70,73 @@ function improveBosnianDaylight(game){
  }
  game.canvas.dataset.bosnieDaylight='clair-jour';
 }
+
+const CHAPTER_2_GRAFFITI='Chapitre 2 — « Même pas mal », p 25–26.';
+// Actual transparent spray-paint on two existing roadside walls.
+// The lettering is part of the 3D scene, not a HUD or an extra HTML sign.
+function createChapter2Graffiti(game){
+ const canvas=document.createElement('canvas');
+ canvas.width=2048;canvas.height=512;
+ const ctx=canvas.getContext('2d');
+ if(!ctx)throw Error('Canvas indisponible pour les graffitis');
+ ctx.clearRect(0,0,2048,512);
+ let seed=15426;
+ const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ ctx.textBaseline='middle';ctx.textAlign='left';ctx.lineJoin='round';
+ const lines=[
+  {value:'Chapitre 2 —',y:90,size:118,color:'#e5eee2'},
+  {value:'« Même pas mal »,',y:252,size:177,color:'#f3ece1'},
+  {value:'p 25–26.',y:420,size:116,color:'#d6e9dc'}
+ ];
+ for(const line of lines){
+  let size=line.size;
+  ctx.font='italic 900 '+size+'px Arial, sans-serif';
+  const naturalWidth=ctx.measureText(line.value).width;
+  if(naturalWidth>1820){size=Math.floor(size*1820/naturalWidth);ctx.font='italic 900 '+size+'px Arial, sans-serif';}
+  ctx.save();ctx.translate(92,line.y);ctx.rotate(-.012);
+  ctx.shadowColor='#d4decf';ctx.shadowBlur=24;
+  ctx.lineWidth=13;ctx.strokeStyle='rgba(230,238,219,.27)';
+  ctx.strokeText(line.value,0,0);
+  ctx.shadowBlur=7;ctx.fillStyle=line.color;ctx.globalAlpha=.93;
+  ctx.fillText(line.value,0,0);
+  ctx.restore();
+ }
+ // A few weathered spray flecks and paint drips, without obscuring the words.
+ for(let i=0;i<900;i++){
+  const x=60+rand()*1900,y=32+rand()*455;
+  const r=.55+rand()*2.6;
+  ctx.globalAlpha=.035+rand()*.17;
+  ctx.fillStyle=i%5===0?'#d4a58c':'#dbe5d3';
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+ }
+ for(const [x,y,length] of [[290,309,35],[1020,309,22],[178,473,19]]){
+  ctx.globalAlpha=.31;ctx.strokeStyle='#e8eadb';ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-2,y+length);ctx.stroke();
+ }
+ ctx.globalAlpha=1;
+ const texture=new THREE.CanvasTexture(canvas);
+ texture.colorSpace=THREE.SRGBColorSpace;
+ texture.anisotropy=4;
+ const material=new THREE.MeshBasicMaterial({
+  map:texture,transparent:true,alphaTest:.045,depthWrite:false,
+  side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1
+ });
+ const group=new THREE.Group();group.name='GraffitiChapitre2';
+ // Both sites are intact parts of the low roadside cover wall, facing the camera.
+ // Reuse the ONE high-resolution texture: no extra downloads or gameplay changes.
+ for(const [i,x] of [4.4,34.1].entries()){
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.84),material);
+  plane.name='GraffitiChapitre2Mur'+(i+1);
+  plane.position.set(x,.75,-.586);
+  plane.rotation.z=i===0?-.012:.018;
+  plane.userData.inscription=CHAPTER_2_GRAFFITI;
+  plane.userData.paintStyle='bombe-de-peinture-patine';
+  plane.renderOrder=4;group.add(plane);
+ }
+ game.scene.add(group);
+ return {group,count:2,text:CHAPTER_2_GRAFFITI,resolution:[canvas.width,canvas.height]};
+}
+
 function createWarDamage(game){
  // Decals and jagged fragments are cosmetic only. Collision geometry stays put.
  const stone=new THREE.MeshStandardMaterial({color:0x93998f,roughness:1,side:THREE.DoubleSide});
@@ -511,6 +578,7 @@ function attach(game){
  if(sky)game.canvas.dataset.bosnieSky='nuages-3d';
  if(!software)improveBosnianDaylight(game);
  const cityDetails=software?null:createWarDamage(game);
+ const chapterGraffiti=software?null:createChapter2Graffiti(game);
  const windowShooter=software?null:makeWindowShooter(game);
  // Even if WebGL is missing, the second soldier is visible in the simpler mode.
  oldAlly=game.buildSoldier();
@@ -560,6 +628,9 @@ function attach(game){
     daylightExposure:game.renderer.toneMappingExposure,
     daylight:game.canvas.dataset.bosnieDaylight==='clair-jour',
     damagedFacades:cityDetails?.fractures??0,
+    chapterGraffitiCount:chapterGraffiti?.count??0,
+    chapterGraffitiText:chapterGraffiti?.text??'',
+    graffitiResolution:chapterGraffiti?.resolution??[],
     visibleWindowShooter:shooterState.visible,
     shooterWindowIndex:shooterState.index,
     shooterReal:!!windowShooter?.userData.windowRig,

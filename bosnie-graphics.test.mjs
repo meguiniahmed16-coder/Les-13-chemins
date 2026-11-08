@@ -162,3 +162,21 @@ test('Daylight debug flag reflects the same bright-day setting as the real rende
  assert.ok(s.includes("game.canvas.dataset.bosnieDaylight='clair-jour'"));
  assert.ok(s.includes("daylight:game.canvas.dataset.bosnieDaylight==='clair-jour'"));
 });
+
+test('The exact Chapter 2 literary reference appears as weathered spray paint on actual 3D walls',()=>{
+ const source=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ assert.ok(source.includes('function createChapter2Graffiti(game)'));
+ assert.ok(source.includes("const CHAPTER_2_GRAFFITI='Chapitre 2 — « Même pas mal », p 25–26.'"));
+ assert.ok(source.includes("value:'Chapitre 2 —'"));
+ assert.ok(source.includes("value:'« Même pas mal »,'"));
+ assert.ok(source.includes("value:'p 25–26.'"));
+ assert.ok(source.includes('canvas.width=2048;canvas.height=512'));
+ assert.ok(source.includes("plane.name='GraffitiChapitre2Mur'+(i+1)"));
+ assert.ok(source.includes("plane.userData.paintStyle='bombe-de-peinture-patine'"));
+ assert.ok(source.includes('game.scene.add(group)'));
+ assert.ok(source.includes('const chapterGraffiti=software?null:createChapter2Graffiti(game)'));
+ assert.ok(source.includes("chapterGraffitiText:chapterGraffiti?.text"));
+ const workflow=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
+ assert.ok(workflow.includes('chapterGraffitiCount!==2'));
+ assert.ok(workflow.includes('bosnie-graffiti-chapitre2.png'));
+});
