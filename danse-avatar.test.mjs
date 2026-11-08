@@ -39,8 +39,9 @@ test('Only the central protagonist is replaced; the four other dancers and game 
  assert.match(code,/this\.renderer\.isSoftware/,'fallback must remain available on low-end phones');
  const q=fs.readFileSync(new URL('./danse-quaternius.js',import.meta.url),'utf8');
  assert.match(q,/head\.add\(smile\)/,'smile must move with the head');
- assert.match(q,/new T\.TubeGeometry\(curve,20/);
+ assert.match(q,/new T\.ShapeGeometry\(curve,10/);
  assert.match(q,/SourireVisible/);
+ assert.match(q,/new T\.Vector3\(0,1\.611,\.094\)/,'smile must touch the true head surface');
  assert.match(q,/cloneSkeleton\(gltf\.scene\)/);
  assert.match(q,/bones\[name\]\.quaternion\.copy\(q\)/,
  'animation must reset original skeletal pose each frame');
