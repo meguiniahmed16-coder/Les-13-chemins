@@ -258,8 +258,8 @@ export function makeCinema(host){
    bagRoot.rotation.x=Math.sin(g.partTime*.9)*.025;
    held.visible=!g.hidden;
    // The arm reaches through the window only when aligned between real bars.
-   // At mid-haul the wrist crosses the steel plane (depth .88m); then retracts.
-   const reach=g.hooked&&betweenBars(g)?Math.sin(Math.PI*pull)*.29:0;
+   // The wrist crosses the steel plane (depth .88m) as soon as the line is hooked, then retracts.
+   const reach=g.hooked&&betweenBars(g)?(.35*(1-pull)+.08*Math.sin(Math.PI*pull)):0;
    const armDepth=.66+reach;
    held.position.set(...atScreen(g.hooked?rx:g.aim,.82-pull*.06,armDepth));
    held.rotation.set(-.10+reach*.35,0,-.035);
