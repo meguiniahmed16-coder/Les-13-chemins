@@ -191,8 +191,8 @@ export function poseQuaterniusSpectator(avatar,t,phase=0){
  worldBend(bones.spine_02,Y,.012*nod);
  worldBend(bones.Head,Z,.025*nod);
  // Partir de la pose en T et ramener les bras à la verticale, sans lever les mains.
- worldBend(bones.upperarm_l,Z,-1.40+.018*nod);
- worldBend(bones.upperarm_r,Z,1.40-.018*nod);
+ worldBend(bones.upperarm_l,Z,1.40-.018*nod);
+ worldBend(bones.upperarm_r,Z,-1.40+.018*nod);
  worldBend(bones.upperarm_l,X,-.09);
  worldBend(bones.upperarm_r,X,-.09);
  worldBend(bones.lowerarm_l,X,-.12);
