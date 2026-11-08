@@ -27,3 +27,33 @@ test('Each posed hand is one connected skin surface and the right cup grip is no
  assert.ok(handData.cup.nails[4].tip[2]>0,'thumb lies on the near side of the cup');
  assert.ok(handData.cup.nails.slice(0,4).every(n=>n.tip[2]<0),'four fingers curl around the far side');
 });
+
+test('Cup grip clears the ceramic wall and the thumb remains visibly opposed',async()=>{
+ const {handData}=await import('./yoyo-hands-data.js');
+ const cup=handData.cup.nails;
+ assert.equal(cup.length,5,'four fingers and one thumb');
+ for(const tip of cup.slice(0,4).map(n=>n.tip)){
+  const distance=Math.hypot(tip[0],tip[2]);
+  assert.ok(tip[2]<-.040,'fingertips wrap behind the cup');
+  assert.ok(distance>.044 && distance<.070,'fingertips must remain close to, but outside, the cup wall');
+ }
+ assert.ok(cup[4].tip[2]>.054,'thumb must stand out in front of the cup');
+ assert.ok(cup[4].tip[2]-Math.max(...cup.slice(0,4).map(n=>n.tip[2]))>.09,
+  'thumb and fingertips must occupy opposite sides of the cup');
+});
+
+test('Cigarette is pinched between the full-length index and middle fingertips',async()=>{
+ const {handData}=await import('./yoyo-hands-data.js');
+ const fingers=handData.smoke.nails;
+ const cigarette={x:-.014,y:.120,z:-.016};
+ const [index,middle]=fingers.map(n=>n.tip);
+ assert.ok(index[0]<cigarette.x && middle[0]>cigarette.x,'cigarette lies between the fingers');
+ assert.ok(Math.abs(index[1]-cigarette.y)<.005 && Math.abs(middle[1]-cigarette.y)<.005,
+  'cigarette and both fingertip pads have a shared gripping height');
+ assert.ok(Math.abs(index[2]-cigarette.z)<.005 && Math.abs(middle[2]-cigarette.z)<.005,
+  'cigarette is not floating behind the fingers');
+ assert.ok(index[1]>.11 && middle[1]>.11,'fingers have not been shortened to fake the grip');
+ const model=fs.readFileSync(new URL('./yoyo-models.js',import.meta.url),'utf8');
+ assert.match(model,/filter points toward the mouth \(\+Z\)/);
+ assert.match(model,/cigarette\.position\.set\(-\.014,\.120,-\.016\)/);
+});
