@@ -221,3 +221,8 @@ La première tentative affichait de simples corps humanoïdes Quaternius repeint
 
 
 **Ajustement de rendu (casque/rangers) :** comparer le gros plan des deux soldats. Le bas du casque couvrait le haut des yeux et les chaussures avaient un volume carré excessif. Rehausser légèrement le couvre-casque sur l'os de la tête et réduire les volumes des rangers, sans modifier le squelette, la vitesse du compagnon ni les cinq passages. Nouvelle capture ordinateur et téléphone obligatoire.
+
+
+## C030 — Bosnie : lecture plus claire, destructions crédibles et tireur visible aux jumelles
+
+Sur la branche expérimentale du mini-jeu « Entre les rafales », éclaircir modérément la colorimétrie et réduire la dominante verte ainsi que l'opacité du brouillard, sans supprimer l'ambiance nuageuse. Compléter les immeubles existants par des ouvertures aux bords fracturés, des impacts dans les façades, des armatures et des gravats ; ces ajouts sont purement visuels et ne changent ni collisions ni trajet. Rendre les deux fusils en bandoulière distincts et visibles sur les soldats français, sans ajouter de mécanique de tir au joueur. Le tireur opposé est identifiable dans la fenêtre active à laquelle les jumelles sont déjà orientées : casque, buste et arme en silhouette, visible seulement pendant l'observation, sans ajout de tirs ni modification des fenêtres de sécurité. Test impératif dans un navigateur réel, y compris une capture avec les jumelles activées ; les captures classiques de build ne suffisent pas.

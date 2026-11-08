@@ -14,10 +14,10 @@ function createOvercastSky(game){
  canvas.width=1024;canvas.height=512;
  const ctx=canvas.getContext('2d');
  const background=ctx.createLinearGradient(0,0,0,512);
- background.addColorStop(0,'#516579');
- background.addColorStop(.38,'#8997a1');
- background.addColorStop(.71,'#a5aba9');
- background.addColorStop(1,'#a8a58f');
+ background.addColorStop(0,'#627b8e');
+ background.addColorStop(.38,'#9faeb5');
+ background.addColorStop(.71,'#bac0bd');
+ background.addColorStop(1,'#bbb8aa');
  ctx.fillStyle=background;ctx.fillRect(0,0,1024,512);
  // Low-contrast cloud banks instead of a flat, closed green roof.
  let seed=8416;
@@ -42,11 +42,147 @@ function createOvercastSky(game){
  mesh.name='CielBosnieCouvert';
  mesh.renderOrder=-200;mesh.frustumCulled=false;
  game.scene.add(mesh);
- game.scene.background=new THREE.Color('#89979b');
+ game.scene.background=new THREE.Color('#a3b1b4');
  return mesh;
 }
 // French camouflage field uniform (OTAN, post-UN mandate) rather than solid
 // civilian-looking purple/green clothes. The source mesh is fully skinned.
+
+function improveBosnianDaylight(game){
+ // Keep the period atmosphere while lifting the former very dark green grade.
+ game.renderer.toneMappingExposure=1.37;
+ game.scene.fog.color.set('#a9b1aa');
+ game.scene.fog.density=.014;
+ const material=game.postMaterial;
+ if(material?.fragmentShader){
+  const original=material.fragmentShader;
+  material.fragmentShader=original
+   .replace('l=pow(clamp(l*1.28,0.,1.),.82)',
+            'l=pow(clamp(l*1.42,0.,1.),.79)')
+   .replace('vec3 dark=vec3(.025,.075,.045),mid=vec3(.26,.43,.19),light=vec3(.82,.94,.56)',
+            'vec3 dark=vec3(.09,.13,.115),mid=vec3(.38,.45,.37),light=vec3(.87,.91,.79)');
+  material.needsUpdate=material.fragmentShader!==original;
+ }
+ game.canvas.dataset.bosnieDaylight='plus-clair';
+}
+function createWarDamage(game){
+ // Decals and jagged fragments are cosmetic only. Collision geometry stays put.
+ const stone=new THREE.MeshStandardMaterial({color:0x93998f,roughness:1,side:THREE.DoubleSide});
+ const broken=new THREE.MeshStandardMaterial({color:0x666e68,roughness:1,side:THREE.DoubleSide});
+ const soot=new THREE.MeshBasicMaterial({color:0x343a35,roughness:1,side:THREE.DoubleSide});
+ const randomSeed=()=>{let seed=18419;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};};
+ const rnd=randomSeed();
+ const group=new THREE.Group();group.name='FacadeGuerreRuines';
+ let fractures=0;
+ // Jagged broken openings, crumbly plaster and exposed steel on the roadside.
+ for(let house=0;house<12;house++){
+  const cx=-10+house*9.1;
+  const top=(3+house%3)*2.9;
+  for(let story=0;story<2;story++){
+   const wx=cx+(story===0?-1.85:1.55),y=story===0?4.0:6.8;
+   const hole=new THREE.Shape();
+   hole.moveTo(-.51,-.61);hole.lineTo(-.62,-.29);hole.lineTo(-.53,.20);
+   hole.lineTo(-.36,.52);hole.lineTo(-.06,.42);hole.lineTo(.14,.61);
+   hole.lineTo(.51,.35);hole.lineTo(.58,-.09);hole.lineTo(.35,-.53);
+   hole.lineTo(-.09,-.61);hole.closePath();
+   const shadow=new THREE.Mesh(new THREE.ShapeGeometry(hole),soot);
+   shadow.position.set(wx,y,-15.75);group.add(shadow);fractures++;
+   // Broken uneven masonry rim, not a regular black square.
+   for(const [dx,dy,ang] of [[-.51,.35,-.25],[.41,.47,.3],[-.29,-.53,.6],[.54,-.24,-.3]]){
+    const chip=new THREE.Mesh(new THREE.TetrahedronGeometry(.17+rnd()*.11,0),stone);
+    chip.position.set(wx+dx,y+dy,-15.65);
+    chip.rotation.set(rnd(),rnd(),ang);group.add(chip);
+   }
+   const rebar=new THREE.Mesh(new THREE.CylinderGeometry(.012,.014,.34,5),
+     new THREE.MeshStandardMaterial({color:0x4b524e,metalness:.45,roughness:.75}));
+   rebar.position.set(wx-.48,y+.51,-15.53);rebar.rotation.z=-.35;
+   group.add(rebar);
+  }
+  // Roofing is largely absent; a few broken edges and exposed bars survive.
+  for(let j=0;j<3;j++){
+   const debris=new THREE.Mesh(new THREE.TetrahedronGeometry(.22+rnd()*.20),broken);
+   debris.position.set(cx+(j-1)*1.8,top-.12-rnd()*.23,-16.25);
+   debris.rotation.set(rnd()*2,rnd(),rnd()*2);group.add(debris);
+  }
+ }
+ const impactGeo=new THREE.CircleGeometry(.029,8);
+ const impactMat=new THREE.MeshBasicMaterial({color:0x373d37,side:THREE.DoubleSide,depthWrite:false});
+ const impacts=new THREE.InstancedMesh(impactGeo,impactMat,155);
+ const dummy=new THREE.Object3D();
+ for(let i=0;i<155;i++){
+  const house=i%12,x=-10+house*9.1;
+  dummy.position.set(x+(rnd()-.5)*6.8,1.4+rnd()*6.2,-15.60);
+  dummy.rotation.set(0,0,rnd()*Math.PI*2);
+  dummy.scale.setScalar(.42+rnd()*1.6);
+  dummy.updateMatrix();impacts.setMatrixAt(i,dummy.matrix);
+ }
+ impacts.name='ImpactsBallesFacade';group.add(impacts);
+ const rockGeo=new THREE.TetrahedronGeometry(.20);
+ const rocks=new THREE.InstancedMesh(rockGeo,broken,92);
+ for(let i=0;i<92;i++){
+  dummy.position.set(-7+rnd()*102,.12+rnd()*.12,-13.1+rnd()*3);
+  dummy.rotation.set(rnd()*3,rnd()*4,rnd()*3);
+  dummy.scale.set(.35+rnd()*1.8,.38+rnd(),.43+rnd()*1.7);
+  dummy.updateMatrix();rocks.setMatrixAt(i,dummy.matrix);
+ }
+ rocks.name='GravatsDeRue';group.add(rocks);
+ game.scene.add(group);
+ return {group,fractures,impacts:155,rocks:92};
+}
+function makeWindowShooter(game){
+ // Only a distant figure in the window; no additional shooting mechanics.
+ const shooter=new THREE.Group();shooter.name='TireurFenetreJumelles';
+ const uniform=new THREE.MeshStandardMaterial({color:0x51574b,roughness:1});
+ const helmetMat=new THREE.MeshStandardMaterial({color:0x343b34,roughness:.98});
+ const skin=new THREE.MeshStandardMaterial({color:0xa49076,roughness:1});
+ const steel=new THREE.MeshStandardMaterial({color:0x292f30,roughness:.7,metalness:.14});
+ const torso=new THREE.Mesh(new RoundedBoxGeometry(.38,.55,.22,3,.08),uniform);
+ torso.position.set(0,-.17,0);torso.name='TorseTireur';shooter.add(torso);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.116,12,9),skin);
+ head.position.set(0,.235,.03);head.name='TeteTireur';shooter.add(head);
+ const helmet=new THREE.Mesh(new THREE.SphereGeometry(.143,14,8,0,Math.PI*2,0,Math.PI*.58),helmetMat);
+ helmet.position.set(0,.307,.022);helmet.name='CasqueTireur';shooter.add(helmet);
+ for(const side of [-1,1]){
+  const arm=new THREE.Mesh(new THREE.CylinderGeometry(.065,.055,.39,8),uniform);
+  arm.position.set(side*.235,-.11,.055);
+  arm.rotation.z=side*.37;
+  shooter.add(arm);
+ }
+ // A visible rifle outline across the window: purely narrative silhouette.
+ const rifle=new THREE.Group();rifle.name='ArmeVisibleTireur';
+ const receiver=new THREE.Mesh(new THREE.BoxGeometry(.52,.072,.076),steel);
+ receiver.position.y=-.09;rifle.add(receiver);
+ const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.017,.02,.43,7),steel);
+ barrel.rotation.z=Math.PI/2;barrel.position.set(.43,-.09,.012);rifle.add(barrel);
+ const stock=new THREE.Mesh(new THREE.BoxGeometry(.16,.11,.052),steel);
+ stock.position.set(-.32,-.12,0);rifle.add(stock);
+ rifle.position.set(0,-.04,.17);shooter.add(rifle);
+ shooter.visible=false;game.scene.add(shooter);
+ // Recesses are anchored to the actual five windows already used by the firing code.
+ const recessMaterial=new THREE.MeshBasicMaterial({color:0x202722,side:THREE.DoubleSide});
+ for(const [i,windowPos]of game.shooters.entries()){
+  const recess=new THREE.Mesh(new THREE.PlaneGeometry(1.17,1.18),recessMaterial);
+  recess.name='FenetreEventreeTireur'+(i+1);
+  recess.position.set(windowPos.x,windowPos.y-.04,-15.47);
+  game.scene.add(recess);
+  const frameMat=new THREE.MeshStandardMaterial({color:0x83897e,roughness:1});
+  for(const [x,y,w,h]of [[-.65,0,.10,1.28],[.64,0,.10,1.17],[0,.63,1.33,.10]]){
+   const edge=new THREE.Mesh(new THREE.BoxGeometry(w,h,.14),frameMat);
+   edge.position.set(windowPos.x+x,windowPos.y+y,-15.34);game.scene.add(edge);
+  }
+ }
+ return shooter;
+}
+function positionWindowShooter(game,enemy,run){
+ const index=Math.max(0,Math.min(game.shooters.length-1,run.passed?.length??0));
+ const windowPos=game.shooters[index];
+ enemy.position.set(windowPos.x,windowPos.y-.02,-15.22);
+ enemy.rotation.y=0;
+ enemy.visible=!!run.binoculars&&run.phase==='playing';
+ if(enemy.visible)enemy.position.y+=Math.sin((run.time||0)*1.2)*.012;
+ return {index:index+1,visible:enemy.visible};
+}
+
 function fieldCamouflage(x,y,z,variation){
  const wav=Math.sin(x*32+y*15+z*23)*.46
   +Math.cos(x*19-y*27+z*17)*.35
@@ -85,6 +221,7 @@ function equipMilitary(avatar,variation=0){
  const olive=new THREE.MeshStandardMaterial({color:green,roughness:.94,metalness:0});
  const edging=new THREE.MeshStandardMaterial({color:trim,roughness:.94});
  const leather=new THREE.MeshStandardMaterial({color:dark,roughness:.96});
+ const gunMetal=new THREE.MeshStandardMaterial({color:0x444b46,roughness:.77,metalness:.14});
  const pouchMat=new THREE.MeshStandardMaterial({color:0x717459,roughness:.94});
  function part(group,name,w,h,d,x,y,z,material=olive,r=.012){
   const obj=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,2,r),material);
@@ -122,7 +259,10 @@ function equipMilitary(avatar,variation=0){
  const rifle=new THREE.Group();rifle.name='FusilEnBandouliere';
  pin(rifle,bones.spine_03,-.025,1.25,.31);
  rifle.rotation.z=.40;
- part(rifle,'ArmeSilhouette',.068,.42,.052,0,0,0,leather,.011);
+ part(rifle,'ArmeSilhouette',.077,.56,.067,0,.042,0,gunMetal,.012);
+ part(rifle,'CanonVisible',.031,.29,.032,0,.45,.008,gunMetal,.006);
+ part(rifle,'CrosseFusil',.125,.20,.072,-.012,-.235,.002,leather,.018);
+ part(rifle,'GardeMainFusil',.104,.20,.074,0,.16,.007,edging,.013);
  part(rifle,'PoigneeTransport',.13,.032,.04,-.013,.123,.016,leather,.008);
  part(rifle,'BoitierArme',.105,.14,.07,.022,-.118,.013,leather,.014);
  part(rifle,'SangleArme',.024,.58,.025,.075,-.03,-.025,edging,.008);
@@ -255,6 +395,9 @@ function attach(game){
  const software=!!game.renderer.isSoftware;
  const sky=software?null:createOvercastSky(game);
  if(sky)game.canvas.dataset.bosnieSky='nuages-3d';
+ if(!software)improveBosnianDaylight(game);
+ const cityDetails=software?null:createWarDamage(game);
+ const windowShooter=software?null:makeWindowShooter(game);
  // Even if WebGL is missing, the second soldier is visible in the simpler mode.
  oldAlly=game.buildSoldier();
  oldAlly.group.name='CompagnonSecours';
@@ -270,6 +413,7 @@ function attach(game){
   const running=run.move!==0&&run.phase==='playing';
   const direction=run.move<0?-Math.PI/2:Math.PI/2;
   if(sky)sky.position.copy(game.camera.position);
+  const shooterState=windowShooter?positionWindowShooter(game,windowShooter,run):{index:0,visible:false};
   if(hero){
    poseHuman(hero,{x:run.x,y:run.phase==='hit'?-.06:0,z:.45,
      facing:direction,crouched:run.crouched,running},t);
@@ -291,7 +435,13 @@ function attach(game){
     allyUniform:ally?.userData?.uniform||'fallback',
     armoredGear:!!hero?.root.getObjectByName('GiletPareBalles'),
     camoHelmet:!!ally?.root.getObjectByName('CouvreCasqueCamouflage'),
-    natoBadge:!!hero?.root.getObjectByName('EcussonOTAN')};
+    natoBadge:!!hero?.root.getObjectByName('EcussonOTAN'),
+    armedHero:!!hero?.root.getObjectByName('CanonVisible'),
+    armedAlly:!!ally?.root.getObjectByName('CanonVisible'),
+    daylight:game.canvas.dataset.bosnieDaylight==='plus-clair',
+    damagedFacades:cityDetails?.fractures??0,
+    visibleWindowShooter:shooterState.visible,
+    shooterWindowIndex:shooterState.index};
   window.__bosnieCompanionState=snap; // Read-only diagnostic for screenshot tests.
   return originalDraw(run,dt);
  };
