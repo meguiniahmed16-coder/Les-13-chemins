@@ -156,3 +156,9 @@ test('Visually armed soldiers and synchronized muzzle fire in the active window'
  assert.ok(workflow.includes("bosnie-jumelles-coup-de-feu.png"));
  assert.ok(workflow.includes("windowGunFlash===true"));
 });
+
+test('Daylight debug flag reflects the same bright-day setting as the real renderer',()=>{
+ const s=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ assert.ok(s.includes("game.canvas.dataset.bosnieDaylight='clair-jour'"));
+ assert.ok(s.includes("daylight:game.canvas.dataset.bosnieDaylight==='clair-jour'"));
+});
