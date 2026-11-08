@@ -17,29 +17,31 @@ function addSmile(avatar, head) {
  // Sourire en léger relief accroché à l'OS DE LA TÊTE : il suit la danse.
  // Le personnage original ne possède aucune forme de bouche animable.
  avatar.updateMatrixWorld(true);
- const at=avatar.localToWorld(new T.Vector3(0,1.609,.128));
+ // Source geometry measured at the lips: y≈1.61, forward surface z≈0.091.
+ const at=avatar.localToWorld(new T.Vector3(0,1.611,.094));
  const front=avatar.getWorldQuaternion(new T.Quaternion());
  const headWorld=head.getWorldQuaternion(new T.Quaternion());
  const smile=new T.Group();
  smile.name='SourireQuaternius';
  smile.position.copy(head.worldToLocal(at));
  smile.quaternion.copy(headWorld.invert().multiply(front));
- const curve=new T.CatmullRomCurve3([
-  new T.Vector3(-.044,.007,.001),new T.Vector3(-.025,-.004,.003),
-  new T.Vector3(0,-.011,.005),new T.Vector3(.025,-.004,.003),
-  new T.Vector3(.044,.007,.001)
- ]);
+ // Soft, curved, readable smile, positioned ON the face not floating away.
+ const curve=new T.Shape();
+ curve.moveTo(-.047,.009);
+ curve.quadraticCurveTo(0,-.019,.047,.009);
+ curve.quadraticCurveTo(0,-.001,-.047,.009);
  const lips=new T.Mesh(
-  new T.TubeGeometry(curve,20,.0035,6,false),
-  new T.MeshBasicMaterial({color:0x704037,depthWrite:false})
+  new T.ShapeGeometry(curve,10),
+  new T.MeshBasicMaterial({color:0x573334,side:T.DoubleSide,depthWrite:false})
  );
+ lips.position.z=.002;
  lips.name='SourireVisible';
  smile.add(lips);
  const light=new T.Mesh(
   new T.TubeGeometry(new T.CatmullRomCurve3([
-   new T.Vector3(-.021,-.013,.0055),new T.Vector3(0,-.015,.006),
-   new T.Vector3(.021,-.013,.0055)
-  ]),12,.0012,5,false),
+   new T.Vector3(-.023,-.003,.0045),new T.Vector3(0,-.006,.0045),
+   new T.Vector3(.023,-.003,.0045)
+  ]),12,.0024,5,false),
   new T.MeshBasicMaterial({color:0xf6cfac,transparent:true,opacity:.70,depthWrite:false})
  );
  smile.add(light);
@@ -53,7 +55,7 @@ export async function loadQuaterniusDancer(scene, originalPosition) {
  avatar.name='DanseurCentralQuaternius';
  avatar.userData.provenance='Quaternius Universal Base Characters CC0';
  avatar.position.copy(originalPosition);
- avatar.scale.setScalar(1.24); // 1,81m dans la source -> silhouette comparable au danseur actuel
+ avatar.scale.setScalar(1.28); // 1,81m dans la source -> silhouette comparable au danseur actuel
  const bones={};
  for(const name of QUATERNIUS_BONES){
   const node=avatar.getObjectByName(name);
@@ -101,9 +103,9 @@ export function poseQuaterniusDancer(avatar,t,action='cross',power=1,won=false,h
  worldBend(bones.Head,Z,half*.055*strength);
  // Les bras, naturellement étendus dans la pose source, descendent le long
  // du corps et suivent le rythme ; on conserve la hiérarchie originale.
- const up=won?.6:action==='square'?.55:action==='circle'?.18:0;
- worldBend(bones.upperarm_l,Z,1.0-up+Math.sin(beat+.25)*.28*strength);
- worldBend(bones.upperarm_r,Z,-1.0+up-Math.sin(beat-.25)*.28*strength);
+ const up=won?.62:action==='square'?.42:action==='circle'?.16:0;
+ worldBend(bones.upperarm_l,Z,-1.02+up+Math.sin(beat+.25)*.24*strength);
+ worldBend(bones.upperarm_r,Z,1.02-up-Math.sin(beat-.25)*.24*strength);
  worldBend(bones.upperarm_l,X,-.11+Math.sin(beat)*.16*strength);
  worldBend(bones.upperarm_r,X,-.11-Math.sin(beat)*.16*strength);
  worldBend(bones.lowerarm_l,X,-.19-.12*Math.max(0,s)*strength);
