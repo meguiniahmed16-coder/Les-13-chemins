@@ -36,7 +36,12 @@ test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a 
  assert.match(src,/if\(i===0\)animatePilotDancer\(h,t,dt,active\)/);
  assert.match(src,/target\.group\.children\.forEach\(child=>\{if\(child!==root\)child\.visible=false;\}\)/);
  assert.match(src,/colourPilotActor\(o\)/,'cloth colours must come from the true skinned mesh');
- assert.match(src,/head\.attach\(mouthGroup\)/,'smile must follow head bone, not float in the air');
+ assert.ok(src.includes("root.updateMatrixWorld(true);head.attach(smile)"),'smile details must follow actual head bone');
+ assert.ok(src.includes("paintPilotEyes(o)"),'the original skinned eyes must receive irises');
+ assert.ok(src.includes("eyes.userData.irisPainted=true"),'iris state must be available for live inspection');
+ assert.ok(src.includes("new T.BufferAttribute(colors,3)"),'the irises must be colored on the real eye mesh');
+ assert.ok(!src.includes("new T.TubeGeometry(curve,20,.0029"),'no second large mouth should be drawn');
+ assert.ok(src.includes("SourireSculpte"),'tiny corners complement the sculpted lips');
  assert.ok(src.includes("for(const [name,bone] of p.bones)bone.quaternion.copy(p.rest.get(name))"),'original bone rotations must be restored every frame');
  assert.ok(src.includes("bone.quaternion.premultiply("),'rig movement must use parent-space/world-space rotations');
  assert.ok(src.includes("worldBend('upperarm_l',Z,-1.18"),'left arm must lower from T-pose');
