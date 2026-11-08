@@ -1,5 +1,7 @@
 import * as T from 'three';
 import {softwareRenderer} from './yoyo-software.js';
+import {models} from './yoyo-models.js';
+import {ropePosition} from './yoyo-core.js';
 const mix=(a,b,t)=>a+(b-a)*t, smooth=t=>t*t*(3-2*t);
 export function makeCinema(host){
  let renderer;try{renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});}catch{renderer=softwareRenderer();}
@@ -24,10 +26,16 @@ export function makeCinema(host){
  // Table, stool, wardrobe, simple personal belongings.
  box(.76,.055,.6,1.04,.76,-1.01,wood);for(const x of [.73,1.35])for(const z of [-1.25,-.78])rod([x,.02,z],[x,.73,z],.021);box(.31,.04,.31,1.02,.44,-.42,wood);for(const x of [.9,1.14])for(const z of [-.54,-.3])rod([x,.02,z],[x,.42,z],.017);box(.19,.017,.25,.96,.8,-1,mat('#b6b49c'));box(.035,.007,.15,1.08,.813,-.98,mat('#2d4657'));
  box(.55,1.7,.42,1.19,.85,.97,wood);box(.008,1.64,.01,1.19,.85,.752,dark);rod([1.13,.83,.73],[1.13,.95,.73],.008,white);rod([1.25,.83,.73],[1.25,.95,.73],.008,white);box(.52,.04,.42,1.19,1.73,.97,mat('#95856c'));
- // Sanitary corner: ceramic pedestal, bowl rim, cistern and visible plumbing.
- ell(.16,.21,.19,1.18,.21,.22,white);ell(.23,.13,.3,1.18,.43,.16,white);const rim=mesh(new T.TorusGeometry(.205,.029,10,36),white);rim.rotation.x=Math.PI/2;rim.scale.y=1.25;rim.position.set(1.18,.51,.13);ell(.17,.014,.22,1.18,.502,.13,dark);box(.38,.43,.15,1.18,.72,.47,white);box(.4,.04,.18,1.18,.95,.47,white);rod([1.4,.16,.4],[1.4,.75,.4],.017,metal);
- ell(.28,.09,.21,1.2,1.05,-.43,white);ell(.22,.022,.16,1.2,1.115,-.46,mat('#8e9d94'));rod([1.2,.07,-.45],[1.2,1,-.45],.025,metal);curve([[1.33,1.08,-.55],[1.33,1.25,-.55],[1.2,1.25,-.53],[1.2,1.19,-.52]],.014,white);box(.34,.44,.02,1.485,1.58,-.48,mat('#919f9c',.13,{metalness:.9}));
- rod([.81,.08,.25],[.81,.47,.25],.012,white);ell(.045,.065,.045,.81,.12,.25,mat('#b1aa8f'));box(.1,.17,.1,.81,.085,.25,mat('#777e70'));
+ // Sanitary fixtures face into the room, with real hollow ceramic profiles.
+ const props=models(),sanitary=props.sanitary();
+ sanitary.toilet.position.set(1.17,0,.23);sanitary.toilet.rotation.y=-Math.PI/2;scene.add(sanitary.toilet);
+ sanitary.basin.position.set(1.19,.99,-.47);sanitary.basin.rotation.y=-Math.PI/2;scene.add(sanitary.basin);
+ box(.025,.51,.40,1.48,1.58,-.47,metal);box(.008,.46,.35,1.46,1.58,-.47,mat('#9babaa',.19,{metalness:.8}));
+ const holder=props.lathe(scene,[[0,0],[.065,0],[.069,.16],[.061,.18],[.052,.17],[.048,.03],[0,.03]],mat('#d0d7c7',.4));holder.position.set(.66,.012,.66);
+ const storedBrush=props.brush();storedBrush.position.set(.66,.49,.66);storedBrush.rotation.z=Math.PI;scene.add(storedBrush);
+ // Contact shadows keep furniture and sanitary fittings grounded, including software rendering.
+ const shade=mat('#23352e',1,{transparent:true,opacity:.12,depthWrite:false});
+ for(const [x,z,rx,rz] of [[1.1,.3,.35,.38],[1.16,-.45,.3,.2],[.66,.66,.10,.10],[-1,.05,.46,1]]){const q=mesh(new T.CircleGeometry(1,32),shade);q.rotation.x=-Math.PI/2;q.scale.set(rx,rz,1);q.position.set(x,.008,z);}
  // Window frame, two hinged leaves and fixed steel bars.
  const hingeL=new T.Group(),hingeR=new T.Group();hingeL.position.set(-.78,.94,-1.42);hingeR.position.set(.78,.94,-1.42);scene.add(hingeL,hingeR);const glass=mat('#8db2bd',.18,{transparent:true,opacity:.16,side:T.DoubleSide,depthWrite:false});
  for(const [h,side] of [[hingeL,1],[hingeR,-1]]){box(.73,.035,.035,side*.365,0,0,metal,h);box(.73,.035,.035,side*.365,1.35,0,metal,h);for(const x of [0,side*.73])box(.035,1.35,.035,x,.675,0,metal,h);box(.68,1.3,.008,side*.365,.675,0,glass,h);rod([side*.65,.57,.04],[side*.65,.7,.04],.013,white,h);}
@@ -36,19 +44,51 @@ export function makeCinema(host){
  const ropeGroup=new T.Group();scene.add(ropeGroup);const cloth=mat('#c6bfab',1);for(let n=0;n<24;n++){rod([Math.sin(n*.7)*.008,n*.11,0],[Math.sin((n+1)*.7)*.008,(n+1)*.11,0],.014,cloth,ropeGroup,.012);if(n%3===0){ell(.023,.031,.019,0,n*.11,0,cloth,ropeGroup);const tail=box(.03,.11,.003,.025,n*.11-.04,0,cloth,ropeGroup);tail.rotation.z=-.3;}}
  curve([[0,0,0],[.045,-.04,0],[.045,-.1,0],[0,-.13,0],[-.18,-.29,0],[.2,-.29,0],[.035,-.13,0]],.007,metal,ropeGroup);
  const bagmat=mat('#d4d5bb',.4,{transparent:true,opacity:.74,side:T.DoubleSide});const bag=ell(.17,.22,.1,0,-.48,0,bagmat,ropeGroup);for(let n=-3;n<=3;n++){curve([[n*.035,-.29,.04],[n*.04+.01,-.46,.095],[n*.03,-.67,.04]],.002,white,ropeGroup);}curve([[-.1,-.31,0],[-.06,-.2,0],[.07,-.2,0],[.1,-.31,0]],.012,bagmat,ropeGroup);
- // Detailed hand: tapered forearm, palm and articulated, individually sized fingers.
- function hand(){const g=new T.Group();rod([0,-.55,.06],[0,-.08,0],.075,skin,g,.045);rod([0,-.64,.07],[0,-.35,.035],.084,sleeve,g,.078);ell(.06,.105,.032,0,0,0,skin,g);for(let i=0;i<4;i++){const px=-.043+i*.029,len=[.123,.153,.142,.11][i];const finger=new T.Group();finger.position.set(px,.073,0);finger.rotation.z=(1.5-i)*.045;g.add(finger);rod([0,0,0],[0,len*.52,-.005],.013,skin,finger,.011);ell(.013,.014,.012,0,len*.52,-.005,skin,finger);rod([0,len*.52,-.005],[0,len*.84,-.017],.011,skin,finger,.009);rod([0,len*.84,-.017],[0,len,-.035],.009,skin,finger,.007);ell(.006,.014,.002,0,len*.89,-.025,nails,finger);for(const y of [len*.5,len*.8])rod([-.007,y,.005],[.007,y,.005],.0012,mat('#8e6656'),finger);}
- rod([-.045,-.037,0],[-.092,.014,.008],.022,skin,g,.018);rod([-.092,.014,.008],[-.103,.064,-.012],.018,skin,g,.012);ell(.008,.016,.003,-.103,.055,-.002,nails,g);curve([[-.04,-.045,.032],[-.014,-.02,.034],[.025,.006,.031]],.001,mat('#936c58'),g);return g;}
- const reaching=hand();scene.add(reaching);reaching.rotation.set(-.3,0,-.5);
- const drink=new T.Group();camera.add(drink);const drinkingHand=hand();drink.add(drinkingHand);drinkingHand.rotation.set(.3,-.6,-1.35);drinkingHand.position.set(.13,-.19,.03);const cup=mesh(new T.CylinderGeometry(.083,.06,.13,32,1,true),white,drink);cup.position.y=.015;const coffee=mesh(new T.CircleGeometry(.076,32),mat('#32271d',.3),drink);coffee.rotation.x=-Math.PI/2;coffee.position.y=.079;const lip=mesh(new T.TorusGeometry(.081,.004,8,36),white,drink);lip.rotation.x=Math.PI/2;lip.position.y=.08;const handle=mesh(new T.TorusGeometry(.04,.009,8,24,Math.PI*1.7),white,drink);handle.position.set(.085,.005,0);handle.rotation.z=-Math.PI*.85;
- const cigarette=new T.Group();camera.add(cigarette);const smokingHand=hand();cigarette.add(smokingHand);smokingHand.rotation.set(0,0,.2);smokingHand.position.set(0,-.09,0);rod([-.012,.076,-.002],[-.012,.076,-.085],.0045,white,cigarette);rod([-.012,.076,-.082],[-.012,.076,-.089],.0046,mat('#ac5735',.8,{emissive:'#5e1a08'}),cigarette);
- const steam=[];for(let i=0;i<18;i++){const p=ell(.013,.026,.013,0,0,0,new T.MeshBasicMaterial({color:'#d0d7cb',transparent:true,opacity:.1,depthWrite:false}),camera);steam.push(p);}
+ // Posed hands grip their own props; a single continuous forearm rises from below frame.
+ const reaching=props.openHand();scene.add(reaching);reaching.rotation.set(-.3,0,-.5);
+ const searching=props.openHand(),held=props.heldBrush(),drink=props.cupHand(),cigarette=props.smokingHand();
+ for(const m of [searching,held,drink,cigarette])camera.add(m);
+ const steam=[];for(let i=0;i<16;i++){const p=ell(.013,.026,.013,0,0,0,new T.MeshBasicMaterial({color:'#d0d7cb',transparent:true,opacity:.1,depthWrite:false}),camera);steam.push(p);}
  const hemi=new T.HemisphereLight('#c2dcdf','#4a483c',2.3);scene.add(hemi);const sun=new T.DirectionalLight('#e5e3cd',3.4);sun.position.set(-3,5,-7);sun.target.position.set(1,.2,.8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:.1,far:15});sun.shadow.bias=-.0007;scene.add(sun,sun.target);const fill=new T.PointLight('#b4c6c4',3,6,1.5);fill.position.set(0,2.4,-1.1);scene.add(fill);
- const frames=[{t:0,p:[.15,1.58,1.16],look:[-.45,1.05,-.8]},{t:4,p:[.17,1.49,.75],look:[-1.05,1.08,-.1]},{t:8,p:[.12,1.54,.3],look:[1.16,1.1,.6]},{t:12,p:[.05,1.48,.14],look:[1.13,.72,-.1]},{t:16,p:[.06,1.5,-.38],look:[0,1.55,-1.6]},{t:22,p:[.05,1.48,-.86],look:[.02,1.53,-2.7]},{t:27,p:[.04,1.48,-.85],look:[0,1.55,-2.7]}];
+ const frames=[{t:0,p:[.15,1.58,1.16],look:[-.45,1.05,-.8]},{t:4,p:[.17,1.49,.75],look:[-1.05,1.08,-.1]},{t:8,p:[-.20,1.43,.8],look:[1.12,1.1,.55]},{t:12,p:[-.25,1.25,.7],look:[1.1,.57,-.15]},{t:16,p:[.06,1.5,-.38],look:[0,1.55,-1.6]},{t:22,p:[.05,1.48,-.86],look:[.02,1.53,-2.7]},{t:27,p:[.04,1.48,-.85],look:[0,1.55,-2.7]}];
  let width=0,height=0;
- function render(t,mode='intro'){const w=host.clientWidth,h=host.clientHeight;if(w!==width||h!==height){width=w;height=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}drink.visible=mode==='victory';cigarette.visible=mode==='victory';steam.forEach(p=>p.visible=mode==='victory');
- if(mode==='victory'){camera.position.set(0,1.4,-.7);camera.lookAt(0,1.45,-4);const sip=Math.sin(Math.min(Math.max(t-1,0)/5,1)*Math.PI);drink.position.set(.17-sip*.1,-.28+sip*.21,-.44+sip*.15);drink.rotation.x=.08+sip*.45;cigarette.position.set(-.22,-.35+Math.max(0,Math.sin((t-6)*.45))*.23,-.38);cigarette.rotation.set(-.1,.2,-.1);reaching.visible=false;ropeGroup.visible=false;steam.forEach((p,i)=>{const age=(t*.16+i/18)%1;const smoking=i>10;p.position.set((smoking?-.23:.17)+Math.sin(t+i)*.012,-.2+age*.17,-.44+Math.cos(t*.4+i)*.012);p.scale.set(.012+age*.016,.024+age*.03,.012);p.material.opacity=(1-age)*.13;});}
- else{let a=frames[0],b=frames[1];for(let i=0;i<frames.length-1;i++)if(t>=frames[i].t){a=frames[i];b=frames[i+1];}const f=smooth(Math.min(1,Math.max(0,(t-a.t)/(b.t-a.t))));camera.position.set(...a.p.map((n,i)=>mix(n,b.p[i],f)));camera.lookAt(...a.look.map((n,i)=>mix(n,b.look[i],f)));reaching.visible=t>15.5&&t<20.8;const reach=Math.sin(Math.min(1,Math.max(0,(t-15.5)/5.3))*Math.PI);reaching.position.set(.26-reach*.05,1.0+reach*.37,-.8-reach*.5);ropeGroup.visible=t>20;ropeGroup.position.set(Math.sin(t*1.2)*.19,2.5-Math.min(1,(t-20)/4)*.7,-1.92);}
- const open=smooth(Math.min(1,Math.max(0,(t-17)/2.8)));hingeL.rotation.y=-open*1.3;hingeR.rotation.y=open*1.3;renderer.render(scene,camera);}
+ function render(t,mode='intro',g={aim:.5,part:0,pull:0,partTime:0}){
+  const w=host.clientWidth,h=host.clientHeight;if(w!==width||h!==height){width=w;height=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  for(const m of [drink,cigarette,searching,held,reaching,ropeGroup])m.visible=false;
+  steam.forEach(p=>p.visible=false);storedBrush.visible=true;
+  const clamp01=v=>Math.min(1,Math.max(0,v)),project=v=>{camera.updateMatrixWorld();const p=v.clone().project(camera);return {x:(p.x+1)/2,y:(1-p.y)/2};};
+  const half=depth=>depth*Math.tan(camera.fov*Math.PI/360),atScreen=(x,y,depth)=>[(x-.5)*2*half(depth)*camera.aspect,(.5-y)*2*half(depth),-depth];
+  let anchors={},opened=1;
+  if(mode==='victory'){
+   camera.position.set(.02,1.45,-.54);camera.lookAt(.02,1.45,-4);
+   const sip=Math.sin(clamp01((t-.6)/5.7)*Math.PI),lower=smooth(clamp01((t-6.3)/1.4));
+   drink.visible=t<7.8;drink.position.set(.16-sip*.105,-.31+sip*.20-lower*.75,-.47+sip*.16);drink.rotation.set(sip*.40,.08,-.10);
+   const rise=smooth(clamp01((t-8)/1.3)),inhale=Math.sin(clamp01((t-9.8)/4)*Math.PI);
+   cigarette.visible=t>8;cigarette.position.set(.12-inhale*.075,-.76+rise*.47+inhale*.17,-.43+inhale*.15);cigarette.rotation.set(-.12-inhale*.2,-.12,.12);
+   steam.forEach((p,i)=>{const smoke=t>10,age=(t*.15+i/16)%1;p.visible=smoke||t<6.5;const base=smoke?cigarette.position:drink.position;p.position.set(base.x+Math.sin(t*.7+i)*(.012+age*.018),base.y+.14+age*.22,base.z+(smoke?-.04:.015));p.scale.set(.008+age*.02,.022+age*.03,.008);p.material.opacity=(1-age)*(smoke?.075:.045);});
+  }else if(mode==='search'||mode==='pickup'){
+   camera.position.set(-.43,1.22,1.31);camera.lookAt(1.05,.56,.05);
+   const target=project(new T.Vector3(.66,.43,.66));anchors.brush=target;
+   const pick=mode==='pickup'?smooth(clamp01(t/1.25)):0;
+   const x=mode==='pickup'?mix(g.aim,target.x,pick):g.aim;
+   searching.visible=!g.hidden&&pick<.42;searching.position.set(...atScreen(x,target.y+.12,.57));searching.rotation.set(-.14,.05,0);
+   held.visible=mode==='pickup'&&pick>=.42;held.position.set(...atScreen(mix(target.x,.57,pick),mix(target.y+.15,.69,pick),.57));held.rotation.set(-.13,0,-.07);
+   storedBrush.visible=pick<.42;
+   if(g.hidden){searching.visible=false;camera.position.y=.55;camera.lookAt(1,.25,.05);}
+  }else if(mode==='window'){
+   camera.position.set(0,1.56,-.75);camera.lookAt(0,1.56,-4);storedBrush.visible=false;
+   const pull=g.pull||0,depth=1.19-pull*.64,rx=ropePosition(g),horizontal=(rx-.5)*2*half(depth)*camera.aspect;
+   ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74-pull*.1,-.75-depth);ropeGroup.scale.set(1-pull*.2,1,1);ropeGroup.rotation.z=g.hooked?-.04:Math.sin(g.partTime)*.045;
+   held.visible=!g.hidden;held.position.set(...atScreen(g.hooked?rx:g.aim,.82,.58));held.rotation.set(-.04,0,0);
+   anchors.head=project(held.localToWorld(new T.Vector3(0,.365,0)));anchors.rope=project(new T.Vector3(horizontal,1.73-pull*.1,-.75-depth));
+   if(g.hidden){held.visible=false;camera.position.y=.62;camera.lookAt(0,.64,-4);}
+  }else{
+   let a=frames[0],b=frames[1];for(let i=0;i<frames.length-1;i++)if(t>=frames[i].t){a=frames[i];b=frames[i+1];}
+   const f=smooth(clamp01((t-a.t)/(b.t-a.t)));camera.position.set(...a.p.map((n,i)=>mix(n,b.p[i],f)));camera.lookAt(...a.look.map((n,i)=>mix(n,b.look[i],f)));
+   reaching.visible=t>15.5&&t<20.8;const reach=Math.sin(clamp01((t-15.5)/5.3)*Math.PI);reaching.position.set(.26-reach*.05,1.0+reach*.37,-.8-reach*.5);
+   ropeGroup.visible=t>20;ropeGroup.scale.set(1,1,1);ropeGroup.rotation.z=0;ropeGroup.position.set(Math.sin(t*1.2)*.19,2.5-clamp01((t-20)/4)*.7,-1.92);opened=smooth(clamp01((t-17)/2.8));
+  }
+  hingeL.rotation.y=-opened*1.3;hingeR.rotation.y=opened*1.3;renderer.render(scene,camera);return anchors;
+ }
  return {render,dispose(){renderer.dispose();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}}});host.replaceChildren();}};
 }

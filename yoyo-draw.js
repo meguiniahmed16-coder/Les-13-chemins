@@ -1,4 +1,4 @@
-import {ropePosition,BRUSH} from './yoyo-core.js';
+import {ropePosition,BRUSH,aligned} from './yoyo-core.js';
 export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200,H=675;let grain=document.createElement('canvas');grain.width=240;grain.height=135;const gx=grain.getContext('2d');for(let i=0;i<3000;i++){gx.fillStyle=i%2?'#ffffff07':'#0000000a';gx.fillRect((i*71)%240,(i*37)%135,1,1);}const pattern=c.createPattern(grain,'repeat');
  const rect=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};const path=(a,col,stroke,width=1)=>{c.beginPath();a(c);if(col){c.fillStyle=col;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=width;c.stroke();}};const line=(x,y,X,Y,col,w=1)=>path(c=>{c.moveTo(x,y);c.lineTo(X,Y);},null,col,w);const ellipse=(x,y,rx,ry,col)=>path(c=>c.ellipse(x,y,rx,ry,0,0,Math.PI*2),col);function text(s,x,y,size=22,color='#e3dfca',align='left'){c.font=`${size}px system-ui`;c.fillStyle=color;c.textAlign=align;c.fillText(s,x,y);}
  function wall(){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#abb2a3');g.addColorStop(.56,'#879c94');g.addColorStop(.57,'#657f77');g.addColorStop(1,'#354946');rect(0,0,W,H,g);rect(0,0,W,H,pattern);for(let n=0;n<17;n++){const x=(n*193)%W,y=(n*87)%450;path(c=>{c.moveTo(x,y);c.lineTo(x+4,y+18);c.lineTo(x-3,y+37);c.lineTo(x+9,y+59);},null,'#324d4239',1);}}
@@ -15,4 +15,26 @@ export function makeDrawing(canvas){const c=canvas.getContext('2d');const W=1200
  if(g.hidden&&mode==='game'){rect(0,0,W,H,'#142724e0');rect(99,428,1003,26,'#57746b');for(let i=0;i<6;i++)rect(179+i*160,450,17,225,'#263e37');text('À L’ABRI',600,288,37,'#e5d6b2','center');text('Attends que les pas s’éloignent.',600,333,22,'#b9c6b7','center');text('Gauche ou droite pour te relever',600,378,18,'#a2b7ac','center');}
  if(g.guard==='approaching'||g.guard==='watching'){rect(0,0,W,57,g.guard==='watching'?'#842c26ed':'#705121ed');text(g.guard==='watching'?'LE SURVEILLANT REGARDE — RESTE CACHÉ':'DES PAS ET DES CLÉS… JOYSTICK VERS LE BAS',600,37,22,'#fff0cc','center');}rect(0,0,W,H,pattern);const vignette=c.createRadialGradient(600,300,150,600,330,700);vignette.addColorStop(0,'#0000');vignette.addColorStop(1,'#0b171b77');rect(0,0,W,H,vignette);}
  return{draw};
+}
+export function makeOverlay(canvas){
+ const c=canvas.getContext('2d');let W=1200,H=675;
+ function fit(){W=Math.max(1,canvas.clientWidth);H=Math.max(1,canvas.clientHeight);const d=2;if(canvas.width!==Math.round(W*d)||canvas.height!==Math.round(H*d)){canvas.width=Math.round(W*d);canvas.height=Math.round(H*d);}c.setTransform(d,0,0,d,0,0);}
+ function pill(text,y,color='#203934',ink='#eee8d4',size=16){
+  size=W<600?12:Math.min(18,size);c.font=`600 ${size}px system-ui`;const max=W-28,words=text.split(' '),lines=[];let line='';
+  for(const word of words){const next=line?line+' '+word:word;if(c.measureText(next).width>max-24&&line){lines.push(line);line=word;}else line=next;}if(line)lines.push(line);
+  const w=Math.min(max,Math.max(...lines.map(l=>c.measureText(l).width))+24),lh=size*1.3,h=lines.length*lh+16;
+  c.fillStyle=color;c.beginPath();c.roundRect((W-w)/2,y,w,h,7);c.fill();c.fillStyle=ink;c.textAlign='center';lines.forEach((l,i)=>c.fillText(l,W/2,y+8+size+i*lh));
+ }
+ return{clear(){c.clearRect(0,0,canvas.width,canvas.height);},draw(g,anchors={},mode='game',time=0){
+  fit();c.clearRect(0,0,W,H);if(mode==='pickup'){pill('La main se referme sur le manche…',H*.86);return;}
+  if(g.hidden){c.fillStyle='#0e24265c';c.fillRect(0,0,W,H);pill('À L’ABRI · Attends que les pas s’éloignent',H*.4);pill('Gauche ou droite pour te relever',H*.4+59,'#172e2ccc','#c1d3c8');return;}
+  const good=aligned(g),a=g.part===0?anchors.brush:anchors.head;
+  if(a){c.strokeStyle=good?'#b7edb1':'#f3ddaa';c.lineWidth=good?3:2;c.setLineDash(good?[]:[4,5]);c.beginPath();c.arc(a.x*W,a.y*H,W<600?13:22,0,Math.PI*2);c.stroke();c.setLineDash([]);}
+  if(g.part===0)pill(good?'La brosse est à portée · Appuie sur le rouge':'Déplace la main jusqu’à la brosse',H*.83,good?'#315c43':'#203934ed');
+  else if(g.hooked){pill('CORDE ATTRAPÉE · Maintiens le bouton rouge',H*.74,'#315c43');const x=W*.22,y=H*.9,w=W*.56;c.fillStyle='#17332fe8';c.beginPath();c.roundRect(x,y,w,9,4);c.fill();c.fillStyle='#d8ba76';c.beginPath();c.roundRect(x,y,Math.max(9,w*g.pull),9,4);c.fill();c.font='600 12px system-ui';c.fillStyle='#f1e9d3';c.textAlign='center';c.fillText('Le sac revient : '+Math.round(g.pull*100)+' %',W/2,H*.98);}
+  else pill(good?'C’EST LE MOMENT · Appuie et garde le rouge enfoncé':'Aligne la tête de la brosse avec la corde',H*.83,good?'#315c43':'#203934ed');
+  if(g.guard==='approaching')pill('DES CLÉS, DES PAS… Manette vers le bas !',12,'#72552af5','#fff0d1');
+  if(g.guard==='watching')pill('LE SURVEILLANT REGARDE · Cache-toi !',12,'#853c31f5','#fff0d1');
+  if(mode==='demo')pill('DÉMONSTRATION · Aucun point ni risque',12,'#192e34ee','#c5d5cc');
+ }};
 }
