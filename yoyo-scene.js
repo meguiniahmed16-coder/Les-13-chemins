@@ -266,7 +266,7 @@ export function makeCinema(host){
    held.position.set(...atScreen(g.hooked?rx:g.aim,.82-pull*.06,armDepth));
    held.rotation.set(-.10+reach*.35,0,-.035);
    // 2D brush head is anchored 45% down the screen; crosshair follows the sprite, not an invisible 3D bone.
-   anchors.head={x:g.hooked?rx:g.aim,y:.46};anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
+   anchors.head={x:g.hooked?rx:g.aim,y:.34};anchors.rope=project(new T.Vector3(horizontal,1.73+pull*.16,-.75-depth));
    if(g.hidden){held.visible=false;camera.position.y=.62;camera.lookAt(0,.64,-4);}
   }else{
    let a=frames[0],b=frames[1];for(let i=0;i<frames.length-1;i++)if(t>=frames[i].t){a=frames[i];b=frames[i+1];}
