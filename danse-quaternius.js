@@ -27,26 +27,78 @@ function addSmile(avatar, head) {
  smile.quaternion.copy(headWorld.invert().multiply(front));
  // Soft, curved, readable smile, positioned ON the face not floating away.
  const curve=new T.Shape();
- curve.moveTo(-.047,.009);
- curve.quadraticCurveTo(0,-.019,.047,.009);
- curve.quadraticCurveTo(0,-.001,-.047,.009);
+ curve.moveTo(-.034,.004);
+ curve.quadraticCurveTo(0,-.006,.034,.004);
+ curve.quadraticCurveTo(0,-.003,-.034,.004);
  const lips=new T.Mesh(
   new T.ShapeGeometry(curve,10),
-  new T.MeshBasicMaterial({color:0x573334,side:T.DoubleSide,depthWrite:false})
+  new T.MeshBasicMaterial({color:0x794c43,side:T.DoubleSide,depthWrite:false})
  );
  lips.position.z=.002;
  lips.name='SourireVisible';
  smile.add(lips);
  const light=new T.Mesh(
   new T.TubeGeometry(new T.CatmullRomCurve3([
-   new T.Vector3(-.023,-.003,.0045),new T.Vector3(0,-.006,.0045),
-   new T.Vector3(.023,-.003,.0045)
-  ]),12,.0024,5,false),
-  new T.MeshBasicMaterial({color:0xf6cfac,transparent:true,opacity:.70,depthWrite:false})
+   new T.Vector3(-.020,-.004,.0045),new T.Vector3(0,-.005,.0045),
+   new T.Vector3(.020,-.004,.0045)
+   ]),12,.0012,5,false),
+  new T.MeshBasicMaterial({color:0xe7b69b,transparent:true,opacity:.48,depthWrite:false})
  );
  smile.add(light);
  head.add(smile);
  return smile;
+}
+
+// The CC0 artist model uses a monochrome jade shader. Preserve the real
+// skinned body but give it lightweight, zero-texture skin and clothing colours.
+function dressOriginalSkin(body){
+ body.geometry=body.geometry.clone();
+ const pos=body.geometry.getAttribute('position'),rgb=new Float32Array(pos.count*3);
+ const skin=new T.Color('#ca9272'),shirt=new T.Color('#655389');
+ const pants=new T.Color('#374052'),shoes=new T.Color('#d8c7b5'),col=new T.Color();
+ for(let i=0;i<pos.count;i++){
+  const x=Math.abs(pos.getX(i)),y=pos.getY(i);
+  if(y<.155)col.copy(shoes);
+  else if(y<1.00&&x<.35)col.copy(pants);
+  else if(y>1.12&&y<1.50&&x<.52)col.copy(shirt);
+  else col.copy(skin);
+  const highlight=1+Math.sin(i*17.1)*.015;
+  rgb[3*i]=Math.min(1,col.r*highlight);
+  rgb[3*i+1]=Math.min(1,col.g*highlight);
+  rgb[3*i+2]=Math.min(1,col.b*highlight);
+ }
+ body.geometry.setAttribute('color',new T.BufferAttribute(rgb,3));
+ body.material=new T.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.83});
+ body.userData.avatarColored=true;
+}
+
+function attachFacialDetails(avatar,head){
+ avatar.updateMatrixWorld(true);
+ const headQuat=head.getWorldQuaternion(new T.Quaternion());
+ const avatarQuat=avatar.getWorldQuaternion(new T.Quaternion());
+ const normal=headQuat.clone().invert().multiply(avatarQuat);
+ const place=(mesh,x,y,z)=>{
+  const original=avatar.localToWorld(new T.Vector3(x,y,z));
+  mesh.position.copy(head.worldToLocal(original));
+  mesh.quaternion.copy(normal);
+  head.add(mesh);return mesh;
+ };
+ const irisMaterial=new T.MeshStandardMaterial({color:0x584235,roughness:.4});
+ const glintMaterial=new T.MeshBasicMaterial({color:0xffffff});
+ for(const side of [-1,1]){
+  const iris=new T.Mesh(new T.SphereGeometry(.0066,12,8),irisMaterial);
+  place(iris,side*.040,1.699,.091);iris.name='Iris';
+  const glint=new T.Mesh(new T.SphereGeometry(.0016,8,6),glintMaterial);
+  place(glint,side*.040-.0018,1.701,.097);
+ }
+ // A short textured-looking sculpted hair cap, attached to the head bone.
+ const hair=new T.Mesh(
+  new T.SphereGeometry(1,28,12,0,Math.PI*2,0,1.20),
+  new T.MeshStandardMaterial({color:0x302a28,roughness:.93,side:T.DoubleSide})
+ );
+ place(hair,0,1.723,-.010);
+ hair.scale.set(.109,.128,.108);
+ hair.name='Cheveux';
 }
 
 export async function loadQuaterniusDancer(scene, originalPosition) {
@@ -69,11 +121,15 @@ export async function loadQuaterniusDancer(scene, originalPosition) {
   const geo=obj.geometry;
   triangles+=geo.index?geo.index.count/3:geo.getAttribute('position').count/3;
   if(obj.isSkinnedMesh)skinned++;
+  if(obj.isSkinnedMesh&&geo.getAttribute('position')?.count>5000) dressOriginalSkin(obj);
+  else if(obj.name==='Eyes')obj.material=new T.MeshStandardMaterial({color:0xf0e5d8,roughness:.6});
+  else if(obj.name==='Eyebrows')obj.material=new T.MeshStandardMaterial({color:0x46332e,roughness:.9});
  });
  if(skinned<1||triangles<3000||triangles>35000)throw new Error('Modèle Quaternius non optimisé ou désarticulé');
  scene.add(avatar);
  avatar.updateMatrixWorld(true);
  const smile=addSmile(avatar,bones.Head);
+ attachFacialDetails(avatar,bones.Head);
  const rest=Object.fromEntries(Object.entries(bones).map(([name,bone])=>[name,bone.quaternion.clone()]));
  return {root:avatar,bones,rest,smile,basePosition:originalPosition.clone(),triangles};
 }
