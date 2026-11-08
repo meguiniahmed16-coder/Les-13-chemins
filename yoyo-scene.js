@@ -248,6 +248,8 @@ export function makeCinema(host){
    ropeGroup.visible=true;ropeGroup.position.set(horizontal,1.74+pull*.16,-.75-depth);
    ropeGroup.scale.set(1-pull*.12,1,1);
    ropeGroup.rotation.z=g.hooked?-.025:Math.sin(g.partTime)*.045;
+   // The horizontal hanger itself is wider than a gap: turn it edge-on at the steel plane.
+   ropeGroup.rotation.y=g.hooked?Math.sin(Math.PI*pull)*Math.PI/2:Math.sin(g.partTime*.4)*.08;
    bagRoot.rotation.z=Math.sin(g.partTime*2)*.028+Math.sin(pull*Math.PI)*.04;
    bagRoot.rotation.x=Math.sin(g.partTime*.9)*.025;
    held.visible=!g.hidden;
