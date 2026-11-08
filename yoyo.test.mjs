@@ -334,12 +334,12 @@ test('Two static DORSAL hand images, no finger animation: 3D tour then 2D trials
  const world=app.slice(app.indexOf('function world('),app.indexOf('const captions='));
  assert.doesNotMatch(world,/cinema\.render/,'3D renderer cannot drive gameplay hands');
  assert.match(app,/cinema\.render\(filmTime,mode,g\)/,'3D cell tour is retained');
- for(const file of ['main-ouverte-dos-v9.webp','main-brosse-dos-v9.webp']){
+ for(const file of ['main-ouverte-dos-v9.avif','main-brosse-dos-v9.avif']){
   assert.match(draw,new RegExp(file.replaceAll('.','\\.')));
   assert.match(build,new RegExp("'"+file.replaceAll('.','\\.')+"'"),'Netlify must publish the image');
   const bytes=fs.readFileSync(new URL('./'+file,import.meta.url));
-  assert.equal(bytes.toString('ascii',0,4),'RIFF');
-  assert.equal(bytes.toString('ascii',8,12),'WEBP');
+  assert.equal(bytes.toString('ascii',4,8),'ftyp');
+  assert.match(bytes.toString('ascii',8,24),/avif|avis/);
   assert.ok(bytes.length<50000,'must stay lightweight for mobile');
  }
  assert.doesNotMatch(draw,/brush\(x,454\)/,'held image already includes the full toilet brush');
