@@ -18,7 +18,10 @@ export function models(){
   // The back of each fingertip determines its nail plane; nails never float on the palm.
   for(const a of data.nails){
    const tip=new T.Vector3(...a.tip),direction=tip.clone().sub(new T.Vector3(...a.previous)).normalize(),out=new T.Vector3(...a.normal);out.addScaledVector(direction,-out.dot(direction)).normalize();
-   const at=tip.clone().addScaledVector(direction,-.005).addScaledVector(out,a.r*1.18),n=oval(p,at.toArray(),[a.r*.58,a.r*.83,.0008],nail);
+   // Open search hand had conspicuous floating pale nail blobs in first-person view.
+   // Place smaller nails on the true fingertip surface; preserve all other poses.
+   const isSearching=name==='open';
+   const at=tip.clone().addScaledVector(direction,-.005).addScaledVector(out,a.r*(isSearching?.91:1.18)),n=oval(p,at.toArray(),[a.r*(isSearching?.47:.58),a.r*(isSearching?.63:.83),isSearching?.00055:.0008],nail);
    const side=new T.Vector3().crossVectors(direction,out).normalize();n.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(side,direction,out));
   }
   if(name==='open'||name==='smoke'){
