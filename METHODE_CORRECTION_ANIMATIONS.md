@@ -189,3 +189,8 @@ Remplacer « QUI EST LE DANSEUR ? » par « Chapitre 3 — Le coup du bus » et 
 ## C025 — Public de l’émission (novembre 2026)
 
 Seize spectateurs restent installés sur deux rangées devant la piste : vêtements et carnations variés, coiffures courtes, carrés, chignons, boucles, quelques crânes dégarnis. Réactions discrètes et décalées (applaudir, encourager, hocher la tête), sans mouvement uniforme ni modification du gameplay. Les figurants demeurent volontairement simples et légers car ils sont au premier plan mais secondaires dans ce mini-jeu de la plateforme littéraire. Ne pas toucher au danseur principal masculin, aux quatre danseuses articulées ni à la banderole « Chapitre 3 — Le coup du bus » / « P 54-56 ». Validation nécessaire sur vue réelle, mobile et écran large.
+
+
+## C026 — Les trois spectateurs visibles de l’autre côté
+
+Les trois têtes au premier plan dans la capture d’ensemble (sièges 3, 4 et 5 de la rangée avant) avaient conservé un aspect ancien, en volumes primitifs. Remplacer **uniquement ces trois figurants** par trois copies du corps Quaternius 3D déjà chargé pour le personnage principal (squelette conservé, couleurs de peau, vêtements et cheveux adaptés), sans aucun nouvel asset à télécharger. Les anciens volumes sont cachés seulement après création des trois nouveaux. Conserver les treize autres spectateurs, les quatre danseuses, le héros, les cinq candidats, les règles et la banderole littéraire. Tester aussi le rendu général réel avant approbation.

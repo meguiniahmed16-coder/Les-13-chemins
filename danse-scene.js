@@ -129,6 +129,58 @@ const CANDIDATE_SKINS=[0xb17a58,0xdca788,0xc99473,0x9e7159,0xe3b89a];
 const CANDIDATE_HAIR=[0x342720,0x6a4a2b,0x292831,0x71452c,0x4b302a];
 // Reuse the same 65-bone male Quaternius mesh already loaded for the playable
 // character. The five background candidates do NOT download five extra models.
+
+const FOREGROUND_AUDIENCE_SLOTS=Object.freeze([3,4,5]); // the three older heads nearest the camera
+function upgradeForegroundAudience(publicRows,source){
+ const tone=[0xd7a17b,0xd6b091,0x916048];
+ const clothes=[0x669eaa,0x9f758e,0x8ca56a];
+ const hairColors=[0x9c764b,0x44362e,0x28252a];
+ const ready=FOREGROUND_AUDIENCE_SLOTS.map((seat,i)=>{
+  const spectator=publicRows[seat];
+  if(!spectator?.group)throw Error('Foreground seat missing: '+seat);
+  // Use the already loaded real body and 65-bone armature: no new downloads.
+  const root=cloneSkeleton(source.root);
+  root.name='PublicPremierPlan3D'+(i+1);
+  root.scale.setScalar(.80+(i===1?.045:0));
+  root.position.set(0,-.18,0);
+  root.traverse(obj=>{
+   if(obj.isSkinnedMesh&&obj.geometry.getAttribute('position')?.count>5000){
+    const geometry=obj.geometry.clone(),pos=geometry.getAttribute('position');
+    const colors=new Float32Array(pos.count*3);
+    const skin=new T.Color(tone[i]),shirt=new T.Color(clothes[i]),
+      pants=new T.Color(0x3d394b),shoes=new T.Color(0x262532);
+    for(let v=0;v<pos.count;v++){
+     const y=pos.getY(v),x=Math.abs(pos.getX(v));
+     const col=y<.155?shoes:y<1.00&&x<.35?pants:y>=1.03&&y<1.52&&x<.52?shirt:skin;
+     col.toArray(colors,v*3);
+    }
+    geometry.setAttribute('color',new T.BufferAttribute(colors,3));
+    obj.geometry=geometry;
+    obj.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.84,metalness:0});
+    obj.frustumCulled=false;
+   } else if(obj.name==='Cheveux'&&obj.isMesh){
+    // One bareheaded spectator and two different hair tones.
+    obj.visible=i!==1;
+    if(i!==1){obj.material=obj.material.clone();obj.material.color.setHex(hairColors[i]);}
+   }
+  });
+  const bones={},rest={};
+  for(const name of Object.keys(source.bones)){
+   const bone=root.getObjectByName(name);
+   if(!bone?.isBone)throw Error('Foreground spectator bone missing: '+name);
+   bones[name]=bone;rest[name]=bone.quaternion.clone();
+  }
+  const smile=root.getObjectByName('SourireQuaternius');
+  if(!smile)throw Error('Foreground spectator head attachment missing');
+  const pilot={root,bones,rest,smile,basePosition:root.position.clone()};
+  return {spectator,root,pilot};
+ });
+ for(const {spectator,root,pilot} of ready){
+  spectator.group.add(root);
+  for(const child of spectator.group.children)if(child!==root)child.visible=false;
+  spectator.realBody=pilot;
+ }
+}
 function upgradeCandidatePanel(scene,candidates,source){
  const copies=candidates.map((candidate,i)=>{
   const root=cloneSkeleton(source.root);
@@ -440,6 +492,8 @@ export class DanceScene{
    this.canvas.dataset.featuredDancer='quaternius-cc0';
    try{upgradeCandidatePanel(s,this.candidates,avatar);}
    catch(err){console.warn('Les cinq candidats gardent leurs silhouettes de repli.',err);}
+   try{upgradeForegroundAudience(this.public,avatar);}
+   catch(err){console.warn('Les trois spectateurs du premier plan gardent leurs silhouettes de repli.',err);}
   }).catch(err=>{
    console.warn('Danseur masculin indisponible, personnage précédent conservé.',err);
    this.canvas.dataset.featuredDancer='fallback';
@@ -518,6 +572,10 @@ export class DanceScene{
  });pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
  // Independent but restrained audience reactions: clapping, cheering and nodding.
  for(const p of this.public){
+  if(p.realBody){
+   poseQuaterniusDancer(p.realBody,t+p.phase*.1,'cross',.09,false);
+   continue;
+  }
   const pulse=Math.sin(t*5.4+p.phase),cheer=active&&p.reaction===1;
   const clap=active&&p.reaction===0;
   p.group.rotation.z=(active?.018:.006)*Math.sin(t*2.6+p.phase);

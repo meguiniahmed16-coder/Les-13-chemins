@@ -71,6 +71,7 @@ jobs:
             await page.waitForFunction(()=>window.__pilot?.dancers?.every(d=>d.pilot?.bones?.size>=60),null,{timeout:28000});
             await page.waitForFunction(()=>window.__pilot?.featuredDancer?.bones?.Head,null,{timeout:28000});
             await page.waitForFunction(()=>window.__pilot?.candidates?.filter(c=>c.quaternius).length===5,null,{timeout:28000});
+            await page.waitForFunction(()=>window.__pilot?.public?.filter(p=>p.realBody).length===3,null,{timeout:28000});
             await page.waitForTimeout(650);
             const state=await page.evaluate(()=>{
               const scene=window.__pilot,p=scene.dancers[0].pilot;
@@ -94,6 +95,9 @@ jobs:
                 candidateModels:scene.candidates.filter(c=>c.quaternius?.root).length,
                 candidateRigBones:scene.candidates.map(c=>Object.keys(c.quaternius?.bones||{}).length),
                 banner:scene.scene.getObjectByName('BanderoleChapitre3')?.userData||null,
+                spectatorForeground:scene.public.filter(p=>p.realBody?.root).length,
+                spectatorForegroundNames:scene.public.filter(p=>p.realBody).map(p=>p.realBody.root.name),
+                spectatorForegroundOldHidden:scene.public.filter(p=>p.realBody).every(p=>p.group.children.filter(c=>c!==p.realBody.root).every(c=>!c.visible)),
                 spectatorCount:scene.public.length,
                 otherHairstyles:scene.dancers.slice(1).map(d=>d.head.userData.hairStyle)};
             });
@@ -106,6 +110,9 @@ jobs:
             if(!state.smile||state.bones<60)throw Error('Visage ou squelette manquant');
             if(!state.iris||state.irisVertices<16||state.faceCorners!==2)
               throw Error('Les vrais yeux doivent être peints et le sourire sans double bouche');
+            if(state.spectatorForeground!==3||!state.spectatorForegroundOldHidden||
+               state.spectatorForegroundNames.join(',')!=='PublicPremierPlan3D1,PublicPremierPlan3D2,PublicPremierPlan3D3')
+              throw Error('Les trois spectateurs visibles doivent utiliser les nouveaux corps 3D');
             if(state.candidateModels!==5||state.candidateRigBones.some(n=>n<14))
               throw Error('Le panel doit contenir cinq vrais modèles humains riggés');
             if(state.femaleReal.some(v=>!v)||state.femaleOriginalHidden.some(v=>!v)||state.femaleRigCounts.some(n=>n<60))

@@ -125,3 +125,18 @@ test('The 16 TV spectators have independent hair, clothing and unobtrusive react
  assert.ok(src.includes('chapterBanner(s)'), 'do not alter the literary banner');
  assert.ok(src.includes('upgradeFemaleDancers(dancers,source)'), 'keep the four real female bodies');
 });
+
+test('The 3 foreground audience silhouettes use the existing rigged Quaternius body',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ assert.ok(src.includes('const FOREGROUND_AUDIENCE_SLOTS=Object.freeze([3,4,5])'));
+ assert.ok(src.includes('function upgradeForegroundAudience(publicRows,source)'));
+ assert.ok(src.includes('cloneSkeleton(source.root)'), 'real rigged body is reused');
+ assert.ok(src.includes('try{upgradeForegroundAudience(this.public,avatar);}'));
+ assert.ok(src.includes("root.name='PublicPremierPlan3D'+(i+1)"));
+ assert.ok(src.includes('spectator.realBody=pilot'));
+ assert.ok(src.includes('if(child!==root)child.visible=false'), 'old silhouettes must be hidden');
+ assert.ok(src.includes('if(p.realBody){'), 'the new body must be animated');
+ assert.ok(src.includes('poseQuaterniusDancer(p.realBody'), 'animate using the original armature');
+ assert.ok(src.includes('const FOREGROUND_AUDIENCE_SLOTS=Object.freeze([3,4,5])'), 'change exactly three foreground viewers');
+ assert.ok(src.includes('this.public.push({group:g,head,arms,reaction:index%4,phase:index*.79})'), 'other spectators remain intact');
+});
