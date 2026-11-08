@@ -43,9 +43,14 @@ export function models(){
   for(let n=0;n<7;n++){const ring=mesh(new T.TorusGeometry(.034+n*.0014,.0008,6,40),plastic,p);ring.rotation.x=Math.PI/2;ring.position.set(0,-.034+n*.016,0);}return p;
  }
  function smokingHand(){
-  const p=hand('smoke'),cigarette=new T.Group();p.add(cigarette);
-  // Between index and middle fingertips. In first-person view the filter points toward the mouth (+Z), ember away (-Z).
-  cigarette.position.set(-.014,.120,-.016);
+  const p=new T.Group(),gripPoint=new T.Vector3(-.015,.096,-.016);
+  // The actor sees the PALM while smoking, not the back of a hand turned inside out.
+  // Rotate only the skin around the actual cigarette pinch: the cigarette must not rotate away from the lips.
+  const palmRig=new T.Group();palmRig.position.copy(gripPoint);palmRig.rotation.y=Math.PI;
+  const posedHand=hand('smoke');posedHand.position.copy(gripPoint).multiplyScalar(-1);
+  palmRig.add(posedHand);p.add(palmRig);
+  const cigarette=new T.Group();p.add(cigarette);cigarette.position.copy(gripPoint);
+  // The cigarette rests between the middle phalanges, with the filter toward the face (+Z).
   bone(cigarette,[0,0,.036],[0,0,.012],.004,.004,material('#bca381'));
   bone(cigarette,[0,0,.012],[0,0,-.049],.004,.004,material('#eee9d8'));
   bone(cigarette,[0,0,-.049],[0,0,-.053],.0041,.0038,material('#5d5b50'));
