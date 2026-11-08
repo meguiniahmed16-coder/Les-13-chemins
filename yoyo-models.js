@@ -43,8 +43,13 @@ export function models(){
   for(let n=0;n<7;n++){const ring=mesh(new T.TorusGeometry(.034+n*.0014,.0008,6,40),plastic,p);ring.rotation.x=Math.PI/2;ring.position.set(0,-.034+n*.016,0);}return p;
  }
  function smokingHand(){
-  const p=hand('smoke'),cigarette=new T.Group();p.add(cigarette);cigarette.position.set(-.014,.111,-.015);
-  bone(cigarette,[0,0,.044],[0,0,.016],.004,.004,material('#bca381'));bone(cigarette,[0,0,.016],[0,0,-.060],.004,.004,material('#eee9d8'));bone(cigarette,[0,0,-.060],[0,0,-.065],.0041,.0038,material('#5d5b50'));bone(cigarette,[0,0,-.065],[0,0,-.066],.0037,.0034,material('#b15d35',.8,{emissive:'#57200b'}));
+  const p=hand('smoke'),cigarette=new T.Group();p.add(cigarette);
+  // Between index and middle fingertips. In first-person view the filter points toward the mouth (+Z), ember away (-Z).
+  cigarette.position.set(-.014,.120,-.016);
+  bone(cigarette,[0,0,.036],[0,0,.012],.004,.004,material('#bca381'));
+  bone(cigarette,[0,0,.012],[0,0,-.049],.004,.004,material('#eee9d8'));
+  bone(cigarette,[0,0,-.049],[0,0,-.053],.0041,.0038,material('#5d5b50'));
+  bone(cigarette,[0,0,-.053],[0,0,-.054],.0037,.0034,material('#b15d35',.8,{emissive:'#57200b'}));
   return p;
  }
  function sanitary(){const toilet=new T.Group();lathe(toilet,[[0,0],[.11,0],[.13,.04],[.095,.21],[.13,.28],[.13,.30]],ceramic,[1,1,1.25]);const bowl=lathe(toilet,[[.09,.22],[.14,.25],[.20,.32],[.225,.40],[.225,.425],[.207,.44],[.186,.421],[.163,.36],[.10,.29],[.065,.28]],ceramic,[1,1,1.32]);bowl.position.z=.06;
