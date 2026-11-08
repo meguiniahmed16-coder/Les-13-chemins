@@ -55,5 +55,17 @@ jobs:
           console.log('PREVIEW_WIDE_BEGIN'+full.toString('base64')+'PREVIEW_WIDE_END');
           console.log('PREVIEW_CLOSE_BEGIN'+crop.toString('base64')+'PREVIEW_CLOSE_END');
           console.log('APERÇU_OK : vrai danseur Quaternius et sourire chargés dans le navigateur');
+
+          // Inspect the actual smile at close range without changing the public game camera.
+          const facePage=await browser.newPage({viewport:{width:1200,height:800},deviceScaleFactor:1});
+          facePage.on('pageerror',e=>console.log('FACE_PAGE_ERROR:',e.message));
+          await facePage.goto('http://127.0.0.1:8173/jeu-danse.html?inspectFace=1',{waitUntil:'domcontentloaded'});
+          await facePage.waitForFunction(()=>document.getElementById('world')?.dataset.featuredDancer==='quaternius-cc0',null,{timeout:28000});
+          await facePage.locator('#start').evaluate(el=>{el.disabled=false;el.click();});
+          await facePage.waitForTimeout(500);
+          const faceBounds=await facePage.locator('.screen').boundingBox();
+          const faceImage=await facePage.screenshot({type:'jpeg',quality:86,clip:faceBounds});
+          console.log('PREVIEW_FACE_BEGIN'+faceImage.toString('base64')+'PREVIEW_FACE_END');
+          console.log('VISAGE_OK : plan proche du modèle articulé');
           await browser.close();
           JS
