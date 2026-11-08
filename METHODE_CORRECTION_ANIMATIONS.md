@@ -199,3 +199,6 @@ Les trois têtes au premier plan dans la capture d’ensemble (sièges 3, 4 et 5
 ## C027 — Les spectateurs ne sont pas des danseurs
 
 Les trois figurants Quaternius au premier plan ont été incorrectement animés par la chorégraphie du héros, d'où les bras levés. Ils doivent simplement observer : bras le long du corps, légère inclinaison de tête, aucune danse ni célébration systématique. Garder leurs trois vrais corps 3D, leurs emplacements et tous les autres éléments. Vérifier dans le vrai navigateur que les coudes se situent sous les épaules avant de valider la capture.
+
+
+**Correction C027, orientation des spectateurs :** les personnages sont retournés d’un demi-tour vers la scène. Les angles monde utilisés pour le héros abaissent les bras dans sa direction, mais les lèvent une fois réutilisés sur les figurants tournés. Adapter les signes des rotations d’épaules au repère de ces spectateurs et contrôler les coordonnées verticales des coudes depuis le navigateur (les coudes doivent être sous les épaules).
