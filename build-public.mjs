@@ -1,9 +1,23 @@
 import { copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const output = join(root, 'dist');
+// Production must not reuse a stale 3D hand mesh or a stale pre-bundled animation.
+// Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
+const run = promisify(execFile);
+for (const args of [
+  ['build-yoyo-hands.mjs'],
+  ['--test', 'yoyo.test.mjs'],
+  ['build-yoyo.mjs'],
+]) {
+  const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
+  if (stdout.trim()) console.log(stdout.trim());
+  if (stderr.trim()) console.error(stderr.trim());
+}
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
   'index.html',
