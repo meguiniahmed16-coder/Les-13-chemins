@@ -32,8 +32,8 @@ test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a 
  const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
  assert.match(src,/import \{GLTFLoader\} from 'three\/examples\/jsm\/loaders\/GLTFLoader\.js'/);
  assert.match(src,/const PILOT_MODEL='assets\/danse\/quaternius-superhero-female\.glb'/);
- assert.match(src,/if\\(i===0\\)\\{h\\.otherDancers=this\\.dancers;loadPilotDancer\\(h\\);\\}/);
- assert.match(src,/if\\(h\\.pilot\\)animatePilotDancer\\(h,t,dt,active\\)/);
+ assert.ok(src.includes("if(i===0){h.otherDancers=this.dancers;loadPilotDancer(h);}"),'load first female once');
+ assert.ok(src.includes("if(h.pilot)animatePilotDancer(h,t,dt,active)"),'animate all female rigs');
  assert.match(src,/target\.group\.children\.forEach\(child=>\{if\(child!==root\)child\.visible=false;\}\)/);
  assert.match(src,/colourPilotActor\(o\)/,'cloth colours must come from the true skinned mesh');
  assert.ok(src.includes("root.updateMatrixWorld(true);head.attach(smile)"),'smile details must follow actual head bone');
