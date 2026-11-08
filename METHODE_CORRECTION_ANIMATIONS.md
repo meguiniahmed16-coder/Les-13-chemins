@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.7 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 1.8 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -119,3 +119,17 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 **Geste 3D :** le bras passe derrière le plan des barreaux dès l'accrochage, entre deux cylindres, puis recule en ramenant le sac. Le cintre est plus large que l'ouverture : il tourne **de profil** lors du franchissement. Le sac est étroit et centré sur l'ouverture, avec des anses asymétriques qui remontent réellement jusqu'au crochet.
 
 **Contrôles :** comparer les ouvertures projetées dans le gameplay et les espaces 3D depuis un téléphone et un écran large. Vérifier le même principe dans le rendu de secours 2D. Ne pas considérer une animation validée uniquement parce que le joueur a réussi l'épreuve.
+
+## C018 — Flexion dorsale accidentelle : le signe n'est pas un détail
+
+**Signalement utilisateur :** dans l'animation de la cigarette, les articulations des quatre doigts sont fléchies, **mais dans le mauvais sens**. Le pouce et les autres doigts ne doivent pas être traités avec un signe identique : leur anatomie diffère.
+
+**Cause géométrique identifiée dans le GLB d'origine :** les doigts s'étendent selon le repère local -Y et la paume se trouve vers -X. Une rotation positive autour de +Z déplace l'extrémité des doigts vers +X, donc **vers le dos de la main**. Les anciens profils de brosse, gobelet et cigarette utilisaient ce signe erroné.
+
+**Correction :** conserver la peau et le squelette anatomiques ; appliquer aux **quatre doigts longs** une flexion **négative autour de +Z** en coordonnées natives, et conserver une convention distincte pour le pouce. Pour fumer, réduire la flexion de l'index et du majeur, enrouler l'annulaire et l'auriculaire vers la paume, et placer la cigarette entre les phalanges intermédiaires de l'index et du majeur.
+
+**Validation obligatoire :** calculer depuis les vrais nœuds du squelette 25 os la direction de déplacement des bouts de doigts après flexion. Elle doit aller vers -X. Comparer des rendus de profil (ancien signe et signe corrigé), avec l'objet présent. Les tests géométriques ne remplacent pas l'observation réelle dans le jeu.
+
+**Réutilisation :** appliquer cette règle aux prises de brosse et de gobelet, ainsi qu'aux autres personnes, sans copier aveuglément la même flexion. Déplacer seulement la cigarette ne saurait réparer un doigt plié à l'envers.
+
+**État :** « Yo-yo v7 — flexion palmaire » ; contrôle utilisateur encore requis.
