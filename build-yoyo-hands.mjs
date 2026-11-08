@@ -4,10 +4,12 @@ import {MarchingCubes} from 'three/examples/jsm/objects/MarchingCubes.js';
 import * as T from 'three';
 import {writeFileSync} from 'node:fs';
 const specs={};
-function spec(){return {shapes:[],nails:[],wrist:[0,-.075,0],cuff:[.018,-.235,.035]};}
+function spec(){return {shapes:[],nails:[],digits:[],wrist:[0,-.075,0],cuff:[.018,-.235,.035]};}
 function ell(s,p,r){s.shapes.push({kind:'ell',p,r});}
 function cap(s,a,b,r0,r1=r0){s.shapes.push({kind:'cap',a,b,r0,r1});}
 function digit(s,pts,r,dorsal=[0,0,1]){
+ // Keep real phalanx control points for anatomical regression checks; do not validate tips alone.
+ s.digits.push({points:pts.map(p=>[...p]),radius:r});
  const curve=new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)),false,'centripetal');const points=curve.getPoints(12);
  for(let i=0;i<12;i++)cap(s,points[i].toArray(),points[i+1].toArray(),r*(1-i/12*.23),r*(1-(i+1)/12*.23));
  s.nails.push({tip:pts.at(-1),previous:pts.at(-2),normal:dorsal,r:r*.77});
@@ -24,27 +26,47 @@ roots.forEach((a,i)=>{const e=ends[i];digit(s,[a,[a[0],a[1]+(e[1]-a[1])*.43,.001
 digit(s,[[-.030,-.031,-.003],[-.052,-.016,-.004],[-.066,.007,-.005],[-.068,.032,-.008]],.0142,[0,0,1]);
 specs.open=s;
 s=spec();base(s);
-// A cigarette is pinched by the tips of a full-length index and middle finger, not glued into the palm.
-digit(s,[roots[0],[-.030,.075,-.002],[-.029,.109,-.010],[-.029,.119,-.016]],.0098);
-digit(s,[[-.002,.039,0],[-.002,.083,.002],[-.002,.114,-.010],[-.001,.121,-.016]],.0102);
-digit(s,[roots[2],[.012,.056,-.033],[.012,.034,-.052],[.012,.010,-.042]],.0095,[0,-.8,-.6]);
-digit(s,[roots[3],[.031,.044,-.025],[.031,.023,-.044],[.031,.003,-.034]],.0082,[0,-.7,-.7]);
-digit(s,[[-.029,-.031,-.004],[-.052,-.009,-.009],[-.043,.019,-.033],[-.019,.030,-.045]],.014,[0,0,1]);
+// Two long, softly flexed fingers flank the cigarette at the middle phalanges.
+// Their tips continue beyond the cigarette; folding them at the tip produces a distorted 'V'.
+digit(s,[roots[0],[-.030,.068,-.006],[-.029,.097,-.016],[-.026,.119,-.022]],.0098);
+digit(s,[roots[1],[-.005,.081,-.006],[.001,.105,-.016],[.005,.130,-.022]],.0102);
+// Ring and little fingers curl gradually instead of bending sharply backwards.
+digit(s,[roots[2],[.014,.061,-.014],[.018,.050,-.036],[.020,.031,-.041],[.020,.018,-.033]],.0095,[0,-.8,-.6]);
+digit(s,[roots[3],[.035,.048,-.012],[.040,.041,-.031],[.041,.022,-.038],[.039,.012,-.030]],.0082,[0,-.7,-.7]);
+digit(s,[[-.029,-.031,-.004],[-.044,-.010,-.008],[-.039,.011,-.023],[-.021,.020,-.031]],.0138,[0,0,1]);
 specs.smoke=s;
-for(const [name,R]of [['brush',.014],['cup',.043]]){
- s=spec();const x=R+.020,z=R>.03?.018:.009;
- ell(s,[x,-.006,z],[.024,.061,R>.03?.033:.027]);ell(s,[x-.004,.015,z+.024],[.025,.031,.024]);
+
+// A proper side grip: the knuckles are spread over the width of the palm.
+// Each bent finger follows the outside of the cup, without crossing the ceramic or
+// extending implausibly across the entire diameter (the old digits were ~12 cm long).
+s=spec();{
+ const R=.014,x=R+.020,z=.009; // brush remains an independent prop grip.
+ ell(s,[x,-.006,z],[.024,.061,.027]);ell(s,[x-.004,.015,z+.024],[.025,.031,.024]);
  s.wrist=[x+.009,-.078,z+.013];s.cuff=[x+.042,-.235,z+.060];
  cap(s,[x+.004,-.055,z+.009],[x+.020,-.143,z+.030],.026,.035);cap(s,[x+.020,-.143,z+.030],s.cuff,.035,.047);
  for(let i=0;i<4;i++){
-  const y=.046-i*.025,r=radii[i],spread=[0,.005,.002,-.003][i];
-  // At the far rim, fingers pass outside the solid cup wall. Alternate heights keep their knuckles distinct.
-  const pts=R>.03?[[x,y,.008],[R*.90,y+spread,-.042+i*.003],[.006,y+spread-.003,-.053+i*.002],[-.022+i*.001,y-.005,-.047+i*.002]]:[[x,y,.007],[.024,y+.004,-.025],[-.012,y,-.028],[-.021,y-.007,.004]];
-  digit(s,pts,r,R>.03?[-.45,0,-.9]:[-1,0,0]);
+  const y=.046-i*.025,r=radii[i];
+  digit(s,[[x,y,.007],[.024,y+.004,-.025],[-.012,y,-.028],[-.021,y-.007,.004]],r,[-1,0,0]);
  }
- // Thumb opposes the fingertips on the near side, slightly above the ceramic surface.
- const thumb=R>.03?[[x+.002,.012,z+.024],[.054,.052,.059],[.024,.064,.061],[-.003,.059,.057]]:[[x+.004,.012,z+.024],[.031,.050,.037],[.007,.060,.036],[-.015,.052,.029]];
- digit(s,thumb,.014,[0,.15,1]);specs[name]=s;
+ digit(s,[[x+.004,.012,z+.024],[.031,.050,.037],[.007,.060,.036],[-.015,.052,.029]],.014,[0,0,1]);
+ specs.brush=s;
+}
+s=spec();{
+ const x=.070,z=.018; // palm at the right side of the cup, not intersecting its cylindrical wall.
+ ell(s,[x,-.006,z],[.024,.060,.032]);ell(s,[x-.004,.015,z+.024],[.025,.031,.023]);
+ s.wrist=[x+.009,-.078,z+.013];s.cuff=[x+.042,-.235,z+.060];
+ cap(s,[x+.004,-.055,z+.009],[x+.020,-.143,z+.030],.026,.035);
+ cap(s,[x+.020,-.143,z+.030],s.cuff,.035,.047);
+ const grips=[
+  [[x,.046,.007],[.060,.046,-.017],[.047,.041,-.036],[.027,.038,-.047]],  // index
+  [[x,.020,.007],[.060,.018,-.018],[.047,.016,-.038],[.027,.013,-.046]], // middle
+  [[x,-.005,.007],[.061,-.008,-.018],[.051,-.011,-.035],[.033,-.016,-.044]], // ring
+  [[x,-.028,.007],[.063,-.031,-.016],[.052,-.035,-.032],[.037,-.039,-.043]], // little
+ ];
+ for(let i=0;i<4;i++)digit(s,grips[i],radii[i],[-.45,0,-.9]);
+ // The thumb opposes the fingers on the visible front side and has a raised joint.
+ digit(s,[[x+.002,.003,.045],[.060,.038,.066],[.036,.053,.068],[.015,.059,.056]],.014,[0,.15,1]);
+ specs.cup=s;
 }
 function bake(spec){
  const N=128,low=[-.115,-.305,-.115],span=[.29,.49,.27];const mc=new MarchingCubes(N,new T.MeshBasicMaterial(),false,false,60000);mc.isolation=0;mc.field.fill(-1);
@@ -68,7 +90,7 @@ function bake(spec){
   if(id===undefined){id=positions.length/3;unique.set(key,id);positions.push(...p);const n=[0,1,2].map(k=>mc.normalArray[i*3+k]/span[k]);const len=Math.hypot(...n)||1;normals.push(...n.map(x=>Math.round(x/len*127)));}
   indices.push(id);
  }
- const b64=a=>Buffer.from(a.buffer).toString('base64');return{p:b64(new Int16Array(positions)),n:b64(new Int8Array(normals)),i:b64(new Uint16Array(indices)),nails:spec.nails,wrist:spec.wrist,cuff:spec.cuff,vertices:positions.length/3,triangles:indices.length/3};
+ const b64=a=>Buffer.from(a.buffer).toString('base64');return{p:b64(new Int16Array(positions)),n:b64(new Int8Array(normals)),i:b64(new Uint16Array(indices)),digits:spec.digits,nails:spec.nails,wrist:spec.wrist,cuff:spec.cuff,vertices:positions.length/3,triangles:indices.length/3};
 }
 const all={};for(const [name,s]of Object.entries(specs)){all[name]=bake(s);console.log(name,all[name].vertices,'vertices,',all[name].triangles,'triangles');}
 writeFileSync('yoyo-hands-data.js','// Generated by build-yoyo-hands.mjs. Continuous right-hand meshes, metres.\nexport const handData='+JSON.stringify(all)+';\n');

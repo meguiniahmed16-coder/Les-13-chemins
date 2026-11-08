@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
+import * as T from 'three';
+import {models} from './yoyo-models.js';
 import {createGame,startGame,move,hide,aimAt,actionDown,actionUp,advance,continueGame,pauseGame,ropePosition,BRUSH,aligned} from './yoyo-core.js';
 const tick=(g,seconds)=>{for(let i=0;i<seconds*60;i++)advance(g,1/60);};
 test('Three separate objects are required for 30 points, misses do not award points',()=>{const g=createGame();startGame(g);actionDown(g);assert.equal(g.points,0);tick(g,1);aimAt(g,BRUSH.x);actionDown(g);assert.equal(g.points,10);assert.equal(g.phase,'between');continueGame(g);aimAt(g,ropePosition(g));actionDown(g);assert.ok(g.hooked);tick(g,2);actionUp(g);const pulled=g.pull;tick(g,1);assert.equal(g.pull,pulled);actionDown(g);tick(g,4);assert.equal(g.points,20);continueGame(g);aimAt(g,ropePosition(g));actionDown(g);tick(g,6);assert.equal(g.phase,'victory');assert.equal(g.points,30);assert.deepEqual(g.events.filter(e=>e.type==='part').map(e=>e.part),[1,2,3]);});
@@ -28,32 +30,67 @@ test('Each posed hand is one connected skin surface and the right cup grip is no
  assert.ok(handData.cup.nails.slice(0,4).every(n=>n.tip[2]<0),'four fingers curl around the far side');
 });
 
-test('Cup grip clears the ceramic wall and the thumb remains visibly opposed',async()=>{
- const {handData}=await import('./yoyo-hands-data.js');
- const cup=handData.cup.nails;
- assert.equal(cup.length,5,'four fingers and one thumb');
- for(const tip of cup.slice(0,4).map(n=>n.tip)){
-  const distance=Math.hypot(tip[0],tip[2]);
-  assert.ok(tip[2]<-.040,'fingertips wrap behind the cup');
-  assert.ok(distance>.044 && distance<.070,'fingertips must remain close to, but outside, the cup wall');
+
+function segmentLength(points){return points.slice(1).reduce((d,p,i)=>d+Math.hypot(...p.map((v,k)=>v-points[i][k])),0);}
+function closestSegmentDistance(point,points){
+ let closest=Infinity;
+ for(let i=0;i<points.length-1;i++){
+  const a=new T.Vector3(...points[i]),b=new T.Vector3(...points[i+1]),p=new T.Vector3(...point);
+  const ab=b.clone().sub(a),t=T.MathUtils.clamp(p.sub(a).dot(ab)/ab.lengthSq(),0,1);
+  closest=Math.min(closest,a.addScaledVector(ab,t).distanceTo(new T.Vector3(...point)));
  }
- assert.ok(cup[4].tip[2]>.054,'thumb must stand out in front of the cup');
- assert.ok(cup[4].tip[2]-Math.max(...cup.slice(0,4).map(n=>n.tip[2]))>.09,
-  'thumb and fingertips must occupy opposite sides of the cup');
+ return closest;
+}
+test('Cup fingers keep anatomical lengths, separate joints, and never cross the ceramic wall',async()=>{
+ const {handData}=await import('./yoyo-hands-data.js');
+ const digits=handData.cup.digits;
+ assert.equal(digits.length,5);
+ // The old grip made the fingers about 12 cm long to reach across the whole cup.
+ for(let i=0;i<4;i++){
+  const length=segmentLength(digits[i].points);
+  assert.ok(length>.055 && length<.09,'cup finger '+i+' must be a plausible, non-duplicated length: '+length);
+  for(let j=0;j<digits[i].points.length-1;j++){
+   for(let n=0;n<=10;n++){
+    const a=digits[i].points[j],b=digits[i].points[j+1],q=a.map((v,k)=>v+(b[k]-v)*n/10);
+    const radius=Math.hypot(q[0],q[2]);
+    const ceramic=q[1]<=-.046?.034:q[1]<=.091?.034+(.044-.034)*(q[1]+.046)/.137:.046;
+    assert.ok(radius-ceramic>digits[i].radius*.82,'finger '+i+' intersects cup at segment '+j);
+   }
+  }
+ }
+ // A raised thumb opposes all four fingers rather than merging with the cup.
+ const thumb=digits[4].points;
+ assert.ok(thumb[2][2]>.06,'thumb knuckle must visibly stand proud of the cup');
+ assert.ok(thumb.at(-1)[2]>.054 && digits.slice(0,4).every(d=>d.points.at(-1)[2]<-.04));
 });
 
-test('Cigarette is pinched between the full-length index and middle fingertips',async()=>{
+test('Smoking gesture presents the palm and pinches cigarette between extended fingers',async()=>{
  const {handData}=await import('./yoyo-hands-data.js');
- const fingers=handData.smoke.nails;
- const cigarette={x:-.014,y:.120,z:-.016};
- const [index,middle]=fingers.map(n=>n.tip);
- assert.ok(index[0]<cigarette.x && middle[0]>cigarette.x,'cigarette lies between the fingers');
- assert.ok(Math.abs(index[1]-cigarette.y)<.005 && Math.abs(middle[1]-cigarette.y)<.005,
-  'cigarette and both fingertip pads have a shared gripping height');
- assert.ok(Math.abs(index[2]-cigarette.z)<.005 && Math.abs(middle[2]-cigarette.z)<.005,
-  'cigarette is not floating behind the fingers');
- assert.ok(index[1]>.11 && middle[1]>.11,'fingers have not been shortened to fake the grip');
- const model=fs.readFileSync(new URL('./yoyo-models.js',import.meta.url),'utf8');
- assert.match(model,/filter points toward the mouth \(\+Z\)/);
- assert.match(model,/cigarette\.position\.set\(-\.014,\.120,-\.016\)/);
+ const fingers=handData.smoke.digits;
+ const grip=[-.015,.096,-.016];
+ for(let i=0;i<2;i++){
+  const d=closestSegmentDistance(grip,fingers[i].points);
+  assert.ok(d>.011 && d<.018,'cigarette must touch the lateral middle phalanx of finger '+i+', not be glued to its tip: '+d);
+  assert.ok(segmentLength(fingers[i].points)>.08,'index and middle fingers must remain full length');
+  assert.ok(fingers[i].points.at(-1)[1]>.115,'fingertips must extend beyond the cigarette pinch');
+ }
+ for(let i=2;i<4;i++){
+  const pts=fingers[i].points, segments=pts.slice(1).map((p,j)=>new T.Vector3(...p).sub(new T.Vector3(...pts[j])).normalize());
+  for(let j=0;j<segments.length-1;j++)assert.ok(segments[j].angleTo(segments[j+1])<Math.PI*.58,'unnatural abrupt curl at finger '+i);
+ }
+ const pose=models().smokingHand();
+ pose.rotation.set(-.10,-.58,.08); // Actual victory camera orientation.
+ pose.updateMatrixWorld(true);
+ const skinPivot=pose.children[0],prop=pose.children[1];
+ assert.ok(skinPivot.rotation.y>Math.PI*.95,'grip is turned so the actor sees the palm');
+ const dorsal=new T.Vector3(0,0,1).transformDirection(skinPivot.matrixWorld);
+ assert.ok(dorsal.z<-.7,'back of hand must point away from the first-person viewer');
+ const filter=prop.localToWorld(new T.Vector3(0,0,.036));
+ const ember=prop.localToWorld(new T.Vector3(0,0,-.054));
+ assert.ok(filter.z>ember.z,'filter must face the actor, ember must face away');
+ // Rotating the skin must not pull it away from the cigarette.
+ const hand=skinPivot.children[0];
+ const pinchCenter=hand.localToWorld(new T.Vector3(...grip));
+ const cigarCenter=prop.getWorldPosition(new T.Vector3());
+ assert.ok(pinchCenter.distanceTo(cigarCenter)<1e-8,'skin and cigarette share one gripping pivot');
 });
