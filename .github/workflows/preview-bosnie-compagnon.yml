@@ -123,8 +123,10 @@ jobs:
               if(!binocular?.shooterInFrame)
                 throw Error('Le tireur n’est pas visible dans le champ des jumelles');
               if(!binocular.shooterReal||binocular.shooterRigBones<60||
-                 !binocular.shooterOriginalHidden)
+                 !binocular.shooterOriginalHidden||!binocular.shooterSkinned)
                 throw Error('Le tireur doit posséder le vrai corps humain Quaternius à 65 os');
+              if(!binocular.shooterElbowDrop?.every(v=>v>.12))
+                throw Error('Les coudes du tireur ne doivent pas rester dans la pose en T');
               if(await page.locator('#binocularMask').isHidden())
                 throw Error('Le masque de jumelles doit être affiché');
               await page.screenshot({path:'/tmp/bosnie-jumelles-tireur.png'});

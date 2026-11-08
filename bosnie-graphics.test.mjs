@@ -109,3 +109,16 @@ test('The enemy visible through binoculars has the SAME rigged Quaternius body',
  const wf=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
  assert.ok(wf.includes("shooterRigBones<60"));
 });
+
+test('Shooter uses a dense skinned body and calm guarded arms rather than a T pose',()=>{
+ const s=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ assert.ok(s.includes("if(obj.isSkinnedMesh&&obj.geometry?.getAttribute('position')?.count>5000)skinnedBody++"));
+ assert.ok(s.includes('enemy.userData.windowSkinned=skinnedBody'));
+ assert.ok(s.includes("const guarding=mode==='shooter'"));
+ assert.ok(s.includes("guarding?1.24:-1.24"));
+ assert.ok(s.includes("guarding?-1.24:1.24"));
+ assert.ok(s.includes('shooterElbowDrop:'));
+ const wf=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
+ assert.ok(wf.includes('binocular.shooterSkinned'));
+ assert.ok(wf.includes('binocular.shooterElbowDrop'));
+});

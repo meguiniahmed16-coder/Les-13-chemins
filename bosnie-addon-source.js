@@ -203,12 +203,18 @@ function upgradeWindowShooter(enemy,template,renderer){
   obj.frustumCulled=false;
  });
  renderer.localClippingEnabled=true;
+ let skinnedBody=0;
+ avatar.root.traverse(obj=>{
+  if(obj.isSkinnedMesh&&obj.geometry?.getAttribute('position')?.count>5000)skinnedBody++;
+ });
+ if(skinnedBody<1)throw Error('Le véritable corps skinné du tireur est introuvable');
  const previous=enemy.children.slice();
  enemy.add(avatar.group);
  // The old rifle across the opening remains visible; everything else
  // simplified is hidden after the complete skinned avatar is ready.
  for(const object of previous)object.visible=object.name==='ArmeVisibleTireur';
  enemy.userData.windowRig=avatar;
+ enemy.userData.windowSkinned=skinnedBody;
  enemy.userData.windowClip=clipping;
  enemy.userData.oldShooterHidden=previous
    .filter(o=>o.name!=='ArmeVisibleTireur').every(o=>!o.visible);
@@ -413,8 +419,11 @@ export function poseHuman(avatar,info,clock,mode='player'){
  group.rotation.set(0,info.facing??Math.PI/2,0);
  group.position.y+=(sprint?Math.abs(stride)*.029:0);
  group.updateMatrixWorld(true);
- worldBend(avatar,'upperarm_l',Z,-1.24+.22*stride);
- worldBend(avatar,'upperarm_r',Z,1.24-.22*stride);
+ // The stationary shooter faces forward, while the running soldiers
+ // face along the avenue. These orientations need opposite shoulder signs.
+ const guarding=mode==='shooter';
+ worldBend(avatar,'upperarm_l',Z,guarding?1.24:-1.24+.22*stride);
+ worldBend(avatar,'upperarm_r',Z,guarding?-1.24:1.24-.22*stride);
  worldBend(avatar,'upperarm_l',X,-.14+.19*stride);
  worldBend(avatar,'upperarm_r',X,-.14-.19*stride);
  worldBend(avatar,'lowerarm_l',X,-.29);
@@ -495,8 +504,15 @@ function attach(game){
     shooterWindowIndex:shooterState.index,
     shooterReal:!!windowShooter?.userData.windowRig,
     shooterRigBones:Object.keys(windowShooter?.userData.windowRig?.bones||{}).length,
-    shooterSkinned:!!windowShooter?.userData.windowRig?.root.getObjectByName('Superhero_Male')?.isSkinnedMesh,
-    shooterOriginalHidden:!!windowShooter?.userData.oldShooterHidden};
+    shooterSkinned:(windowShooter?.userData.windowSkinned??0)>0,
+    shooterOriginalHidden:!!windowShooter?.userData.oldShooterHidden,
+    shooterElbowDrop:(()=>{
+      const rig=windowShooter?.userData.windowRig;
+      if(!rig)return [];
+      const read=name=>rig.bones[name].getWorldPosition(new THREE.Vector3()).y;
+      return [read('upperarm_l')-read('lowerarm_l'),
+              read('upperarm_r')-read('lowerarm_r')];
+    })()};
   window.__bosnieCompanionState=snap; // Read-only diagnostic for screenshot tests.
   const result=originalDraw(run,dt);
   if(windowShooter?.visible){
