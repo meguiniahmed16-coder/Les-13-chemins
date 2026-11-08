@@ -1,59 +1,110 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-// One-person isolated pilot. The licensed Quaternius GLB is supplied only
-// after its Standard CC0 archive has been obtained and validated.
-const PILOT_MODEL='assets/danse/quaternius-regular-female.glb';
-function loadPilotDancer(target,scene){
- const loader=new GLTFLoader();
- loader.load(PILOT_MODEL,gltf=>{
+// Pilot only: real CC0 Quaternius Superhero Female from the free Standard pack.
+// Preserve the old stage and dancers until this single replacement is approved.
+const PILOT_MODEL='assets/danse/quaternius-superhero-female.glb';
+function colourPilotActor(actor){
+ const skin=new T.Color('#ca9279'),shirt=new T.Color('#70bdb6'),
+  sleeve=new T.Color('#91d5cc'),pants=new T.Color('#333c58'),
+  shoes=new T.Color('#252b3a'),contrast=new T.Color('#e9c996');
+ const pos=actor.geometry.getAttribute('position');
+ if(!pos||pos.count<1000)throw Error('Quaternius skin geometry missing');
+ const colours=new Float32Array(pos.count*3);
+ for(let i=0;i<pos.count;i++){
+  const x=Math.abs(pos.getX(i)),y=pos.getY(i);
+  let col=skin;
+  // At rest: skin on head/hands; colourful short-sleeved shirt; fitted pants.
+  if(y<.105)col=shoes;
+  else if(y<1.015)col=pants;
+  else if(y<1.49 && x<.46)col=shirt;
+  else if(y<1.49 && x<.57)col=sleeve;
+  if(y>1.17&&y<1.20&&x<.38)col=contrast; // small clothing seam
+  const k=3*i;col.toArray(colours,k);
+ }
+ const geom=actor.geometry.clone();
+ geom.setAttribute('color',new T.BufferAttribute(colours,3));
+ geom.computeBoundingSphere();
+ actor.geometry=geom;
+ actor.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.82,metalness:0});
+ actor.frustumCulled=false; // dancing rig can exceed rest-pose bounds
+}
+function makePilotSmile(root,head){
+ // The free Standard model has no facial blendshapes. A tiny smile curve
+ // follows the actual HEAD bone, rather than a separate floating face.
+ if(!head)return null;
+ const mouthGroup=new T.Group();
+ root.add(mouthGroup);
+ mouthGroup.position.set(0,1.585,.118); // face-front rest-pose coordinates
+ root.updateMatrixWorld(true);
+ head.attach(mouthGroup);
+ const curve=new T.CatmullRomCurve3([
+  new T.Vector3(-.030,.005,0),new T.Vector3(-.016,-.003,.005),
+  new T.Vector3(0,-.010,.007),new T.Vector3(.016,-.003,.005),
+  new T.Vector3(.030,.005,0)
+ ]);
+ const smile=new T.Mesh(new T.TubeGeometry(curve,20,.0029,6,false),
+  new T.MeshStandardMaterial({color:0x834c42,roughness:.84}));
+ mouthGroup.add(smile);
+ // A lightweight continuous hair cap, not a separate spherical head.
+ const hair=new T.Group();root.add(hair);
+ hair.position.set(0,1.733,-.017);
+ root.updateMatrixWorld(true);head.attach(hair);
+ const cap=new T.Mesh(new T.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI*.54),
+  new T.MeshStandardMaterial({color:0x322631,roughness:.95}));
+ cap.scale.set(.121,.082,.112);hair.add(cap);
+ return smile;
+}
+function loadPilotDancer(target){
+ new GLTFLoader().load(PILOT_MODEL,gltf=>{
   const root=gltf.scene;
-  const bounds=new T.Box3().setFromObject(root),size=bounds.getSize(new T.Vector3());
-  if(size.y<.01||!Number.isFinite(size.y))throw Error('Invalid Quaternius pilot model bounds');
-  const offset=bounds.min.y;
-  root.scale.setScalar(1.78/size.y);
-  root.position.y=-offset*root.scale.y;
+  const b=new T.Box3().setFromObject(root),size=b.getSize(new T.Vector3());
+  if(size.y<1.3||!Number.isFinite(size.y))throw Error('Invalid Quaternius pilot model');
+  const scale=1.77/size.y;root.scale.setScalar(scale);
+  root.position.y=-b.min.y*scale;
+  const bones=new Map();let body=null;
   root.traverse(o=>{
-   if(o.isMesh||o.isSkinnedMesh){
-    o.castShadow=true;o.receiveShadow=true;
-    if(o.material)o.material=o.material.clone();
-   }
+   if(o.isBone)bones.set(o.name.toLowerCase(),o);
+   if(!o.isMesh&&!o.isSkinnedMesh)return;
+   o.castShadow=true;o.receiveShadow=true;
+   if(o.name==='Superhero_Female'){colourPilotActor(o);body=o;}
+   else if(o.name==='Eyes')o.material=new T.MeshStandardMaterial({color:0xf9f2e7,roughness:.68});
+   else if(o.name==='Eyebrows')o.material=new T.MeshStandardMaterial({color:0x382b31,roughness:.91});
   });
-  // Preserve the existing body until a real GLB is loaded; never show a blank dancer.
+  if(!body||bones.size<60)throw Error('Quaternius humanoid rig or skinned body missing');
+  const rest=new Map([...bones].map(([name,o])=>[name,o.quaternion.clone()]));
+  const smile=makePilotSmile(root,bones.get('head'));
   target.group.add(root);
   target.group.children.forEach(child=>{if(child!==root)child.visible=false;});
-  const bones=new Map();
-  root.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o);});
-  const mixer=gltf.animations.length?new T.AnimationMixer(root):null;
-  const clip=gltf.animations.find(c=>/dance|idle|groove/i.test(c.name));
-  if(mixer&&clip)mixer.clipAction(clip).play();
-  const smiles=[];
-  root.traverse(o=>{
-   if(!o.morphTargetDictionary||!o.morphTargetInfluences)return;
-   const entry=Object.entries(o.morphTargetDictionary).find(([name])=>/smile|happy|mouth.?smile/i.test(name));
-   if(entry)smiles.push({mesh:o,index:entry[1]});
-  });
-  target.pilot={root,bones,mixer,smiles,animated:!!clip};
+  target.pilot={root,bones,rest,smile,baseY:root.position.y};
  },undefined,err=>{
-  // Free archive not yet installed: keep current character intact.
-  console.warn('Quaternius pilot model not installed; original dancer retained.',err);
+  // If the model cannot load, preserve the current character, not an empty gap.
+  console.warn('Quaternius pilot unavailable; original dancer retained.',err);
  });
 }
 function animatePilotDancer(h,t,dt,active){
  const p=h.pilot;if(!p)return;
- if(p.mixer)p.mixer.update(dt);
- const energy=active?1:.2;
- if(!p.animated){
-  const find=(...names)=>{for(const [name,bone] of p.bones)if(names.some(n=>name.includes(n)))return bone;return null;};
-  const left=find('leftupperarm','upperarm_l'),right=find('rightupperarm','upperarm_r');
-  const hip=find('hips','pelvis'),head=find('head');
-  const wave=Math.sin(t*5);
-  if(left)left.rotation.z=.3+.2*wave*energy;
-  if(right)right.rotation.z=-.3-.2*wave*energy;
-  if(hip)hip.rotation.z=.045*Math.sin(t*2.5)*energy;
-  if(head)head.rotation.z=.055*Math.sin(t*2.5+.6)*energy;
- }
- const smile=active?.85:.25;
- for(const {mesh,index} of p.smiles)mesh.morphTargetInfluences[index]=smile;
+ const energy=active?1:.22,beat=t/BEAT*Math.PI*2;
+ const sn=Math.sin(beat),co=Math.cos(beat);
+ const q=new T.Quaternion();
+ const rotate=(name,x=0,y=0,z=0)=>{
+  const bone=p.bones.get(name),base=p.rest.get(name);if(!bone||!base)return;
+  q.setFromEuler(new T.Euler(x*energy,y*energy,z*energy,'XYZ'));
+  bone.quaternion.copy(base).multiply(q); // additive relative to imported bind pose
+ };
+ rotate('spine_02',-.025*sn,.07*co,.065*sn);
+ rotate('spine_03',.02*co,.06*sn,-.04*sn);
+ rotate('head',.04*co,.045*sn,-.05*sn);
+ rotate('upperarm_l',-.24-.18*sn,0,.2+.13*co);
+ rotate('upperarm_r',-.24+.18*sn,0,-.2+.13*co);
+ rotate('lowerarm_l',-.24-.18*co,0,.02);
+ rotate('lowerarm_r',-.24+.18*co,0,-.02);
+ rotate('thigh_l', .20*sn,0,.045*co);
+ rotate('thigh_r',-.20*sn,0,-.045*co);
+ rotate('calf_l',.16*Math.max(0,-sn));
+ rotate('calf_r',.16*Math.max(0,sn));
+ p.root.position.y=p.baseY+Math.abs(sn)*.032*energy;
+ p.root.rotation.z=.027*sn*energy;
+ if(p.smile)p.smile.scale.y=.40+.60*(active?.9:.30);
 }
 
 import {SoftwareRenderer} from './danse-software.js';
@@ -143,7 +194,7 @@ export class DanceScene{
  // Soft oval pools place each performer on the polished stage.
  for(const [x,z,r] of [[0,.45,1.3],[-2.1,-.7,.8],[2.1,-.7,.8],[-3.6,-1.9,.7],[3.6,-1.9,.7]]){const disk=mesh(new T.CircleGeometry(r,32),new T.MeshBasicMaterial({color:x<0?0xbd73a1:x>0?0x6aada5:0xa985c7}),s,x,.025,z);disk.rotation.x=-Math.PI/2;disk.userData.layer=-2;}
  this.hero=human();this.hero.group.position.set(0,.04,.45);this.hero.group.scale.setScalar(1.2);s.add(this.hero.group);
- this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){const h=human({shirt:i%2?palette.mint:palette.pink,skin:i%2?0x9e664b:0xe0aa88,female:true,hair:true});h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;s.add(h.group);this.dancers.push(h);if(i===0)loadPilotDancer(h,s);}
+ this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){const h=human({shirt:i%2?palette.mint:palette.pink,skin:i%2?0x9e664b:0xe0aa88,female:true,hair:true});h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;s.add(h.group);this.dancers.push(h);if(i===0)loadPilotDancer(h);}
  this.lionel=human({shirt:0xadc1c2,pants:0x2b253a,skin:0xd1a084,hair:true});this.lionel.group.position.set(4.7,.04,-.5);this.lionel.group.scale.setScalar(.92);s.add(this.lionel.group);sign(s,'LIONEL',1.2,.3,4.7,2.35,-.45,'#30233f','#b6ffdc',78);
  // The audience faces the performers, seen from behind along the front of frame.
  this.public=[];for(let row=0;row<2;row++)for(let i=0;i<8;i++){const x=(i-3.5)*1.16;const z=4.2+row*1.4;box(s,1,.58,.85,0x46274f,x,.1+row*.22,z);const g=new T.Group();g.position.set(x,.25+row*.22,z);g.rotation.y=Math.PI;s.add(g);ellipsoid(g,0,.68,0,.25,.35,.17,[0x92719b,0x5f7c88,0xa9836c,0x7c8a6b][i%4]);ellipsoid(g,0,1.15,0,.16,.21,.16,[0xbf8b67,0xdbb191,0x93664e][i%3]);ellipsoid(g,0,1.27,-.04,.17,.12,.16,0x372c36);const arms=[];for(const a of [-1,1]){const arm=new T.Group();arm.position.set(a*.23,.85,0);g.add(arm);cylinder(arm,.06,.045,.45,0xa67f6a,0,-.2,0);arms.push(arm);}this.public.push({group:g,arms});}
