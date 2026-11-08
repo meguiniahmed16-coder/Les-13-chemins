@@ -132,15 +132,15 @@ function createWarDamage(game){
 function makeWindowShooter(game){
  // Only a distant figure in the window; no additional shooting mechanics.
  const shooter=new THREE.Group();shooter.name='TireurFenetreJumelles';
- const uniform=new THREE.MeshStandardMaterial({color:0x51574b,roughness:1});
- const helmetMat=new THREE.MeshStandardMaterial({color:0x343b34,roughness:.98});
- const skin=new THREE.MeshStandardMaterial({color:0xa49076,roughness:1});
+ const uniform=new THREE.MeshStandardMaterial({color:0x748071,roughness:.94,emissive:0x202821,emissiveIntensity:.24});
+ const helmetMat=new THREE.MeshStandardMaterial({color:0x4c564b,roughness:.95});
+ const skin=new THREE.MeshStandardMaterial({color:0xc2ac91,roughness:.96});
  const steel=new THREE.MeshStandardMaterial({color:0x292f30,roughness:.7,metalness:.14});
- const torso=new THREE.Mesh(new RoundedBoxGeometry(.38,.55,.22,3,.08),uniform);
+ const torso=new THREE.Mesh(new RoundedBoxGeometry(.44,.62,.27,3,.08),uniform);
  torso.position.set(0,-.17,0);torso.name='TorseTireur';shooter.add(torso);
- const head=new THREE.Mesh(new THREE.SphereGeometry(.116,12,9),skin);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.131,12,9),skin);
  head.position.set(0,.235,.03);head.name='TeteTireur';shooter.add(head);
- const helmet=new THREE.Mesh(new THREE.SphereGeometry(.143,14,8,0,Math.PI*2,0,Math.PI*.58),helmetMat);
+ const helmet=new THREE.Mesh(new THREE.SphereGeometry(.159,14,8,0,Math.PI*2,0,Math.PI*.58),helmetMat);
  helmet.position.set(0,.307,.022);helmet.name='CasqueTireur';shooter.add(helmet);
  for(const side of [-1,1]){
   const arm=new THREE.Mesh(new THREE.CylinderGeometry(.065,.055,.39,8),uniform);
@@ -387,6 +387,8 @@ export function poseHuman(avatar,info,clock,mode='player'){
 }
 function attach(game){
  const state=createCompanionState();
+ const maskLabel=document.querySelector('#binocularMask span');
+ if(maskLabel)maskLabel.textContent='TIREUR REPÉRÉ À LA FENÊTRE';
  let hero=null,ally=null,oldAlly=null;
  const originalDraw=game.draw.bind(game);
  const originalAnimate=game.animateSoldier.bind(game);

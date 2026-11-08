@@ -83,3 +83,12 @@ test('Brighter Bosnian ruins and recognizable window shooter keep gameplay intac
  assert.ok(workflow.includes("page.keyboard.down('b')"),'test the real binocular controls');
  assert.ok(workflow.includes("bosnie-jumelles-tireur.png"),'capture the actual observed window');
 });
+
+test('Binoculars zoom close enough to distinguish the window shooter',()=>{
+ const runtime=fs.readFileSync(new URL('./bosnie-runtime.js',import.meta.url),'utf8');
+ const addon=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
+ assert.ok(runtime.includes('this.camera.fov=is.damp(this.camera.fov,15.5,7,t)'));
+ assert.ok(addon.includes("'TIREUR REPÉRÉ À LA FENÊTRE'"));
+ assert.ok(addon.includes('new RoundedBoxGeometry(.44,.62,.27,3,.08)'));
+ assert.ok(addon.includes('shooterInFrame='));
+});
