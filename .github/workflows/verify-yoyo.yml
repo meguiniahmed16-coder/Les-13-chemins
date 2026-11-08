@@ -1,0 +1,27 @@
+name: Vérification des animations et du jeu
+on:
+  push:
+    branches:
+      - main
+      - fix/yoyo-anatomie-2026-11-08
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Reconstruire la version publique et vérifier les prises
+        run: npm run build
+      - name: Vérifier le gameplay et les plateaux
+        run: npm run test:yoyo
