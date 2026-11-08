@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.5 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 1.6 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -83,3 +83,29 @@ Dans la pose v2, la cigarette est tenue entre les phalanges de l'index et du maj
 **Réutilisation :** appliquer la même logique aux mains d'autres personnages, mais **ne pas remplacer leurs poses sans les contrôler une par une**. Les gestes du gobelet, de la cigarette et de la brosse restent à traiter séparément.
 
 **État :** première main ouverte « Main anatomique v5 » — contrôles automatisés et rendu 3D de référence en cours ; contrôle dans le vrai jeu requis avant validation.
+
+## C014 — Même anatomie pour tous les gestes et toutes les personnes
+
+Réutiliser la géométrie WebXR anatomique `hand-right.glb` pour la prise de la brosse, du gobelet, de la cigarette, la main ouverte et les petites mains des détenus visibles. Une **même géométrie de peau ne signifie pas une pose identique** : les articulations sont animées selon l'objet. Chaque main requiert une inspection de la paume, du poignet, de ses cinq doigts et de ses contacts réels. Ne pas remplacer une main par un modèle primitif simplement parce qu'un geste est difficile.
+
+## C015 — La collision avec les barreaux fait partie de la règle du jeu
+
+Les barreaux sont des cylindres fixes, espacés de 21 cm dans la scène. Le sac plastique est replié pour passer entre les deux cylindres (largeur comprimée ≈ 11,6 cm), pas à travers eux. Après accroche, la manette déplace horizontalement le sac. Si son centre n'est pas dans l'ouverture calculée depuis la caméra, `advance()` interdit de progresser : **aucune livraison ne doit être validée en traversant le métal**. Les tests doivent simuler un choc sur un barreau, un réalignement, une nouvelle collision pendant la remontée et la réussite dans l'intervalle.
+
+Le bras portant la brosse avance ensuite à travers cette même ouverture pendant la remontée ; dans la phase de recherche, il reste à l'intérieur. Les repères visuels du HUD doivent montrer les ouvertures, pas seulement un cercle de cible.
+
+## C016 — Réalisme des détenus et du sac
+
+Dans la prison française représentée, ne pas inventer un uniforme de détenu. Donner aux personnes des vêtements civils de formes et de couleurs différentes, des silhouettes plus fines, des visages moins simplifiés et des gestes moins identiques. Employer le même maillage anatomique pour les mains visibles.
+
+Le sac transporté par le cintre retourné doit avoir une **géométrie de plastique souple**, deux anses, des bords thermosoudés, des plis et du volume concentré au fond. Sa transparence doit laisser deviner le contenu : tabac, puis café dans la version ludique à deux livraisons. Un ellipsoïde blanc et opaque ne constitue pas une représentation satisfaisante.
+
+## C017 — Les deux livraisons changent visiblement la couleur
+
+Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sac, le bâtiment gris commence à se colorer ; après le second, les murs, les vêtements civils, les fenêtres et l'environnement sont beaucoup plus vifs. L'intensité doit dépendre de **deux livraisons réussies** (`bags=1`, puis `bags=2`), pas du seul lancement d'une cinématique. En cas de recommencement, repartir du gris.
+
+## Vérifications restantes
+
+- Contrôler le geste complet dans la scène sur mobile, les collisions visibles et la progression des teintes sur les deux livraisons.
+- Inspecter séparément les poses de la brosse, du café et de la cigarette : compilation verte ne signifie pas validation anatomique.
+- Vérifier également le rendu en mode logiciel, la lisibilité des indicateurs et la difficulté des espaces sur un écran étroit.
