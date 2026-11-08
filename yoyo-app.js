@@ -1,8 +1,8 @@
-import {createGame,startGame,continueGame,move,actionDown,actionUp,advance,pauseGame,PARTS,BRUSH,clamp,slitCenters} from './yoyo-core.js';
+import {createGame,startGame,continueGame,move,actionDown,actionUp,advance,pauseGame,PARTS,BRUSH,clamp,slitCenters,setWindowAspect} from './yoyo-core.js';
 import {makeCinema} from './yoyo-scene.js';
 import {makeDrawing,makeOverlay} from './yoyo-draw.js';
 import {makeAudio} from './yoyo-audio.js';
-const $=id=>document.getElementById(id),g=createGame(),drawing=makeDrawing($('game')),hud=makeOverlay($('game')),sound=makeAudio();
+const $=id=>document.getElementById(id),g=createGame(),drawing=makeDrawing($('game')),hud=makeOverlay($('hud')),sound=makeAudio();
 let cinema=null,mode='ready',filmTime=0,last=performance.now(),paused=false,session=null,wonSent=false,stickX=0,stickY=0,keys=new Set(),pickupAim=.5;
 const embedded=parent!==window;
 function send(type,extra={}){if(embedded)parent.postMessage({type,id:session?.id,...extra},location.origin);}
@@ -15,8 +15,13 @@ function showGame2D(){$('cinema').hidden=true;}
 // are deliberately authored in 2D: no skinned hands, joints or 3D physics.
 function world(view,s=g,time=0){
  showGame2D();
+ setWindowAspect(s,$('screen').clientWidth/Math.max(1,$('screen').clientHeight));
  drawing.draw(s,{mode:view,time});
  if(view==='search')g.brushX=BRUSH.x;
+ // The game illustration and HUD MUST use different canvases.
+ // Previously hud.clearRect erased the entire 2D scene and its hand.
+ const anchors={brush:{x:BRUSH.x,y:BRUSH.y},head:{x:s.aim,y:342/675},slits:slitCenters(s.aspect)};
+ hud.draw(s,anchors,mode==='demo'?'demo':mode,time);
 }
 const captions=[[0,'Les grilles s’ouvrent. Et se referment.'],[4,'Neuf mètres carrés. Deux lits. Une table.'],[8,'Une armoire. Quelques affaires.'],[12,'Les toilettes et le lavabo, dans la même pièce.'],[16,'À la fenêtre, l’air du dehors. Les barreaux restent.'],[21,'Une corde de drap. Un cintre. Un sac.'],[24,'Quelqu’un, au-dessus, a pensé à toi.']];
 function guide(){mode='guide';$('skip').hidden=true;$('caption').textContent='';$('overlay').hidden=true;$('guide').hidden=false;$('objective').textContent='Avant de jouer : le yo-yo';$('guard').textContent='Un moyen de communication entre cellules';announce('Lis les trois étapes, puis appuie sur « Jouer les trois épreuves ».');$('play').scrollIntoView({behavior:'smooth',block:'nearest'});}
