@@ -422,8 +422,8 @@ export function poseHuman(avatar,info,clock,mode='player'){
  // The stationary shooter faces forward, while the running soldiers
  // face along the avenue. These orientations need opposite shoulder signs.
  const guarding=mode==='shooter';
- worldBend(avatar,'upperarm_l',Z,guarding?1.24:-1.24+.22*stride);
- worldBend(avatar,'upperarm_r',Z,guarding?-1.24:1.24-.22*stride);
+ worldBend(avatar,'upperarm_l',Z,guarding?-1.24:-1.24+.22*stride);
+ worldBend(avatar,'upperarm_r',Z,guarding?1.24:1.24-.22*stride);
  worldBend(avatar,'upperarm_l',X,-.14+.19*stride);
  worldBend(avatar,'upperarm_r',X,-.14-.19*stride);
  worldBend(avatar,'lowerarm_l',X,-.29);

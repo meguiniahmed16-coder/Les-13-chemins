@@ -115,8 +115,8 @@ test('Shooter uses a dense skinned body and calm guarded arms rather than a T po
  assert.ok(s.includes("if(obj.isSkinnedMesh&&obj.geometry?.getAttribute('position')?.count>5000)skinnedBody++"));
  assert.ok(s.includes('enemy.userData.windowSkinned=skinnedBody'));
  assert.ok(s.includes("const guarding=mode==='shooter'"));
- assert.ok(s.includes("guarding?1.24:-1.24"));
- assert.ok(s.includes("guarding?-1.24:1.24"));
+ assert.ok(s.includes("guarding?-1.24:-1.24"));
+ assert.ok(s.includes("guarding?1.24:1.24"));
  assert.ok(s.includes('shooterElbowDrop:'));
  const wf=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
  assert.ok(wf.includes('binocular.shooterSkinned'));

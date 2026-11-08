@@ -237,3 +237,6 @@ Le tireur découvert aux jumelles doit réutiliser le **même modèle Quaternius
 
 
 **Ajustement C031 :** les rotations d'épaules du tireur doivent correspondre à son orientation face aux jumelles, et non aux angles des soldats courant latéralement dans l'avenue. Valider dans Chromium que les deux coudes descendent sous les épaules (pas de T-pose), que le maillage original est un SkinnedMesh dense et que les corps en primitives sont cachés.
+
+
+**Correction d'orientation C031 :** un premier signe appliqué au squelette importé levait les coudes de 0,18 m malgré un calcul intuitif fondé sur l'axe géométrique. Se fier à la hauteur mesurée des os réels dans Chromium (épaule moins coude doit être positive) et non à l'impression qu'un signe de rotation devrait être correct. Revenir aux signes natifs de l'armature et recapturer.
