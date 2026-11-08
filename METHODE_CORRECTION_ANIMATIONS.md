@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.4 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 1.5 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -69,3 +69,17 @@ Dans la pose v2, la cigarette est tenue entre les phalanges de l'index et du maj
 **Nouvelle pose « Main ouverte v4 » :** cinq doigts complets, trajectoires articulaires progressives, index/majeur/annulaire/auriculaire de longueurs naturelles, pouce déployé sans torsion inverse. Ongles réduits et mieux placés contre la peau. Un rendu hors jeu est inspecté de face, dos, profil et trois quarts. Tests spécifiques sur l'état `search`, la longueur de chaque doigt, les angles et le pouce. **Validation visuelle dans le jeu à confirmer par l'utilisateur.**
 
 **Statut :** les corrections v3 ne sont pas considérées comme une validation de la main ouverte ; le correctif ciblé v4 doit être observé sur le site.
+
+## C013 — Interdiction de simuler une vraie main par des tubes et une boule
+
+**Retour de référence du 8 novembre 2026 :** l'utilisateur a fourni la photographie d'une main réelle et comparé le rendu précédent « Main ouverte v4 » à une déformation anatomique. Il a raison : malgré les ajustements, le volume procédural était trop rond, les doigts ressemblaient à quatre cylindres et la paume était gonflée, sans une naissance naturelle des articulations.
+
+**Cause technique :** les capsules lissées de `build-yoyo-hands.mjs` ne possèdent ni topologie de peau articulée, ni vraie forme des métacarpes, ni zones d'insertion interdigitale. Ajuster les seules coordonnées ne corrige pas cette erreur de représentation.
+
+**Changement de méthode :** pour une main visible en gros plan, employer un **maillage humain anatomique continu**, issu d'un asset publié sous une licence compatible, avec un squelette réel. Le modèle générique WebXR de main droite (25 articulations, MIT, 2019 Amazon) remplace la peau de `openHand()` seulement, en conservant la mécanique du jeu. Le fichier `hand-right.glb` est stocké dans le dépôt et copié localement sur Netlify avec `hand-right-LICENSE.txt`. Le raccord avec l'avant-bras doit être contrôlé depuis la caméra du jeu.
+
+**Tests obligatoires :** le modèle doit être réellement chargé dans la scène visible avant la saisie ; vérifier qu'il contient un maillage anatomique dense et les articulations, pas simplement cinq ongles ou cinq doigts au nombre correct. Une compilation verte ne remplace pas l'examen photographique du rendu et la validation utilisateur.
+
+**Réutilisation :** appliquer la même logique aux mains d'autres personnages, mais **ne pas remplacer leurs poses sans les contrôler une par une**. Les gestes du gobelet, de la cigarette et de la brosse restent à traiter séparément.
+
+**État :** première main ouverte « Main anatomique v5 » — contrôles automatisés et rendu 3D de référence en cours ; contrôle dans le vrai jeu requis avant validation.
