@@ -1,6 +1,6 @@
 # Méthode permanente — scènes et animations 3D
 
-Version 1.9 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
+Version 1.8 — 8 novembre 2026. Cette méthode accompagne les fichiers du projet, pas un document stocké hors du site.
 
 ## Cycle obligatoire de correction
 
@@ -133,15 +133,3 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 **Réutilisation :** appliquer cette règle aux prises de brosse et de gobelet, ainsi qu'aux autres personnes, sans copier aveuglément la même flexion. Déplacer seulement la cigarette ne saurait réparer un doigt plié à l'envers.
 
 **État :** « Yo-yo v7 — flexion palmaire » ; contrôle utilisateur encore requis.
-
-## C019 — Respect absolu des deux formats de ce jeu
-
-**Rectification essentielle par l'auteur :** la visite de la cellule est en **3D**. Le jeu interactif, lorsqu'on cherche la brosse, l'attrape et récupère les sacs devant les barreaux, est en **2D**, avec une main qui fait face au joueur. Les manipulations d'un squelette 3D de 25 articulations ne doivent donc plus servir de substitut aux dessins 2D pendant les épreuves.
-
-**Erreur précédente :** la fonction de rendu du gameplay appelait la scène Three.js avec un bras déformé, alors qu'un moteur de dessin 2D existait déjà. Les retouches géométriques ont gaspillé du temps sans résoudre le besoin : une prise **lisible, immédiatement humaine, visible de face**.
-
-**Correction permanente :** réserver `makeCinema()` et le décor 3D à l'introduction. Pendant les épreuves, activer seulement `makeDrawing()` : dessin de la main ouverte avant prise, dessin fixe de la main entourant le manche ensuite, brosse au même point d'ancrage, sac plastique dessiné avec anses et lest visible, barreaux et transformation progressive du bâtiment. Les dessins source sont quatre SVG originaux conservés dans le dépôt.
-
-**Contrôle technique crucial :** le HUD 2D et la scène 2D doivent utiliser **deux canvas indépendants**, sans quoi le nettoyage des indicateurs efface la main. Vérifier la présence des SVG dans le répertoire Netlify de production, l'affichage de la main sur téléphone et la transition fluide ouverte → prise. Les doigts dessinés passent au premier plan **devant le manche** ; les quatre doigts et le pouce restent lisibles en permanence.
-
-**État :** version « Jeu 2D v8 », version de validation utilisateur après contrôle des tests et publication.
