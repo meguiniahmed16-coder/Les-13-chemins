@@ -1,4 +1,4 @@
-name: Vérification visuelle du danseur Quaternius
+name: Vérification de la piste de danse et des cinq personnages
 on:
   push:
     branches: [prototype/danseur-humain-quaternius-v1]
@@ -24,12 +24,13 @@ jobs:
           const scene=new DanceScene(document.querySelector('#stage'));
           scene.observer.disconnect();
           const face=location.search.includes('visage=1');
-          // Face crop: include forehead, eyes, lips and chin (previous framing
-          // cut the top of the face, hiding the actual expression).
-          scene.camera.position.set(-2.10,face?1.75:1.72,face?.72:2.86);
-          scene.camera.lookAt(-2.1,face?1.68:1.1,-.7);
-          scene.camera.fov=face?28:33;
-          scene.camera.updateProjectionMatrix();
+          const ensemble=location.search.includes('ensemble=1');
+          if(!ensemble){ // keep the normal full-stage camera for the ensemble
+           scene.camera.position.set(-2.10,face?1.75:1.72,face?.72:2.86);
+           scene.camera.lookAt(-2.1,face?1.68:1.1,-.7);
+           scene.camera.fov=face?28:33;
+           scene.camera.updateProjectionMatrix();
+          }
           const r={phase:'playing',clock:0,time:0,actionAt:-10,action:'cross'};
           function frame(){
             r.clock+=1/60;r.time+=1/60;
@@ -68,6 +69,7 @@ jobs:
             page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));
             await page.goto('http://127.0.0.1:8123/pilot-visual.html'+query,{waitUntil:'domcontentloaded'});
             await page.waitForFunction(()=>window.__pilot?.dancers?.[0]?.pilot?.bones?.size>=60,null,{timeout:28000});
+            await page.waitForFunction(()=>window.__pilot?.featuredDancer?.bones?.Head,null,{timeout:28000});
             await page.waitForTimeout(650);
             const state=await page.evaluate(()=>{
               const scene=window.__pilot,p=scene.dancers[0].pilot;
@@ -82,13 +84,20 @@ jobs:
                 smile:!!p.smile,
                 iris:p.eyes?.userData.irisPainted===true,
                 irisVertices:p.eyes?.userData.irisVertexCount||0,
-                faceCorners:p.smile?.children?.length||0};
+                faceCorners:p.smile?.children?.length||0,
+                protagonist:!!scene.featuredDancer,
+                femaleCount:scene.dancers.length,
+                spectatorCount:scene.public.length,
+                otherHairstyles:scene.dancers.slice(1).map(d=>d.head.userData.hairStyle)};
             });
             console.log('ETAT_DANSEUSE',width,JSON.stringify(state));
             if(state.render!=='WebGL 2')throw Error('Le personnage a besoin du vrai rendu WebGL');
             if(!state.smile||state.bones<60)throw Error('Visage ou squelette manquant');
             if(!state.iris||state.irisVertices<16||state.faceCorners!==2)
               throw Error('Les vrais yeux doivent être peints et le sourire sans double bouche');
+            if(!state.protagonist||state.femaleCount!==4||state.spectatorCount!==16||
+               state.otherHairstyles.join(',')!=='long,ponytail,bob')
+              throw Error('Le héros masculin et les quatre danseuses doivent être présents');
             if(state.leftDrop<.10||state.rightDrop<.10)
               throw Error('Bras encore en T-pose : les coudes doivent tomber sous les épaules');
             await page.screenshot({path});
@@ -98,7 +107,7 @@ jobs:
           try{
             await capture(680,740,'/tmp/danse-pilot.png');
             await capture(390,740,'/tmp/danse-pilot-mobile.png');
-            await capture(680,640,'/tmp/danse-pilot-visage.png','?visage=1');
+            await capture(960,650,'/tmp/danse-pilot-ensemble.png','?ensemble=1');
           }finally{await browser.close();}
           JS
       - uses: actions/upload-artifact@v4
@@ -108,5 +117,5 @@ jobs:
           path: |
             /tmp/danse-pilot.png
             /tmp/danse-pilot-mobile.png
-            /tmp/danse-pilot-visage.png
+            /tmp/danse-pilot-ensemble.png
           retention-days: 5

@@ -51,3 +51,22 @@ test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a 
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
  assert.match(build,/\['--test','danse\.test\.mjs'\]/,'the actual dance tests must run in the public build');
 });
+
+test('The playable protagonist is male; four distinct women surround him; afro unchanged',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ const helper=fs.readFileSync(new URL('./danse-quaternius.js',import.meta.url),'utf8');
+ const model=fs.readFileSync(new URL('./danse-quaternius-hero.glb',import.meta.url));
+ assert.equal(model.toString('ascii',0,4),'glTF');
+ assert.ok(model.length>300000&&model.length<1200000);
+ assert.match(helper,/Superhero Male/);
+ assert.ok(src.includes("loadQuaterniusDancer(s,this.hero.group.position)"),'the playable protagonist must be a man');
+ assert.ok(src.includes("poseQuaterniusDancer(this.featuredDancer"),'player commands must animate the male 3D model');
+ assert.ok(src.includes("if(i===0)loadPilotDancer(h)"),'preserve the existing afro dancer');
+ assert.ok(src.includes("hairStyle:'afro'"));
+ for(const style of ["hairStyle:'long'","hairStyle:'ponytail'","hairStyle:'bob'"])assert.ok(src.includes(style),'missing distinct hairstyle '+style);
+ assert.ok(src.includes("if(hairStyle==='long')")&&src.includes("if(hairStyle==='ponytail')")&&src.includes("if(hairStyle==='bob')"));
+ assert.ok(src.includes("this.dancers.push(h)"));
+ assert.ok(src.includes("this.featuredDancer=null;this.destroyed=false"));
+ const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ assert.ok(build.includes("'danse-quaternius-hero.glb'")&&build.includes("'danse-quaternius-LICENSE.txt'"));
+});

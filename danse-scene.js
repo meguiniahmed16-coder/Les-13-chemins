@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {loadQuaterniusDancer,poseQuaterniusDancer} from './danse-quaternius.js';
 // Pilot only: real CC0 Quaternius Superhero Female from the free Standard pack.
 // Preserve the old stage and dancers until this single replacement is approved.
 const PILOT_MODEL='assets/danse/quaternius-superhero-female.glb';
@@ -191,22 +192,37 @@ function faceMap(skin,female=false){const key=skin+':'+female;if(faceMaps.has(ke
  c.strokeStyle='rgba(255,211,190,.45)';c.lineWidth=1.5;c.beginPath();c.moveTo(121,165);c.quadraticCurveTo(128,168,135,165);c.stroke();
  const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;faceMaps.set(key,tex);return tex;
 }
-function makeHead(parent,skin,hair,female,simple){const head=new T.Group();head.position.y=1.02;parent.add(head);
+function makeHead(parent,skin,hair,female,simple,hairStyle='classic',hairColor=0x332326){const head=new T.Group();head.position.y=1.02;parent.add(head);
  const g=new T.SphereGeometry(1,simple?24:32,simple?16:22),pos=g.attributes.position;
  for(let i=0;i<pos.count;i++){const y=pos.getY(i);const jaw=y<-.15?1-Math.min(.23,(-y-.15)*.27):1;const x=pos.getX(i)*.134*jaw,hy=y*.172;let z=pos.getZ(i)*.133*(y<-.5?.92:1);if(z>0){z+=.015*Math.exp(-((x/.022)**2+((hy+.015)/.05)**2));z+=.008*Math.exp(-((x/.028)**2+((hy+.043)/.018)**2));}pos.setXYZ(i,x,hy,z);}g.computeVertexNormals();
  const skinMat=new T.MeshStandardMaterial({map:faceMap(skin,female),color:0xffffff,roughness:.84});const surface=mesh(g,skinMat,head);surface.userData.baseColor=skin;
  // The nose and ears are restrained volumes integrated into the head.
  
  for(const side of [-1,1]){ellipsoid(head,side*.132,-.015,-.004,.018,.033,.019,skin);}
- if(hair){const cap=mesh(new T.SphereGeometry(1,24,14,0,Math.PI*2,0,1.48),material(0x332326),head,0,.007,-.005);cap.scale.set(.139,.173,.139);if(female){ellipsoid(head,0,-.065,-.115,.12,.17,.045,0x332326);const bun=ellipsoid(head,.04,.015,-.16,.065,.07,.06,0x332326);}}
+ if(hair){
+  const cap=mesh(new T.SphereGeometry(1,24,14,0,Math.PI*2,0,1.48),material(hairColor),head,0,.007,-.005);cap.scale.set(.139,.173,.139);
+  if(female){
+   if(hairStyle==='long'){ // blonde: loose straight hair down to her shoulders
+    for(const side of [-1,1])ellipsoid(head,side*.115,-.16,-.047,.029,.17,.042,hairColor);
+    ellipsoid(head,0,-.095,-.126,.106,.155,.033,hairColor);
+   }else if(hairStyle==='ponytail'){ // redhead: tied hair
+    ellipsoid(head,0,-.042,-.133,.095,.104,.042,hairColor);
+    ellipsoid(head,-.045,-.17,-.172,.040,.12,.038,hairColor);
+   }else if(hairStyle==='bob'){ // brunette: short straight bob, not afro
+    for(const side of [-1,1])ellipsoid(head,side*.116,-.095,-.035,.038,.102,.045,hairColor);
+    ellipsoid(head,0,-.052,-.130,.107,.086,.032,hairColor);
+   }else{ellipsoid(head,0,-.065,-.115,.12,.17,.045,hairColor);ellipsoid(head,.04,.015,-.16,.065,.07,.06,hairColor);}
+  }
+ }
+ head.userData.hairStyle=hairStyle;
  return head;
 }
-function human({shirt=palette.purple,skin=0xc58c69,pants=0x373349,hair=false,female=false,simple=false}={}){
+function human({shirt=palette.purple,skin=0xc58c69,pants=0x373349,hair=false,female=false,simple=false,hairStyle='classic',hairColor=0x332326}={}){
  const group=new T.Group(),hip=new T.Group(),body=new T.Group();hip.position.y=1.17;group.add(hip);hip.add(body);
  const profile=(female?[[.16,0],[.17,.13],[.15,.29],[.20,.48],[.23,.61],[.22,.69],[.10,.76]]:[[.18,0],[.19,.16],[.22,.36],[.26,.55],[.275,.65],[.245,.70],[.105,.77]]).map(([r,y])=>new T.Vector2(r,y));
  const torso=mesh(new T.LatheGeometry(profile,32),material(shirt),body);torso.scale.z=.61;
  cylinder(body,.065,.078,.17,skin,0,.83,0);
- const head=makeHead(body,skin,hair,female,simple);
+ const head=makeHead(body,skin,hair,female,simple,hairStyle,hairColor);
  if(!female){for(let i=0;i<4;i++)ellipsoid(body,0,.17+i*.12,.143,.007,.007,.005,0xd1a8f4);
   for(const side of [-1,1]){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([side*.015,.76,.076,side*.11,.70,.18,side*.067,.60,.19,side*.015,.76,.076,side*.067,.60,.19,side*.01,.69,.18],3));g.computeVertexNormals();const m=new T.MeshStandardMaterial({color:new T.Color(shirt).offsetHSL(0,-.02,.07),side:T.DoubleSide,roughness:.8});mesh(g,m,body);}
   box(body,.36,.035,.245,0x302438,0,.02,0);box(body,.038,.029,.012,0xa89aa9,0,.02,.13);
@@ -247,7 +263,31 @@ export class DanceScene{
  // Soft oval pools place each performer on the polished stage.
  for(const [x,z,r] of [[0,.45,1.3],[-2.1,-.7,.8],[2.1,-.7,.8],[-3.6,-1.9,.7],[3.6,-1.9,.7]]){const disk=mesh(new T.CircleGeometry(r,32),new T.MeshBasicMaterial({color:x<0?0xbd73a1:x>0?0x6aada5:0xa985c7}),s,x,.025,z);disk.rotation.x=-Math.PI/2;disk.userData.layer=-2;}
  this.hero=human();this.hero.group.position.set(0,.04,.45);this.hero.group.scale.setScalar(1.2);s.add(this.hero.group);
- this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){const h=human({shirt:i%2?palette.mint:palette.pink,skin:i%2?0x9e664b:0xe0aa88,female:true,hair:true});h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;s.add(h.group);this.dancers.push(h);if(i===0)loadPilotDancer(h);}
+ // Le lecteur incarne un HOMME issu du récit. Garder l'ancien modèle comme repli.
+ this.featuredDancer=null;this.destroyed=false;
+ if(!this.renderer.isSoftware){
+  loadQuaterniusDancer(s,this.hero.group.position).then(avatar=>{
+   if(this.destroyed){s.remove(avatar.root);return;}
+   this.featuredDancer=avatar;
+   this.hero.group.visible=false;
+   this.canvas.dataset.featuredDancer='quaternius-cc0';
+  }).catch(err=>{
+   console.warn('Danseur masculin indisponible, personnage précédent conservé.',err);
+   this.canvas.dataset.featuredDancer='fallback';
+  });
+ }
+ const danceLooks=[
+  {shirt:0x70bdb6,skin:0x9e664b,hairColor:0x322631,hairStyle:'afro'}, // Quaternius : coiffure afro préservée
+  {shirt:0x595ba6,skin:0xe7bea4,hairColor:0xe9c668,hairStyle:'long'}, // blonde
+  {shirt:0x67bd9d,skin:0xe5ae92,hairColor:0xb95f38,hairStyle:'ponytail'}, // rousse
+  {shirt:0xd98aa9,skin:0xc18b70,hairColor:0x35242a,hairStyle:'bob'} // brune
+ ];
+ this.dancers=[];for(const [i,[x,z]] of [[-2.1,-.7],[2.1,-.7],[-3.6,-1.9],[3.6,-1.9]].entries()){
+  const h=human({...danceLooks[i],female:true,hair:true});
+  h.group.position.set(x,.04,z);h.group.scale.setScalar(1.02);h.baseX=x;h.baseZ=z;
+  s.add(h.group);this.dancers.push(h);
+  if(i===0)loadPilotDancer(h); // Conserver l'afro originale de la première danseuse
+ }
  this.lionel=human({shirt:0xadc1c2,pants:0x2b253a,skin:0xd1a084,hair:true});this.lionel.group.position.set(4.7,.04,-.5);this.lionel.group.scale.setScalar(.92);s.add(this.lionel.group);sign(s,'LIONEL',1.2,.3,4.7,2.35,-.45,'#30233f','#b6ffdc',78);
  // The audience faces the performers, seen from behind along the front of frame.
  this.public=[];for(let row=0;row<2;row++)for(let i=0;i<8;i++){const x=(i-3.5)*1.16;const z=4.2+row*1.4;box(s,1,.58,.85,0x46274f,x,.1+row*.22,z);const g=new T.Group();g.position.set(x,.25+row*.22,z);g.rotation.y=Math.PI;s.add(g);ellipsoid(g,0,.68,0,.25,.35,.17,[0x92719b,0x5f7c88,0xa9836c,0x7c8a6b][i%4]);ellipsoid(g,0,1.15,0,.16,.21,.16,[0xbf8b67,0xdbb191,0x93664e][i%3]);ellipsoid(g,0,1.27,-.04,.17,.12,.16,0x372c36);const arms=[];for(const a of [-1,1]){const arm=new T.Group();arm.position.set(a*.23,.85,0);g.add(arm);cylinder(arm,.06,.045,.45,0xa67f6a,0,-.2,0);arms.push(arm);}this.public.push({group:g,arms});}
@@ -261,6 +301,9 @@ export class DanceScene{
  if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(i===0)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;});pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
  for(const [i,p]of this.public.entries()){p.arms.forEach((a,j)=>{a.rotation.z=(j?1:-1)*(.4+Math.sin(t*6+i)*.15);a.rotation.x=active?-.8:0;});}
  if(r.phase==='won'){this.hero.arms[0].shoulder.rotation.z=-1.4;this.hero.arms[1].shoulder.rotation.z=1.4;this.hero.head.rotation.x=-.15;this.confetti.forEach((o,i)=>{o.visible=!this.reduced;o.position.y=5.5-((r.time*.8+i*.19)%5.7);o.rotation.z=t+i;});}else this.confetti.forEach(o=>o.visible=false);
+ if(this.featuredDancer){
+  poseQuaterniusDancer(this.featuredDancer,t,action,power,r.phase==='won',this.hero.group.position,this.hero.group.rotation.y);
+ }
  this.renderer.render(this.scene,this.camera);}
- dispose(){this.observer.disconnect();this.renderer.dispose();}
+ dispose(){this.destroyed=true;this.observer.disconnect();this.renderer.dispose();}
 }

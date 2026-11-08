@@ -46,6 +46,8 @@ const publicFiles = [
   'danse-runtime.js',
   'assets/danse/quaternius-superhero-female.glb',
   'assets/danse/QUATERNIUS-LICENSE.txt',
+  'danse-quaternius-hero.glb',
+  'danse-quaternius-LICENSE.txt',
   'jeu-yoyo.html',
   'yoyo-runtime.js',
   'main_ouverte_fixee.webp',
