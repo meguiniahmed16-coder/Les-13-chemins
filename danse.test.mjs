@@ -70,3 +70,19 @@ test('The playable protagonist is male; four distinct women surround him; afro u
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
  assert.ok(build.includes("'danse-quaternius-hero.glb'")&&build.includes("'danse-quaternius-LICENSE.txt'"));
 });
+
+test('Five background candidates reuse the real 65-bone male model, not cylinder people',()=>{
+ const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
+ assert.match(src,/clone as cloneSkeleton/);
+ assert.ok(src.includes('function upgradeCandidatePanel(scene,candidates,source)'));
+ assert.ok(src.includes('cloneSkeleton(source.root)'), 'same 3D body as playable male, reused in memory');
+ assert.ok(src.includes('upgradeCandidatePanel(s,this.candidates,avatar)'));
+ assert.ok(src.includes('for(const name of Object.keys(source.bones))'), 'each candidate preserves 65-bone skeleton');
+ assert.ok(src.includes('candidate.group.visible=false'), 'old capsule body hidden only after upgrade');
+ assert.ok(src.includes("if(h.quaternius)poseQuaterniusDancer"), 'background bodies follow their original rig');
+ assert.ok(src.includes('const CANDIDATE_SHIRTS='));
+ assert.ok(src.includes('const CANDIDATE_SKINS='));
+ assert.ok(src.includes('const CANDIDATE_HAIR='));
+ assert.match(src,/candidates\.map\(\(candidate,i\)=>/);
+ assert.ok(src.includes('try{upgradeCandidatePanel('), 'keep fallback if upgrade fails');
+});

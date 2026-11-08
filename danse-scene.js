@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {loadQuaterniusDancer,poseQuaterniusDancer} from './danse-quaternius.js';
 // Pilot only: real CC0 Quaternius Superhero Female from the free Standard pack.
 // Preserve the old stage and dancers until this single replacement is approved.
@@ -119,6 +120,54 @@ function loadPilotDancer(target){
   // If the model cannot load, preserve the current character, not an empty gap.
   console.warn('Quaternius pilot unavailable; original dancer retained.',err);
  });
+}
+
+const CANDIDATE_SHIRTS=[0x6bb7ba,0xe7b564,0xac729e,0x92a38a,0xb9816d];
+const CANDIDATE_SKINS=[0xb17a58,0xdca788,0xc99473,0x9e7159,0xe3b89a];
+const CANDIDATE_HAIR=[0x342720,0x6a4a2b,0x292831,0x71452c,0x4b302a];
+// Reuse the same 65-bone male Quaternius mesh already loaded for the playable
+// character. The five background candidates do NOT download five extra models.
+function upgradeCandidatePanel(scene,candidates,source){
+ const copies=candidates.map((candidate,i)=>{
+  const root=cloneSkeleton(source.root);
+  root.name='CandidatHumainQuaternius'+(i+1);
+  root.position.copy(candidate.group.position);
+  root.scale.setScalar(.80+(i%3)*.035);
+  root.traverse(obj=>{
+   if(obj.isSkinnedMesh&&obj.geometry.getAttribute('position')?.count>5000){
+    const geo=obj.geometry.clone(),pos=geo.getAttribute('position');
+    const colors=new Float32Array(pos.count*3);
+    const skin=new T.Color(CANDIDATE_SKINS[i]),shirt=new T.Color(CANDIDATE_SHIRTS[i]);
+    const pants=new T.Color([0x343c54,0x46404e,0x343b49,0x463b36,0x303e4b][i]);
+    const shoes=new T.Color(0x27252a);
+    for(let v=0;v<pos.count;v++){
+     const x=Math.abs(pos.getX(v)),y=pos.getY(v);
+     const color=y<.155?shoes:y<1.00&&x<.35?pants:y>=1.03&&y<1.52&&x<.52?shirt:skin;
+     color.toArray(colors,v*3);
+    }
+    geo.setAttribute('color',new T.BufferAttribute(colors,3));
+    obj.geometry=geo;
+    obj.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.83,metalness:0});
+    obj.frustumCulled=false;
+   }else if(obj.name==='Cheveux'&&obj.isMesh){
+    obj.material=obj.material.clone();
+    obj.material.color.setHex(CANDIDATE_HAIR[i]);
+    obj.scale.x*=.92+(i%3)*.055;
+   }
+  });
+  const bones={},rest={};
+  for(const name of Object.keys(source.bones)){
+   const bone=root.getObjectByName(name);
+   if(!bone?.isBone)throw new Error('Os manquant pour le candidat '+(i+1)+': '+name);
+   bones[name]=bone;rest[name]=bone.quaternion.clone();
+  }
+  const smile=root.getObjectByName('SourireQuaternius');
+  if(!smile)throw new Error('Expression manquante pour le candidat '+(i+1));
+  return {root,bones,rest,smile,basePosition:root.position.clone()};
+ });
+ // Replace the entire panel only AFTER all five genuine rigged bodies exist.
+ for(const copy of copies)scene.add(copy.root);
+ candidates.forEach((candidate,i)=>{candidate.quaternius=copies[i];candidate.group.visible=false;});
 }
 function animatePilotDancer(h,t,dt,active){
  const p=h.pilot;if(!p)return;
@@ -271,6 +320,8 @@ export class DanceScene{
    this.featuredDancer=avatar;
    this.hero.group.visible=false;
    this.canvas.dataset.featuredDancer='quaternius-cc0';
+   try{upgradeCandidatePanel(s,this.candidates,avatar);}
+   catch(err){console.warn('Les cinq candidats gardent leurs silhouettes de repli.',err);}
   }).catch(err=>{
    console.warn('Danseur masculin indisponible, personnage précédent conservé.',err);
    this.canvas.dataset.featuredDancer='fallback';
@@ -298,7 +349,10 @@ export class DanceScene{
  }
  resize(){const b=this.canvas.parentElement.getBoundingClientRect();this.renderer.setSize(b.width,b.height,false);this.camera.aspect=b.width/b.height;const narrow=this.camera.aspect<1.3;this.camera.fov=narrow?44:38;this.camera.position.set(narrow?.1:1.3,narrow?3.1:3.5,narrow?6.8:7.2);this.camera.lookAt(0,1.15,-.4);this.camera.updateProjectionMatrix();}
  update(r,dt){const t=r.clock,active=['playing','practice','break','countdown','won'].includes(r.phase),recent=t-r.actionAt<1.1;const action=recent?r.action:'cross';const power=active?1:.25;pose(this.hero,t,action,power);this.hero.group.position.x=recent&&(action==='left'||action==='right')?(action==='left'?-.35:.35)*Math.sin(Math.min(1,(t-r.actionAt)/1.1)*Math.PI):0;
- if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(i===0)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;});pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
+ if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(i===0)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{
+  if(h.quaternius)poseQuaterniusDancer(h.quaternius,t+i*.3,'cross',.12,false,h.group.position,(i-2)*.04);
+  else{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;}
+ });pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
  for(const [i,p]of this.public.entries()){p.arms.forEach((a,j)=>{a.rotation.z=(j?1:-1)*(.4+Math.sin(t*6+i)*.15);a.rotation.x=active?-.8:0;});}
  if(r.phase==='won'){this.hero.arms[0].shoulder.rotation.z=-1.4;this.hero.arms[1].shoulder.rotation.z=1.4;this.hero.head.rotation.x=-.15;this.confetti.forEach((o,i)=>{o.visible=!this.reduced;o.position.y=5.5-((r.time*.8+i*.19)%5.7);o.rotation.z=t+i;});}else this.confetti.forEach(o=>o.visible=false);
  if(this.featuredDancer){

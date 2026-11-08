@@ -169,3 +169,8 @@ Aucun gain de couleur lorsque seule la brosse est trouvée. Après le premier sa
 ## C021 — Fidélité au roman et sobriété du mini-jeu (8 novembre 2026)
 
 **Instruction de l'auteur :** le personnage jouable principal est un **homme** tiré du roman *La Tectonique des âmes*. Quatre femmes dansent autour de lui : une femme noire avec sa coiffure afro déjà validée, une blonde aux cheveux longs lisses, une rousse avec queue-de-cheval et une brune au carré. Seules les coiffures et couleurs des trois personnages secondaires doivent être différenciées, sans rouvrir le travail sur les visages. Conserver la scène, les règles, les cinq personnages et le public existants. Il s'agit d'un petit jeu inséré dans une plateforme littéraire, pas d'un développement autonome coûteux. Tester rapidement une vraie vue complète et mobile ; rester sur branche d'essai jusqu'à validation.
+
+
+## C022 — Panel des cinq candidats : mêmes corps 3D que le héros (8 novembre 2026)
+
+Le panel au fond du mini-jeu ne doit plus présenter les anciens personnages en tubes et sphères quand le vrai danseur 3D fonctionne. Les cinq candidats utilisent des copies de **la même géométrie masculine Quaternius CC0, avec le vrai squelette 65 os**, chargée une seule fois pour le héros. Les copies possèdent des chemises, carnations, couleurs de cheveux et proportions légèrement différentes ; elles conservent les cinq emplacements, numéros et petites réactions en arrière-plan. Les silhouettes simplifiées ne servent que de secours si WebGL ou le chargement du modèle échoue. Ne pas toucher à la coiffure afro validée de la danseuse ni aux visages et règles du jeu. Ne pas télécharger d'assets supplémentaires, créer de sous-jeu ou publier avant contrôle visuel.
