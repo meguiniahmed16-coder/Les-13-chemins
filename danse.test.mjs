@@ -147,8 +147,8 @@ test('The three foreground spectators have calm arms, never the hero dance pose'
  assert.ok(scene.includes('poseQuaterniusSpectator(p.realBody,t,p.phase)'));
  assert.ok(!scene.includes("poseQuaterniusDancer(p.realBody"), 'do not apply player choreography to spectators');
  assert.ok(module.includes('export function poseQuaterniusSpectator('));
- assert.ok(module.includes("worldBend(bones.upperarm_l,Z,-1.40"));
- assert.ok(module.includes("worldBend(bones.upperarm_r,Z,1.40"));
+ assert.ok(module.includes("worldBend(bones.upperarm_l,Z,1.40"));
+ assert.ok(module.includes("worldBend(bones.upperarm_r,Z,-1.40"));
  assert.ok(module.includes('worldBend(bones.Head,Z,.025*nod)'));
  assert.ok(module.includes("root.position.copy(basePosition)"), 'stay in place');
 });
