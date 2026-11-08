@@ -28,24 +28,62 @@ function colourPilotActor(actor){
  actor.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.82,metalness:0});
  actor.frustumCulled=false; // dancing rig can exceed rest-pose bounds
 }
+
+function paintPilotEyes(eyes){
+ // Paint the ORIGINAL skinned eye surface, without adding floating eyeballs.
+ // These coordinates come from inspection of the actual Quaternius GLB:
+ // white-eye surface +/-0.018..0.051 x, 1.640..1.673 y, ~0.075 z at front.
+ const geometry=eyes.geometry.clone(),pos=geometry.getAttribute('position');
+ if(!pos||pos.count<500)throw Error('Original Quaternius eye mesh missing');
+ const colors=new Float32Array(pos.count*3);
+ const sclera=new T.Color('#f1e5d8'),iris=new T.Color('#684a36'),
+       rim=new T.Color('#4a352d'),pupil=new T.Color('#211c1b'),
+       colour=new T.Color();
+ const smooth=(v,a,b)=>T.MathUtils.smoothstep(v,a,b);
+ let affected=0;
+ for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const dx=(Math.abs(x)-.0345)/.0086,dy=(y-1.656)/.0092;
+  const d=Math.hypot(dx,dy);
+  // Only FRONT surface vertices are painted. The sclera stays a single
+  // curved eye; there are no separate giant spheres on the face.
+  const front=smooth(z,.060,.069);
+  const edge=(1-smooth(d,.92,1.18))*front;
+  const pupilMask=(1-smooth(d,.34,.52))*front;
+  colour.copy(sclera).lerp(rim,edge*.30).lerp(iris,edge*.88);
+  colour.lerp(pupil,pupilMask);
+  if(edge>.50)affected++;
+  colour.toArray(colors,3*i);
+ }
+ if(affected<16)throw Error('Iris placement outside original eye surface');
+ geometry.setAttribute('color',new T.BufferAttribute(colors,3));
+ eyes.geometry=geometry;
+ eyes.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.39,metalness:0});
+ eyes.userData.irisPainted=true;
+ eyes.userData.irisVertexCount=affected;
+ return affected;
+}
 function makePilotSmile(root,head){
- // The free Standard model has no facial blendshapes. A tiny smile curve
- // follows the actual HEAD bone, rather than a separate floating face.
+ // The model already has sculpted lips. Never draw a second complete mouth:
+ // the old dark V-shaped tube floated ~2 cm in front of the original lips.
  if(!head)return null;
- const mouthGroup=new T.Group();
- root.add(mouthGroup);
- mouthGroup.position.set(0,1.585,.118); // face-front rest-pose coordinates
- root.updateMatrixWorld(true);
- head.attach(mouthGroup);
- const curve=new T.CatmullRomCurve3([
-  new T.Vector3(-.030,.005,0),new T.Vector3(-.016,-.003,.005),
-  new T.Vector3(0,-.010,.007),new T.Vector3(.016,-.003,.005),
-  new T.Vector3(.030,.005,0)
- ]);
- const smile=new T.Mesh(new T.TubeGeometry(curve,20,.0029,6,false),
-  new T.MeshStandardMaterial({color:0x834c42,roughness:.84}));
- mouthGroup.add(smile);
- // A lightweight continuous hair cap, not a separate spherical head.
+ const smile=new T.Group();smile.name='SourireSculpte';
+ root.add(smile);smile.position.set(0,1.585,.092);
+ root.updateMatrixWorld(true);head.attach(smile);
+ // Only two tiny mouth-corner creases, following the REAL skinned head.
+ const mat=new T.MeshStandardMaterial({
+   color:0x84594e,roughness:.95,transparent:true,opacity:.58,depthWrite:false
+ });
+ for(const side of [-1,1]){
+  const c=new T.CatmullRomCurve3([
+   new T.Vector3(side*.027,0,-.002),
+   new T.Vector3(side*.033,.0035,-.003),
+   new T.Vector3(side*.038,.007,-.006)
+  ]);
+  const corner=new T.Mesh(new T.TubeGeometry(c,10,.00085,5,false),mat);
+  corner.name=side<0?'CoinGauche':'CoinDroit';smile.add(corner);
+ }
+ // A small existing hairstyle cap, correctly attached to the same head bone.
  const hair=new T.Group();root.add(hair);
  hair.position.set(0,1.733,-.017);
  root.updateMatrixWorld(true);head.attach(hair);
@@ -61,21 +99,21 @@ function loadPilotDancer(target){
   if(size.y<1.3||!Number.isFinite(size.y))throw Error('Invalid Quaternius pilot model');
   const scale=1.77/size.y;root.scale.setScalar(scale);
   root.position.y=-b.min.y*scale;
-  const bones=new Map();let body=null;
+  const bones=new Map();let body=null,eyes=null;
   root.traverse(o=>{
    if(o.isBone)bones.set(o.name.toLowerCase(),o);
    if(!o.isMesh&&!o.isSkinnedMesh)return;
    o.castShadow=true;o.receiveShadow=true;
    if(o.name==='Superhero_Female'){colourPilotActor(o);body=o;}
-   else if(o.name==='Eyes')o.material=new T.MeshStandardMaterial({color:0xf9f2e7,roughness:.68});
+   else if(o.name==='Eyes'){paintPilotEyes(o);eyes=o;}
    else if(o.name==='Eyebrows')o.material=new T.MeshStandardMaterial({color:0x382b31,roughness:.91});
   });
-  if(!body||bones.size<60)throw Error('Quaternius humanoid rig or skinned body missing');
+  if(!body||!eyes?.userData.irisPainted||bones.size<60)throw Error('Quaternius skin, original iris or humanoid rig missing');
   const rest=new Map([...bones].map(([name,o])=>[name,o.quaternion.clone()]));
   const smile=makePilotSmile(root,bones.get('head'));
   target.group.add(root);
   target.group.children.forEach(child=>{if(child!==root)child.visible=false;});
-  target.pilot={root,bones,rest,smile,baseY:root.position.y};
+  target.pilot={root,bones,rest,smile,eyes,baseY:root.position.y};
  },undefined,err=>{
   // If the model cannot load, preserve the current character, not an empty gap.
   console.warn('Quaternius pilot unavailable; original dancer retained.',err);
