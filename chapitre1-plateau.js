@@ -124,16 +124,27 @@
  const oldRollTravel=rollTravel;
  rollTravel=function(n){
   if(boardRolling||n!==state.selected)return;
-  if(n===1||n===2){
-   if(!flow.partDone(state,n))return;
-   arriveAtStage(n+1);return;
+  // All internal scene-to-scene transitions now use the same dotted-line map,
+  // including within chapters (1→2, 2→3, 4→5).
+  if(n===1||n===2||n===4){
+   const finished=n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n);
+   if(!finished)return;
+   if(!window.TreizeVoyage){arriveAtStage(n+1);return;}
+   boardRolling=true;
+   const next=n+1;
+   finishBoardRoll=TreizeVoyage.start({
+    from:n,to:next,title:LEVELS[next-1].title,
+    onFinish:()=>{
+     boardRolling=false;finishBoardRoll=null;
+     if(state.selected!==n)return;
+     if(!(n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n)))return;
+     arriveAtStage(next);
+    }
+   });
+   return;
   }
   if(n===3&&!flow.done(state))return;
-  if(n===4){
-   if(!flow.chapter2PartDone(state,1))return;
-   arriveAtStage(5);return; // Sarajevo -> danse, sans changement de chapitre
-  }
-  if(n===5&&!flow.chapter2Done(state))return; // Prison obligatoirement réussie
+  if(n===5&&!flow.chapter2Done(state))return;
   oldRollTravel(n);
  };
  const oldSave=save;
@@ -229,19 +240,32 @@
  };
  if(flow.reconcile(state))save();
  render();
- let pendingAuto=0;
+ let pendingAuto=0,autoTransitionTimer=0;
  const finishes={'marmousets:won':1,'a410:escaped':2,'catalogne:sale':3,'bosnie:won':4};
  const closes={'marmousets:close':1,'a410:close':2,'catalogne:close':3,'bosnie:close':4};
+ const dialogIds={1:'marmousetsDialog',2:'arcadeDialog',3:'catalogneDialog',4:'bosnieDialog'};
+ const closeIds={1:'marmousetsClose',2:'arcadeClose',3:'catalogneClose',4:'bosnieClose'};
+ function sceneFinished(n){return n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n);}
  function afterClose(n){
-  if(pendingAuto!==n||state.selected!==n||!(n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n)))return;
-  pendingAuto=0;
-  if(n<3||n===4)queueMicrotask(()=>{if(state.selected===n&&(n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n)))arriveAtStage(n+1);});
-  else render();
+  if(pendingAuto!==n||state.selected!==n||!sceneFinished(n))return;
+  pendingAuto=0;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;
+  queueMicrotask(()=>{if(state.selected===n&&sceneFinished(n))rollTravel(n);});
+ }
+ function scheduleAutoTransition(n){
+  pendingAuto=n;
+  clearTimeout(autoTransitionTimer);
+  // Allow the game's successful ending and credited score to be visible briefly.
+  autoTransitionTimer=setTimeout(()=>{
+   if(pendingAuto!==n||state.selected!==n||!sceneFinished(n)||boardRolling)return;
+   const dialog=$(dialogIds[n]),closeButton=$(closeIds[n]);
+   if(dialog?.open&&typeof closeButton?.click==='function')closeButton.click();
+   else afterClose(n);
+  },1800);
  }
  window.addEventListener('message',event=>{
   if(event.origin!==location.origin||!event.data)return;
   const type=event.data.type,finished=finishes[type],closed=closes[type];
-  if(finished&&state.selected===finished&&(finished===4?flow.chapter2PartDone(state,1):flow.partDone(state,finished)))pendingAuto=finished;
+  if(finished&&state.selected===finished&&sceneFinished(finished))scheduleAutoTransition(finished);
   if(closed)afterClose(closed);
  });
  for(const [n,id]of [[1,'marmousetsClose'],[2,'arcadeClose'],[3,'catalogneClose'],[4,'bosnieClose']])
