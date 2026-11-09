@@ -56,7 +56,7 @@ html.embedded .mast,html.embedded .intro,html.embedded .rules,html.embedded .bot
 <main class="grid"><section aria-label="Le parc de la place de Catalogne"><div class="machine">
 <div class="marquee"><span class="marquee-star" aria-hidden="true">✦</span><div>PLACE DE<br>CATALOGNE<small>LES TREIZE CHEMINS · BARCELONE</small></div><span class="marquee-star" aria-hidden="true">✦</span></div>
 <div class="cabinet-tools"><span>1 JOUEUR · 5 CLIENTS</span><div><button id="parkFullscreen" class="utility" type="button" aria-pressed="false" aria-label="Agrandir la zone de jeu">⛶ AGRANDIR</button><button id="pause" class="utility" disabled>Ⅱ PAUSE</button><button id="sound" class="utility" aria-pressed="true" aria-label="Désactiver les sons">SON ON</button></div></div>
-<div class="screen"><canvas id="scene" width="768" height="432" aria-label="Grand parc 2D : cinq clients, des groupes de promeneurs et deux policiers qui patrouillent. Utilise la manette et les flèches haut/bas pour emprunter plusieurs allées."></canvas><span class="scene-label">PLAÇA DE CATALUNYA</span><span class="goal-label" id="canvasCount">CLIENTS 0 / 5</span><div class="npc-speech" id="policeSpeech" role="status" hidden></div><div id="overlay" class="scene-overlay" hidden></div></div>
+<div class="screen"><canvas id="scene" width="768" height="432" aria-label="Grand parc 2D : cinq clients, des groupes de promeneurs et deux policiers qui font des allers-retours. Utilise la manette et les flèches haut/bas pour emprunter plusieurs allées."></canvas><span class="scene-label">PLAÇA DE CATALUNYA</span><span class="goal-label" id="canvasCount">CLIENTS 0 / 5</span><div class="npc-speech" id="policeSpeech" role="status" hidden></div><div id="overlay" class="scene-overlay" hidden></div></div>
 <div class="hud"><div class="distance-row"><span id="soldLabel">0 / 5 CLIENTS SERVIS</span><strong id="earned">+0 / 10 POINTS</strong></div><div class="track" role="progressbar" aria-label="Clients servis" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><div id="progress"></div></div><div class="map-strip"><span>GRAND PARC · PLUSIEURS ALLÉES</span><span>5 RENCONTRES ◆</span></div><p class="clue" id="hint">Explore les allées du parc. Approche-toi d’un client et tourne-toi vers lui.</p></div>
 <div class="arcade-deck"><div class="joystick-unit"><span class="deck-label">DIRECTION</span><div class="stick-zone" id="stickZone"><div class="joystick-base" aria-hidden="true"></div><div class="joystick" id="stick" aria-hidden="true"><span class="stick-shaft"></span><span class="stick-ball"></span></div><button class="direction-control left" id="left" aria-label="Manette : marcher vers la gauche" disabled>◀</button><button class="direction-control right" id="right" aria-label="Manette : marcher vers la droite" disabled>▶</button></div><small id="facing">MAINTIENS OU GLISSE</small></div>
 <div class="park-lane-controls" aria-label="Choisir une allée du parc"><button id="north" type="button" aria-label="Marcher vers l’allée nord" disabled>▲<small>ALLÉE NORD</small></button><button id="south" type="button" aria-label="Marcher vers l’allée sud" disabled>▼<small>ALLÉE SUD</small></button></div>
@@ -108,7 +108,7 @@ const CLIENTS=[{id:'c1',x:260,lane:-45,color:'#b16c84'},{id:'c2',x:650,lane:68,c
 const POLICE=[560,1490];
 const LANE_MIN=-112,LANE_MAX=112;
 function createRun(sold=[]){return {x:90,y:0,vy:0,lane:0,facing:1,time:0,phase:'ready',sold:[...new Set(sold.filter(id=>CLIENTS.some(c=>c.id===id)))],steps:0,
- policeState:POLICE.map((x,i)=>({x,baseX:x,lane:[-85,75][i],homeLane:[-85,75][i]}))};}
+ policeState:POLICE.map((x,i)=>({x,baseX:x,lane:[-85,75][i],homeLane:[-85,75][i],dir:i===0?1:-1,minX:x-120,maxX:x+120}))};}
 function jump(r){if(r.phase!=='running'||r.y>0)return false;r.vy=780;return true;}
 function advance(r,dt,direction,depth=0){
  if(r.phase!=='running')return;r.time+=dt;
@@ -116,17 +116,14 @@ function advance(r,dt,direction,depth=0){
  if(direction){r.facing=Math.sign(direction);r.x=Math.min(WORLD-40,Math.max(40,r.x+direction*185*dt));r.steps+=dt*12;}
  if(depth){r.lane=Math.max(LANE_MIN,Math.min(LANE_MAX,r.lane+depth*122*dt));r.steps+=Math.abs(r.lane-oldLane)*.07;}
  if(r.vy||r.y){r.y=Math.max(0,r.y+r.vy*dt);r.vy-=1350*dt;if(!r.y&&r.vy<0)r.vy=0;}
- // Only two patrols, widely separated, try to intercept in both world dimensions.
- // The runner is faster, and can escape by changing alleys or jumping.
+ // Deux patrouilles indépendantes de la position du joueur.
+ // Chaque policier va et vient à vitesse constante, sans changer d'allée.
  for(const p of r.policeState){
-  const dx=r.x-p.x,dz=r.lane-p.lane;
-  if(Math.abs(dx)<190&&Math.abs(dz)<155){
-   p.x+=Math.sign(dx)*Math.min(Math.abs(dx),64*dt);
-   p.lane+=Math.sign(dz)*Math.min(Math.abs(dz),45*dt);
-  }else{
-   p.x+=Math.sign(p.baseX-p.x)*Math.min(Math.abs(p.baseX-p.x),22*dt);
-   p.lane+=Math.sign(p.homeLane-p.lane)*Math.min(Math.abs(p.homeLane-p.lane),22*dt);
-  }
+  p.x+=p.dir*52*dt;
+  if(p.x<=p.minX){p.x=p.minX;p.dir=1;}
+  if(p.x>=p.maxX){p.x=p.maxX;p.dir=-1;}
+  p.lane=p.homeLane;
+  // Uniquement un contact réel (même allée) provoque l'interpellation.
   if(Math.abs(p.x-r.x)<25&&Math.abs(p.lane-r.lane)<26&&r.y<58){r.phase='caught';return;}
  }
 }
@@ -198,7 +195,7 @@ if(fullscreenButton&&fullscreenHost){
 }
 const scene=new ParkScene($('scene'));let run=createRun(),phase='ready',score=0,sessionId=null,correct=true,particles=[],direction=0,keyLeft=false,keyRight=false,keyUp=false,keyDown=false,pointerDir=0,pointerLane=0,last=0,clock=0,hintUntil=0,pendingSale=false,replayMode=false;
 let soundOn=true,audio=null,musicTimer=null,musicStep=0;
-const voices=new ArcadeVoices($('voiceStatus'));let policeTurn=0,policeBubble=null,lastPoliceShout=-9;const passedPolice=new Set();
+const voices=new ArcadeVoices($('voiceStatus'));let policeTurn=0,policeBubble=null,lastPoliceShout=-9;
 function policeShout(x){const speaker=policeTurn++%2,text=speaker?'¡Vuelve aquí!':'¡Gilipollas!';policeBubble={x,text,until:clock+2};lastPoliceShout=clock;$('policeSpeech').textContent=text;voices.say(text,'es-ES',speaker);}
 function placePoliceBubble(){const el=$('policeSpeech');el.hidden=!policeBubble||!['running','paused','caught'].includes(phase)||clock>policeBubble.until;if(el.hidden)return;el.style.left=Math.max(72,Math.min(696,policeBubble.x-scene.camera))/768*100+'%';el.style.top='37%';}
 $('voiceTest').onclick=()=>{if(!soundOn){voices.report('Active SON ON pour entendre les voix.');return;}voices.stop();voices.say('¡Gilipollas!','es-ES',0);voices.say('¡Vuelve aquí!','es-ES',1);};
@@ -233,7 +230,7 @@ function renderPanel(){
  if(replayMode&&phase==='ready')content.querySelectorAll('.copy')[1].textContent='Partie libre : les dix points sont déjà acquis. Ton score reste conservé.';if(replayMode&&phase==='won'){content.querySelector('.result-number').textContent='Bravo !';content.querySelector('.copy').textContent='Les cinq clients sont servis. Les points déjà acquis restent conservés.';}
  $('start')?.addEventListener('click',start);$('retry')?.addEventListener('click',start);$('return')?.addEventListener('click',()=>{voices.stop();send('catalogne:close');});
 }
-function start(){voices.stop();voices.unlock().catch(()=>{});policeBubble=null;policeTurn=0;lastPoliceShout=-9;passedPolice.clear();const saved=run.sold;run=createRun(saved);run.phase='running';phase='running';pendingSale=false;particles=[];release();renderPanel();musicStart();hint('Explore le parc : gauche et droite pour avancer, ▲ ▼ pour changer d’allée.',3);$('scene').scrollIntoView({block:'nearest',behavior:'instant'});}
+function start(){voices.stop();voices.unlock().catch(()=>{});policeBubble=null;policeTurn=0;lastPoliceShout=-9;const saved=run.sold;run=createRun(saved);run.phase='running';phase='running';pendingSale=false;particles=[];release();renderPanel();musicStart();hint('Explore le parc : gauche et droite pour avancer, ▲ ▼ pour changer d’allée.',3);$('scene').scrollIntoView({block:'nearest',behavior:'instant'});}
 function pause(){if(phase==='running'){phase='paused';run.phase='paused';release();musicStop();voices.stop();renderPanel();}else if(phase==='paused'){phase='running';run.phase='running';last=0;renderPanel();musicStart();}}
 function performJump(){if(jump(run)){note(67,.1,.025,'square');note(79,.08,.02,'square',.06);}}
 function won(){voices.stop();policeBubble=null;phase='won';run.phase='won';release();musicStop();[72,76,79,84,79,84].forEach((n,i)=>note(n,.16,.035,'square',i*.13));renderPanel();hint('Mission accomplie : cinq clients, dix points.',10);announce('Mission accomplie. Cinq clients servis, dix points gagnés.');}
@@ -270,9 +267,12 @@ window.addEventListener('message',e=>{
  }
 });
 function frame(ms){const dt=last?Math.min(.035,(ms-last)/1000):0;last=ms;clock+=dt;
- if(phase==='running'){const previousX=run.x;direction=pointerDir||Number(keyRight)-Number(keyLeft);const depth=pointerLane||Number(keyDown)-Number(keyUp);advance(run,dt,direction,depth);if(run.phase==='caught')stopOnLoss();else {const crossed=POLICE.find(x=>(previousX-x)*(run.x-x)<=0&&previousX!==run.x&&run.y>=60&&!passedPolice.has(x));if(crossed!==undefined){passedPolice.add(crossed);policeShout(crossed);}else if(clock-lastPoliceShout>4){const near=run.policeState.find(p=>Math.abs(p.x-run.x)<155&&Math.abs(p.lane-run.lane)<125)?.x;if(near!==undefined)policeShout(near);}}
+ if(phase==='running'){const previousX=run.x;direction=pointerDir||Number(keyRight)-Number(keyLeft);const depth=pointerLane||Number(keyDown)-Number(keyUp);advance(run,dt,direction,depth);if(run.phase==='caught')stopOnLoss();else {if(clock-lastPoliceShout>4){
+   const near=run.policeState.find(p=>Math.abs(p.x-run.x)<145&&Math.abs(p.lane-run.lane)<95);
+   if(near)policeShout(near.x);
+  }}
   $('stick').classList.toggle('left',direction<0);$('stick').classList.toggle('right',direction>0);$('facing').textContent=direction?(direction>0?'VERS LA DROITE →':'← VERS LA GAUCHE'):'RELÂCHE POUR T’ARRÊTER';
-  if(clock>hintUntil){const c=nearbyClient(run),p=POLICE.find(x=>(x-run.x)*run.facing>0&&(x-run.x)*run.facing<120);$('hint').textContent=c?(run.sold.includes(c.id)?'Client déjà servi ✓':'Face au client : bouton rouge pour vendre !'):p?'Un policier devant toi : bouton jaune pour sauter !':'Cherche un client marqué ◆. Deux points par vente.';}
+  if(clock>hintUntil){const c=nearbyClient(run),p=run.policeState.find(p=>(p.x-run.x)*run.facing>0&&(p.x-run.x)*run.facing<120&&Math.abs(p.lane-run.lane)<75);$('hint').textContent=c?(run.sold.includes(c.id)?'Client déjà servi ✓':'Face au client : bouton rouge pour vendre !'):p?'Un policier devant toi : bouton jaune pour sauter !':'Cherche un client marqué ◆. Deux points par vente.';}
  }
  for(const p of particles){p.life-=dt;p.y-=dt*28;}particles=particles.filter(p=>p.life>0);scene.draw(run,phase,particles,clock);placePoliceBubble();requestAnimationFrame(frame);
 }
