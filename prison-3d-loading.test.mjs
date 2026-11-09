@@ -18,26 +18,31 @@ function bootstrap(){
   });
   return nodes.get(id);
  };
- const controls=['left','right','hide','action','start','pause','retry'].map(node);
+ const controls=[...html.matchAll(/<button\b[^>]*\bdata-game-control\b[^>]*>/g)]
+  .map(([tag])=>tag.match(/\bid="([^"]+)"/)[1]).map(node);
  const window={addEventListener:(event,callback)=>events.set(event,callback)};
  vm.runInNewContext(bootCode,{
-  window,document:{getElementById:node,querySelectorAll:()=>controls},
+  window,document:{getElementById:node,querySelectorAll:selector=>{
+   assert.equal(selector,'[data-game-control]');return controls;
+  }},
   setTimeout:callback=>{timeout=callback;return 1;},clearTimeout:()=>{timeout=null;},
   location:{reload:()=>reloads++}
  });
  return {node,controls,api:window.Prison3DLoading,events,
   expire:()=>timeout?.(),reloads:()=>reloads};
 }
-test('Loading finishes with a real play action and no lingering loading label',()=>{
+test('Loading finishes with an enabled tour start and no lingering loading label',()=>{
  const ui=bootstrap();
  assert.ok(ui.controls.every(button=>button.disabled));
+ assert.equal(ui.node('joystick').attributes['aria-disabled'],'true');
  ui.api.phase('Personnage · 50 %',53);
  assert.equal(ui.node('loading-progress').value,53);
  assert.equal(ui.api.ready(),true);
- assert.equal(ui.node('start').textContent,'Entrer dans la cellule');
+ assert.equal(ui.node('start').textContent,'Commencer la visite');
  assert.equal(ui.node('world').dataset.loadState,'ready');
  assert.equal(ui.node('loading').hidden,true);
  assert.ok(ui.controls.every(button=>!button.disabled));
+ assert.equal(ui.node('joystick').attributes['aria-disabled'],'false');
  ui.expire();assert.equal(ui.node('world').dataset.loadState,'ready');
 });
 test('A failed or missing runtime gives a working reload action, not a frozen loader',()=>{
@@ -49,6 +54,7 @@ test('A failed or missing runtime gives a working reload action, not a frozen lo
  assert.equal(ui.node('start').textContent,'Chargement interrompu');
  assert.equal(ui.api.ready(),false,'Late completion must not reactivate a failed scene');
  assert.ok(ui.controls.every(button=>button.disabled));
+ assert.equal(ui.node('joystick').attributes['aria-disabled'],'true');
  ui.node('loading-retry').listeners.click();assert.equal(ui.reloads(),1);
 });
 test('A stalled startup and a lost graphics context remain recoverable',()=>{
@@ -59,6 +65,7 @@ test('A stalled startup and a lost graphics context remain recoverable',()=>{
  assert.equal(active.node('loading').hidden,false);
  assert.equal(active.node('loading-retry').hidden,false);
  assert.ok(active.controls.every(button=>button.disabled));
+ assert.equal(active.node('joystick').attributes['aria-disabled'],'true');
 });
 test('The real model survives a streamed transfer and parses into the required rig',async()=>{
  const source=readFileSync(new URL('./danse-quaternius-hero.glb',import.meta.url));

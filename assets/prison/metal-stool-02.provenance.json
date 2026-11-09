@@ -1,0 +1,114 @@
+{
+  "schema": "prison-asset-provenance-v1",
+  "asset": "Metal Stool 02",
+  "creator": "Ulan Cabanilla",
+  "publisher": "Poly Haven",
+  "source_url": "https://polyhaven.com/a/metal_stool_02",
+  "license": "CC0-1.0",
+  "license_url": "https://polyhaven.com/license",
+  "source_api": "https://api.polyhaven.com/files/metal_stool_02",
+  "source_downloads": [
+    {
+      "file": "metal_stool_02_1k.gltf",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/metal_stool_02/metal_stool_02_1k.gltf",
+      "bytes": 2897,
+      "md5": "52bc62d1b46276ef64133151d2388385",
+      "sha256": "de8d603993443294b8a0aed48ea631ac38f2b15872491ea929551f72be726fcb"
+    },
+    {
+      "file": "textures/metal_stool_02_nor_gl_1k.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_stool_02/metal_stool_02_nor_gl_1k.jpg",
+      "bytes": 724830,
+      "md5": "7871114c94f3b795bc08346e3a57c9f6",
+      "sha256": "65d0a8be725f094222ca5badf388042d76f24e374398fc0cfb579bc03a29a8c6"
+    },
+    {
+      "file": "textures/metal_stool_02_diff_1k.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_stool_02/metal_stool_02_diff_1k.jpg",
+      "bytes": 776056,
+      "md5": "b470e8320de149ba7e6561c173efbeae",
+      "sha256": "6dd23ca9932da71c37eb537e7d996e1cc7fc8752c566cec0f7e18690c06f07af"
+    },
+    {
+      "file": "textures/metal_stool_02_arm_1k.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_stool_02/metal_stool_02_arm_1k.jpg",
+      "bytes": 854331,
+      "md5": "dc4ddb00b46b843a8236f7488d5117e0",
+      "sha256": "dff17b725379af449dae2af9f5224d8b3e863d2dbd645f13d5f4c8b2c9aa1999"
+    },
+    {
+      "file": "metal_stool_02.bin",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/metal_stool_02/metal_stool_02.bin",
+      "bytes": 182872,
+      "md5": "e2e2cc4b51e8311ac936430e5f51afc2",
+      "sha256": "17127317d391eb90ce3446739463b1067cc490210db821769b7a46bd1ff02e1c"
+    }
+  ],
+  "derived_file": {
+    "file": "metal-stool-02.glb",
+    "bytes": 1100864,
+    "sha256": "c3e28074de6f8b8129e069505996f8dd5b52347fd983687e9ceedfe5504b760a"
+  },
+  "mesh": {
+    "triangles": 6532,
+    "vertices": 4490,
+    "meshes": 1,
+    "materials": 1,
+    "bounds_m_after_root_rotation": {
+      "min": [
+        -0.22403834760189056,
+        -1.1295080184936523e-05,
+        -0.23518557846546173
+      ],
+      "max": [
+        0.22406147420406342,
+        0.458111435174942,
+        0.23790471255779266
+      ]
+    },
+    "units": "meters",
+    "up_axis": "Y"
+  },
+  "textures": [
+    {
+      "source": "textures/metal_stool_02_nor_gl_1k.jpg",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "jpeg_quality": 88,
+      "chroma_subsampling": "4:4:4",
+      "encoded_bytes": 248917
+    },
+    {
+      "source": "textures/metal_stool_02_diff_1k.jpg",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "jpeg_quality": 88,
+      "chroma_subsampling": "4:4:4",
+      "encoded_bytes": 305215
+    },
+    {
+      "source": "textures/metal_stool_02_arm_1k.jpg",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "jpeg_quality": 88,
+      "chroma_subsampling": "4:4:4",
+      "encoded_bytes": 361653
+    }
+  ],
+  "modifications": [
+    "Texture JPEG recompression at unchanged resolution",
+    "Added occlusionTexture reference to existing ARM map",
+    "Embedded source geometry and textures in self-contained GLB"
+  ],
+  "validation": {
+    "source_md5": "verified against official API for every file",
+    "offline_closed_bundle": true,
+    "game_dev_cli": "unavailable; not admitted through game-dev CLI"
+  }
+}

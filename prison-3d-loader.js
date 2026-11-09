@@ -4,7 +4,7 @@ export async function loadActorBytes(url,{onProgress=()=>{},timeoutMs=30000,fetc
  const timer=setTimeout(()=>controller.abort(),timeoutMs);
  try{
   const response=await fetchImpl(url,{signal:controller.signal,cache:'no-cache'});
-  if(!response.ok)throw new Error('Le fichier du personnage est indisponible (HTTP '+response.status+').');
+  if(!response.ok)throw new Error('Le modèle 3D est indisponible (HTTP '+response.status+').');
   let buffer;
   const total=Number(response.headers.get('content-length'))||0;
   if(response.body?.getReader){
@@ -21,10 +21,10 @@ export async function loadActorBytes(url,{onProgress=()=>{},timeoutMs=30000,fetc
   const view=new DataView(buffer);
   if(buffer.byteLength<20||view.getUint32(0,true)!==0x46546c67||
      view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)
-   throw new Error('Le fichier du personnage est incomplet. Relance le chargement.');
+   throw new Error('Le modèle 3D est incomplet. Relance le chargement.');
   onProgress(1);return buffer;
  }catch(error){
-  if(controller.signal.aborted)throw new Error('Le téléchargement du personnage a pris trop de temps. Relance le chargement.');
+  if(controller.signal.aborted)throw new Error('Le téléchargement du modèle 3D a pris trop de temps. Relance le chargement.');
   throw error;
  }finally{clearTimeout(timer);}
 }
