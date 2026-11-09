@@ -94,7 +94,8 @@ test('The new view and controls preserve original score and parent messages',()=
  assert.ok(html.includes('const WORLD=1960;'));
  assert.ok(html.includes("send('catalogne:sale',{clientId:c.id})"));
  assert.ok(html.includes("send('catalogne:ready')"));
- assert.ok(html.includes("send('catalogne:won')"));
+ assert.ok(html.includes("if(m.finished){won();}"));
+ assert.ok(html.includes("catalogne:credited"));
  assert.ok(html.includes("score+=2"));
  assert.ok(build.includes("'catalogne-park-v2.js'"));
  assert.ok(build.includes("'catalogne-park-v2.test.mjs'"));
