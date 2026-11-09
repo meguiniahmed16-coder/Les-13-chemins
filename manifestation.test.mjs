@@ -128,9 +128,9 @@ test('Commandes statue et cache navigateur réinitialisés pour la foule derriè
  for(const id of ['statueControls','statueProgress','statueCall','statueDescend'])assert.ok(html.includes('id="'+id+'"'));
  assert.ok(app.includes("if(e.type==='shout')"));assert.ok(app.includes('voiceCamarades()'));
  assert.ok(app.includes('statuePanel.hidden=!up'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261109-crowd-behind6'));
- assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-crowd-behind6'));
- assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-crowd-behind6'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261109-last-fix7'));
+ assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-last-fix7'));
+ assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-last-fix7'));
 });
 
 test('La manette de la statue existe une seule fois et ses commandes sont raccordées',()=>{
@@ -161,9 +161,9 @@ test('Bonne feuille du Chemin III : même lecture immersive que les autres jeux'
 
 test('Régression densification : foule de République toujours derrière',()=>{
  const src=read('manifestation-app.js');
- assert.ok(src.includes('makeCrowd(root,24,-13'));
- assert.ok(src.includes('distantCrowd(root,-27,100)'));
- assert.ok(src.includes('makeCrowd(root,25,-12'));
+ assert.ok(src.includes('makeCrowd(root,9,-13'));
+ assert.ok(src.includes('distantCrowd(root,-27,40)'));
+ assert.ok(src.includes('makeCrowd(root,9,-12'));
  assert.ok(!src.includes('distantCrowd(root,20,190)'));
  assert.ok(!src.includes('distantCrowd(root,113,230)'));
  assert.ok(src.includes('bastilleCrowd.visible=run.z>=83'));
@@ -171,4 +171,29 @@ test('Régression densification : foule de République toujours derrière',()=>{
   assert.ok(behindNarrator(z,candidate,5.5)<=z-5.5);
  const run=newRun();progress(run,1);progress(run,2);
  for(let i=0;i<240;i++){advance(run,.05,{x:0,y:1,red:i%20<7});assert.ok(run.leaderZ<=run.z-6);}
+});
+
+test('Après la statue le joystick avant avance et permet de finir sans perdre au niveau de la jauge',()=>{
+ const r=newRun();progress(r,1);r.x=0;r.z=1.94;
+ assert.equal(yellow(r),true);
+ for(let i=0;i<50;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.climbed,true);
+ assert.equal(callFromStatue(r),true);
+ for(let i=0;i<90&&r.phase===2;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.phase,3);assert.equal(r.z,0);assert.equal(r.height,0);
+ for(let i=0;i<10;i++)advance(r,.12,{x:0,y:1,red:false});
+ assert.ok(r.z>5,'Le joystick doit faire avancer après la descente');
+ for(let i=0;i<240&&r.phase===3;i++)advance(r,.12,{x:0,y:1,red:false});
+ assert.equal(r.finished,true,'Avancer suffit pour rejoindre Bastille, même sans bouton rouge');
+ assert.deepEqual(r.steps,[1,2,3]);
+});
+test('La troisième scène est plus légère et possède une commande de marche directe',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes('buildings(root,-7,135,true)'));
+ assert.ok(js.includes('makeCrowd(root,9,-12'));
+ assert.ok(js.includes('distantCrowd(root,-27,40)'));
+ assert.ok(js.includes('if(run.phase===3){autoMarch=true;'));
+ assert.ok(js.includes("$('advanceBastille').onclick="));
+ assert.ok(html.includes('id="advanceBastille"'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261109-last-fix7'));
 });

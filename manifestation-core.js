@@ -103,7 +103,7 @@ function advanceOnStatue(run,dx,dz,moving,t){
 }
 export function advance(run,dt,input){
  if(run.finished)return;
- const t=clamp(dt,0,.05),x=clamp(Number(input.x)||0,-1,1),y=clamp(Number(input.y)||0,-1,1);
+ const t=clamp(dt,0,.12),x=clamp(Number(input.x)||0,-1,1),y=clamp(Number(input.y)||0,-1,1);
  const mag=Math.hypot(x,y)||1,dx=x/mag,dz=y/mag;
  run.clock+=t;
  // La montée est une animation réelle (pas une téléportation dans la statue).
@@ -120,7 +120,7 @@ export function advance(run,dt,input){
   return;
  }
  const speed=run.phase===3?5.6:4.9;
- const movement=moving?speed*t*(run.phase===3&&run.cohesion<42?.22:1):0;
+ const movement=moving?speed*t:0; // Cohesion must never slow or stop the player's controls.
  let nx=clamp(run.x+dx*movement,-8,8);
  let nz=clamp(run.z+dz*movement,run.phase===3?-2:-11,run.phase===3?106:20);
  // Des collisions protègent le socle contre l'entrée par l'intérieur.
@@ -134,10 +134,10 @@ export function advance(run,dt,input){
   const gap=run.z-run.leaderZ;
   // Suivre le meneur sans passer devant lui, y compris après densification.
   run.leaderZ+=clamp(run.z-8-run.leaderZ,-6,6)*t*2.4*(input.red?1.25:1);
-  run.leaderZ=Math.min(run.leaderZ,run.z-6);
+  run.leaderZ=Math.min(run.z-6,Math.max(run.leaderZ,run.z-10)); // Keep crowd behind, but not lost.
   const tooFar=gap>10;
-  run.cohesion=clamp(run.cohesion+t*((input.red?23:0)+(moving?(tooFar?-11:-1.2):10.8)),0,100);
-  if(run.z>=99&&run.cohesion>=62)progress(run,3);
+  run.cohesion=clamp(run.cohesion+t*((input.red?23:0)+(moving?(tooFar?-.85:-.45):10.8)),0,100);
+  if(run.z>=99)progress(run,3); // Arrival never fails from an invisible crowd threshold.
  }
 }
 export function yellow(run){

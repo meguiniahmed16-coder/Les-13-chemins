@@ -15,7 +15,7 @@ let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlag
 const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
-let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0;
+let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,autoMarch=false,lastHud=0;
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
 const colors={
@@ -156,21 +156,21 @@ function walking(actor,time,strength,signal=false){
  a.arms[0].rotation.x=-Math.sin(phase)*.23*energy;
  a.arms[1].rotation.x=Math.sin(phase)*.23*energy;
 }
-function buildings(root,start,end){
+function buildings(root,start,end,light=false){
  const length=end-start;const green=mat(0x56735e),asphalt=mat(0x545d5e);
  addBox(root,0,-.24,(start+end)/2,17,.35,length+8,0x6b6862);
  addBox(root,0,-.056,(start+end)/2,10,.01,length+8,0x70716b);
  for(const side of [-1,1]){
   addBox(root,side*11,-.06,(start+end)/2,4,.30,length+8,0xa8a398);
-  for(let z=start;z<end;z+=12){
+  for(let z=start;z<end;z+=light?22:12){
    const idx=Math.floor(z*2+side*9)+10,shade=colors.stone[Math.abs(idx)%colors.stone.length];
    const h=11+rnd(idx)*6;
    addBox(root,side*14.2,h/2-.05,z+4,5,h,10,shade);
    // Limestone mansard roof, cornice and architectural windows
    addBox(root,side*14.2,h+.30,z+4,5.2,.5,10.2,0x6b747a);
    addBox(root,side*14.2,h-1,z+4,5.1,.18,10.2,0xd6c9ad);
-   for(let floor=2;floor<=h-2;floor+=3.1){
-    for(let slot=-1;slot<=1;slot++){
+   for(let floor=light?4:2;floor<=h-2;floor+=light?6.2:3.1){
+    for(let slot=light?0:-1;slot<=(light?0:1);slot++){
      const xf=side*11.62;
      const w=addBox(root,xf,floor,z+4+slot*2.7,.09,1.60,.94,0x343d41);
      addBox(root,xf-side*.09,floor,z+4+slot*2.7,.06,1.5,.067,0xe1d6bf);
@@ -179,12 +179,12 @@ function buildings(root,start,end){
    }
   }
  }
- for(let z=start+4;z<end;z+=8){
+ for(let z=start+4;z<end;z+=light?18:8){
   addBox(root,-3.1,.0,z,.11,.025,2.0,0xe3dfc6);
   addBox(root, 3.1,.0,z,.11,.025,2.0,0xe3dfc6);
  }
  // Lamps and plane trees repeat at a reasonable cadence.
- for(let z=start+7;z<end;z+=24){
+ for(let z=start+7;z<end;z+=light?38:24){
   for(const side of [-1,1]){
    addBox(root,side*8.2,2.9,z,.11,5.8,.11,0x434c49);
    addBox(root,side*7.86,5.7,z,.73,.15,.35,0xd9d3ae);
@@ -280,20 +280,20 @@ function sceneFor(phase){
   buildings(root,-23,46);statue(root);
   // République : le cortège initial reste dans le dos du joueur.
   // L'ancienne densification à z=+20 plaçait la foule devant la statue.
-  crowdActors=makeCrowd(root,24,-13,{spread:7});
-  distantCrowd(root,-27,100);
+  crowdActors=makeCrowd(root,9,-13,{spread:7});
+  distantCrowd(root,-27,40);
   for(let i=0;i<5;i++)flag(root,i%3===0?'france':'red',(rnd(i+11)-.5)*14,0,3+(rnd(i+73)-.5)*17,3.3);
   protestSign(root,'NON À LE PEN',-4,8,3.2);
   protestSign(root,'LIBERTÉ ÉGALITÉ FRATERNITÉ',5,13,4.9);
   protestSign(root,'ENSEMBLE CONTRE LA HAINE',-6,-1,4.4);
   banner(root,'LA RÉPUBLIQUE POUR TOUS',0,19,7.2);
  }else{
-  buildings(root,-7,135);
+  buildings(root,-7,135,true); // Android: avoid rebuilding hundreds of individually drawn windows.
   // La foule de République suit derrière ; Bastille apparaît près de la rencontre.
-  crowdActors=makeCrowd(root,25,-12,{spread:6});
-  distantCrowd(root,-27,100);
+  crowdActors=makeCrowd(root,9,-12,{spread:6});
+  distantCrowd(root,-27,40);
   bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
-  distantCrowd(bastilleCrowd,110,110);
+  distantCrowd(bastilleCrowd,110,55);
   for(let i=0;i<6;i++)flag(root,i%3===0?'france':'red',(rnd(i+25)-.5)*12,0,98+(rnd(i+66)-.5)*18,3.2);
   banner(root,'RÉPUBLIQUE — BASTILLE',0,92,7.6);
   protestSign(root,'NON À LE PEN',-5,84,3.0);
@@ -322,8 +322,10 @@ function refreshHUD(){
   else if(run.climbed)hint.textContent=run.statueShouted?'— CAMARADES ! La foule répond ; tu redescends.':'En haut, appuie sur « Camarades ! » pour appeler la foule.';
   else hint.textContent='Approche des marches et presse JAUNE pour monter, puis « Camarades ! » en haut.';
  }
- else hint.textContent=run.cohesion<60?'La foule est derrière toi mais s’étire : ralentis et utilise le rouge.':'Avance vers Bastille ; ta foule te suit derrière. Rouge : rassembler les retardataires.';
+ else hint.textContent='Vers Bastille : '+Math.min(100,Math.floor(run.z))+' / 100 · Le cortège suit derrière. Tu peux guider avec le joystick.';
  if(run.finished)hint.textContent='Les deux cortèges se retrouvent à mi-chemin. « — Par là. »';
+ const advanceButton=$('advanceBastille');
+ if(advanceButton){advanceButton.hidden=run.phase!==3||!playing;advanceButton.textContent=autoMarch?'❚❚ Arrêter la marche':'▶ Avancer vers Bastille';}
  const up=playing&&!paused&&run.phase===2&&run.climbed&&!run.climb&&!run.statueShouted;
  const statuePanel=$('statueControls');
  if(statuePanel)statuePanel.hidden=!up;
@@ -368,7 +370,7 @@ function drain(){
 function card(titleText,bodyText){overlay.hidden=false;$('overlayTitle').textContent=titleText;$('overlayText').textContent=bodyText;}
 function start(){
  if(!gameReady)return;
- $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;
+ $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;autoMarch=false;lastHud=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
 }
 function pause(){
@@ -429,7 +431,8 @@ function changeDir(){
  const left=Number(keys.has('arrowleft')||keys.has('q')||keys.has('a'));
  const fwd=Number(keys.has('arrowup')||keys.has('z')||keys.has('w'));
  const back=Number(keys.has('arrowdown')||keys.has('s'));
- return {x:-clamp(joy.x+right-left,-1,1),y:clamp(joy.y+fwd-back,-1,1),red:redHeld||keys.has('r')};
+ const manualY=clamp(joy.y+fwd-back,-1,1);
+ return {x:-clamp(joy.x+right-left,-1,1),y:run.phase===3&&autoMarch&&Math.abs(manualY)<.15?1:manualY,red:redHeld||keys.has('r')};
 }
 function bindControls(){
  const zone=$('stick'),knob=$('knob');
@@ -469,6 +472,7 @@ function bindControls(){
  $('back').onclick=()=>send('manifestation:close');
  $('next').onclick=()=>send('manifestation:next');
  $('pause').onclick=pause;
+ $('advanceBastille').onclick=()=>{if(run.phase!==3||!playing)return;autoMarch=!autoMarch;refreshHUD();};
  $('statueCall').onclick=callCrowd;
  $('statueDescend').onclick=yellowPress;
  $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(soundOn));if(soundOn)sound(450,.13);};
@@ -521,13 +525,18 @@ function animateActors(dt,t){
 }
 function render(ms){
  if(!renderer)return;
- const dt=Math.min(.05,(ms-previous)/1000||0);previous=ms;
+ const dt=Math.min(.12,(ms-previous)/1000||0);previous=ms;
  if(playing&&!paused){
   if(stageInWorld!==run.phase)sceneFor(run.phase);
   if(actionTransition>0)actionTransition-=dt;
   const phase=run.phase;advance(run,dt,changeDir());
   drain();
-  if(phase!==run.phase){sceneFor(run.phase);messageFeedback(run.phase===2?'Place de la République':'Vers Bastille !',1.7);}
+  if(phase!==run.phase){
+   if(run.phase===3){autoMarch=true;joy={x:0,y:0};keys.clear();redHeld=false;}
+   sceneFor(run.phase);
+   messageFeedback(run.phase===2?'Place de la République':'Vers Bastille ! La marche démarre.',2.3);
+   refreshHUD();
+  }
  }
  const t=ms/1000;
  if(showSpeechUntil<t)speech.hidden=true;
@@ -550,7 +559,7 @@ function render(ms){
   renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
  }
  renderer.render(world,camera);
- if(playing)refreshHUD();
+ if(playing&&ms-lastHud>180){lastHud=ms;refreshHUD();}
  requestAnimationFrame(render);
 }
 async function loadCharacters(){
