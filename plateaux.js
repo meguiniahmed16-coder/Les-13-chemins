@@ -41,5 +41,29 @@
    prisonExitTimer=setTimeout(()=>{if(yoyoWon&&state.completed.includes(5)&&yoyo.dialog.open)closeYoyo();},2000);
   }}if(m.type==='yoyo:replay'&&state.yoyoFinished&&!state.yoyoPending){flow.beginYoyo(state,crypto.randomUUID());yoyoWon=false;save();context(yoyo);}}
  });
+ // Navigation sous les deux mini-jeux du chapitre 2.
+ // "Retour" stops automatic chaining, "Suivant" preserves wins or skips.
+ window.TreizePlateauxNavigation={
+  back(which){
+   clearTimeout(travelTimer);clearTimeout(prisonExitTimer);
+   if(which==='dance')dismiss(dance);
+   else if(which==='prison')dismiss(yoyo);
+   focusEntry();
+  },
+  next(which){
+   if(which==='dance'){
+    clearTimeout(travelTimer);
+    if(progress().finished.includes(1))travel();
+    return;
+   }
+   if(which==='prison'){
+    clearTimeout(prisonExitTimer);
+    dismiss(yoyo);
+    render();
+    if(window.TreizeChapitre1?.chapter2Done(state))rollTravel(5);
+   }
+  },
+  isOpen(which){return which==='dance'?dance.dialog.open:which==='prison'?yoyo.dialog.open:false;}
+ };
  flow.migrate(state);save();render();
 })();
