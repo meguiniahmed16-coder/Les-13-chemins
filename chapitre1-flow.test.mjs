@@ -105,7 +105,7 @@ test('Step two keeps a single featured card and distinguishes the three book cha
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js');
  const levels=JSON.parse(html.match(/const LEVELS=(\[.*?\]);\s*const AVATARS=/s)[1]);
  assert.equal(levels[3].title,'Même pas mal');
- assert.ok(ui.includes('Bloc 2 · Chapitres 2, 3 et 4'));
+ assert.ok(ui.includes('Bloc 2 · Le météore'));
  assert.ok(ui.includes('chapter-literary-part'));
  assert.ok(!ui.includes('De Sarajevo à Strasbourg'),'No invented collective title replaces the three chapter names');
  assert.ok(ui.includes('chapterTitle'),'The card renders titles from the distinct chapter metadata');

@@ -34,7 +34,7 @@
  $('questTitle').before(header);$('gameEntry').before(sequence);
  const chapterName='Chapitre 1 — « La salle d’attente »';
  const chapterTwoName='Chapitre 2 — « Même pas mal »';
- const secondBlockName='Bloc 2 · Chapitres 2, 3 et 4';
+ const secondBlockName='Bloc 2 · Le météore';
  const icons=['🌳','🪖'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
  const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison'];
@@ -49,7 +49,7 @@
     button.dataset.level=String(scene);button.dataset.chapter=String(i+1);
     button.append(
      makeSpan('chapter-card-kicker','BLOC '+(i+1)+(scene===1?' · CHAPITRE 1':'')),
-     makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Chapitres 2, 3 et 4':LEVELS[scene-1].title),
+     makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Le météore':LEVELS[scene-1].title),
      makeSpan('chapter-card-place',scene===1?'Ferney-Voltaire · La Roche-sur-Foron · Barcelone':scene===4?'Trois extraits, une même étape de jeu.':LEVELS[scene-1].place)
     );
     if(scene===1||scene===4){

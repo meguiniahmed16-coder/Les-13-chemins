@@ -441,3 +441,8 @@ Cette précision de l’auteur remplace les mentions précédentes qui rassembla
 - Utiliser les références littéraires explicites pour chaque extrait. Les identifiants techniques historiques 4, 5/1 et 5/2 ne sont pas des numéros de chapitre.
 - Harmoniser la vignette, la navigation interne, les lecteurs, les en-têtes des jeux, les dialogues et les arrivées sur la carte. Les compteurs du plateau comptent des blocs, pas des chapitres.
 - Sur téléphone, garder les trois titres lisibles dans une même enveloppe. Sur écran large, les trois parties peuvent être côte à côte.
+
+
+### 2026-11-09 — Titre du bloc 2 choisi par l’auteur : « Le météore »
+
+À la demande de l’auteur, remplacer le titre de groupe « Chapitres 2, 3 et 4 » par **« Le météore »**. Ce titre commun est désormais explicitement choisi et remplace l’intitulé neutre de la consigne précédente. Conserver les trois références à l’intérieur : chapitre 2 « Même pas mal », chapitre 3 « Le coup du bus », chapitre 4 « Le drapeau rouge », ainsi que leurs extraits, jeux et progression.
