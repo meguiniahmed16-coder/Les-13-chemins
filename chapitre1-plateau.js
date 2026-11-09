@@ -28,19 +28,23 @@
  css.textContent+=`
 #boardTargets .rendezvous-card .chapter-part-state{color:#e1dcc9}
 #boardTargets .rendezvous-card[aria-disabled=true] .chapter-card-title{color:#fff9e5}
-#rendezvousDialog{box-sizing:border-box;width:100vw;height:100dvh;max-width:100vw;max-height:100dvh;margin:0;padding:0;border:0;background:#f8f0df;color:#293f37;overflow-y:auto}
-#rendezvousDialog::backdrop{background:#152820e8}
-#rendezvousDialog .rendezvous-top{position:sticky;top:0;z-index:3;background:#253e36;color:#fff4dc;padding:12px clamp(16px,4vw,45px);display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:3px solid #b68e54}
-#rendezvousDialog .rendezvous-top strong{font:600 clamp(16px,2vw,22px) 'Cormorant Garamond',Georgia,serif}
-#rendezvousDialog .rendezvous-top button{padding:11px 15px;background:#f5e8cd;color:#293e35;border:1px solid #b18a55;border-radius:5px;font:600 13px 'DM Sans',sans-serif;cursor:pointer;min-height:44px}
-#rendezvousDialog .rendezvous-content{max-width:940px;margin:0 auto;padding:26px clamp(14px,4vw,58px) 75px}
-#rendezvousDialog .rendezvous-kicker{font:700 11px 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8a7046}
-#rendezvousDialog h2{font:600 clamp(38px,6vw,61px)/1.1 'Cormorant Garamond',Georgia,serif;margin:8px 0 15px}
-#rendezvousDialog .rendezvous-excerpt{font:clamp(18px,2vw,24px)/1.86 Georgia,serif;background:#fffaf0;border:1px solid #cbb896;padding:clamp(18px,4vw,45px)}
-#rendezvousDialog .rendezvous-excerpt p{margin:0 0 1.15em}#rendezvousDialog .rendezvous-excerpt p:last-child{margin:0}
-#rendezvousDialog .rendezvous-future{margin-top:25px;background:#eee1c6;border-left:4px solid #b68e54;padding:17px 23px;font:14px/1.6 'DM Sans',sans-serif}
-#rendezvousDialog .rendezvous-future strong{display:block;font-size:17px;margin-bottom:5px}
-@media(max-width:650px){#rendezvousDialog .rendezvous-top{padding:8px 11px}#rendezvousDialog .rendezvous-top strong{font-size:15px}#rendezvousDialog .rendezvous-top button{padding:9px 10px;font-size:12px}#rendezvousDialog .rendezvous-excerpt{padding:17px 14px}}
+#rendezvousDialog{position:fixed;inset:0;box-sizing:border-box;display:block;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border:0;border-radius:0;background:#fff9ed;color:#283b36;overflow:auto;overscroll-behavior:contain;text-align:left}
+#rendezvousDialog::backdrop{background:#19332cd9}
+#rendezvousDialog .rendezvous-top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px clamp(14px,3vw,36px);background:#263e3a;color:#fff3dc;font:600 12px/1.4 'DM Sans',sans-serif;border:0}
+#rendezvousDialog .rendezvous-top strong{font:600 12px/1.4 'DM Sans',sans-serif}
+#rendezvousDialog .rendezvous-top button{border:1px solid #c9b28b;background:transparent;color:#fff3dc;min-width:44px;min-height:44px;border-radius:4px;font-size:17px;cursor:pointer;padding:8px 12px}
+#rendezvousDialog .rendezvous-content{max-width:790px;margin:0 auto;padding:clamp(24px,4vw,55px) clamp(20px,5vw,64px) 90px}
+#rendezvousDialog .rendezvous-kicker{font:600 12px/1.5 'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#88673d;margin:0 0 8px}
+#rendezvousDialog h2{font:600 clamp(32px,5vw,47px)/1.08 'Cormorant Garamond',Georgia,serif;margin:0 0 9px}
+#rendezvousDialog .rendezvous-area{font:16px/1.6 'DM Sans',sans-serif;margin:0 0 18px}
+#rendezvousDialog .rendezvous-reference{font:14px/1.6 'DM Sans',sans-serif;margin:0 0 6px}
+#rendezvousDialog .rendezvous-excerpt{font:clamp(20px,2.15vw,25px)/1.86 Georgia,serif;letter-spacing:.005em;margin:30px 0 40px;white-space:normal;background:none;border:0;padding:0}
+#rendezvousDialog .rendezvous-excerpt p{margin:0 0 1.1em}
+#rendezvousDialog .rendezvous-excerpt p:last-child{margin-bottom:0}
+#rendezvousDialog .rendezvous-future{margin:20px auto 0;padding:24px;border:1px solid #b7a179;background:#eee6d3;border-radius:9px;font:14px/1.6 'DM Sans',sans-serif}
+#rendezvousDialog .rendezvous-future strong{display:block;font:700 21px/1.35 Georgia,serif;margin-bottom:8px;color:#324d42}
+#rendezvousDialog .rendezvous-part-nav{max-width:650px;margin:32px auto 0}
+@media(max-width:600px){#rendezvousDialog .rendezvous-content{padding:25px 20px 78px}#rendezvousDialog .rendezvous-excerpt{font-size:20px;line-height:1.8}#rendezvousDialog .rendezvous-top{font-size:11px;padding:11px 12px}#rendezvousDialog .rendezvous-top strong{font-size:11px}#rendezvousDialog .rendezvous-top button{font-size:12px}}
 `;
  document.head.append(css);
  $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
@@ -62,19 +66,21 @@
  const reader=document.createElement('dialog');
  reader.id='rendezvousDialog';reader.setAttribute('aria-label','Chemin III — Les rendez-vous, chapitre 4');
  const readerBar=document.createElement('div');readerBar.className='rendezvous-top';
- const readerHeading=document.createElement('strong');readerHeading.textContent='CHEMIN III · LES RENDEZ-VOUS · CHAPITRE 4';
+ const readerHeading=document.createElement('strong');readerHeading.textContent='LES TREIZE CHEMINS · CHEMIN III · CHAPITRE 4 — « DRAPEAU ROUGE »';
  const readerClose=document.createElement('button');readerClose.type='button';readerClose.textContent='Retour au plateau ×';
  readerBar.append(readerHeading,readerClose);
  const readerBody=document.createElement('div');readerBody.className='rendezvous-content';
- const readerKicker=document.createElement('p');readerKicker.className='rendezvous-kicker';readerKicker.textContent='Bonne feuille 1/3 · Chapitre 4 — « Drapeau rouge »';
- const readerTitle=document.createElement('h2');readerTitle.textContent='République–Bastille · Avril 2002';
+ const readerKicker=document.createElement('p');readerKicker.className='rendezvous-kicker';readerKicker.textContent='Vous êtes arrivé à';
+ const readerTitle=document.createElement('h2');readerTitle.textContent='République–Bastille';
+ const readerArea=document.createElement('p');readerArea.className='rendezvous-area';readerArea.textContent='Paris · avril 2002';
+ const readerReference=document.createElement('p');readerReference.className='rendezvous-reference';readerReference.textContent='Extrait du chapitre 4 — « Drapeau rouge », p. 59–60.';
  const excerpt=document.createElement('div');excerpt.className='rendezvous-excerpt';
  for(const paragraph of thirdExtract){const el=document.createElement('p');el.textContent=paragraph;excerpt.append(el);}
  const future=document.createElement('div');future.className='rendezvous-future';
  const futureTitle=document.createElement('strong');futureTitle.textContent='Jeu 1 / 3 — Camarades !';
  const futureBody=document.createElement('p');futureBody.textContent='Trois épreuves de 10 points : trouver le drapeau, mobiliser la République et réunir les cortèges. Le jeu s’ouvre après la lecture, en descendant jusqu’au bas de l’extrait.';
  future.append(futureTitle,futureBody);
- readerBody.append(readerKicker,readerTitle,excerpt,future);reader.append(readerBar,readerBody);document.body.append(reader);
+ readerBody.append(readerKicker,readerTitle,readerArea,readerReference,excerpt,future);reader.append(readerBar,readerBody);document.body.append(reader);
  readerClose.onclick=()=>reader.close();
  reader.addEventListener('close',()=>{const b=$('boardTargets').querySelector('[data-chemin="3"]');if(b)b.setAttribute('aria-pressed','false');b?.focus({preventScroll:true});});
  function openThirdPath(){
