@@ -76,8 +76,6 @@ const publicFiles = [
   'plateaux.js',
   'voyage.js',
   'escale.js',
-  'plateau-mobile.webp',
-  'plateau-large.webp',
 ];
 
 if (process.env.CONTEXT === 'production' && process.env.BRANCH !== 'main') {
