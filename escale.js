@@ -32,6 +32,12 @@
  #arrivalReader[data-autoplay="scroll"] .arrival-kicker{font-size:12px}
  #arrivalReader[data-autoplay="scroll"] .arrival-challenge{max-width:650px;margin:22px auto 0}
  #arrivalReader[data-autoplay="scroll"] .arrival-reading-instruction{font:600 13px/1.6 'DM Sans',sans-serif;color:#607768;text-align:center;padding:10px 0}
+ #arrivalReader[data-autoplay="scroll"] .arrival-inline-quiz{margin:28px auto 32px;padding:24px;border:1px solid #b7a179;background:#eee6d3;border-radius:9px;max-width:700px}
+ .arrival-inline-quiz h4{font:700 21px/1.35 Georgia,serif;margin:8px 0 17px;color:#324d42}
+ .arrival-inline-quiz small{font:700 11px/1.4 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#85633f}
+ .arrival-inline-quiz .arrival-quiz-answer{display:block;width:100%;min-height:46px;padding:12px 15px;margin:9px 0;text-align:left;background:#fffaf0;border:1px solid #bfa77c;border-radius:6px;color:#304e41;font:600 14px/1.5 'DM Sans',sans-serif;cursor:pointer}
+ .arrival-inline-quiz .arrival-quiz-answer:focus-visible{outline:3px solid #567a63}
+ .arrival-inline-quiz .arrival-quiz-result{font:600 16px/1.6 Georgia,serif;color:#2d5d47}
  @media(max-width:600px){#arrivalReader[data-autoplay="scroll"] .arrival-body{padding:25px 20px 78px}#arrivalReader[data-autoplay="scroll"] .arrival-excerpt{font-size:20px;line-height:1.8}#arrivalReader[data-autoplay="scroll"] .arrival-bar{font-size:11px}}
  :is(#arrivalReader,#characterReader) .arrival-challenge{display:block;width:100%;min-height:64px;padding:18px 24px;background:#345448;color:#fff8e9;border:1px solid #345448;border-radius:5px;cursor:pointer;text-align:center;font:700 20px/1.3 'DM Sans',sans-serif}
  :is(#arrivalReader,#characterReader) .arrival-challenge:hover{background:#476e59}:is(#arrivalReader,#characterReader) button:focus-visible,:is(#arrivalReader,#characterReader) a:focus-visible{outline:3px solid #b58037;outline-offset:3px}
@@ -70,12 +76,33 @@
  }
  function readerHTML(s){return `<div class="arrival-bar"><span>LES TREIZE CHEMINS · ${chapterReaderLabel(s.level)}</span><button class="arrival-close" type="button" aria-label="Fermer le passage">×</button></div><div class="arrival-body"><p class="arrival-kicker">Vous êtes arrivé à</p><h2 id="arrivalTitle" tabindex="-1">${esc(s.city)}</h2><p class="arrival-area">${esc(s.area)}</p><dl class="arrival-facts"><div><dt>GPS</dt><dd>${esc(gps(s.coordinates))}</dd></div><div><dt>Altitude</dt><dd>≈ ${s.altitude} m</dd></div></dl><p class="arrival-note">Coordonnées indicatives · altitude estimée au repère.</p><p class="arrival-history">${esc(s.history)}</p>${s.characters.length?`<ul class="arrival-characters" aria-label="Les personnages de cette étape">${s.characters.map(name=>`<li>${esc(name)}</li>`).join('')}</ul>`:''}${characterButton(s.level,s.plateau||1)}<h3>${esc(s.passage.scene)}</h3><p class="arrival-reference">Extrait du chapitre ${Number(s.passage.chapter)} — <em>« ${esc(s.passage.title)} »</em>, ${esc(s.passage.pageLabel)}.</p><p class="arrival-note">Le titre de ce passage a été choisi pour le jeu.</p><div class="arrival-excerpt">${s.passage.quote.split(/\n\s*\n/).map(p=>`<p>${esc(p)}</p>`).join('')}</div><p class="arrival-reference">${esc(s.passage.source)}</p><details class="arrival-sources"><summary>Repères et sources du lieu</summary><p>Histoire : <a href="${esc(s.historySource.url)}" target="_blank" rel="noopener noreferrer">${esc(s.historySource.label)}</a>.<br>Altitude : <a href="${esc(s.altitudeSource?.url||'https://open-meteo.com/en/docs/elevation-api')}" target="_blank" rel="noopener noreferrer">${esc(s.altitudeSource?.label||'Open-Meteo · Copernicus DEM GLO-90, arrondie à 5 m')}</a>. Le point situe l’étape, sans désigner une adresse privée ni l’emplacement exact de chaque scène.</p></details><button class="arrival-challenge" type="button">Relevez le défi <span aria-hidden="true">→</span></button></div>`;}
  let active=null;
- function openReader(n,{onChallenge=()=>{},plateau=1,autoAdvanceOnEnd=false,onDismiss=()=>{}}={}){
+ function openReader(n,{onChallenge=()=>{},plateau=1,autoAdvanceOnEnd=false,onDismiss=()=>{},inlineQuiz=null}={}){
   const stage=getStage(n,plateau);if(!stage){onChallenge();return null;}if(active)return active;
   install();const modal=document.createElement('dialog');modal.id='arrivalReader';modal.setAttribute('aria-labelledby','arrivalTitle');modal.dataset.level=stage.level;
   if(autoAdvanceOnEnd)modal.dataset.autoplay='scroll';
   modal.innerHTML=readerHTML(stage);document.body.append(modal);active=modal;bindCharacters(modal);
   let finished=false,continueToGame=!autoAdvanceOnEnd,scrollTimer=0;
+  let quizAnswered=!inlineQuiz,checkEnd=()=>{},quizCard=null;
+  if(inlineQuiz&&Array.isArray(inlineQuiz.options)&&inlineQuiz.options.length){
+   quizCard=document.createElement('section');quizCard.className='arrival-inline-quiz';
+   quizCard.innerHTML='<small>Quiz du chapitre</small><h4>'+esc(inlineQuiz.question||'Question du chapitre')+'</h4>'+
+    inlineQuiz.options.map((option,i)=>'<button class="arrival-quiz-answer" type="button" data-answer="'+i+'">'+
+      String.fromCharCode(65+i)+' · '+esc(option)+'</button>').join('');
+   const excerpt=modal.querySelector('.arrival-excerpt');
+   excerpt?.after?.(quizCard);
+   quizCard.querySelectorAll('.arrival-quiz-answer').forEach(button=>{
+    button.onclick=()=>{
+     if(quizAnswered)return;
+     quizAnswered=true;
+     const index=Number(button.dataset.answer);
+     inlineQuiz.onAnswer?.(index);
+     quizCard.innerHTML='<p class="arrival-quiz-result">'+
+      (index===inlineQuiz.correct?'Bonne réponse.':'Réponse enregistrée. Tu pourras réessayer après le jeu.')+
+      ' Le mini-jeu va commencer.</p>';
+     if(autoAdvanceOnEnd)checkEnd();
+    };
+   });
+  }
   function finish(){
    if(finished)return;finished=true;if(scrollTimer)clearTimeout(scrollTimer);active=null;
    document.documentElement.classList.remove('arrival-reading');modal.remove();
@@ -83,16 +110,24 @@
   }
   const close=(launch=false)=>{continueToGame=launch||!autoAdvanceOnEnd;if(modal.open)modal.close();else finish();};
   modal.querySelector('.arrival-close').onclick=()=>close(false);
-  modal.querySelector('.arrival-challenge').onclick=()=>close(true);
+  modal.querySelector('.arrival-challenge').onclick=()=>{
+   if(!quizAnswered){quizCard?.scrollIntoView?.({block:'center',behavior:'smooth'});return;}
+   close(true);
+  };
   modal.addEventListener('close',finish,{once:true});
   if(autoAdvanceOnEnd){
    const excerpt=modal.querySelector('.arrival-excerpt');
-   const checkEnd=()=>{
+   checkEnd=()=>{
     if(finished||characterDialog?.open)return;
-    if(!reachedReadingEnd(modal,excerpt)){clearTimeout(scrollTimer);scrollTimer=0;return;}
+    if(!quizAnswered||!reachedReadingEnd(modal,excerpt)){
+     if(scrollTimer)clearTimeout(scrollTimer);scrollTimer=0;return;
+    }
     if(scrollTimer)return;
     // Let the final sentence remain visible briefly before handing off to the game.
-    scrollTimer=setTimeout(()=>{scrollTimer=0;if(!finished&&!characterDialog?.open&&reachedReadingEnd(modal,excerpt))close(true);},850);
+    scrollTimer=setTimeout(()=>{
+     scrollTimer=0;
+     if(!finished&&quizAnswered&&!characterDialog?.open&&reachedReadingEnd(modal,excerpt))close(true);
+    },850);
    };
    modal.addEventListener('scroll',checkEnd,{passive:true});
    modal.querySelector('.arrival-challenge').textContent='Continuer vers le mini-jeu →';
