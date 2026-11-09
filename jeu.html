@@ -83,6 +83,12 @@ function arriveAtStage(n){
  const options={onChallenge:revealChallenge,autoAdvanceOnEnd:isVideoScene,
   onDismiss:()=>{const status=document.getElementById('status');
    if(status)status.textContent='Lecture interrompue. Tu peux reprendre le passage ou lancer le jeu depuis le plateau.';}};
+ // A Sarajevo, the chapter quiz is answered inside the same immersive reader.
+ // It does not interrupt the map → passage → game sequence.
+ if(n===4&&!state.completed.includes(4)&&!state.bosniePending){
+  options.inlineQuiz={question:LEVELS[3].question,options:LEVELS[3].options,
+   correct:LEVELS[3].correct,onAnswer:index=>answer(index)};
+ }
  if(window.TreizeEscale)TreizeEscale.openReader(n,options);else revealChallenge();
 }
 function rollTravel(n){
