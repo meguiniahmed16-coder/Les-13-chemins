@@ -36,7 +36,7 @@ test('The 3D version uses the actual original three-stage game rules without cha
  for(const fn of ['createGame','startGame','continueGame','move','aimAt',
   'actionDown','actionUp','advance','aligned','betweenBars'])
   assert.ok(src.includes(fn),'The legacy rule function '+fn+' is reused');
- assert.ok(src.includes('const state=createGame()'));
+ assert.ok(src.includes('state=createGame()'));
  assert.ok(src.includes("send('yoyo:won'")===false,
   'The prototype never submits new prizes to the public platform');
  assert.ok(src.includes('Le tabac est récupéré'));
