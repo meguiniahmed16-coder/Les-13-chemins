@@ -38,6 +38,29 @@
   return Math.max(1,chapterOf(Math.min(13,Math.max(4,Number(state.unlocked)||4))));
  }
  function scenePassedCount(state){return PARTS.filter(p=>partDone(state,p.scene)).length;}
+ function preparePart(state,n,makeId){
+  // Une seule question au début du chapitre : les jeux 2 et 3 reprennent
+  // sa réussite sans réclamer une autre réponse ni donner 100 points.
+  if((n!==2&&n!==3)||!canEnter(state,n)||partDone(state,n))return false;
+  let changed=false;
+  if(!completed(state,n)){state.completed.push(n);changed=true;}
+  if(state.unlocked<n+1){state.unlocked=n+1;changed=true;}
+  const newId=()=>typeof makeId==='function'?makeId():String(n)+'-legacy';
+  if(n===2&&!state.arcadeBonuses?.['2']){
+   if(!state.arcadePending){state.arcadePending={id:newId(),level:2,correct:true};changed=true;}
+   else if(!state.arcadePending.correct){state.arcadePending.correct=true;changed=true;}
+  }
+  if(n===3&&!state.catalogneFinished){
+   if((state.catalogneSold||[]).length===5&&!state.catalognePending){
+    state.catalogneFinished=true;changed=true;
+   }else if(!state.catalognePending){
+    state.catalognePending={id:newId(),level:3,correct:true};changed=true;
+   }else if(!state.catalognePending.correct){
+    state.catalognePending.correct=true;changed=true;
+   }
+  }
+  return changed;
+ }
  function reconcile(state){
   if(!state||!Array.isArray(state.completed))return false;
   let desired=state.selected;
@@ -49,5 +72,5 @@
   state.selected=desired;
   return true;
  }
- root.TreizeChapitre1={PARTS,CARDS,legacy,partDone,done,nextPart,canEnter,chapterOf,chaptersDone,chapterReached,scenePassedCount,reconcile};
+ root.TreizeChapitre1={PARTS,CARDS,legacy,partDone,done,nextPart,canEnter,chapterOf,chaptersDone,chapterReached,scenePassedCount,preparePart,reconcile};
 })(typeof window==='undefined'?globalThis:window);
