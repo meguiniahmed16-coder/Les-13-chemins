@@ -135,12 +135,12 @@ function person(id,opts={}){
  group.scale.setScalar(height);actor.userData={id,legs,arms,height,hero:!!opts.hero,origin:opts.origin||{x:0,z:0},offset:rnd(id+7)*6.28};
  return actor;
 }
-function walking(actor,time,strength){
+function walking(actor,time,strength,signal=false){
  const a=actor.userData;
  if(a.mixer){
   const dt=Math.max(0,Math.min(.05,a.previousTime===null?0:time-a.previousTime));
   a.previousTime=time;
-  const desired=strength>.38?'walk':'idle';
+  const desired=signal?'signal':strength>.38?'walk':'idle';
   if(a.current!==desired){
    const previous=a.actions[a.current],next=a.actions[desired];
    next.reset().play();next.crossFadeFrom(previous,.2,true);
@@ -194,11 +194,20 @@ function buildings(root,start,end){
  }
 }
 function statue(root){
- // Interpretive 3D monument, clearly marked as a recreation, not a scan.
+ // Monument interprété : le joueur monte par un escalier visible sur le socle.
  addBox(root,0,.3,5,6,1.0,6,0xa5a39a);
  addBox(root,0,1.05,5,4.5,.55,4.5,0xbdb6a3);
  addBox(root,0,2.05,5,3.1,1.55,3.1,0xe1d4b7);
  addBox(root,0,3.15,5,3.8,.20,3.8,0xb5aa94);
+ // Marches claires sur la face avant gauche, de la rue au sommet.
+ for(let i=0;i<10;i++){
+  const height=(i+1)*.332;
+  const z=.35+i*(3.13/9);
+  addBox(root,-1.15,height/2,z,1.35,height,.38,i%2?0xc6b49a:0xe4d4b5);
+  addBox(root,-1.15,height+.015,z,1.4,.025,.38,0xf1e3c8);
+ }
+ const entrance=roundedText('ACCÈS AU SOCLE ↑',3.2,'#f6e9c8','#405744');
+ entrance.position.set(-1.15,.27,-.30);root.add(entrance);
  const bronze=mat(0x527e71,.45);
  root.add(mesh(gCyl,bronze,0,4.56,5,.60,1.35,.60));
  root.add(mesh(gCone,bronze,0,6.3,5,.65,1.6,.65));
@@ -310,9 +319,18 @@ function refreshHUD(){
  meter.style.width=Math.round(pct)+'%';meterValue.textContent=Math.round(pct)+'%';
  $('meterLabel').textContent=p===2?'MOBILISATION':p===1?'PRÉPARATION':'COHÉSION DU CORTÈGE';
  if(p===1)hint.textContent='Joystick : avance vers le drapeau français devant l’école. Jaune pour grimper et le prendre.';
- else if(p===2)hint.textContent=run.climbed?'Maintiens le rouge : « Camarades ! » Rassemble la foule jusqu’à 100 %.':'Approche de la statue et appuie sur le jaune pour grimper.';
+ else if(p===2){
+  if(run.climb)hint.textContent=run.climb.direction==='up'?'Tu montes réellement par les marches du socle. Les commandes restent disponibles dès l’arrivée.':'Tu redescends par les marches. Reprends ensuite le joystick.';
+  else if(run.climbed)hint.textContent='Tu es SUR le socle. Joystick : bouger. Maintiens ROUGE pour crier « Camarades ! » ; JAUNE pour redescendre.';
+  else hint.textContent='Approche des marches DEVANT la statue et presse JAUNE. Tu pourras redescendre avec JAUNE.';
+ }
  else hint.textContent=run.cohesion<60?'La foule s’étire : arrête-toi et maintiens le rouge pour rassembler.':'Avance vers Bastille en gardant la foule avec toi. Rouge : appeler les retardataires.';
  if(run.finished)hint.textContent='Les deux cortèges se retrouvent à mi-chemin. « — Par là. »';
+ const up=run.phase===2&&run.climbed&&!run.climb;
+ $('red').classList.toggle('awaiting',up);
+ $('yellow').setAttribute('aria-label',up?'Jaune : redescendre du socle':'Jaune : agir ou monter sur le socle');
+ const yellowCaption=$('yellowLabel');
+ if(yellowCaption)yellowCaption.textContent=up?'REDESCENDRE':run.climb?'MONTÉE / DESCENTE':'AGIR / GRIMPER';
 }
 const send=(type,extra={})=>{if(embedded)parent.postMessage({type,id:sessionId,...extra},location.origin);};
 function drain(){
@@ -324,6 +342,12 @@ function drain(){
    }
    const words=['Drapeau français récupéré !','La foule se met en marche !','Deux cortèges réunis !'];
    messageFeedback(words[e.step-1],1.8);sound(600+80*e.step,.18);
+  }
+  if(e.type==='summit'){
+   messageFeedback('Sur le socle ! Rouge : « Camarades ! »',2.7);sound(660,.22);
+  }
+  if(e.type==='ground'){
+   messageFeedback('De retour au pied des marches.',1.8);
   }
   if(e.type==='won'){
    playing=false;paused=false;refreshHUD();
@@ -372,9 +396,10 @@ function yellowPress(){
  const before=run.phase,climbed=run.climbed;
  const result=yellow(run);
  if(result){
-  if(before===2&&!climbed&&run.climbed){
-   messageFeedback('— Camarades !',2);sound(520,.2);
-  }else actionTransition=.85;
+  if(before===2&&run.climb){
+   messageFeedback(run.climb.direction==='up'?'Montée sur les marches…':'Descente par les marches…',2.2);
+   sound(520,.16);
+  }else actionTransition=.45;
   drain();refreshHUD();
  }else{
   if(run.phase===1)messageFeedback('Avance jusqu’au drapeau.',.9);
@@ -437,11 +462,15 @@ function bindControls(){
  });
 }
 function animateActors(dt,t){
- if(hero){hero.position.set(run.x,0,run.z);
-  const input=changeDir();const running=Math.abs(input.x)+Math.abs(input.y)>.2&&!paused;
-  walking(hero,t,running?1:.03);
-  if(running)hero.rotation.y=Math.atan2(input.x,input.y);
-  if(run.phase===2&&run.climbed)hero.position.y=2.55;
+ if(hero){
+  // The feet are on top of the stone platform, never inside its volume.
+  hero.position.set(run.x,run.height||0,run.z);
+  const input=changeDir();
+  const running=(Math.abs(input.x)+Math.abs(input.y)>.2&&!paused)||!!run.climb;
+  const rallying=run.phase===2&&run.climbed&&!run.climb&&(redHeld||keys.has('r'));
+  walking(hero,t,running?1:.03,rallying);
+  if(run.climb)hero.rotation.y=0;
+  else if(running)hero.rotation.y=Math.atan2(input.x,input.y);
  }
  if(run.phase===1){
   const red=crowdActors[0];if(red){red.guy.position.z=6+Math.sin(t*.4)*1.1;walking(red.guy,t,.25);}
@@ -483,8 +512,9 @@ function render(ms){
  if(showSpeechUntil<t)speech.hidden=true;
  animateActors(dt,t);
  if(hero){
-  const desired=new T.Vector3(run.x,6.15,run.z-12.9);
-  const look=new T.Vector3(run.x,run.phase===2?3.45:1.9,run.z+9.5);
+  const height=run.height||0;
+  const desired=new T.Vector3(run.x+0.55,6.15+height*.82,run.z-12.9);
+  const look=new T.Vector3(run.x,run.phase===2?Math.max(3.4,2.4+height):1.9,run.z+8.0);
   camera.position.lerp(desired,Math.min(1,dt*3.4));
   camera.lookAt(look);
  }
