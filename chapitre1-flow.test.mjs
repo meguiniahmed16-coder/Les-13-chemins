@@ -77,6 +77,8 @@ test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two
  assert.ok(!html.includes('function boardGeometry(){'));
  assert.ok(!html.includes('plateau-large.webp'));
  assert.ok(!html.includes('plateau-mobile.webp'));
+ assert.ok(!build.includes("'plateau-mobile.webp'"));
+ assert.ok(!build.includes("'plateau-large.webp'"));
  assert.ok(!html.includes('host.replaceChildren(...positions.map'));
  assert.ok(ui.includes("host.dataset.mode='chapters-minimal-v1'"));
  assert.ok(ui.includes("const icons=['🌳','🪖']"));
