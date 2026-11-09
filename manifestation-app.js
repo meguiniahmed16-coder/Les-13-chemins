@@ -260,12 +260,6 @@ function banner(root,text,x,z,width=6.0){
  fabric.rotation.y=Math.PI;fabric.position.set(x,3.3,z);root.add(fabric);
  for(const side of [-1,1])root.add(mesh(gCyl,mat(0x685a48),x+side*width*.5,1.65,z,.035,3.4,.035));
 }
-function chapterWall(root){
- const l=roundedText('CHAPITRE 4',3.7,'#ead6b3','#544232');
- l.position.set(11.53,4.1,19);l.rotation.y=-Math.PI/2;root.add(l);
- const name=roundedText('DRAPEAU ROUGE · P. 59–60',4.5,'#ead6b3','#544232');
- name.position.set(11.53,3.15,19);name.rotation.y=-Math.PI/2;root.add(name);
-}
 function sceneFor(phase){
  if(sceneGroup)world.remove(sceneGroup);
  sceneGroup=new T.Group();world.add(sceneGroup);
@@ -275,7 +269,6 @@ function sceneFor(phase){
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
   buildings(root,-20,43);
-  chapterWall(root);
   addBox(root,11.63,3.8,11, .1,7,6,0xd5c5a7);
   const panel=roundedText('ÉCOLE',2.6);panel.position.set(11.54,4.7,11);panel.rotation.y=-Math.PI/2;root.add(panel);
   flag(root,'france',4.1,2.05,12,3.7);
