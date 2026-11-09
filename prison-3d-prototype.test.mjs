@@ -61,3 +61,10 @@ test('Independent runtime was built without modifying the official one',()=>{
   assert.ok(builder.includes(file),'Prototype not included in controlled build: '+file);
  assert.ok(builder.includes("'jeu-yoyo.html'"),'The published game is retained');
 });
+
+test('The existing yo-yo offers a direct optional link to the 3D study',()=>{
+ const official=read('./jeu-yoyo.html').toString('utf8');
+ assert.ok(official.includes('href="prison-3d-prototype.html"'));
+ assert.ok(official.includes('Cette préversion ne modifie pas les points'));
+ assert.ok(official.includes('yoyo-runtime.js'),'The validated game still loads the original engine');
+});
