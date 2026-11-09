@@ -1,6 +1,26 @@
 [
   {
     "level": 1,
+    "city": "Ferney-Voltaire",
+    "area": "Les Marmousets · Prévessin-Moëns",
+    "coordinates": [
+      46.258,
+      6.108
+    ],
+    "altitude": 435,
+    "characters": [
+      "Mustapha",
+      "Ma mère",
+      "Mon père"
+    ],
+    "history": "Voltaire a passé les vingt dernières années de sa vie à Ferney. Son château est devenu un lieu de mémoire du siècle des Lumières.",
+    "historySource": {
+      "url": "https://www.chateau-ferney-voltaire.fr/decouvrir/histoire-du-chateau-de-voltaire",
+      "label": "Centre des monuments nationaux"
+    }
+  },
+  {
+    "level": 2,
     "city": "La Roche-sur-Foron",
     "area": "Éteaux · Haute-Savoie",
     "coordinates": [
@@ -19,7 +39,7 @@
     }
   },
   {
-    "level": 2,
+    "level": 3,
     "city": "Barcelone",
     "area": "Place de Catalogne",
     "coordinates": [
@@ -34,26 +54,6 @@
     "historySource": {
       "url": "https://bid.barcelonaturisme.com/wv3/en/page/5069/placa-de-catalunya.html",
       "label": "Turisme de Barcelona"
-    }
-  },
-  {
-    "level": 3,
-    "city": "Ferney-Voltaire",
-    "area": "Les Marmousets · Prévessin-Moëns",
-    "coordinates": [
-      46.258,
-      6.108
-    ],
-    "altitude": 435,
-    "characters": [
-      "Mustapha",
-      "Ma mère",
-      "Mon père"
-    ],
-    "history": "Voltaire a passé les vingt dernières années de sa vie à Ferney. Son château est devenu un lieu de mémoire du siècle des Lumières.",
-    "historySource": {
-      "url": "https://www.chateau-ferney-voltaire.fr/decouvrir/histoire-du-chateau-de-voltaire",
-      "label": "Centre des monuments nationaux"
     }
   },
   {
