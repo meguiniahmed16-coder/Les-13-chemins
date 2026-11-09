@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172b29">
 <title>Camarades ! — Chemin III · Les rendez-vous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#f6edd8;--gold:#e6bf76;--ink:#172b29;--cream:#fff9e6}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#132420;color:var(--paper);font:14px/1.5 system-ui,Arial,sans-serif}button{font:inherit;cursor:pointer;touch-action:manipulation}button:focus-visible{outline:3px solid #fff8b1;outline-offset:3px}[hidden]{display:none!important}
@@ -12,9 +15,11 @@
 #world{display:block;width:100%;height:100%;touch-action:pan-y}.hud{position:absolute;z-index:2;top:12px;left:12px;right:12px;display:flex;align-items:start;justify-content:space-between;gap:9px;pointer-events:none;text-shadow:0 1px 3px #101b18}
 .hudbox{background:#152b27d9;padding:9px 12px;border:1px solid #bfd4ba7a;border-radius:7px;max-width:70%}.hudbox strong{display:block;font-size:clamp(13px,2vw,20px);line-height:1.3;color:#f8eccb}.hudbox span{font-size:10px;color:#d4e4ce}.pts{font:700 24px/1.1 Georgia,serif;white-space:nowrap;color:#fff0b3}
 .hint{position:absolute;z-index:2;bottom:14px;left:12px;right:12px;pointer-events:none;background:#172d27e7;padding:10px 12px;border:1px solid #e0c58b77;color:#f5efd7;font-size:clamp(11px,1.5vw,14px);text-align:center}
-.chapter-stamp{position:absolute;z-index:3;left:14px;bottom:62px;max-width:calc(100% - 28px);padding:7px 11px;background:#f5e6bfed;color:#304438;border:1px solid #b99d72;box-shadow:0 3px 10px #172a2560;pointer-events:none;line-height:1.45}
-.chapter-stamp strong{display:block;font:600 clamp(13px,1.7vw,19px) Georgia,serif}
-.chapter-stamp span{font:700 10px system-ui,sans-serif;color:#745c3f}
+.chapter-sky{position:absolute;z-index:2;left:50%;top:54px;transform:translateX(-50%);width:min(68%,600px);pointer-events:none;user-select:none}
+.chapter-sky svg{width:100%;height:auto;display:block;overflow:visible;filter:drop-shadow(0 1px 1px #fcebc550)}
+.chapter-sky .chapter-arc{font-family:'Parisienne','URW Chancery L','Apple Chancery',cursive;font-size:45px;font-weight:400;fill:#a92a24;stroke:#b9322630;stroke-width:.45px;paint-order:stroke;letter-spacing:.25px}
+.chapter-sky .chapter-pages{font:italic 19px Georgia,serif;fill:#ab3529;letter-spacing:1.3px}
+@media(max-width:690px){.chapter-sky{top:45px;width:min(78%,460px)}.chapter-sky .chapter-arc{font-size:49px}.chapter-sky .chapter-pages{font-size:21px}}
 .statue-controls{position:absolute;z-index:5;top:41%;right:12px;width:min(350px,46%);border:2px solid #e9d7a8;border-radius:11px;background:#132f29f2;box-shadow:0 8px 23px #061810a9;color:#fff1d1;padding:13px 14px;text-align:center;pointer-events:auto}
 .statue-controls[hidden]{display:none!important}.statue-controls strong{display:block;font-size:13px;letter-spacing:.06em}
 .statue-controls span{display:block;font-size:13px;margin:6px 0 10px;color:#e8dbc1}
@@ -45,7 +50,17 @@
 <section class="screen" aria-label="Manifestation de République vers Bastille en 3D">
 <canvas id="world" aria-label="Rue de Paris en 3D avec foule de manifestants"></canvas>
 <div class="hud"><div class="hudbox"><strong id="goal">1 / 3 · Le drapeau</strong><span id="phase">Paris · printemps 2002</span></div><div class="pts"><span id="score">0</span> / 30</div></div>
-<div class="chapter-stamp" id="chapter-stamp" aria-label="Référence du manuscrit"><strong>Chapitre 4 — « Drapeau rouge »</strong><span>p. 59–60 · Paris, avril 2002</span></div>
+<div class="chapter-sky" id="chapter-sky" role="img" aria-label="Chapitre 4 — « Drapeau rouge », pages 59 à 60. Inscription calligraphiée rouge en arc dans le ciel.">
+<svg viewBox="0 0 720 172" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+ <defs>
+  <path id="chapitreQuatreArc" d="M 40 130 Q 360 -32 680 130"/>
+  <radialGradient id="chapitreQuatreSoleil"><stop offset="0%" stop-color="#e6a86e" stop-opacity=".38"/><stop offset="58%" stop-color="#dc7d54" stop-opacity=".19"/><stop offset="100%" stop-color="#d66d4e" stop-opacity="0"/></radialGradient>
+ </defs>
+ <circle cx="360" cy="101" r="80" fill="url(#chapitreQuatreSoleil)"/>
+ <text class="chapter-arc" text-anchor="middle"><textPath href="#chapitreQuatreArc" startOffset="50%">Chapitre 4 — « Drapeau rouge »</textPath></text>
+ <text class="chapter-pages" x="360" y="153" text-anchor="middle">p. 59–60</text>
+</svg>
+</div>
 <div class="hint" id="hint" role="status">Rejoins le drapeau français sur la façade de l’école.</div>
 <div id="speech" class="speech" hidden>Camarades !</div>
 <div id="statueControls" class="statue-controls" role="group" aria-label="Commandes accessibles en haut de la statue" hidden>
