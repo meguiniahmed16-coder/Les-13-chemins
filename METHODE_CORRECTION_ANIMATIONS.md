@@ -451,3 +451,8 @@ Cette précision de l’auteur remplace les mentions précédentes qui rassembla
 ### 2026-11-09 — Nommer les ensembles « Chemin 1 » et « Chemin 2 »
 
 À la demande de l’auteur, employer **« Chemin 1 »** et **« Chemin 2 »** à la place de « Bloc 1 » et « Bloc 2 » dans la présentation publique. Le premier s’intitule « La salle d’attente » et le second « Le météore ». Harmoniser les compteurs, l’inventaire, les textes de navigation, les libellés accessibles et les en-têtes des jeux. Les numéros et titres des chapitres à l’intérieur restent distincts de ceux des chemins.
+
+
+### 2026-11-09 — Chiffres romains pour les chemins
+
+Afficher **« Chemin I »** et **« Chemin II »**, conformément au choix de l’auteur. Appliquer cette numérotation aux titres, aux en-têtes, à la navigation et au chemin atteint. Les numéros des chapitres, des jeux, les points et les compteurs de quantité conservent leurs chiffres arabes ; les identifiants de progression ne changent pas.

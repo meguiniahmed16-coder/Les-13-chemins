@@ -28,13 +28,14 @@
  document.head.append(css);
  $('board').setAttribute('aria-label','Deux chemins de jeu : le chapitre 1, puis les trois extraits des chapitres 2, 3 et 4.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Deux chemins de jeu : le chapitre 1, puis trois extraits distincts des chapitres 2, 3 et 4 réunis dans le chemin 2.';
+ if(intro)intro.textContent='Deux chemins de jeu : le chapitre 1, puis trois extraits distincts des chapitres 2, 3 et 4 réunis dans le chemin II.';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
  const chapterName='Chapitre 1 — « La salle d’attente »';
  const chapterTwoName='Chapitre 2 — « Même pas mal »';
- const secondBlockName='Chemin 2 · Le météore';
+ const secondBlockName='Chemin II · Le météore';
+ const pathNumeral=n=>['I','II','III','IV','V','VI','VII','VIII','IX','X'][n-1]||String(n);
  const icons=['🌳','🪖'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
  const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison'];
@@ -48,7 +49,7 @@
     button.className='board-target'+(scene===1||scene===4?' chapter-featured':'')+(scene===4?' step-chapters':'');
     button.dataset.level=String(scene);button.dataset.chapter=String(i+1);
     button.append(
-     makeSpan('chapter-card-kicker','CHEMIN '+(i+1)+(scene===1?' · CHAPITRE 1':'')),
+     makeSpan('chapter-card-kicker','CHEMIN '+pathNumeral(i+1)+(scene===1?' · CHAPITRE 1':'')),
      makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Le météore':LEVELS[scene-1].title),
      makeSpan('chapter-card-place',scene===1?'Ferney-Voltaire · La Roche-sur-Foron · Barcelone':scene===4?'Trois extraits, une même étape de jeu.':LEVELS[scene-1].place)
     );
@@ -106,7 +107,7 @@
    button.tabIndex=allowed?0:-1;
    button.setAttribute('aria-label',n===1?chapterName+' · '+flow.scenePassedCount(state)+'/3 scènes terminées':
     n===4?secondBlockName+' · '+flow.CHAPTER2_PARTS.map(p=>'Chapitre '+p.chapter+' — '+p.chapterTitle).join(' ; ')+' · '+flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length+'/3 scènes terminées':
-    'Chemin '+i+' — '+LEVELS[n-1].title+(finished?' terminé':!allowed?' verrouillé':''));
+    'Chemin '+pathNumeral(i)+' — '+LEVELS[n-1].title+(finished?' terminé':!allowed?' verrouillé':''));
    if(n===1){
     button.querySelector('.chapter-card-status').textContent=finished?
      (flow.chapterHasSkips(state,1)?'↷ Les trois scènes sont parcourues':'✓ Les trois scènes sont réussies'):
@@ -182,7 +183,7 @@
   const count=Number(flow.done(state))+Number(flow.chapter2Done(state));
   if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 2 chemins · '+state.points+' points';
   $('count').textContent=count+'/2';
-  $('stage').textContent=Math.min(2,flow.chapterReached(state));
+  $('stage').textContent=pathNumeral(Math.min(2,flow.chapterReached(state)));
  }
  function paintChapterSection(){
   updateProgressBar();
@@ -194,7 +195,7 @@
   if(n<=3){
    header.textContent=chapterName;
    const part=flow.PARTS[n-1];
-   $('levelTag').textContent='CHEMIN 1 · CHAPITRE 1 · JEU '+n+' / 3';
+   $('levelTag').textContent='CHEMIN I · CHAPITRE 1 · JEU '+n+' / 3';
    $('questTitle').textContent=part.title;
    sequence.replaceChildren(...flow.PARTS.map((p,i)=>{
     const b=document.createElement('button');b.type='button';b.className='chapter1-part';
@@ -229,12 +230,12 @@
    if(n===3&&!flow.partDone(state,3))
     $('status').textContent='Partie 3 / 3 : sers les cinq clients à Barcelone pour terminer le chapitre. Le quiz commun est déjà validé.';
   }else if(n===4||n===5){
-   sequence.setAttribute('aria-label','Chemin 2 : extraits des chapitres 2, 3 et 4');
+   sequence.setAttribute('aria-label','Chemin II : extraits des chapitres 2, 3 et 4');
    const secondDone=flow.chapter2PartDone(state,2);
    const activePart=n===4?1:secondDone?3:2;
    const activeChapter=flow.CHAPTER2_PARTS[activePart-1];
    header.textContent='Chapitre '+activeChapter.chapter+' — « '+activeChapter.chapterTitle+' »';
-   $('levelTag').textContent='CHEMIN 2 · JEU '+activePart+' / 3';
+   $('levelTag').textContent='CHEMIN II · JEU '+activePart+' / 3';
    $('questTitle').textContent=n===4?'Sarajevo':secondDone?'La prison':'Le danseur';
    sequence.replaceChildren(...flow.CHAPTER2_PARTS.map(p=>{
     const b=document.createElement('button');b.type='button';b.className='chapter1-part';
@@ -258,11 +259,11 @@
     $('status').textContent='Jeu 1 / 3 · Chapitre 2 — Même pas mal : franchis Sarajevo pour poursuivre dans le même chemin.';
    if(n===5&&!flow.chapter2Done(state)){
     $('status').textContent=secondDone?
-     'Jeu 3 / 3 · Chapitre 4 — Le drapeau rouge : termine les épreuves de la prison pour achever le chemin 2.':
+     'Jeu 3 / 3 · Chapitre 4 — Le drapeau rouge : termine les épreuves de la prison pour achever le chemin II.':
      'Jeu 2 / 3 · Chapitre 3 — Le coup du bus : réussis la danse pour poursuivre vers le chapitre 4, dans le même chemin.';
    }
   }else{
-   $('levelTag').textContent='CHEMIN '+flow.chapterOf(n)+' · EN PRÉPARATION';
+   $('levelTag').textContent='CHEMIN '+pathNumeral(flow.chapterOf(n))+' · EN PRÉPARATION';
   }
   const rewards=[];
   if(flow.done(state))rewards.push('<span class="item">'+
