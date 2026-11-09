@@ -25,7 +25,7 @@
  #boardTargets .step-chapters .chapter-part-state{padding-top:3px}
 }
 `;
- css.textContent+=\`
+ css.textContent+=`
 #boardTargets .rendezvous-card .chapter-part-state{color:#e1dcc9}
 #boardTargets .rendezvous-card[aria-disabled=true] .chapter-card-title{color:#fff9e5}
 #rendezvousDialog{box-sizing:border-box;width:100vw;height:100dvh;max-width:100vw;max-height:100dvh;margin:0;padding:0;border:0;background:#f8f0df;color:#293f37;overflow-y:auto}
@@ -41,7 +41,7 @@
 #rendezvousDialog .rendezvous-future{margin-top:25px;background:#eee1c6;border-left:4px solid #b68e54;padding:17px 23px;font:14px/1.6 'DM Sans',sans-serif}
 #rendezvousDialog .rendezvous-future strong{display:block;font-size:17px;margin-bottom:5px}
 @media(max-width:650px){#rendezvousDialog .rendezvous-top{padding:8px 11px}#rendezvousDialog .rendezvous-top strong{font-size:15px}#rendezvousDialog .rendezvous-top button{padding:9px 10px;font-size:12px}#rendezvousDialog .rendezvous-excerpt{padding:17px 14px}}
-\`;
+`;
  document.head.append(css);
  $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
  const intro=document.querySelector('.board-intro');
