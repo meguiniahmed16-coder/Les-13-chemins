@@ -39,3 +39,14 @@ test('Public page delegates both horse and human art to reusable vector rig',()=
  assert.ok(page.includes('marmousets:won'));
  assert.ok(page.includes("jeu.html?niveau=1"));
 });
+
+test('Schoolchild handwriting writes the exact chapter reference in the sky',()=>{
+ const page=read('arcade-marmousets.html');
+ assert.ok(page.includes('Chapitre 1 — « La salle d’attente », p 17–19.'));
+ assert.ok(page.includes('fonts.googleapis.com/css2?family=Schoolbell'));
+ assert.ok(page.includes('chapterSky(){'));
+ assert.ok(page.includes('this.cloud(1030-cam*.06,130,1.1);this.chapterSky();'));
+ assert.ok(page.includes('c.strokeText(caption,0,0)'));
+ assert.ok(page.includes("c.fillText(caption,0,0)"));
+ assert.ok(page.includes('c.measureText(caption).width<=765'));
+});
