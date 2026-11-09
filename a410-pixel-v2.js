@@ -114,17 +114,15 @@ function sign(g,d){
  text(g,'A410',x+16,113,18,'#f5f3dc');text(g,'→',x+61,116,15,'#f5f3dc');
  box(g,x+40,175,3,29,'#e1e0d2');
 }
-// Trois panneaux en pixel art, de tailles différentes, rapprochés vers le
-// milieu des 400 mètres. Chacun reprend le titre exact, réparti sur quatre lignes.
+// Un seul panneau en pixel art, le dernier (le plus grand) des trois essais.
+// Il reste au milieu des 400 mètres, sans changer le déroulement de la course.
 const CHAPTER_SIGN_TEXT='Chapitre 1 — « La salle d’attente », pages 7–9';
 const CHAPTER_SIGN_LINES=['Chapitre 1 —','« La salle','d’attente »,','pages 7–9'];
 const CHAPTER_SIGN_SPECS=[
- {x:42,y:112,w:60,h:38,font:6,line:8,baseline:10},
- {x:133,y:104,w:72,h:46,font:7,line:10,baseline:11},
  {x:228,y:96,w:84,h:54,font:8,line:12,baseline:13}
 ];
 function chapterRoadSigns(g,d){
- // Les trois panneaux sont simultanément visibles près du milieu (d≈205 m).
+ // Le dernier panneau est visible près du milieu (d≈205 m).
  // Leur mouvement dépend uniquement de la distance, jamais du chronomètre.
  const scroll=Math.round((d-205)*2.7);
  for(const s of CHAPTER_SIGN_SPECS){
