@@ -11,11 +11,11 @@ const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
 const meter=$('meter'),meterValue=$('meterValue');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 let sessionId='standalone',serverSteps=[],run=newRun(),playing=false,paused=false,gameReady=false;
-let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
+let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,escortInstances=null,rallyProps=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
 const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
-let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,autoMarch=false,lastHud=0;
+let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,forwardHeld=false,lastHud=0;
 let cameraOrbit=0,cameraOrbitLeft=0;
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
@@ -158,40 +158,52 @@ function walking(actor,time,strength,signal=false){
  a.arms[1].rotation.x=Math.sin(phase)*.23*energy;
 }
 function buildings(root,start,end,light=false){
- const length=end-start;const green=mat(0x56735e),asphalt=mat(0x545d5e);
- addBox(root,0,-.24,(start+end)/2,17,.35,length+8,0x6b6862);
- addBox(root,0,-.056,(start+end)/2,10,.01,length+8,0x70716b);
+ const len=end-start,mid=(start+end)/2;
+ const canopy=mat(0x587359),slate=mat(0x4f5d64);
+ // Chaussée, trottoirs surélevés et bordures en pierre (style rue parisienne).
+ addBox(root,0,-.18,mid,17,.28,len+8,0x595d60);
+ addBox(root,0,-.029,mid,16,.025,len+8,0x777773);
  for(const side of [-1,1]){
-  addBox(root,side*11,-.06,(start+end)/2,4,.30,length+8,0xa8a398);
-  for(let z=start;z<end;z+=light?22:12){
-   const idx=Math.floor(z*2+side*9)+10,shade=colors.stone[Math.abs(idx)%colors.stone.length];
-   const h=11+rnd(idx)*6;
-   addBox(root,side*14.2,h/2-.05,z+4,5,h,10,shade);
-   // Limestone mansard roof, cornice and architectural windows
-   addBox(root,side*14.2,h+.30,z+4,5.2,.5,10.2,0x6b747a);
-   addBox(root,side*14.2,h-1,z+4,5.1,.18,10.2,0xd6c9ad);
-   for(let floor=light?4:2;floor<=h-2;floor+=light?6.2:3.1){
-    for(let slot=light?0:-1;slot<=(light?0:1);slot++){
-     const xf=side*11.62;
-     const w=addBox(root,xf,floor,z+4+slot*2.7,.09,1.60,.94,0x343d41);
-     addBox(root,xf-side*.09,floor,z+4+slot*2.7,.06,1.5,.067,0xe1d6bf);
-     addBox(root,xf-side*.1,floor-.02,z+4+slot*2.7,.06,.055,.95,0xe5daca);
+  addBox(root,side*10.35,-.02,mid,4.65,.22,len+8,0xd8cbb5);
+  addBox(root,side*8.15,.11,mid,.25,.24,len+8,0xb0a596);
+  // Quelques façades haussmanniennes crème, avec fenêtres et balcons en fer.
+  for(let z=start;z<end;z+=light?20:14){
+   const idx=Math.abs(Math.floor(z/9+side*11));
+   const shade=[0xd7c7ab,0xe0d4be,0xcabda8,0xeadfc8,0xd4c1a2][idx%5];
+   const h=12+rnd(idx+3)*5.2;
+   addBox(root,side*13.8,h/2,z+5,5.1,h,12,shade);
+   addBox(root,side*13.8,h+.15,z+5,5.25,.55,12.4,0x69747b);
+   addBox(root,side*13.8,h-1.05,z+5,5.22,.17,12.2,0xf3e9d4);
+   const xf=side*11.18;
+   // Porte cochère et vitrine en rez-de-chaussée.
+   addBox(root,xf,1.38,z+4,.12,2.65,1.55,0x434f50);
+   addBox(root,xf-side*.12,2.88,z+4,.35,.14,2.0,0xb38b57);
+   for(let floor=light?4:3;floor<h-1;floor+=light?4.4:3.15){
+    for(const slot of (light?[-1,1]:[-1,0,1])){
+     const vz=z+5+slot*3.15;
+     addBox(root,xf,floor,vz,.14,1.6,.95,0x425257);
+     addBox(root,xf-side*.14,floor,vz,.07,1.5,.07,0xf1e4cc);
+     addBox(root,xf-side*.13,floor-.81,vz,.35,.17,1.25,0xd6c9b4);
+     if(floor<7.6){
+      addBox(root,xf-side*.42,floor-.82,vz,.66,.09,2.0,0xb8b0a3);
+      addBox(root,xf-side*.7,floor-.37,vz,.07,.8,2.1,0x35403d);
+     }
     }
    }
   }
  }
- for(let z=start+4;z<end;z+=light?18:8){
-  addBox(root,-3.1,.0,z,.11,.025,2.0,0xe3dfc6);
-  addBox(root, 3.1,.0,z,.11,.025,2.0,0xe3dfc6);
+ for(let z=start+4;z<end;z+=light?19:11){
+  addBox(root,-2.9,-.004,z,.09,.022,2.15,0xe7dfcc);
+  addBox(root,2.9,-.004,z,.09,.022,2.15,0xe7dfcc);
  }
- // Lamps and plane trees repeat at a reasonable cadence.
- for(let z=start+7;z<end;z+=light?38:24){
-  for(const side of [-1,1]){
-   addBox(root,side*8.2,2.9,z,.11,5.8,.11,0x434c49);
-   addBox(root,side*7.86,5.7,z,.73,.15,.35,0xd9d3ae);
-   if(z%2<1){addBox(root,side*9.5,1.85,z+5,.28,3.7,.28,0x735944);
-    root.add(mesh(gSphere,green,side*9.5,4.7,z+5,1.5,2.1,1.5));}
-  }
+ // Passages piétons, terrasses, platanes et réverbères à intervalles espacés.
+ for(let z=start+15;z<end;z+=55)
+  for(let x=-6.6;x<=6.6;x+=1.5)addBox(root,x,.003,z,.78,.026,2.4,0xece6d8);
+ for(let z=start+12;z<end;z+=light?35:25)for(const side of [-1,1]){
+  addBox(root,side*8.85,2.75,z,.12,5.5,.12,0x3f4b47);
+  addBox(root,side*8.5,5.45,z,.7,.16,.3,0xdfd4b3);
+  addBox(root,side*10.25,1.8,z+8,.3,3.6,.3,0x735c47);
+  root.add(mesh(gSphere,canopy,side*10.25,4.35,z+8,1.45,1.9,1.35));
  }
 }
 function statue(root){
@@ -231,7 +243,7 @@ function makeCrowd(root,count,baseZ,{reveal=false,spread=7}={}){
  }
  return arr;
 }
-function distantCrowd(root,baseZ,count){
+function distantCrowd(root,baseZ,count,follow=false){
  // Four draw calls rather than hundreds of detailed models.
  const body=new T.InstancedMesh(gBox,mat(0x5f645a),count);
  const head=new T.InstancedMesh(gSphere,mat(0xcaa17b),count);
@@ -240,7 +252,7 @@ function distantCrowd(root,baseZ,count){
  const hat=new T.InstancedMesh(gBox,mat(0x484944),hatCount);
  const dummy=new T.Object3D(),col=new T.Color();
  for(let i=0;i<count;i++){
-  const x=(rnd(i*31+5)-.5)*14,z=baseZ+(rnd(i*61+1)-.5)*21;
+  const x=(rnd(i*31+5)-.5)*(follow?9:14),z=follow?run.z-8-rnd(i*61+1)*6:baseZ+(rnd(i*61+1)-.5)*21;
   dummy.position.set(x,.95,z);dummy.scale.set(.42,.77,.28);dummy.updateMatrix();body.setMatrixAt(i,dummy.matrix);
   col.setHex(colors.coat[i%colors.coat.length]);body.setColorAt(i,col);
   dummy.position.set(x,1.66,z);dummy.scale.set(.19,.22,.18);dummy.updateMatrix();head.setMatrixAt(i,dummy.matrix);
@@ -249,7 +261,32 @@ function distantCrowd(root,baseZ,count){
   if(i<hatCount){dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}
  }
  root.add(body,head,legs,hat);staticFar.push(body,head,legs,hat);
+ if(follow)escortInstances={body,head,legs,hat,count,hatCount};
 }
+function moveEscortInstances(){
+ if(!escortInstances)return;
+ const {body,head,legs,hat,count,hatCount}=escortInstances;
+ const dummy=new T.Object3D();
+ const center=run.phase===3?run.leaderZ:run.z-7;
+ for(let i=0;i<count;i++){
+  const x=clamp(run.x*.28+(rnd(i*31+5)-.5)*8.5,-7,7);
+  const z=behindNarrator(run.z,center-1.5+(rnd(i*61+1)-.5)*6.0,4.8);
+  dummy.position.set(x,.95,z);dummy.scale.set(.42,.77,.28);dummy.updateMatrix();body.setMatrixAt(i,dummy.matrix);
+  dummy.position.set(x,1.66,z);dummy.scale.set(.19,.22,.18);dummy.updateMatrix();head.setMatrixAt(i,dummy.matrix);
+  dummy.position.set(x,.4,z);dummy.scale.set(.33,.80,.24);dummy.updateMatrix();legs.setMatrixAt(i,dummy.matrix);
+  if(i<hatCount){dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}
+ }
+ for(const part of [body,head,legs,hat])part.instanceMatrix.needsUpdate=true;
+}
+function crowdSymbols(root,tricolor=false){
+ rallyProps=new T.Group();root.add(rallyProps);
+ protestSign(rallyProps,'NON À LE PEN',-3,-1,2.9);
+ protestSign(rallyProps,'LIBERTÉ ÉGALITÉ',3,-3,3.4);
+ banner(rallyProps,'TOUS ENSEMBLE',0,-5.3,5.5);
+ flag(rallyProps,tricolor?'france':'red',-4,0,-3.0,3.1);
+ if(tricolor)flag(rallyProps,'france',4,0,-2.0,2.9);
+}
+
 
 function protestSign(root,text,x,z,width=3.2,paint='#f3e1b9'){
  const pole=mesh(gBox,mat(0x80664b),x,1.35,z,.065,2.65,.065);root.add(pole);
@@ -264,43 +301,35 @@ function banner(root,text,x,z,width=6.0){
 function sceneFor(phase){
  if(sceneGroup)world.remove(sceneGroup);
  sceneGroup=new T.Group();world.add(sceneGroup);
- stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;
+ stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;escortInstances=null;rallyProps=null;
  const root=sceneGroup,sky=phase===1?0xb8cdd5:phase===2?0xb8c7d3:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
-  // Le joueur commence déjà sur la statue et la foule est derrière.
   buildings(root,-23,46,true);statue(root);
-  crowdActors=makeCrowd(root,9,-13,{spread:7});
-  distantCrowd(root,-27,40);
-  protestSign(root,'NON À LE PEN',-4,-6,3.2);
-  protestSign(root,'ENSEMBLE CONTRE LA HAINE',5,-8,4.4);
-  banner(root,'LA RÉPUBLIQUE POUR TOUS',0,-17,7.2);
+  crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
+  distantCrowd(root,-8,24,true);
+  crowdSymbols(root,false);
  }else if(phase===2){
-  // Après la statue, on cherche le drapeau français devant l'école.
   buildings(root,-20,43,true);
   addBox(root,11.63,3.8,11,.1,7,6,0xd5c5a7);
   const school=roundedText('ÉCOLE',2.6);school.position.set(11.54,4.7,11);school.rotation.y=-Math.PI/2;root.add(school);
-  flag(root,'france',4.1,2.05,12,3.7);
-  const red=person(73);red.position.set(-2,0,6);red.rotation.y=.2;root.add(red);
-  flag(red,'red',.25,1.26,0,2);
-  crowdActors=[{guy:red,x:-2,z:6,seed:27}];
-  addBox(root,4.1,.28,12,2.2,.56,2.3,0xc9bea6);
-  distantCrowd(root,-27,40);
+  // Drapeau planté au niveau de la chaussée, sans l'ancien bloc blanc sous lui.
+  flag(root,'france',4.1,0,12,4.4);
+  crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
+  distantCrowd(root,-8,24,true);
+  crowdSymbols(root,false);
  }else{
   buildings(root,-7,135,true);
-  crowdActors=makeCrowd(root,9,-12,{spread:6});
-  distantCrowd(root,-27,40);
+  crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
+  distantCrowd(root,-8,24,true);
+  crowdSymbols(root,true);
   bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
-  distantCrowd(bastilleCrowd,110,55);
-  for(let i=0;i<6;i++)flag(root,i%3===0?'france':'red',(rnd(i+25)-.5)*12,0,98+(rnd(i+66)-.5)*18,3.2);
+  distantCrowd(bastilleCrowd,110,48);
   banner(root,'RÉPUBLIQUE — BASTILLE',0,92,7.6);
-  protestSign(root,'NON À LE PEN',-5,84,3.0);
-  protestSign(root,'TOUS ENSEMBLE',5,95,3.1);
   protestSign(root,'NON À LA HAINE',-4,103,3.1);
   const destination=roundedText('BASTILLE',5);destination.position.set(0,5.2,108);root.add(destination);
  }
  hero=person(2,{hero:true});root.add(hero);
- // Le narrateur ne porte le drapeau qu'après l'avoir récupéré.
  if(phase===3)flag(hero,'france',.40,1.05,0,2.6);
  stageInWorld=phase;
 }
@@ -316,10 +345,12 @@ function refreshHUD(){
  $('meterLabel').textContent=p===1?'APPEL DE LA RÉPUBLIQUE':p===2?'DRAPEAU À RÉCUPÉRER':'COHÉSION DU CORTÈGE';
  if(p===1)hint.textContent=run.climb?'Tu descends chercher le drapeau français devant l’école.':run.statueShouted?'La foule a entendu ton appel. Descente dans un instant.':'Tu es sur la statue : appuie sur « Camarades ! ».';
  else if(p===2)hint.textContent='Va jusqu’au drapeau français devant l’école. JAUNE pour le récupérer.';
- else hint.textContent='Vers Bastille : '+Math.min(100,Math.floor(run.z))+' / 100 · Le cortège suit derrière. Joystick pour guider.';
+ else if(run.z>=99&&run.cohesion<68)hint.textContent='Bastille ! Arrête-toi et maintiens ROUGE pour regrouper le cortège et terminer.';
+ else if(run.cohesion<56)hint.textContent='La foule prend du retard ! Arrête-toi, puis maintiens ROUGE pour la rassembler.';
+ else hint.textContent='Vers Bastille : '+Math.min(100,Math.floor(run.z))+' / 100. Avance ; quand la foule s’étire, arrête-toi et utilise ROUGE.';
  if(run.finished)hint.textContent='Les cortèges se rencontrent. « — On va où maintenant ? — Par là. »';
  const march=$('advanceBastille');
- if(march){march.hidden=p!==3||!playing;march.textContent=autoMarch?'❚❚ Arrêter la marche':'▶ Avancer vers Bastille';}
+ if(march){march.hidden=p!==3||!playing;march.textContent='Maintenir pour avancer ▶';}
  const up=playing&&!paused&&p===1&&!run.statueShouted&&!run.climb;
  const panel=$('statueControls');if(panel)panel.hidden=!up;
  if(up){$('statueProgress').textContent='La foule attend ton appel.';$('statueCall').textContent='📣 Crier « Camarades ! »';}
@@ -359,7 +390,7 @@ function drain(){
 function card(titleText,bodyText){overlay.hidden=false;$('overlayTitle').textContent=titleText;$('overlayText').textContent=bodyText;}
 function start(){
  if(!gameReady)return;
- $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;autoMarch=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;
+ $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;forwardHeld=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
 }
 function pause(){
@@ -396,7 +427,7 @@ function callCrowd(){
   if(!run.statueShouted&&callFromStatue(run)){drain();refreshHUD();}
   return;
  }
- if(run.phase===3)messageFeedback('On reste ensemble !',1.0);
+ if(run.phase===3)messageFeedback('— Ensemble ! Restez avec moi !',1.0);
  sound(310,.08);
 }
 function yellowPress(){
@@ -404,7 +435,7 @@ function yellowPress(){
  const before=run.phase,result=yellow(run);
  if(result){
   drain();refreshHUD();
-  if(before===2){autoMarch=true;joy={x:0,y:0};keys.clear();redHeld=false;sceneFor(3);messageFeedback('Drapeau récupéré ! Direction Bastille.',2);sound(640,.16);}
+  if(before===2){forwardHeld=false;joy={x:0,y:0};keys.clear();redHeld=false;sceneFor(3);messageFeedback('Drapeau récupéré ! Avance avec le joystick ; arrête-toi pour regrouper la foule.',2.8);sound(640,.16);}
  }else if(before===2)messageFeedback('Approche-toi du drapeau français.',1.2);
 }
 function changeDir(){
@@ -414,7 +445,7 @@ function changeDir(){
  const fwd=Number(keys.has('arrowup')||keys.has('z')||keys.has('w'));
  const back=Number(keys.has('arrowdown')||keys.has('s'));
  const manualY=clamp(joy.y+fwd-back,-1,1);
- return {x:-clamp(joy.x+right-left,-1,1),y:run.phase===3&&autoMarch&&Math.abs(manualY)<.15?1:manualY,red:redHeld||keys.has('r')};
+ return {x:-clamp(joy.x+right-left,-1,1),y:clamp(manualY+Number(run.phase===3&&forwardHeld),-1,1),red:redHeld||keys.has('r')};
 }
 function bindControls(){
  const zone=$('stick'),knob=$('knob');
@@ -448,14 +479,19 @@ function bindControls(){
   if(!has&&key==='v'&&playing){cameraOrbit=0;cameraOrbitLeft=Math.PI*2;}
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();redHeld=false;red.classList.remove('held');release();});
+ window.addEventListener('blur',()=>{keys.clear();redHeld=false;forwardHeld=false;red.classList.remove('held');release();});
  $('start').onclick=()=>{if(paused){paused=false;overlay.hidden=true;return;}start();};
  $('replay').onclick=start;
  $('quit').onclick=()=>send('manifestation:close');
  $('back').onclick=()=>send('manifestation:close');
  $('next').onclick=()=>send('manifestation:next');
  $('pause').onclick=pause;
- $('advanceBastille').onclick=()=>{if(run.phase!==3||!playing)return;autoMarch=!autoMarch;refreshHUD();};
+ const march=$('advanceBastille');
+ march.addEventListener('pointerdown',e=>{if(run.phase!==3||!playing)return;e.preventDefault();forwardHeld=true;try{march.setPointerCapture(e.pointerId);}catch{}});
+ const stopMarch=()=>{forwardHeld=false;};
+ for(const event of ['pointerup','pointercancel','lostpointercapture','pointerleave'])march.addEventListener(event,stopMarch);
+ march.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)&&run.phase===3){forwardHeld=true;e.preventDefault();}});
+ march.addEventListener('keyup',stopMarch);
  $('turn360').onclick=()=>{if(!playing)return;cameraOrbit=0;cameraOrbitLeft=Math.PI*2;};
  $('statueCall').onclick=callCrowd;
  $('statueDescend').onclick=yellowPress;
@@ -471,30 +507,26 @@ function bindControls(){
 function animateActors(dt,t){
  if(hero){
   hero.position.set(run.x,run.height||0,run.z);
-  const input=changeDir();
-  const running=(run.phase!==1&&(Math.abs(input.x)+Math.abs(input.y)>.2&&!paused))||!!run.climb;
-  const rallying=run.phase===1&&run.statueShouted&&!run.climb;
-  walking(hero,t,running?1:.03,rallying);
+  const input=changeDir(),moving=Math.abs(input.x)+Math.abs(input.y)>.2&&!paused;
+  walking(hero,t,moving?1:.03,run.phase===1&&run.statueShouted&&!run.climb);
   hero.rotation.y=run.facing+cameraOrbit;
  }
- if(run.phase===2){
-  const red=crowdActors[0];if(red){red.guy.position.z=6+Math.sin(t*.4)*1.1;walking(red.guy,t,.25);}
- }else if(run.phase===1){
-  for(const a of crowdActors){walking(a.guy,t,run.climbed?run.mobilisation/130:.13);
-   const swell=run.climbed?run.mobilisation/100:0;
-   a.guy.position.x=a.x*(1+swell*.08);
-   a.guy.position.z=behindNarrator(run.z,a.z+swell*(rnd(a.seed+37)-.5)*1.0,4.5);
-   a.guy.rotation.y=.12*Math.sin(t*.6+a.seed);}
- }else{
-  if(bastilleCrowd)bastilleCrowd.visible=run.z>=83;
-  for(const a of crowdActors){
-   const offset=(a.z+12)/2.6;
-   const z=behindNarrator(run.z,run.leaderZ-2+offset+Math.sin(t*.7+a.seed)*.18,5.5);
-   const x=a.x*.60+(rnd(a.seed+92)-.5)*(100-run.cohesion)*.030;
-   a.guy.position.set(x,0,z);walking(a.guy,t,.9);
-   a.guy.rotation.y=Math.sin(t*.42+a.seed)*.12;
-  }
+ const input=changeDir(),moving=Math.abs(input.x)+Math.abs(input.y)>.18&&!paused;
+ const red=redHeld||keys.has('r');
+ const lead=run.phase===3?run.leaderZ:run.z-6.8;
+ // Les mêmes camarades restent VISIBLES et PHYSIQUEMENT derrière le joueur.
+ for(const follower of crowdActors){
+  const seed=follower.seed;
+  const z=behindNarrator(run.z,lead+(rnd(seed*71+13)-.5)*4.3,4.8);
+  const x=clamp(run.x*.27+follower.x*.66,-7.4,7.4);
+  follower.guy.position.set(x,0,z);
+  follower.guy.rotation.y=Math.sin(t*.31+seed)*.09;
+  walking(follower.guy,t,moving?0.9:red?0.8:0.08);
  }
+ moveEscortInstances();
+ if(rallyProps)rallyProps.position.set(run.x*.27,0,lead-2.5);
+ if(bastilleCrowd)bastilleCrowd.visible=run.z>=83;
+
  for(const f of stageFlags)for(const piece of f.fabric){
   const pos=piece.gm.attributes.position;
   for(let i=0;i<pos.count;i++){
@@ -514,7 +546,7 @@ function render(ms){
   const phase=run.phase;advance(run,dt,changeDir());
   drain();
   if(phase!==run.phase){
-   if(run.phase===3){autoMarch=true;joy={x:0,y:0};keys.clear();redHeld=false;}
+   if(run.phase===3){forwardHeld=false;joy={x:0,y:0};keys.clear();redHeld=false;}
    sceneFor(run.phase);
    messageFeedback(run.phase===2?'Va chercher le drapeau français !':'Drapeau en main : vers Bastille !',2.3);
    refreshHUD();
@@ -530,10 +562,12 @@ function render(ms){
   if(cameraOrbitLeft<.004){cameraOrbitLeft=0;cameraOrbit=0;}
  }
  if(hero){
-  const y=run.height||0,theta=cameraOrbit;
-  const radius=run.phase===1?12.8:12.9;
-  const target=new T.Vector3(run.x,Math.max(1.8,y+1.7),run.z+1.1);
-  const desired=new T.Vector3(run.x+Math.sin(theta)*radius,6.1+y*.92,run.z-Math.cos(theta)*radius);
+  const height=run.height||0,theta=cameraOrbit;
+  // RECOIL CAMERA : la foule, à 5–15 m derrière le héros, est dans le cadre
+  // et pas derrière l'objectif comme dans les versions précédentes.
+  const radius=run.phase===1?26:25;
+  const target=new T.Vector3(run.x,Math.max(1.8,height+1.7),run.z+1.0);
+  const desired=new T.Vector3(run.x+Math.sin(theta)*radius,9.5+height*.85,run.z-Math.cos(theta)*radius);
   camera.position.lerp(desired,Math.min(1,Math.max(.012,dt)*3.4));
   camera.lookAt(target);
  }

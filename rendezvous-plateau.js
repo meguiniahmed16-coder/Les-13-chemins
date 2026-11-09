@@ -57,7 +57,7 @@
    readerReference.textContent='Extrait du chapitre 4 — « Drapeau rouge », p. 59–60.';readerReference.hidden=false;
    excerpt.hidden=false;
    infoHeading.textContent='Jeu 1 / 3 · Camarades !';
-   infoBody.textContent='Trois épreuves : commencer sur la statue et appeler la foule, récupérer le drapeau français, puis réunir les cortèges. Joystick, jaune et rouge. 10 points par épreuve réussie, une seule fois.';
+   infoBody.textContent='Trois épreuves : appeler la foule depuis la statue, récupérer le drapeau français, puis marcher vers Bastille en s'arrêtant pour regrouper la foule avec ROUGE. Joystick, jaune et rouge. 10 points par épreuve réussie, une seule fois.';
    launch.hidden=false;
   }else{
    kicker.textContent='Chemin III · Les rendez-vous';
@@ -82,7 +82,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261109-statue360-v8';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261109-rally-paris-v9';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){
