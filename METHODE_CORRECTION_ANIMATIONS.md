@@ -282,3 +282,9 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - En vue de profil sur le cheval, **une seule jambe** de l'enfant est dessinée du côté visible. La seconde reste entièrement masquée de l'autre côté du cheval.
 - Supprimer le second contour de jambe et la seconde chaussure dans le bloc `mounted>0` de `marmousets-art-v2.js` ; ne pas modifier les quatre jambes du cheval.
 - Conserver les animations de montée, cabré, saut, descente, les personnages à pied et le score. Vérifier avec un test ciblé la silhouette montée.
+
+### 2026-11-09 — Marmousets : deux jambes à terre / une jambe pleine en selle
+- **Erreur corrigée :** l'ancienne jambe unique du cavalier était un simple contour (`fill=null`) et apparaissait même lors des premières images où l'enfant était encore à terre.
+- **Nouvelle règle d'animation :** immobile à terre et au début de la montée (`mount<=0.32`) : un personnage entier avec **deux jambes et deux chaussures** ; lorsque l'enfant est sur le cheval : **une seule jambe du côté visible** et une seule botte, toutes deux avec remplissage opaque. Après la descente, dessin complet à deux jambes.
+- **Tests graphiques :** contrôle des poses au sol, au début / à la fin de la montée, à la marche, au cabré, au saut et à la descente. Test automatisé des contours fermés, du remplissage du pantalon, de la botte et du nombre de jambes selon la pose.
+- **Portée :** dessin seul ; aucune modification des parcours, des commandes, des points, des cartes ou du chapitre.
