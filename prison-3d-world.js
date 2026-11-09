@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {BAR_X} from './yoyo-core.js';
 export const CHARACTER_FILE='danse-quaternius-hero.glb';
-export const ROOM={width:3.3,depth:3.3,height:3.05};
+export const ROOM={width:3.3,depth:2.75,height:3.05}; // about 9.1 m², not a surveyed dimension
 export const ITEMS=['Trouver la brosse','Attraper le tabac','Récupérer le café'];
 export const worldX=(unit,aspect=16/9)=>(unit-.5)*2*.88*Math.tan(63*Math.PI/360)*Math.max(.85,aspect);
 const mat=(color,rough=.86,metalness=0)=>new T.MeshStandardMaterial({color,roughness:rough,metalness});
