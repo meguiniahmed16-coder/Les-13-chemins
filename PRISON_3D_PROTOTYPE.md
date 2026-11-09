@@ -104,7 +104,7 @@ conserve l'axe du sac dans son ouverture après l'accroche, même si le joueur d
 Le cintre est présenté de profil et la tête de brosse tournée pour présenter son épaisseur.
 
 La réussite est transmise au plateau par la session courante et termine le jeu 3/3
-du chemin 2, consacré au chapitre 4 « Le drapeau rouge ». Ce chemin regroupe
+du chemin II, consacré au chapitre 4 « Le drapeau rouge ». Ce chemin regroupe
 Sarajevo (chapitre 2), le danseur (chapitre 3) et la prison (chapitre 4). Le jeu ne lit ni n’écrit directement les sauvegardes de progression.
 
 ## Ressources et licences

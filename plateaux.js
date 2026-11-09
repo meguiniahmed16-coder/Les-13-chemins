@@ -25,7 +25,7 @@
  answer=function(index){if(state.selected!==5)return oldAnswer(index);refresh();if(state.dansePending){open(dance);return;}if(progress().finished.includes(1)||state.quizPassed?.[5])return;const correct=index===LEVELS[4].correct;if(correct){state.quizPassed??={};state.quizPassed[5]=true;state.points+=100;}else{state.tries[5]=(state.tries[5]||0)+1;state.points=Math.max(0,state.points-10);}score.begin(state,correct,crypto.randomUUID());save();render();focusGameEntry();};
  render=function(){progress();for(const id of ['danseLaunch','yoyoLaunch','danceReplay','plateauxRoute'])$(id)?.remove();$('options').hidden=false;$('question').hidden=false;$('read-stage-link').onclick=null;oldRender();if(state.selected!==5)return;const p=progress(),second=p.finished.includes(1),done=state.completed.includes(5),hasGame=second||!!state.dansePending||!!state.quizPassed?.[5];
   const route=document.createElement('div');route.id='plateauxRoute';route.className='plateaux-route';route.innerHTML='<span class="'+(!second?'active':'')+'">'+(second?'✓ ':'')+'Chapitre 3 · Le danseur</span><span class="'+(second?'active':'')+'">'+(state.yoyoFinished?'✓ ':'')+'Chapitre 4 · La prison</span>';$('place').after(route);
-  $('levelTag').textContent='Chemin 2 / 2 · Chapitre '+(second?'4':'3')+' · Jeu '+(second?'3':'2')+' / 3';
+  $('levelTag').textContent='Chemin II · Chapitre '+(second?'4':'3')+' · Jeu '+(second?'3':'2')+' / 3';
   $('status').textContent=second?(done?'✓ Les trois jeux de ce chemin sont réussis. Le voyage peut continuer.':'La danse est réussie. Trois épreuves t’attendent à Strasbourg : 30 points.'):(state.dansePending?(state.quizPassed?.[5]?'Quiz du chemin déjà validé. ':'')+'Gagne le jeu de danse pour poursuivre vers Strasbourg.':'Retrouve Lionel dans le chapitre 3 « Le coup du bus », deuxième jeu de ce chemin.');
   if(second){$('questTitle').textContent='Un fil entre les barreaux';$('place').textContent='📍 Strasbourg · La cellule des arrivants';$('options').hidden=true;$('question').hidden=true;$('read-stage-link').href='lecture.html?niveau=5&plateau=2';$('read-stage-link').onclick=e=>{e.preventDefault();readStrasbourg();};$('map-stage-link').href='carte.html?niveau=5&plateau=2';$('travelHint').textContent=done?'Les trois jeux de ce chemin sont terminés. Le voyage peut continuer.':'Chapitre 4 « Le drapeau rouge » : termine les trois épreuves de la cellule pour achever ce chemin.';}
   else if(state.dansePending){document.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);}
@@ -42,7 +42,7 @@
    prisonExitTimer=setTimeout(()=>{if(yoyoWon&&state.completed.includes(5)&&yoyo.dialog.open)closeYoyo();},2000);
   }}if(m.type==='yoyo:replay'&&state.yoyoFinished&&!state.yoyoPending){flow.beginYoyo(state,crypto.randomUUID());yoyoWon=false;save();context(yoyo);}}
  });
- // Navigation sous les deux derniers mini-jeux du chemin 2.
+ // Navigation sous les deux derniers mini-jeux du chemin II.
  // "Retour" stops automatic chaining, "Suivant" preserves wins or skips.
  window.TreizePlateauxNavigation={
   back(which){

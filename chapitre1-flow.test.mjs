@@ -105,7 +105,7 @@ test('Step two keeps a single featured card and distinguishes the three book cha
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js');
  const levels=JSON.parse(html.match(/const LEVELS=(\[.*?\]);\s*const AVATARS=/s)[1]);
  assert.equal(levels[3].title,'Même pas mal');
- assert.ok(ui.includes('Chemin 2 · Le météore'));
+ assert.ok(ui.includes('Chemin II · Le météore'));
  assert.ok(ui.includes('chapter-literary-part'));
  assert.ok(!ui.includes('De Sarajevo à Strasbourg'),'No invented collective title replaces the three chapter names');
  assert.ok(ui.includes('chapterTitle'),'The card renders titles from the distinct chapter metadata');
@@ -256,6 +256,6 @@ test('One step groups the three games while each page and dialog names its own b
   ['jeu-danse.html',3,'Le coup du bus',2],['jeu-yoyo.html',4,'Le drapeau rouge',3]]){
   const page=read('./'+file);
   assert.match(page,new RegExp('Chapitre '+chapter+'[^<\\n]*'+title,'i'),file+' displays its book chapter');
-  assert.match(page,new RegExp('Chemin 2[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
+  assert.match(page,new RegExp('Chemin II[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
  }
 });

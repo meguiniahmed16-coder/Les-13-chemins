@@ -1,11 +1,12 @@
 /* A bounded interlude: dice, the whole atlas, departure, travel, arrival. */
 (function(root){
  'use strict';
+ const pathNumeral=n=>['I','II','III','IV','V','VI','VII','VIII','IX','X'][n-1]||String(n);
  function chapterArrivalLabel(level,titles=[],plateau=1){
   if(level<=3)return 'Chapitre 1 — « La salle d’attente »';
   if(level===4)return 'Chapitre 2 — « Même pas mal »';
   if(level===5)return Number(plateau)===2?'Chapitre 4 — « Le drapeau rouge »':'Chapitre 3 — « Le coup du bus »';
-  return 'Chemin '+(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
+  return 'Chemin '+pathNumeral(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
  }
  const styles=`
  #diceDialog.journey-open{width:min(920px,96vw);max-width:96vw;padding:18px;overflow:hidden}
