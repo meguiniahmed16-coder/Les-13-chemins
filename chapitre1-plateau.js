@@ -1,4 +1,4 @@
-/* Deux chemins de jeu : chapitre 1, puis trois extraits des chapitres 2, 3 et 4. */
+/* Trois chemins : I chapitre 1, II chapitres 2-4, III Les rendez-vous chapitres 4-6. */
 (function(){
  'use strict';
  const flow=window.TreizeChapitre1;
@@ -25,16 +25,67 @@
  #boardTargets .step-chapters .chapter-part-state{padding-top:3px}
 }
 `;
+ css.textContent+=\`
+#boardTargets .rendezvous-card .chapter-part-state{color:#e1dcc9}
+#boardTargets .rendezvous-card[aria-disabled=true] .chapter-card-title{color:#fff9e5}
+#rendezvousDialog{box-sizing:border-box;width:100vw;height:100dvh;max-width:100vw;max-height:100dvh;margin:0;padding:0;border:0;background:#f8f0df;color:#293f37;overflow-y:auto}
+#rendezvousDialog::backdrop{background:#152820e8}
+#rendezvousDialog .rendezvous-top{position:sticky;top:0;z-index:3;background:#253e36;color:#fff4dc;padding:12px clamp(16px,4vw,45px);display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:3px solid #b68e54}
+#rendezvousDialog .rendezvous-top strong{font:600 clamp(16px,2vw,22px) 'Cormorant Garamond',Georgia,serif}
+#rendezvousDialog .rendezvous-top button{padding:11px 15px;background:#f5e8cd;color:#293e35;border:1px solid #b18a55;border-radius:5px;font:600 13px 'DM Sans',sans-serif;cursor:pointer;min-height:44px}
+#rendezvousDialog .rendezvous-content{max-width:940px;margin:0 auto;padding:26px clamp(14px,4vw,58px) 75px}
+#rendezvousDialog .rendezvous-kicker{font:700 11px 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8a7046}
+#rendezvousDialog h2{font:600 clamp(38px,6vw,61px)/1.1 'Cormorant Garamond',Georgia,serif;margin:8px 0 15px}
+#rendezvousDialog .rendezvous-excerpt{font:clamp(18px,2vw,24px)/1.86 Georgia,serif;background:#fffaf0;border:1px solid #cbb896;padding:clamp(18px,4vw,45px)}
+#rendezvousDialog .rendezvous-excerpt p{margin:0 0 1.15em}#rendezvousDialog .rendezvous-excerpt p:last-child{margin:0}
+#rendezvousDialog .rendezvous-future{margin-top:25px;background:#eee1c6;border-left:4px solid #b68e54;padding:17px 23px;font:14px/1.6 'DM Sans',sans-serif}
+#rendezvousDialog .rendezvous-future strong{display:block;font-size:17px;margin-bottom:5px}
+@media(max-width:650px){#rendezvousDialog .rendezvous-top{padding:8px 11px}#rendezvousDialog .rendezvous-top strong{font-size:15px}#rendezvousDialog .rendezvous-top button{padding:9px 10px;font-size:12px}#rendezvousDialog .rendezvous-excerpt{padding:17px 14px}}
+\`;
  document.head.append(css);
- $('board').setAttribute('aria-label','Deux chemins de jeu : le chapitre 1, puis les trois extraits des chapitres 2, 3 et 4.');
+ $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Deux chemins de jeu : le chapitre 1, puis trois extraits distincts des chapitres 2, 3 et 4 réunis dans le chemin II.';
+ if(intro)intro.textContent='Chemin I · La salle d’attente ; chemin II · Le météore ; chemin III · Les rendez-vous (trois jeux des chapitres 4, 5 et 6 en préparation).';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
  const chapterName='Chapitre 1 — « La salle d’attente »';
  const chapterTwoName='Chapitre 2 — « Même pas mal »';
  const secondBlockName='Chemin II · Le météore';
+ const thirdBlockName='Chemin III · Les rendez-vous';
+ const thirdParts=Object.freeze([
+  {chapter:4,title:'Drapeau rouge',scene:'Strasbourg · La reddition'},
+  {chapter:5,title:'Passe-muraille',scene:'Scène à sélectionner'},
+  {chapter:6,title:'Tu veux bien t’occuper de moi ?',scene:'Scène à sélectionner'}
+ ]);
+ const thirdExtract=["Plus tard, à Strasbourg, j’ai participé à une manifestation en faveur des sans-papiers.","Je n’avais rien organisé et j’étais plutôt là en touriste. Mais j’étais beaucoup passé à la télévision au cours des semaines précédentes. J’étais devenu reconnaissable. La manifestation a assez mal tourné. Il y a eu d’importantes dégradations dans le centre-ville. Et manifestement, il fallait rapidement trouver des responsables. À un moment, je commence à sentir que la police en a après moi. T’es parano. C’est dans ta tête. Puis des manifestants viennent me voir.","— Mais qu’est-ce que t’as fait ?","Merde. Je ne suis peut-être pas parano. Un policier finit par me désigner franchement.","— Toi. Viens là.","Pris par surprise, je donne probablement la réponse la moins appropriée à un policier :","— Non.","Et je pars dans l’autre sens. Évidemment, l’étau commence à se resserrer. C’est devenu évident : c’est moi qu’ils veulent. Des manifestants cagoulés improvisent un service d’ordre autour de moi. Des gens m’attrapent par le bras. Plusieurs cordons se forment pour me protéger et essayer de me sortir de là. À voir la scène, j’étais devenu le grand leader qui ramenait dix mille personnes pour envahir Strasbourg. La situation est surréaliste.","À un moment, Philippe Delaunay, un capitaine de police, monte sur le capot d’une voiture.","— On en veut un et on vous laisse partir.","Et tout le monde me regarde.","Puis je vois une colonne de CRS remonter le cortège. Ils tirent au flash-ball à bout portant. Une arme potentiellement mortelle à cette distance. Au loin, des gens qui ne représentent aucune menace pour eux s’effondrent et disparaissent de ma vue.","Un. Puis deux. Puis trois. Puis quatre.","Alors je dis à ceux qui m’entourent :","— C’est bon, arrêtez. Je vais me rendre. Je vais voir ce qu’ils veulent. J’ai rien fait. Il y a aucune raison que tant de gens souffrent pour rien.","Je m’avance, les bras levés. Je suis brutalement plaqué au sol. Ils me menottent, me retournent, me soulèvent les bras. C’est à ce moment-là qu’ils m’en brisent un.","Je m’étais rendu."];
+ const reader=document.createElement('dialog');
+ reader.id='rendezvousDialog';reader.setAttribute('aria-label','Chemin III — Les rendez-vous, chapitre 4');
+ const readerBar=document.createElement('div');readerBar.className='rendezvous-top';
+ const readerHeading=document.createElement('strong');readerHeading.textContent='CHEMIN III · LES RENDEZ-VOUS · CHAPITRE 4';
+ const readerClose=document.createElement('button');readerClose.type='button';readerClose.textContent='Retour au plateau ×';
+ readerBar.append(readerHeading,readerClose);
+ const readerBody=document.createElement('div');readerBody.className='rendezvous-content';
+ const readerKicker=document.createElement('p');readerKicker.className='rendezvous-kicker';readerKicker.textContent='Bonne feuille 1/3 · Chapitre 4 — « Drapeau rouge »';
+ const readerTitle=document.createElement('h2');readerTitle.textContent='Strasbourg — Je m’étais rendu';
+ const excerpt=document.createElement('div');excerpt.className='rendezvous-excerpt';
+ for(const paragraph of thirdExtract){const el=document.createElement('p');el.textContent=paragraph;excerpt.append(el);}
+ const future=document.createElement('div');future.className='rendezvous-future';
+ const futureTitle=document.createElement('strong');futureTitle.textContent='Jeu 1 / 3 — en préparation';
+ const futureBody=document.createElement('p');futureBody.textContent='La scène est sélectionnée pour son potentiel ludique. Aucun jeu n’est encore disponible pour ce chemin ; les chapitres 5 et 6 seront choisis ensuite. Les points et la progression des deux premiers chemins restent inchangés.';
+ future.append(futureTitle,futureBody);
+ readerBody.append(readerKicker,readerTitle,excerpt,future);reader.append(readerBar,readerBody);document.body.append(reader);
+ readerClose.onclick=()=>reader.close();
+ reader.addEventListener('close',()=>{const b=$('boardTargets').querySelector('[data-chemin="3"]');if(b)b.setAttribute('aria-pressed','false');b?.focus({preventScroll:true});});
+ function openThirdPath(){
+  if(!flow.chapter2Done(state)||boardRolling)return;
+  const card=$('boardTargets').querySelector('[data-chemin="3"]');
+  if(card)card.setAttribute('aria-pressed','true');
+  if(!reader.open)reader.showModal();
+  reader.scrollTop=0;readerClose.focus({preventScroll:true});
+ }
+ window.TreizeRendezVous={open:openThirdPath,parts:thirdParts};
+
  const pathNumeral=n=>['I','II','III','IV','V','VI','VII','VIII','IX','X'][n-1]||String(n);
  const icons=['🌳','🪖'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
@@ -96,6 +147,25 @@
    }
    connector.append(heading,stops);
    host.querySelector('[data-chapter="1"]').after(connector);
+   const third=document.createElement('button');third.type='button';
+   third.className='board-target chapter-featured step-chapters rendezvous-card';
+   third.dataset.chemin='3';
+   const thirdRoute=document.createElement('div');thirdRoute.className='chapter-card-route';
+   for(let i=0;i<thirdParts.length;i++){
+    const p=thirdParts[i];const tile=makeSpan('chapter-part-label chapter-literary-part','');
+    tile.append(makeSpan('chapter-part-number','CHAPITRE '+p.chapter),
+     makeSpan('chapter-part-title','« '+p.title+' »'),
+     makeSpan('chapter-part-game','Jeu '+(i+1)+' / 3'),
+     makeSpan('chapter-part-state',i===0?'Bonne feuille choisie · Jeu en préparation':'Scène et jeu à préparer'));
+    thirdRoute.append(tile);
+   }
+   third.append(makeSpan('chapter-card-kicker','CHEMIN III'),
+    makeSpan('chapter-card-title','Les rendez-vous'),
+    makeSpan('chapter-card-place','Trois chapitres · Trois jeux'),
+    thirdRoute,makeSpan('chapter-card-status','À découvrir après le chemin II'),
+    makeSpan('board-badge','✦'));
+   third.onclick=openThirdPath;
+   host.append(third);
   }
   for(const button of host.querySelectorAll('[data-chapter]')){
    const n=Number(button.dataset.level),i=Number(button.dataset.chapter);
@@ -133,6 +203,16 @@
     button.querySelector('.board-badge').textContent=finished?'✓':icons[i-1];
    }
   }
+  const third=$('boardTargets').querySelector('[data-chemin="3"]');
+  if(third){
+   const allowed=flow.chapter2Done(state);
+   third.setAttribute('aria-disabled',String(!allowed));
+   third.setAttribute('aria-pressed',String(reader.open));
+   third.setAttribute('aria-label',thirdBlockName+' · Chapitres 4, 5 et 6 · '+(allowed?'Lire la première bonne feuille':'À découvrir après le chemin II'));
+   third.tabIndex=allowed?0:-1;
+   third.querySelector('.chapter-card-status').textContent=allowed?
+    'Première bonne feuille disponible · 3 jeux à concevoir':'À découvrir après le chemin II';
+  }
   const n=state.selected;
   const canContinue=n<=3?flow.partDone(state,n):n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state):state.completed.includes(n);
   const mayTravel=canContinue&&n<13;
@@ -140,7 +220,7 @@
   $('boardRoll').disabled=!!boardRolling;
   $('boardRoll').textContent=n<=2?'Partie suivante du chapitre →':
    n===3?'Vers le chapitre 2 →':n===4?'Continuer : Le danseur →':
-   n===5?'Vers la suite du parcours →':'Étape suivante →';
+   n===5?'Chemin III · Les rendez-vous →':'Étape suivante →';
   $('boardRoll').onclick=()=>rollTravel(state.selected);
   $('travelHint').textContent=flow.done(state)&&n<=3?'Les trois jeux du chapitre 1 sont terminés. Sarajevo ouvre le chapitre 2.':
    n<=3?flow.scenePassedCount(state)+'/3 scènes terminées · Un seul chapitre.':
@@ -156,6 +236,7 @@
   if(boardRolling||n!==state.selected)return;
   // Passage d'une scène à l'autre, gagnée OU volontairement passée.
   // The historic IDs and save format are retained; only wins pay points.
+  if(n===5&&flow.chapter2Done(state)){openThirdPath();return;}
   if(n>=1&&n<=5){
    const traversed=n<=3?flow.partDone(state,n):
     n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
@@ -180,10 +261,10 @@
  const oldSave=save;
  save=function(){oldSave();updateProgressBar();};
  function updateProgressBar(){
-  const count=Number(flow.done(state))+Number(flow.chapter2Done(state));
-  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 2 chemins · '+state.points+' points';
-  $('count').textContent=count+'/2';
-  $('stage').textContent=pathNumeral(Math.min(2,flow.chapterReached(state)));
+  const count=Number(flow.done(state))+Number(flow.chapter2Done(state)); // Le troisième chemin reste en construction.
+  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 3 chemins · '+state.points+' points';
+  $('count').textContent=count+'/3';
+  $('stage').textContent=pathNumeral(flow.chapter2Done(state)?3:flow.done(state)?2:1);
  }
  function paintChapterSection(){
   updateProgressBar();
@@ -252,7 +333,7 @@
    const finished=n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
    $('next').hidden=!finished;
    $('mobileNext').hidden=!finished;
-   $('next').textContent=n===4?'Chapitre 3 — Le coup du bus →':'Suite du parcours →';
+   $('next').textContent=n===4?'Chapitre 3 — Le coup du bus →':'Chemin III — Les rendez-vous →';
    $('mobileNext').textContent=$('next').textContent;
    if(finished)$('mobileGameDock').hidden=false;
    if(n===4&&!finished)
