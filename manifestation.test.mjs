@@ -28,3 +28,30 @@ test('La nouvelle scène reste indépendante des deux autres chemins',()=>{
  assert.match(build,/'jeu-manifestation.html'/);assert.match(build,/build-manifestation.mjs/);
  assert.equal(OBJECTIFS.length,3);
 });
+
+
+test('Six silhouettes humaines CC0 riggées et leurs animations sont présentes',()=>{
+ const fs=awaitFreeFilesystem();
+ for(const kind of ['male','female']){
+  for(const variant of ['a','c','e']){
+   const path='assets/manifestation/character-'+kind+'-'+variant+'.glb';
+   const bytes=fs.readFileSync(new URL('./'+path,import.meta.url));
+   assert.equal(bytes.toString('ascii',0,4),'glTF',path);
+   assert.ok(bytes.length>100000&&bytes.length<400000,'Modèle compact '+path);
+   assert.match(bytes.toString('latin1',20,110000),/\"walk\"/);
+  }
+ }
+ const license=read('assets/manifestation/KENNEY-CC0-LICENSE.txt');
+ assert.match(license,/Creative Commons Zero/);
+});
+function awaitFreeFilesystem(){return {readFileSync};}
+test('L’incrustation du chapitre et les pancartes restent visibles',()=>{
+ const html=read('jeu-manifestation.html'),js=read('manifestation-app.js');
+ assert.match(html,/Chapitre 4 — « Drapeau rouge »/);
+ assert.match(html,/p\. 59–60/);
+ assert.match(js,/CHAPITRE 4/);assert.match(js,/DRAPEAU ROUGE · P\. 59–60/);
+ for(const text of ['NON À LE PEN','LIBERTÉ ÉGALITÉ FRATERNITÉ','ENSEMBLE CONTRE LA HAINE','RÉPUBLIQUE — BASTILLE'])
+  assert.ok(js.includes(text),'Pancarte ou banderole '+text);
+ assert.ok(js.includes('GLTFLoader'));assert.ok(js.includes('cloneSkinned'));
+ assert.ok(js.includes('x:-clamp(joy.x+right-left,-1,1)'),'Manette corrigée');
+});
