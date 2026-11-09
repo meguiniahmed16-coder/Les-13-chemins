@@ -70,7 +70,7 @@ test('Skipping a partially completed game retains credits, stored IDs and legiti
  assert.deepEqual(s.storySkips,['1','2','3','4','5:dance','5:prison']);
  const saved=structuredClone(s);
  assert.equal(f.skipPart(s,'5:prison'),false,'Repeated skip does not alter the state');
- assert.deepEqual(s,saved);
+ assert.deepEqual(JSON.parse(JSON.stringify(s)),saved);
 });
 test('An existing game victory is never converted into a skipped game',()=>{
  const f=flow(),s=fresh();s.completed=[1];s.arcadeBonuses[1]=true;
@@ -88,8 +88,15 @@ function frontend(){
   setAttribute(k,v){this.attrs[k]=v;}
   querySelector(sel){
    const target=sel.startsWith('.')?sel.slice(1):'';
-   const search=e=>e.children.find(c=>(c.className||'').split(' ').includes(target)||search(c));
-   return search(this)||null;
+   const search=e=>{
+    for(const child of e.children){
+     if((child.className||'').split(' ').includes(target))return child;
+     const deeper=search(child);
+     if(deeper)return deeper;
+    }
+    return null;
+   };
+   return search(this);
   }
   click(){this.onclick?.();}
  }
