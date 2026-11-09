@@ -13,7 +13,7 @@ const sample=(patch={})=>({
  completed:[],points:0,unlocked:1,selected:1,
  arcadeBonuses:{},catalogneFinished:false,catalogneSold:[],...patch
 });
-test('Two visible step cards retain three games each, with three distinct book chapters in step two',()=>{
+test('Two legacy path cards keep their three games; the third literary path is introduced separately',()=>{
  const f=api();
  assert.deepEqual(Array.from(f.CARDS),[1,4]);
  assert.deepEqual(Array.from(f.ARCHIVED_CARDS),[1,4,6,7,8,9,10,11,12,13]);
@@ -69,7 +69,7 @@ test('Past players on later scenes keep their progress; incomplete players resum
  assert.equal(w.completed.length,2,'No old quiz answer is lost');
  assert.equal(w.unlocked,3,'No historical stage id is changed');
 });
-test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two large step cards',()=>{
+test('Atlas keeps 13 historical scenes and the board adds the third path without changing their IDs',()=>{
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js'),build=read('./build-public.mjs');
  assert.match(html,/const LEVELS=\[(.*?)\];\s*const AVATARS=/s);
  assert.match(html,/src="chapitre1-flow\.js(?:\?[^"]*)?"/);
@@ -112,7 +112,7 @@ test('Step two keeps a single featured card and distinguishes the three book cha
  assert.ok(ui.includes("scene===1||scene===4?' chapter-featured'"));
  assert.ok(ui.includes('if(scene===1||scene===4)'));
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
- assert.ok(ui.includes("' / 2 chemins · '"));
+ assert.ok(ui.includes("' / 3 chemins · '"));
  assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
  assert.ok(ui.includes('Chapitre '),'The active game retains its book chapter heading');
  assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
@@ -248,8 +248,8 @@ test('One step groups the three games while each page and dialog names its own b
  assert.ok(u.includes("const changed2=state.selected===5&&flow.prepareChapter2Dance(state)"));
  assert.ok(u.includes("'bosnie:won':4"));
  assert.ok(u.includes("'bosnieClose'"));
- assert.ok(game.includes('0 / 2 chemins · 0 points'));
- assert.ok(game.includes('<b id="count">0/2</b>'));
+ assert.ok(game.includes('0 / 3 chemins · 0 points'));
+ assert.ok(game.includes('<b id="count">0/3</b>'));
  assert.match(p,/Chapitre 3[^\n]*Le coup du bus/);
  assert.match(p,/Chapitre 4[^\n]*Le drapeau rouge/);
  for(const [file,chapter,title,index] of [['jeu-bosnie.html',2,'Même pas mal',1],
@@ -258,4 +258,22 @@ test('One step groups the three games while each page and dialog names its own b
   assert.match(page,new RegExp('Chapitre '+chapter+'[^<\\n]*'+title,'i'),file+' displays its book chapter');
   assert.match(page,new RegExp('Chemin II[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
  }
+});
+
+test('Chemin III Les rendez-vous is one board cartouche for book chapters 4, 5, 6, without an invented game completion',()=>{
+ const ui=read('./chapitre1-plateau.js'),game=read('./jeu.html'),build=read('./build-public.mjs');
+ assert.ok(ui.includes("third.dataset.chemin='3';third.id='chemin-iii';"));
+ assert.ok(ui.includes("makeSpan('chapter-card-title','Les rendez-vous')"));
+ assert.ok(ui.includes("host.append(third);"));
+ assert.ok(ui.includes("third.onclick=openThirdPath;"));
+ assert.ok(ui.includes("if(n===5&&flow.chapter2Done(state)){openThirdPath();return;}"));
+ assert.ok(ui.includes("if(!flow.chapter2Done(state)||boardRolling)return;"));
+ for(const title of ['Drapeau rouge','Passe-muraille','Tu veux bien t’occuper de moi ?'])assert.ok(ui.includes(title));
+ for(const n of [4,5,6])assert.ok(ui.includes('chapter:'+n));
+ assert.ok(ui.includes("Jeu 1 / 3 — en préparation"));
+ assert.ok(ui.includes("const thirdExtract="));
+ assert.ok(ui.includes('Je m’étais rendu.'));
+ assert.ok(game.includes('Trois chemins de jeu'));
+ assert.ok(!build.includes("'les-rendez-vous.html'"),'A separate independent page must not be published');
+ assert.ok(!build.includes("'chemin3.html'"));
 });
