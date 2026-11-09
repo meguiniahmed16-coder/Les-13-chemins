@@ -140,6 +140,11 @@ export function drawPixelRunner(g,x,ground,who,time,speed=0,options={}){
  box(g,-3,-41,7,5,who==='suit'?'#f3e9d6':'#faeacb');
  box(g,-1,-36,2,12,who==='suit'?'#b69b6d':'#e0a983');
  box(g,-10,-24,20,3,v.shade);
+ // Extra, high-contrast pixel accents that remain distinct at phone size.
+ box(g,-8,-37,3,3,'#ffffff66');box(g,7,-34,2,5,v.shade);
+ box(g,-9,-30,5,2,'#f6c891');box(g,5,-29,4,2,'#eac39c');
+ box(g,-4,-25,7,2,'#7a6559');box(g,-8,-13,4,3,v.dark);
+ box(g,4,-13,4,3,v.pants);box(g,-5,-5,3,2,'#a4a8a2');
  // Proper side profile: ear, visible eye, hair volume, eyebrows and mouth.
  box(g,-3,-47,7,7,v.face);box(g,-8,-60,18,16,'#284049');box(g,-7,-59,16,14,v.face);
  box(g,-9,-59,6,8,v.hair);box(g,-9,-62,18,6,v.hair);box(g,-3,-64,10,3,v.hair);
@@ -157,7 +162,7 @@ export function drawPixelRunner(g,x,ground,who,time,speed=0,options={}){
 export function drawPixelChase(g,run,phase,time,reduced=false){
  const d=run?.distance||0,t=biomeAt(d),speed=phase==='running'&&!run?.stopRemaining?(run?.speed||0):0;
  const c=g.ctx;c.clearRect(0,0,384,216);
- background(g,d,reduced);school(g,d);campus(g,d);forest(g,d,t.highway);roadway(g,d,t.highway);
+ background(g,d,reduced);roadway(g,d,t.highway);forest(g,d,t.highway);school(g,d);campus(g,d);
  for(let i=0;i<14;i++){const x=span(i*34-d*2.4,580)-28;
   if(t.highway<.66&&i%2===0)flower(g,x,176,i%3?'#ffd46f':'#fff8dc');
   if(t.highway<.6&&i%3===0)bush(g,x,174,.33);
