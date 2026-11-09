@@ -97,10 +97,10 @@
   $('boardRoll').hidden=!mayTravel;
   $('boardRoll').disabled=!!boardRolling;
   $('boardRoll').textContent=n<=2?'Partie suivante du chapitre →':
-   n===3?'Vers le chapitre 2 →':n===4?'Continuer : Le danseur →':
+   n===3?'Voyage en pointillés vers le chapitre 2 →':n===4?'Continuer : Le danseur →':
    n===5?'Vers le chapitre 3 →':'Étape suivante →';
   $('boardRoll').onclick=()=>rollTravel(state.selected);
-  $('travelHint').textContent=flow.done(state)&&n<=3?'Les trois jeux du chapitre 1 sont terminés. Sarajevo ouvre le chapitre 2.':
+  $('travelHint').textContent=flow.done(state)&&n<=3?'Trajet animé : Barcelone → Ferney-Voltaire → Vannes (Bretagne) → Poitiers → Sarajevo.':
    n<=3?flow.scenePassedCount(state)+'/3 scènes terminées · Un seul chapitre.':
    n<=5?flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length+'/3 scènes terminées · Sarajevo, le danseur, la prison.':
    mayTravel?'Le chapitre est terminé. Les dés et la carte accompagnent la suite.':
