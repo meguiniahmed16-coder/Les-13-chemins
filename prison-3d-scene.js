@@ -32,7 +32,10 @@ export function buildPrisonScene(host,{onModelReady=()=>{},onModelError=()=>{}}=
  overhead.position.set(.2,2.45,.72);scene.add(overhead);
  const sunlight=new T.DirectionalLight('#d5eafa',2.15);
  sunlight.position.set(-1.8,4.4,-4.5);scene.add(sunlight);
- const prison=new T.Group();prison.name='CelluleTroisMetres';scene.add(prison);
+ const prison=new T.Group();prison.name='CelluleTroisMetres';
+ // Source proportions are uniformly remapped in plan to a 3m × 3m cell (≈9m²).
+ const footprintX=3/3.36,footprintZ=3/3.6;
+ prison.scale.set(footprintX,1,footprintZ);scene.add(prison);
  const props=new T.Group();props.name='ObjetsPrison';prison.add(props);
  const matter=(color,metalness=0,roughness=.88)=>new T.MeshStandardMaterial({color,roughness,metalness});
  const mat={
@@ -234,13 +237,14 @@ export function buildPrisonScene(host,{onModelReady=()=>{},onModelError=()=>{}}=
   tool.position.set(worldX(g.aim),1.16+Math.sin(t*2)*.018,-.72+Math.min(.25,g.pull*.25));
   tool.rotation.set(.42,0,-.34);
   // In-game aiming corresponds to the physical space between metal bars.
-  const targetX=worldX(g.hooked?g.hookX??g.aim:ropePosition(g));
+  const targetX=worldX(g.hooked?g.hookX??g.aim:ropePosition(g))*footprintX;
   cargo.visible=part>=1&&g.phase!=='victory';
   cargo.position.set(targetX,1.43+Math.sin(t*1.3)*.045,-2.06+g.pull*.75);
   bag.material=part===2?mat.coffee:mat.tobacco;
-  const vertices=new Float32Array([targetX,2.82,-2.10,targetX,1.67+Math.sin(t*1.3)*.045,-2.05+g.pull*.75]);
-  ropeGeometry.setAttribute('position',new T.BufferAttribute(vertices,3));
-  ropeGeometry.attributes.position.needsUpdate=true;
+  const vertices=ropeGeometry.getAttribute('position');
+  vertices.setXYZ(0,targetX,2.82,-2.10);
+  vertices.setXYZ(1,targetX,1.67+Math.sin(t*1.3)*.045,-2.05+g.pull*.75);
+  vertices.needsUpdate=true;
   rope.visible=cargo.visible;
   broom.scale.setScalar(aligned(g)&&part===0?1.045:1);
   if(part>=1)tool.scale.setScalar(g.hooked?1.04:1);
@@ -265,6 +269,6 @@ export function buildPrisonScene(host,{onModelReady=()=>{},onModelError=()=>{}}=
  return {scene,camera,prison,actor:avatarRoot,modelPromise,bars,bunk,broom,table,wardrobe,toilet,sink,
   cargo,tool,render,resize,dispose,
   orbit(){orbit.side=!orbit.side;return orbit.side;},
-  geometry:{length:3.36,width:3.6,height:2.83,bars:bars.length,bedLevels:2},
+  geometry:{length:3,width:3,height:2.83,area:9,bars:bars.length,bedLevels:2},
   targetX:worldX,canPassBars:betweenBars};
 }
