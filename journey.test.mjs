@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const code=fs.readFileSync(new URL('./voyage.js',import.meta.url),'utf8');
-function harness(){
+function harness(search='?voyage=1&depart=4&arrivee=5&session=test-id'){
  let now=0,seq=0;const timers=new Map(),events=new Map(),els=new Map(),sent=[];
  const schedule=(fn,ms)=>{const id=++seq;timers.set(id,{at:now+ms,fn});return id;};
  function element(){const handlers=new Map();return {style:{},dataset:{},classList:{add(){},remove(){}},hidden:false,open:false,contentWindow:{postMessage:m=>sent.push(m)},append(){},before(){},remove(){this.removed=true;},querySelectorAll:()=>[{style:{}},{style:{}}],showModal(){this.open=true;},close(){this.open=false;handlers.get('close')?.();},addEventListener:(k,f)=>handlers.set(k,f),removeEventListener:k=>handlers.delete(k)};}
  ['diceDialog','diceStatus','diceTitle','diceRule','diceDestination','skipDice','map'].forEach(k=>els.set(k,element()));
  const frames=[],doc={head:{append(){}},documentElement:{classList:{add(){}}},getElementById:id=>id==='journeyStyles'?{}:els.get(id),querySelector:()=>element(),createElement:tag=>{const e=element();if(tag==='iframe')frames.push(e);return e;}};
- const ctx=vm.createContext({document:doc,location:{origin:'https://example.test',search:'?voyage=1&depart=4&arrivee=5&session=test-id'},URLSearchParams,crypto:{randomUUID:()=> 'test-id'},matchMedia:()=>({matches:false}),performance:{now:()=>now},setTimeout:schedule,clearTimeout:id=>timers.delete(id),requestAnimationFrame:fn=>schedule(()=>fn(now),16),cancelAnimationFrame:id=>timers.delete(id),addEventListener:(k,f)=>events.set(k,f),removeEventListener:k=>events.delete(k),parent:{postMessage:m=>sent.push(m)}});
+ const ctx=vm.createContext({document:doc,location:{origin:'https://example.test',search},URLSearchParams,crypto:{randomUUID:()=> 'test-id'},matchMedia:()=>({matches:false}),performance:{now:()=>now},setTimeout:schedule,clearTimeout:id=>timers.delete(id),requestAnimationFrame:fn=>schedule(()=>fn(now),16),cancelAnimationFrame:id=>timers.delete(id),addEventListener:(k,f)=>events.set(k,f),removeEventListener:k=>events.delete(k),parent:{postMessage:m=>sent.push(m)}});
  vm.runInContext(code,ctx);
  function advance(ms){const end=now+ms;let count=0;while(true){const next=[...timers].sort((a,b)=>a[1].at-b[1].at)[0];if(!next||next[1].at>end)break;assert.ok(++count<5000,'timer loop terminates');timers.delete(next[0]);now=next[1].at;next[1].fn();}now=end;}
  const message=(type,extra={})=>events.get('message')?.({origin:ctx.location.origin,source:frames[0]?.contentWindow,data:{type,session:'test-id',...extra}});
@@ -42,4 +42,64 @@ test('The map visits overview, departure, moving pointer and exact arrival in or
  assert.deepEqual(characters,[5]);assert.notEqual(h.sent.at(-1).type,'journey:done','names remain visible before the reading handoff');h.advance(3500);
  assert.deepEqual(h.sent.filter(x=>x.type==='journey:phase').map(x=>x.phase),['overview','departure','travel','arrival']);
  assert.equal(h.sent.at(-1).type,'journey:done');assert.ok(positions.length>30);assert.deepEqual(positions.at(-1),centers[4]);assert.deepEqual(views.at(-1),centers[4]);
+});
+
+test('Barcelone → Ferney-Voltaire → Vannes → Poitiers → Sarajevo: ordered dotted animation',()=>{
+ const h=harness('?voyage=1&depart=3&arrivee=4&session=test-id');
+ const origin=[41.387,2.17],destination=[43.856,18.413];
+ const itinerary=h.ctx.TreizeVoyage.chapter2Itinerary(3,4,origin,destination);
+ assert.deepEqual(Array.from(itinerary,p=>p.name),[
+  'Barcelone','Ferney-Voltaire','Vannes (Bretagne)','Poitiers','Sarajevo'
+ ]);
+ assert.deepEqual(Array.from(itinerary,p=>Array.from(p.coordinates)),[
+  origin,[46.258,6.108],[47.6587,-2.7599],[46.5803,0.3402],destination
+ ]);
+ assert.equal(h.ctx.TreizeVoyage.chapter2Itinerary(4,5,origin,destination),null,
+  'Other chapter journeys still take the regular route');
+ const labels=[],pointer=[],traces=[],markers=[],characters=[];
+ const layer=()=>({addTo(){return this;},removeLayer(){return this;},setLatLng(p){pointer.push(Array.from(p));return this;},
+  setLatLngs(ps){assert.ok(ps.every(p=>p.every(Number.isFinite)));traces.push(ps.map(p=>Array.from(p)));return this;}});
+ h.ctx.TreizeEscale={
+  getStage:n=>({coordinates:n===3?origin:destination,city:n===3?'Barcelone':'Sarajevo',
+   passage:{scene:n===3?'Dernier jeu du chapitre 1':'Chapitre 2 Même pas mal'}}),
+  addCharacters:(_,n)=>characters.push(n)
+ };
+ h.ctx.L={layerGroup:layer,marker:(p,o)=>{if(o?.icon?.html?.includes('journey-place-name'))
+   markers.push(o.icon.html);return layer();},
+  divIcon:x=>x,polyline:layer,latLngBounds:ps=>({pad:()=>ps})};
+ const map={
+  distance:()=>950000,invalidateSize(){},stop(){},fitBounds(){},
+  setView(){},flyTo(){},panTo(){}
+ };
+ const centers=Array.from({length:13},(_,i)=>[39+i*.3,2+i]);
+ h.ctx.TreizeVoyage.initMap({map,points:[{latitude:41.387,longitude:2.17}],
+  centers,titles:centers.map((_,i)=>'Titre '+i),places:centers.map((_,i)=>'Ville '+i)});
+ h.events.get('message')({source:h.ctx.parent,origin:'https://example.test',
+  data:{type:'journey:start',session:'test-id'}});
+ h.advance(8800);
+ for(const e of h.sent.filter(e=>e.type==='journey:phase'&&e.phase==='travel'))labels.push(e.label);
+ assert.deepEqual(labels,[
+  'Barcelone → Ferney-Voltaire','Ferney-Voltaire → Vannes (Bretagne)',
+  'Vannes (Bretagne) → Poitiers','Poitiers → Sarajevo'
+ ]);
+ assert.equal(markers.length,5,'All five places have labeled markers');
+ for(const name of ['Barcelone','Ferney-Voltaire','Vannes (Bretagne)','Poitiers','Sarajevo'])
+  assert.ok(markers.some(x=>x.includes(name)),name+' has a map label');
+ assert.ok(traces.some(ps=>ps.length===2));
+ assert.ok(traces.some(ps=>ps.length===5),'The completed dotted line retains all five waypoints');
+ assert.ok(pointer.length>150,'Marker progresses smoothly between every pair of towns');
+ assert.deepEqual(pointer.at(-1),destination,'Animation reaches Sarajevo');
+ assert.deepEqual(characters,[4],'Only the Sarajevo scene opens after the trip');
+ h.advance(4500);
+ assert.equal(h.sent.at(-1).type,'journey:done','The map finishes and hands control back');
+ assert.ok(!h.ctx.TreizeVoyage.chapter2Itinerary(1,2,origin,destination));
+});
+test('The two first chapter cards are linked by a dotted itinerary in the same order',()=>{
+ const ui=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
+ assert.ok(ui.includes("className='chapter-journey-route'"));
+ assert.ok(ui.includes("host.querySelector('[data-chapter=\"1\"]').after(connector)"));
+ assert.ok(ui.includes("['Barcelone','Ferney-Voltaire','Vannes · Bretagne','Poitiers','Sarajevo']"));
+ assert.ok(ui.includes('chapterTravelDot'));
+ assert.ok(ui.includes('border-top:3px dotted'));
+ assert.ok(ui.includes('prefers-reduced-motion:reduce'));
 });
