@@ -39,7 +39,7 @@ test('All three mini-games follow the new stage numbers and correct answers',()=
  assert.ok(a410.includes('state.selected!==2'));
  assert.ok(a410.includes('LEVELS[1].correct'));
  for(const [file,lev]of [['arcade-marmousets.html',1],['arcade-a410.html',2],['arcade-catalogne.html',3]]){
-  assert.ok(read('./'+file).includes('Arcade · niveau '+lev));
+  assert.ok(read('./'+file).includes('Chapitre 1 · partie '+lev+'/3'));
  }
  assert.ok(read('./arcade-marmousets.html').includes('lecture.html?niveau=1'));
  assert.ok(read('./arcade-catalogne.html').includes('jeu.html?niveau=3'));
