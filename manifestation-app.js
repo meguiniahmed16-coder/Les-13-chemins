@@ -4,7 +4,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {newRun,advance,yellow,clamp,distance,OBJECTIFS} from './manifestation-core.js';
+import {newRun,advance,yellow,callFromStatue,clamp,distance,OBJECTIFS} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
 const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
@@ -321,13 +321,19 @@ function refreshHUD(){
  if(p===1)hint.textContent='Joystick : avance vers le drapeau français devant l’école. Jaune pour grimper et le prendre.';
  else if(p===2){
   if(run.climb)hint.textContent=run.climb.direction==='up'?'Tu montes réellement par les marches du socle. Les commandes restent disponibles dès l’arrivée.':'Tu redescends par les marches. Reprends ensuite le joystick.';
-  else if(run.climbed)hint.textContent='Tu es SUR le socle. Joystick : bouger. Maintiens ROUGE pour crier « Camarades ! » ; JAUNE pour redescendre.';
+  else if(run.climbed)hint.textContent=run.rallying?'La foule répond ! '+Math.round(run.mobilisation)+' % · La marche vers Bastille va commencer.':'Tu es SUR le socle. Un appui sur ROUGE suffit pour appeler la foule. JAUNE pour redescendre.';
   else hint.textContent='Approche des marches DEVANT la statue et presse JAUNE. Tu pourras redescendre avec JAUNE.';
  }
  else hint.textContent=run.cohesion<60?'La foule s’étire : arrête-toi et maintiens le rouge pour rassembler.':'Avance vers Bastille en gardant la foule avec toi. Rouge : appeler les retardataires.';
  if(run.finished)hint.textContent='Les deux cortèges se retrouvent à mi-chemin. « — Par là. »';
- const up=run.phase===2&&run.climbed&&!run.climb;
- $('red').classList.toggle('awaiting',up);
+ const up=playing&&!paused&&run.phase===2&&run.climbed&&!run.climb;
+ const statuePanel=$('statueControls');
+ if(statuePanel)statuePanel.hidden=!up;
+ if(up){
+  $('statueProgress').textContent=run.rallying?'La foule se mobilise : '+Math.round(run.mobilisation)+' %':'La foule attend ton appel.';
+  $('statueCall').textContent=run.rallying?'📣 Appel lancé · '+Math.round(run.mobilisation)+' %':'📣 Crier « Camarades ! »';
+ }
+ $('red').classList.toggle('awaiting',up&&!run.rallying);
  $('yellow').setAttribute('aria-label',up?'Jaune : redescendre du socle':'Jaune : agir ou monter sur le socle');
  const yellowCaption=$('yellowLabel');
  if(yellowCaption)yellowCaption.textContent=up?'REDESCENDRE':run.climb?'MONTÉE / DESCENTE':'AGIR / GRIMPER';
@@ -367,8 +373,8 @@ function start(){
 function pause(){
  if(!playing)return;paused=!paused;
  $('pause').textContent=paused?'Reprendre':'Pause';
- if(paused){card('Pause','La foule attend. Reprends quand tu veux.');$('start').textContent='Reprendre';}
- else overlay.hidden=true;
+ if(paused){card('Pause','La foule attend. Reprends quand tu veux.');$('start').textContent='Reprendre';refreshHUD();}
+ else {overlay.hidden=true;refreshHUD();}
 }
 let audioCtx=null,lastSound=0;
 function sound(freq,length){
@@ -382,8 +388,10 @@ function sound(freq,length){
 }
 function callCrowd(){
  if(!playing||paused)return;
- if(run.phase===2&&run.climbed){
+ if(run.phase===2&&run.climbed&&!run.climb){
+  callFromStatue(run);
   messageFeedback('— Camarades !',1.3);
+  refreshHUD();
   if(soundOn&&'speechSynthesis'in window&&performance.now()/1000-lastSound>5){
    try{const q=new SpeechSynthesisUtterance('Camarades !');q.lang='fr-FR';q.rate=1.05;q.volume=.8;speechSynthesis.speak(q);}catch{}
   }
@@ -452,6 +460,8 @@ function bindControls(){
  $('back').onclick=()=>send('manifestation:close');
  $('next').onclick=()=>send('manifestation:next');
  $('pause').onclick=pause;
+ $('statueCall').onclick=callCrowd;
+ $('statueDescend').onclick=yellowPress;
  $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(soundOn));if(soundOn)sound(450,.13);};
  window.addEventListener('message',e=>{
   if(e.source!==parent||e.origin!==location.origin||!e.data)return;
@@ -513,8 +523,14 @@ function render(ms){
  animateActors(dt,t);
  if(hero){
   const height=run.height||0;
-  const desired=new T.Vector3(run.x+0.55,6.15+height*.82,run.z-12.9);
-  const look=new T.Vector3(run.x,run.phase===2?Math.max(3.4,2.4+height):1.9,run.z+8.0);
+  const onStatue=run.phase===2&&(run.climbed||!!run.climb);
+  // Caméra FIXE sur la statue : les mouvements au joystick deviennent visibles.
+  const desired=onStatue?
+   new T.Vector3(0.8,9.3,-8.1):
+   new T.Vector3(run.x+0.55,6.15+height*.82,run.z-12.9);
+  const look=onStatue?
+   new T.Vector3(0,4.3,5):
+   new T.Vector3(run.x,run.phase===2?3.4:1.9,run.z+8.0);
   camera.position.lerp(desired,Math.min(1,dt*3.4));
   camera.lookAt(look);
  }
