@@ -114,21 +114,28 @@ export function createPrisonArms(gltf){
   const palm=new Vector3().crossVectors(finger,pinky.sub(index)).normalize().multiplyScalar(side==='r'?1:-1);
   const bindHand=hand.getWorldQuaternion(new Quaternion());
   const nativeFrame=quaternionFromFrame(finger,palm);
-  const palmPoint=wrist.clone().addScaledVector(finger,.075).addScaledVector(palm,.034);
+  // The 32 mm handle sits below the metacarpal heads, where the four fingers
+  // can wrap around it, rather than near the centre of the long palm.
+  const palmPoint=wrist.clone().addScaledVector(finger,.110).addScaledVector(palm,.034);
   const gripLocal=hand.worldToLocal(palmPoint.clone());
   const joints=[];
   for(const name of ['index','middle','ring','pinky']){
+   // MCP joints are staggered along the hand. Different flexion lets all four
+   // fingers follow the same cylinder without the shorter pinky cutting in.
+   const flexion={index:[1.05,1.0,.65],middle:[1.0,1.20,.95],ring:[.75,1.10,1.0],pinky:[.20,.80,1.10]}[name];
    for(let joint=1;joint<=3;joint++){
     const bone=bones[`${name}_0${joint}_${side}`];
     const axis=new Vector3(0,0,side==='r'?1:-1).applyQuaternion(bone.getWorldQuaternion(new Quaternion()).invert()).normalize();
-    joints.push({bone,axis,angle:[.97,1.30,.95][joint-1]});
+    joints.push({bone,axis,angle:flexion[joint-1]});
    }
   }
   const thumb=bones['thumb_01_'+side];
   const thumbBase=thumb.getWorldPosition(new Vector3());
   const thumbTip=bones['thumb_04_leaf_'+side].getWorldPosition(new Vector3());
   const before=thumbTip.sub(thumbBase).normalize();
-  const thumbTarget=hand.worldToLocal(palmPoint.clone().addScaledVector(finger,.017).addScaledVector(palm,.010));
+  // Opposition puts the thumb pad on the other side of the cylinder; aiming
+  // the thumb tip at the cylinder centre would drive its skin through it.
+  const thumbTarget=hand.worldToLocal(palmPoint.clone().addScaledVector(finger,-.045).addScaledVector(palm,.030));
   const thumbFlex=new Vector3().crossVectors(before,palm).normalize();
   for(let joint=2;joint<=3;joint++){
    const bone=bones[`thumb_0${joint}_${side}`];

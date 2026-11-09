@@ -1,6 +1,30 @@
-# Cellule immersive — prototype indépendant v0.3
+# Cellule immersive — prototype indépendant v0.4
 
-## Ce que cette version change
+## Ajustements de confort v0.4
+
+Le manche est placé sous les têtes des métacarpiens pour que les quatre doigts
+l'entourent. Chaque doigt dispose d'une fermeture adaptée à sa longueur ; le pouce
+rejoint le côté opposé du manche. Les dimensions de la main et du manche restent
+identiques. Les contacts sont vérifiés sur les triangles réellement déformés du GLB.
+
+Pour récupérer les sacs, il suffit maintenant de **maintenir Saisir** à la fenêtre.
+L'assistance suit le fil visible, accroche automatiquement et garde l'axe de l'ouverture
+pendant le tirage. Le fil se balance doucement de 1,2 cm à l'intérieur de cette ouverture,
+quelle que soit la proportion de l'écran. Le tirage dure deux secondes, contre environ
+5,3 secondes auparavant. Relâcher ou se cacher suspend le geste ; maintenir de nouveau
+reprend le même sac. Le test de partie complète réalise chaque récupération en moins
+de 3,5 secondes hors cachette, depuis le centre et sans anticipation du mouvement du fil.
+
+Le premier passage du surveillant intervient après 28 secondes de jeu actif. Après
+chaque étape, le joueur dispose également de 28 secondes de répit. Les pas avertissent
+pendant quatre secondes ; le joueur dispose encore de deux secondes de réaction quand
+le surveillant regarde. Après son départ, le calme dure 32 secondes avant l'approche suivante.
+
+Ces valeurs sont explicites dans `prison-3d-balance.js`. Le moteur partagé accepte cette
+configuration optionnelle ; le jeu de yo-yo précédent continue d'utiliser ses réglages
+historiques. Les points et les règles géométriques de passage restent les mêmes.
+
+## Vue immersive et visite
 
 La caméra se trouve désormais **dans la cellule, à la hauteur des yeux du prisonnier**.
 Une visite de neuf secondes présente les lits, le coin lavabo, la porte fermée et
@@ -53,8 +77,8 @@ de l'échelle, du tabouret, de l'armoire, de la table et des sanitaires.
 Les règles proviennent toujours de `yoyo-core.js` : saisir la brosse, récupérer le tabac,
 puis le café ; surveillant et possibilité de se cacher ; total de 30 points.
 Le sac de 116 mm passe dans les 174 mm libres entre deux barreaux de 36 mm de diamètre,
-espacés de 210 mm. La progression du tirage est bloquée hors d'une ouverture. Lorsque
-le sac chevauche le plan des barreaux, son déplacement latéral reste dans cette ouverture.
+espacés de 210 mm. La progression du tirage est bloquée hors d'une ouverture. L'assistance
+conserve l'axe du sac dans son ouverture après l'accroche, même si le joueur déplace la caméra.
 Le cintre est présenté de profil et la tête de brosse tournée pour présenter son épaisseur.
 
 Ce prototype ne remplace pas `jeu-yoyo.html`, ne transmet aucun crédit au plateau et
@@ -77,6 +101,7 @@ Les modèles sont servis par le même site que le jeu.
 - `prison-3d-camera.js` : visite, vue subjective, regard, déplacement et collisions.
 - `prison-3d-arms.js` : géométrie des bras, squelette, préhension et attache du manche.
 - `prison-3d-controls.js` : joystick, doigts indépendants, clavier et remise à zéro.
+- `prison-3d-balance.js` : rythme doux du prototype, sans modifier les valeurs par défaut du yo-yo.
 - `prison-3d-spatial.js` : conversion des ouvertures physiques et collision latérale du sac.
 - `prison-3d-loader.js` et le bootstrap HTML : transfert interrompable, modèle complet,
   progression, première image et écran de reprise après erreur.
@@ -85,7 +110,9 @@ Les modèles sont servis par le même site que le jeu.
 les vrais GLB, les bras déformés, la fermeture des doigts, la caméra portrait/paysage,
 les commandes multi-touch, les dimensions des ouvertures et les erreurs de chargement.
 Un parcours d'intégration exécute l'application, ses contrôles et ses règles jusqu'à
-30/30, y compris visite, pause, surveillant, brosse, tabac et café. Seuls DOM, renderer
+30/30 par simple maintien, y compris visite, pause, surveillant, brosse, tabac et café.
+Les durées du surveillant, le tirage en deux secondes et les réglages historiques du
+jeu précédent font l'objet de vérifications distinctes. Seuls DOM, renderer
 WebGL et parsing des textures du tabouret sont simulés dans ce parcours CPU.
 
 `npm run build` reconstruit et vérifie également les autres jeux avant de copier la

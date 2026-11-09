@@ -10,7 +10,8 @@ import {createPrisonRoom,CELL,FURNITURE_URL} from './prison-3d-room.js';
 import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
-import {renderPixelRatio,windowScale,ropeWorldX,ropeWorldZ,constrainBagX} from './prison-3d-spatial.js';
+import {PRISON_BALANCE} from './prison-3d-balance.js';
+import {renderPixelRatio,windowScale,ropeWorldX,ropeWorldZ} from './prison-3d-spatial.js';
 import {createGame,startGame,continueGame,aimAt,hide,actionDown,actionUp,advance,aligned,
  ropePosition,setWindowAspect,clamp} from './yoyo-core.js';
 
@@ -46,11 +47,11 @@ const room=createPrisonRoom({anisotropy:Math.min(8,renderer.capabilities.getMaxA
 const {scene,rope,packet,floorBrush,heldBrush,floorBrushHalo,windowHalo,brushGripTarget}=room;
 const camera=new T.PerspectiveCamera(72,16/9,.025,30);
 const eyes=createPrisonCamera(camera,{onTourEnd:enterPlay});
-const game=createGame();
+const game=createGame(PRISON_BALANCE);
 const controls=createPrisonControls({surface:screen,joystick,knob:$('joystick-knob'),
  actionButton,hideButton,onActionDown:startAction,onActionUp:stopAction,onPause:togglePause});
 let arms=null,assetsReady=false,firstFrame=false,contextLost=false;
-let mode='ready',paused=false,reach=0,actionElapsed=0,actionAttempted=false,hookOffset=0;
+let mode='ready',paused=false,reach=0,actionElapsed=0,actionAttempted=false;
 let pickupTime=-1,transitionDelay=0,transitionCard=null,heldBlend=1;
 let width=0,height=0,previous=performance.now();
 const reachTarget=new T.Vector3(),pickupTarget=new T.Vector3(),gazeTarget=new T.Vector3(),forward=new T.Vector3(),right=new T.Vector3();
@@ -81,7 +82,7 @@ function card(title,paragraph,button,action){
 }
 function begin(){
  if(!firstFrame||contextLost)return;
- controls.reset();Object.assign(game,createGame());syncAspect();
+ controls.reset();Object.assign(game,createGame(PRISON_BALANCE));syncAspect();
  paused=false;reach=0;pickupTime=-1;heldBlend=1;transitionDelay=0;transitionCard=null;
  heldBrush.quaternion.identity();renderer.shadowMap.needsUpdate=true;
  overlay.hidden=true;pauseButton.textContent='Pause';
@@ -99,10 +100,10 @@ function between(){
  transitionDelay=part===1?.8:.35;
  transitionCard=()=>card(part===1?'La brosse est à toi.':'Le tabac est récupéré.',
   part===1?'Approche-toi de la fenêtre. Avec le manche, tu peux atteindre le fil qui descend du dehors.':
-   'Il reste le café. Guide le sac dans une ouverture, et cache-toi quand le surveillant passe.',
+   'Il reste le café. Maintiens Saisir pour le ramener, et cache-toi si des pas approchent.',
   'Continuer',()=>{
    controls.reset();continueGame(game);syncAspect();overlay.hidden=true;setMode('playing');
-   text('Maintiens Saisir pour accrocher le fil. Le joystick guide ensuite le sac entre les barreaux.');
+   text('Maintiens simplement Saisir : ta main attrape le fil et ramène le sac entre les barreaux.');
   });
 }
 function won(){
@@ -122,12 +123,11 @@ function drainEvents(){
   if(event.type==='won')won();
   if(event.type==='caught')caught();
   if(event.type==='hook'){
-   hookOffset=ropeWorldX(game,game.hookX)-eyes.player.x;
-   text('Le fil est accroché. Maintiens Saisir et guide le sac dans une ouverture avec le joystick.');
+   text('Le fil est accroché. Continue de maintenir Saisir pour ramener le sac.');
   }
   if(event.type==='guard'&&event.state==='approaching')text('Des pas se rapprochent. Maintiens Se cacher.');
   if(event.type==='guard'&&event.state==='away')text('Le couloir est calme. Tu peux reprendre.');
-  if(['bar-miss','miss'].includes(event.type))text('Attends que le fil passe devant une ouverture, puis saisis à nouveau.');
+  if(['bar-miss','miss'].includes(event.type))text('Garde Saisir appuyé : ta main se replace devant le fil.');
   if(event.type==='bar-blocked')text('Le sac bute contre un barreau. Guide-le vers un espace libre.');
   if(event.type==='search-miss')text('Un peu plus près : ta main doit atteindre le manche.');
   if(event.type==='warning')text('Le surveillant regarde : maintiens Se cacher !');
@@ -262,19 +262,30 @@ function frame(dt,time){
  if(playing&&!eyes.isTravelling){
   if(game.part===0)aimAt(game,eyes.player.distanceTo(brushGripTarget)<.63?game.brushX:.12);
   else{
-   let x=eyes.player.x+(game.hooked?hookOffset:0);
-   if(game.hooked)x=constrainBagX(rope.position.x,x,rope.position.z);
-   aimAt(game,.5+x/windowScale(game.aspect));
+   // Aim assistance follows the real rope. After catching it, retain the
+   // opening instead of asking a second finger to keep a precise alignment.
+   const target=game.hooked?game.hookX:holding?ropePosition(game):.5+eyes.player.x/windowScale(game.aspect);
+   aimAt(game,target);
   }
   if(controls.state.hide)hide(game);
   else game.hidden=false;
   if(holding){
    actionElapsed+=dt;
-   if(!actionAttempted&&actionElapsed>=.5){
-    const inReach=game.part===0?arms&&arms.grip.distanceTo(brushGripTarget)<.025:eyes.player.z<-.60;
-    actionAttempted=true;
-    if(inReach){actionDown(game);drainEvents();}
-    else text(game.part===0?'Approche-toi un peu du manche avec le joystick, puis saisis à nouveau.':'Approche-toi de la fenêtre avec le joystick.');
+   if(actionElapsed>=.5){
+    if(game.part===0&&!actionAttempted){
+     actionAttempted=true;
+     if(arms&&arms.grip.distanceTo(brushGripTarget)<.025){actionDown(game);drainEvents();}
+     else text('Approche-toi un peu du manche avec le joystick, puis saisis à nouveau.');
+    }else if(game.part>0&&game.part<3){
+     if(eyes.player.z>=-.60){
+      actionUp(game);
+      if(!actionAttempted){text('Approche-toi de la fenêtre avec le joystick.');actionAttempted=true;}
+     }else if(game.guard!=='watching'&&game.cooldown<=0&&(!game.holding||!game.hooked)&&(game.hooked||aligned(game))){
+      // Holding keeps trying. Hiding or releasing stops the pull immediately,
+      // and another held press resumes the same rope without a timing puzzle.
+      actionDown(game);drainEvents();
+     }
+    }
    }
   }
   if(!holding){actionUp(game);actionElapsed=0;actionAttempted=false;}

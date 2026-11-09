@@ -96,8 +96,8 @@ test('The fingers and opposable thumb close around the palm instead of rotating 
  const open=at(arms,'middle_04_leaf_r').distanceTo(arms.grip);
  settle(arms,camera,{gripping:true});
  const closed=at(arms,'middle_04_leaf_r').distanceTo(arms.grip);
- assert.ok(closed<open*.25);assert.ok(closed<.03);
- assert.ok(at(arms,'thumb_04_leaf_r').distanceTo(arms.grip)<.03,'The thumb opposes the curled fingers at the handle');
+ assert.ok(closed<open*.40);assert.ok(closed<.04);
+ assert.ok(at(arms,'thumb_03_r').distanceTo(arms.grip)<.04,'The thumb pad opposes the curled fingers at the handle');
  assert.ok(at(arms,'middle_01_r').distanceTo(at(arms,'middle_02_r'))>.035);
  assert.ok(at(arms,'middle_01_r').distanceTo(at(arms,'middle_02_r'))<.04);
  const pose=Object.values(arms.bones).map(bone=>bone.quaternion.clone()),grip=arms.grip.clone();
@@ -131,6 +131,66 @@ test('A held cylinder aligns through the closed palm without moving its grip cen
   const rotation=arms.bones.hand_r.getWorldQuaternion(arms.bones.hand_r.quaternion.clone());
   settle(arms,camera,{target,reach:1,gripping:true,handleAxis:handleAxis.clone().negate()});
   assert.ok(rotation.normalize().angleTo(arms.bones.hand_r.getWorldQuaternion(rotation.clone()).normalize())<2e-6,'The cylinder axis has no preferred sign');
+ }
+ arms.dispose();
+});
+
+test('The actual palm and all five skinned digits envelop a 32 mm handle with radial contact',async()=>{
+ const {arms,camera}=await setup();const target=new Vector3(.24,1.3,.54);
+ const mesh=visibleMeshes(arms.root)[0],si=mesh.geometry.attributes.skinIndex,sw=mesh.geometry.attributes.skinWeight;
+ const vertices=[...new Set(mesh.geometry.index.array)];
+ for(const handleAxis of [new Vector3(0,1,0),new Vector3(.2,.4,-.8).normalize()]){
+  settle(arms,camera,{target,reach:1,gripping:true,handleAxis});
+  const finger=at(arms,'middle_01_r').sub(at(arms,'hand_r')).normalize();
+  const radialNormal=new Vector3().crossVectors(handleAxis,finger).normalize();
+  const contactAngles=[],skinRadial=new Map();
+  for(const digit of ['hand','index','middle','ring','pinky','thumb']){
+   const radii=[];
+   for(const vertex of vertices){
+    let weight=0;
+    for(let i=0;i<4;i++){
+     const name=mesh.skeleton.bones[si.getComponent(vertex,i)].name;
+     if(name.startsWith(digit+'_')&&name.endsWith('_r'))weight+=sw.getComponent(vertex,i);
+    }
+    if(weight<.5)continue;
+    const point=mesh.getVertexPosition(vertex,new Vector3()).applyMatrix4(mesh.matrixWorld).sub(arms.grip);
+    if(Math.abs(point.dot(handleAxis))>.065)continue;
+    const x=point.dot(finger),y=point.dot(radialNormal),radius=Math.hypot(x,y);
+    skinRadial.set(vertex,[x,y]);
+    radii.push(radius);
+    if(radius<.022)contactAngles.push(Math.atan2(y,x));
+   }
+   assert.ok(radii.length>50,`The real ${digit} skin is sampled`);
+   assert.ok(Math.min(...radii)>=.014,`${digit}: no skin penetrates more than 2 mm into the 16 mm-radius handle`);
+   assert.ok(Math.min(...radii)<=.020,`${digit}: the pad lies within 4 mm of the handle surface`);
+   assert.ok(radii.filter(r=>r>=.014&&r<.022).length>=5,`${digit}: contact occupies a surface, not one isolated vertex`);
+  }
+  // Test the triangle interiors as well as vertices: a coarse face can cross
+  // the cylinder even when all three corners lie outside it.
+  const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+  const edgeDistance=(a,b)=>{
+   const dx=b[0]-a[0],dy=b[1]-a[1],length=dx*dx+dy*dy;
+   const t=length?Math.max(0,Math.min(1,-(a[0]*dx+a[1]*dy)/length)):0;
+   return Math.hypot(a[0]+dx*t,a[1]+dy*t);
+  };
+  let checkedFaces=0;
+  for(let i=0;i<mesh.geometry.index.count;i+=3){
+   const points=[0,1,2].map(j=>skinRadial.get(mesh.geometry.index.getX(i+j)));
+   if(points.some(point=>!point))continue;
+   const [a,b,c]=points,signs=[cross(a,b),cross(b,c),cross(c,a)];
+   const crossesAxis=signs.every(s=>s>=0)||signs.every(s=>s<=0);
+   const radius=crossesAxis?0:Math.min(edgeDistance(a,b),edgeDistance(b,c),edgeDistance(c,a));
+   assert.ok(radius>=.013,'No skinned hand face cuts more than 3 mm into the handle');
+   checkedFaces++;
+  }
+  assert.ok(checkedFaces>1500);
+  contactAngles.sort((a,b)=>a-b);let largestGap=0;
+  for(let i=0;i<contactAngles.length;i++){
+   const next=i===contactAngles.length-1?contactAngles[0]+2*Math.PI:contactAngles[i+1];
+   largestGap=Math.max(largestGap,next-contactAngles[i]);
+  }
+  assert.ok(2*Math.PI-largestGap>300*Math.PI/180,'The palm, finger pads and opposing thumb surround the cylinder');
+  assertLengths(arms);
  }
  arms.dispose();
 });
