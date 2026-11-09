@@ -54,7 +54,7 @@ test('Migration preserves accumulated points and stage-specific bonuses',()=>{
  assert.equal(state.arcadeBonuses[2],true);assert.equal(state.arcadeBonuses[3],true);
  assert.equal(state.arcadePending.level,2);assert.equal(state.catalognePending.level,3);assert.equal(state.marmousetsPending.level,1);
  assert.equal(api.migrate(storage).points,220);
- assert.deepEqual(JSON.parse(storage.getItem('tectonique-jeu-plateau-v1')),state);
+ assert.deepEqual(JSON.parse(storage.getItem('tectonique-jeu-plateau-v1')),JSON.parse(JSON.stringify(state)));
 });
 test('New players begin on Mustapha; readers already advanced remain advanced',()=>{
  const api=getApi(),first=api.migrate(mkStore({selected:1,unlocked:1,completed:[],points:0}));
