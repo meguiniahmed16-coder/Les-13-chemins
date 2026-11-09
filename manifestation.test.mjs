@@ -122,14 +122,14 @@ test('Le bouton ROUGE projette de vrais cœurs animés et fait fuir les policier
  assert.ok(src.includes("if(e.type==='heart'){sendHearts(e.wave)"));
  assert.ok(src.includes("wave.status==='active'"));
  assert.ok(src.includes('elapsed<2.2'),'Les CRS fuient après l’envoi des cœurs');
- assert.ok(src.includes('Math.max(run.z+5.5,display.anchor-approaching*2.4)'));
+ assert.ok(src.includes('Math.max(run.z+4.1,display.anchor-approaching*4.1)'));
  assert.ok(src.includes('updatePoliceWaves(t)'));
 });
 test('La manifestation de Bastille apparaît ensemble et seulement à la fin',()=>{
  const src=read('manifestation-app.js');
- assert.ok(src.includes('bastilleCrowd.visible=run.z>=87'));
- assert.ok(src.includes('distantCrowd(bastilleCrowd,103,55)'));
- assert.ok(src.includes('bastilleActors=makeCrowd(bastilleCrowd,8,102'));
+ assert.ok(src.includes('bastilleCrowd.visible=run.z>=93'));
+ assert.ok(!src.includes('distantCrowd(bastilleCrowd,'),'The other group must use the same models, not boxes');
+ assert.ok(src.includes('bastilleActors=makeCrowd(bastilleCrowd,20,102,{reveal:true,spread:5.6})'));
  assert.ok(src.includes("banner(bastilleCrowd,'RÉPUBLIQUE — BASTILLE'"));
  assert.ok(src.includes("protestSign(bastilleCrowd,'NON À LA HAINE'"));
  assert.ok(!src.includes("banner(root,'RÉPUBLIQUE — BASTILLE'"));
@@ -149,7 +149,7 @@ test('Le cartouche du haut est discret et l’arc Chapitre 4 reste dégagé',()=
  assert.ok(page.includes(".chapter-sky{position:absolute;z-index:2;left:50%;top:28px"));
  assert.ok(page.includes('id="chapter-sky"'));
  assert.ok(page.includes('id="redLabel"'));
- assert.ok(page.includes('manifestation-runtime.js?v=20261109-crs-hearts-v10'));
+ assert.ok(page.includes('manifestation-runtime.js?v=20261110-crs-visible-v11'));
 });
 test('Le décor parisien et le drapeau sans bloc blanc sont conservés',()=>{
  const src=read('manifestation-app.js');
@@ -163,8 +163,8 @@ test('Lecture, score 10 points par étape, versions à jour',()=>{
  assert.ok(book.includes('Les deux cortèges se rencontrent à mi-chemin.'));
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261109-crs-hearts-v10'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261109-crs-hearts-v10'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-crs-visible-v11'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-crs-visible-v11'));
 });
 test('Six silhouettes 3D Kenney sous licence CC0 sont toujours présentes',()=>{
  for(const sex of ['male','female'])for(const variant of ['a','c','e']){
@@ -174,4 +174,23 @@ test('Six silhouettes 3D Kenney sous licence CC0 sont toujours présentes',()=>{
   assert.match(bytes.toString('latin1',20,110000),/"walk"/);
  }
  assert.match(read('assets/manifestation/KENNEY-CC0-LICENSE.txt'),/Creative Commons Zero/);
+});
+
+test('Les CRS sont VISIBLES sur la chaussée et arrivent en formation pendant les trois vagues',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes('for(let i=0;i<4;i++)'),'Quatre CRS par attaque');
+ assert.ok(js.includes('officer.actor.position.x=(i-1.5)*1.45'),'Formation centrée sur la rue');
+ assert.ok(js.includes('officer.actor.scale.setScalar(1.25)'),'Visibles sur téléphone');
+ assert.ok(js.includes('Math.max(run.z+4.1,display.anchor-approaching*4.1)'));
+ assert.ok(js.includes('policeAlert.hidden=!currentWave'));
+ assert.ok(html.includes('id="crsAlert"'));
+ assert.ok(html.includes('CRS SUR LA CHAUSSÉE'));
+});
+test('Le cortège de Bastille est de même qualité graphique que celui de République',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes('crowdActors=makeCrowd(root,16,-7.5'),'Même fonction de personnages');
+ assert.ok(js.includes('bastilleActors=makeCrowd(bastilleCrowd,20,102,{reveal:true,spread:5.6})'));
+ assert.ok(!js.includes('distantCrowd(bastilleCrowd,'),'Pas de foule en cubes pour Bastille');
+ assert.ok(js.includes('walking(a.guy,t,.66)'),'Le cortège adverse avance');
+ assert.ok(js.includes('bastilleCrowd.visible=run.z>=93'),'La foule et les banderoles arrivent ensemble');
 });

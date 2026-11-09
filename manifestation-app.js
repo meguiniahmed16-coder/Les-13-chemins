@@ -307,13 +307,13 @@ function riotOfficer(index){
  personBody.rotation.y=Math.PI;actor.add(personBody);
  const vest=mesh(gBox,mat(0x273e54),0,1.08,0,.39,.48,.32);actor.add(vest);
  const belt=mesh(gBox,mat(0x1b2634),0,.77,0,.41,.08,.32);actor.add(belt);
- const helmet=mesh(gSphere,mat(0x1c2b3d),0,1.68,0,.23,.18,.23);actor.add(helmet);
+ const helmet=mesh(gSphere,mat(0x1c2b3d),0,1.68,0,.27,.20,.25);actor.add(helmet);
  const visor=mesh(gBox,new T.MeshStandardMaterial({color:0x829ca8,transparent:true,opacity:.75,roughness:.33}),
    0,1.61,-.21,.32,.16,.03);actor.add(visor);
  // Front-facing shield, toward the player's path, plus a baton in the other hand.
- const shield=mesh(gBox,mat(0x667d8c,.18),-.42,1.13,-.31,.67,.88,.1);actor.add(shield);
- const label=roundedText('CRS',.48,'#c8d5d8','#293949');label.rotation.y=Math.PI;
- label.position.set(-.42,1.14,-.37);actor.add(label);
+ const shield=mesh(gBox,mat(0x667d8c,.18),-.42,1.13,-.34,.82,1.04,.11);actor.add(shield);
+ const label=roundedText('CRS',.66,'#e4ebed','#152b3d');label.rotation.y=Math.PI;
+ label.position.set(-.42,1.14,-.415);actor.add(label);
  const baton=mesh(gCyl,mat(0x17202a),.43,1.22,-.2,.035,.42,.035);
  baton.rotation.z=-.26;actor.add(baton);
  return {actor,personBody};
@@ -323,9 +323,10 @@ function createPoliceWaves(root){
  for(const wave of CRS_WAVES){
   const group=new T.Group(),actors=[];
   group.visible=false;group.position.z=wave.anchor;root.add(group);
-  for(let i=0;i<3;i++){
-   const officer=riotOfficer((wave.id-1)*3+i);
-   officer.actor.position.x=(i-1)*1.7;
+  for(let i=0;i<4;i++){
+   const officer=riotOfficer((wave.id-1)*4+i);
+   officer.actor.scale.setScalar(1.25); // Easily recognisable on mobile.
+   officer.actor.position.x=(i-1.5)*1.45;
    group.add(officer.actor);actors.push(officer);
   }
   policeGroups.push({id:wave.id,group,actors,anchor:wave.anchor});
@@ -341,13 +342,13 @@ function updatePoliceWaves(t){
    display.group.visible=true;
    const approaching=Math.max(0,run.clock-wave.startedAt);
    display.group.position.set(Math.sin(t*.6+wave.id)*.25,0,
-    Math.max(run.z+5.5,display.anchor-approaching*2.4));
+    Math.max(run.z+4.1,display.anchor-approaching*4.1));
   }else{
    const elapsed=run.clock-wave.repelledAt;
    display.group.visible=elapsed<2.2;
    if(display.group.visible){
     display.group.position.set((wave.id%2?1:-1)*elapsed*3.4,0,
-     Math.max(run.z+6,display.anchor)+elapsed*7);
+     Math.max(run.z+5,display.anchor)+elapsed*8);
    }
   }
   if(display.group.visible)for(const officer of display.actors){
@@ -374,7 +375,7 @@ function sendHearts(waveId){
   const start=from.clone().add(new T.Vector3((i-1)*.13,(i%2)*.10,0));
   const end=to.clone().add(new T.Vector3((i-1)*1.0,(i%2)*.32,0));
   heart.position.copy(start);
-  heart.scale.setScalar(.48);
+  heart.scale.setScalar(.72);
   sceneGroup.add(heart);
   heartBursts.push({heart,start,end,elapsed:0,duration:.72+i*.10,phase:i*.8});
  }
@@ -419,8 +420,9 @@ function sceneFor(phase){
   crowdSymbols(root,true);
   // The other procession appears TOGETHER, not as early, orphaned banners.
   bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
-  distantCrowd(bastilleCrowd,103,55);
-  bastilleActors=makeCrowd(bastilleCrowd,8,102,{spread:5});
+  // The opposite demonstration uses the SAME rigged animated Kenney models
+  // as the nearby followers, rather than the crude distantCrowd boxes.
+  bastilleActors=makeCrowd(bastilleCrowd,20,102,{reveal:true,spread:5.6});
   banner(bastilleCrowd,'RÉPUBLIQUE — BASTILLE',0,97,7.4);
   protestSign(bastilleCrowd,'NON À LA HAINE',-4,103,3.1);
   flag(bastilleCrowd,'france',3,0,101,3.2);
@@ -458,6 +460,12 @@ function refreshHUD(){
  const up=playing&&!paused&&p===1&&!run.statueShouted&&!run.climb;
  const panel=$('statueControls');if(panel)panel.hidden=!up;
  if(up){$('statueProgress').textContent='La foule attend ton appel.';$('statueCall').textContent='📣 Crier « Camarades ! »';}
+ const policeAlert=$('crsAlert');
+ if(policeAlert){
+  const currentWave=run.phase===3?run.crsWaves.find(w=>w.status==='active'):null;
+  policeAlert.hidden=!currentWave;
+  if(currentWave)policeAlert.textContent='🚨 CRS SUR LA CHAUSSÉE · Attaque '+currentWave.id+'/3 · ❤️ '+currentWave.hearts+'/4';
+ }
  $('red').classList.toggle('awaiting',up);
  $('red').textContent=p===3?'♥':'●';
  $('red').setAttribute('aria-label',p===3?'Rouge : envoyer des cœurs aux CRS et rassembler la foule':'Rouge : appeler et rassembler');
@@ -646,10 +654,13 @@ function animateActors(dt,t){
  moveEscortInstances();
  if(rallyProps)rallyProps.position.set(run.x*.27,0,lead-2.5);
  if(bastilleCrowd){
-  bastilleCrowd.visible=run.z>=87;
+  bastilleCrowd.visible=run.z>=93;
   if(bastilleCrowd.visible)for(const a of bastilleActors){
    a.guy.rotation.y=Math.PI;
-   walking(a.guy,t,.20);
+   // The other demonstration advances towards the narrator rather than
+   // standing motionless in front of an orphaned banner.
+   a.guy.position.z=Math.max(96,a.z-Math.max(0,run.z-93)*.38);
+   walking(a.guy,t,.66);
   }
  }
  updatePoliceWaves(t);
