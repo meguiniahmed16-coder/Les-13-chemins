@@ -168,3 +168,13 @@ test('Les commandes au sommet restent accessibles et la version mobile est rafra
  assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-statuerepair3'));
  assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-statuerepair3'));
 });
+
+test('La manette de la statue existe une seule fois et ses commandes sont raccordées',()=>{
+ const html=read('jeu-manifestation.html'),app=read('manifestation-app.js');
+ for(const id of ['statueControls','statueProgress','statueCall','statueDescend']){
+  assert.equal(html.split('id="'+id+'"').length-1,1,'Un seul élément '+id);
+  assert.ok(app.includes("$('"+id+"')"),'Élément contrôlé par le jeu : '+id);
+ }
+ assert.ok(app.includes("$('statueCall').onclick=callCrowd"));
+ assert.ok(app.includes("$('statueDescend').onclick=yellowPress"));
+});
