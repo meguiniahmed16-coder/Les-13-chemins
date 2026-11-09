@@ -77,7 +77,7 @@
   modal.innerHTML=readerHTML(stage);document.body.append(modal);active=modal;bindCharacters(modal);
   let finished=false,continueToGame=!autoAdvanceOnEnd,scrollTimer=0;
   function finish(){
-   if(finished)return;finished=true;clearTimeout(scrollTimer);active=null;
+   if(finished)return;finished=true;if(scrollTimer)clearTimeout(scrollTimer);active=null;
    document.documentElement.classList.remove('arrival-reading');modal.remove();
    if(continueToGame)onChallenge();else onDismiss();
   }
