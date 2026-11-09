@@ -123,8 +123,9 @@ function createChapter2Graffiti(game){
  });
  const group=new THREE.Group();group.name='GraffitiChapitre2';
  // Both sites are intact parts of the low roadside cover wall, facing the camera.
+ // The first is nearer the camera and left of the player so the text is legible.
  // Reuse the ONE high-resolution texture: no extra downloads or gameplay changes.
- for(const [i,x] of [4.4,34.1].entries()){
+ for(const [i,x] of [-.4,32.5].entries()){
   const plane=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.84),material);
   plane.name='GraffitiChapitre2Mur'+(i+1);
   plane.position.set(x,.75,-.586);
