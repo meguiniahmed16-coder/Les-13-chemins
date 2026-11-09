@@ -19,7 +19,8 @@ for (const args of [
   ['--test', 'marmousets-art.test.mjs'],
   ['--test', 'a410-pixel-v2.test.mjs'],
   ['--test', 'catalogne-park-v2.test.mjs'],
-  ['--test', 'ordre-lecture.test.mjs'],  // compile true stage characters from sources, never reuse stale runtime
+  ['--test', 'ordre-lecture.test.mjs'],
+  ['--test', 'chapitre1-flow.test.mjs'],  // verify the grouped chapter and preserve the thirteen scene IDs
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
   if (stdout.trim()) console.log(stdout.trim());
@@ -32,6 +33,8 @@ const publicFiles = [
   'carte.html',
   'jeu.html',
   'ordre-lecture.js',
+  'chapitre1-flow.js',
+  'chapitre1-plateau.js',
   'lecture.html',
   'mode_emploi.html',
   'mode_emploi_treize_chemins.html',
