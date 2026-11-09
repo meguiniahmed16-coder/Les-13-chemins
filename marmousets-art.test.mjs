@@ -62,8 +62,45 @@ test('Location strip is at the bottom of the scene, beneath the schoolbook sky c
 test('Rider silhouette keeps exactly one visible leg in side profile',()=>{
  const horse=art.slice(art.indexOf('function horse('));
  const mounted=horse.slice(horse.indexOf('if(mounted>0)'),horse.indexOf('c.restore();}',horse.indexOf('if(mounted>0)')));
- assert.ok(mounted.includes('M-10 -115Q2 -108 16 -98'));
- assert.ok(mounted.includes('M17 -73L29 -73'));
+ assert.ok(mounted.includes("M-12 -116Q-2 -115 9 -109"));
+ assert.ok(mounted.includes("M15 -77Q21 -81 27 -77"));
+ assert.ok(mounted.includes("'#2f536d',INK,2"));
+ assert.ok(mounted.includes("'#453832',INK,1.7"));
  assert.ok(!mounted.includes('M-11 -115Q-25 -108 -23 -94L-16 -84'));
  assert.ok(!mounted.includes('M-15 -83L-6 -83M17 -73L28 -73'));
+});
+
+test('Two filled legs on foot, only one filled leg and boot when seated',()=>{
+ const paths=[];
+ class TracedPath2D{constructor(d){this.d=d;}}
+ const traceContext={Path2D:TracedPath2D};
+ vm.runInNewContext(art,traceContext);
+ const riderArt=traceContext.MarmousetsArt;
+ const brush={...ctx,fill(path){if(path)paths.push({d:path.d,color:this.fillStyle});}};
+ const render=(phase,options={})=>{
+  paths.length=0;
+  riderArt.horse(brush,{...base,phase,mount:1,phaseTime:0,...options},1.5,426,(x,y,opt)=>riderArt.person(brush,x,y,opt));
+  return paths.map(x=>({...x}));
+ };
+ const feet=x=>x.filter(p=>/^M(?:-13|1) -35Q/.test(p.d));
+ const thigh=x=>x.filter(p=>p.d.startsWith('M-12 -116Q-2 -115 9 -109'));
+ const boot=x=>x.filter(p=>p.d.startsWith('M15 -77Q21 -81 27 -77'));
+ for(const [state,options,standing,horseback] of [
+  ['ready',{mount:0},2,0],
+  ['mounting',{mount:.21},2,0],
+  ['mounting',{mount:.68},0,1],
+  ['running',{},0,1],
+  ['running',{jump:{t:.5},y:120},0,1],
+  ['reunion',{phaseTime:2},4,0],
+  ['won',{},4,0]
+ ]){
+  const fills=render(state,options);
+  assert.equal(feet(fills).length,standing,state+' legs on ground');
+  assert.equal(thigh(fills).length,horseback,state+' seated legs');
+  assert.equal(boot(fills).length,horseback,state+' seated boots');
+  if(horseback){
+   assert.equal(thigh(fills)[0].color,'#2f536d','trouser is an opaque filled polygon');
+   assert.equal(boot(fills)[0].color,'#453832','boot is an opaque filled polygon');
+  }
+ }
 });
