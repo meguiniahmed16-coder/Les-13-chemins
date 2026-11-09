@@ -64,6 +64,98 @@ const ownerLogin=x=>x.request('admin-login',{method:'POST',headers:{Origin:origi
 const ownerCookie=async x=>(await ownerLogin(x)).headers.get('set-cookie').split(';')[0];
 const command=(x,c,action,body)=>x.request(action,{method:'POST',headers:{Cookie:c,Origin:origin},body:JSON.stringify(body)});
 const editorLogin=(x,code)=>x.request('login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({code})});
+const partBytes=3*1024*1024;
+async function multipartFixture(count=2,large=false){
+ const x=setup(),owner=await ownerCookie(x),reader=(await x.login()).headers.get('set-cookie').split(';')[0];
+ const old=Array.from({length:24},(_,i)=>{const data=Buffer.from('old-'+i);return{id:(i+1).toString(16).padStart(32,'0'),name:'Document-'+i+'.docx',title:'Document '+i,category:'Manuscrits',mime:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',bytes:data.length,parts:[digest(data)],sha256:digest(data),updatedAt:'2026-11-08'};});
+ await x.store.setJSON('catalog-v1',{files:old,updatedAt:'2026-11-08'});
+ const contents=Array.from({length:count},(_,i)=>large&&i===0?Buffer.alloc(partBytes+11,65):Buffer.from('new-document-'+i));
+ const files=contents.map((bytes,i)=>({name:old[i].name,expectedSha256:old[i].sha256,bytes:bytes.length,sha256:digest(bytes),parts:Array.from({length:Math.ceil(bytes.length/partBytes)},(_,p)=>digest(bytes.subarray(p*partBytes,(p+1)*partBytes)))}));
+ const begin=async(body={files})=>command(x,owner,'owner-begin-upload',body);
+ const start=async(body={files})=>{const r=await begin(body);assert.equal(r.status,201);return r.json();};
+ const put=(batch,i,p,bytes=contents[i].subarray(p*partBytes,(p+1)*partBytes),cookie=owner)=>x.request(`owner-upload-part&upload=${batch.uploadId}&id=${batch.files[i].id}&part=${p}`,{method:'POST',headers:{Cookie:cookie,Origin:origin,'x-content-sha256':digest(bytes)},body:bytes});
+ const upload=async batch=>{for(let i=0;i<files.length;i++)for(let p=0;p<files[i].parts.length;p++)assert.equal((await put(batch,i,p)).status,200);};
+ const publish=batch=>command(x,owner,'owner-publish-upload',{uploadId:batch.uploadId});
+ return{...x,owner,reader,old,files,contents,begin,start,put,upload,publish};
+}
+test('Large private replacements keep the existing owner, origin and session boundaries',async()=>{
+ const x=await multipartFixture();
+ for(const action of ['owner-begin-upload','owner-upload-part','owner-publish-upload']){
+  for(const cookie of ['',x.reader])assert.equal((await command(x,cookie,action,{files:x.files})).status,401);
+  assert.equal((await x.request(action,{method:'POST',headers:{Origin:origin,'x-editor-admin':'admin-test-secret'},body:'{}'})).status,401);
+  assert.equal((await x.request(action,{method:'POST',headers:{Cookie:x.owner},body:'{}'})).status,403);
+  assert.equal((await x.request(action,{method:'POST',headers:{Cookie:x.owner,Origin:'https://evil.example'},body:'{}'})).status,403);
+  assert.equal((await x.request(action,{headers:{Cookie:x.owner,Origin:origin}})).status,403);
+ }
+ const batch=await x.start(),otherOwner=await ownerCookie(x);
+ assert.equal((await x.put(batch,0,0,x.contents[0],otherOwner)).status,409);
+ x.setTime(10000000+2*60*60*1000+1);assert.equal((await x.publish(batch)).status,409);
+ x.setTime(10000000+4*60*60*1000+1);assert.equal((await x.begin()).status,401);
+ const y=await multipartFixture();y.cfg.adminHash=digest('rotated-owner');assert.equal((await y.begin()).status,401);
+});
+test('Large replacement manifests reject ambiguous, stale and invalid batches',async()=>{
+ const x=await multipartFixture(),before=await x.store.get('catalog-v1');
+ const cases=[
+  [{files:[]},400],
+  [{files:Array(8).fill(x.files[0])},400],
+  [{files:[x.files[0],x.files[0]]},400],
+  [{files:[{...x.files[0],name:'Unknown.docx'}]},409],
+  [{files:[{...x.files[0],name:'../Document-0.docx'}]},409],
+  [{files:[{...x.files[0],expectedSha256:digest('stale')}]},409],
+  [{files:[{...x.files[0],bytes:200000001}]},400],
+  [{files:[{...x.files[0],parts:[]}]},400],
+  [{files:[{...x.files[0],sha256:'bad'}]},400],
+ ];
+ for(const[body,status]of cases)assert.equal((await x.begin(body)).status,status);
+ assert.deepEqual(await x.store.get('catalog-v1'),before);
+ await x.store.setJSON('catalog-v1',{files:[...x.old,{...x.old[0],id:'f'.repeat(32)}]});
+ assert.equal((await x.begin()).status,409);
+});
+test('Private upload parts are bounded, immutable, session-bound and hidden until publication',async()=>{
+ const x=await multipartFixture(1,true),batch=await x.start(),id=batch.files[0].id;
+ assert.equal((await x.put(batch,0,0,Buffer.from('short'))).status,400);
+ assert.equal((await x.put(batch,0,0,Buffer.alloc(partBytes,66))).status,400);
+ assert.equal((await x.put(batch,0,9,Buffer.from('bad'))).status,400);
+ const forged={...batch,files:[{...batch.files[0],id:x.old[0].id}]};assert.equal((await x.put(forged,0,0)).status,400);
+ assert.equal((await x.put(batch,0,0)).status,200);
+ const etag=(await x.store.getMetadata(`files/${id}/0`)).etag;
+ assert.equal((await x.put(batch,0,0)).status,200);assert.equal((await x.store.getMetadata(`files/${id}/0`)).etag,etag);
+ assert.equal((await x.request(`part&id=${id}&part=0`,{headers:{Cookie:x.reader}})).status,404);
+ assert.equal((await x.request(`part&id=${id}&part=0`)).status,401);
+});
+test('Missing parts, altered bytes and a false whole-file digest cannot publish',async()=>{
+ const missing=await multipartFixture(1,true),a=await missing.start();await missing.put(a,0,0);
+ assert.equal((await missing.publish(a)).status,409);assert.deepEqual((await missing.store.get('catalog-v1')).files,missing.old);
+ const wrong=await multipartFixture(1),b=await wrong.start({files:[{...wrong.files[0],sha256:digest('wrong-whole-file')}]});await wrong.upload(b);
+ assert.equal((await wrong.publish(b)).status,409);assert.deepEqual((await wrong.store.get('catalog-v1')).files,wrong.old);
+ const corrupt=await multipartFixture(1),c=await corrupt.start();await corrupt.upload(c);
+ const record=corrupt.records.get(`files/${c.files[0].id}/0`);record.data=Buffer.alloc(corrupt.contents[0].length,90);
+ assert.equal((await corrupt.publish(c)).status,409);assert.deepEqual((await corrupt.store.get('catalog-v1')).files,corrupt.old);
+});
+test('Concurrent target or catalogue changes cannot be lost and failed CAS never removes file parts',async()=>{
+ const x=await multipartFixture(1),batch=await x.start();await x.upload(batch);
+ const changed=x.old.map((f,i)=>i===0?{...f,title:'Concurrent target title'}:f);await x.store.setJSON('catalog-v1',{files:changed});
+ assert.equal((await x.publish(batch)).status,409);assert.deepEqual((await x.store.get('catalog-v1')).files,changed);
+ const y=await multipartFixture(1),other=await y.start();await y.upload(other);
+ const original=y.store.setJSON.bind(y.store);y.store.setJSON=async(key,data,opts)=>key==='catalog-v1'&&opts?.onlyIfMatch?{modified:false}:original(key,data,opts);
+ assert.equal((await y.publish(other)).status,409);assert.deepEqual((await y.store.get('catalog-v1')).files,y.old);
+ assert.ok(await y.store.get(`files/${other.files[0].id}/0`));
+});
+test('Seven replacements publish atomically within 24 documents and preserve unrelated current entries',async()=>{
+ const x=await multipartFixture(7,true),batch=await x.start();await x.upload(batch);
+ const current=x.old.map((f,i)=>i===23?{...f,title:'New unrelated title'}:f);await x.store.setJSON('catalog-v1',{files:current});
+ let commits=0;const original=x.store.setJSON.bind(x.store);x.store.setJSON=async(key,data,opts)=>{if(key==='catalog-v1')commits++;return original(key,data,opts);};
+ assert.equal((await x.publish(batch)).status,200);assert.equal(commits,1);
+ const catalog=await x.store.get('catalog-v1');assert.equal(catalog.files.length,24);assert.deepEqual(catalog.files.slice(7),current.slice(7));
+ for(let i=0;i<7;i++){
+  const file=catalog.files[i];assert.equal(file.sha256,x.files[i].sha256);assert.equal(file.name,x.old[i].name);assert.equal(file.title,x.old[i].title);
+  const chunks=[];for(let p=0;p<file.parts.length;p++){const r=await x.request(`part&id=${file.id}&part=${p}`,{headers:{Cookie:x.reader}});assert.equal(r.status,200);chunks.push(Buffer.from(await r.arrayBuffer()));}
+  assert.equal(digest(Buffer.concat(chunks)),file.sha256);
+ }
+ assert.equal((await x.publish(batch)).status,409);assert.equal(commits,1);
+ assert.equal((await x.put(batch,0,0)).status,409);assert.ok(await x.store.get(`files/${catalog.files[0].id}/0`));
+ assert.equal((await x.request(`part&id=${catalog.files[0].id}&part=0`)).status,401);
+});
 test('Owner private document updates preserve catalogue, reject readers and stale writes',async()=>{
  const x=setup(),owner=await ownerCookie(x),reader=(await x.login()).headers.get('set-cookie').split(';')[0];
  const existing={id:'a'.repeat(32),name:'Existing.txt',title:'Existing',category:'Méthodes et révisions',mime:'text/plain',bytes:3,parts:[digest('old')],sha256:digest('old')};

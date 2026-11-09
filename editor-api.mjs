@@ -11,6 +11,8 @@ const ADMIN_COOKIE = '__Host-editor-admin';
 const DAY = 86400000;
 const SESSION_SECONDS = 4 * 60 * 60;
 const PART_BYTES = 3 * 1024 * 1024;
+const OWNER_UPLOAD_MAX_FILES = 7;
+const OWNER_UPLOAD_MAX_BYTES = 400000000;
 const HEX = /^[a-f0-9]{64}$/;
 const ID = /^[a-f0-9]{32}$/;
 const headers = {
@@ -155,6 +157,100 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       const ownerRevision = credential?.revision || cfg.adminHash;
       const ownerSession = HEX.test(ownerToken) ? await store.get('owner-sessions/' + digest(ownerToken), { type: 'json' }) : null;
       const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === ownerRevision;
+      // The owner's existing private-document permission also supports large
+      // replacements. Immutable new parts remain invisible until one catalogue CAS.
+      if (['owner-begin-upload', 'owner-upload-part', 'owner-publish-upload'].includes(action)) {
+        if (!owner) return json({ error: 'Connecte-toi à l’espace administrateur.' }, 401);
+        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        const sessionHash = digest(ownerToken);
+        if (action === 'owner-begin-upload') {
+          let body;
+          try { body = await smallJSON(request); } catch { return json({ error: 'Lot invalide.' }, 400); }
+          if (!Array.isArray(body?.files) || !body.files.length || body.files.length > OWNER_UPLOAD_MAX_FILES) return json({ error: 'Lot invalide.' }, 400);
+          const catalog = await store.get('catalog-v1', { type: 'json' });
+          if (!catalog?.files) return json({ error: 'Catalogue indisponible.' }, 409);
+          const names = new Set(), ids = new Set(catalog.files.map(f => f.id)), files = [];
+          let total = 0;
+          for (const item of body.files) {
+            if (!item || typeof item.name !== 'string' || names.has(item.name) || !HEX.test(item.expectedSha256 || '')) return json({ error: 'Référence du document invalide.' }, 400);
+            names.add(item.name);
+            const matches = catalog.files.filter(f => f.name === item.name);
+            if (matches.length !== 1 || matches[0].sha256 !== item.expectedSha256) return json({ error: 'Le document a changé. Recharge sa version actuelle.' }, 409);
+            const previous = matches[0];
+            let id;
+            do { id = randomBytes(16).toString('hex'); } while (ids.has(id));
+            ids.add(id);
+            let file;
+            try {
+              file = cleanCatalog({ files: [{ ...previous, id, bytes: item.bytes, parts: item.parts, sha256: item.sha256 }] }).files[0];
+            } catch { return json({ error: 'Document invalide.' }, 400); }
+            total += file.bytes;
+            if (total > OWNER_UPLOAD_MAX_BYTES) return json({ error: 'Lot trop volumineux.' }, 413);
+            files.push({ file, previousEntryHash: digest(JSON.stringify(previous)) });
+          }
+          const uploadId = randomBytes(16).toString('hex');
+          const draft = { sessionHash, revision: ownerRevision, expires: Math.min(ownerSession.expires, now() + 2 * 60 * 60 * 1000), files };
+          const saved = await store.setJSON('owner-uploads/' + uploadId, draft, { onlyIfNew: true });
+          if (!saved.modified) return json({ error: 'Réessaie de préparer le lot.' }, 409);
+          return json({ ok: true, uploadId, files: files.map(({ file }) => ({ id: file.id, name: file.name, bytes: file.bytes, parts: file.parts.length })) }, 201);
+        }
+        let uploadId;
+        if (action === 'owner-upload-part') uploadId = url.searchParams.get('upload');
+        else {
+          let body;
+          try { body = await smallJSON(request, 1000); } catch { return json({ error: 'Lot invalide.' }, 400); }
+          uploadId = body?.uploadId;
+        }
+        if (!ID.test(uploadId || '')) return json({ error: 'Lot invalide.' }, 400);
+        const draft = await store.get('owner-uploads/' + uploadId, { type: 'json' });
+        if (!draft || draft.sessionHash !== sessionHash || draft.revision !== ownerRevision || draft.expires <= now()) return json({ error: 'Ce lot a expiré. Prépare-le à nouveau.' }, 409);
+        if (action === 'owner-upload-part') {
+          const file = draft.files.find(({ file }) => file.id === url.searchParams.get('id'))?.file;
+          const partText = url.searchParams.get('part');
+          if (!file || !/^(0|[1-9]\d{0,2})$/.test(partText || '') || Number(partText) >= file.parts.length) return json({ error: 'Référence invalide.' }, 400);
+          const part = Number(partText), expectedBytes = Math.min(PART_BYTES, file.bytes - part * PART_BYTES);
+          if (Number(request.headers.get('content-length') || 0) > PART_BYTES) return json({ error: 'Fichier trop volumineux.' }, 413);
+          const bytes = Buffer.from(await request.arrayBuffer()), sha256 = digest(bytes);
+          if (bytes.length !== expectedBytes || sha256 !== file.parts[part] || request.headers.get('x-content-sha256') !== sha256) return json({ error: 'Contrôle d’intégrité échoué.' }, 400);
+          const key = `files/${file.id}/${part}`;
+          const saved = await store.set(key, bytes, { onlyIfNew: true, metadata: { sha256, bytes: bytes.length } });
+          if (!saved.modified) {
+            const existing = await store.getMetadata(key);
+            if (existing?.metadata?.sha256 !== sha256 || existing?.metadata?.bytes !== bytes.length) return json({ error: 'Cette partie ne peut pas être remplacée.' }, 409);
+          }
+          return json({ ok: true, sha256 });
+        }
+        // Recompute the complete digests in order using bounded groups of parts.
+        // This also detects a wrong whole-file digest despite valid part hashes.
+        for (const { file } of draft.files) {
+          const hash = createHash('sha256');
+          for (let first = 0; first < file.parts.length; first += 4) {
+            const chunks = await Promise.all(file.parts.slice(first, first + 4).map((_, i) => store.get(`files/${file.id}/${first + i}`, { type: 'arrayBuffer' })));
+            for (let i = 0; i < chunks.length; i++) {
+              if (!chunks[i]) return json({ error: 'Un document est incomplet.' }, 409);
+              const bytes = Buffer.from(chunks[i]), part = first + i;
+              if (bytes.length !== Math.min(PART_BYTES, file.bytes - part * PART_BYTES) || digest(bytes) !== file.parts[part]) return json({ error: 'Contrôle d’intégrité échoué.' }, 409);
+              hash.update(bytes);
+            }
+          }
+          if (hash.digest('hex') !== file.sha256) return json({ error: 'Contrôle du document échoué.' }, 409);
+        }
+        const snapshot = await store.getWithMetadata('catalog-v1', { type: 'json' });
+        if (!snapshot?.data?.files) return json({ error: 'Catalogue indisponible.' }, 409);
+        const replacements = new Map();
+        for (const { file, previousEntryHash } of draft.files) {
+          const matches = snapshot.data.files.filter(f => f.name === file.name);
+          if (matches.length !== 1 || digest(JSON.stringify(matches[0])) !== previousEntryHash) return json({ error: 'Le document a changé. Recharge sa version actuelle.' }, 409);
+          replacements.set(file.name, { ...file, updatedAt: new Date(now()).toISOString() });
+        }
+        const catalog = cleanCatalog({ files: snapshot.data.files.map(file => replacements.get(file.name) || file) });
+        const saved = await store.setJSON('catalog-v1', catalog, { onlyIfMatch: snapshot.etag });
+        if (!saved.modified) return json({ error: 'Le catalogue a changé. Réessaie la publication.' }, 409);
+        // Do not delete file parts on a failed or concurrent publication.
+        // They may already belong to the active catalogue.
+        try { await store.delete('owner-uploads/' + uploadId); } catch {}
+        return json({ ok: true, count: catalog.files.length, updated: [...replacements.values()].map(({ id, name, sha256 }) => ({ id, name, sha256 })) });
+      }
       // Owner-authenticated updates append or replace one small private document.
       // The catalogue is updated atomically; unrelated documents are preserved.
       if (action === 'owner-save-document') {
