@@ -6,7 +6,7 @@
  const $=id=>document.getElementById(id);
  const css=document.createElement('style');
  css.id='chapitre1-board-styles';
- css.textContent="#board{aspect-ratio:auto!important;min-height:0!important;overflow:visible!important;background:linear-gradient(145deg,#f1e2c5,#e6d2ae);padding:13px!important;touch-action:pan-y}\n#board picture{display:none!important}\n#boardTargets{position:relative!important;inset:auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}\n#boardTargets .board-target{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:100%!important;height:auto!important;min-height:130px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px 12px 39px;border-radius:10px;text-align:left;background:linear-gradient(155deg,#fff6df,#edddbc);border:2px solid #c5a679;box-shadow:0 3px 0 #ad8a5c33;color:#4f3c2a;overflow:hidden}\n#boardTargets .board-target:before{content:'';position:absolute;right:-26px;top:-32px;width:95px;height:95px;border:1px solid #ddc29b;border-radius:50%;pointer-events:none}\n#boardTargets .board-target[aria-disabled=true]{opacity:.6;filter:saturate(.6);cursor:not-allowed}\n#boardTargets .board-target[aria-pressed=true]{border-color:#31594c;background:linear-gradient(145deg,#fff4dc,#e6edd8);box-shadow:inset 0 0 0 2px #fff9eb}\n#boardTargets .board-target.done{background:linear-gradient(145deg,#e9efdb,#d1ddc5);border-color:#7e9d76}\n#boardTargets .chapter-first{grid-column:1/-1;min-height:178px!important;background:linear-gradient(110deg,#32564b 0%,#527768 48%,#739377 100%)!important;border:3px solid #bd995e!important;color:#fff5dc!important;padding:20px 22px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 1.35fr;align-content:center;column-gap:22px;row-gap:9px}\n#boardTargets .chapter-first[aria-disabled=true]{opacity:1;filter:none}\n#boardTargets .chapter-first[aria-pressed=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}\n#boardTargets .chapter-first.done{background:linear-gradient(110deg,#2d584a,#466d54,#70855c)!important}\n#boardTargets .chapter-first:before{right:-22px;top:-42px;width:230px;height:230px;border:2px solid #f7eaca30}\n#boardTargets .chapter-first .chapter-card-kicker{color:#f0d6a2}\n#boardTargets .chapter-first .chapter-card-title{color:#fff9e5;font-size:clamp(24px,3vw,37px)}\n#boardTargets .chapter-first .chapter-card-place{color:#e3e9d3}\n#boardTargets .chapter-card-kicker{font:700 10px/1.2 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8b6740;position:relative}\n#boardTargets .chapter-card-title{font:700 clamp(19px,2.2vw,25px)/1.06 'Cormorant Garamond',Georgia,serif;position:relative;max-width:100%}\n#boardTargets .chapter-card-place{font:11px/1.4 'DM Sans',sans-serif;color:#836a49;position:relative}\n#boardTargets .chapter-card-route{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;grid-column:2;grid-row:1 / span 3;align-self:center;position:relative}\n#boardTargets .chapter-card-route span{flex:1 1 90px;min-width:0;text-align:center;border:1px solid #eed9ae70;padding:12px 6px;border-radius:7px;background:#1d403749;font:700 11px/1.45 'DM Sans',sans-serif;color:#fff8dc}\n#boardTargets .chapter-card-route span.passed{background:#e4eed3;color:#28503d}\n#boardTargets .chapter-card-status{font:600 11px/1.3 'DM Sans',sans-serif;margin-top:auto;color:#dceacf;grid-column:1;position:relative}\n#boardTargets .board-badge{position:absolute;right:8px;bottom:8px;top:auto;z-index:1;width:24px;height:24px;font-size:12px}\n#boardTargets .chapter-first .board-badge{right:12px;bottom:12px;width:31px;height:31px;font-size:17px}\n#chapter1Sequence{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0;padding:11px;border:1px solid #bbad84;border-radius:8px;background:#f5ecd7}\n#chapter1Sequence .chapter1-part{border:1px solid #bba778;border-radius:5px;background:#fff9ea;color:#52613e;padding:8px 10px;min-height:43px;font:600 12px 'DM Sans',sans-serif;flex:1 1 120px;cursor:pointer}\n#chapter1Sequence .chapter1-part.active{background:#315b49;color:#fff9e2;border-color:#315b49}\n#chapter1Sequence .chapter1-part.passed{border-color:#638869}\n#chapter1Sequence .chapter1-part:disabled{opacity:.46;cursor:not-allowed}\n#chapter1Header{font:700 17px/1.25 'Cormorant Garamond',Georgia,serif;color:#6b5637;margin:0 0 7px}\n#chapter1Header[hidden],#chapter1Sequence[hidden]{display:none!important}\n@media(max-width:760px){#boardTargets{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#boardTargets .board-target{min-height:135px;padding:11px 10px 35px}#boardTargets .chapter-first{grid-column:1/-1;grid-template-columns:1fr;min-height:195px!important;padding:17px!important}#boardTargets .chapter-card-route{grid-column:1;grid-row:auto;gap:5px}#boardTargets .chapter-card-route span{flex:1 1 85px;padding:9px 4px;font-size:10px}}\n@media(max-width:390px){#boardTargets .chapter-card-title{font-size:19px}#boardTargets .chapter-card-route{flex-wrap:wrap}}";
+ css.textContent="#board{aspect-ratio:auto!important;min-height:0!important;overflow:visible!important;background:linear-gradient(145deg,#f1e2c5,#e6d2ae);padding:13px!important;touch-action:pan-y}\n#board picture{display:none!important}\n#boardTargets{position:relative!important;inset:auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}\n#boardTargets .board-target{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:100%!important;height:auto!important;min-height:130px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px 12px 39px;border-radius:10px;text-align:left;background:linear-gradient(155deg,#fff6df,#edddbc);border:2px solid #c5a679;box-shadow:0 3px 0 #ad8a5c33;color:#4f3c2a;overflow:hidden}\n#boardTargets .board-target:before{content:'';position:absolute;right:-26px;top:-32px;width:95px;height:95px;border:1px solid #ddc29b;border-radius:50%;pointer-events:none}\n#boardTargets .board-target[aria-disabled=true]{opacity:.6;filter:saturate(.6);cursor:not-allowed}\n#boardTargets .board-target[aria-pressed=true]{border-color:#31594c;background:linear-gradient(145deg,#fff4dc,#e6edd8);box-shadow:inset 0 0 0 2px #fff9eb}\n#boardTargets .board-target.done{background:linear-gradient(145deg,#e9efdb,#d1ddc5);border-color:#7e9d76}\n#boardTargets .chapter-featured{grid-column:1/-1;min-height:178px!important;background:linear-gradient(110deg,#32564b 0%,#527768 48%,#739377 100%)!important;border:3px solid #bd995e!important;color:#fff5dc!important;padding:20px 22px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 1.35fr;align-content:center;column-gap:22px;row-gap:9px}\n#boardTargets .chapter-featured[aria-disabled=true]{opacity:1;filter:none}\n#boardTargets .chapter-featured[aria-pressed=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}\n#boardTargets .chapter-featured.done{background:linear-gradient(110deg,#2d584a,#466d54,#70855c)!important}\n#boardTargets .chapter-featured:before{right:-22px;top:-42px;width:230px;height:230px;border:2px solid #f7eaca30}\n#boardTargets .chapter-featured .chapter-card-kicker{color:#f0d6a2}\n#boardTargets .chapter-featured .chapter-card-title{color:#fff9e5;font-size:clamp(24px,3vw,37px)}\n#boardTargets .chapter-featured .chapter-card-place{color:#e3e9d3}\n#boardTargets .chapter-card-kicker{font:700 10px/1.2 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8b6740;position:relative}\n#boardTargets .chapter-card-title{font:700 clamp(19px,2.2vw,25px)/1.06 'Cormorant Garamond',Georgia,serif;position:relative;max-width:100%}\n#boardTargets .chapter-card-place{font:11px/1.4 'DM Sans',sans-serif;color:#836a49;position:relative}\n#boardTargets .chapter-card-route{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;grid-column:2;grid-row:1 / span 3;align-self:center;position:relative}\n#boardTargets .chapter-card-route span{flex:1 1 90px;min-width:0;text-align:center;border:1px solid #eed9ae70;padding:12px 6px;border-radius:7px;background:#1d403749;font:700 11px/1.45 'DM Sans',sans-serif;color:#fff8dc}\n#boardTargets .chapter-card-route span.passed{background:#e4eed3;color:#28503d}\n#boardTargets .chapter-card-status{font:600 11px/1.3 'DM Sans',sans-serif;margin-top:auto;color:#dceacf;grid-column:1;position:relative}\n#boardTargets .board-badge{position:absolute;right:8px;bottom:8px;top:auto;z-index:1;width:24px;height:24px;font-size:12px}\n#boardTargets .chapter-featured .board-badge{right:12px;bottom:12px;width:31px;height:31px;font-size:17px}\n#chapter1Sequence{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0;padding:11px;border:1px solid #bbad84;border-radius:8px;background:#f5ecd7}\n#chapter1Sequence .chapter1-part{border:1px solid #bba778;border-radius:5px;background:#fff9ea;color:#52613e;padding:8px 10px;min-height:43px;font:600 12px 'DM Sans',sans-serif;flex:1 1 120px;cursor:pointer}\n#chapter1Sequence .chapter1-part.active{background:#315b49;color:#fff9e2;border-color:#315b49}\n#chapter1Sequence .chapter1-part.passed{border-color:#638869}\n#chapter1Sequence .chapter1-part:disabled{opacity:.46;cursor:not-allowed}\n#chapter1Header{font:700 17px/1.25 'Cormorant Garamond',Georgia,serif;color:#6b5637;margin:0 0 7px}\n#chapter1Header[hidden],#chapter1Sequence[hidden]{display:none!important}\n@media(max-width:760px){#boardTargets{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#boardTargets .board-target{min-height:135px;padding:11px 10px 35px}#boardTargets .chapter-featured{grid-column:1/-1;grid-template-columns:1fr;min-height:195px!important;padding:17px!important}#boardTargets .chapter-card-route{grid-column:1;grid-row:auto;gap:5px}#boardTargets .chapter-card-route span{flex:1 1 85px;padding:9px 4px;font-size:10px}}\n@media(max-width:390px){#boardTargets .chapter-card-title{font-size:19px}#boardTargets .chapter-card-route{flex-wrap:wrap}}";
  document.head.append(css);
  $('board').setAttribute('aria-label','Plateau de onze chapitres. Le premier réunit trois scènes de jeu.');
  const intro=document.querySelector('.board-intro');
@@ -15,6 +15,7 @@
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
  const chapterName='Chapitre 1 — « La salle d’attente »';
+ const chapterTwoName='Chapitre 2 — « Même pas mal »';
  const icons=['🌳','🪖','🎭','🗝️','🦋','🤝','🪶','🥾','⛺','💍','⛵'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
  const makeSpan=(name,label)=>{const el=document.createElement('span');el.className=name;el.textContent=label;return el;};
@@ -24,19 +25,24 @@
    host.dataset.mode='chapters-v1';
    host.replaceChildren(...flow.CARDS.map((scene,i)=>{
     const button=document.createElement('button');button.type='button';
-    button.className='board-target'+(scene===1?' chapter-first':'');
+    button.className='board-target'+(scene===1||scene===4?' chapter-featured':'');
     button.dataset.level=String(scene);button.dataset.chapter=String(i+1);
     button.append(
      makeSpan('chapter-card-kicker','CHAPITRE '+(i+1)),
-     makeSpan('chapter-card-title',scene===1?'La salle d’attente':LEVELS[scene-1].title),
+     makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Même pas mal':LEVELS[scene-1].title),
      makeSpan('chapter-card-place',scene===1?'Ferney-Voltaire · La Roche-sur-Foron · Barcelone':LEVELS[scene-1].place)
     );
-    if(scene===1){
+    if(scene===1||scene===4){
      const route=document.createElement('div');route.className='chapter-card-route';
-     for(let part=1;part<=3;part++){
-      const tile=makeSpan('chapter-part-label',captions[part-1]);tile.dataset.part=String(part);route.append(tile);
+     if(scene===1){
+      for(let part=1;part<=3;part++){
+       const tile=makeSpan('chapter-part-label',captions[part-1]);tile.dataset.part=String(part);route.append(tile);
+      }
+      button.append(route,makeSpan('chapter-card-status','0 / 3 scènes terminées'));
+     }else{
+      route.append(makeSpan('chapter-part-label','🪖 Sarajevo · Le choc de l’arrivée'));
+      button.append(route,makeSpan('chapter-card-status','Une scène · Entre les rafales'));
      }
-     button.append(route,makeSpan('chapter-card-status','0 / 3 scènes terminées'));
     }
     button.append(makeSpan('board-badge',icons[i]));
     button.onclick=()=>{
@@ -65,7 +71,10 @@
      badge.classList.toggle('passed',flow.partDone(state,p));
      badge.textContent=(flow.partDone(state,p)?'✓ ':'')+captions[p-1];
     }
-   }else button.querySelector('.board-badge').textContent=finished?'✓':icons[i];
+   }else{
+    if(n===4)button.querySelector('.chapter-card-status').textContent=finished?'✓ Sarajevo · chapitre terminé':'🪖 Sarajevo · une scène à accomplir';
+    button.querySelector('.board-badge').textContent=finished?'✓':icons[i];
+   }
   }
   const n=state.selected;
   const canContinue=n<=3?flow.partDone(state,n):state.completed.includes(n);
@@ -101,6 +110,8 @@
   updateProgressBar();
   const n=state.selected;
   header.hidden=n>3;sequence.hidden=n>3;
+  $('question').hidden=n===2||n===3;
+  $('options').hidden=n===2||n===3;
   if(n<=3){
    header.textContent=chapterName;
    const part=flow.PARTS[n-1];
@@ -118,17 +129,20 @@
    const canContinue=flow.partDone(state,n);
    const next=$('next');
    next.hidden=!canContinue;
-   next.textContent=n<3?'Continuer : '+flow.PARTS[n].title+' →':'Chapitre 2 · Sarajevo →';
+   next.textContent=n<3?'Continuer : '+flow.PARTS[n].title+' →':chapterTwoName+' · Sarajevo →';
    $('mobileNext').hidden=!canContinue;
    $('mobileNext').textContent=next.textContent;
    if(canContinue)$('mobileGameDock').hidden=false;
    $('gameEntryName').textContent=part.title;
    $('mobileGameName').textContent=part.title;
    $('gameEntryHint').textContent=canContinue&&n<3?'Cette partie est réussie. Tu peux continuer le chapitre.':canContinue?'Les trois parties du chapitre sont terminées.':'Réponds à la question et termine le jeu pour poursuivre.';
-   if(n===3&&state.completed.includes(3)&&!state.catalogneFinished)
-    $('status').textContent='Bonne réponse : termine les cinq rencontres à Barcelone pour achever ce chapitre.';
+   if(n===2&&!flow.partDone(state,2))
+    $('status').textContent='Partie 2 / 3 : réussis la fuite vers l’A410. Le quiz commun du chapitre a déjà été validé.';
+   if(n===3&&!flow.partDone(state,3))
+    $('status').textContent='Partie 3 / 3 : sers les cinq clients à Barcelone pour terminer le chapitre. Le quiz commun est déjà validé.';
   }else{
    $('levelTag').textContent='CHAPITRE '+flow.chapterOf(n)+' / 11'+(n===5?' · PLATEAU '+(TreizePlateaux.progress(state,5).finished.includes(1)?2:1)+' / 2':'');
+   if(n===4)$('questTitle').textContent=chapterTwoName;
   }
   const rewards=[];
   if(flow.done(state))rewards.push('<span class="item">✦ '+chapterName+'</span>');
@@ -138,7 +152,10 @@
   paintTargets();
  }
  const oldRender=render;
- render=function(){oldRender();paintChapterSection();};
+ render=function(){
+  if(flow.preparePart(state,state.selected,()=>crypto.randomUUID()))save();
+  oldRender();paintChapterSection();
+ };
  if(flow.reconcile(state))save();
  render();
  let pendingAuto=0;
