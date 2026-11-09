@@ -320,13 +320,13 @@ function refreshHUD(){
  $('meterLabel').textContent=p===2?'MOBILISATION':p===1?'PRÉPARATION':'COHÉSION DU CORTÈGE';
  if(p===1)hint.textContent='Joystick : avance vers le drapeau français devant l’école. Jaune pour grimper et le prendre.';
  else if(p===2){
-  if(run.climb)hint.textContent=run.climb.direction==='up'?'Tu montes réellement par les marches du socle. Les commandes restent disponibles dès l’arrivée.':'Tu redescends par les marches. Reprends ensuite le joystick.';
-  else if(run.climbed)hint.textContent=run.rallying?'La foule répond ! '+Math.round(run.mobilisation)+' % · La marche vers Bastille va commencer.':'Tu es SUR le socle. Un appui sur ROUGE suffit pour appeler la foule. JAUNE pour redescendre.';
-  else hint.textContent='Approche des marches DEVANT la statue et presse JAUNE. Tu pourras redescendre avec JAUNE.';
+  if(run.climb)hint.textContent=run.climb.direction==='up'?'Montée sur les marches… Le cri « Camarades ! » se déclenche au sommet.':'Descente automatique vers la rue. Tu pourras ensuite guider le cortège.';
+  else if(run.climbed)hint.textContent='— CAMARADES ! La foule répond. Descente automatique dans un instant.';
+  else hint.textContent='Approche des marches et presse JAUNE : montée, cri « Camarades ! » et descente s’enchaînent automatiquement.';
  }
  else hint.textContent=run.cohesion<60?'La foule s’étire : arrête-toi et maintiens le rouge pour rassembler.':'Avance vers Bastille en gardant la foule avec toi. Rouge : appeler les retardataires.';
  if(run.finished)hint.textContent='Les deux cortèges se retrouvent à mi-chemin. « — Par là. »';
- const up=playing&&!paused&&run.phase===2&&run.climbed&&!run.climb;
+ const up=playing&&!paused&&run.phase===2&&run.climbed&&!run.climb&&!run.statueShouted;
  const statuePanel=$('statueControls');
  if(statuePanel)statuePanel.hidden=!up;
  if(up){
@@ -350,7 +350,10 @@ function drain(){
    messageFeedback(words[e.step-1],1.8);sound(600+80*e.step,.18);
   }
   if(e.type==='summit'){
-   messageFeedback('Sur le socle ! Rouge : « Camarades ! »',2.7);sound(660,.22);
+   messageFeedback('Sur la statue !',.8);sound(660,.22);
+  }
+  if(e.type==='shout'){
+   voiceCamarades();
   }
   if(e.type==='ground'){
    messageFeedback('De retour au pied des marches.',1.8);
@@ -386,17 +389,25 @@ function sound(freq,length){
  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.055,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+length);
  o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+length+.02);}catch{}
 }
+function voiceCamarades(){
+ messageFeedback('— CAMARADES !',1.4);
+ if(soundOn&&'speechSynthesis'in window){
+  try{
+   const q=new SpeechSynthesisUtterance('Camarades !');q.lang='fr-FR';q.rate=1.03;q.volume=.9;
+   speechSynthesis.speak(q);
+  }catch{}
+ }
+ sound(520,.18);
+ lastSound=performance.now()/1000;
+}
 function callCrowd(){
  if(!playing||paused)return;
  if(run.phase===2&&run.climbed&&!run.climb){
-  callFromStatue(run);
-  messageFeedback('— Camarades !',1.3);
-  refreshHUD();
-  if(soundOn&&'speechSynthesis'in window&&performance.now()/1000-lastSound>5){
-   try{const q=new SpeechSynthesisUtterance('Camarades !');q.lang='fr-FR';q.rate=1.05;q.volume=.8;speechSynthesis.speak(q);}catch{}
-  }
-  lastSound=performance.now()/1000;
- }else if(run.phase===3)messageFeedback('On reste ensemble !',1.0);
+  // Le premier cri est déjà automatique : n'en créer aucun second.
+  if(!run.statueShouted&&callFromStatue(run))voiceCamarades();
+  return;
+ }
+ if(run.phase===3)messageFeedback('On reste ensemble !',1.0);
  sound(310,.08);
 }
 function yellowPress(){
@@ -405,7 +416,7 @@ function yellowPress(){
  const result=yellow(run);
  if(result){
   if(before===2&&run.climb){
-   messageFeedback(run.climb.direction==='up'?'Montée sur les marches…':'Descente par les marches…',2.2);
+   messageFeedback(run.climb.direction==='up'?'Montée… « Camarades ! » retentira au sommet.':'Descente vers le cortège…',2.2);
    sound(520,.16);
   }else actionTransition=.45;
   drain();refreshHUD();
@@ -477,7 +488,7 @@ function animateActors(dt,t){
   hero.position.set(run.x,run.height||0,run.z);
   const input=changeDir();
   const running=(Math.abs(input.x)+Math.abs(input.y)>.2&&!paused)||!!run.climb;
-  const rallying=run.phase===2&&run.climbed&&!run.climb&&(redHeld||keys.has('r'));
+  const rallying=run.phase===2&&run.climbed&&!run.climb&&run.statueShouted;
   walking(hero,t,running?1:.03,rallying);
   if(run.climb)hero.rotation.y=0;
   else if(running)hero.rotation.y=Math.atan2(input.x,input.y);
@@ -557,7 +568,7 @@ async function loadCharacters(){
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Paris, avril 2002. Trois épreuves pour rejoindre la Bastille : récupérer le drapeau, appeler les manifestants depuis la statue, puis réunir les deux cortèges. Joystick, jaune pour agir, rouge pour rassembler.';
+  $('overlayText').textContent='Paris, avril 2002. Trois épreuves : récupérer le drapeau, monter sur la statue (cri automatique puis descente), et réunir les cortèges jusqu’à Bastille. Joystick pour marcher ; jaune pour monter ; rouge pour rassembler la foule en chemin.';
   $('start').disabled=false;
   send('manifestation:ready');
  }catch(e){
