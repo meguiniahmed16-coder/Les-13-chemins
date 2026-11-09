@@ -54,7 +54,7 @@ function roundedText(text,width=3,background='#f0e2c2',color='#344c40'){
 }
 function flag(parent,style,x,y,z,height=3.1){
  const root=new T.Group();root.position.set(x,y,z);parent.add(root);
- const pole=mesh(gCyl,mat(0x5a4e3b,.1),0,height/2,0,.027,height/2,.027);root.add(pole);
+ const pole=mesh(gCyl,mat(0x5a4e3b,.1),0,height/2,0,.027,height,.027);root.add(pole);
  const cs=style==='france'?[0x1c376a,0xe8ece2,0xbb342e]:[0xc2363e,0xc2363e,0xc2363e];
  const fabric=[];
  for(let n=0;n<3;n++){
@@ -266,13 +266,13 @@ function drain(){
 function card(titleText,bodyText){overlay.hidden=false;$('overlayTitle').textContent=titleText;$('overlayText').textContent=bodyText;}
 function start(){
  if(!gameReady)return;
- run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;
+ $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
 }
 function pause(){
  if(!playing)return;paused=!paused;
  $('pause').textContent=paused?'Reprendre':'Pause';
- if(paused)card('Pause','La foule attend. Reprends quand tu veux.');
+ if(paused){card('Pause','La foule attend. Reprends quand tu veux.');$('start').textContent='Reprendre';}
  else overlay.hidden=true;
 }
 let audioCtx=null,lastSound=0;
@@ -311,8 +311,7 @@ function yellowPress(){
  }
 }
 function changeDir(){
- const x=(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('q')||keys.has('a')?-0:0);
- // Proper left axis stays independent of the right side.
+ // Independent horizontal and vertical axes.
  const right=Number(keys.has('arrowright')||keys.has('d'));
  const left=Number(keys.has('arrowleft')||keys.has('q')||keys.has('a'));
  const fwd=Number(keys.has('arrowup')||keys.has('z')||keys.has('w'));
@@ -403,6 +402,7 @@ function render(ms){
  if(!renderer)return;
  const dt=Math.min(.05,(ms-previous)/1000||0);previous=ms;
  if(playing&&!paused){
+  if(stageInWorld!==run.phase)sceneFor(run.phase);
   if(actionTransition>0)actionTransition-=dt;
   const phase=run.phase;advance(run,dt,changeDir());
   drain();
