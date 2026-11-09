@@ -41,7 +41,7 @@ test('The board opens the reading after selecting the arrival, without changing 
 });
 
 test('Only substantive characters appear; solitary stages keep the reading without invented names',()=>{
- const h=harness();assert.deepEqual(Array.from(h.api.getStage(5).characters),['Lionel']);assert.deepEqual(Array.from(h.api.getStage(2).characters),['Michel le Belge']);
+ const h=harness();assert.deepEqual(Array.from(h.api.getStage(5).characters),['Lionel']);assert.deepEqual(Array.from(h.api.getStage(3).characters),['Michel le Belge']);
  for(const level of [4,7,11,12]){const stage=h.api.getStage(level);assert.equal(stage.characters.length,0);assert.equal(h.api.addCharacters({},level),null);assert.ok(!h.api.readerHTML(stage).includes('aria-label="Les personnages de cette étape"'));}
  for(const stage of h.context.TreizeEtapesData)assert.ok(!stage.characters.includes('Le narrateur'));
  const modal=h.api.openReader(7);assert.equal(modal.open,true);assert.ok(modal.innerHTML.includes('Relevez le défi'));
@@ -55,6 +55,6 @@ test('Opening a continuity over the passage preserves reading, score flow and re
  parent.querySelector('.arrival-challenge').onclick();assert.equal(challenges,1);assert.equal(h.api.openCharacters(6),null);assert.equal(h.api.characterButton(6),'');
 });
 test('Continuity links use only explicit identities and are available on the reading page',()=>{
- const h=harness();for(const [level,name] of [[2,'Michel le Belge'],[3,'Mustapha'],[5,'Lionel']]){const stage=h.api.getStage(level);assert.equal(stage.workshops.length,1);assert.equal(stage.workshops[0].name,name);assert.ok(h.api.readerHTML(stage).includes('En savoir plus sur les personnages'));}
+ const h=harness();for(const [level,name] of [[3,'Michel le Belge'],[1,'Mustapha'],[5,'Lionel']]){const stage=h.api.getStage(level);assert.equal(stage.workshops.length,1);assert.equal(stage.workshops[0].name,name);assert.ok(h.api.readerHTML(stage).includes('En savoir plus sur les personnages'));}
  const lecture=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');assert.ok(lecture.includes('TreizeEscale.characterButton(d.level,d.plateau)'));assert.ok(lecture.includes('TreizeEscale.bindCharacters'));
 });
