@@ -277,3 +277,8 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Déplacer « FERNEY → PRÉVESSIN » du haut vers le bas gauche de l'image, en dehors de l'inscription scolaire dans le ciel.
 - Sur petits écrans, préserver une marge de 8 px. Le bandeau reste masqué uniquement pendant la victoire, comme auparavant.
 - Aucun changement au gameplay, aux points, au cheval ni aux autres scènes.
+
+### 2026-11-09 — Marmousets : cavalier vraiment à califourchon, vu de profil
+- En vue de profil sur le cheval, **une seule jambe** de l'enfant est dessinée du côté visible. La seconde reste entièrement masquée de l'autre côté du cheval.
+- Supprimer le second contour de jambe et la seconde chaussure dans le bloc `mounted>0` de `marmousets-art-v2.js` ; ne pas modifier les quatre jambes du cheval.
+- Conserver les animations de montée, cabré, saut, descente, les personnages à pied et le score. Vérifier avec un test ciblé la silhouette montée.
