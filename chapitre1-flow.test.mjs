@@ -72,7 +72,8 @@ test('Atlas has 13 underlying scenes, but the plateau exposes 10 visual chapter 
  assert.ok(html.includes('src="chapitre1-plateau.js"'));
  assert.ok(html.includes('src="ordre-lecture.js"'));
  assert.ok(ui.includes('host.replaceChildren(...flow.CARDS.map'));
- assert.ok(ui.includes('scene===1?(flow.done(state)?1:flow.nextPart(state)):scene'));
+ assert.ok(ui.includes('scene===1?(flow.done(state)?1:flow.nextPart(state)):'));
+ assert.ok(ui.includes('scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene'));
  assert.ok(ui.includes("arriveAtStage(n+1);return;"));
  assert.ok(ui.includes("if(n===3&&!flow.done(state))return;"));
  assert.ok(ui.includes('Chapitre 1 — « La salle d’attente »'));
@@ -95,7 +96,8 @@ test('Chapter 2 uses the same featured card as chapter 1 and the title Même pas
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
  assert.ok(ui.includes("' / 10 chapitres · '"));
  assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
- assert.ok(ui.includes("if(n===4)$('questTitle').textContent=chapterTwoName"));
+ assert.ok(ui.includes("header.textContent=chapterTwoName"));
+ assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
  const bosnie=read('./jeu-bosnie.html');
  assert.ok(bosnie.includes('CHAPITRE 2 · « MÊME PAS MAL »'));
  assert.ok(bosnie.includes('CHAPITRE 2 · BOSNIE'));
