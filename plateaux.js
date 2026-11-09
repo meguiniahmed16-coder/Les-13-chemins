@@ -4,7 +4,7 @@
  const css=document.createElement('style');css.textContent='#yoyoDialog{padding:0;width:min(1100px,98vw);height:96dvh;max-width:98vw;max-height:96dvh;border:1px solid #a3977a;border-radius:12px;background:#172024;color:#ede6d6;overflow:hidden}#yoyoDialog[open]{display:flex;flex-direction:column}#yoyoDialog::backdrop{background:#142323ed}#yoyoDialog .arcade-dialog-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;font-size:12px;border-bottom:1px solid #61716a}#yoyoClose{min-height:42px;padding:9px;color:#eee6d3;background:#2c3a3c;border:1px solid #8c8e78;border-radius:5px}#yoyoFrame{flex:1;min-height:0;border:0;width:100%}.plateaux-route{display:flex;gap:8px;margin:12px 0;font-size:12px}.plateaux-route span{border:1px solid #a69874;padding:7px;border-radius:5px}.plateaux-route .active{background:#294f3e;color:#fff4db}@media(max-width:650px){#yoyoDialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}#yoyoDialog .arcade-dialog-bar{font-size:10px;padding:5px 8px}}';document.head.append(css);
  function makeDialog(name,title,url){const d=document.createElement('dialog');d.id=name+'Dialog';d.setAttribute('aria-label',title);d.innerHTML='<div class="arcade-dialog-bar"><strong>'+title+'</strong><button type="button" id="'+name+'Close">Retour au plateau ×</button></div><iframe id="'+name+'Frame" title="'+title+'" allow="autoplay"></iframe>';document.body.append(d);return{dialog:d,frame:$(name+'Frame'),url,loaded:false};}
  const dance=makeDialog('danse','Chapitre 2 · Partie 2/3 — Le danseur','jeu-danse.html?embedded=1'),yoyo=makeDialog('yoyo','Chapitre 2 · Partie 3/3 — La prison','jeu-yoyo.html?embedded=1');
- let travelTimer=0,yoyoWon=false;
+ let travelTimer=0,prisonExitTimer=0,yoyoWon=false;
  function progress(){flow.migrate(state);return flow.progress(state,5);}
  function refresh(){try{const latest=JSON.parse(localStorage.getItem(KEY)||'null');if(latest&&Array.isArray(latest.completed))state={...state,...latest};}catch{}flow.migrate(state);}
  function context(which){const p=which===dance?state.dansePending:state.yoyoPending;if(p&&which.dialog.open)which.frame.contentWindow?.postMessage({type:(which===dance?'danse':'yoyo')+':init',...p,passed:score.valid(state),score:state.points},location.origin);}
@@ -13,10 +13,12 @@
  function focusEntry(){render();focusGameEntry();$('gameLaunchSlot').querySelector('button')?.focus({preventScroll:true});}
  function launchDance(){refresh();if(!state.dansePending)score.begin(state,!!state.quizPassed?.[5],crypto.randomUUID());save();open(dance);}
  function launchYoyo(){refresh();if(!progress().finished.includes(1))return;flow.beginYoyo(state,crypto.randomUUID());save();yoyoWon=false;open(yoyo);}
- function readStrasbourg(){TreizeEscale.openReader(5,{plateau:2,onChallenge:()=>{const p=progress();if(!p.read.includes(2))p.read.push(2);save();render();launchYoyo();}});}
+ function readStrasbourg(){TreizeEscale.openReader(5,{plateau:2,autoAdvanceOnEnd:true,
+  onChallenge:()=>{const p=progress();if(!p.read.includes(2))p.read.push(2);save();render();launchYoyo();},
+  onDismiss:()=>focusEntry()});}
  function travel(){clearTimeout(travelTimer);if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;dismiss(dance);boardRolling=true;finishBoardRoll=TreizeVoyage.start({from:5,to:5,fromPlateau:1,toPlateau:2,title:'Strasbourg · Un fil entre les barreaux',onFinish:()=>{boardRolling=false;finishBoardRoll=null;if(state.selected!==5)return;render();readStrasbourg();}});}
  function closeDance(){clearTimeout(travelTimer);dismiss(dance);if(progress().finished.includes(1)&&!progress().read.includes(2))travel();else focusEntry();}
- function closeYoyo(){dismiss(yoyo);focusEntry();if(yoyoWon&&state.completed.includes(5))rollTravel(5);}
+ function closeYoyo(){clearTimeout(prisonExitTimer);prisonExitTimer=0;dismiss(yoyo);focusEntry();if(yoyoWon&&state.completed.includes(5))rollTravel(5);}
  $('danseClose').onclick=closeDance;$('yoyoClose').onclick=closeYoyo;
  for(const [which,close] of [[dance,closeDance],[yoyo,closeYoyo]]){which.dialog.addEventListener('cancel',e=>{e.preventDefault();close();});which.frame.addEventListener('load',()=>context(which));}
  answer=function(index){if(state.selected!==5)return oldAnswer(index);refresh();if(state.dansePending){open(dance);return;}if(progress().finished.includes(1)||state.quizPassed?.[5])return;const correct=index===LEVELS[4].correct;if(correct){state.quizPassed??={};state.quizPassed[5]=true;state.points+=100;}else{state.tries[5]=(state.tries[5]||0)+1;state.points=Math.max(0,state.points-10);}score.begin(state,correct,crypto.randomUUID());save();render();focusGameEntry();};
@@ -33,7 +35,11 @@
   if(e.source===dance.frame.contentWindow&&dance.dialog.open){if(m.type==='danse:ready'){context(dance);return;}if(m.type==='danse:close'){closeDance();return;}refresh();if(m.type==='danse:pass'){const r=score.record(state,m.id,m.gap);if(r){save();render();dance.frame.contentWindow.postMessage({type:'danse:credited',id:m.id,...r},location.origin);}}
    if(m.type==='danse:won'){const r=score.finish(state,m.id);if(r){flow.done(state,5,1);save();render();dance.frame.contentWindow.postMessage({type:'danse:finished',id:m.id,...r,retryQuestion:false},location.origin);if(!progress().read.includes(2))travelTimer=setTimeout(travel,3900);}}
    if(m.type==='danse:replay'&&!state.dansePending&&score.valid(state).length===5){score.begin(state,!!state.quizPassed?.[5],crypto.randomUUID());save();context(dance);}}
-  if(e.source===yoyo.frame.contentWindow&&yoyo.dialog.open){if(m.type==='yoyo:ready'){context(yoyo);return;}if(m.type==='yoyo:close'){closeYoyo();return;}refresh();if(m.type==='yoyo:won'&&m.points===30){const r=flow.finishYoyo(state,m.id);if(r){yoyoWon=true;save();render();yoyo.frame.contentWindow.postMessage({type:'yoyo:finished',id:m.id,...r},location.origin);}}if(m.type==='yoyo:replay'&&state.yoyoFinished&&!state.yoyoPending){flow.beginYoyo(state,crypto.randomUUID());yoyoWon=false;save();context(yoyo);}}
+  if(e.source===yoyo.frame.contentWindow&&yoyo.dialog.open){if(m.type==='yoyo:ready'){context(yoyo);return;}if(m.type==='yoyo:close'){closeYoyo();return;}refresh();if(m.type==='yoyo:won'&&m.points===30){const r=flow.finishYoyo(state,m.id);if(r){
+   yoyoWon=true;save();render();yoyo.frame.contentWindow.postMessage({type:'yoyo:finished',id:m.id,...r},location.origin);
+   clearTimeout(prisonExitTimer);
+   prisonExitTimer=setTimeout(()=>{if(yoyoWon&&state.completed.includes(5)&&yoyo.dialog.open)closeYoyo();},2000);
+  }}if(m.type==='yoyo:replay'&&state.yoyoFinished&&!state.yoyoPending){flow.beginYoyo(state,crypto.randomUUID());yoyoWon=false;save();context(yoyo);}}
  });
  flow.migrate(state);save();render();
 })();
