@@ -303,3 +303,9 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - **Transition :** départ dans la cour arborée, chemin plus boisé, disparition graduelle des haies au profit des glissières et signalétique de l'A410 ; biome piloté uniquement par la distance (0–400).
 - **Invariants :** ne modifier ni `newRun`, ni `advance`, ni `FINISH`, ni le chronométrage, les dialogues/voix, les boutons, le score, les bonus ou la communication avec le plateau.
 - **Tests :** respect des quatre décors, des trois personnages, des repères « LYCÉE » et « A410 », moteur intact, fichier public inclus au build.
+
+### 2026-11-09 — A410 : trois panneaux du chapitre regroupés au milieu
+- Texte intégral et identique sur les trois panneaux : **« Chapitre 1 — « La salle d’attente », pages 7–9 »**. Le texte est coupé en quatre lignes pour rester lisible en pixels, ponctuation préservée.
+- Trois panneaux de dimensions différentes (**60×38, 72×46, 84×54 pixels**) mais proches les uns des autres, visibles ensemble aux alentours de **205 m sur les 400 m** de course.
+- Intégration au décor de route, avec deux poteaux, bordure ivoire et bleu routier, avant les personnages pour conserver leur lisibilité.
+- Défilement uniquement selon `distance`, sans modifier le gameplay. Tests de regroupement au milieu, dimensions, non-chevauchement, texte exact et absence au départ / à l'arrivée.
