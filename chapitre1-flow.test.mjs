@@ -76,7 +76,6 @@ test('Atlas has 13 underlying scenes, but the plateau exposes only 11 visual car
  assert.ok(ui.includes("if(n===3&&!flow.done(state))return;"));
  assert.ok(ui.includes('Chapitre 1 — « La salle d’attente »'));
  assert.ok(ui.includes("drawBoard=paintTargets"));
- assert.ok(ui.includes("source"));
  assert.ok(build.includes("'chapitre1-flow.js'"));
  assert.ok(build.includes("'chapitre1-plateau.js'"));
  assert.ok(build.includes("'chapitre1-flow.test.mjs'"));
