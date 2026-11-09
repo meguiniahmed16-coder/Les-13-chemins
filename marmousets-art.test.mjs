@@ -58,3 +58,12 @@ test('Location strip is at the bottom of the scene, beneath the schoolbook sky c
  assert.match(page,/@media\(max-width:760px\)\{\.screen \.scene-label\{top:auto;bottom:8px;left:8px\}\}/);
  assert.ok(page.includes('this.chapterSky();'));
 });
+
+test('Rider silhouette keeps exactly one visible leg in side profile',()=>{
+ const horse=art.slice(art.indexOf('function horse('));
+ const mounted=horse.slice(horse.indexOf('if(mounted>0)'),horse.indexOf('c.restore();}',horse.indexOf('if(mounted>0)')));
+ assert.ok(mounted.includes('M-10 -115Q2 -108 16 -98'));
+ assert.ok(mounted.includes('M17 -73L29 -73'));
+ assert.ok(!mounted.includes('M-11 -115Q-25 -108 -23 -94L-16 -84'));
+ assert.ok(!mounted.includes('M-15 -83L-6 -83M17 -73L28 -73'));
+});
