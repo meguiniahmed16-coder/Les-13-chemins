@@ -265,15 +265,26 @@ test('Chemin III Les rendez-vous is one board cartouche for book chapters 4, 5, 
  assert.ok(ui.includes("third.dataset.chemin='3';third.id='chemin-iii';"));
  assert.ok(ui.includes("makeSpan('chapter-card-title','Les rendez-vous')"));
  assert.ok(ui.includes("host.append(third);"));
- assert.ok(ui.includes("third.onclick=openThirdPath;"));
- assert.ok(ui.includes("if(n===5&&flow.chapter2Done(state)){openThirdPath();return;}"));
+ assert.ok(ui.includes("third.onclick=()=>window.TreizeRendezVous?.open?.();"));
+ assert.ok(ui.includes("if(n===5&&flow.chapter2Done(state)){window.TreizeRendezVous?.open?.();return;}"));
  assert.ok(ui.includes("if(!flow.chapter2Done(state)||boardRolling)return;"));
  for(const title of ['Drapeau rouge','Passe-muraille','Tu veux bien t’occuper de moi ?'])assert.ok(ui.includes(title));
  for(const n of [4,5,6])assert.ok(ui.includes('chapter:'+n));
- assert.ok(ui.includes("Jeu 1 / 3 — en préparation"));
+ assert.ok(ui.includes("Jeu 1 / 3 — Camarades !"));
  assert.ok(ui.includes("const thirdExtract="));
- assert.ok(ui.includes('Je m’étais rendu.'));
+ assert.ok(ui.includes('— Camarades !'));
  assert.ok(game.includes('Trois chemins de jeu'));
  assert.ok(!build.includes("'les-rendez-vous.html'"),'A separate independent page must not be published');
  assert.ok(!build.includes("'chemin3.html'"));
+});
+
+test('Le chemin III conserve le texte validé et le contrôleur de jeu',()=>{
+ const ui=read('./chapitre1-plateau.js'),controller=read('./rendezvous-plateau.js');
+ assert.ok(ui.includes('Julie est devant la télévision.'));
+ assert.ok(ui.includes('Les deux cortèges se rencontrent à mi-chemin.'));
+ assert.ok(ui.includes('— Par là.'));
+ assert.ok(controller.includes('manifestation:progress'));
+ assert.ok(controller.includes('step!==passed.length+1'));
+ assert.ok(controller.includes('state.points+=10'));
+ assert.ok(controller.includes('reader.addEventListener'));
 });
