@@ -15,6 +15,7 @@
  function launchYoyo(){refresh();if(!progress().finished.includes(1))return;flow.beginYoyo(state,crypto.randomUUID());save();yoyoWon=false;open(yoyo);}
  function readStrasbourg(){TreizeEscale.openReader(5,{plateau:2,autoAdvanceOnEnd:true,
   onChallenge:()=>{const p=progress();if(!p.read.includes(2))p.read.push(2);save();render();launchYoyo();},
+  onSkip:()=>window.TreizeLibreParcours?.next('5:prison'),
   onDismiss:()=>focusEntry()});}
  function travel(){clearTimeout(travelTimer);if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;dismiss(dance);boardRolling=true;finishBoardRoll=TreizeVoyage.start({from:5,to:5,fromPlateau:1,toPlateau:2,title:'Strasbourg · Un fil entre les barreaux',onFinish:()=>{boardRolling=false;finishBoardRoll=null;if(state.selected!==5)return;render();readStrasbourg();}});}
  function closeDance(){clearTimeout(travelTimer);dismiss(dance);if(progress().finished.includes(1)&&!progress().read.includes(2))travel();else focusEntry();}
