@@ -1,0 +1,62 @@
+name: Audit version publique Bosnie (Netlify)
+on:
+  push:
+    branches: [diagnostic/netlify-bosnie-version-20261109]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Comparer le site Netlify aux fichiers attendus
+        shell: bash
+        run: |
+          set -euo pipefail
+          SITE="https://tectonique-des-ames.netlify.app"
+          for item in "jeu-bosnie.html" "bosnie-addon.js" "danse-quaternius-hero.glb"; do
+            echo "::group::VERIFICATION $item"
+            code="$(curl -sSL --compressed --max-time 30 --retry 1 \
+              -H 'Cache-Control: no-cache' \
+              -w '%{http_code}' \
+              -D /tmp/netlify-headers.txt \
+              -o "/tmp/$(basename "$item")" \
+              "$SITE/$item?audit=20261109-bosnie-$(date +%s)" || echo 000)"
+            echo "HTTP_CODE=$code"
+            grep -iE '^(content-type|cache-control|etag|age|server|x-nf-request-id|last-modified):' /tmp/netlify-headers.txt || true
+            if test -f "/tmp/$(basename "$item")"; then
+              wc -c "/tmp/$(basename "$item")"
+            fi
+            echo "::endgroup::"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('/tmp/jeu-bosnie.html')
+          addon=Path('/tmp/bosnie-addon.js')
+          glb=Path('/tmp/danse-quaternius-hero.glb')
+          print("NETLIFY_AUDIT_START")
+          if html.exists():
+            s=html.read_text(encoding='utf-8',errors='replace')
+            print("PAGE_HAS_BOSNIE_ADDON:", 'src="bosnie-addon.js"' in s)
+            print("PAGE_HAS_BOSNIE_RUNTIME:", 'src="bosnie-runtime.js"' in s)
+            print("PAGE_HEAD:", s[:100])
+          else:print("PAGE_MISSING")
+          if addon.exists():
+            src=addon.read_text(encoding='utf-8',errors='replace')
+            for label,text in [
+              ('GRAFFITI','Chapitre 2'),
+              ('GRAFFITI_MUR','GraffitiChapitre2Mur'),
+              ('WINDOW_SHOOTER','TireurFenetreJumelles'),
+              ('RIFLE','FusilEnBandouliere'),
+              ('SKY','CielBosnieCouvert'),
+              ('WINDOW_MUZZLE','EclairDeBoucheDuFusil'),
+            ]:print('ADDON_HAS_'+label+':', text in src)
+            print('ADDON_SIZE:',len(src))
+          else:print('ADDON_MISSING')
+          if glb.exists():
+            b=glb.read_bytes()
+            print('GLB_SIZE:',len(b),'GLB_VALID_MAGIC:',b[:4]==b'glTF')
+          else:print('GLB_MISSING')
+          print("NETLIFY_AUDIT_END")
+          PY
