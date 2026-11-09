@@ -1,0 +1,178 @@
+name: Contrôle Bosnie — soldat, compagnon et ciel
+on:
+  push:
+    branches: [prototype/bosnie-soldat-compagnon-ciel-20261108]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Reconstruire la plateforme et tester les cinq passages
+        run: npm run build
+      - name: Captures réelles desktop et mobile avec deux soldats riggés
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright-core@1.57.0
+          cat > bosnie-uniform-inspection.mjs <<'UNIFORM'
+          import * as THREE from 'three';
+          import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+          import {makeSoldier,poseHuman} from './bosnie-addon-source.js';
+          const canvas=document.getElementById('uniform-stage');
+          const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'low-power'});
+          renderer.setSize(980,620,false);
+          renderer.setPixelRatio(1);
+          renderer.outputColorSpace=THREE.SRGBColorSpace;
+          renderer.toneMapping=THREE.ACESFilmicToneMapping;
+          renderer.toneMappingExposure=1.45;
+          const scene=new THREE.Scene();scene.background=new THREE.Color('#697368');
+          scene.add(new THREE.HemisphereLight('#eff7fb','#3e493d',3));
+          const light=new THREE.DirectionalLight('#f4f1e4',4);
+          light.position.set(2,5,6);scene.add(light);
+          const fill=new THREE.DirectionalLight('#bfcee2',1.4);fill.position.set(-3,2,-2);scene.add(fill);
+          const ground=new THREE.Mesh(new THREE.PlaneGeometry(12,9),
+            new THREE.MeshStandardMaterial({color:'#575a53',roughness:1}));
+          ground.rotation.x=-Math.PI/2;ground.position.y=-.075;scene.add(ground);
+          const camera=new THREE.PerspectiveCamera(34,980/620,.1,40);
+          camera.position.set(0,1.55,3.65);camera.lookAt(0,.95,0);
+          (async()=>{try{
+            const loaded=await new GLTFLoader().loadAsync('./danse-quaternius-hero.glb');
+            const main=makeSoldier(loaded.scene,0);
+            const ally=makeSoldier(loaded.scene,1);
+            scene.add(main.group,ally.group);
+            poseHuman(main,{x:-.77,y:0,z:0,facing:0,crouched:false,running:false},.9);
+            poseHuman(ally,{x:.77,y:0,z:0,facing:0,crouched:false,running:false},1.5,'companion');
+            const check=a=>({
+              vest:!!a.root.getObjectByName('GiletPareBallesAvant'),
+              patch:!!a.root.getObjectByName('EcussonOTAN'),
+              helmet:!!a.root.getObjectByName('CouvreCasqueCamouflage'),
+              rifle:!!a.root.getObjectByName('FusilEnBandouliere'),
+              pack:!!a.root.getObjectByName('SacPatrouille'),
+              bootCount:a.root.getObjectsByProperty('name','Rangers').length
+            });
+            window.__uniformReview={soldiers:2,hero:check(main),ally:check(ally)};
+            renderer.render(scene,camera);
+          }catch(err){
+            window.__uniformError=String(err.stack||err);
+            console.error(err);
+          }})();
+          UNIFORM
+          npx esbuild bosnie-uniform-inspection.mjs --bundle --format=iife --target=es2020 --outfile=dist/bosnie-uniform-inspection.js
+          cat > dist/bosnie-uniform-inspection.html <<'HTML'
+          <!doctype html><html lang="fr"><meta charset="utf-8">
+          <style>html,body{margin:0;background:#222b27;color:#e7ebe3;font:700 17px Arial}
+          .labels{width:980px;display:flex;justify-content:space-around;padding:10px 0}
+          canvas{display:block;width:980px;height:620px}</style>
+          <div class="labels"><span>Soldat du joueur</span><span>Compagnon autonome</span></div>
+          <canvas id="uniform-stage" width="980" height="620"></canvas>
+          <script src="bosnie-uniform-inspection.js"></script></html>
+          HTML
+          python3 -m http.server 8191 --directory dist > /tmp/bosnie-server.log 2>&1 &
+          sleep 2
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright-core';
+          import fs from 'node:fs';
+          const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(x=>fs.existsSync(x));
+          if(!chrome)throw Error('Chrome/Chromium introuvable sur le runner');
+          const browser=await chromium.launch({headless:true,executablePath:chrome,args:[
+            '--no-sandbox','--disable-dev-shm-usage','--enable-webgl',
+            '--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'
+          ]});
+          async function preview(width,height,file){
+            const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+            page.on('pageerror',error=>console.log('PAGE_ERROR',error.message));
+            page.on('console',msg=>{if(msg.type()==='error'||msg.type()==='warning')console.log('CONSOLE',msg.text().slice(0,350));});
+            await page.goto('http://127.0.0.1:8191/jeu-bosnie.html',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>{
+              const c=document.getElementById('world');
+              return c?.dataset.bosnieCompanion==='quaternius-deux-soldats';
+            },null,{timeout:32000});
+            await page.waitForFunction(()=>document.getElementById('world')?.dataset.bosnieSky==='nuages-3d');
+            await page.locator('#start').click();
+            await page.waitForTimeout(800);
+            const state=await page.evaluate(()=>window.__bosnieCompanionState);
+            const renderer=await page.locator('#world').evaluate(el=>el.dataset.renderer);
+            console.log('BOSNIE_PREVIEW',width,renderer,JSON.stringify(state));
+            if(state?.chapterGraffitiCount!==2||
+               state?.chapterGraffitiText!=='Chapitre 2 — « Même pas mal », p 25–26.'||
+               state?.graffitiResolution?.[0]!==2048)
+              throw Error('Graffiti littéraire du chapitre 2 absent ou incorrect');
+            if(state?.heroUniform!=='treillis-camouflage-otan'||
+               state?.allyUniform!=='treillis-camouflage-otan'||
+               !state?.armoredGear||!state?.camoHelmet||!state?.natoBadge)
+              throw Error('Les deux soldats doivent porter la tenue militaire et le gilet OTAN');
+            if(!state?.daylight||state?.damagedFacades<20||!state?.armedHero||!state?.armedAlly||
+               !state?.groundHeroSlungRifle||!state?.groundAllySlungRifle||
+               !state?.windowRiflePresent||state?.daylightExposure<1.6)
+              throw Error('Décor clairement éclairci et trois fusils visibles obligatoires');
+            if(!state||!state.modelLoaded||!state.sky||!state.invulnerable)
+              throw Error('Soldat humain, compagnon et ciel doivent être chargés');
+            if(state.stage!==0||state.companionX<=state.playerX)
+              throw Error('Le compagnon doit partir avant le joueur');
+            await page.screenshot({path:file,fullPage:false});
+            if(width===1100)await page.screenshot({path:'/tmp/bosnie-graffiti-chapitre2.png'});
+
+            // Same visual state, actual binocular key held: enemy visible in target window.
+            if(width===1100){
+              await page.keyboard.down('b');
+              await page.waitForFunction(()=>window.__bosnieCompanionState?.visibleWindowShooter===true,null,{timeout:9000});
+              await page.waitForTimeout(450);
+              const binocular=await page.evaluate(()=>window.__bosnieCompanionState);
+              console.log('BOSNIE_JUMELLES',JSON.stringify(binocular));
+              if(!binocular?.shooterInFrame)
+                throw Error('Le tireur n’est pas visible dans le champ des jumelles');
+              if(!binocular.shooterReal||binocular.shooterRigBones<60||
+                 !binocular.shooterOriginalHidden||!binocular.shooterSkinned)
+                throw Error('Le tireur doit posséder le vrai corps humain Quaternius à 65 os');
+              if(!binocular.shooterElbowDrop?.every(v=>v>.12))
+                throw Error('Les coudes du tireur ne doivent pas rester dans la pose en T');
+              if(await page.locator('#binocularMask').isHidden())
+                throw Error('Le masque de jumelles doit être affiché');
+              await page.screenshot({path:'/tmp/bosnie-jumelles-tireur.png'});
+              await page.waitForFunction(()=>window.__bosnieCompanionState?.windowGunFlash===true,null,{timeout:14000});
+              const firing=await page.evaluate(()=>window.__bosnieCompanionState);
+              console.log('TIR_VISIBLE_JUMELLES',JSON.stringify(firing));
+              if(!firing?.windowRiflePresent||!firing?.windowGunFiring&&!firing?.windowGunFlash)
+                throw Error('Le tireur doit tirer visiblement avec son arme');
+              await page.screenshot({path:'/tmp/bosnie-jumelles-coup-de-feu.png'});
+              await page.keyboard.up('b');
+            }
+            await page.close();
+          }
+          try {
+            await preview(1100,770,'/tmp/bosnie-desktop.png');
+            await preview(390,844,'/tmp/bosnie-mobile.png');
+            const close=await browser.newPage({viewport:{width:990,height:680},deviceScaleFactor:1});
+            close.on('pageerror',e=>console.log('UNIFORM_PAGE_ERROR',e.message));
+            await close.goto('http://127.0.0.1:8191/bosnie-uniform-inspection.html',{waitUntil:'domcontentloaded'});
+            await close.waitForFunction(()=>window.__uniformReview?.soldiers===2,null,{timeout:30000});
+            const review=await close.evaluate(()=>window.__uniformReview);
+            console.log('MILITARY_UNIFORMS',JSON.stringify(review));
+            for(const actor of [review.hero,review.ally])
+              if(!actor.vest||!actor.patch||!actor.helmet||!actor.rifle||!actor.pack||actor.bootCount!==2)
+                throw Error('Équipement militaire incomplet pour un soldat');
+            await close.screenshot({path:'/tmp/bosnie-uniforme-gros-plan.png'});
+            await close.close();
+          }finally{await browser.close();}
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-bosnie-compagnon
+          path: |
+            /tmp/bosnie-desktop.png
+            /tmp/bosnie-graffiti-chapitre2.png
+            /tmp/bosnie-mobile.png
+            /tmp/bosnie-uniforme-gros-plan.png
+            /tmp/bosnie-jumelles-tireur.png
+            /tmp/bosnie-jumelles-coup-de-feu.png
+          retention-days: 5

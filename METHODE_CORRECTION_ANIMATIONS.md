@@ -202,3 +202,60 @@ Les trois figurants Quaternius au premier plan ont été incorrectement animés 
 
 
 **Correction C027, orientation des spectateurs :** les personnages sont retournés d’un demi-tour vers la scène. Les angles monde utilisés pour le héros abaissent les bras dans sa direction, mais les lèvent une fois réutilisés sur les figurants tournés. Adapter les signes des rotations d’épaules au repère de ces spectateurs et contrôler les coordonnées verticales des coudes depuis le navigateur (les coudes doivent être sous les épaules).
+
+
+## C028 — Mini-jeu Bosnie : un compagnon autonome et le ciel ouvert (8 novembre 2026)
+
+**Règle validée de l'auteur :** ajouter un second soldat qui fait chaque traversée avant le héros, en sécurité, rejoint le muret suivant et y attend. Lorsque le joueur réussit, il dépasse le compagnon ; celui-ci repart en éclaireur pour le passage suivant. Il ne peut jamais être touché, ne modifie pas les tirs ni les collisions, ne rapporte aucun point et n'a pas d'influence sur l'échec du personnage principal.
+
+**Choix technique :** le personnage principal et le compagnon chargent une seule fois le modèle humain riggé CC0 « Superhero Male » de Quaternius déjà présent pour le jeu de danse (danse-quaternius-hero.glb) ; deux copies du rig reçoivent des tenues vert olive et un casque simple. Les animations sont reconstituées à partir des quaternions de repos pour éviter les articulations brisées. Pour garder le mini-jeu court, les objets sont intégrés par bosnie-addon-source.js, compilé dans bosnie-addon.js, sans modifier la logique des cinq passages du fichier existant. Si le modèle ne charge pas ou si WebGL n'est pas disponible, le personnage jouable original reste en place et un compagnon de secours apparaît.
+
+**Ciel :** dôme panoramique 3D procédural, gris-bleu, nuages diffus et brouillard conservé pour l'ambiance. C'est une amélioration de décor sans nouvelle archive ni abonnement. Vérification obligatoire sur capture réelle desktop/mobile, d'une traversée et de l'apparition du soldat supplémentaire. Les autres scènes de la plateforme littéraire et les règles du jeu restent inchangées.
+
+**Précaution :** s'appuyer sur la branche d'essai, jamais publier directement sans contrôle d'image et de comportement.
+
+
+## C029 — Deux soldats en tenue militaire et non en tenue de danse
+
+La première tentative affichait de simples corps humanoïdes Quaternius repeints en kaki : inadmissible, ils ressemblaient à des danseurs. Respecter le texte du chapitre « Même pas mal », Sarajevo après passage du mandat ONU au mandat OTAN : veste et pantalon treillis camouflage, gilet pare-balles, pochettes et ceinturon, rangers, paquetage, écusson « OTAN », casque lourd bleu recouvert de camouflage, jugulaire. Les accessoires sont attachés aux **vrais os** pour suivre course, flexion et tête ; ne pas coller un gros rectangle statique sur l'écran. Modèles Quaternius existants sous CC0, pas de nouvel achat ou téléchargement. Le compagnon reste invulnérable et part en premier. Contrôles : les deux modèles doivent posséder leurs équipements avant le rendu et la capture mobile doit montrer une silhouette militaire reconnaissable. Les éléments ne sont qu'une évocation visuelle, pas une reproduction certifiée au millimètre.
+
+
+**Ajustement de rendu (casque/rangers) :** comparer le gros plan des deux soldats. Le bas du casque couvrait le haut des yeux et les chaussures avaient un volume carré excessif. Rehausser légèrement le couvre-casque sur l'os de la tête et réduire les volumes des rangers, sans modifier le squelette, la vitesse du compagnon ni les cinq passages. Nouvelle capture ordinateur et téléphone obligatoire.
+
+
+## C030 — Bosnie : lecture plus claire, destructions crédibles et tireur visible aux jumelles
+
+Sur la branche expérimentale du mini-jeu « Entre les rafales », éclaircir modérément la colorimétrie et réduire la dominante verte ainsi que l'opacité du brouillard, sans supprimer l'ambiance nuageuse. Compléter les immeubles existants par des ouvertures aux bords fracturés, des impacts dans les façades, des armatures et des gravats ; ces ajouts sont purement visuels et ne changent ni collisions ni trajet. Rendre les deux fusils en bandoulière distincts et visibles sur les soldats français, sans ajouter de mécanique de tir au joueur. Le tireur opposé est identifiable dans la fenêtre active à laquelle les jumelles sont déjà orientées : casque, buste et arme en silhouette, visible seulement pendant l'observation, sans ajout de tirs ni modification des fenêtres de sécurité. Test impératif dans un navigateur réel, y compris une capture avec les jumelles activées ; les captures classiques de build ne suffisent pas.
+
+
+**Contrôle visuel C030 :** la première capture des jumelles plaçait effectivement le tireur au centre d'une fenêtre, mais sa silhouette trop petite était difficile à reconnaître sur téléphone. Réduire le champ optique des jumelles à 15,5°, renforcer légèrement la silhouette et ajouter une courte identification « TIREUR REPÉRÉ À LA FENÊTRE » dans le masque existant, sans toucher à la cadence des tirs ni au déplacement du joueur. Retester une capture de la véritable fenêtre visée.
+
+
+## C031 — Tireur à la fenêtre : même véritable corps humain 3D
+
+Le tireur découvert aux jumelles doit réutiliser le **même modèle Quaternius humanoïde articulé** que les deux soldats du joueur, chargé une seule fois depuis le dépôt. Le vieux buste cylindrique et la tête sphérique restent uniquement comme repli jusqu'au chargement de l'asset. Une fois le rig prêt, ils sont cachés ; l'arme en travers de la fenêtre reste visible, mais le tireur conserve sa peau humaine continue, son casque et sa tenue discrète sans écussons français ou OTAN. Les jambes de la figurine sont masquées par le seuil grâce à un plan de coupe, pour qu'elle ne traverse pas le mur. Aucun changement dans les tirs, les jumelles, les scores ou les cinq fenêtres. Tests obligatoires dans le vrai navigateur : présence d'au moins 60 os, ancienne silhouette masquée et capture avec jumelles activées.
+
+
+**Ajustement C031 :** les rotations d'épaules du tireur doivent correspondre à son orientation face aux jumelles, et non aux angles des soldats courant latéralement dans l'avenue. Valider dans Chromium que les deux coudes descendent sous les épaules (pas de T-pose), que le maillage original est un SkinnedMesh dense et que les corps en primitives sont cachés.
+
+
+**Correction d'orientation C031 :** un premier signe appliqué au squelette importé levait les coudes de 0,18 m malgré un calcul intuitif fondé sur l'axe géométrique. Se fier à la hauteur mesurée des os réels dans Chromium (épaule moins coude doit être positive) et non à l'impression qu'un signe de rotation devrait être correct. Revenir aux signes natifs de l'armature et recapturer.
+
+
+**Amélioration de lisibilité C031 :** dans la capture des jumelles, le tireur humanoïde 65 os était présent mais sa tenue trop petite pour être reconnaissable. Utiliser un champ optique de 10° lors de l'observation (au lieu de 15,5°), et une échelle du même modèle de 0,86. Conserver l'orientation des coudes validée et revérifier la présence du tireur dans les deux optiques. Aucun changement aux tirs ou à la sécurité des cinq traversées.
+
+
+## C032 — Trois armes réellement visibles et scène diurne lisible (9 novembre 2026)
+
+L'auteur a confirmé que la scène demeurait trop sombre et que les armes étaient invisibles ou non utilisées. Ne plus se satisfaire de vérifications sur les seuls noms d'objets 3D : inspecter les captures. Les deux soldats français portent chacun un fusil en bandoulière clairement reconnaissable, au-devant du gilet, sans capacité de tir ajoutée. Le tireur à la fenêtre possède une arme identifiable : flash lumineux et très léger recul synchronisés **exclusivement** avec les rafales déjà présentes dans la mécanique des cinq fenêtres ; aucun nouveau tir ni blessure. Une capture en vraie vue jumelles pendant un coup de feu est obligatoire. Sur la scène entière, exposition 1,68, palette de post-traitement gris-clair, brouillard moins dense, éclairage supérieur et vignettage du cadre réduit : ne pas transformer l'ambiance de guerre en journée ensoleillée, mais rendre les bâtiments, abris et soldats nettement visibles sur téléphone. Conserver le compagnon invulnérable, les contrôles, scores et continuités précédentes.
+
+
+## C033 — Graffiti littéraire sur les murs de Bosnie (9 novembre 2026)
+
+Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti à la bombe de peinture, « Chapitre 2 — « Même pas mal », p 25–26. » La version visible est répartie sur trois lignes pour rester lisible et respecte les majuscules, le tiret cadratin, les guillemets français et le tiret demi-cadratin de pagination. Deux inscriptions sont peintes sur des parties intactes des murets de couverture existants, au début et plus loin dans la traversée. Une texture Canvas transparente 2048 × 512 à bords imparfaits, avec grain de pulvérisation et petites coulures, est partagée entre les deux surfaces 3D : pas de panneau rectangulaire ajouté ni de nouvelle ressource externe. Ne toucher ni aux cinq passages, ni aux dégâts, ni aux personnages, armes ou tirs. Vérifier la lisibilité sur des captures réelles ordinateur et téléphone avant validation.
+
+
+**Contrôle de taille C033 :** la première vraie capture montrait le graffiti entre les personnages avec une largeur projetée trop petite. Rapprocher l'inscription du point de vue d'entrée en la plaçant sur la partie intacte du premier muret (x = −0,4, à gauche du joueur), et placer la seconde sur un muret intact du troisième tronçon (x = 32,5). Le texte est ainsi lisible sans occuper un bandeau d'interface ni masquer les soldats. Refaire une capture du vrai navigateur.
+
+
+**Deuxième inspection C033 :** le premier repositionnement à x = −0,4 rendait l'inscription grande sur ordinateur mais coupait presque toute la phrase hors de l'écran mobile. Recentrer la première inscription à x = 3,1 sur le muret pour conserver l'ensemble des trois lignes dans les deux formats. Contrôler aussi la capture mobile et pas seulement la vue grand écran.
