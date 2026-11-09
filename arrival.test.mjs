@@ -22,6 +22,17 @@ test('Every arrival uses the exact approved excerpt and includes its references,
  const h=harness();assert.equal(h.context.TreizeEtapesData.length,13);
  for(const original of passages){const s=h.api.getStage(original.level),html=h.api.readerHTML(s);assert.equal(s.passage.quote,original.quote);assert.equal(s.passage.source,original.source);assert.ok(html.includes('GPS'));assert.ok(html.includes('Altitude'));assert.ok(html.includes('Relevez le défi'));assert.ok(s.historySource.url.startsWith('https://'));assert.ok(Array.isArray(s.characters));}
  assert.equal(h.api.getStage(11).city,'León');assert.equal(h.api.getStage(11).coordinates[1],-5.568);assert.equal(h.api.getStage(4).city,'Sarajevo');
+ for(const [level,plateau,chapter,label] of [
+  [4,1,2,'CHAPITRE 2 · MÊME PAS MAL'],
+  [5,1,3,'CHAPITRE 3 · LE COUP DU BUS'],
+  [5,2,4,'CHAPITRE 4 · LE DRAPEAU ROUGE']
+ ]){
+  const stage=h.api.getStage(level,plateau);
+  assert.equal(Number(stage.passage.chapter),chapter,'The displayed excerpt keeps its book chapter');
+  assert.ok(h.api.readerHTML(stage).includes(label),'The full-screen reader names the right chapter and plateau');
+  assert.ok(!h.api.readerHTML(stage).includes('Le titre de ce passage a été choisi pour le jeu.'),'The three excerpt titles are presented as book chapters');
+ }
+ assert.equal(h.api.chapterReaderLabel(6),'ÉTAPE 06','Unmapped future stages do not invent book chapter numbers');
 });
 test('Arrival opens immediately, waits for the reader, and closes once on the challenge',()=>{
  const h=harness();let calls=0;const modal=h.api.openReader(5,{onChallenge:()=>calls++});
@@ -234,7 +245,7 @@ test('All reading surfaces fill the full screen, without stretching long paragra
  assert.ok(standalone.includes('max-width:860px'));
  assert.ok(standalone.includes('body{margin:0;background:#fff9ec}'));
 });
-test('No original board bitmap or thirteen old hitboxes appear before the two new chapters',()=>{
+test('No original board bitmap or thirteen old hitboxes appear before the two grouped game blocks',()=>{
  const html=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8'),
   ui=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
  assert.ok(!html.includes('<picture>'));
@@ -243,7 +254,7 @@ test('No original board bitmap or thirteen old hitboxes appear before the two ne
  assert.ok(!html.includes('function boardGeometry(){'));
  assert.ok(!html.includes('host.replaceChildren(...positions.map'));
  assert.ok(html.includes('function drawBoard(){}'));
- assert.ok(ui.includes("host.dataset.mode='chapters-minimal-v1'"));
+ assert.ok(ui.includes("host.dataset.mode='chapters-grouped-v2'"));
  assert.ok(ui.includes('host.replaceChildren(...flow.CARDS.map'));
  assert.ok(ui.includes("const icons=['🌳','🪖']"));
  assert.ok(ui.includes('marmousetsReadingStart'));

@@ -430,3 +430,14 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - **Rythme du surveillant :** 28 secondes avant la première approche et après chaque étape, quatre secondes d'avertissement, deux secondes de réaction lorsque le surveillant regarde, puis 32 secondes de calme après son départ.
 - **Portée :** ces paramètres sont propres au prototype et activés explicitement par sa configuration. Le moteur commun conserve les anciens réglages lorsqu'aucune configuration n'est fournie.
 - **Contrôle :** tester une partie complète avec un joueur qui maintient simplement Saisir, y compris cachette et reprise ; vérifier le passage physique du sac et les valeurs par défaut du jeu précédent.
+
+
+### 2026-11-09 — Bloc 2 : trois extraits, trois chapitres distincts
+
+Cette précision de l’auteur remplace les mentions précédentes qui rassemblaient Sarajevo, la danse et la prison sous le seul chapitre 2. Le **bloc 2 reste une seule étape de jeu**, avec trois extraits successifs : **Chapitre 2 — « Même pas mal »**, **Chapitre 3 — « Le coup du bus »**, **Chapitre 4 — « Le drapeau rouge »**.
+
+- Afficher ces trois numéros et ces trois titres dans le même grand bloc. Employer seulement un intitulé de groupe neutre, « Bloc 2 » / « Chapitres 2, 3 et 4 ». **Ne pas inventer un titre commun.**
+- Conserver l’ordre Sarajevo → danse télévisée → prison, les sauvegardes, les points et le quiz commun existant. La correction porte sur la présentation des extraits, pas sur un découpage en trois étapes autonomes.
+- Utiliser les références littéraires explicites pour chaque extrait. Les identifiants techniques historiques 4, 5/1 et 5/2 ne sont pas des numéros de chapitre.
+- Harmoniser la vignette, la navigation interne, les lecteurs, les en-têtes des jeux, les dialogues et les arrivées sur la carte. Les compteurs du plateau comptent des blocs, pas des chapitres.
+- Sur téléphone, garder les trois titres lisibles dans une même enveloppe. Sur écran large, les trois parties peuvent être côte à côte.

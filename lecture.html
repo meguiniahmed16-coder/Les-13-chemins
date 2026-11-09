@@ -16,7 +16,7 @@ body{margin:0;background:#fff9ec}
 <p>Chaque niveau est relié à un chapitre.</p>
 <label for="stage">Choisir un niveau</label> <select id="stage"></select><div id="reading"></div>
 <p class="meta">Les pages renvoient à la mise en page du manuscrit de lecture.</p>
-</main><script src="etapes-data.js"></script><script src="escale.js"></script><script>
+</main><script src="etapes-data.js"></script><script src="escale.js?v=20261109-ch234"></script><script>
 const DATA=TreizeEtapesData.flatMap(s=>(s.plateaux||[s]).map(p=>({...p.passage,plateau:p.plateau||1,total:s.plateaux?.length||1})));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const select=document.getElementById('stage');

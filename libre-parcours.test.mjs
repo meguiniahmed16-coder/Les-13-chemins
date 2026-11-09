@@ -24,7 +24,7 @@ test('Six optional mini-games can be skipped in order, without earning points or
  assert.equal(f.chaptersDone(s),1);assert.equal(f.chapterHasSkips(s,1),true);
  s.selected=4;assert.equal(f.skipPart(s,'4'),true);
  assert.equal(f.chapter2PartDone(s,1),true);assert.equal(f.canEnter(s,5),true);
- assert.equal(f.canEnter(s,6),false,'The third chapter is still locked');
+ assert.equal(f.canEnter(s,6),false,'The next step is still locked');
  s.selected=5;assert.equal(f.skipPart(s,'5:prison'),false,'The prison cannot be skipped before the dance');
  assert.equal(f.skipPart(s,'5:dance'),true);
  assert.equal(f.chapter2PartDone(s,2),true);

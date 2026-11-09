@@ -1,4 +1,4 @@
-/* Chapitres 1 et 2 : scènes regroupées, sauvegardes compatibles.
+/* Deux étapes de jeu : chapitre 1, puis chapitres littéraires 2, 3 et 4.
  * Les identifiants historiques 1, 2, 3 sont conservés pour les sauvegardes,
  * les questions, les mini-jeux, la lecture et l'atlas géographique.
  */
@@ -10,13 +10,14 @@
   Object.freeze({scene:3,title:'Barcelone',place:'Place de Catalogne',game:'arcade-catalogne.html'})
  ]);
  const CHAPTER2_PARTS=Object.freeze([
-  Object.freeze({part:1,scene:4,plateau:1,title:'Sarajevo',game:'jeu-bosnie.html'}),
-  Object.freeze({part:2,scene:5,plateau:1,title:'Le danseur',game:'jeu-danse.html'}),
-  Object.freeze({part:3,scene:5,plateau:2,title:'La prison',game:'jeu-yoyo.html'})
+  Object.freeze({part:1,scene:4,plateau:1,chapter:2,chapterTitle:'Même pas mal',title:'Sarajevo',game:'jeu-bosnie.html'}),
+  Object.freeze({part:2,scene:5,plateau:1,chapter:3,chapterTitle:'Le coup du bus',title:'Le danseur',game:'jeu-danse.html'}),
+  Object.freeze({part:3,scene:5,plateau:2,chapter:4,chapterTitle:'Le drapeau rouge',title:'La prison',game:'jeu-yoyo.html'})
  ]);
- // Les scènes 4 et 5 (deux sous-jeux) ne comptent que pour un chapitre.
- // Les 10 anciens chapitres restent dans les données, pour la reconstruction.
- // Le plateau ne matérialise aujourd'hui que ses deux premiers chapitres.
+ // Les noms CHAPTER2_PARTS/chapter2* restent compatibles avec les intégrations.
+ // Ils désignent la deuxième étape de jeu, qui regroupe les chapitres 2 à 4.
+ // Les autres étapes historiques restent dans les données, pour la reconstruction.
+ // Le plateau ne matérialise aujourd'hui que ses deux premières étapes.
  const ARCHIVED_CARDS=Object.freeze([1,4,6,7,8,9,10,11,12,13]);
  const CARDS=Object.freeze([1,4]);
  const completed=(state,n)=>Array.isArray(state?.completed)&&state.completed.includes(n);
@@ -140,7 +141,7 @@
   return changed;
  }
  function prepareChapter2Dance(state,makeId){
-  // Le quiz du chapitre 2 se fait à Sarajevo, pas entre Sarajevo et la danse.
+  // Le quiz commun de l'étape 2 se fait à Sarajevo, pas avant chaque chapitre.
   // Les points d'une ancienne sauvegarde ne sont jamais retouchés ici.
   if(!canEnter(state,5)||chapter2PartDone(state,2))return false;
   state.quizPassed??={};
