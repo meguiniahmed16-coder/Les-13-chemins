@@ -315,3 +315,13 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Conserver son inscription « Chapitre 1 — « La salle d’attente », pages 7–9 » et les mêmes couleurs, poteaux, position et défilement.
 - Ne pas toucher aux autres panneaux (notamment le panneau A410), aux personnages, au paysage ni au gameplay.
 - Test de non-régression : un seul panneau chapitre, aux dimensions et coordonnées précédentes, absent au début et à la fin du parcours.
+
+### 2026-11-09 — Catalogne : grand parc 2D à allées multiples et foule
+- Rendu 2D **en perspective trois-quarts**, plus vaste et moins linéaire que l’ancien couloir, avec trois grandes allées reliées par des cheminements transversaux, des jardins fleuris, plusieurs fontaines, arbres de hauteurs différentes, palmiers, bancs, réverbères et oiseaux.
+- Ajout d’une véritable latitude de déplacement (`run.lane`, −112 à +112) par boutons tactiles ▲/▼ et flèches du clavier, sans modifier le parcours horizontal ni la mécanique des cinq ventes (+2 par client, +10 maximum).
+- Clients situés sur plusieurs allées ; contrôle de proximité en X **et** en profondeur. La hauteur du saut `run.y` reste distincte de l’allée `run.lane`.
+- Quatre policiers possèdent une patrouille et peuvent poursuivre le narrateur sur les deux axes lorsqu’il approche ; l’interpellation exige désormais proximité en X et en profondeur, ou le saut permet d’échapper à leur contact.
+- Personnages modernes pixelisés originaux (corps plus lisibles, deux jambes, bottes, visages, costumes différenciés) et environ 16 groupes plus 30 personnes seules, avec profondeur et superposition cohérente.
+- Ressources **CC0** réellement intégrées : Kenney Tiny Town pour textures de feuillage, Pixel-Boy & AAA Ninja Adventure pour quelques figurants spéciaux. Source et licence détaillées dans `CATALOGNE_ASSETS_CC0.md`.
+- Conservation de la précédente mise en scène dans `ParkScene.legacyDraw` pour retour arrière ; changement de l’affichage principal uniquement.
+- Ne jamais modifier `score`, `catalogne:sale`, `catalogne:credited`, l’identité des cinq clients, les voix et musiques déjà en place. Tests structurels, déplacement, police, ressources et intégrité de l’arcade.
