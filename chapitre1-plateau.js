@@ -8,22 +8,22 @@
  css.id='chapitre1-board-styles';
  css.textContent="#board{aspect-ratio:auto!important;min-height:0!important;overflow:visible!important;background:linear-gradient(145deg,#f1e2c5,#e6d2ae);padding:13px!important;touch-action:pan-y}\n#board picture{display:none!important}\n#boardTargets{position:relative!important;inset:auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}\n#boardTargets .board-target{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:100%!important;height:auto!important;min-height:130px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px 12px 39px;border-radius:10px;text-align:left;background:linear-gradient(155deg,#fff6df,#edddbc);border:2px solid #c5a679;box-shadow:0 3px 0 #ad8a5c33;color:#4f3c2a;overflow:hidden}\n#boardTargets .board-target:before{content:'';position:absolute;right:-26px;top:-32px;width:95px;height:95px;border:1px solid #ddc29b;border-radius:50%;pointer-events:none}\n#boardTargets .board-target[aria-disabled=true]{opacity:.6;filter:saturate(.6);cursor:not-allowed}\n#boardTargets .board-target[aria-pressed=true]{border-color:#31594c;background:linear-gradient(145deg,#fff4dc,#e6edd8);box-shadow:inset 0 0 0 2px #fff9eb}\n#boardTargets .board-target.done{background:linear-gradient(145deg,#e9efdb,#d1ddc5);border-color:#7e9d76}\n#boardTargets .chapter-featured{grid-column:1/-1;min-height:178px!important;background:linear-gradient(110deg,#32564b 0%,#527768 48%,#739377 100%)!important;border:3px solid #bd995e!important;color:#fff5dc!important;padding:20px 22px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 1.35fr;align-content:center;column-gap:22px;row-gap:9px}\n#boardTargets .chapter-featured[aria-disabled=true]{opacity:1;filter:none}\n#boardTargets .chapter-featured[aria-pressed=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}\n#boardTargets .chapter-featured.done{background:linear-gradient(110deg,#2d584a,#466d54,#70855c)!important}\n#boardTargets .chapter-featured:before{right:-22px;top:-42px;width:230px;height:230px;border:2px solid #f7eaca30}\n#boardTargets .chapter-featured .chapter-card-kicker{color:#f0d6a2}\n#boardTargets .chapter-featured .chapter-card-title{color:#fff9e5;font-size:clamp(24px,3vw,37px)}\n#boardTargets .chapter-featured .chapter-card-place{color:#e3e9d3}\n#boardTargets .chapter-card-kicker{font:700 10px/1.2 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8b6740;position:relative}\n#boardTargets .chapter-card-title{font:700 clamp(19px,2.2vw,25px)/1.06 'Cormorant Garamond',Georgia,serif;position:relative;max-width:100%}\n#boardTargets .chapter-card-place{font:11px/1.4 'DM Sans',sans-serif;color:#836a49;position:relative}\n#boardTargets .chapter-card-route{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;grid-column:2;grid-row:1 / span 3;align-self:center;position:relative}\n#boardTargets .chapter-card-route span{flex:1 1 90px;min-width:0;text-align:center;border:1px solid #eed9ae70;padding:12px 6px;border-radius:7px;background:#1d403749;font:700 11px/1.45 'DM Sans',sans-serif;color:#fff8dc}\n#boardTargets .chapter-card-route span.passed{background:#e4eed3;color:#28503d}\n#boardTargets .chapter-card-status{font:600 11px/1.3 'DM Sans',sans-serif;margin-top:auto;color:#dceacf;grid-column:1;position:relative}\n#boardTargets .board-badge{position:absolute;right:8px;bottom:8px;top:auto;z-index:1;width:24px;height:24px;font-size:12px}\n#boardTargets .chapter-featured .board-badge{right:12px;bottom:12px;width:31px;height:31px;font-size:17px}\n#chapter1Sequence{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0;padding:11px;border:1px solid #bbad84;border-radius:8px;background:#f5ecd7}\n#chapter1Sequence .chapter1-part{border:1px solid #bba778;border-radius:5px;background:#fff9ea;color:#52613e;padding:8px 10px;min-height:43px;font:600 12px 'DM Sans',sans-serif;flex:1 1 120px;cursor:pointer}\n#chapter1Sequence .chapter1-part.active{background:#315b49;color:#fff9e2;border-color:#315b49}\n#chapter1Sequence .chapter1-part.passed{border-color:#638869}\n#chapter1Sequence .chapter1-part:disabled{opacity:.46;cursor:not-allowed}\n#chapter1Header{font:700 17px/1.25 'Cormorant Garamond',Georgia,serif;color:#6b5637;margin:0 0 7px}\n#chapter1Header[hidden],#chapter1Sequence[hidden]{display:none!important}\n@media(max-width:760px){#boardTargets{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#boardTargets .board-target{min-height:135px;padding:11px 10px 35px}#boardTargets .chapter-featured{grid-column:1/-1;grid-template-columns:1fr;min-height:195px!important;padding:17px!important}#boardTargets .chapter-card-route{grid-column:1;grid-row:auto;gap:5px}#boardTargets .chapter-card-route span{flex:1 1 85px;padding:9px 4px;font-size:10px}}\n@media(max-width:390px){#boardTargets .chapter-card-title{font-size:19px}#boardTargets .chapter-card-route{flex-wrap:wrap}}\n/* Passage illustré entre les deux premières vignettes. */\n#boardTargets .chapter-journey-route{grid-column:1/-1;position:relative;padding:14px 15px 11px;border:1px solid #ac8e5f;border-radius:10px;background:linear-gradient(110deg,#fff7e2,#f1e0bc);color:#59462e;overflow:hidden}\n#boardTargets .chapter-journey-title{font:700 12px/1.35 'DM Sans',sans-serif;letter-spacing:.035em;text-align:center;margin:0 0 12px}\n#boardTargets .chapter-route-stops{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;position:relative;padding:0 3px 3px}\n#boardTargets .chapter-route-stops:before{content:'';position:absolute;left:10%;right:10%;top:8px;border-top:3px dotted #a37540;pointer-events:none}\n#boardTargets .chapter-route-stops:after{content:'';position:absolute;top:1px;left:10%;height:17px;width:17px;border-radius:50%;background:#315c48;border:3px solid #faf0d6;box-shadow:0 0 0 2px #b5884e,0 2px 7px #152c2060;z-index:2;pointer-events:none;animation:chapterTravelDot 7s linear infinite}\n#boardTargets .chapter-route-stop{font:600 10px/1.3 'DM Sans',sans-serif;text-align:center;position:relative;z-index:1;overflow-wrap:break-word}\n#boardTargets .chapter-route-stop:before{content:'';display:block;margin:0 auto 8px;width:14px;height:14px;border:2px solid #a37540;border-radius:50%;background:#fff9e8;box-shadow:0 0 0 2px #fff7e5}\n@keyframes chapterTravelDot{0%{left:10%}100%{left:90%}}\n@media(max-width:760px){#boardTargets .chapter-journey-route{padding:11px 7px}#boardTargets .chapter-journey-title{font-size:11px}#boardTargets .chapter-route-stop{font-size:9px}#boardTargets .chapter-route-stops{gap:2px}}\n@media(prefers-reduced-motion:reduce){#boardTargets .chapter-route-stops:after{animation:none;left:10%}}";
  document.head.append(css);
- $('board').setAttribute('aria-label','Plateau de dix chapitres. Les deux premiers réunissent chacun trois scènes de jeu.');
+ $('board').setAttribute('aria-label','Plateau épuré en reconstruction : deux grandes vignettes, trois jeux par chapitre.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Dix chapitres · treize scènes de jeu. Les chapitres 1 et 2 réunissent chacun trois jeux.';
+ if(intro)intro.textContent='Deux chapitres pour commencer : « La salle d’attente » et « Même pas mal ». Les suivants seront reconstruits progressivement.';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
  const chapterName='Chapitre 1 — « La salle d’attente »';
  const chapterTwoName='Chapitre 2 — « Même pas mal »';
- const icons=['🌳','🪖','🗝️','🦋','🤝','🪶','🥾','⛺','💍','⛵'];
+ const icons=['🌳','🪖'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
  const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison'];
  const makeSpan=(name,label)=>{const el=document.createElement('span');el.className=name;el.textContent=label;return el;};
  function paintTargets(){
   const host=$('boardTargets'),current=state.selected<=3?1:state.selected<=5?4:state.selected;
-  if(host.dataset.mode!=='chapters-v2'){
-   host.dataset.mode='chapters-v2';
+  if(host.dataset.mode!=='chapters-minimal-v1'){
+   host.dataset.mode='chapters-minimal-v1';
    host.replaceChildren(...flow.CARDS.map((scene,i)=>{
     const button=document.createElement('button');button.type='button';
     button.className='board-target'+(scene===1||scene===4?' chapter-featured':'');
@@ -54,8 +54,8 @@
      const n=scene===1?(flow.done(state)?1:flow.nextPart(state)):
       scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene;
      if(!flow.canEnter(state,n))return;
-     if(state.selected!==n)select(n);
-     if(matchMedia('(max-width:900px)').matches)$('questTitle').scrollIntoView({behavior:'instant',block:'start'});
+     // Dès le clic sur la vignette, commencer par le texte en plein écran.
+     arriveAtStage(n);
     };
     return button;
    }));
@@ -154,21 +154,22 @@
  const oldSave=save;
  save=function(){oldSave();updateProgressBar();};
  function updateProgressBar(){
-  const count=flow.chaptersDone(state);
-  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 10 chapitres parcourus · '+state.points+' points';
-  $('count').textContent=count+'/10';
-  $('stage').textContent=flow.chapterReached(state);
+  const count=Number(flow.done(state))+Number(flow.chapter2Done(state));
+  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 2 chapitres visibles · '+state.points+' points';
+  $('count').textContent=count+'/2';
+  $('stage').textContent=Math.min(2,flow.chapterReached(state));
  }
  function paintChapterSection(){
   updateProgressBar();
   const n=state.selected;
+  $('marmousetsReadingStart')?.remove();
   header.hidden=n>5;sequence.hidden=n>5;
   $('question').hidden=n===2||n===3||n===5;
   $('options').hidden=n===2||n===3||n===5;
   if(n<=3){
    header.textContent=chapterName;
    const part=flow.PARTS[n-1];
-   $('levelTag').textContent='CHAPITRE 1 / 10 · PARTIE '+n+' / 3';
+   $('levelTag').textContent='CHAPITRE 1 / 2 · PARTIE '+n+' / 3';
    $('questTitle').textContent=part.title;
    sequence.replaceChildren(...flow.PARTS.map((p,i)=>{
     const b=document.createElement('button');b.type='button';b.className='chapter1-part';
@@ -176,7 +177,7 @@
     b.textContent=(flow.partDone(state,p.scene)?'✓ ':'')+(i+1)+' · '+p.title;
     b.disabled=!flow.canEnter(state,p.scene)||boardRolling;
     b.setAttribute('aria-current',n===p.scene?'step':'false');
-    b.onclick=()=>select(p.scene);
+    b.onclick=()=>arriveAtStage(p.scene);
     return b;
    }));
    const canContinue=flow.partDone(state,n);
@@ -188,7 +189,16 @@
    if(canContinue)$('mobileGameDock').hidden=false;
    $('gameEntryName').textContent=part.title;
    $('mobileGameName').textContent=part.title;
-   $('gameEntryHint').textContent=canContinue&&n<3?'Cette partie est réussie. Tu peux continuer le chapitre.':canContinue?'Les trois parties du chapitre sont terminées.':'Réponds à la question et termine le jeu pour poursuivre.';
+   $('gameEntryHint').textContent=canContinue&&n<3?'Cette partie est réussie. Tu peux continuer le chapitre.':canContinue?'Les trois parties du chapitre sont terminées.':'Lis le passage en plein écran avant de commencer le mini-jeu.';
+   // L'entrée du chapitre 1 reste accessible même avant la première bonne réponse.
+   if(n===1&&!state.completed.includes(1)&&!state.marmousetsPending){
+    const launch=document.createElement('button');launch.type='button';
+    launch.id='marmousetsReadingStart';launch.className='action';
+    launch.textContent='📖 Lire Les Marmousets et commencer →';
+    launch.onclick=()=>arriveAtStage(1);
+    $('gameLaunchSlot').append(launch);
+    $('gameEntry').hidden=false;
+   }
    if(n===2&&!flow.partDone(state,2))
     $('status').textContent='Partie 2 / 3 : réussis la fuite vers l’A410. Le quiz commun du chapitre a déjà été validé.';
    if(n===3&&!flow.partDone(state,3))
@@ -198,7 +208,7 @@
    sequence.setAttribute('aria-label','Trois parties du chapitre 2');
    const secondDone=flow.chapter2PartDone(state,2);
    const activePart=n===4?1:secondDone?3:2;
-   $('levelTag').textContent='CHAPITRE 2 / 10 · PARTIE '+activePart+' / 3';
+   $('levelTag').textContent='CHAPITRE 2 / 2 · PARTIE '+activePart+' / 3';
    $('questTitle').textContent=n===4?'Sarajevo':secondDone?'La prison':'Le danseur';
    sequence.replaceChildren(...flow.CHAPTER2_PARTS.map(p=>{
     const b=document.createElement('button');b.type='button';b.className='chapter1-part';
@@ -208,7 +218,7 @@
     b.disabled=!flow.canEnter(state,p.scene)||boardRolling||
      (p.part===3&&!flow.chapter2PartDone(state,2));
     b.setAttribute('aria-current',activePart===p.part?'step':'false');
-    b.onclick=()=>select(p.scene);
+    b.onclick=()=>arriveAtStage(p.scene);
     return b;
    }));
    const finished=n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
@@ -225,7 +235,7 @@
      'Partie 2 / 3 : réussis la danse pour poursuivre vers la prison.';
    }
   }else{
-   $('levelTag').textContent='CHAPITRE '+flow.chapterOf(n)+' / 10';
+   $('levelTag').textContent='CHAPITRE '+flow.chapterOf(n)+' · EN PRÉPARATION';
   }
   const rewards=[];
   if(flow.done(state))rewards.push('<span class="item">'+

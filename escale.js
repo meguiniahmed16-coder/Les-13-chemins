@@ -50,6 +50,10 @@
  .journey-character-card strong{display:block;font:600 23px/1.2 'Cormorant Garamond',Georgia,serif;margin-bottom:8px}.journey-character-names{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}.journey-character-name{display:inline-block;border:1px solid #c4b18d;border-radius:16px;padding:4px 8px;background:#f3e8d1;animation:arrival-name .45s both;animation-delay:var(--delay,0s)}
  .character-more{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 16px;margin:0 0 22px;border:1px solid #9f8356;border-radius:5px;background:#f1e7d1;color:#294f3e;cursor:pointer;font:600 14px/1.4 'DM Sans',sans-serif;text-align:left}
  .character-more:hover{background:#e7d8b9}.character-more:focus-visible{outline:3px solid #b58037;outline-offset:3px}
+ /* Toute lecture est une vraie fenêtre immersive : aucun fond de plateau visible autour. */
+ :is(#arrivalReader,#characterReader){position:fixed;inset:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border:0;border-radius:0;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;background:#fff9ec}
+ :is(#arrivalReader,#characterReader) .arrival-body{width:100%;max-width:860px;margin:0 auto;padding:clamp(28px,4vw,58px) clamp(22px,5vw,66px) 82px}
+ :is(#arrivalReader,#characterReader) .arrival-excerpt{font:clamp(20px,2.2vw,25px)/1.86 Georgia,serif;letter-spacing:.006em}
  #characterReader .arrival-body{padding-top:25px}#characterReader article+article{border-top:1px solid #c9b48f;margin-top:30px;padding-top:20px}
  @keyframes arrival-name{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
  @media(prefers-reduced-motion:reduce){.journey-character-name{animation:none}}

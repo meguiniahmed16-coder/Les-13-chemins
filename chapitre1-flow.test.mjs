@@ -13,9 +13,10 @@ const sample=(patch={})=>({
  completed:[],points:0,unlocked:1,selected:1,
  arcadeBonuses:{},catalogneFinished:false,catalogneSold:[],...patch
 });
-test('Ten chapter cards: chapters 1 and 2 each contain three playable scenes',()=>{
+test('Two visible chapter cards, each with three mini-games; all ten legacy chapters remain archived',()=>{
  const f=api();
- assert.deepEqual(Array.from(f.CARDS),[1,4,6,7,8,9,10,11,12,13]);
+ assert.deepEqual(Array.from(f.CARDS),[1,4]);
+ assert.deepEqual(Array.from(f.ARCHIVED_CARDS),[1,4,6,7,8,9,10,11,12,13]);
  assert.deepEqual(Array.from(f.PARTS,p=>p.scene),[1,2,3]);
  assert.deepEqual(Array.from(f.PARTS,p=>p.game),['arcade-marmousets.html','arcade-a410.html','arcade-catalogne.html']);
  assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.title),['Sarajevo','Le danseur','La prison']);
@@ -65,13 +66,24 @@ test('Past players on later scenes keep their progress; incomplete players resum
  assert.equal(w.completed.length,2,'No old quiz answer is lost');
  assert.equal(w.unlocked,3,'No historical stage id is changed');
 });
-test('Atlas has 13 underlying scenes, but the plateau exposes 10 visual chapter cards',()=>{
+test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two large chapter cards',()=>{
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js'),build=read('./build-public.mjs');
  assert.match(html,/const LEVELS=\[(.*?)\];\s*const AVATARS=/s);
  assert.ok(html.includes('src="chapitre1-flow.js"'));
  assert.ok(html.includes('src="chapitre1-plateau.js"'));
  assert.ok(html.includes('src="ordre-lecture.js"'));
  assert.ok(ui.includes('host.replaceChildren(...flow.CARDS.map'));
+ assert.ok(html.includes('function drawBoard(){}'));
+ assert.ok(!html.includes('function boardGeometry(){'));
+ assert.ok(!html.includes('plateau-large.webp'));
+ assert.ok(!html.includes('plateau-mobile.webp'));
+ assert.ok(!build.includes("'plateau-mobile.webp'"));
+ assert.ok(!build.includes("'plateau-large.webp'"));
+ assert.ok(!html.includes('host.replaceChildren(...positions.map'));
+ assert.ok(ui.includes("host.dataset.mode='chapters-minimal-v1'"));
+ assert.ok(ui.includes("const icons=['🌳','🪖']"));
+ assert.ok(ui.includes("arriveAtStage(n);"));
+ assert.ok(ui.includes("b.onclick=()=>arriveAtStage(p.scene)"));
  assert.ok(ui.includes('scene===1?(flow.done(state)?1:flow.nextPart(state)):'));
  assert.ok(ui.includes('scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene'));
  assert.ok(ui.includes("if(n>=1&&n<=5)"));
@@ -95,7 +107,7 @@ test('Chapter 2 uses the same featured card as chapter 1 and the title Même pas
  assert.ok(ui.includes("scene===1||scene===4?' chapter-featured'"));
  assert.ok(ui.includes('if(scene===1||scene===4)'));
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
- assert.ok(ui.includes("' / 10 chapitres parcourus · '"));
+ assert.ok(ui.includes("' / 2 chapitres visibles · '"));
  assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
  assert.ok(ui.includes("header.textContent=chapterTwoName"));
  assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
@@ -231,8 +243,8 @@ test('Chapter 2 title and gate are displayed on one card with three named mini-g
  assert.ok(u.includes("const changed2=state.selected===5&&flow.prepareChapter2Dance(state)"));
  assert.ok(u.includes("'bosnie:won':4"));
  assert.ok(u.includes("'bosnieClose'"));
- assert.ok(game.includes('0 / 10 chapitres · 0 points'));
- assert.ok(game.includes('<b id="count">0/10</b>'));
+ assert.ok(game.includes('0 / 2 chapitres · 0 points'));
+ assert.ok(game.includes('<b id="count">0/2</b>'));
  assert.ok(p.includes('Chapitre 2 · Partie 2/3 — Le danseur'));
  assert.ok(p.includes('Chapitre 2 · Partie 3/3 — La prison'));
  assert.ok(read('./jeu-danse.html').includes('« MÊME PAS MAL » · PARTIE 2/3'));
