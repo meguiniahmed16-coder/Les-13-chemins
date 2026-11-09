@@ -54,11 +54,11 @@
  const secondBlockName='Chemin II · Le météore';
  const thirdBlockName='Chemin III · Les rendez-vous';
  const thirdParts=Object.freeze([
-  {chapter:4,title:'Drapeau rouge',scene:'Strasbourg · La reddition'},
+  {chapter:4,title:'Drapeau rouge',scene:'République–Bastille · Camarades !',game:'jeu-manifestation.html'},
   {chapter:5,title:'Passe-muraille',scene:'Scène à sélectionner'},
   {chapter:6,title:'Tu veux bien t’occuper de moi ?',scene:'Scène à sélectionner'}
  ]);
- const thirdExtract=["Plus tard, à Strasbourg, j’ai participé à une manifestation en faveur des sans-papiers.","Je n’avais rien organisé et j’étais plutôt là en touriste. Mais j’étais beaucoup passé à la télévision au cours des semaines précédentes. J’étais devenu reconnaissable. La manifestation a assez mal tourné. Il y a eu d’importantes dégradations dans le centre-ville. Et manifestement, il fallait rapidement trouver des responsables. À un moment, je commence à sentir que la police en a après moi. T’es parano. C’est dans ta tête. Puis des manifestants viennent me voir.","— Mais qu’est-ce que t’as fait ?","Merde. Je ne suis peut-être pas parano. Un policier finit par me désigner franchement.","— Toi. Viens là.","Pris par surprise, je donne probablement la réponse la moins appropriée à un policier :","— Non.","Et je pars dans l’autre sens. Évidemment, l’étau commence à se resserrer. C’est devenu évident : c’est moi qu’ils veulent. Des manifestants cagoulés improvisent un service d’ordre autour de moi. Des gens m’attrapent par le bras. Plusieurs cordons se forment pour me protéger et essayer de me sortir de là. À voir la scène, j’étais devenu le grand leader qui ramenait dix mille personnes pour envahir Strasbourg. La situation est surréaliste.","À un moment, Philippe Delaunay, un capitaine de police, monte sur le capot d’une voiture.","— On en veut un et on vous laisse partir.","Et tout le monde me regarde.","Puis je vois une colonne de CRS remonter le cortège. Ils tirent au flash-ball à bout portant. Une arme potentiellement mortelle à cette distance. Au loin, des gens qui ne représentent aucune menace pour eux s’effondrent et disparaissent de ma vue.","Un. Puis deux. Puis trois. Puis quatre.","Alors je dis à ceux qui m’entourent :","— C’est bon, arrêtez. Je vais me rendre. Je vais voir ce qu’ils veulent. J’ai rien fait. Il y a aucune raison que tant de gens souffrent pour rien.","Je m’avance, les bras levés. Je suis brutalement plaqué au sol. Ils me menottent, me retournent, me soulèvent les bras. C’est à ce moment-là qu’ils m’en brisent un.","Je m’étais rendu."];
+ const thirdExtract=["Julie est devant la télévision. Elle se retourne vers moi.","— T’es pas au courant ?","— Au courant de quoi ?","— Jean-Marie Le Pen est au deuxième tour.","Je reste là, effondré. Je n’étais pas particulièrement politisé, mais ce scénario me paraissait impossible. Je rentre chez moi. Impossible de dormir. Ça tourne à deux cents à l’heure dans ma tête. Qu’est-ce qui s’est passé ? Est-ce que mon pays est devenu à ce point facho sans que je m’en rende compte ? Ça ne colle pas avec ce que je vis. On ne m’attaque pas dans la rue. Je travaille. Je rencontre des gens. Je traverse Paris toute la journée. Ce n’est pas possible. Mais cette nuit-là, c’est comme ça que je la vivais. Et puisque je ne pouvais pas dormir, j’ai décidé de marcher. J’ai marché sans savoir exactement où j’allais.","Mes pas m’ont doucement conduit vers la place de la République. Au loin, j’aperçois un type avec un drapeau rouge. Il a l’air d’être à peu près dans le même état que moi. Lui non plus, visiblement, n’a pas réussi à aller se coucher. Il va quelque part. Alors je décide de le suivre. Son drapeau rouge, en revanche, ce n’est vraiment pas le mien. Moi, je suis un ancien militaire, fils d’un ancien militaire, serveur devenu chauffeur-livreur. Alors, quand j’aperçois un drapeau français sur le fronton d’une école, j’escalade ce qu’il faut pour le récupérer et le brandir à mon tour. Et nous voilà partis. Lui avec son drapeau rouge.","Quand j’arrive place de la République avec mon drapeau français, je découvre que des milliers de personnes ont eu la même idée. Les téléphones circulent. Des textos appellent au rassemblement :","« Rendez-vous République » et « Rendez-vous Bastille ». ","Et puis, à un moment, je ne sais absolument pas ce qui me prend. Je grimpe sur la statue de la République. Un autre rassemblement se forme à Bastille. Je décide d’aller le rejoindre. Il faut maintenant l’expliquer aux gens. Alors je crie :","— Camarades !","Le mot me surprend moi-même. Camarades ? Je n’ai jamais appelé personne « camarade » de ma vie. À ma surprise, les gens se taisent et m’écoutent. Il y a là peut-être deux mille personnes. Du haut de la statue, je leur annonce que le rassemblement de Bastille nous attend et leur propose de partir le rejoindre. La foule se met en mouvement et devient un cortège. Nous prenons la direction de Bastille.","Là-bas, les autres ont eu la même idée : ils viennent vers nous. Les deux cortèges se rencontrent à mi-chemin. Et là, quelque chose se produit.","Ce qui, quelques heures auparavant, ressemblait à une tragédie se transforme soudain en fête. Les gens sont heureux de se retrouver et d’être sortis de chez eux. Ils ne sont plus seuls devant leur télévision, sidérés. Nous sommes maintenant des milliers à nous regarder avec, au fond, quelque chose d’assez simple à nous dire : Toi aussi, tu es venu. La fête dure. Comme j’avais pris la parole sur la statue et que j’étais assez facilement reconnaissable avec ma casquette de Poulbot, à la Gavroche, une dizaine de personnes viennent vers moi.","— On va où maintenant ?","Intérieurement, je suis effaré. Pourquoi moi ? Je suis arrivé à Paris quelques mois plus tôt. Je connais tellement mal la ville que je me perds encore avec mon camion de chauffeur-livreur. Mais je ne me démonte pas. Je tends le bras.","— Par là.","Et nous partons par là. Voilà, à peu près, comment je suis devenu l’un des visages de ce mouvement parisien. Très vite, les journalistes arrivent. Ils demandent qui ils doivent interviewer. Les gens me désignent. Je ressens alors quelque chose qui ressemble à une mission. Comme citoyen. Comme patriote. Comme ancien militaire. Un Arabe avec une casquette de Gavroche, un drapeau français à la main, au milieu d’une manifestation contre le Front national. Ce drapeau était le mien, à cause de mon histoire, de celle de mon père et de mon passage dans l’armée. Ensuite, tout s’est emballé. Une sorte de boule de neige médiatique."];
  const reader=document.createElement('dialog');
  reader.id='rendezvousDialog';reader.setAttribute('aria-label','Chemin III — Les rendez-vous, chapitre 4');
  const readerBar=document.createElement('div');readerBar.className='rendezvous-top';
@@ -67,12 +67,12 @@
  readerBar.append(readerHeading,readerClose);
  const readerBody=document.createElement('div');readerBody.className='rendezvous-content';
  const readerKicker=document.createElement('p');readerKicker.className='rendezvous-kicker';readerKicker.textContent='Bonne feuille 1/3 · Chapitre 4 — « Drapeau rouge »';
- const readerTitle=document.createElement('h2');readerTitle.textContent='Strasbourg — Je m’étais rendu';
+ const readerTitle=document.createElement('h2');readerTitle.textContent='République–Bastille · Avril 2002';
  const excerpt=document.createElement('div');excerpt.className='rendezvous-excerpt';
  for(const paragraph of thirdExtract){const el=document.createElement('p');el.textContent=paragraph;excerpt.append(el);}
  const future=document.createElement('div');future.className='rendezvous-future';
- const futureTitle=document.createElement('strong');futureTitle.textContent='Jeu 1 / 3 — en préparation';
- const futureBody=document.createElement('p');futureBody.textContent='La scène est sélectionnée pour son potentiel ludique. Aucun jeu n’est encore disponible pour ce chemin ; les chapitres 5 et 6 seront choisis ensuite. Les points et la progression des deux premiers chemins restent inchangés.';
+ const futureTitle=document.createElement('strong');futureTitle.textContent='Jeu 1 / 3 — Camarades !';
+ const futureBody=document.createElement('p');futureBody.textContent='Trois épreuves de 10 points : trouver le drapeau, mobiliser la République et réunir les cortèges. Le jeu s’ouvre après la lecture, en descendant jusqu’au bas de l’extrait.';
  future.append(futureTitle,futureBody);
  readerBody.append(readerKicker,readerTitle,excerpt,future);reader.append(readerBar,readerBody);document.body.append(reader);
  readerClose.onclick=()=>reader.close();
@@ -156,7 +156,7 @@
     tile.append(makeSpan('chapter-part-number','CHAPITRE '+p.chapter),
      makeSpan('chapter-part-title','« '+p.title+' »'),
      makeSpan('chapter-part-game','Jeu '+(i+1)+' / 3'),
-     makeSpan('chapter-part-state',i===0?'Bonne feuille choisie · Jeu en préparation':'Scène et jeu à préparer'));
+     makeSpan('chapter-part-state',i===0?'Bonne feuille validée · Jeu jouable':'Scène et jeu à préparer'));
     thirdRoute.append(tile);
    }
    third.append(makeSpan('chapter-card-kicker','CHEMIN III'),
@@ -164,7 +164,7 @@
     makeSpan('chapter-card-place','Trois chapitres · Trois jeux'),
     thirdRoute,makeSpan('chapter-card-status','À découvrir après le chemin II'),
     makeSpan('board-badge','✦'));
-   third.onclick=openThirdPath;
+   third.onclick=()=>window.TreizeRendezVous?.open?.();
    host.append(third);
   }
   for(const button of host.querySelectorAll('[data-chapter]')){
@@ -236,7 +236,7 @@
   if(boardRolling||n!==state.selected)return;
   // Passage d'une scène à l'autre, gagnée OU volontairement passée.
   // The historic IDs and save format are retained; only wins pay points.
-  if(n===5&&flow.chapter2Done(state)){openThirdPath();return;}
+  if(n===5&&flow.chapter2Done(state)){window.TreizeRendezVous?.open?.();return;}
   if(n>=1&&n<=5){
    const traversed=n<=3?flow.partDone(state,n):
     n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
