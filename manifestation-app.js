@@ -16,6 +16,7 @@ const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
 let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,autoMarch=false,lastHud=0;
+let cameraOrbit=0,cameraOrbitLeft=0;
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
 const colors={
@@ -264,32 +265,29 @@ function sceneFor(phase){
  if(sceneGroup)world.remove(sceneGroup);
  sceneGroup=new T.Group();world.add(sceneGroup);
  stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;
- const root=sceneGroup;
- const sky=phase===1?0xb8c7d3:phase===2?0xb8cdd5:0xc3d4d9;
+ const root=sceneGroup,sky=phase===1?0xb8cdd5:phase===2?0xb8c7d3:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
-  buildings(root,-20,43);
-  addBox(root,11.63,3.8,11, .1,7,6,0xd5c5a7);
-  const panel=roundedText('ÉCOLE',2.6);panel.position.set(11.54,4.7,11);panel.rotation.y=-Math.PI/2;root.add(panel);
-  flag(root,'france',4.1,2.05,12,3.7);
-  const red=person(73);red.position.set(-2,0,6);red.rotation.y=.2;root.add(red);
-  flag(red,'red',.25,1.26,0,2.0);
-  crowdActors=[{guy:red,x:-2,z:6,seed:27}];
-  addBox(root,4.1,.28,12,2.2,.56,2.3,0xc9bea6);
- }else if(phase===2){
-  buildings(root,-23,46);statue(root);
-  // République : le cortège initial reste dans le dos du joueur.
-  // L'ancienne densification à z=+20 plaçait la foule devant la statue.
+  // Le joueur commence déjà sur la statue et la foule est derrière.
+  buildings(root,-23,46,true);statue(root);
   crowdActors=makeCrowd(root,9,-13,{spread:7});
   distantCrowd(root,-27,40);
-  for(let i=0;i<5;i++)flag(root,i%3===0?'france':'red',(rnd(i+11)-.5)*14,0,3+(rnd(i+73)-.5)*17,3.3);
-  protestSign(root,'NON À LE PEN',-4,8,3.2);
-  protestSign(root,'LIBERTÉ ÉGALITÉ FRATERNITÉ',5,13,4.9);
-  protestSign(root,'ENSEMBLE CONTRE LA HAINE',-6,-1,4.4);
-  banner(root,'LA RÉPUBLIQUE POUR TOUS',0,19,7.2);
+  protestSign(root,'NON À LE PEN',-4,-6,3.2);
+  protestSign(root,'ENSEMBLE CONTRE LA HAINE',5,-8,4.4);
+  banner(root,'LA RÉPUBLIQUE POUR TOUS',0,-17,7.2);
+ }else if(phase===2){
+  // Après la statue, on cherche le drapeau français devant l'école.
+  buildings(root,-20,43,true);
+  addBox(root,11.63,3.8,11,.1,7,6,0xd5c5a7);
+  const school=roundedText('ÉCOLE',2.6);school.position.set(11.54,4.7,11);school.rotation.y=-Math.PI/2;root.add(school);
+  flag(root,'france',4.1,2.05,12,3.7);
+  const red=person(73);red.position.set(-2,0,6);red.rotation.y=.2;root.add(red);
+  flag(red,'red',.25,1.26,0,2);
+  crowdActors=[{guy:red,x:-2,z:6,seed:27}];
+  addBox(root,4.1,.28,12,2.2,.56,2.3,0xc9bea6);
+  distantCrowd(root,-27,40);
  }else{
-  buildings(root,-7,135,true); // Android: avoid rebuilding hundreds of individually drawn windows.
-  // La foule de République suit derrière ; Bastille apparaît près de la rencontre.
+  buildings(root,-7,135,true);
   crowdActors=makeCrowd(root,9,-12,{spread:6});
   distantCrowd(root,-27,40);
   bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
@@ -299,44 +297,35 @@ function sceneFor(phase){
   protestSign(root,'NON À LE PEN',-5,84,3.0);
   protestSign(root,'TOUS ENSEMBLE',5,95,3.1);
   protestSign(root,'NON À LA HAINE',-4,103,3.1);
-  // Distinct two corteges with a clear meeting zone on the boulevard.
-  const banner=roundedText('BASTILLE',5.0);banner.position.set(0,5.2,108);root.add(banner);
+  const destination=roundedText('BASTILLE',5);destination.position.set(0,5.2,108);root.add(destination);
  }
  hero=person(2,{hero:true});root.add(hero);
- if(phase>1)flag(hero,'france',.40,1.05,0,2.6);
+ // Le narrateur ne porte le drapeau qu'après l'avoir récupéré.
+ if(phase===3)flag(hero,'france',.40,1.05,0,2.6);
  stageInWorld=phase;
 }
 function messageFeedback(text,duration=2){speech.textContent=text;speech.hidden=false;showSpeechUntil=performance.now()/1000+duration;}
 function refreshHUD(){
  const p=run.phase,n=run.steps.length;
- title.textContent=run.finished?'3 / 3 · Réunion des cortèges':String(p)+' / 3 · '+OBJECTIFS[Math.min(2,p-1)];
- label.textContent=p===1?'Paris · 2002 · Cherche le drapeau':p===2?'Place de la République':'Boulevard vers Bastille';
- steps.forEach((s,i)=>{s.classList.toggle('done',i<n);s.textContent=i<n?'✓':String(i+1);});
+ title.textContent=run.finished?'3 / 3 · Réunion des cortèges':p+' / 3 · '+OBJECTIFS[Math.min(2,p-1)];
+ label.textContent=p===1?'Place de la République · Paris 2002':p===2?'Devant l’école · Le drapeau':'Boulevard vers Bastille';
+ steps.forEach((el,i)=>{el.classList.toggle('done',i<n);el.textContent=i<n?'✓':String(i+1);});
  score.textContent=String(serverSteps.length*10);
- const pct=p===2?run.mobilisation:run.cohesion;
+ const pct=p===1?(run.statueShouted?100:0):p===2?0:run.cohesion;
  meter.style.width=Math.round(pct)+'%';meterValue.textContent=Math.round(pct)+'%';
- $('meterLabel').textContent=p===2?'MOBILISATION':p===1?'PRÉPARATION':'COHÉSION DU CORTÈGE';
- if(p===1)hint.textContent='Joystick : avance vers le drapeau français devant l’école. Jaune pour grimper et le prendre.';
- else if(p===2){
-  if(run.climb)hint.textContent=run.climb.direction==='up'?'Montée sur les marches… En haut, appuie sur « Camarades ! ».':'Descente vers la rue ; les manifestants sont derrière toi.';
-  else if(run.climbed)hint.textContent=run.statueShouted?'— CAMARADES ! La foule répond ; tu redescends.':'En haut, appuie sur « Camarades ! » pour appeler la foule.';
-  else hint.textContent='Approche des marches et presse JAUNE pour monter, puis « Camarades ! » en haut.';
- }
- else hint.textContent='Vers Bastille : '+Math.min(100,Math.floor(run.z))+' / 100 · Le cortège suit derrière. Tu peux guider avec le joystick.';
- if(run.finished)hint.textContent='Les deux cortèges se retrouvent à mi-chemin. « — Par là. »';
- const advanceButton=$('advanceBastille');
- if(advanceButton){advanceButton.hidden=run.phase!==3||!playing;advanceButton.textContent=autoMarch?'❚❚ Arrêter la marche':'▶ Avancer vers Bastille';}
- const up=playing&&!paused&&run.phase===2&&run.climbed&&!run.climb&&!run.statueShouted;
- const statuePanel=$('statueControls');
- if(statuePanel)statuePanel.hidden=!up;
- if(up){
-  $('statueProgress').textContent=run.rallying?'La foule se mobilise : '+Math.round(run.mobilisation)+' %':'La foule attend ton appel.';
-  $('statueCall').textContent=run.rallying?'📣 Appel lancé · '+Math.round(run.mobilisation)+' %':'📣 Crier « Camarades ! »';
- }
- $('red').classList.toggle('awaiting',up&&!run.rallying);
- $('yellow').setAttribute('aria-label',up?'Jaune : redescendre du socle':'Jaune : agir ou monter sur le socle');
- const yellowCaption=$('yellowLabel');
- if(yellowCaption)yellowCaption.textContent=up?'REDESCENDRE':run.climb?'MONTÉE / DESCENTE':'AGIR / GRIMPER';
+ $('meterLabel').textContent=p===1?'APPEL DE LA RÉPUBLIQUE':p===2?'DRAPEAU À RÉCUPÉRER':'COHÉSION DU CORTÈGE';
+ if(p===1)hint.textContent=run.climb?'Tu descends chercher le drapeau français devant l’école.':run.statueShouted?'La foule a entendu ton appel. Descente dans un instant.':'Tu es sur la statue : appuie sur « Camarades ! ».';
+ else if(p===2)hint.textContent='Va jusqu’au drapeau français devant l’école. JAUNE pour le récupérer.';
+ else hint.textContent='Vers Bastille : '+Math.min(100,Math.floor(run.z))+' / 100 · Le cortège suit derrière. Joystick pour guider.';
+ if(run.finished)hint.textContent='Les cortèges se rencontrent. « — On va où maintenant ? — Par là. »';
+ const march=$('advanceBastille');
+ if(march){march.hidden=p!==3||!playing;march.textContent=autoMarch?'❚❚ Arrêter la marche':'▶ Avancer vers Bastille';}
+ const up=playing&&!paused&&p===1&&!run.statueShouted&&!run.climb;
+ const panel=$('statueControls');if(panel)panel.hidden=!up;
+ if(up){$('statueProgress').textContent='La foule attend ton appel.';$('statueCall').textContent='📣 Crier « Camarades ! »';}
+ $('red').classList.toggle('awaiting',up);
+ $('yellow').setAttribute('aria-label',p===1?'Jaune : crier Camarades !':p===2?'Jaune : prendre le drapeau français':'Jaune : action');
+ const caption=$('yellowLabel');if(caption)caption.textContent=p===1?'CAMARADES !':p===2?'PRENDRE DRAPEAU':'ACTION';
 }
 const send=(type,extra={})=>{if(embedded)parent.postMessage({type,id:sessionId,...extra},location.origin);};
 function drain(){
@@ -346,7 +335,7 @@ function drain(){
     if(!embedded){serverSteps.push(e.step);refreshHUD();}
     send('manifestation:progress',{step:e.step});
    }
-   const words=['Drapeau français récupéré !','La foule se met en marche !','Deux cortèges réunis !'];
+   const words=['« Camarades ! » · appel réussi !','Drapeau français récupéré !','Deux cortèges réunis !'];
    messageFeedback(words[e.step-1],1.8);sound(600+80*e.step,.18);
   }
   if(e.type==='summit'){
@@ -370,7 +359,7 @@ function drain(){
 function card(titleText,bodyText){overlay.hidden=false;$('overlayTitle').textContent=titleText;$('overlayText').textContent=bodyText;}
 function start(){
  if(!gameReady)return;
- $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;autoMarch=false;lastHud=0;
+ $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;autoMarch=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
 }
 function pause(){
@@ -402,7 +391,7 @@ function voiceCamarades(){
 }
 function callCrowd(){
  if(!playing||paused)return;
- if(run.phase===2&&run.climbed&&!run.climb){
+ if(run.phase===1&&run.climbed&&!run.climb){
   // Le joueur déclenche le cri ici ; son événement joue la voix une seule fois.
   if(!run.statueShouted&&callFromStatue(run)){drain();refreshHUD();}
   return;
@@ -412,18 +401,11 @@ function callCrowd(){
 }
 function yellowPress(){
  if(!playing||paused||actionTransition>0)return;
- const before=run.phase,climbed=run.climbed;
- const result=yellow(run);
+ const before=run.phase,result=yellow(run);
  if(result){
-  if(before===2&&run.climb){
-   messageFeedback(run.climb.direction==='up'?'Montée… appuie sur « Camarades ! » en haut.':'Descente ; la foule est derrière toi.',2.2);
-   sound(520,.16);
-  }else actionTransition=.45;
   drain();refreshHUD();
- }else{
-  if(run.phase===1)messageFeedback('Avance jusqu’au drapeau.',.9);
-  if(run.phase===2&&!run.climbed)messageFeedback('Approche-toi de la statue.',.9);
- }
+  if(before===2){autoMarch=true;joy={x:0,y:0};keys.clear();redHeld=false;sceneFor(3);messageFeedback('Drapeau récupéré ! Direction Bastille.',2);sound(640,.16);}
+ }else if(before===2)messageFeedback('Approche-toi du drapeau français.',1.2);
 }
 function changeDir(){
  // Independent horizontal and vertical axes.
@@ -459,10 +441,11 @@ function bindControls(){
  red.addEventListener('click',e=>{if(e.detail===0){redHeld=true;callCrowd();setTimeout(redUp,350);}});
  window.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
-  if(['arrowup','arrowdown','arrowleft','arrowright',' ','enter','r','w','a','s','d','z','q'].includes(key))e.preventDefault();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' ','enter','r','v','w','a','s','d','z','q'].includes(key))e.preventDefault();
   const has=keys.has(key);keys.add(key);
   if(!has&&(key===' '||key==='enter'))yellowPress();
   if(!has&&key==='r')callCrowd();
+  if(!has&&key==='v'&&playing){cameraOrbit=0;cameraOrbitLeft=Math.PI*2;}
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
  window.addEventListener('blur',()=>{keys.clear();redHeld=false;red.classList.remove('held');release();});
@@ -473,6 +456,7 @@ function bindControls(){
  $('next').onclick=()=>send('manifestation:next');
  $('pause').onclick=pause;
  $('advanceBastille').onclick=()=>{if(run.phase!==3||!playing)return;autoMarch=!autoMarch;refreshHUD();};
+ $('turn360').onclick=()=>{if(!playing)return;cameraOrbit=0;cameraOrbitLeft=Math.PI*2;};
  $('statueCall').onclick=callCrowd;
  $('statueDescend').onclick=yellowPress;
  $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(soundOn));if(soundOn)sound(450,.13);};
@@ -486,18 +470,16 @@ function bindControls(){
 }
 function animateActors(dt,t){
  if(hero){
-  // The feet are on top of the stone platform, never inside its volume.
   hero.position.set(run.x,run.height||0,run.z);
   const input=changeDir();
-  const running=(Math.abs(input.x)+Math.abs(input.y)>.2&&!paused)||!!run.climb;
-  const rallying=run.phase===2&&run.climbed&&!run.climb&&run.statueShouted;
+  const running=(run.phase!==1&&(Math.abs(input.x)+Math.abs(input.y)>.2&&!paused))||!!run.climb;
+  const rallying=run.phase===1&&run.statueShouted&&!run.climb;
   walking(hero,t,running?1:.03,rallying);
-  if(run.climb)hero.rotation.y=0;
-  else if(running)hero.rotation.y=Math.atan2(input.x,input.y);
+  hero.rotation.y=run.facing+cameraOrbit;
  }
- if(run.phase===1){
+ if(run.phase===2){
   const red=crowdActors[0];if(red){red.guy.position.z=6+Math.sin(t*.4)*1.1;walking(red.guy,t,.25);}
- }else if(run.phase===2){
+ }else if(run.phase===1){
   for(const a of crowdActors){walking(a.guy,t,run.climbed?run.mobilisation/130:.13);
    const swell=run.climbed?run.mobilisation/100:0;
    a.guy.position.x=a.x*(1+swell*.08);
@@ -534,25 +516,26 @@ function render(ms){
   if(phase!==run.phase){
    if(run.phase===3){autoMarch=true;joy={x:0,y:0};keys.clear();redHeld=false;}
    sceneFor(run.phase);
-   messageFeedback(run.phase===2?'Place de la République':'Vers Bastille ! La marche démarre.',2.3);
+   messageFeedback(run.phase===2?'Va chercher le drapeau français !':'Drapeau en main : vers Bastille !',2.3);
    refreshHUD();
   }
  }
  const t=ms/1000;
  if(showSpeechUntil<t)speech.hidden=true;
  animateActors(dt,t);
+ // Le bouton 360° montre le cortège en faisant un tour complet du joueur.
+ if(cameraOrbitLeft>0&&playing){
+  const step=Math.min(cameraOrbitLeft,Math.max(.012,dt)*2.6);
+  cameraOrbit+=step;cameraOrbitLeft-=step;
+  if(cameraOrbitLeft<.004){cameraOrbitLeft=0;cameraOrbit=0;}
+ }
  if(hero){
-  const height=run.height||0;
-  const onStatue=run.phase===2&&(run.climbed||!!run.climb);
-  // Caméra FIXE sur la statue : les mouvements au joystick deviennent visibles.
-  const desired=onStatue?
-   new T.Vector3(0.8,9.3,-8.1):
-   new T.Vector3(run.x+0.55,6.15+height*.82,run.z-12.9);
-  const look=onStatue?
-   new T.Vector3(0,4.3,5):
-   new T.Vector3(run.x,run.phase===2?3.4:1.9,run.z+8.0);
-  camera.position.lerp(desired,Math.min(1,dt*3.4));
-  camera.lookAt(look);
+  const y=run.height||0,theta=cameraOrbit;
+  const radius=run.phase===1?12.8:12.9;
+  const target=new T.Vector3(run.x,Math.max(1.8,y+1.7),run.z+1.1);
+  const desired=new T.Vector3(run.x+Math.sin(theta)*radius,6.1+y*.92,run.z-Math.cos(theta)*radius);
+  camera.position.lerp(desired,Math.min(1,Math.max(.012,dt)*3.4));
+  camera.lookAt(target);
  }
  const w=canvas.clientWidth,h=canvas.clientHeight;
  if(w>0&&h>0&&(!renderer.domElement.width||Math.abs(camera.aspect-w/h)>.02)){
@@ -577,7 +560,7 @@ async function loadCharacters(){
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Paris, avril 2002. Récupère le drapeau, monte sur la statue au bouton jaune, puis appuie sur « Camarades ! » en haut. Après la descente, avance vers Bastille avec les manifestants derrière toi.';
+  $('overlayText').textContent='Tu commences sur la statue de la République : crie « Camarades ! », redescends, puis retrouve le drapeau français avec le joystick et JAUNE. Ensuite, mène les manifestants derrière toi vers Bastille. Le bouton ↻ fait tourner la vue à 360°.';
   $('start').disabled=false;
   send('manifestation:ready');
  }catch(e){
