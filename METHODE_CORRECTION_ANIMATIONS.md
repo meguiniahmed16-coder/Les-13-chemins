@@ -446,3 +446,8 @@ Cette précision de l’auteur remplace les mentions précédentes qui rassembla
 ### 2026-11-09 — Titre du bloc 2 choisi par l’auteur : « Le météore »
 
 À la demande de l’auteur, remplacer le titre de groupe « Chapitres 2, 3 et 4 » par **« Le météore »**. Ce titre commun est désormais explicitement choisi et remplace l’intitulé neutre de la consigne précédente. Conserver les trois références à l’intérieur : chapitre 2 « Même pas mal », chapitre 3 « Le coup du bus », chapitre 4 « Le drapeau rouge », ainsi que leurs extraits, jeux et progression.
+
+
+### 2026-11-09 — Nommer les ensembles « Chemin 1 » et « Chemin 2 »
+
+À la demande de l’auteur, employer **« Chemin 1 »** et **« Chemin 2 »** à la place de « Bloc 1 » et « Bloc 2 » dans la présentation publique. Le premier s’intitule « La salle d’attente » et le second « Le météore ». Harmoniser les compteurs, l’inventaire, les textes de navigation, les libellés accessibles et les en-têtes des jeux. Les numéros et titres des chapitres à l’intérieur restent distincts de ceux des chemins.
