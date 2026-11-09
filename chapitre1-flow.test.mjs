@@ -74,7 +74,7 @@ test('Atlas has 13 underlying scenes, but the plateau exposes 10 visual chapter 
  assert.ok(ui.includes('host.replaceChildren(...flow.CARDS.map'));
  assert.ok(ui.includes('scene===1?(flow.done(state)?1:flow.nextPart(state)):'));
  assert.ok(ui.includes('scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene'));
- assert.ok(ui.includes("if(n===1||n===2||n===4)"));
+ assert.ok(ui.includes("if(n>=1&&n<=5)"));
  assert.ok(ui.includes("from:n,to:next"));
  assert.ok(ui.includes("if(n===3&&!flow.done(state))return;"));
  assert.ok(ui.includes('Chapitre 1 — « La salle d’attente »'));
@@ -225,7 +225,7 @@ test('Chapter 2 title and gate are displayed on one card with three named mini-g
  assert.ok(u.includes("scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene"));
  assert.ok(u.includes("n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state)"));
  assert.ok(u.includes("if(n===5&&!flow.chapter2Done(state))return;"));
- assert.ok(u.includes("if(n===1||n===2||n===4)"));
+ assert.ok(u.includes("if(n>=1&&n<=5)"));
  assert.ok(u.includes("from:n,to:next"));
  assert.ok(u.includes("arriveAtStage(next)"));
  assert.ok(u.includes("const changed2=state.selected===5&&flow.prepareChapter2Dance(state)"));
