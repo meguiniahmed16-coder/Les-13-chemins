@@ -8,12 +8,12 @@ function harness(search='?voyage=1&depart=4&arrivee=5&session=test-id'){
  const schedule=(fn,ms)=>{const id=++seq;timers.set(id,{at:now+ms,fn});return id;};
  function element(){const handlers=new Map();return {style:{},dataset:{},classList:{add(){},remove(){}},hidden:false,open:false,contentWindow:{postMessage:m=>sent.push(m)},append(){},before(){},remove(){this.removed=true;},querySelectorAll:()=>[{style:{}},{style:{}}],showModal(){this.open=true;},close(){this.open=false;handlers.get('close')?.();},addEventListener:(k,f)=>handlers.set(k,f),removeEventListener:k=>handlers.delete(k)};}
  ['diceDialog','diceStatus','diceTitle','diceRule','diceDestination','skipDice','map'].forEach(k=>els.set(k,element()));
- const frames=[],doc={head:{append(){}},documentElement:{classList:{add(){}}},getElementById:id=>id==='journeyStyles'?{}:els.get(id),querySelector:()=>element(),createElement:tag=>{const e=element();if(tag==='iframe')frames.push(e);return e;}};
+ const frames=[],banners=[],doc={head:{append(){}},documentElement:{classList:{add(){}}},getElementById:id=>id==='journeyStyles'?{}:els.get(id),querySelector:()=>element(),createElement:tag=>{const e=element();if(tag==='iframe')frames.push(e);if(tag==='div')banners.push(e);return e;}};
  const ctx=vm.createContext({document:doc,location:{origin:'https://example.test',search},URLSearchParams,crypto:{randomUUID:()=> 'test-id'},matchMedia:()=>({matches:false}),performance:{now:()=>now},setTimeout:schedule,clearTimeout:id=>timers.delete(id),requestAnimationFrame:fn=>schedule(()=>fn(now),16),cancelAnimationFrame:id=>timers.delete(id),addEventListener:(k,f)=>events.set(k,f),removeEventListener:k=>events.delete(k),parent:{postMessage:m=>sent.push(m)}});
  vm.runInContext(code,ctx);
  function advance(ms){const end=now+ms;let count=0;while(true){const next=[...timers].sort((a,b)=>a[1].at-b[1].at)[0];if(!next||next[1].at>end)break;assert.ok(++count<5000,'timer loop terminates');timers.delete(next[0]);now=next[1].at;next[1].fn();}now=end;}
  const message=(type,extra={})=>events.get('message')?.({origin:ctx.location.origin,source:frames[0]?.contentWindow,data:{type,session:'test-id',...extra}});
- return {ctx,els,frames,sent,timers,events,advance,message};
+ return {ctx,els,frames,banners,sent,timers,events,advance,message};
 }
 test('Dice finish before map starts; only the active frame can finish and it settles once',()=>{
  const h=harness();let completed=0;const finish=h.ctx.TreizeVoyage.start({from:4,to:5,title:'Paris',onFinish:()=>completed++});
@@ -102,4 +102,56 @@ test('The two first chapter cards are linked by a dotted itinerary in the same o
  assert.ok(ui.includes('chapterTravelDot'));
  assert.ok(ui.includes('border-top:3px dotted'));
  assert.ok(ui.includes('prefers-reduced-motion:reduce'));
+});
+
+test('Every arrival shows its chapter title and the documented characters on the map',()=>{
+ const h=harness('?voyage=1&depart=2&arrivee=3&session=test-id'),charVisits=[];
+ assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(3,[]),'Chapitre 1 — « La salle d’attente »');
+ assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(4,[]),'Chapitre 2 — « Même pas mal »');
+ assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(5,[]),'Chapitre 2 — « Même pas mal »');
+ const stub=()=>({addTo(){return this;},removeLayer(){return this;},
+  setLatLng(){return this;},setLatLngs(){return this;}});
+ const map={distance:()=>550000,invalidateSize(){},stop(){},fitBounds(){},
+  setView(){},flyTo(){},panTo(){}};
+ h.ctx.TreizeEscale={
+  getStage:n=>({coordinates:n===2?[46.07,6.3]:[41.387,2.17],city:n===2?'La Roche-sur-Foron':'Barcelone',
+   characters:n===3?['Michel le Belge']:[],passage:{scene:'Le parc'}}),
+  addCharacters:(_,n)=>charVisits.push(n)
+ };
+ h.ctx.L={layerGroup:stub,marker:stub,divIcon:x=>x,polyline:stub,
+  latLngBounds:ps=>({pad:()=>ps})};
+ const centers=Array.from({length:13},(_,i)=>[40+i*.6,2+i]);
+ h.ctx.TreizeVoyage.initMap({map,points:[{latitude:46,longitude:6}],centers,
+  titles:centers.map((_,i)=>'Scène '+i),places:centers.map((_,i)=>'Ville '+i)});
+ h.events.get('message')({source:h.ctx.parent,origin:'https://example.test',
+  data:{type:'journey:start',session:'test-id'}});
+ h.advance(7800);
+ assert.deepEqual(charVisits,[3]);
+ assert.equal(h.banners.length,1,'A map arrival banner is created');
+ assert.equal(h.banners[0].hidden,false);
+ assert.match(h.banners[0].textContent,/Chapitre 1 — « La salle d’attente »/);
+ assert.match(h.banners[0].textContent,/Barcelone/);
+ assert.match(h.banners[0].textContent,/Michel le Belge/);
+ const arrived=h.sent.find(m=>m.type==='journey:phase'&&m.phase==='arrival');
+ assert.match(arrived.label,/Chapitre 1/);
+ assert.equal(h.sent.at(-1).type,'journey:phase','The arrival stays visible while names are read');
+ h.advance(3000);
+ assert.equal(h.sent.at(-1).type,'journey:done');
+});
+test('The five game-to-game journeys keep their dotted map and required frame parameters',()=>{
+ const src=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
+ const game=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8');
+ const plates=fs.readFileSync(new URL('./plateaux.js',import.meta.url),'utf8');
+ assert.ok(src.includes('if(n===1||n===2||n===4)'));
+ assert.ok(src.includes('from:n,to:next'));
+ assert.ok(src.includes('scheduleAutoTransition(finished)'));
+ assert.ok(src.includes('rollTravel(n);'));
+ assert.ok(game.includes("const buttonId={2:'arcadeLaunch',3:'catalogneLaunch',4:'bosnieLaunch',5:'danseLaunch'}")||
+           game.includes("const launch=document.getElementById(buttonId)"));
+ assert.ok(plates.includes('from:5,to:5,fromPlateau:1,toPlateau:2'));
+ assert.ok(plates.includes('autoAdvanceOnEnd:true'));
+ assert.ok(plates.includes('prisonExitTimer=setTimeout'));
+ assert.ok(code.includes("dashArray:'6 7'"));
+ assert.ok(code.includes('root.TreizeEscale?.addCharacters(map,to,toPlateau)'));
+ assert.ok(code.includes('showArrivalTitle()'));
 });
