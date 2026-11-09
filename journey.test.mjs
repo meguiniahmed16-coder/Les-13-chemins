@@ -108,7 +108,9 @@ test('Every arrival shows its chapter title and the documented characters on the
  const h=harness('?voyage=1&depart=2&arrivee=3&session=test-id'),charVisits=[];
  assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(3,[]),'Chapitre 1 — « La salle d’attente »');
  assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(4,[]),'Chapitre 2 — « Même pas mal »');
- assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(5,[]),'Chapitre 2 — « Même pas mal »');
+ assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(5,[],1),'Chapitre 3 — « Le coup du bus »');
+ assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(5,[],2),'Chapitre 4 — « Le drapeau rouge »');
+ assert.equal(h.ctx.TreizeVoyage.chapterArrivalLabel(6,['','','','','','L’alchimiste']),'Bloc 3 — L’alchimiste');
  const stub=()=>({addTo(){return this;},removeLayer(){return this;},
   setLatLng(){return this;},setLatLngs(){return this;}});
  const map={distance:()=>550000,invalidateSize(){},stop(){},fitBounds(){},

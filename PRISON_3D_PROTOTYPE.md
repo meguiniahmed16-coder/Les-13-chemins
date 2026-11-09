@@ -103,8 +103,9 @@ espacés de 210 mm. La progression du tirage est bloquée hors d'une ouverture. 
 conserve l'axe du sac dans son ouverture après l'accroche, même si le joueur déplace la caméra.
 Le cintre est présenté de profil et la tête de brosse tournée pour présenter son épaisseur.
 
-La réussite est transmise au plateau par la session courante et termine la partie 3/3
-du chapitre 2. Le jeu ne lit ni n’écrit directement les sauvegardes de progression.
+La réussite est transmise au plateau par la session courante et termine le jeu 3/3
+du bloc 2, consacré au chapitre 4 « Le drapeau rouge ». Ce bloc regroupe
+Sarajevo (chapitre 2), le danseur (chapitre 3) et la prison (chapitre 4). Le jeu ne lit ni n’écrit directement les sauvegardes de progression.
 
 ## Ressources et licences
 

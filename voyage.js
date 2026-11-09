@@ -1,10 +1,11 @@
 /* A bounded interlude: dice, the whole atlas, departure, travel, arrival. */
 (function(root){
  'use strict';
- function chapterArrivalLabel(level,titles=[]){
+ function chapterArrivalLabel(level,titles=[],plateau=1){
   if(level<=3)return 'Chapitre 1 — « La salle d’attente »';
-  if(level<=5)return 'Chapitre 2 — « Même pas mal »';
-  return 'Chapitre '+(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
+  if(level===4)return 'Chapitre 2 — « Même pas mal »';
+  if(level===5)return Number(plateau)===2?'Chapitre 4 — « Le drapeau rouge »':'Chapitre 3 — « Le coup du bus »';
+  return 'Bloc '+(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
  }
  const styles=`
  #diceDialog.journey-open{width:min(920px,96vw);max-width:96vw;padding:18px;overflow:hidden}
@@ -115,7 +116,7 @@
   function showArrivalTitle(){
    const city=toStage?.city||places[to-1]||'Destination';
    const names=Array.isArray(toStage?.characters)?toStage.characters:[];
-   chapterBanner.textContent=chapterArrivalLabel(to,titles)+' · '+city+
+   chapterBanner.textContent=chapterArrivalLabel(to,titles,toPlateau)+' · '+city+
     (names.length?' · Personnages : '+names.join(' · '):'');
    chapterBanner.hidden=false;
   }
@@ -128,7 +129,7 @@
    cancelAnimationFrame(raf);pointer.setLatLng(destination);
    map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});
    showArrivalTitle();
-   phase('arrival',chapterArrivalLabel(to,titles)+' · '+(toStage?.city||places[to-1]));
+   phase('arrival',chapterArrivalLabel(to,titles,toPlateau)+' · '+(toStage?.city||places[to-1]));
    root.TreizeEscale?.addCharacters(map,to,toPlateau);
    later(()=>send('journey:done'),3400);
   }

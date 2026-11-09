@@ -13,13 +13,16 @@ const sample=(patch={})=>({
  completed:[],points:0,unlocked:1,selected:1,
  arcadeBonuses:{},catalogneFinished:false,catalogneSold:[],...patch
 });
-test('Two visible chapter cards, each with three mini-games; all ten legacy chapters remain archived',()=>{
+test('Two visible step cards retain three games each, with three distinct book chapters in step two',()=>{
  const f=api();
  assert.deepEqual(Array.from(f.CARDS),[1,4]);
  assert.deepEqual(Array.from(f.ARCHIVED_CARDS),[1,4,6,7,8,9,10,11,12,13]);
  assert.deepEqual(Array.from(f.PARTS,p=>p.scene),[1,2,3]);
  assert.deepEqual(Array.from(f.PARTS,p=>p.game),['arcade-marmousets.html','arcade-a410.html','arcade-catalogne.html']);
  assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.title),['Sarajevo','Le danseur','La prison']);
+ assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.chapter),[2,3,4]);
+ assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.chapterTitle),['Même pas mal','Le coup du bus','Le drapeau rouge']);
+ assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>[p.scene,p.plateau]),[[4,1],[5,1],[5,2]],'The distinct book chapters keep the existing game sessions');
  assert.deepEqual([1,2,3,4,5,6,13].map(f.chapterOf),[1,1,1,2,2,3,10]);
 });
 test('A correct answer alone never unlocks the next video or Sarajevo',()=>{
@@ -58,7 +61,7 @@ test('Past players on later scenes keep their progress; incomplete players resum
  assert.equal(f.done(v),true);
  assert.equal(f.canEnter(v,7),true);
  assert.equal(f.reconcile(v),false);
- assert.equal(f.chaptersDone(v),3,'Chapter 1 + Chapter 2 + old scene 6');
+ assert.equal(f.chaptersDone(v),3,'Step 1 + Step 2 + old scene 6');
  assert.equal(v.points,540);
  const w=sample({completed:[1,2],selected:3,unlocked:3,arcadeBonuses:{1:true}});
  assert.equal(f.reconcile(w),true);
@@ -66,12 +69,12 @@ test('Past players on later scenes keep their progress; incomplete players resum
  assert.equal(w.completed.length,2,'No old quiz answer is lost');
  assert.equal(w.unlocked,3,'No historical stage id is changed');
 });
-test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two large chapter cards',()=>{
+test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two large step cards',()=>{
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js'),build=read('./build-public.mjs');
  assert.match(html,/const LEVELS=\[(.*?)\];\s*const AVATARS=/s);
- assert.ok(html.includes('src="chapitre1-flow.js"'));
- assert.ok(html.includes('src="chapitre1-plateau.js"'));
- assert.ok(html.includes('src="ordre-lecture.js"'));
+ assert.match(html,/src="chapitre1-flow\.js(?:\?[^"]*)?"/);
+ assert.match(html,/src="chapitre1-plateau\.js(?:\?[^"]*)?"/);
+ assert.match(html,/src="ordre-lecture\.js(?:\?[^"]*)?"/);
  assert.ok(ui.includes('host.replaceChildren(...flow.CARDS.map'));
  assert.ok(html.includes('function drawBoard(){}'));
  assert.ok(!html.includes('function boardGeometry(){'));
@@ -80,7 +83,6 @@ test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two
  assert.ok(!build.includes("'plateau-mobile.webp'"));
  assert.ok(!build.includes("'plateau-large.webp'"));
  assert.ok(!html.includes('host.replaceChildren(...positions.map'));
- assert.ok(ui.includes("host.dataset.mode='chapters-minimal-v1'"));
  assert.ok(ui.includes("const icons=['🌳','🪖']"));
  assert.ok(ui.includes("arriveAtStage(n);"));
  assert.ok(ui.includes("b.onclick=()=>arriveAtStage(p.scene)"));
@@ -99,17 +101,20 @@ test('Atlas keeps 13 underlying scenes but the cleaned board exposes exactly two
  }
 });
 
-test('Chapter 2 uses the same featured card as chapter 1 and the title Même pas mal',()=>{
+test('Step two keeps a single featured card and distinguishes the three book chapter titles',()=>{
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js');
  const levels=JSON.parse(html.match(/const LEVELS=(\[.*?\]);\s*const AVATARS=/s)[1]);
  assert.equal(levels[3].title,'Même pas mal');
- assert.ok(ui.includes("const chapterTwoName='Chapitre 2 — « Même pas mal »'"));
+ assert.ok(ui.includes('Bloc 2 · Chapitres 2, 3 et 4'));
+ assert.ok(ui.includes('chapter-literary-part'));
+ assert.ok(!ui.includes('De Sarajevo à Strasbourg'),'No invented collective title replaces the three chapter names');
+ assert.ok(ui.includes('chapterTitle'),'The card renders titles from the distinct chapter metadata');
  assert.ok(ui.includes("scene===1||scene===4?' chapter-featured'"));
  assert.ok(ui.includes('if(scene===1||scene===4)'));
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
- assert.ok(ui.includes("' / 2 chapitres visibles · '"));
+ assert.ok(ui.includes("' / 2 blocs · '"));
  assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
- assert.ok(ui.includes("header.textContent=chapterTwoName"));
+ assert.ok(ui.includes('Chapitre '),'The active game retains its book chapter heading');
  assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
  const bosnie=read('./jeu-bosnie.html');
  assert.ok(bosnie.includes('CHAPITRE 2 · « MÊME PAS MAL »'));
@@ -170,7 +175,7 @@ test('Interrupted games and already earned points retain their IDs and scores',(
  assert.equal(f.preparePart(failed,2,ids=>ids),false,'A single successful quiz does not bypass the Marmousets game');
 });
 
-test('Chapter 2 is Sarajevo → dancer → prison, only then chapter 3',()=>{
+test('Step two remains Sarajevo → dancer → prison, only then the next step',()=>{
  const f=api();
  const s=sample({completed:[1,2,3],arcadeBonuses:{1:true,2:true},
   catalogneFinished:true,catalogneSold:['c1','c2','c3','c4','c5'],selected:4,unlocked:4,points:130});
@@ -179,7 +184,7 @@ test('Chapter 2 is Sarajevo → dancer → prison, only then chapter 3',()=>{
  assert.equal(f.chapter2NextPart(s),1);
  assert.equal(f.canEnter(s,4),true);
  assert.equal(f.canEnter(s,5),false,'The dancer is locked before Sarajevo is finished');
- assert.equal(f.canEnter(s,6),false,'Chapter 3 is locked');
+ assert.equal(f.canEnter(s,6),false,'The next step is locked');
  s.completed.push(4);s.unlocked=5;
  assert.equal(f.chapter2PartDone(s,1),false,'A correct Sarajevo quiz alone is insufficient');
  s.bosnieFinished=true;s.bosniePassed=[1,2,3,4,5];
@@ -191,7 +196,7 @@ test('Chapter 2 is Sarajevo → dancer → prison, only then chapter 3',()=>{
  assert.equal(f.chapterReached(s),2);
  const savedPoints=s.points;
  assert.equal(f.prepareChapter2Dance(s),true);
- assert.equal(s.quizPassed[5],true,'The same chapter quiz is reused');
+ assert.equal(s.quizPassed[5],true,'The same step quiz is reused');
  assert.equal(s.points,savedPoints,'No extra quiz score at the dancer');
  assert.equal(f.prepareChapter2Dance(s),false,'Preparation is idempotent');
  assert.equal(f.chapter2PartDone(s,2),false);
@@ -199,7 +204,7 @@ test('Chapter 2 is Sarajevo → dancer → prison, only then chapter 3',()=>{
  s.levelPlates={5:{index:2,finished:[1],read:[]}};
  assert.equal(f.chapter2PartDone(s,2),true);
  assert.equal(f.chapter2NextPart(s),3);
- assert.equal(f.chapter2Done(s),false,'The dancer does not unlock chapter 3');
+ assert.equal(f.chapter2Done(s),false,'The dancer does not unlock the next step');
  assert.equal(f.canEnter(s,6),false);
  s.yoyoFinished=true;s.levelPlates[5].finished.push(2);
  s.completed.push(5);s.unlocked=6;
@@ -207,10 +212,10 @@ test('Chapter 2 is Sarajevo → dancer → prison, only then chapter 3',()=>{
  assert.equal(f.chapter2Done(s),true);
  assert.equal(f.chaptersDone(s),2);
  assert.equal(f.chapterReached(s),3);
- assert.equal(f.canEnter(s,6),true,'Only completing prison unlocks chapter 3');
- assert.equal(s.points,savedPoints,'Chapter regrouping changes no saved score');
+ assert.equal(f.canEnter(s,6),true,'Only completing prison unlocks the next step');
+ assert.equal(s.points,savedPoints,'Book chapter labels change no saved score');
 });
-test('Incomplete chapter 2 resumes at Sarajevo or dancer without losing historic progress',()=>{
+test('Incomplete step two resumes at Sarajevo or dancer without losing historic progress',()=>{
  const f=api();
  const s=sample({completed:[1,2,3,4],arcadeBonuses:{1:true,2:true},catalogneFinished:true,
   catalogneSold:['c1','c2','c3','c4','c5'],selected:5,unlocked:5,points:318});
@@ -230,7 +235,7 @@ test('Incomplete chapter 2 resumes at Sarajevo or dancer without losing historic
  assert.equal(s.yoyoPending.id,'saved-prison');
  assert.equal(f.canEnter(s,6),false);
 });
-test('Chapter 2 title and gate are displayed on one card with three named mini-games',()=>{
+test('One step groups the three games while each page and dialog names its own book chapter',()=>{
  const u=read('./chapitre1-plateau.js'),game=read('./jeu.html'),p=read('./plateaux.js');
  assert.ok(u.includes("const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
  assert.ok(u.includes("button.className='board-target'+(scene===1||scene===4?' chapter-featured':''"));
@@ -243,11 +248,14 @@ test('Chapter 2 title and gate are displayed on one card with three named mini-g
  assert.ok(u.includes("const changed2=state.selected===5&&flow.prepareChapter2Dance(state)"));
  assert.ok(u.includes("'bosnie:won':4"));
  assert.ok(u.includes("'bosnieClose'"));
- assert.ok(game.includes('0 / 2 chapitres · 0 points'));
+ assert.ok(game.includes('0 / 2 blocs · 0 points'));
  assert.ok(game.includes('<b id="count">0/2</b>'));
- assert.ok(p.includes('Chapitre 2 · Partie 2/3 — Le danseur'));
- assert.ok(p.includes('Chapitre 2 · Partie 3/3 — La prison'));
- assert.ok(read('./jeu-danse.html').includes('« MÊME PAS MAL » · PARTIE 2/3'));
- assert.ok(read('./jeu-yoyo.html').includes('Chapitre 2 — « Même pas mal » · Partie 3/3'));
- assert.ok(read('./jeu-bosnie.html').includes('CHAPITRE 2 · « MÊME PAS MAL » · PARTIE 1/3'));
+ assert.match(p,/Chapitre 3[^\n]*Le coup du bus/);
+ assert.match(p,/Chapitre 4[^\n]*Le drapeau rouge/);
+ for(const [file,chapter,title,index] of [['jeu-bosnie.html',2,'Même pas mal',1],
+  ['jeu-danse.html',3,'Le coup du bus',2],['jeu-yoyo.html',4,'Le drapeau rouge',3]]){
+  const page=read('./'+file);
+  assert.match(page,new RegExp('Chapitre '+chapter+'[^<\\n]*'+title,'i'),file+' displays its book chapter');
+  assert.match(page,new RegExp('(?:Étape|Bloc) 2[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
+ }
 });
