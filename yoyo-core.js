@@ -25,30 +25,42 @@ export function betweenBars(g){
 export function setWindowAspect(g,aspect){if(Number.isFinite(aspect)&&aspect>.6&&aspect<3)g.aspect=aspect;}
 
 export const clamp = (v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-export function createGame(){return {phase:'ready',part:0,points:0,time:0,partTime:0,aim:.5,brushX:BRUSH.x,hookX:null,hidden:false,holding:false,hooked:false,pull:0,guard:'away',nextGuard:9.8,guardStart:0,exposed:0,cooldown:0,misses:0,bags:0,blocked:false,aspect:16/9,events:[],lastPhase:null};}
-export function startGame(g){Object.assign(g,createGame(),{phase:'playing'});}
+// Optional pacing only; omitted values retain the approved original game.
+const setting=(g,key,fallback)=>Number.isFinite(g.tuning?.[key])?g.tuning[key]:fallback;
+export function createGame(tuning){
+ const g={phase:'ready',part:0,points:0,time:0,partTime:0,aim:.5,brushX:BRUSH.x,hookX:null,hidden:false,holding:false,hooked:false,pull:0,guard:'away',nextGuard:9.8,guardStart:0,exposed:0,cooldown:0,misses:0,bags:0,blocked:false,aspect:16/9,events:[],lastPhase:null};
+ if(tuning){g.tuning=tuning;g.nextGuard=setting(g,'firstGuardDelay',9.8);}
+ return g;
+}
+export function startGame(g){Object.assign(g,createGame(g.tuning),{phase:'playing'});}
 export function aligned(g){return Math.abs(g.aim-(g.part===0?(g.brushX??BRUSH.x):ropePosition(g)))<(g.part===0?.065:.057)&&(g.part===0||ropeReachable(g));}
-export function ropePosition(g){if(g.hooked&&Number.isFinite(g.hookX))return g.hookX;return slitCenters(g.aspect||16/9)[g.part===2?2:1]+Math.sin(g.partTime*(g.part===2?1.31:1.08))*(g.part===2?.21:.20);}
+export function ropePosition(g){
+ if(g.hooked&&Number.isFinite(g.hookX))return g.hookX;
+ const worldScale=2*BAR_DEPTH*FOV_HALF*Math.max(.85,g.aspect||16/9);
+ const amplitude=Number.isFinite(g.tuning?.ropeAmplitudeMeters)?g.tuning.ropeAmplitudeMeters/worldScale:(g.part===2?.21:.20);
+ return slitCenters(g.aspect||16/9)[g.part===2?2:1]+Math.sin(g.partTime*(g.part===2?1.31:1.08)*setting(g,'ropeSpeedScale',1))*amplitude;
+}
 export function move(g,x,y=0,dt=1/30){if(g.phase!=='playing')return;if(y>.45){hide(g);return;}if(Math.abs(x)>.15){g.hidden=false;g.aim=clamp(g.aim+x*dt*.38,.12,.88);if(g.hooked){g.hookX=g.aim;g.blocked=!betweenBars(g);}}if(y<-.45)g.hidden=false;}
 export function hide(g){g.hidden=true;g.holding=false;g.exposed=0;g.blocked=false;}
 export function aimAt(g,x){if(g.phase==='playing'){g.aim=clamp(x,.12,.88);if(g.hooked){g.hookX=g.aim;g.blocked=!betweenBars(g);}g.hidden=false;}}
 function award(g){g.part++;g.points=g.part*10;g.holding=false;g.hooked=false;g.hookX=null;g.pull=0;g.blocked=false;g.bags=Math.max(0,g.part-1);g.partTime=0;g.events.push({type:'part',part:g.part,points:g.points});if(g.part===3){g.phase='victory';g.events.push({type:'won',points:30});}else{g.phase='between';g.events.push({type:'between',part:g.part});}}
-export function continueGame(g){if(g.phase!=='between')return;g.phase='playing';g.hidden=false;g.aim=.5;g.guard='away';g.nextGuard=g.time+8.8+g.part*.8;g.exposed=0;}
+export function continueGame(g){if(g.phase!=='between')return;g.phase='playing';g.hidden=false;g.aim=.5;g.guard='away';g.nextGuard=g.time+setting(g,'stageGuardDelay',8.8+g.part*.8);g.exposed=0;}
 export function actionDown(g){if(g.phase!=='playing'||g.cooldown>0)return;g.hidden=false;g.holding=true;if(g.guard==='watching'){g.events.push({type:'warning'});return;}if(g.part===0){if(aligned(g)){award(g);}else{g.cooldown=.55;g.events.push({type:'search-miss'});}return;}if(!g.hooked){if(aligned(g)){g.hookX=ropePosition(g);g.hooked=true;g.blocked=!betweenBars(g);g.events.push({type:'hook'});}else{g.misses++;g.cooldown=.55;g.events.push({type:ropeReachable(g)?'miss':'bar-miss'});}}}
 export function actionUp(g){g.holding=false;}
 export function pauseGame(g){if(g.phase==='paused'){g.phase=g.lastPhase||'playing';g.lastPhase=null;}else if(['playing','between'].includes(g.phase)){g.lastPhase=g.phase;g.phase='paused';g.holding=false;}}
 export function advance(g,dt){if(g.phase!=='playing')return;dt=clamp(dt,0,.1);g.time+=dt;g.partTime+=dt;g.cooldown=Math.max(0,g.cooldown-dt);
  if(g.guard==='away'&&g.time>=g.nextGuard){g.guard='approaching';g.guardStart=g.time;g.events.push({type:'guard',state:'approaching'});}
  const since=g.time-g.guardStart;
- if(g.guard==='approaching'&&since>=2.8){g.guard='watching';g.events.push({type:'guard',state:'watching'});}
- if(g.guard==='watching'&&since>=5.2){g.guard='leaving';g.events.push({type:'guard',state:'leaving'});}
- if(g.guard==='leaving'&&since>=6.8){g.guard='away';g.nextGuard=g.time+8.6+(g.part*1.7+g.misses*.41)%4;g.events.push({type:'guard',state:'away'});}
- if(g.guard==='watching'&&!g.hidden){g.exposed+=dt;if(g.exposed>.62){g.phase='caught';g.holding=false;g.events.push({type:'caught'});return;}}else g.exposed=0;
+ const warning=setting(g,'guardWarning',2.8),watching=setting(g,'guardWatching',2.4),leaving=setting(g,'guardLeaving',1.6);
+ if(g.guard==='approaching'&&since>=warning){g.guard='watching';g.events.push({type:'guard',state:'watching'});}
+ if(g.guard==='watching'&&since>=warning+watching){g.guard='leaving';g.events.push({type:'guard',state:'leaving'});}
+ if(g.guard==='leaving'&&since>=warning+watching+leaving){g.guard='away';g.nextGuard=g.time+setting(g,'guardRest',8.6+(g.part*1.7+g.misses*.41)%4);g.events.push({type:'guard',state:'away'});}
+ if(g.guard==='watching'&&!g.hidden){g.exposed+=dt;if(g.exposed>setting(g,'guardExposure',.62)){g.phase='caught';g.holding=false;g.events.push({type:'caught'});return;}}else g.exposed=0;
  if(g.part>0&&g.hooked&&g.holding&&!g.hidden&&g.guard!=='watching'){
   const clear=betweenBars(g);
   if(!clear && !g.blocked)g.events.push({type:'bar-blocked'});
   g.blocked=!clear;
   // Physically blocked by the bars: steer the hooked bag through a gap.
-  if(clear){g.pull=clamp(g.pull+dt*.19,0,1);if(g.pull>=1)award(g);}
+  if(clear){g.pull=clamp(g.pull+dt*setting(g,'pullSpeed',.19),0,1);if(g.pull>=1)award(g);}
  }
 }

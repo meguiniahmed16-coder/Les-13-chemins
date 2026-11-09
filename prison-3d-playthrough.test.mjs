@@ -8,6 +8,7 @@ import {createPrisonRoom,CELL,FURNITURE_URL} from './prison-3d-room.js';
 import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
+import {PRISON_BALANCE} from './prison-3d-balance.js';
 import * as spatial from './prison-3d-spatial.js';
 import * as rules from './yoyo-core.js';
 
@@ -92,7 +93,7 @@ async function harness(t){
   }
  }
  const bindings={
-  T:{...Three,WebGLRenderer:Renderer},GLTFLoader,CELL,FURNITURE_URL,
+  T:{...Three,WebGLRenderer:Renderer},GLTFLoader,CELL,FURNITURE_URL,PRISON_BALANCE,
   createPrisonRoom:options=>createPrisonRoom({...options,textures:false}),
   createPrisonCamera,createPrisonArms,createPrisonControls,...spatial,...rules,
   loadActorBytes:async(url,options)=>{
@@ -149,67 +150,44 @@ function release(ui,id){ui.node(id).emit('pointerup',{pointerId:id==='action'?21
 function hideUntilSafe(ui){
  release(ui,'action');press(ui,'hide');ui.tick();
  assert.equal(ui.app.game.hidden,true,'The real hide control protects the prisoner');
- ui.until(()=>ui.app.game.guard==='away',8,'The guard finishes his visit while the player is hidden');
+ ui.until(()=>ui.app.game.guard==='away',9,'The guard finishes his visit while the player is hidden');
  assert.equal(ui.app.mode,'playing','Hiding must avoid a caught transition');
  release(ui,'hide');ui.tick();
 }
 
-function moveToGap(ui,x){
- const key=x<ui.app.eyes.player.x?'KeyA':'KeyD';
- ui.window.emit('keydown',{code:key,target:ui.node('world')});
- ui.until(()=>Math.abs(ui.app.eyes.player.x-x)<.008,2,'The keyboard moves the player beside the chosen gap');
- ui.window.emit('keyup',{code:key,target:ui.node('world')});
- ui.tick();
-}
-
-function futureHookIsClear(game){
- // This is a test player choosing when to press, not a replacement rule.
- // Ask the unchanged core about the half-second reach delay and its adjacent
- // frames, then let the actual app perform and validate the real action.
- const forecast={...game,events:[]};
- let clear=true;
- for(let frame=0;frame<32;frame++){
-  rules.advance(forecast,1/60);
-  if(frame>=27)clear&&=rules.aligned(forecast)&&forecast.guard==='away';
- }
- return clear;
-}
-
-function recoverBag(ui,part,x){
- moveToGap(ui,x);
- for(let frame=0;!futureHookIsClear(ui.app.game)&&frame<1200;frame++){
-  if(ui.app.game.guard!=='away')hideUntilSafe(ui);
-  else ui.tick();
- }
- assert.equal(futureHookIsClear(ui.app.game),true,'A real reachable interval must occur');
- const misses=ui.app.game.misses;
+function recoverBag(ui,part){
+ // A novice presses immediately from the centre aisle. No joystick movement,
+ // forecast, release/retry loop, or direct game-state mutation assists them.
+ const {game,eyes,controls}=ui.app;
+ const misses=game.misses,started=game.time,playerX=eyes.player.x;
+ let hiddenTime=0;
+ assert.equal(controls.state.x,0);assert.equal(controls.state.y,0);
  press(ui,'action');
- ui.until(()=>ui.app.game.hooked,1,'Holding Saisir must hook the actual rope');
- assert.equal(ui.app.game.misses,misses,'A correctly timed reach must not miss');
+ ui.until(()=>game.hooked,1,'Simply holding Saisir must hook the accessible rope');
+ assert.equal(game.misses,misses,'Automatic aiming must not require timing retries');
  if(part===1){
   ui.advance(.2);
+  const hiddenAt=game.time;
   press(ui,'hide');ui.tick();
-  assert.equal(ui.app.controls.state.holding,true,'Saisir remains physically held while hiding');
-  assert.equal(ui.app.game.hidden,true);
-  const hiddenPull=ui.app.game.pull;ui.advance(.3);
-  assert.equal(ui.app.game.pull,hiddenPull,'Hiding suspends the pull without releasing Saisir');
+  assert.equal(controls.state.holding,true,'Saisir remains physically held while hiding');
+  assert.equal(game.hidden,true);
+  const hiddenPull=game.pull;ui.advance(.3);
+  assert.equal(game.pull,hiddenPull,'Hiding suspends the pull without releasing Saisir');
   release(ui,'hide');
-  ui.until(()=>ui.app.game.pull>hiddenPull,.8,
+  hiddenTime=game.time-hiddenAt;
+  ui.until(()=>game.pull>hiddenPull,.8,
    'Releasing Se cacher resumes the still-held action after its reach delay');
  }
- let frames=0;
- while(ui.app.game.part===part&&frames++<1500){
-  if(ui.app.game.guard!=='away'){
-   hideUntilSafe(ui);press(ui,'action');
-  }
-  ui.tick();
-  assert.notEqual(ui.app.mode,'caught',ui.diagnostic());
- }
- assert.equal(ui.app.game.part,part+1,'Pulling must finish the bag: '+ui.diagnostic());
+ ui.until(()=>game.part===part+1,Math.max(0,3.5-(game.time-started-hiddenTime)),
+  'A continuous novice hold must recover the bag within 3.5 seconds outside hiding');
+ assert.ok(game.time-started-hiddenTime<=3.5+1/60,'The assisted pull stays short');
+ assert.equal(game.misses,0,'The actual run completes without a timing miss');
+ assert.equal(eyes.player.x,playerX,'The player did not need to line up with a slit');
+ assert.equal(controls.state.x,0);assert.equal(controls.state.y,0);
  release(ui,'action');
 }
 
-test('The actual loaded app completes the tour, supports pause and hiding, then plays all three trials to 30 points',async t=>{
+test('A novice completes the actual app with simple holds, short pulls and a more forgiving guard',async t=>{
  const ui=await harness(t),{app,node}=ui;
  assert.equal(node('action').disabled,true,'Actions are disabled before the visit');
  node('start').click();
@@ -226,9 +204,29 @@ test('The actual loaded app completes the tour, supports pause and hiding, then 
  ui.window.emit('keydown',{code:'KeyP',target:node('world')});
  ui.window.emit('keyup',{code:'KeyP',target:node('world')});
  assert.equal(app.paused,false,'KeyP also resumes while gameplay controls are disabled');
- ui.until(()=>app.game.guard==='approaching',11,'The real guard approaches');
+ ui.advance(27.8);
+ assert.equal(app.game.guard,'away','The first 27 seconds remain calm');
+ ui.until(()=>app.game.guard==='approaching',1,'The first guard approaches at 28 seconds');
+ assert.ok(app.game.time>=28&&app.game.time<28.05);
+ assert.equal(node('guard').textContent,'Des pas dans le couloir');
+ const approachingAt=app.game.time;
+ ui.advance(3.75);
+ assert.equal(app.game.guard,'approaching','The audible warning lasts four seconds');
+ ui.until(()=>app.game.guard==='watching',.5,'The guard begins watching after the warning');
+ assert.ok(app.game.time-approachingAt>=4&&app.game.time-approachingAt<4.05);
+ const watchingAt=app.game.time;
+ ui.advance(1.1);
+ assert.equal(app.mode,'playing','One second of exposure must not cause an abrupt failure');
  hideUntilSafe(ui);
+ assert.ok(app.game.time-watchingAt>=4&&app.game.time-watchingAt<4.1,
+  'Watching and leaving take 2.5 and 1.5 seconds before calm returns');
  assert.equal(app.game.points,0);
+ const calmAt=app.game.time;
+ ui.advance(31.5);
+ assert.equal(app.game.guard,'away','The next patrol leaves at least 31 seconds of calm');
+ ui.until(()=>app.game.guard==='approaching',1,'The following patrol begins after 32 calm seconds');
+ assert.ok(app.game.time-calmAt>31.9&&app.game.time-calmAt<32.05);
+ hideUntilSafe(ui);
 
  // Exercise the same public restart and skip buttons before the full run.
  node('retry').click();assert.equal(app.mode,'tour');
@@ -244,11 +242,11 @@ test('The actual loaded app completes the tour, supports pause and hiding, then 
  assert.equal(node('action').disabled,true,'Actions wait for the approach to finish');
  ui.until(()=>!app.eyes.isTravelling,5,'The player reaches the window without getting stuck');
  assert.ok(app.eyes.player.z<-.6);assert.equal(node('action').disabled,false);
- recoverBag(ui,1,-.105);
+ recoverBag(ui,1);
  assert.equal(app.mode,'between');assert.equal(app.game.points,20);
  ui.until(()=>!node('overlay').hidden,1,'The tobacco leads to its Continue card');
  node('overlay').querySelector('button').click();ui.tick();
- recoverBag(ui,2,.105);
+ recoverBag(ui,2);
  assert.equal(app.mode,'won');assert.equal(app.game.phase,'victory');
  assert.equal(app.game.points,30);assert.equal(node('score').textContent,'30 / 30');
  assert.equal(node('overlay').hidden,false);

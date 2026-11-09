@@ -423,3 +423,10 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - **Ressource réellement intégrée :** tabouret Metal Stool 02 de Poly Haven, CC0, avec textures locales, licence et empreintes des sources. Ne pas présenter les sanitaires Kenney étudiés comme des objets livrés.
 - **Géométrie :** caméra contenue par le mobilier réel ; sac de 116 mm dans un passage de 174 mm, déplacement latéral bloqué contre le fer pendant la traversée. Cintre de profil et brosse tournée pour présenter son épaisseur.
 - **Vérification :** vrais GLB, contrôle de la géométrie déformée et de la caméra, commandes multi-touch, parcours réel de l'application jusqu'à 30 points. Les captures CPU Blender contrôlent le cadrage mais ne prouvent pas le rendu WebGL sur téléphone. Publier les correctifs sur GitHub et vérifier les fichiers du site déployé avant de donner le lien d'essai.
+
+### 2026-11-09 — Préhension et difficulté adoucie (v0.4)
+- **Prise du manche :** placer le cylindre sous les têtes métacarpiennes, fermer chaque doigt selon sa longueur et opposer le pouce sur l'autre côté. Vérifier les contacts sur les triangles skinnés, pas seulement sur les os ; conserver l'échelle et la longueur du bras.
+- **Sacs accessibles :** un maintien continu de Saisir doit suffire depuis la position d'arrivée à la fenêtre. Suivre le vrai fil, retenter automatiquement et conserver l'ouverture pendant le tirage. Pas de relâchement obligatoire ni de recherche d'un instant précis. Le fil oscille de 1,2 cm et le tirage dure environ deux secondes.
+- **Rythme du surveillant :** 28 secondes avant la première approche et après chaque étape, quatre secondes d'avertissement, deux secondes de réaction lorsque le surveillant regarde, puis 32 secondes de calme après son départ.
+- **Portée :** ces paramètres sont propres au prototype et activés explicitement par sa configuration. Le moteur commun conserve les anciens réglages lorsqu'aucune configuration n'est fournie.
+- **Contrôle :** tester une partie complète avec un joueur qui maintient simplement Saisir, y compris cachette et reprise ; vérifier le passage physique du sac et les valeurs par défaut du jeu précédent.
