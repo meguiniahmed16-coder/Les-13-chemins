@@ -1,8 +1,9 @@
-/* CAMARADES ! — scène 3D, personnages originaux et foule animée.
- * Le plateau du Chemin III est seul autorisé à attribuer les points.
- * Aucun mesh externe, aucun logo, aucun échantillon audio propriétaire.
+/* CAMARADES ! — Chemin III, page 59–60, personnages 3D CC0 Kenney.
+ * Le plateau seul attribue les points et les sauvegarde, sans doublons.
  */
 import * as T from 'three';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {newRun,advance,yellow,clamp,distance,OBJECTIFS} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
@@ -11,6 +12,9 @@ const meter=$('meter'),meterValue=$('meterValue');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 let sessionId='standalone',serverSteps=[],run=newRun(),playing=false,paused=false,gameReady=false;
 let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],redHeld=false,soundOn=false,voices=null,cheerUntil=0;
+const templates=[];
+const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
+let crowdLoading=false;
 let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0;
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
@@ -29,7 +33,7 @@ try{
  renderer.setPixelRatio(Math.min(1.4,devicePixelRatio||1));
  renderer.toneMapping=T.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.19;
- gameReady=true;
+ gameReady=false;
 }catch(error){
  $('overlayTitle').textContent='La 3D ne démarre pas';
  $('overlayText').textContent='Le navigateur ne parvient pas à activer WebGL. Ouvre le jeu directement dans Chrome ou réessaie après avoir fermé les autres jeux.';
@@ -65,7 +69,34 @@ function flag(parent,style,x,y,z,height=3.1){
  }
  stageFlags.push({fabric,root});return root;
 }
+
+function clothCap(group,id,hero=false){
+ const m=mat(hero?0x293a3d:0x455b4c);
+ const top=mesh(gSphere,m,0,1.73,-.02,.205,.10,.194);group.add(top);
+ const brim=mesh(gBox,m,0,1.72,.18,.19,.025,.17);group.add(brim);
+}
+function modelPerson(id,opts={}){
+ const actor=new T.Group(),template=templates[id%templates.length];
+ const clone=cloneSkinned(template.scene);
+ clone.scale.setScalar((2.45+rnd(id)*.23)*(opts.hero?1.0:1.0));
+ actor.add(clone);
+ // Most demonstrators have visible hair. Hats appear only on selected people;
+ // the narrator alone has the distinctive Poulbot-style cap.
+ if(opts.hero||id%12===0)clothCap(actor,id,!!opts.hero);
+ const mixer=new T.AnimationMixer(clone);
+ const clips=template.animations;
+ const actions={
+  idle:mixer.clipAction(clips.find(a=>a.name==='idle')||clips[0]),
+  walk:mixer.clipAction(clips.find(a=>a.name==='walk')||clips[0]),
+  signal:mixer.clipAction(clips.find(a=>a.name==='interact-right')||clips.find(a=>a.name==='walk')||clips[0])
+ };
+ actions.idle.play();
+ actor.userData={id,mixer,actions,current:'idle',previousTime:null,
+  height:1,hero:!!opts.hero,origin:opts.origin||{x:0,z:0},offset:rnd(id+7)*6.28};
+ return actor;
+}
 function person(id,opts={}){
+ if(templates.length)return modelPerson(id,opts);
  const actor=new T.Group();
  const group=new T.Group();actor.add(group);
  const skin=mat(colors.skin[(id*7)%colors.skin.length]),
@@ -105,7 +136,20 @@ function person(id,opts={}){
  return actor;
 }
 function walking(actor,time,strength){
- const a=actor.userData,phase=time*5.4+a.offset;
+ const a=actor.userData;
+ if(a.mixer){
+  const dt=Math.max(0,Math.min(.05,a.previousTime===null?0:time-a.previousTime));
+  a.previousTime=time;
+  const desired=strength>.38?'walk':'idle';
+  if(a.current!==desired){
+   const previous=a.actions[a.current],next=a.actions[desired];
+   next.reset().play();next.crossFadeFrom(previous,.2,true);
+   a.current=desired;
+  }
+  a.mixer.update(dt);
+  return;
+ }
+ const phase=time*5.4+a.offset;
  const energy=.4+strength*.6;
  a.legs[0].rotation.x=Math.sin(phase)*.34*energy;
  a.legs[1].rotation.x=-Math.sin(phase)*.34*energy;
@@ -182,7 +226,8 @@ function distantCrowd(root,baseZ,count){
  const body=new T.InstancedMesh(gBox,mat(0x5f645a),count);
  const head=new T.InstancedMesh(gSphere,mat(0xcaa17b),count);
  const legs=new T.InstancedMesh(gBox,mat(0x495453),count);
- const hat=new T.InstancedMesh(gBox,mat(0x484944),count);
+ const hatCount=Math.ceil(count*.11);
+ const hat=new T.InstancedMesh(gBox,mat(0x484944),hatCount);
  const dummy=new T.Object3D(),col=new T.Color();
  for(let i=0;i<count;i++){
   const x=(rnd(i*31+5)-.5)*14,z=baseZ+(rnd(i*61+1)-.5)*21;
@@ -191,9 +236,26 @@ function distantCrowd(root,baseZ,count){
   dummy.position.set(x,1.66,z);dummy.scale.set(.19,.22,.18);dummy.updateMatrix();head.setMatrixAt(i,dummy.matrix);
   head.setColorAt(i,new T.Color(colors.skin[(i*7)%colors.skin.length]));
   dummy.position.set(x,.4,z);dummy.scale.set(.33,.80,.24);dummy.updateMatrix();legs.setMatrixAt(i,dummy.matrix);
-  dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);
+  if(i<hatCount){dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}
  }
  root.add(body,head,legs,hat);staticFar.push(body,head,legs,hat);
+}
+
+function protestSign(root,text,x,z,width=3.2,paint='#f3e1b9'){
+ const pole=mesh(gBox,mat(0x80664b),x,1.35,z,.065,2.65,.065);root.add(pole);
+ const board=roundedText(text,width,paint,'#3d493d');
+ board.position.set(x,2.8,z);board.rotation.y=Math.PI;root.add(board);
+}
+function banner(root,text,x,z,width=6.0){
+ const fabric=roundedText(text,width,'#fbf1d8','#33453c');
+ fabric.rotation.y=Math.PI;fabric.position.set(x,3.3,z);root.add(fabric);
+ for(const side of [-1,1])root.add(mesh(gCyl,mat(0x685a48),x+side*width*.5,1.65,z,.035,3.4,.035));
+}
+function chapterWall(root){
+ const l=roundedText('CHAPITRE 4',3.7,'#ead6b3','#544232');
+ l.position.set(11.53,4.1,19);l.rotation.y=-Math.PI/2;root.add(l);
+ const name=roundedText('DRAPEAU ROUGE · P. 59–60',4.5,'#ead6b3','#544232');
+ name.position.set(11.53,3.15,19);name.rotation.y=-Math.PI/2;root.add(name);
 }
 function sceneFor(phase){
  if(sceneGroup)world.remove(sceneGroup);
@@ -204,6 +266,7 @@ function sceneFor(phase){
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
   buildings(root,-20,43);
+  chapterWall(root);
   addBox(root,11.63,3.8,11, .1,7,6,0xd5c5a7);
   const panel=roundedText('ÉCOLE',2.6);panel.position.set(11.54,4.7,11);panel.rotation.y=-Math.PI/2;root.add(panel);
   flag(root,'france',4.1,2.05,12,3.7);
@@ -213,14 +276,22 @@ function sceneFor(phase){
   addBox(root,4.1,.28,12,2.2,.56,2.3,0xc9bea6);
  }else if(phase===2){
   buildings(root,-23,46);statue(root);
-  crowdActors=makeCrowd(root,53,5,{spread:8});
+  crowdActors=makeCrowd(root,33,5,{spread:8});
   distantCrowd(root,20,190);
-  for(let i=0;i<12;i++)flag(root,i%5===0?'france':'red',(rnd(i+11)-.5)*14,0,3+(rnd(i+73)-.5)*17,3.3);
+  for(let i=0;i<5;i++)flag(root,i%3===0?'france':'red',(rnd(i+11)-.5)*14,0,3+(rnd(i+73)-.5)*17,3.3);
+  protestSign(root,'NON À LE PEN',-4,8,3.2);
+  protestSign(root,'LIBERTÉ ÉGALITÉ FRATERNITÉ',5,13,4.9);
+  protestSign(root,'ENSEMBLE CONTRE LA HAINE',-6,-1,4.4);
+  banner(root,'LA RÉPUBLIQUE POUR TOUS',0,19,7.2);
  }else{
   buildings(root,-7,135);
-  crowdActors=makeCrowd(root,62,-8,{spread:6});
+  crowdActors=makeCrowd(root,38,-8,{spread:6});
   distantCrowd(root,113,230);
-  for(let i=0;i<14;i++)flag(root,i%5===0?'france':'red',(rnd(i+25)-.5)*12,0,98+(rnd(i+66)-.5)*18,3.2);
+  for(let i=0;i<6;i++)flag(root,i%3===0?'france':'red',(rnd(i+25)-.5)*12,0,98+(rnd(i+66)-.5)*18,3.2);
+  banner(root,'RÉPUBLIQUE — BASTILLE',0,92,7.6);
+  protestSign(root,'NON À LE PEN',-5,84,3.0);
+  protestSign(root,'TOUS ENSEMBLE',5,95,3.1);
+  protestSign(root,'NON À LA HAINE',-4,103,3.1);
   // Distinct two corteges with a clear meeting zone on the boulevard.
   const banner=roundedText('BASTILLE',5.0);banner.position.set(0,5.2,108);root.add(banner);
  }
@@ -316,7 +387,7 @@ function changeDir(){
  const left=Number(keys.has('arrowleft')||keys.has('q')||keys.has('a'));
  const fwd=Number(keys.has('arrowup')||keys.has('z')||keys.has('w'));
  const back=Number(keys.has('arrowdown')||keys.has('s'));
- return {x:clamp(joy.x+right-left,-1,1),y:clamp(joy.y+fwd-back,-1,1),red:redHeld||keys.has('r')};
+ return {x:-clamp(joy.x+right-left,-1,1),y:clamp(joy.y+fwd-back,-1,1),red:redHeld||keys.has('r')};
 }
 function bindControls(){
  const zone=$('stick'),knob=$('knob');
@@ -425,6 +496,31 @@ function render(ms){
  if(playing)refreshHUD();
  requestAnimationFrame(render);
 }
+async function loadCharacters(){
+ if(!renderer||crowdLoading)return;
+ crowdLoading=true;
+ $('overlayTitle').textContent='Préparation de la manifestation…';
+ $('overlayText').textContent='Chargement de six personnages 3D Kenney CC0, avec de vraies animations de marche.';
+ $('start').disabled=true;
+ try{
+  const loader=new GLTFLoader();
+  const loaded=await Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path)));
+  for(const model of loaded){
+   if(!model.scene||!model.animations?.some(c=>c.name==='walk'))throw Error('Personnage non animé');
+   templates.push(model);
+  }
+  sceneFor(1);refreshHUD();gameReady=true;
+  $('overlayTitle').textContent='Camarades !';
+  $('overlayText').textContent='Paris, avril 2002. Trois épreuves pour rejoindre la Bastille : récupérer le drapeau, appeler les manifestants depuis la statue, puis réunir les deux cortèges. Joystick, jaune pour agir, rouge pour rassembler.';
+  $('start').disabled=false;
+  send('manifestation:ready');
+ }catch(e){
+  $('overlayTitle').textContent='Impossible de charger les personnages';
+  $('overlayText').textContent='Le jeu n’a pas pu charger les modèles animés. Réessaie avec une connexion stable ; les personnages ne sont pas remplacés par des silhouettes rudimentaires.';
+  $('start').hidden=true;$('replay').hidden=false;$('replay').textContent='↻ Recharger';
+  $('replay').onclick=()=>location.reload();
+  console.error('Chargement des personnages CC0 :',e);
+ }
+}
 bindControls();
-sceneFor(1);refreshHUD();
-if(gameReady){requestAnimationFrame(render);send('manifestation:ready');}
+if(renderer){requestAnimationFrame(render);loadCharacters();}
