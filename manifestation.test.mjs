@@ -115,7 +115,7 @@ test('Les commandes du socle restent lisibles sur téléphone',()=>{
  assert.ok(page.includes('.deck{position:sticky;bottom:0;'));
  assert.ok(app.includes('hero.position.set(run.x,run.height||0,run.z)'));
  assert.ok(app.includes("run.climb.direction==='up'"));
- assert.ok(app.includes("if(run.phase===2&&run.climbed)"));
+ assert.ok(app.includes("if(run.phase===2&&run.climbed&&!run.climb)"));
  assert.ok(app.includes("hero.rotation.y=0"));
  assert.ok(app.includes("Marches claires sur la face avant gauche"));
 });
