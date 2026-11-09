@@ -114,6 +114,34 @@ function sign(g,d){
  text(g,'A410',x+16,113,18,'#f5f3dc');text(g,'→',x+61,116,15,'#f5f3dc');
  box(g,x+40,175,3,29,'#e1e0d2');
 }
+// Trois panneaux en pixel art, de tailles différentes, rapprochés vers le
+// milieu des 400 mètres. Chacun reprend le titre exact, réparti sur quatre lignes.
+const CHAPTER_SIGN_TEXT='Chapitre 1 — « La salle d’attente », pages 7–9';
+const CHAPTER_SIGN_LINES=['Chapitre 1 —','« La salle','d’attente »,','pages 7–9'];
+const CHAPTER_SIGN_SPECS=[
+ {x:42,y:112,w:60,h:38,font:6,line:8,baseline:10},
+ {x:133,y:104,w:72,h:46,font:7,line:10,baseline:11},
+ {x:228,y:96,w:84,h:54,font:8,line:12,baseline:13}
+];
+function chapterRoadSigns(g,d){
+ // Les trois panneaux sont simultanément visibles près du milieu (d≈205 m).
+ // Leur mouvement dépend uniquement de la distance, jamais du chronomètre.
+ const scroll=Math.round((d-205)*2.7);
+ for(const s of CHAPTER_SIGN_SPECS){
+  const x=s.x-scroll;if(x+s.w<0||x>384)continue;
+  // Poteaux derrière la pancarte, du côté du chemin (y≈150 à 176).
+  box(g,x+Math.round(s.w*.24),s.y+s.h,3,25,'#71858a');
+  box(g,x+Math.round(s.w*.78),s.y+s.h,3,25,'#71858a');
+  box(g,x+Math.round(s.w*.24)+1,s.y+s.h,1,25,'#b8c8c5');
+  // Bleu routier, liseré ivoire, sommet éclairci ; contours nets en pixel art.
+  box(g,x,s.y,s.w,s.h,'#f2ead7');
+  box(g,x+3,s.y+3,s.w-6,s.h-6,'#26657b');
+  box(g,x+5,s.y+5,s.w-10,2,'#4d90a1');
+  for(let line=0;line<CHAPTER_SIGN_LINES.length;line++){
+   text(g,CHAPTER_SIGN_LINES[line],x+7,s.y+s.baseline+line*s.line,s.font,'#fff5df');
+  }
+ }
+}
 const costumes={
  hero:{coat:'#cf7456',shade:'#a45445',pants:'#335874',dark:'#244053',face:'#c88e69',shine:'#e4b18d',hair:'#263c43',shoe:'#f0dbb3'},
  white:{coat:'#f3ede2',shade:'#c8cebb',pants:'#596873',dark:'#3b505d',face:'#ddb089',shine:'#f0caa6',hair:'#78654c',shoe:'#60564a'},
@@ -168,6 +196,7 @@ export function drawPixelChase(g,run,phase,time,reduced=false){
   if(t.highway<.6&&i%3===0)bush(g,x,174,.33);
  }
  sign(g,d);
+ chapterRoadSigns(g,d);
  const gap=run?.gap??27,hx=phase==='escaped'?245:214,white=hx-Math.max(16,gap*2.75),suit=white-29;
  const trip=['running','paused'].includes(phase)&&(run?.tripRemaining||0)>0;
  if(phase!=='escaped'){
