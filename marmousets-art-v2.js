@@ -112,10 +112,10 @@ function horse(c,r,t,ground,person){
  const p=r.phase;const mounted=p==='ready'||p==='won'?0:p==='mounting'?r.mount:p==='reunion'?Math.max(0,1-r.phaseTime):1;
  if(mounted>0){const q=mounted,dx=-92*(1-q),dy=102*(1-q);
   c.save();c.translate(dx,dy);c.translate(-5,-112);c.scale(.87,.87);c.translate(5,112);
-  // Legs bent forward over saddle, feet hanging free.
-  shape(c,'M-9 -115Q-1 -104 15 -94L24 -74',null,'#2f536d',7);
-  shape(c,'M-11 -115Q-25 -108 -23 -94L-16 -84',null,'#314d65',7);
-  shape(c,'M-15 -83L-6 -83M17 -73L28 -73',null,'#4d3931',4);
+  // En profil, une seule jambe du jeune cavalier est visible ;
+  // l'autre reste derriere le cheval, ce qui affirme l'assise a califourchon.
+  shape(c,'M-10 -115Q2 -108 16 -98L28 -82Q31 -78 27 -73L17 -73Q11 -77 13 -84L4 -92Q-7 -101 -14 -111Z',null,'#2f536d',2);
+  shape(c,'M17 -73L29 -73',null,'#4d3931',4);
   shape(c,'M-24 -155Q-8 -160 4 -151L9 -124Q-10 -115 -22 -127Z','#3e799e',INK,2);
   shape(c,'M-12 -149L0 -145',null,'#8db8be',2);
   shape(c,'M1 -147Q10 -132 24 -124L40 -115',null,'#ba865f',5);
