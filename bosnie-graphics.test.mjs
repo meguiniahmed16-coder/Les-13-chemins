@@ -183,7 +183,7 @@ test('The exact Chapter 2 literary reference appears as weathered spray paint on
 
 test('The painted chapter is placed close enough to read and away from the playable soldier',()=>{
  const s=fs.readFileSync(new URL('./bosnie-addon-source.js',import.meta.url),'utf8');
- assert.ok(s.includes('for(const [i,x] of [-.4,32.5].entries())'));
+ assert.ok(s.includes('for(const [i,x] of [3.1,32.5].entries())'));
  assert.ok(s.includes("plane.position.set(x,.75,-.586)"));
  assert.ok(s.includes("plane.userData.inscription=CHAPTER_2_GRAFFITI"));
 });

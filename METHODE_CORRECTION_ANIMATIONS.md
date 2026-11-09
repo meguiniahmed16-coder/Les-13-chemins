@@ -256,3 +256,6 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 
 
 **Contrôle de taille C033 :** la première vraie capture montrait le graffiti entre les personnages avec une largeur projetée trop petite. Rapprocher l'inscription du point de vue d'entrée en la plaçant sur la partie intacte du premier muret (x = −0,4, à gauche du joueur), et placer la seconde sur un muret intact du troisième tronçon (x = 32,5). Le texte est ainsi lisible sans occuper un bandeau d'interface ni masquer les soldats. Refaire une capture du vrai navigateur.
+
+
+**Deuxième inspection C033 :** le premier repositionnement à x = −0,4 rendait l'inscription grande sur ordinateur mais coupait presque toute la phrase hors de l'écran mobile. Recentrer la première inscription à x = 3,1 sur le muret pour conserver l'ensemble des trois lignes dans les deux formats. Contrôler aussi la capture mobile et pas seulement la vue grand écran.
