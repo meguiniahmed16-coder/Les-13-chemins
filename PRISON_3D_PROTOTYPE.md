@@ -1,86 +1,99 @@
-# Refonte du jeu de prison — prototype 3D isolé (v0.2)
+# Cellule immersive — prototype indépendant v0.3
 
-## Objectif
-Ne pas remplacer le jeu officiel avant la validation du prototype.
-Conserver les mêmes étapes : 1. saisir la brosse, 2. récupérer le tabac,
-3. récupérer le café. Une véritable ouverture entre deux barreaux permet
-de faire passer le sac ; les fers doivent arrêter le sac. Le surveillant
-revient et le prisonnier peut se cacher. Score : 3 × 10 = 30.
+## Ce que cette version change
 
-## Fichiers
-- prison-3d-prototype.html : prévisualisation jouable autonome ;
-- prison-3d-prototype-app.js : maquette 3D, acteur, mobilier et commandes ;
-- build-prison-3d-prototype.mjs : compilation de Three.js ;
-- prison-3d-prototype-runtime.js : code généré pendant le build ;
-- prison-3d-prototype.test.mjs : vérifications du corps, décor et règles.
-- prison-3d-loader.js : téléchargement interrompable et contrôle du modèle complet ;
-- prison-3d-loading.test.mjs : démarrage, progression, erreurs et relance ;
-- prison-3d-visibility.test.mjs : visibilité de la scène en portrait et paysage.
+La caméra se trouve désormais **dans la cellule, à la hauteur des yeux du prisonnier**.
+Une visite de neuf secondes présente les lits, le coin lavabo, la porte fermée et
+la fenêtre. « Passer la visite » conduit au même point de départ que la visite complète.
+Pendant le jeu, seuls les vrais bras et les mains articulées sont rendus.
+Le regard accompagne le geste vers la brosse ou le fil, puis reste dans cette direction.
 
-## Correction du chargement — 9 novembre 2026
-Le bouton affichait encore « Chargement du personnage 3D… » après réussite.
-La porte fermée, restée devant la caméra extérieure, masquait aussi le centre
-de la cellule : environ 23 % des rayons en paysage et 46 % en portrait.
-La paroi avant est désormais traitée entièrement en coupe (porte, guichet
-et poignée compris) lorsque la caméra est dehors. La porte conserve sa
-position fermée et reste visible depuis une caméra située dans la cellule.
+L'interface tactile utilise un joystick analogique à gauche et deux boutons maintenus
+à droite : « Saisir / tirer » et « Se cacher ». Glisser sur la scène oriente le regard.
+Plusieurs doigts peuvent déplacer le personnage, orienter la vue et saisir simultanément.
+Le plein écran et la pause sont accessibles. Au clavier : ZQSD / WASD / flèches,
+Espace pour saisir, C ou Ctrl pour se cacher, P pour suspendre et reprendre.
 
-Le bouton « Entrer dans la cellule » n'est activé qu'après le chargement
-du corps et une première image rendue. L'écran de préparation est indépendant
-du programme 3D : script manquant, fichier GLB incomplet, délai dépassé ou
-perte du contexte graphique donnent un message et « Réessayer le chargement ».
-Le téléchargement du corps est interrompu au bout de 30 secondes ; le démarrage
-complet dispose de 45 secondes. Le profil mobile limite la résolution à 1×,
-désactive l'anticrénelage et les ombres dynamiques pour alléger la mémoire GPU.
+## Rendu et décor
 
-Vérification : transfert et analyse du véritable GLB, états de chargement
-et erreurs, géométrie et lignes de vue avec Three.js en portrait/paysage,
-puis construction publique. Le navigateur cloud disponible ne fournit pas
-de contexte WebGL : il permet de contrôler la page et sa reprise après erreur,
-mais pas de valider le rendu animé sur le téléphone de l'auteur.
+L'ancien réglage mobile de v0.2 (résolution 1× et anticrénelage désactivé) a été retiré.
+L'anticrénelage est actif sur tous les appareils. Le rendu utilise jusqu'à 2× la résolution
+CSS, dans un budget de 3,2 millions de pixels pour les écrans haute densité.
+Les textures de plâtre, bois et tissu sont filtrées avec mipmaps et anisotropie.
+Les ombres du décor utilisent une carte 2048² cadrée sur la petite pièce, recalculée
+au chargement et à la prise de la brosse, plutôt que chaque image.
 
-Le prototype ne remplace pas jeu-yoyo.html et ne touche ni aux points,
-ni aux données de progression, ni aux messages de crédit du jeu officiel.
+La pièce mesure 3 × 3 m, avec quatre murs complets, un plafond et une **porte toujours
+fermée**. La vue en coupe de v0.2 n'est plus utilisée. Le mobilier comprend les lits
+superposés et leur échelle, une table, un tabouret, une armoire, des affaires, un WC,
+un lavabo et un miroir. Les matelas et arêtes sont arrondis ; les sanitaires utilisent
+des profils lisses avec de vrais creux. La fenêtre donne sur une cour en volume.
 
-## Scénographie
-- Cellule 3 × 3 mètres (9 m²), murs, plafond, porte ;
-- lits superposés avec cadre, matelas, couverture et échelle ;
-- table, tabouret, armoire, quelques affaires ;
-- WC, réservoir et lavabo en relief ;
-- vraie ouverture de fenêtre avec sept barreaux ;
-- corde de drap, cintre, sac plastique translucide et brosse ;
-- caméra à l'épaule : le personnage, les bras et les objets sont en volume ;
-- lumière de fenêtre, ombres et changement discret de lumière au fil du récit.
+Le tabouret est un modèle texturé effectivement importé de Poly Haven. Le reste du
+mobilier est construit pour cette pièce en Three.js. Les sanitaires du pack Kenney ont
+été examinés mais ne sont pas inclus : leurs silhouettes stylisées ne répondaient pas
+à la correction visuelle recherchée.
 
-## Actifs et licences
-- [Quaternius Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html) : CC0, intégré dans v0.1 via le modèle masculin déjà présent dans le dépôt.
-- [Quaternius Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) : CC0, amélioration à envisager ; pas encore intégrée.
-- [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) : CC0, source proposée pour un futur mobilier plus détaillé ; pas encore téléchargée.
-- [Quaternius Modular Dungeons](https://quaternius.com/packs/modulardungeon.html) : CC0, source possible pour les murs modulaires ; pas encore téléchargée.
-- [Poly Haven](https://polyhaven.com/license) : CC0, source possible de textures de béton et métal ; pas encore intégrée.
+## Bras et prise du manche
 
-Le mobilier de v0.1 est modélisé en Three.js ; il ne serait pas exact de le
-présenter comme des modèles Kenney déjà téléchargés.
+Le GLB Quaternius existant fournit le squelette et la géométrie réels. Le maillage visible
+est filtré par les poids des os : bras et mains uniquement, sans tête ni torse à travers
+la caméra. Les bras conservent les longueurs d'origine, avec résolution des deux segments
+épaule–coude et coude–poignet. Chaque doigt se ferme et le pouce s'oppose autour du manche.
+L'axe du manche oriente la paume ; le point d'attache se trouve au centre de la prise,
+et non sur l'avant-bras. Le manche reste à la même échelle et ne glisse pas dans la main
+fermée pendant le transfert. La brosse initiale est à portée depuis le point de départ.
 
-## Interactions
-Flèches gauche et droite (ou A/D) pour se déplacer, flèche basse (ou S)
-pour se cacher, Espace ou maintien du bouton Saisir pour attraper et tirer.
-Le squelette Quaternius fournit une anatomie articulée ; épaules, coudes,
-colonne, hanches, genoux et tête sont réellement animés. La brosse est
-rattachée à l'avant-bras articulé, pas à un sprite fixe. Le gameplay,
-les points, les fenêtres entre les barreaux et le surveillant viennent
-directement du moteur yoyo-core.js, sans duplication de règles.
+La caméra tourne vers l'objet avant la prise. Après la brosse, le personnage rejoint
+la fenêtre par l'allée centrale. Les collisions utilisent les emprises réelles du lit,
+de l'échelle, du tabouret, de l'armoire, de la table et des sanitaires.
 
-## Prochaines validations avant tout remplacement
-1. Examiner le rendu dans un vrai navigateur sur mobile et ordinateur.
-2. Corriger l'orientation des paumes et la prise anatomique du manche,
-   et empêcher toute pénétration d'un objet à travers un barreau.
-3. Importer les accessoires CC0 documentés, améliorer les matériaux PBR.
-4. Vérifier la stabilité et les performances sur Android, avec résolution
-   et ombres adaptatives et sans fuite mémoire.
-5. Essayer les trois épreuves, la pose accroupie et les avertissements.
-6. Ne remplacer le jeu actuel qu'après validation des gestes et de la scène.
+## Épreuves conservées
 
-## Invariants
-Aucune modification des points du jeu actuel, des scènes de lecture,
-des autres mini-jeux, des fichiers historiques du manuscrit et du plateau.
+Les règles proviennent toujours de `yoyo-core.js` : saisir la brosse, récupérer le tabac,
+puis le café ; surveillant et possibilité de se cacher ; total de 30 points.
+Le sac de 116 mm passe dans les 174 mm libres entre deux barreaux de 36 mm de diamètre,
+espacés de 210 mm. La progression du tirage est bloquée hors d'une ouverture. Lorsque
+le sac chevauche le plan des barreaux, son déplacement latéral reste dans cette ouverture.
+Le cintre est présenté de profil et la tête de brosse tournée pour présenter son épaisseur.
+
+Ce prototype ne remplace pas `jeu-yoyo.html`, ne transmet aucun crédit au plateau et
+n'accède pas aux sauvegardes de la progression officielle.
+
+## Ressources et licences
+
+- Bras : [Quaternius — Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html), CC0 ; `danse-quaternius-hero.glb` et sa licence existante.
+- Tabouret : [Metal Stool 02](https://polyhaven.com/a/metal_stool_02), Ulan Cabanilla / Poly Haven, [CC0](https://polyhaven.com/license).
+- Modèle livré : `assets/prison/metal-stool-02.glb`, 1 100 864 octets, textures 1024² intégrées, 6 532 triangles. Les fichiers source ont été contrôlés avec les empreintes de l'API officielle ; les textures ont été recompressées sans changer leur résolution.
+- Licence et provenance : `assets/prison/metal-stool-02-LICENSE.txt` et `metal-stool-02.provenance.json`.
+
+Aucun téléchargement de modèle depuis un service tiers n'est requis pendant une partie.
+Les modèles sont servis par le même site que le jeu.
+
+## Organisation et vérification
+
+- `prison-3d-prototype-app.js` : orchestration, progression et liaison entre les modules.
+- `prison-3d-room.js` : géométrie, éclairage, matériaux et accessoires.
+- `prison-3d-camera.js` : visite, vue subjective, regard, déplacement et collisions.
+- `prison-3d-arms.js` : géométrie des bras, squelette, préhension et attache du manche.
+- `prison-3d-controls.js` : joystick, doigts indépendants, clavier et remise à zéro.
+- `prison-3d-spatial.js` : conversion des ouvertures physiques et collision latérale du sac.
+- `prison-3d-loader.js` et le bootstrap HTML : transfert interrompable, modèle complet,
+  progression, première image et écran de reprise après erreur.
+
+`npm run test:prison3d` construit le programme et exécute les tests ciblés. Ils analysent
+les vrais GLB, les bras déformés, la fermeture des doigts, la caméra portrait/paysage,
+les commandes multi-touch, les dimensions des ouvertures et les erreurs de chargement.
+Un parcours d'intégration exécute l'application, ses contrôles et ses règles jusqu'à
+30/30, y compris visite, pause, surveillant, brosse, tabac et café. Seuls DOM, renderer
+WebGL et parsing des textures du tabouret sont simulés dans ce parcours CPU.
+
+`npm run build` reconstruit et vérifie également les autres jeux avant de copier la
+liste fermée des fichiers publics dans `dist/`. La publication reste GitHub → build
+et déploiement automatiques ; aucune connexion interactive à Netlify n'est requise.
+
+Des captures Blender de la géométrie et des poses réelles complètent les vérifications
+de cadrage. Elles ne remplacent pas un essai WebGL : l'éclairage est approximé et
+les textures procédurales ne sont pas reproduites dans ce contrôle. Le navigateur
+cloud disponible ne possède pas de contexte WebGL. Le rendu animé, la fluidité et
+le confort tactile sur le téléphone de l'auteur restent à apprécier avec le lien publié.

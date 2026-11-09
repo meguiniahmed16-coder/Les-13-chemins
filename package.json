@@ -10,7 +10,7 @@
     "test:arrival": "node build-public.mjs && node --test arrival.test.mjs journey.test.mjs",
     "build:yoyo": "node build-yoyo.mjs",
     "build:prison3d": "node build-prison-3d-prototype.mjs",
-    "test:prison3d": "node build-prison-3d-prototype.mjs && node --test prison-3d-prototype.test.mjs prison-3d-loading.test.mjs prison-3d-visibility.test.mjs",
+    "test:prison3d": "node build-prison-3d-prototype.mjs && node --test prison-3d-*.test.mjs",
     "test:yoyo": "node --test yoyo.test.mjs plateaux.test.mjs arrival.test.mjs journey.test.mjs libre-parcours.test.mjs"
   },
   "dependencies": {

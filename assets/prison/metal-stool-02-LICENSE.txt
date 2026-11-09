@@ -1,0 +1,11 @@
+Metal Stool 02
+Creator: Ulan Cabanilla
+Publisher: Poly Haven
+Asset source: https://polyhaven.com/a/metal_stool_02
+License: CC0 1.0 Universal
+License statement: https://polyhaven.com/license
+CC0 legal text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+The source mesh and textures are dedicated to the public domain under CC0.
+Texture JPEG encoding was optimized; geometry remains unchanged.
+Source file integrity and output SHA-256 are recorded in provenance.json.
