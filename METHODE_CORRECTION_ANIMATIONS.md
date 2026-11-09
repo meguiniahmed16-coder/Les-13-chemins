@@ -309,3 +309,9 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Trois panneaux de dimensions différentes (**60×38, 72×46, 84×54 pixels**) mais proches les uns des autres, visibles ensemble aux alentours de **205 m sur les 400 m** de course.
 - Intégration au décor de route, avec deux poteaux, bordure ivoire et bleu routier, avant les personnages pour conserver leur lisibilité.
 - Défilement uniquement selon `distance`, sans modifier le gameplay. Tests de regroupement au milieu, dimensions, non-chevauchement, texte exact et absence au départ / à l'arrivée.
+
+### 2026-11-09 — A410 : ne garder que le dernier panneau du chapitre
+- À la demande de l'auteur, supprimer les deux premiers panneaux routiers du groupe et **ne conserver que le troisième**, le plus grand (84×54 pixels), à sa place au milieu du chemin (autour de 205 m).
+- Conserver son inscription « Chapitre 1 — « La salle d’attente », pages 7–9 » et les mêmes couleurs, poteaux, position et défilement.
+- Ne pas toucher aux autres panneaux (notamment le panneau A410), aux personnages, au paysage ni au gameplay.
+- Test de non-régression : un seul panneau chapitre, aux dimensions et coordonnées précédentes, absent au début et à la fin du parcours.

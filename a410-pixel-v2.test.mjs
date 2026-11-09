@@ -56,22 +56,21 @@ test('The public arcade uses new pixel rendering but preserves the original chas
  assert.doesNotMatch(assets,/https?:\/\/|fetch\(|new Image\(/);
 });
 
-test('Three different roadside chapter signs stay grouped around the middle of the 400 m chase',()=>{
+test('Keep only the last, largest chapter sign at the midpoint of the chase',()=>{
  const at=d=>{
   const {scene,shapes,labels}=sceneRecorder();
   drawPixelChase(scene,{distance:d,gap:27,speed:17,elapsed:4.1,direction:1,tripRemaining:0,stopRemaining:0},'running',4.1);
   return {panels:shapes.filter(s=>s.type==='rect'&&s.color==='#f2ead7'),labels};
  };
  const opening=at(0),middle=at(205),ending=at(400);
- assert.equal(opening.panels.length,0,'Panneaux absents devant le lycée');
- assert.equal(ending.panels.length,0,'Panneaux passés avant le panneau A410');
- assert.equal(middle.panels.length,3,'Les trois panneaux sont visibles ensemble au milieu');
- assert.deepEqual(middle.panels.map(s=>s.w),[60,72,84],'Trois largeurs différentes');
- assert.deepEqual(middle.panels.map(s=>s.h),[38,46,54],'Trois hauteurs différentes');
- assert.ok(middle.panels.every(s=>s.x>=0&&s.x+s.w<=384),'Aucun panneau coupé au milieu');
- for(let i=1;i<middle.panels.length;i++)
-  assert.ok(middle.panels[i].x>middle.panels[i-1].x+middle.panels[i-1].w,'Les panneaux ne se chevauchent pas');
+ assert.equal(opening.panels.length,0,'No chapter sign before the school');
+ assert.equal(ending.panels.length,0,'The sign has passed before the A410 finish');
+ assert.equal(middle.panels.length,1,'Only the third and last sign remains');
+ assert.equal(middle.panels[0].w,84,'Keep the width of the last sign');
+ assert.equal(middle.panels[0].h,54,'Keep the height of the last sign');
+ assert.equal(middle.panels[0].x,228,'Keep its original roadside position');
+ assert.equal(middle.panels[0].y,96,'Keep its original height');
  for(const line of ['Chapitre 1 —','« La salle','d’attente »,','pages 7–9'])
-  assert.equal(middle.labels.filter(t=>t===line).length,3,'Chaque panneau reproduit '+line);
+  assert.equal(middle.labels.filter(t=>t===line).length,1,'The heading is written exactly once: '+line);
  assert.equal(['Chapitre 1 —','« La salle','d’attente »,','pages 7–9'].join(' '),'Chapitre 1 — « La salle d’attente », pages 7–9');
 });
