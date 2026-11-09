@@ -6,12 +6,15 @@ const code=fs.readFileSync(new URL('./escale.js',import.meta.url),'utf8');
 const dataCode=fs.readFileSync(new URL('./dist/etapes-data.js',import.meta.url),'utf8');
 const passages=JSON.parse(fs.readFileSync(new URL('./passages.json',import.meta.url),'utf8'));
 function harness(){
- const elements=[],classes=new Set();
- const context=vm.createContext({document:{head:{append(){}},body:{append(){}},documentElement:{classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)}},getElementById:()=>null,createElement:tag=>{
+ const elements=[],classes=new Set(),timers=new Map();let timerId=0;
+ const context=vm.createContext({setTimeout:(fn,delay)=>{const id=++timerId;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),document:{head:{append(){}},body:{append(){}},documentElement:{classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)}},getElementById:()=>null,createElement:tag=>{
   const events=new Map(),children=new Map();
   const e={tag,open:false,dataset:{},setAttribute(){},querySelectorAll:()=>[],querySelector:s=>{if(!children.has(s))children.set(s,{focus(){e.focused=s;}});return children.get(s);},addEventListener:(s,f)=>events.set(s,f),showModal(){this.open=true;},close(){this.open=false;events.get('close')?.();},remove(){this.removed=true;},emit:s=>events.get(s)?.()};elements.push(e);return e;
  }}});
- context.window=context;vm.runInContext(dataCode,context);vm.runInContext(code,context);return {context,api:context.TreizeEscale,elements,classes};
+ context.window=context;vm.runInContext(dataCode,context);vm.runInContext(code,context);
+ return {context,api:context.TreizeEscale,elements,classes,timers,runTimers:()=>{
+  for(const [id,fn]of [...timers]){timers.delete(id);fn();}
+ }};
 }
 test('Every arrival uses the exact approved excerpt and includes its references, location and challenge',()=>{
  const h=harness();assert.equal(h.context.TreizeEtapesData.length,13);
@@ -57,4 +60,46 @@ test('Opening a continuity over the passage preserves reading, score flow and re
 test('Continuity links use only explicit identities and are available on the reading page',()=>{
  const h=harness();for(const [level,name] of [[3,'Michel le Belge'],[1,'Mustapha'],[5,'Lionel']]){const stage=h.api.getStage(level);assert.equal(stage.workshops.length,1);assert.equal(stage.workshops[0].name,name);assert.ok(h.api.readerHTML(stage).includes('En savoir plus sur les personnages'));}
  const lecture=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');assert.ok(lecture.includes('TreizeEscale.characterButton(d.level,d.plateau)'));assert.ok(lecture.includes('TreizeEscale.bindCharacters'));
+});
+
+test('Immersive reader opens full screen and the end of the passage automatically starts the next game',()=>{
+ const h=harness();let started=0,dismissed=0;
+ const stage=h.api.getStage(2),modal=h.api.openReader(2,{
+  autoAdvanceOnEnd:true,onChallenge:()=>started++,onDismiss:()=>dismissed++
+ });
+ assert.equal(modal.open,true);
+ assert.equal(modal.dataset.autoplay,'scroll');
+ assert.match(modal.innerHTML,/CHAPITRE 1 · LA SALLE D’ATTENTE/);
+ assert.ok(modal.innerHTML.includes(stage.passage.quote.split('\n')[0].slice(0,20)),'The exact passage is conserved');
+ assert.equal(started,0);
+ modal.scrollTop=0;modal.clientHeight=500;modal.scrollHeight=700;modal.emit('scroll');
+ assert.equal(h.timers.size,0,'Opening the reader never auto-skips unscrolled text');
+ modal.scrollTop=215;modal.emit('scroll');
+ assert.equal(h.timers.size,1,'Reaching the bottom schedules a short reading handoff');
+ assert.equal(started,0,'The last sentence stays visible briefly');
+ h.runTimers();
+ assert.equal(started,1);
+ assert.equal(dismissed,0);
+ assert.equal(modal.open,false);
+ assert.ok(modal.removed);
+ h.runTimers();assert.equal(started,1,'No double game launch');
+});
+test('Closing the immersive reader does not launch the next game; explicit continue still works',()=>{
+ const h=harness();let started=0,dismissed=0;
+ const a=h.api.openReader(3,{autoAdvanceOnEnd:true,onChallenge:()=>started++,onDismiss:()=>dismissed++});
+ a.close();assert.equal(started,0);assert.equal(dismissed,1,'Escape or close is a safe exit');
+ const b=h.api.openReader(4,{autoAdvanceOnEnd:true,onChallenge:()=>started++,onDismiss:()=>dismissed++});
+ b.querySelector('.arrival-challenge').onclick();
+ assert.equal(started,1);assert.equal(dismissed,1);
+ assert.match(h.api.readerHTML(h.api.getStage(4)),/CHAPITRE 2 · MÊME PAS MAL/);
+});
+test('End-of-reading detection works with readable text boundaries, not on initial focus',()=>{
+ const h=harness(),check=h.api.reachedReadingEnd;
+ assert.equal(check({scrollTop:0,clientHeight:500,scrollHeight:500},null),false);
+ assert.equal(check({scrollTop:20,clientHeight:500,scrollHeight:600},null),false);
+ assert.equal(check({scrollTop:110,clientHeight:500,scrollHeight:600},null),true);
+ assert.equal(check({scrollTop:70,clientHeight:500,scrollHeight:800},null),false);
+ const modal={scrollTop:75,getBoundingClientRect:()=>({bottom:720})};
+ assert.equal(check(modal,{getBoundingClientRect:()=>({bottom:680})}),true);
+ assert.equal(check(modal,{getBoundingClientRect:()=>({bottom:740})}),false);
 });
