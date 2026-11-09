@@ -142,7 +142,7 @@ test('The five game-to-game journeys keep their dotted map and required frame pa
  const src=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
  const game=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8');
  const plates=fs.readFileSync(new URL('./plateaux.js',import.meta.url),'utf8');
- assert.ok(src.includes('if(n===1||n===2||n===4)'));
+ assert.ok(src.includes('if(n>=1&&n<=5)'));
  assert.ok(src.includes('from:n,to:next'));
  assert.ok(src.includes('scheduleAutoTransition(finished)'));
  assert.ok(src.includes('rollTravel(n);'));

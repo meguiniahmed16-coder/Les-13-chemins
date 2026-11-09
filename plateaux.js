@@ -15,6 +15,7 @@
  function launchYoyo(){refresh();if(!progress().finished.includes(1))return;flow.beginYoyo(state,crypto.randomUUID());save();yoyoWon=false;open(yoyo);}
  function readStrasbourg(){TreizeEscale.openReader(5,{plateau:2,autoAdvanceOnEnd:true,
   onChallenge:()=>{const p=progress();if(!p.read.includes(2))p.read.push(2);save();render();launchYoyo();},
+  onSkip:()=>window.TreizeLibreParcours?.next('5:prison'),
   onDismiss:()=>focusEntry()});}
  function travel(){clearTimeout(travelTimer);if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;dismiss(dance);boardRolling=true;finishBoardRoll=TreizeVoyage.start({from:5,to:5,fromPlateau:1,toPlateau:2,title:'Strasbourg · Un fil entre les barreaux',onFinish:()=>{boardRolling=false;finishBoardRoll=null;if(state.selected!==5)return;render();readStrasbourg();}});}
  function closeDance(){clearTimeout(travelTimer);dismiss(dance);if(progress().finished.includes(1)&&!progress().read.includes(2))travel();else focusEntry();}
@@ -41,5 +42,29 @@
    prisonExitTimer=setTimeout(()=>{if(yoyoWon&&state.completed.includes(5)&&yoyo.dialog.open)closeYoyo();},2000);
   }}if(m.type==='yoyo:replay'&&state.yoyoFinished&&!state.yoyoPending){flow.beginYoyo(state,crypto.randomUUID());yoyoWon=false;save();context(yoyo);}}
  });
+ // Navigation sous les deux mini-jeux du chapitre 2.
+ // "Retour" stops automatic chaining, "Suivant" preserves wins or skips.
+ window.TreizePlateauxNavigation={
+  back(which){
+   clearTimeout(travelTimer);clearTimeout(prisonExitTimer);
+   if(which==='dance')dismiss(dance);
+   else if(which==='prison')dismiss(yoyo);
+   focusEntry();
+  },
+  next(which){
+   if(which==='dance'){
+    clearTimeout(travelTimer);
+    if(progress().finished.includes(1))travel();
+    return;
+   }
+   if(which==='prison'){
+    clearTimeout(prisonExitTimer);
+    dismiss(yoyo);
+    render();
+    if(window.TreizeChapitre1?.chapter2Done(state))rollTravel(5);
+   }
+  },
+  isOpen(which){return which==='dance'?dance.dialog.open:which==='prison'?yoyo.dialog.open:false;}
+ };
  flow.migrate(state);save();render();
 })();

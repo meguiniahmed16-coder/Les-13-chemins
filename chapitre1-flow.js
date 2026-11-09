@@ -17,11 +17,20 @@
  // Les scènes 4 et 5 (deux sous-jeux) ne comptent que pour un chapitre.
  const CARDS=Object.freeze([1,4,6,7,8,9,10,11,12,13]);
  const completed=(state,n)=>Array.isArray(state?.completed)&&state.completed.includes(n);
+ const SKIP_KEYS=Object.freeze(['1','2','3','4','5:dance','5:prison']);
+ function wasSkipped(state,key){
+  return Array.isArray(state?.storySkips)&&state.storySkips.includes(String(key));
+ }
+ function chapterHasSkips(state,chapter){
+  const keys=chapter===1?SKIP_KEYS.slice(0,3):chapter===2?SKIP_KEYS.slice(3):[];
+  return keys.some(key=>wasSkipped(state,key));
+ }
  // Compatibilité : les joueurs qui ont déjà terminé une scène ultérieure
  // gardent l'accès à leurs chapitres et peuvent revisiter les trois jeux.
  function legacy(state){return Array.isArray(state?.completed)&&state.completed.some(n=>n>=4);}
  function partDone(state,n){
   if(!Number.isInteger(n)||n<1||n>3)return false;
+  if(wasSkipped(state,n))return true;
   if(legacy(state))return true;
   if(!completed(state,n))return false;
   if(n===1)return Boolean(state.arcadeBonuses?.['1']);
@@ -37,6 +46,8 @@
  function chapter2Progress(state){return state?.levelPlates?.[5]||{finished:[]};}
  function chapter2PartDone(state,n){
   if(!Number.isInteger(n)||n<1||n>3)return false;
+  const skipKey=n===1?'4':n===2?'5:dance':'5:prison';
+  if(wasSkipped(state,skipKey))return true;
   if(chapter2Legacy(state))return true;
   const p=chapter2Progress(state),pastDance=Boolean(
    state?.danseFinished||state?.dansePending||
@@ -68,6 +79,40 @@
   return Math.max(2,chapterOf(Math.min(13,Math.max(6,Number(state.unlocked)||6))));
  }
  function scenePassedCount(state){return PARTS.filter(p=>partDone(state,p.scene)).length;}
+ function skipPart(state,key){
+  // Story traversal and game victory are separate, so skips earn no points.
+  const k=String(key),scene=Number(k.split(':')[0]);
+  if(!SKIP_KEYS.includes(k)||!state||!Array.isArray(state.completed))return false;
+  if(!canEnter(state,scene))return false;
+  if(k==='5:prison'&&!chapter2PartDone(state,2))return false;
+  if(k==='5:dance'&&chapter2PartDone(state,2))return false;
+  const passed=k==='5:dance'?chapter2PartDone(state,2):
+   k==='5:prison'?chapter2PartDone(state,3):
+   scene<=3?partDone(state,scene):chapter2PartDone(state,1);
+  if(passed)return false; // No skipped mark over an already earned win.
+  state.storySkips??=[];
+  if(state.storySkips.includes(k))return false;
+  state.storySkips.push(k);
+  const pending={1:'marmousetsPending',2:'arcadePending',3:'catalognePending',
+   4:'bosniePending','5:dance':'dansePending','5:prison':'yoyoPending'}[k];
+  if(pending)state[pending]=null;
+  if(k==='5:dance'){
+   state.levelPlates??={};
+   const p=state.levelPlates[5]??={index:1,finished:[],read:[]};
+   p.finished??=[];if(!p.finished.includes(1))p.finished.push(1);
+   p.index=Math.max(2,p.index||1);
+  }
+  if(k==='5:prison'){
+   state.levelPlates??={};
+   const p=state.levelPlates[5]??={index:2,finished:[1],read:[]};
+   p.finished??=[];
+   for(const n of [1,2])if(!p.finished.includes(n))p.finished.push(n);
+   p.index=Math.max(3,p.index||1);
+  }
+  const next=scene===5&&k==='5:prison'?6:scene===5?5:scene+1;
+  state.unlocked=Math.min(13,Math.max(Number(state.unlocked)||1,next));
+  return true;
+ }
  function preparePart(state,n,makeId){
   // Une seule question au début du chapitre : les jeux 2 et 3 reprennent
   // sa réussite sans réclamer une autre réponse ni donner 100 points.
@@ -116,5 +161,6 @@
  }
  root.TreizeChapitre1={PARTS,CHAPTER2_PARTS,CARDS,legacy,partDone,done,nextPart,chapter2Legacy,
   chapter2PartDone,chapter2Progress,chapter2Done,chapter2NextPart,canEnter,chapterOf,
-  chaptersDone,chapterReached,scenePassedCount,preparePart,prepareChapter2Dance,reconcile};
+  chaptersDone,chapterReached,scenePassedCount,preparePart,prepareChapter2Dance,
+  SKIP_KEYS,wasSkipped,chapterHasSkips,skipPart,reconcile};
 })(typeof window==='undefined'?globalThis:window);
