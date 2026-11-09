@@ -57,7 +57,7 @@ test('Playable prototype uses the existing CC0 humanoid skinning, not a 2D limb 
  assert.match(license,/CC0 1\.0 Universal/);
  assert.ok(app.includes('new GLTFLoader().loadAsync(CHARACTER_FILE)'));
  assert.ok(app.includes('upperarm_r')&&app.includes('lowerarm_r'));
- assert.ok(app.includes('isSkinnedMesh')&&app.includes('bones[name].quaternion.copy'));
+ assert.ok(app.includes('isSkinnedMesh')&&app.includes('b[name].quaternion.copy'));
  assert.ok(app.includes('setWindowAspect(g,camera.aspect)'));
  assert.ok(app.includes('renderer.render(w.scene,camera)'));
  assert.ok(!page.includes('handOpen2D')&&!app.includes('handGrip2D'));
