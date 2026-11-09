@@ -1,6 +1,11 @@
 /* A bounded interlude: dice, the whole atlas, departure, travel, arrival. */
 (function(root){
  'use strict';
+ function chapterArrivalLabel(level,titles=[]){
+  if(level<=3)return 'Chapitre 1 — « La salle d’attente »';
+  if(level<=5)return 'Chapitre 2 — « Même pas mal »';
+  return 'Chapitre '+(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
+ }
  const styles=`
  #diceDialog.journey-open{width:min(920px,96vw);max-width:96vw;padding:18px;overflow:hidden}
  #diceDialog.journey-open h2{font-size:clamp(25px,4vw,34px);margin:6px 0}
@@ -21,6 +26,9 @@
  html.journey-map .compass .rose{font-size:26px!important;line-height:38px!important}
  html.journey-map .compass .north{left:19px!important;font-size:8px!important}
  .journey-stop{display:grid;place-items:center;border:1px solid #675637;border-radius:50%;background:#f9edcf;color:#3d5746;font:bold 12px Arial;box-shadow:0 1px 4px #293d3335}
+ html.journey-map .journey-arrival-title{position:absolute;z-index:2005;top:19px;left:50%;transform:translateX(-50%);width:max-content;max-width:min(95vw,740px);padding:12px 22px;border:2px solid #ac8450;border-radius:9px;background:#fff7e9f5;color:#28493d;box-shadow:0 6px 28px #0d262344;text-align:center;font:700 clamp(18px,2.1vw,27px)/1.3 Georgia,serif;pointer-events:none}
+ html.journey-map .journey-arrival-title[hidden]{display:none!important}
+ @media(max-width:600px){html.journey-map .journey-arrival-title{max-width:94vw;font-size:18px;padding:10px 14px;top:9px}}
  .journey-pointer{display:block;width:27px;height:27px;border-radius:50% 50% 50% 2px;transform:rotate(-45deg);background:#ad7739;border:3px solid #fff8e3;box-shadow:0 0 0 7px #ad773933,0 3px 8px #233b3b66}
  .journey-pointer:after{content:'';position:absolute;width:7px;height:7px;left:7px;top:7px;background:#fff8e3;border-radius:50%}
  .journey-route-stop{background:transparent;border:0}
@@ -101,12 +109,29 @@
   const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
   const phase=(name,label)=>{ribbon.textContent=label;document.getElementById('map').dataset.journeyPhase=name;send('journey:phase',{phase:name,label});};
   const marks=L.layerGroup().addTo(map);
+  const chapterBanner=document.createElement('div');
+  chapterBanner.className='journey-arrival-title';chapterBanner.hidden=true;
+  document.getElementById('map')?.append(chapterBanner);
+  function showArrivalTitle(){
+   const city=toStage?.city||places[to-1]||'Destination';
+   const names=Array.isArray(toStage?.characters)?toStage.characters:[];
+   chapterBanner.textContent=chapterArrivalLabel(to,titles)+' · '+city+
+    (names.length?' · Personnages : '+names.join(' · '):'');
+   chapterBanner.hidden=false;
+  }
   const stops=centers.map((p,i)=>L.marker(p,{interactive:false,icon:L.divIcon({className:'journey-stop',html:String(i+1),iconSize:[23,23],iconAnchor:[11,11]})}).addTo(marks));
   const pointer=L.marker(origin,{interactive:false,zIndexOffset:1000,icon:L.divIcon({className:'',html:'<span class="journey-pointer"></span>',iconSize:[27,27],iconAnchor:[13,27]})});
   const distance=map.distance(origin,destination),travelZoom=distance>500000?6:distance>100000?8:distance>10000?10:13;
   const trace=L.polyline([],{color:'#a9773d',weight:3,dashArray:'6 7',opacity:.85,interactive:false});
   const at=t=>[origin[0]+(destination[0]-origin[0])*t+Math.sin(Math.PI*t)*Math.min(1.2,Math.abs(destination[1]-origin[1])*.08),origin[1]+(destination[1]-origin[1])*t];
-  function arrive(){cancelAnimationFrame(raf);pointer.setLatLng(destination);map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});phase('arrival',(toStage?.city||places[to-1])+' · '+(toStage?.passage?.scene||titles[to-1]));root.TreizeEscale?.addCharacters(map,to,toPlateau);later(()=>send('journey:done'),2400);}
+  function arrive(){
+   cancelAnimationFrame(raf);pointer.setLatLng(destination);
+   map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});
+   showArrivalTitle();
+   phase('arrival',chapterArrivalLabel(to,titles)+' · '+(toStage?.city||places[to-1]));
+   root.TreizeEscale?.addCharacters(map,to,toPlateau);
+   later(()=>send('journey:done'),3400);
+  }
   function travel(){
    if(waypointRoute){
     // Le personnage avance sur quatre tronçons pointillés, dans l'ordre demandé.
@@ -163,6 +188,6 @@
   addEventListener('message',message);send('journey:ready');
   addEventListener('pagehide',()=>{cancelAnimationFrame(raf);timers.forEach(clearTimeout);removeEventListener('message',message);},{once:true});
  }
- root.TreizeVoyage={start,initMap,onceFinish,chapter2Itinerary};
+ root.TreizeVoyage={start,initMap,onceFinish,chapter2Itinerary,chapterArrivalLabel};
  if(typeof document!=='undefined')install();
 })(typeof window==='undefined'?globalThis:window);
