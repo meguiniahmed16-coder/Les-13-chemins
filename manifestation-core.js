@@ -7,13 +7,21 @@ export const MAX_POINTS=30;
 export const GAME_ID='rendezvous-2002';
 export const STATUE=Object.freeze({x:0,z:5,footX:-1.15,footZ:.35,topX:-1.15,topZ:3.48,topHeight:3.32,descendTime:2});
 export const FLAG=Object.freeze({x:4.1,z:12});
+// Three distinct approaches on the boulevard; the police are fictional game
+// opponents repelled by hearts, not by physical violence.
+export const CRS_WAVES=Object.freeze([
+ Object.freeze({id:1,trigger:17,anchor:27}),
+ Object.freeze({id:2,trigger:44,anchor:54}),
+ Object.freeze({id:3,trigger:71,anchor:81}),
+]);
 export const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const behindNarrator=(narratorZ,candidateZ,gap=4.5)=>Math.min(candidateZ,narratorZ-gap);
 export function newRun(){
  return {phase:1,steps:[],x:STATUE.topX,z:STATUE.topZ,height:STATUE.topHeight,facing:0,
  climbed:true,climb:null,statueShouted:false,shoutRemaining:0,mobilisation:0,
- cohesion:80,leaderZ:-9,clock:0,finished:false,events:[]};
+ cohesion:80,leaderZ:-9,clock:0,finished:false,events:[],
+ crsWaves:CRS_WAVES.map(w=>({...w,status:'waiting',hearts:0,startedAt:0,repelledAt:0,cooldown:0}))};
 }
 export function progress(run,step){
  if(run.finished||step!==run.steps.length+1||step<1||step>3)return false;
@@ -69,11 +77,30 @@ export function advance(run,dt,input={}){
  }
  run.leaderZ=clamp(run.leaderZ,run.z-15.5,run.z-5.5);
  const gap=run.z-run.leaderZ;
+ // La police intervient trois fois. Un appui maintenu sur ROUGE envoie des
+ // cœurs successifs (maximum 4 par vague), qui font fuir les CRS.
+ let active=run.crsWaves.find(w=>w.status==='active');
+ if(!active){
+  active=run.crsWaves.find(w=>w.status==='waiting'&&run.z>=w.trigger);
+  if(active){active.status='active';active.startedAt=run.clock;active.cooldown=0;run.events.push({type:'crs:incoming',wave:active.id});}
+ }
+ if(active){
+  active.cooldown=Math.max(0,active.cooldown-t);
+  if(input.red&&active.cooldown<=0){
+   active.hearts++;
+   active.cooldown=.38;
+   run.events.push({type:'heart',wave:active.id,hit:active.hearts});
+   if(active.hearts>=4){
+    active.status='repelled';active.repelledAt=run.clock;
+    run.events.push({type:'crs:repelled',wave:active.id});
+   }
+  }
+ }
  if(moving)run.cohesion=clamp(run.cohesion-t*(gap>10?4.0:2.3),0,100);
  else if(input.red)run.cohesion=clamp(run.cohesion+t*23,0,100);
  else run.cohesion=clamp(run.cohesion+t*1.4,0,100);
  // Ni ralentissement ni blocage du joystick. La rencontre attend le groupe.
- if(run.z>=99&&run.cohesion>=68&&gap<=9.5)progress(run,3);
+ if(run.z>=99&&run.cohesion>=68&&gap<=9.5&&run.crsWaves.every(w=>w.status==='repelled'))progress(run,3);
 }
 export function yellow(run){
  if(run.phase===1)return callFromStatue(run);
