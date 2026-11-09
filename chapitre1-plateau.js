@@ -149,7 +149,7 @@
    host.querySelector('[data-chapter="1"]').after(connector);
    const third=document.createElement('button');third.type='button';
    third.className='board-target chapter-featured step-chapters rendezvous-card';
-   third.dataset.chemin='3';
+   third.dataset.chemin='3';third.id='chemin-iii';
    const thirdRoute=document.createElement('div');thirdRoute.className='chapter-card-route';
    for(let i=0;i<thirdParts.length;i++){
     const p=thirdParts[i];const tile=makeSpan('chapter-part-label chapter-literary-part','');
