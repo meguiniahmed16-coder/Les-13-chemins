@@ -9,7 +9,9 @@ function harness(){
  const elements=[],classes=new Set(),timers=new Map();let timerId=0;
  const context=vm.createContext({setTimeout:(fn,delay)=>{const id=++timerId;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),document:{head:{append(){}},body:{append(){}},documentElement:{classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)}},getElementById:()=>null,createElement:tag=>{
   const events=new Map(),children=new Map();
-  const e={tag,open:false,dataset:{},setAttribute(){},querySelectorAll:()=>[],querySelector:s=>{if(!children.has(s))children.set(s,{focus(){e.focused=s;}});return children.get(s);},addEventListener:(s,f)=>events.set(s,f),showModal(){this.open=true;},close(){this.open=false;events.get('close')?.();},remove(){this.removed=true;},emit:s=>events.get(s)?.()};elements.push(e);return e;
+  const e={tag,open:false,dataset:{},setAttribute(){},querySelectorAll:()=>[],querySelector:s=>{if(!children.has(s))children.set(s,{focus(){e.focused=s;},after(child){e.inserted=child;},scrollIntoView(){}});return children.get(s);},
+  querySelectorAll:s=>{if(s!=='.arrival-quiz-answer')return[];return e.quizButtons??=Array.from({length:3},(_,i)=>({dataset:{answer:String(i)},onclick:null}));},
+  addEventListener:(s,f)=>events.set(s,f),showModal(){this.open=true;},close(){this.open=false;events.get('close')?.();},remove(){this.removed=true;},emit:s=>events.get(s)?.()};elements.push(e);return e;
  }}});
  context.window=context;vm.runInContext(dataCode,context);vm.runInContext(code,context);
  return {context,api:context.TreizeEscale,elements,classes,timers,runTimers:()=>{
@@ -102,4 +104,58 @@ test('End-of-reading detection works with readable text boundaries, not on initi
  const modal={scrollTop:75,getBoundingClientRect:()=>({bottom:720})};
  assert.equal(check(modal,{getBoundingClientRect:()=>({bottom:680})}),true);
  assert.equal(check(modal,{getBoundingClientRect:()=>({bottom:740})}),false);
+});
+
+test('The chapter 2 quiz is inside the reader and must be answered before auto-playing Sarajevo',()=>{
+ const h=harness();let started=0,answers=[],dismiss=0;
+ const modal=h.api.openReader(4,{
+  autoAdvanceOnEnd:true,
+  inlineQuiz:{question:'Quel contraste découvre le narrateur à Sarajevo ?',
+   options:['Le départ','La ville','Les autres'],correct:1,onAnswer:i=>answers.push(i)},
+  onChallenge:()=>started++,onDismiss:()=>dismiss++
+ });
+ const quiz=h.elements.find(x=>x.className==='arrival-inline-quiz');
+ assert.ok(quiz,'The quiz appears inside the full-screen reading interface');
+ assert.ok(quiz.innerHTML.includes('Quel contraste'));
+ assert.ok(quiz.querySelectorAll('.arrival-quiz-answer').length===3);
+ modal.scrollTop=200;modal.clientHeight=500;modal.scrollHeight=600;
+ modal.emit('scroll');assert.equal(h.timers.size,0,'Unanswered quiz prevents automatic launch');
+ modal.querySelector('.arrival-challenge').onclick();
+ assert.equal(started,0,'The manual continuation cannot bypass the quiz');
+ quiz.querySelectorAll('.arrival-quiz-answer')[1].onclick();
+ assert.deepEqual(answers,[1]);
+ assert.match(quiz.innerHTML,/Bonne réponse/);
+ assert.equal(h.timers.size,1,'Completing the quiz arms the automatic handoff');
+ h.runTimers();
+ assert.equal(started,1);assert.equal(dismiss,0);assert.equal(modal.open,false);
+});
+test('After the arrival reading, the correct game launches without an extra click',()=>{
+ const source=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8');
+ const fn=source.slice(source.indexOf('function arriveAtStage(n){'),source.indexOf('function rollTravel(n){'));
+ const selectFn=source.slice(source.indexOf('function select(n){'),source.indexOf('function answer(i){'));
+ const clicked=[],opens=[];
+ const state={selected:1,unlocked:5,completed:[1,2,3],points:185};
+ const doc={
+  getElementById(id){
+   if(['arcadeLaunch','catalogneLaunch','danseLaunch'].includes(id))
+    return {click(){clicked.push(id);},disabled:false};
+   if(id==='bosnieLaunch')return null;
+   if(id==='questTitle')return {focus(){},scrollIntoView(){}};
+   return {textContent:''};
+  }
+ };
+ const c=vm.createContext({state,LEVELS:Array.from({length:13},(_,i)=>({
+  title:'Scène '+(i+1),question:'Question '+i,options:['A','B','C'],correct:0
+ })),document:doc,save(){},render(){},TreizeEscale:{openReader(n,options){opens.push({n,options});}}});
+ c.window=c;
+ vm.runInContext(selectFn+fn+';arriveAtStage(2);arriveAtStage(3);arriveAtStage(5);',c);
+ assert.deepEqual(opens.map(x=>x.n),[2,3,5]);
+ assert.ok(opens.every(x=>x.options.autoAdvanceOnEnd===true));
+ for(const opened of opens)opened.options.onChallenge();
+ assert.deepEqual(clicked,['arcadeLaunch','catalogneLaunch','danseLaunch']);
+ assert.equal(state.points,185,'Opening a video does not grant any bonus');
+ c.TreizeEscale.openReader=(_n,options)=>opens.push({n:4,options});
+ vm.runInContext('arriveAtStage(4)',c);
+ assert.equal(opens.at(-1).options.inlineQuiz.question,'Question 3','The Sarajevo quiz appears inside reading');
+ assert.equal(clicked.includes('bosnieLaunch'),false,'The Sarajevo quiz is not bypassed');
 });
