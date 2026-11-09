@@ -15,7 +15,10 @@
   Object.freeze({part:3,scene:5,plateau:2,title:'La prison',game:'jeu-yoyo.html'})
  ]);
  // Les scènes 4 et 5 (deux sous-jeux) ne comptent que pour un chapitre.
- const CARDS=Object.freeze([1,4,6,7,8,9,10,11,12,13]);
+ // Les 10 anciens chapitres restent dans les données, pour la reconstruction.
+ // Le plateau ne matérialise aujourd'hui que ses deux premiers chapitres.
+ const ARCHIVED_CARDS=Object.freeze([1,4,6,7,8,9,10,11,12,13]);
+ const CARDS=Object.freeze([1,4]);
  const completed=(state,n)=>Array.isArray(state?.completed)&&state.completed.includes(n);
  const SKIP_KEYS=Object.freeze(['1','2','3','4','5:dance','5:prison']);
  function wasSkipped(state,key){
@@ -71,7 +74,7 @@
  }
  function chapterOf(scene){return scene<=3?1:scene<=5?2:scene-3;}
  function chaptersDone(state){
-  return Number(done(state))+Number(chapter2Done(state))+CARDS.slice(2).filter(n=>completed(state,n)).length;
+  return Number(done(state))+Number(chapter2Done(state))+ARCHIVED_CARDS.slice(2).filter(n=>completed(state,n)).length;
  }
  function chapterReached(state){
   if(!done(state))return 1;
@@ -159,7 +162,7 @@
   state.selected=desired;
   return true;
  }
- root.TreizeChapitre1={PARTS,CHAPTER2_PARTS,CARDS,legacy,partDone,done,nextPart,chapter2Legacy,
+ root.TreizeChapitre1={PARTS,CHAPTER2_PARTS,CARDS,ARCHIVED_CARDS,legacy,partDone,done,nextPart,chapter2Legacy,
   chapter2PartDone,chapter2Progress,chapter2Done,chapter2NextPart,canEnter,chapterOf,
   chaptersDone,chapterReached,scenePassedCount,preparePart,prepareChapter2Dance,
   SKIP_KEYS,wasSkipped,chapterHasSkips,skipPart,reconcile};
