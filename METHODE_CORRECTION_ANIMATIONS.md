@@ -259,3 +259,10 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 
 
 **Deuxième inspection C033 :** le premier repositionnement à x = −0,4 rendait l'inscription grande sur ordinateur mais coupait presque toute la phrase hors de l'écran mobile. Recentrer la première inscription à x = 3,1 sur le muret pour conserver l'ensemble des trois lignes dans les deux formats. Contrôler aussi la capture mobile et pas seulement la vue grand écran.
+
+### 2026-11-09 — Marmousets : personnages et cheval 2D articulés (v2.1)
+- **Principe :** conserver intégralement les 13 étapes, le plateau, les règles, les boutons et les points existants ; remplacer seulement les dessins 2D du mini-jeu Marmousets.
+- **Cheval :** nouveau dessin Canvas vectoriel original (corps, encolure, tête, oreilles, queue, quatre membres) avec mouvements distincts marche, cabré, saut et cavalier / descente. Pas de déformation de maillage 3D.
+- **Humains :** adultes et enfants vectoriels, visage / cheveux / vêtements / proportions par âge, silhouettes complètes, personnages variés et animations de course.
+- **Licence :** ressources originales créées pour le jeu, sans reprendre ni publier les feuilles de sprites d'Onfe ou de tiers sur ce dépôt public.
+- **Tests :** images indépendantes, gestes, changements de direction, saut et cabré, rattachement au mini-jeu, pipeline de déploiement. Vérification visuelle des silhouettes de face / profil, membres et contact avec le sol avant publication.
