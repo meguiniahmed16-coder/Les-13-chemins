@@ -1,6 +1,7 @@
 import {build} from 'esbuild';
 import {readFileSync} from 'node:fs';
-// Standalone experiment: do not overwrite jeu-yoyo.html or its approved runtime.
+// The canonical prison page uses this immersive runtime. Keep the filename
+// stable so old preview links can redirect without requesting another bundle.
 await build({
  entryPoints:['prison-3d-prototype-app.js'],
  outfile:'prison-3d-prototype-runtime.js',
@@ -11,4 +12,4 @@ await build({
  legalComments:'inline',
  banner:{js:'/* Three.js MIT license: '+readFileSync('node_modules/three/LICENSE','utf8').slice(0,600).replaceAll('*/','')+' */'}
 });
-console.log('Prototype prison 3D assemblé séparément du jeu de prison officiel.');
+console.log('Jeu de la prison en vue subjective assemblé.');

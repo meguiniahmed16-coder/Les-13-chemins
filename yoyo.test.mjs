@@ -326,8 +326,8 @@ test('All four fingers fold towards the real PALM of the 25-joint WebXR hand',()
  }
 });
 
-test('Two illustrated static hand states remain visible and light, with no finger animation',()=>{
- const page=fs.readFileSync(new URL('./jeu-yoyo.html',import.meta.url),'utf8');
+test('Archived v10 retains its two illustrated static hand states, with no finger animation',()=>{
+ const page=fs.readFileSync(new URL('./archive/jeu-yoyo-v10.html',import.meta.url),'utf8');
  const app=fs.readFileSync(new URL('./yoyo-app.js',import.meta.url),'utf8');
  const scene=fs.readFileSync(new URL('./yoyo-scene.js',import.meta.url),'utf8');
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
@@ -406,8 +406,8 @@ test('Coffee cup uses SAME WebXR hand, turned toward the wall with thumb opposin
  }
  assert.ok(radial.slice(1).every(r=>Math.abs(r-.044)<.025),'four fingers actually surround the cup');
 });
-test('At startup the game loads the approved DORSAL hand instead of its palm',()=>{
- const page=fs.readFileSync(new URL('./jeu-yoyo.html',import.meta.url),'utf8');
+test('Archived v10 starts with its approved dorsal hand instead of its palm',()=>{
+ const page=fs.readFileSync(new URL('./archive/jeu-yoyo-v10.html',import.meta.url),'utf8');
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
  assert.match(page,/id="handOpen2D" src="main-ouverte-dos-v10\.avif"/);
  assert.match(page,/Main fixe v10/);

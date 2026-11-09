@@ -1,7 +1,7 @@
-/* Prototype autonome : visite intérieure, puis vue depuis les yeux du détenu.
+/* Jeu de la prison : visite intérieure, puis vue depuis les yeux du détenu.
  * Les bras sont découpés dans le vrai maillage articulé CC0 de Quaternius.
- * Les trois épreuves et leurs règles viennent du jeu existant, sans créditer
- * les points du plateau ni accéder à sa sauvegarde.
+ * Les trois épreuves valident la session du plateau, qui reste seul
+ * responsable des points et de la sauvegarde de la progression.
  */
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -10,6 +10,7 @@ import {createPrisonRoom,CELL,FURNITURE_URL} from './prison-3d-room.js';
 import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
+import {createPrisonSession} from './prison-3d-session.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
 import {renderPixelRatio,windowScale,ropeWorldX,ropeWorldZ} from './prison-3d-spatial.js';
 import {createGame,startGame,continueGame,aimAt,hide,actionDown,actionUp,advance,aligned,
@@ -25,7 +26,7 @@ export const PROTOTYPE_ASSETS=Object.freeze({
 export const OBJECTIVES=Object.freeze(['Saisir la brosse','Récupérer le tabac','Récupérer le café']);
 const $=id=>document.getElementById(id);
 const screen=$('world'),status=$('status'),stageText=$('stage'),scoreText=$('score');
-const feedback=$('feedback'),guardText=$('guard'),overlay=$('overlay');
+const feedback=$('feedback'),guardText=$('guard'),overlay=$('overlay'),replayButton=$('overlay-replay');
 const playButton=$('start'),pauseButton=$('pause'),skipButton=$('skip-tour');
 const actionButton=$('action'),hideButton=$('hide'),joystick=$('joystick');
 const loading=window.Prison3DLoading;
@@ -50,6 +51,8 @@ const eyes=createPrisonCamera(camera,{onTourEnd:enterPlay});
 const game=createGame(PRISON_BALANCE);
 const controls=createPrisonControls({surface:screen,joystick,knob:$('joystick-knob'),
  actionButton,hideButton,onActionDown:startAction,onActionUp:stopAction,onPause:togglePause});
+const session=createPrisonSession({onReplay:()=>begin()});
+document.body.dataset.embedded=String(session.embedded);
 let arms=null,assetsReady=false,firstFrame=false,contextLost=false;
 let mode='ready',paused=false,reach=0,actionElapsed=0,actionAttempted=false;
 let pickupTime=-1,transitionDelay=0,transitionCard=null,heldBlend=1;
@@ -78,6 +81,7 @@ function notify(){
 }
 function card(title,paragraph,button,action){
  overlay.hidden=false;overlay.querySelector('h2').textContent=title;overlay.querySelector('p').textContent=paragraph;
+ replayButton.hidden=true;
  const next=overlay.querySelector('button');next.textContent=button;next.onclick=action;
 }
 function begin(){
@@ -110,7 +114,9 @@ function won(){
  controls.reset();setMode('won');
  card('Une humanité de l’autre côté',
   'La brosse, le tabac, puis le café. Trois gestes réussis dans la cellule.',
-  'Rejouer',begin);
+  'Continuer le voyage',()=>session.close());
+ replayButton.hidden=false;
+ session.win();
  text('Les trois épreuves sont réussies : 30 / 30.');
 }
 function caught(){
@@ -144,7 +150,14 @@ function togglePause(){
  paused=!paused;controls.reset();pauseButton.textContent=paused?'Reprendre':'Pause';enableControls();
  text(paused?'Le temps est suspendu.':'Le jeu reprend.');
 }
-playButton.addEventListener('click',begin);$('retry').addEventListener('click',begin);
+playButton.addEventListener('click',begin);
+$('retry').addEventListener('click',()=>mode==='won'?session.replay():begin());
+replayButton.addEventListener('click',()=>session.replay());
+for(const link of document.querySelectorAll('[data-return-plateau]')){
+ link.addEventListener('click',event=>{
+  if(session.embedded){event.preventDefault();session.close();}
+ });
+}
 pauseButton.addEventListener('click',togglePause);
 window.addEventListener('keydown',event=>{
  if(!event.defaultPrevented&&paused&&mode==='playing'&&event.code==='KeyP'&&!event.repeat){event.preventDefault();togglePause();}
@@ -306,6 +319,7 @@ function render(now){
   frame(dt,now/1000);renderer.render(scene,camera);
   if(assetsReady&&!firstFrame){
    firstFrame=true;loading?.ready();enableControls();status.textContent='Prêt · visite puis vue immersive';
+   session.sendReady();
   }
  }catch(error){
   loading?.fail('L’affichage de la cellule a été interrompu. Relance le chargement.');

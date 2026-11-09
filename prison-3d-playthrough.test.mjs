@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import * as Three from 'three';
 import {GLTFLoader as RealGLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {loadActorBytes as realLoadActorBytes} from './prison-3d-loader.js';
@@ -8,11 +9,12 @@ import {createPrisonRoom,CELL,FURNITURE_URL} from './prison-3d-room.js';
 import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
+import {createPrisonSession} from './prison-3d-session.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
 import * as spatial from './prison-3d-spatial.js';
 import * as rules from './yoyo-core.js';
 
-const html=readFileSync(new URL('./prison-3d-prototype.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('./jeu-yoyo.html',import.meta.url),'utf8');
 const bootstrap=html.match(/<script id="prison-loading-bootstrap">([\s\S]*?)<\/script>/)[1];
 const appSource=readFileSync(new URL('./prison-3d-prototype-app.js',import.meta.url),'utf8')
  .replace(/^import\s[\s\S]*?;\s*/gm,'')
@@ -54,27 +56,78 @@ async function harness(t){
   return nodes.get(id);
  };
  for(const [,tag,id] of html.matchAll(/<([a-z][\w-]*)\b[^>]*\bid="([^"]+)"/g))node(id,tag);
+ for(const [,attributes,label] of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)){
+  const id=attributes.match(/\bid="([^"]+)"/)?.[1];
+  if(id)node(id,'button').textContent=label.replace(/<[^>]+>/g,'').trim();
+ }
  const controls=[...html.matchAll(/<button\b[^>]*\bdata-game-control\b[^>]*>/g)]
   .map(([tag])=>node(tag.match(/\bid="([^"]+)"/)[1]));
+ const returnLinks=[...html.matchAll(/<a\b[^>]*\bdata-return-plateau\b[^>]*>/g)]
+  .map(([tag],index)=>{
+   const link=node(tag.match(/\bid="([^"]+)"/)?.[1]||'return-link-'+index,'a');
+   link.setAttribute('href',tag.match(/\bhref="([^"]+)"/)?.[1]||'jeu.html');
+   return link;
+  });
  const document=new Element('document');
- document.baseURI='https://example.test/prison-3d-prototype.html';
+ const origin='https://example.test';
+ document.baseURI=origin+'/jeu-yoyo.html?embedded=1';
  document.body={dataset:{}};document.hidden=false;
  document.getElementById=node;
- document.querySelectorAll=selector=>{assert.equal(selector,'[data-game-control]');return controls;};
+ document.querySelectorAll=selector=>{
+  if(selector==='[data-game-control]')return controls;
+  assert.equal(selector,'[data-return-plateau]');return returnLinks;
+ };
  node('overlay').querySelector=tag=>node('overlay '+tag,tag);
  node('overlay').hidden=true;
  node('world').clientWidth=390;node('world').clientHeight=720;
  node('joystick-knob').clientWidth=44;
  const window=new Element('window');window.devicePixelRatio=2;
+ const boardContext=vm.createContext({TreizeEtapesData:[{level:5,plateaux:[{},{}]}]});
+ vm.runInContext(readFileSync(new URL('./plateaux-core.js',import.meta.url),'utf8'),boardContext);
+ const board={flow:boardContext.TreizePlateaux,
+  state:{points:510,unlocked:5,completed:[1,2,3,4],platesVersion:1},
+  messages:[],closed:0,travel:[],navigations:[],won:false,replayCount:0};
+ board.flow.done(board.state,5,1);board.flow.beginYoyo(board.state,'official-prison-first');
+ const parentWindow={postMessage(message,targetOrigin){
+  assert.equal(targetOrigin,origin,'The game must address its exact parent origin');
+  board.messages.push(structuredClone(message));board.receive(message);
+ }};
+ window.parent=parentWindow;
+ window.location={origin,href:document.baseURI,assign:url=>board.navigations.push(url),reload(){}};
+ Object.defineProperty(window,'localStorage',{get(){throw new Error('Only the parent may save board points');}});
+ board.init=()=>{
+  if(board.state.yoyoPending)window.emit('message',{origin,source:parentWindow,
+   data:{type:'yoyo:init',...board.state.yoyoPending,score:board.state.points}});
+ };
+ board.receive=message=>{
+  // Transport is simulated, but all progression, session validation and
+  // bonuses are computed by the unchanged real board core.
+  if(message.type==='yoyo:ready')board.init();
+  if(message.type==='yoyo:won'&&message.points===30){
+   const result=board.flow.finishYoyo(board.state,message.id);
+   if(result){
+    board.won=true;
+    window.emit('message',{origin,source:parentWindow,data:{type:'yoyo:finished',id:message.id,...result}});
+   }
+  }
+  if(message.type==='yoyo:replay'&&board.state.yoyoFinished&&!board.state.yoyoPending){
+   board.flow.beginYoyo(board.state,'official-prison-replay-'+(++board.replayCount));
+   board.won=false;board.init();
+  }
+  if(message.type==='yoyo:close'){
+   board.closed++;
+   if(board.won&&board.state.completed.includes(5))board.travel.push(5);
+  }
+ };
  const oldWindow=globalThis.window,oldDocument=globalThis.document;
  globalThis.window=window;globalThis.document=document;
  t.after(()=>{
-  app?.controls.dispose();app?.arms?.dispose();
+  app?.session.dispose();app?.controls.dispose();app?.arms?.dispose();
   if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
   if(oldDocument===undefined)delete globalThis.document;else globalThis.document=oldDocument;
  });
  new Function('window','document','setTimeout','clearTimeout','location',bootstrap)(
-  window,document,fn=>{timers.set(++nextTimer,fn);return nextTimer;},id=>timers.delete(id),{reload(){}}
+  window,document,fn=>{timers.set(++nextTimer,fn);return nextTimer;},id=>timers.delete(id),window.location
  );
  assert.equal(node('world').dataset.loadState,'loading');
  assert.equal(node('start').disabled,true);
@@ -95,7 +148,7 @@ async function harness(t){
  const bindings={
   T:{...Three,WebGLRenderer:Renderer},GLTFLoader,CELL,FURNITURE_URL,PRISON_BALANCE,
   createPrisonRoom:options=>createPrisonRoom({...options,textures:false}),
-  createPrisonCamera,createPrisonArms,createPrisonControls,...spatial,...rules,
+  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,...spatial,...rules,
   loadActorBytes:async(url,options)=>{
    const path=new URL(url).pathname.slice(1);
    assert.ok(['danse-quaternius-hero.glb',FURNITURE_URL].includes(path),'Only packaged local assets may load');
@@ -104,14 +157,18 @@ async function harness(t){
    return realLoadActorBytes(url,{...options,fetchImpl:async()=>new Response(bytes,
     {headers:{'Content-Length':String(bytes.byteLength)}})});
   },
-  window,document,performance:{now:()=>now},
+  window,document,location:window.location,performance:{now:()=>now},
   requestAnimationFrame:fn=>{rafs.push(fn);return rafs.length;},
   console:{error:(...args)=>errors.push(args.map(String).join(' '))}
  };
  app=new Function(...Object.keys(bindings),appSource+
-  '\nreturn {game,room,camera,eyes,controls,get arms(){return arms;},get mode(){return mode;},'+
+  '\nreturn {game,room,camera,eyes,controls,session,get arms(){return arms;},get mode(){return mode;},'+
   'get assetsReady(){return assetsReady;},get firstFrame(){return firstFrame;},get paused(){return paused;}};')
   (...Object.values(bindings));
+ board.init();
+ assert.equal(app.session.session.id,'official-prison-first','An early init is retained during model loading');
+ assert.equal(app.session.ready,false);assert.equal(app.mode,'ready');
+ assert.deepEqual(board.messages,[],'The parent is not told the game is ready before its first frame');
  const diagnostic=()=>JSON.stringify({mode:app.mode,phase:app.game.phase,part:app.game.part,
   points:app.game.points,guard:app.game.guard,hooked:app.game.hooked,pull:app.game.pull,
   player:app.eyes.player.toArray(),gripDistance:app.arms?.grip.distanceTo(app.room.brushGripTarget),
@@ -138,7 +195,11 @@ async function harness(t){
  assert.deepEqual(loads,['danse-quaternius-hero.glb',FURNITURE_URL]);
  assert.equal(timers.size,0,'Successful loading cancels its watchdog');
  assert.equal(node('world').dataset.rig,'quaternius-cc0-first-person-arms');
- return {app,node,window,tick,advance,until,diagnostic};
+ assert.equal(app.session.embedded,true);assert.equal(app.session.ready,true);
+ assert.equal(String(document.body.dataset.embedded),'true');
+ assert.equal(board.messages.filter(message=>message.type==='yoyo:ready').length,1);
+ assert.equal(app.mode,'ready','The ready handshake must not restart the initial game');
+ return {app,node,window,board,returnLinks,tick,advance,until,diagnostic};
 }
 
 function press(ui,id){
@@ -187,7 +248,7 @@ function recoverBag(ui,part){
  release(ui,'action');
 }
 
-test('A novice completes the actual app with simple holds, short pulls and a more forgiving guard',async t=>{
+test('The official immersive game lets a novice win, credits the board once and continues the journey',async t=>{
  const ui=await harness(t),{app,node}=ui;
  assert.equal(node('action').disabled,true,'Actions are disabled before the visit');
  node('start').click();
@@ -235,6 +296,8 @@ test('A novice completes the actual app with simple holds, short pulls and a mor
  press(ui,'action');
  ui.until(()=>app.mode==='between',2,'Holding Saisir must actually reach and pick up the brush');
  assert.equal(app.game.part,1);assert.equal(app.game.points,10);
+ assert.equal(ui.board.state.points,510,'The brush alone does not credit the board');
+ assert.equal(ui.board.state.unlocked,5);
  assert.equal(app.room.floorBrush.visible,false);assert.equal(app.room.heldBrush.visible,true);
  ui.until(()=>!node('overlay').hidden,2,'The pickup animation must lead to its Continue card');
  node('overlay').querySelector('button').click();
@@ -244,12 +307,30 @@ test('A novice completes the actual app with simple holds, short pulls and a mor
  assert.ok(app.eyes.player.z<-.6);assert.equal(node('action').disabled,false);
  recoverBag(ui,1);
  assert.equal(app.mode,'between');assert.equal(app.game.points,20);
+ assert.equal(ui.board.state.points,510,'The board waits for all three trials');
  ui.until(()=>!node('overlay').hidden,1,'The tobacco leads to its Continue card');
  node('overlay').querySelector('button').click();ui.tick();
  recoverBag(ui,2);
  assert.equal(app.mode,'won');assert.equal(app.game.phase,'victory');
  assert.equal(app.game.points,30);assert.equal(node('score').textContent,'30 / 30');
  assert.equal(node('overlay').hidden,false);
- assert.equal(node('overlay').querySelector('button').textContent,'Rejouer');
+ assert.equal(node('overlay').querySelector('button').textContent,'Continuer le voyage');
+ assert.equal(node('overlay-replay').textContent,'Rejouer');
+ assert.equal(node('overlay-replay').hidden,false);
  assert.equal(node('action').disabled,true,'The final card ends gameplay cleanly');
+ assert.equal(app.session.finished,true);assert.equal(app.session.result.bonus,30);
+ assert.equal(ui.board.state.points,540,'The real board credits exactly 30 points');
+ assert.equal(ui.board.state.unlocked,6);assert.ok(ui.board.state.completed.includes(5));
+ const wonMessages=ui.board.messages.filter(message=>message.type==='yoyo:won');
+ assert.deepEqual(wonMessages,[{type:'yoyo:won',id:'official-prison-first',points:30}]);
+ assert.equal(app.session.win(),false);ui.advance(.2);
+ assert.equal(ui.board.messages.filter(message=>message.type==='yoyo:won').length,1);
+ ui.board.receive(wonMessages[0]);
+ assert.equal(ui.board.state.points,540,'A repeated transport delivery cannot credit a second bonus');
+ assert.equal(ui.board.closed,0);
+ node('overlay').querySelector('button').click();
+ node('overlay').querySelector('button').click();
+ assert.equal(ui.board.closed,1,'Continue closes the parent game exactly once');
+ assert.deepEqual(ui.board.travel,[5],'The parent may continue from the completed prison chapter');
+ assert.deepEqual(ui.board.navigations,[],'The game never opens the board inside its own iframe');
 });
