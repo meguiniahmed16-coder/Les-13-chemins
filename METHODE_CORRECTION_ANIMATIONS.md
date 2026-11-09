@@ -266,3 +266,9 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - **Humains :** adultes et enfants vectoriels, visage / cheveux / vêtements / proportions par âge, silhouettes complètes, personnages variés et animations de course.
 - **Licence :** ressources originales créées pour le jeu, sans reprendre ni publier les feuilles de sprites d'Onfe ou de tiers sur ce dépôt public.
 - **Tests :** images indépendantes, gestes, changements de direction, saut et cabré, rattachement au mini-jeu, pipeline de déploiement. Vérification visuelle des silhouettes de face / profil, membres et contact avec le sol avant publication.
+
+### 2026-11-09 — Marmousets : inscription du chapitre dans le ciel
+- **Texte exact :** « Chapitre 1 — « La salle d’attente », p 17–19. »
+- **Mise en scène :** une écriture d'écolier (police Schoolbell avec secours cursif) dessinée directement en haut du ciel, centrée et dotée d'un léger contour clair pour le contraste, sans toucher aux obstacles, personnages ni score.
+- **Technique :** chargement de Schoolbell via Google Fonts, puis dessin Canvas renouvelé après chargement de la fonte ; largeur mesurée pour tenir dans la scène 960×540 et dans le cadrage mobile.
+- **Contrôle :** test de non-régression du libellé, de l'ordre de dessin et de l'intégration des gestes précédents.
