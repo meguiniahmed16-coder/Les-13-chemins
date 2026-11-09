@@ -159,3 +159,37 @@ test('After the arrival reading, the correct game launches without an extra clic
  assert.equal(opens.at(-1).options.inlineQuiz.question,'Question 3','The Sarajevo quiz appears inside reading');
  assert.equal(clicked.includes('bosnieLaunch'),false,'The Sarajevo quiz is not bypassed');
 });
+
+test('Passer le défi closes immersive reading and advances without answering or starting the game',()=>{
+ const h=harness();let started=0,skipped=0,dismissed=0,answer=0;
+ const m=h.api.openReader(4,{autoAdvanceOnEnd:true,
+  onSkip:()=>skipped++,onChallenge:()=>started++,onDismiss:()=>dismissed++,
+  inlineQuiz:{question:'Quelle scène ?',options:['A','B','C'],correct:1,onAnswer:()=>answer++}
+ });
+ assert.equal(m.open,true);
+ const top=h.elements.find(e=>e.className==='arrival-skip-top');
+ const footer=h.elements.find(e=>e.className==='arrival-skip');
+ assert.ok(top);assert.ok(footer);
+ footer.onclick();
+ assert.equal(m.open,false);
+ assert.equal(started,0,'Skipping must not launch the mini-game');
+ assert.equal(skipped,1);
+ assert.equal(dismissed,0);
+ assert.equal(answer,0,'The quiz is optional when skipping the challenge');
+ h.runTimers();
+ assert.equal(skipped,1,'Reader completion must settle once');
+});
+test('Closing reader without using skip does not change progress or trigger next game',()=>{
+ const h=harness();let skipped=0,dismissed=0,started=0;
+ const m=h.api.openReader(2,{autoAdvanceOnEnd:true,
+  onSkip:()=>skipped++,onDismiss:()=>dismissed++,onChallenge:()=>started++});
+ m.querySelector('.arrival-close').onclick();
+ assert.equal(skipped,0);assert.equal(dismissed,1);assert.equal(started,0);
+});
+test('The board and the prison reader expose the skip option for every mini-game',()=>{
+ const html=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8'),
+  plates=fs.readFileSync(new URL('./plateaux.js',import.meta.url),'utf8');
+ assert.ok(html.includes('onSkip:()=>window.TreizeLibreParcours?.next()'));
+ assert.ok(plates.includes("onSkip:()=>window.TreizeLibreParcours?.next('5:prison')"));
+ assert.ok(html.includes('src="libre-parcours.js"'));
+});
