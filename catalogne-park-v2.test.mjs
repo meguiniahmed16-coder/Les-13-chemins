@@ -74,7 +74,7 @@ test('Police patrouillent en aller-retour sans poursuivre le joueur',()=>{
  left.x=90;left.lane=0;right.x=1850;right.lane=112;
  assert.equal(left.policeState.length,2);
  const starting=left.policeState.map(p=>({x:p.x,lane:p.lane,dir:p.dir,minX:p.minX,maxX:p.maxX}));
- assert.deepEqual(starting.map(p=>p.dir),[1,-1]);
+ assert.deepEqual(Array.from(starting,p=>p.dir),[1,-1]);
  for(let i=0;i<120;i++){
   advance(left,.05,0,0);advance(right,.05,0,0);
   assert.equal(left.phase,'running');assert.equal(right.phase,'running');
