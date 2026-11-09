@@ -341,3 +341,12 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Les policiers ne poursuivent plus le joueur. Chacun patrouille horizontalement à vitesse constante (52 unités/s), fait demi-tour à ±120 unités de son poste et reste dans son allée.
 - Une interpellation reste possible uniquement en cas de contact sur la même allée quand le personnage ne saute pas. Orientation des silhouettes et avertissements liés à la position actuelle des patrouilles.
 - Les scripts de musique et les messages « catalogne:sale » / « catalogne:credited » ainsi que les points déjà obtenus sont préservés. Ajouter des tests de non-régression sur le mouvement, les panneaux et les objectifs.
+
+### 2026-11-09 — Réunir les trois premiers jeux en un seul chapitre
+- Un **seul cartouche visuel** au plateau s’intitule « Chapitre 1 — « La salle d’attente » ». Les anciennes vignettes 1, 2 et 3 sont remplacées par un panneau regroupant, dans l’ordre, **Marmousets, départ du lycée, Barcelone**. Le plateau montre donc onze chapitres visibles, tout en conservant treize scènes et treize entrées d’atlas.
+- La première partie ne débloque la deuxième qu’après la bonne réponse **et** le succès du jeu des Marmousets ; la deuxième débloque Barcelone après la réussite du départ du lycée ; **le chapitre 2 (Sarajevo) n’est accessible qu’après la réussite des trois jeux**. La navigation entre les deux premières parties se fait sans voyage interchapitre.
+- Les jeux conservent leurs URLs, identifiants internes (1, 2, 3), questions, messages postMessage, points, bonus et sauvegardes. L’interface signale « Chapitre 1 · Partie 1/3 », « Partie 2/3 », « Partie 3/3 ».
+- Les parties antérieures déjà achevées restent rejouables depuis le panneau interne ; les utilisateurs ayant déjà terminé un niveau supérieur conservent l’accès aux chapitres débloqués grâce à la compatibilité des anciennes sauvegardes.
+- Les dix autres vignettes correspondent toujours aux étapes 4 à 13, affichées comme chapitres 2 à 11. L’atlas original conserve ses treize scènes géographiques ; la nouvelle présentation ne modifie pas le manuscrit.
+- Le compteur du plateau indique le nombre de chapitres terminés sur onze ; les récompenses du premier chapitre figurent ensemble dans le sac, mais les points et bonus déjà attribués ne sont pas effacés.
+- Tests à conserver : ordre des scènes, migration, chargement JS, progrès incomplet, reprise de sauvegarde, achèvement 3/3, accès Sarajevo, contrôle des autres niveaux et construction Netlify.
