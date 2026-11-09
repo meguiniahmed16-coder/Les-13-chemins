@@ -29,13 +29,34 @@ html.embedded .mast,html.embedded .intro,html.embedded .rules,html.embedded .bot
 .park-lane-controls button:disabled{opacity:.43;cursor:default}
 @media(max-width:760px){.arcade-deck{gap:7px;padding-left:6px;padding-right:6px}.joystick-unit{width:80px}.buttons-unit{gap:8px}.arcade-control{min-width:54px}.park-lane-controls{min-width:63px;gap:5px}.park-lane-controls button{min-height:41px;font-size:15px}.park-lane-controls button small{font-size:6px}.arcade-button{width:50px;height:50px}.arcade-control b{font-size:7px}.arcade-control small{font-size:6px}}
 @media(max-width:390px){.arcade-deck{gap:4px}.joystick-unit{width:67px}.park-lane-controls{min-width:56px}.buttons-unit{gap:5px}.arcade-control{min-width:48px}.arcade-button{width:45px;height:45px}}
+</style><style id="park-easy-layout">
+/* Barcelona: let the game use the available display, with its scorecard below. */
+.wrap{max-width:1280px}
+.grid{grid-template-columns:minmax(0,1fr)!important;gap:18px}
+.machine{width:100%;min-width:0}
+.screen{aspect-ratio:16/9}
+.panel{max-width:none;min-height:0}
+.cabinet-tools .utility{min-width:46px;white-space:nowrap}
+.machine:fullscreen{display:flex;flex-direction:column;gap:4px;justify-content:flex-start;width:100vw;height:100dvh;max-height:100dvh;overflow-y:auto;overflow-x:hidden;padding:7px 10px 12px;background:#152d29}
+.machine:fullscreen .screen{width:min(100%,calc((100dvh - 230px)*16/9));max-width:100%;min-height:130px;align-self:center;flex-shrink:0}
+.machine:fullscreen .arcade-deck{margin-top:auto}
+.machine.park-expanded{position:relative;width:100%;margin:0 auto}
+@media(max-width:760px){
+ .wrap{padding:9px 5px 18px}
+ html.embedded .wrap{padding:5px!important}
+ .machine{padding:6px 5px 0}
+ .cabinet-tools{font-size:8px;gap:4px}
+ .cabinet-tools .utility{padding:6px 5px;font-size:9px}
+ .screen{width:100%}
+ .machine:fullscreen .screen{width:min(100%,calc((100dvh - 218px)*16/9))}
+}
 </style></head><body><div class="wrap">
 <header class="mast"><a class="brand" href="index.html">✦ Les Treize Chemins</a><span class="edition">Arcade · niveau 3</span></header>
 <div class="intro"><div><p class="eyebrow">La ville inconnue · Barcelone</p><h1>Place de <em>Catalogne.</em></h1><p>Cinq clients. Des policiers dans le parc. Et le matériel de Michel.</p></div><span class="level">ÉPREUVE 03 / 13</span></div>
 <main class="grid"><section aria-label="Le parc de la place de Catalogne"><div class="machine">
 <div class="marquee"><span class="marquee-star" aria-hidden="true">✦</span><div>PLACE DE<br>CATALOGNE<small>LES TREIZE CHEMINS · BARCELONE</small></div><span class="marquee-star" aria-hidden="true">✦</span></div>
-<div class="cabinet-tools"><span>1 JOUEUR · 5 CLIENTS</span><div><button id="pause" class="utility" disabled>Ⅱ PAUSE</button><button id="sound" class="utility" aria-pressed="true" aria-label="Désactiver les sons">SON ON</button></div></div>
-<div class="screen"><canvas id="scene" width="768" height="432" aria-label="Grand parc 2D : cinq clients, des groupes de promeneurs et quatre policiers qui patrouillent. Utilise la manette et les flèches haut/bas pour emprunter plusieurs allées."></canvas><span class="scene-label">PLAÇA DE CATALUNYA</span><span class="goal-label" id="canvasCount">CLIENTS 0 / 5</span><div class="npc-speech" id="policeSpeech" role="status" hidden></div><div id="overlay" class="scene-overlay" hidden></div></div>
+<div class="cabinet-tools"><span>1 JOUEUR · 5 CLIENTS</span><div><button id="parkFullscreen" class="utility" type="button" aria-pressed="false" aria-label="Agrandir la zone de jeu">⛶ AGRANDIR</button><button id="pause" class="utility" disabled>Ⅱ PAUSE</button><button id="sound" class="utility" aria-pressed="true" aria-label="Désactiver les sons">SON ON</button></div></div>
+<div class="screen"><canvas id="scene" width="768" height="432" aria-label="Grand parc 2D : cinq clients, des groupes de promeneurs et deux policiers qui patrouillent. Utilise la manette et les flèches haut/bas pour emprunter plusieurs allées."></canvas><span class="scene-label">PLAÇA DE CATALUNYA</span><span class="goal-label" id="canvasCount">CLIENTS 0 / 5</span><div class="npc-speech" id="policeSpeech" role="status" hidden></div><div id="overlay" class="scene-overlay" hidden></div></div>
 <div class="hud"><div class="distance-row"><span id="soldLabel">0 / 5 CLIENTS SERVIS</span><strong id="earned">+0 / 10 POINTS</strong></div><div class="track" role="progressbar" aria-label="Clients servis" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><div id="progress"></div></div><div class="map-strip"><span>GRAND PARC · PLUSIEURS ALLÉES</span><span>5 RENCONTRES ◆</span></div><p class="clue" id="hint">Explore les allées du parc. Approche-toi d’un client et tourne-toi vers lui.</p></div>
 <div class="arcade-deck"><div class="joystick-unit"><span class="deck-label">DIRECTION</span><div class="stick-zone" id="stickZone"><div class="joystick-base" aria-hidden="true"></div><div class="joystick" id="stick" aria-hidden="true"><span class="stick-shaft"></span><span class="stick-ball"></span></div><button class="direction-control left" id="left" aria-label="Manette : marcher vers la gauche" disabled>◀</button><button class="direction-control right" id="right" aria-label="Manette : marcher vers la droite" disabled>▶</button></div><small id="facing">MAINTIENS OU GLISSE</small></div>
 <div class="park-lane-controls" aria-label="Choisir une allée du parc"><button id="north" type="button" aria-label="Marcher vers l’allée nord" disabled>▲<small>ALLÉE NORD</small></button><button id="south" type="button" aria-label="Marcher vers l’allée sud" disabled>▼<small>ALLÉE SUD</small></button></div>
@@ -84,10 +105,10 @@ class ChaseDialogue {
 
 const WORLD=1960;
 const CLIENTS=[{id:'c1',x:260,lane:-45,color:'#b16c84'},{id:'c2',x:650,lane:68,color:'#598b70'},{id:'c3',x:1020,lane:-68,color:'#d2a34c'},{id:'c4',x:1370,lane:58,color:'#7a78a1'},{id:'c5',x:1760,lane:-10,color:'#d18053'}];
-const POLICE=[455,830,1195,1550];
+const POLICE=[560,1490];
 const LANE_MIN=-112,LANE_MAX=112;
 function createRun(sold=[]){return {x:90,y:0,vy:0,lane:0,facing:1,time:0,phase:'ready',sold:[...new Set(sold.filter(id=>CLIENTS.some(c=>c.id===id)))],steps:0,
- policeState:POLICE.map((x,i)=>({x,baseX:x,lane:[-80,66,-50,64][i],homeLane:[-80,66,-50,64][i]}))};}
+ policeState:POLICE.map((x,i)=>({x,baseX:x,lane:[-85,75][i],homeLane:[-85,75][i]}))};}
 function jump(r){if(r.phase!=='running'||r.y>0)return false;r.vy=780;return true;}
 function advance(r,dt,direction,depth=0){
  if(r.phase!=='running')return;r.time+=dt;
@@ -95,13 +116,13 @@ function advance(r,dt,direction,depth=0){
  if(direction){r.facing=Math.sign(direction);r.x=Math.min(WORLD-40,Math.max(40,r.x+direction*185*dt));r.steps+=dt*12;}
  if(depth){r.lane=Math.max(LANE_MIN,Math.min(LANE_MAX,r.lane+depth*122*dt));r.steps+=Math.abs(r.lane-oldLane)*.07;}
  if(r.vy||r.y){r.y=Math.max(0,r.y+r.vy*dt);r.vy-=1350*dt;if(!r.y&&r.vy<0)r.vy=0;}
- // Four active police patrols try to intercept in both world dimensions.
+ // Only two patrols, widely separated, try to intercept in both world dimensions.
  // The runner is faster, and can escape by changing alleys or jumping.
  for(const p of r.policeState){
   const dx=r.x-p.x,dz=r.lane-p.lane;
-  if(Math.abs(dx)<215&&Math.abs(dz)<172){
-   p.x+=Math.sign(dx)*Math.min(Math.abs(dx),78*dt);
-   p.lane+=Math.sign(dz)*Math.min(Math.abs(dz),58*dt);
+  if(Math.abs(dx)<190&&Math.abs(dz)<155){
+   p.x+=Math.sign(dx)*Math.min(Math.abs(dx),64*dt);
+   p.lane+=Math.sign(dz)*Math.min(Math.abs(dz),45*dt);
   }else{
    p.x+=Math.sign(p.baseX-p.x)*Math.min(Math.abs(p.baseX-p.x),22*dt);
    p.lane+=Math.sign(p.homeLane-p.lane)*Math.min(Math.abs(p.homeLane-p.lane),22*dt);
@@ -159,6 +180,22 @@ class ParkScene{
 
 const $=id=>document.getElementById(id),embedded=window.parent!==window&&new URLSearchParams(location.search).get('embedded')==='1';
 if(embedded)document.documentElement.classList.add('embedded');
+// A larger view is optional on mobile; the original arcade controls stay visible in fullscreen.
+const fullscreenHost=document.querySelector('.machine'),fullscreenButton=$('parkFullscreen');
+if(fullscreenButton&&fullscreenHost){
+ const syncFullscreen=()=>{
+  const expanded=document.fullscreenElement===fullscreenHost||fullscreenHost.classList.contains('park-expanded');
+  fullscreenButton.textContent=expanded?'⛶ RÉDUIRE':'⛶ AGRANDIR';
+  fullscreenButton.setAttribute('aria-pressed',String(expanded));
+ };
+ fullscreenButton.addEventListener('click',()=>{
+  if(document.fullscreenElement===fullscreenHost){document.exitFullscreen?.().catch(()=>{});return;}
+  if(fullscreenHost.classList.contains('park-expanded')){fullscreenHost.classList.remove('park-expanded');syncFullscreen();return;}
+  if(fullscreenHost.requestFullscreen)fullscreenHost.requestFullscreen().catch(()=>{fullscreenHost.classList.add('park-expanded');syncFullscreen();});
+  else{fullscreenHost.classList.add('park-expanded');syncFullscreen();}
+ });
+ document.addEventListener('fullscreenchange',syncFullscreen);
+}
 const scene=new ParkScene($('scene'));let run=createRun(),phase='ready',score=0,sessionId=null,correct=true,particles=[],direction=0,keyLeft=false,keyRight=false,keyUp=false,keyDown=false,pointerDir=0,pointerLane=0,last=0,clock=0,hintUntil=0,pendingSale=false,replayMode=false;
 let soundOn=true,audio=null,musicTimer=null,musicStep=0;
 const voices=new ArcadeVoices($('voiceStatus'));let policeTurn=0,policeBubble=null,lastPoliceShout=-9;const passedPolice=new Set();

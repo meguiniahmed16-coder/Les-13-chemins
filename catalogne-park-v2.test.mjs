@@ -23,7 +23,7 @@ function api(){const context={};vm.runInNewContext(mechanics+'\nglobalThis.arcad
 test('Real 2D park has multiple routes, a large crowd, and CC0 resources',()=>{
  assert.equal(PARK_LAYOUT.width,1960);
  assert.equal(PARK_LAYOUT.groups,16);assert.equal(PARK_LAYOUT.solitary,30);
- assert.equal(PARK_LAYOUT.police,4);assert.equal(PARK_LAYOUT.clients,5);
+ assert.equal(PARK_LAYOUT.police,2);assert.equal(PARK_LAYOUT.clients,5);
  const art=read('catalogne-park-v2.js');
  assert.ok(art.includes('KENNEY_ATLAS="data:image/png;base64,iVBORw'));
  assert.ok(art.includes('PIXELBOY_NPCS="data:image/png;base64,iVBORw'));
@@ -99,4 +99,43 @@ test('The new view and controls preserve original score and parent messages',()=
  assert.ok(html.includes("score+=2"));
  assert.ok(build.includes("'catalogne-park-v2.js'"));
  assert.ok(build.includes("'catalogne-park-v2.test.mjs'"));
+});
+
+test('Wider park view and two patrols reduce pressure without changing the five clients',()=>{
+ const {createRun,advance,POLICE,CLIENTS}=api();
+ assert.equal(POLICE.length,2,'Two police officers instead of four');
+ assert.equal(CLIENTS.length,5,'Five client objectives remain');
+ assert.deepEqual(Array.from(POLICE),[560,1490],'Patrols are well spaced across the park');
+ const r=createRun(['c1','c2']);r.phase='running';
+ assert.equal(r.policeState.length,2);
+ assert.deepEqual(Array.from(r.sold),['c1','c2'],'Previous sales persist');
+ assert.equal(r.policeState[0].lane,-85);
+ assert.equal(r.policeState[1].lane,75);
+ r.x=300;r.facing=1;
+ const {g}=fakePark();
+ drawCatalognePark(g,r,'running',[],1.2,CLIENTS,POLICE);
+ assert.ok(g.camera>=0,'Camera stays within map');
+ r.x=960;
+ drawCatalognePark(g,r,'running',[],1.2,CLIENTS,POLICE);
+ assert.equal(g.camera,705,'Forward-facing camera shows 75 extra world units ahead');
+ r.facing=-1;drawCatalognePark(g,r,'running',[],1.2,CLIENTS,POLICE);
+ assert.equal(g.camera,525,'The camera offers more room for reversing');
+ const officer=r.policeState[0];r.x=officer.x-160;r.lane=officer.lane;r.facing=1;
+ const old=officer.x;advance(r,.05,0,0);
+ assert.ok(officer.x<old,'Police still attempt interception');
+ assert.equal(r.phase,'running','Police do not catch someone at a distance');
+});
+test('Game stage fills the page and offers fullscreen while keeping all commands accessible',()=>{
+ const html=read('arcade-catalogne.html'),art=read('catalogne-park-v2.js');
+ assert.ok(html.includes('id="park-easy-layout"'));
+ assert.ok(html.includes('.wrap{max-width:1280px}'));
+ assert.ok(html.includes('.grid{grid-template-columns:minmax(0,1fr)!important'));
+ assert.ok(html.includes('.machine:fullscreen'));
+ assert.ok(html.includes('id="parkFullscreen"'));
+ assert.ok(html.includes('requestFullscreen'));
+ assert.ok(html.includes('fullscreenchange'));
+ assert.ok(html.includes('id="north"')&&html.includes('id="south"'));
+ assert.ok(html.includes("send('catalogne:sale',{clientId:c.id})"));
+ assert.ok(html.includes("score+=2"));
+ assert.ok(art.includes('treeRows:4,police:2,clients:5'));
 });

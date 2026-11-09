@@ -12,7 +12,7 @@ if(typeof Image!=='undefined')for(const [name,src] of Object.entries({kenney:KEN
  const img=new Image();img.src=src;CC0_SPRITES[name]=img;
 }
 export const PARK_LAYOUT={width:1960,laneMin:-112,laneMax:112,groups:16,solitary:30,
- treeRows:4,police:4,clients:5,projection:'2d-three-quarter'};
+ treeRows:4,police:2,clients:5,projection:'2d-three-quarter'};
 const palette={
  grass:'#8dbb84',grassDark:'#75a874',turf:'#a5ca8c',stone:'#d9c9a8',
  sand:'#e7d7b7',border:'#c4b493',ink:'#273b3d',water:'#65bac9',
@@ -230,7 +230,7 @@ function drawForeground(g,run,phase,particles,cam,t,clients,policeBases){
   }});
  }
  for(const [idx,base] of policeBases.entries()){
-  const p=run.policeState?.[idx]||{x:base,lane:[-80,66,-50,64][idx]},x=p.x-cam,depth=p.lane;
+  const p=run.policeState?.[idx]||{x:base,lane:[-85,75][idx]},x=p.x-cam,depth=p.lane;
   dynamic.push({depth,x,draw:()=>{
    if(x<-50||x>W+50)return;
    const y=302+depth*.73;
@@ -267,7 +267,8 @@ export function drawCatalognePark(scene,run,phase,particles=[],clock=0,clients=[
  const g=scene;
  const c=g.g; c.imageSmoothingEnabled=false;
  const curr=run||{x:90,lane:0,y:0,sold:[],facing:1,steps:0};
- scene.camera=clamp(curr.x-330,0,PARK_LAYOUT.width-W);
+ // See farther ahead to choose another alley before reaching a police patrol.
+ scene.camera=clamp(curr.x-(curr.facing===-1?435:255),0,PARK_LAYOUT.width-W);
  const cam=scene.camera;
  c.clearRect(0,0,W,H);
  townBackdrop(g,cam);paths(g,cam);garden(g,cam);
