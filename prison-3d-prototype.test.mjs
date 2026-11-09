@@ -25,7 +25,7 @@ test('The cell is fully 3D with a body, bunk, sink, toilet and functional window
   'Armoire','WC','Lavabo','Brosse','SacPlastique','YoYoAuDrap','PrisonnierQuaternius65Os'])
   assert.ok(code.includes(required),'Missing 3D element '+required);
  assert.ok(code.includes('new T.WebGLRenderer'));
- assert.ok(code.includes('new GLTFLoader().loadAsync(PROTOTYPE_ASSETS.actor)'));
+ assert.ok(code.includes('new GLTFLoader().parseAsync(bytes,'));
  assert.ok(code.includes('o.isSkinnedMesh'));
  assert.ok(code.includes('bend(bones.upperarm_r'), 'The real shoulder rig moves');
  assert.ok(code.includes('bend(bones.lowerarm_r'), 'The real elbow rig moves');

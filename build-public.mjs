@@ -14,7 +14,7 @@ for (const args of [
   ['--test', 'yoyo.test.mjs'],
   ['build-yoyo.mjs'],
   ['build-prison-3d-prototype.mjs'],
-  ['--test', 'prison-3d-prototype.test.mjs'],
+  ['--test', 'prison-3d-prototype.test.mjs', 'prison-3d-loading.test.mjs', 'prison-3d-visibility.test.mjs'],
   ['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs'],
   ['build-bosnie-addon.mjs'],
   ['build-danse.mjs'],

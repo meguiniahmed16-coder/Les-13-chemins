@@ -23,6 +23,14 @@ h1 em{color:#efcb88}
 #world{display:block;width:100%;height:min(65vh,660px);min-height:350px}
 #overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:#15241ddf}
 #overlay[hidden]{display:none}
+#loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:16px;background:#15241de8}
+#loading[hidden]{display:none}
+.loading-card{max-height:100%;overflow:auto}
+.loading-card a{color:#355344}
+#loading-progress{display:block;width:100%;height:12px;accent-color:#50725c;margin:18px 0}
+#loading-progress[hidden],#loading-retry[hidden]{display:none}
+#loading-retry{margin-bottom:12px}
+.controls button:disabled,.secondary:disabled{opacity:.45;cursor:wait}
 .overlay-card{width:min(550px,95%);background:#f0e8d8;color:#263d32;padding:clamp(18px,3vw,35px);border-radius:12px;text-align:center;box-shadow:0 18px 50px #0008}
 .overlay-card h2{font:500 clamp(25px,4vw,39px)/1.15 Georgia,serif;margin:0 0 14px}
 .overlay-card p{line-height:1.7}
@@ -61,7 +69,7 @@ details p{max-width:850px}
 <main>
 <nav>
 <a class="brand" href="jeu.html">✦ Les Treize Chemins</a>
-<span class="tag">Prototype 3D autonome · CC0</span>
+<span class="tag">Prototype 3D autonome · v0.2</span>
 </nav>
 <header><h1>La cellule — <em>Un fil entre les barreaux</em></h1>
 <p>Chapitre 2 « Même pas mal » · Strasbourg · Comparaison sans remplacement du jeu officiel</p></header>
@@ -69,6 +77,13 @@ details p{max-width:850px}
 <section>
 <div class="scene">
 <canvas id="world" role="img" aria-label="Cellule de prison entièrement en trois dimensions, avec un prisonnier animé, deux lits superposés, un lavabo, un WC, une table, une armoire et une fenêtre à barreaux."></canvas>
+<div id="loading" role="status" aria-live="polite" aria-busy="true"><div class="overlay-card loading-card">
+<h2 id="loading-title">La cellule s’ouvre</h2>
+<p id="loading-detail">Préparation du jeu 3D…</p>
+<progress id="loading-progress" max="100" value="0" aria-label="Chargement de la cellule"></progress>
+<button id="loading-retry" class="primary" type="button" hidden>Réessayer le chargement</button>
+<div><a href="jeu-yoyo.html">Revenir au jeu actuel</a></div>
+</div></div>
 <div id="overlay" hidden><div class="overlay-card">
 <h2>La cellule</h2><p>Un jeu de yo-yo au travers des barreaux.</p>
 <button class="primary" type="button">Continuer</button>
@@ -82,8 +97,8 @@ details p{max-width:850px}
 </div>
 <div class="toolbar">
 <button class="primary" id="start" type="button" disabled>Chargement du personnage 3D…</button>
-<button class="secondary" id="pause" type="button">Pause</button>
-<button class="secondary" id="retry" type="button">Recommencer</button>
+<button class="secondary" id="pause" type="button" disabled>Pause</button>
+<button class="secondary" id="retry" type="button" disabled>Recommencer</button>
 </div>
 <p class="small">Sur clavier : ← → ou A / D pour déplacer, ↓ ou S pour se cacher, maintenir Espace pour saisir et tirer, P pour pause.</p>
 </section>
@@ -106,6 +121,54 @@ details p{max-width:850px}
 <p>Le prototype réutilise les règles du yo-yo original : brosse, tabac, café, passages du surveillant, interception uniquement dans un passage entre les barreaux, et total de 30 points.</p>
 </details>
 </main>
-<script src="prison-3d-prototype-runtime.js" defer></script>
+<noscript><p>Active JavaScript dans ton navigateur pour ouvrir la cellule 3D.</p></noscript>
+<!-- Independent of the 3D bundle: even a missing script gets a usable retry. -->
+<script id="prison-loading-bootstrap">
+(()=>{
+ const $=id=>document.getElementById(id);
+ const panel=$('loading'),title=$('loading-title'),detail=$('loading-detail');
+ const progress=$('loading-progress'),retry=$('loading-retry'),start=$('start');
+ const status=$('status'),canvas=$('world');
+ const controls=[...document.querySelectorAll('.controls button, .toolbar button')];
+ let state='loading';
+ const timer=setTimeout(()=>fail('Le chargement prend trop de temps. Vérifie ta connexion, puis réessaie.'),45000);
+ const disable=value=>controls.forEach(button=>{button.disabled=value;});
+ disable(true);canvas.dataset.loadState='loading';
+ function fail(message){
+  if(state==='error')return;
+  state='error';clearTimeout(timer);disable(true);
+  canvas.dataset.loadState='error';panel.hidden=false;
+  panel.setAttribute('aria-busy','false');panel.setAttribute('role','alert');
+  title.textContent='La cellule n’a pas pu s’ouvrir';
+  detail.textContent=message;status.textContent=message;
+  progress.hidden=true;retry.hidden=false;
+  start.textContent='Chargement interrompu';
+ }
+ window.Prison3DLoading={
+  phase(message,value){
+   if(state!=='loading')return;
+   detail.textContent=message;status.textContent=message;
+   if(value===null)progress.removeAttribute('value');else progress.value=value;
+  },
+  ready(){
+   if(state!=='loading')return false;
+   state='ready';clearTimeout(timer);disable(false);
+   canvas.dataset.loadState='ready';panel.hidden=true;
+   panel.setAttribute('aria-busy','false');
+   start.textContent='Entrer dans la cellule';
+   status.textContent='La cellule et le personnage sont prêts. Entre pour jouer.';
+   return true;
+  },
+  fail
+ };
+ retry.addEventListener('click',()=>location.reload());
+ window.addEventListener('error',event=>{
+  const source=event.target?.src||event.filename||'';
+  if(state==='loading'&&source.includes('prison-3d-prototype-runtime.js'))
+   fail('Le programme 3D n’a pas pu démarrer. Réessaie le chargement.');
+ },true);
+})();
+</script>
+<script src="prison-3d-prototype-runtime.js?v=20261109-2" defer></script>
 </body>
 </html>
