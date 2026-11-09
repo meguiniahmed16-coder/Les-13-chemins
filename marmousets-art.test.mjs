@@ -89,6 +89,8 @@ test('Two filled legs on foot, only one filled leg and boot when seated',()=>{
  const boot=x=>x.filter(p=>p.d.startsWith('M15 -77Q21 -81 27 -77'));
  for(const [state,options,standing,horseback] of [
   ['ready',{mount:0},2,0],
+  ['approaching',{approach:.4,mount:0,phaseTime:.45},2,0],
+  ['paused',{pausePhase:'approaching',approach:.5,mount:0,phaseTime:.55},2,0],
   ['mounting',{mount:.21},2,0],
   ['mounting',{mount:.68},0,1],
   ['running',{},0,1],
@@ -105,4 +107,37 @@ test('Two filled legs on foot, only one filled leg and boot when seated',()=>{
    assert.equal(boot(fills)[0].color,'#453832','boot is an opaque filled polygon');
   }
  }
+});
+
+test('Opening walk lasts slightly longer and the horse mounting is substantially faster',()=>{
+ const page=read('arcade-marmousets.html');
+ const begin=page.indexOf('const WORLD=3610,GROUND=426;');
+ const finish=page.indexOf('\nconst clamp=',begin);
+ assert.ok(begin>=0&&finish>begin,'Game logic is extractable for a state-machine test');
+ const context={};
+ vm.runInNewContext(page.slice(begin,finish)+'\nglobalThis.__opening={createRun,startRun,advance,APPROACH_SECONDS,MOUNT_SECONDS};',context);
+ const {createRun,startRun,advance,APPROACH_SECONDS,MOUNT_SECONDS}=context.__opening;
+ assert.equal(APPROACH_SECONDS,1.05);
+ assert.equal(MOUNT_SECONDS,.45);
+ const state=createRun();
+ const originalX=state.x;
+ assert.equal(state.phase,'ready');
+ assert.equal(startRun(state),true);
+ assert.equal(state.phase,'approaching');
+ let walkingTime=0;
+ while(state.phase==='approaching'&&walkingTime<2){advance(state,.025);walkingTime+=.025;}
+ assert.ok(Math.abs(walkingTime-APPROACH_SECONDS)<=.026,'Walking duration matches the animation');
+ assert.equal(state.approach,1);
+ assert.equal(state.mount,0);
+ assert.equal(state.x,originalX,'The course and checkpoints are unchanged');
+ let mountingTime=0;
+ while(state.phase==='mounting'&&mountingTime<2){advance(state,.025);mountingTime+=.025;}
+ assert.ok(Math.abs(mountingTime-MOUNT_SECONDS)<=.026,'Mounting duration matches the animation');
+ assert.equal(state.mount,1);
+ assert.equal(state.phase,'running');
+ assert.equal(state.scared.length,0);assert.equal(state.cleared.length,0);
+ assert.equal(state.events.length,0,'No scoring or mission event during the entrance');
+ assert.ok(mountingTime < walkingTime*.5,'Mounting is at least twice as fast as walking');
+ assert.ok(page.includes("['running','mounting','approaching']"),'Audio accompanies the walking start');
+ assert.ok(page.includes("run.pausePhase=pausedFrom"),'Pause retains the opening animation state');
 });
