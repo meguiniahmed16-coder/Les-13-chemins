@@ -333,3 +333,11 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Caméra : davantage de visibilité devant le joueur (décalage 255 px à droite, 435 px lorsqu’il retourne à gauche), sans réduire la taille des personnages ni changer les limites du monde.
 - Invariants : conserver les cinq clients, l’accès aux allées, les interactions, les musiques, la question, les ventes +2, les sauvegardes et les messages vers le plateau.
 - Tests : police et positionnement, compatibilité des objectifs, plein écran et commandes, construction publique, autres mini-jeux.
+
+### 2026-11-09 — Barcelone : pelouse, panneaux clients et patrouilles aller-retour
+- Sur la pelouse du parc, inscrire en blanc exactement « chapitre 1 — « La salle d’attente », p 9-10 », réparti en trois lignes, avec une petite ombre contrastante et une position fixe dans le monde.
+- Agrandir le panneau client de 34×21 à 48×28 px, le losange et la mention « CLIENT » ; conserver les cinq ventes et le score (+2 points chacune).
+- Ajouter un panneau permanent « GUARDIA CIVIL » au-dessus de chacun des deux policiers, distinct des indications « CLIENT ».
+- Les policiers ne poursuivent plus le joueur. Chacun patrouille horizontalement à vitesse constante (52 unités/s), fait demi-tour à ±120 unités de son poste et reste dans son allée.
+- Une interpellation reste possible uniquement en cas de contact sur la même allée quand le personnage ne saute pas. Orientation des silhouettes et avertissements liés à la position actuelle des patrouilles.
+- Les scripts de musique et les messages « catalogne:sale » / « catalogne:credited » ainsi que les points déjà obtenus sont préservés. Ajouter des tests de non-régression sur le mouvement, les panneaux et les objectifs.

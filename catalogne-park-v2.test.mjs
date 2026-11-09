@@ -67,22 +67,35 @@ test('Two real directions: north/south lanes and sideways movement preserve five
  assert.equal(r.sold.length,2);
  assert.equal(jump(r),true,'Original jump mechanics preserved');
 });
-test('Police pursue in two dimensions, and jumping or switching lane avoids arbitrary capture',()=>{
+test('Police patrouillent en aller-retour sans poursuivre le joueur',()=>{
  const {createRun,advance,POLICE}=api();
- const r=createRun();r.phase='running';
- const officer=r.policeState[0];r.x=officer.x-130;r.lane=officer.lane;
- const before=officer.x;advance(r,.05,0,0);
- assert.ok(officer.x<before,'Police run toward hero');
- assert.equal(r.phase,'running');
- const free=createRun();free.phase='running';free.x=POLICE[0];free.lane=112;
- advance(free,.05,0,0);
- assert.equal(free.phase,'running','Farther alley is a valid escape route');
- const jumped=createRun();jumped.phase='running';jumped.x=POLICE[0];jumped.lane=jumped.policeState[0].lane;jumped.y=100;
- advance(jumped,.05,0,0);
- assert.equal(jumped.phase,'running','Jump avoids catching');
- const collision=createRun();collision.phase='running';collision.x=POLICE[0];collision.lane=collision.policeState[0].lane;
- advance(collision,.05,0,0);
- assert.equal(collision.phase,'caught','Real contact catches the runner');
+ const left=createRun(),right=createRun();
+ left.phase='running';right.phase='running';
+ left.x=90;left.lane=0;right.x=1850;right.lane=112;
+ assert.equal(left.policeState.length,2);
+ const starting=left.policeState.map(p=>({x:p.x,lane:p.lane,dir:p.dir,minX:p.minX,maxX:p.maxX}));
+ assert.deepEqual(Array.from(starting,p=>p.dir),[1,-1]);
+ for(let i=0;i<120;i++){
+  advance(left,.05,0,0);advance(right,.05,0,0);
+  assert.equal(left.phase,'running');assert.equal(right.phase,'running');
+  left.policeState.forEach((p,j)=>{
+   assert.ok(p.x>=p.minX&&p.x<=p.maxX,'Patrol stays within its range');
+   assert.equal(p.lane,starting[j].lane,'Officer keeps the same alley');
+   assert.equal(p.x,right.policeState[j].x,'Officer ignores player position');
+   assert.equal(p.dir,right.policeState[j].dir,'Patrol direction ignores player');
+  });
+ }
+ assert.equal(left.policeState[0].dir,-1,'First officer has turned');
+ assert.equal(left.policeState[1].dir,1,'Second officer has turned');
+});
+test('Interpellation seulement par contact sur la même allée, sauf saut',()=>{
+ const {createRun,advance,POLICE}=api();
+ const far=createRun();far.phase='running';far.x=POLICE[0];far.lane=112;
+ advance(far,.01,0,0);assert.equal(far.phase,'running','Other alley remains safe');
+ const jump=createRun();jump.phase='running';jump.x=POLICE[0];jump.lane=jump.policeState[0].lane;jump.y=100;
+ advance(jump,.01,0,0);assert.equal(jump.phase,'running','Jump avoids contact');
+ const contact=createRun();contact.phase='running';contact.x=POLICE[0];contact.lane=contact.policeState[0].lane;
+ advance(contact,.01,0,0);assert.equal(contact.phase,'caught','Contact on the same alley leads to arrest');
 });
 test('The new view and controls preserve original score and parent messages',()=>{
  const html=read('arcade-catalogne.html'),build=read('build-public.mjs');
@@ -122,7 +135,7 @@ test('Wider park view and two patrols reduce pressure without changing the five 
  assert.equal(g.camera,525,'The camera offers more room for reversing');
  const officer=r.policeState[0];r.x=officer.x-160;r.lane=officer.lane;r.facing=1;
  const old=officer.x;advance(r,.05,0,0);
- assert.ok(officer.x<old,'Police still attempt interception');
+ assert.ok(officer.x>old,'The officer continues the scheduled patrol regardless of the hero');
  assert.equal(r.phase,'running','Police do not catch someone at a distance');
 });
 test('Game stage fills the page and offers fullscreen while keeping all commands accessible',()=>{
@@ -138,4 +151,19 @@ test('Game stage fills the page and offers fullscreen while keeping all commands
  assert.ok(html.includes("send('catalogne:sale',{clientId:c.id})"));
  assert.ok(html.includes("score+=2"));
  assert.ok(art.includes('treeRows:4,police:2,clients:5'));
+});
+test('Pelouse blanche, grands panneaux clients et inscription GUARDIA CIVIL',()=>{
+ const {createRun,POLICE,CLIENTS}=api();
+ const state=createRun();state.x=1200;
+ const {g,calls,texts}=fakePark();
+ drawCatalognePark(g,state,'running',[],3.2,CLIENTS,POLICE);
+ const art=read('catalogne-park-v2.js');
+ assert.ok(art.includes('chapitre 1 — « La salle d’attente », p 9-10'));
+ for(const line of ['chapitre 1 —','« La salle d’attente »','p 9-10'])
+  assert.ok(calls.some(x=>x[0]==='text'&&x[1]===line&&x[5]==='#ffffff'),'White lawn text '+line);
+ assert.ok(calls.some(x=>x[0]==='rect'&&x[3]===48&&x[4]===28&&x[5]==='#f7df9e'),'Client panel enlarged');
+ assert.ok(calls.some(x=>x[0]==='text'&&x[1]==='CLIENT'&&x[4]===12),'CLIENT label enlarged');
+ assert.equal(texts.filter(t=>t==='GUARDIA').length,1,'GUARDIA visible for an onscreen officer');
+ assert.equal(texts.filter(t=>t==='CIVIL').length,1,'CIVIL visible for that officer');
+ assert.ok(!art.includes("const chase=Math.abs(p.x-run.x)"),'Police marker is always visible');
 });
