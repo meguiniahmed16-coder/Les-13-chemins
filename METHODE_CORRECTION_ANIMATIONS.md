@@ -295,3 +295,11 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Pendant la marche, les deux jambes sont animées ; sur le cheval, une seule jambe pleine et sa chaussure restent visibles de profil.
 - Le bouton pause, l'accessibilité et la musique préservent l'état « approaching » pour éviter toute apparition prématurée du cavalier sur la selle.
 - Contrôler les états ready → approaching → mounting → running, le temps de chacun, la conservation des points, puis toutes les poses (cabré, saut, descente).
+
+### 2026-11-09 — Lycée A410 : personnages lisibles, nature et autoroute en pixel art
+- **Style :** conserver le Canvas basse définition 384 × 216 et son rendu pixelisé. Dessins originaux sans sprites tiers redistribués ; l'ancienne scène reste en `legacyDraw` / `legacyRunner` pour retour arrière si nécessaire.
+- **Personnages :** agrandir et différencier le narrateur (veste terracotta, baladeur et casque), le directeur (costume sombre) et le responsable de cycle (chemise claire), avec deux jambes animées, bras, visages, nez, yeux et cheveux distincts.
+- **Nature :** lycée au toit de tuiles, fenêtres, entrée, fleurs, parterres, clôture et range-vélos ; montagne de Haute-Savoie, sapins et arbres feuillus à plusieurs profondeurs, buissons, herbes et fleurs.
+- **Transition :** départ dans la cour arborée, chemin plus boisé, disparition graduelle des haies au profit des glissières et signalétique de l'A410 ; biome piloté uniquement par la distance (0–400).
+- **Invariants :** ne modifier ni `newRun`, ni `advance`, ni `FINISH`, ni le chronométrage, les dialogues/voix, les boutons, le score, les bonus ou la communication avec le plateau.
+- **Tests :** respect des quatre décors, des trois personnages, des repères « LYCÉE » et « A410 », moteur intact, fichier public inclus au build.
