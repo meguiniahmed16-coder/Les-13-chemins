@@ -288,3 +288,10 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - **Nouvelle règle d'animation :** immobile à terre et au début de la montée (`mount<=0.32`) : un personnage entier avec **deux jambes et deux chaussures** ; lorsque l'enfant est sur le cheval : **une seule jambe du côté visible** et une seule botte, toutes deux avec remplissage opaque. Après la descente, dessin complet à deux jambes.
 - **Tests graphiques :** contrôle des poses au sol, au début / à la fin de la montée, à la marche, au cabré, au saut et à la descente. Test automatisé des contours fermés, du remplissage du pantalon, de la botte et du nombre de jambes selon la pose.
 - **Portée :** dessin seul ; aucune modification des parcours, des commandes, des points, des cartes ou du chapitre.
+
+### 2026-11-09 — Marmousets : courte marche d'approche et montée accélérée
+- Au lancement, l'enfant reste **à pied avec ses deux jambes**, marche pendant **1,05 s** de 62 unités visuelles jusqu'au cheval, puis monte sur la selle.
+- La montée, auparavant de **1,25 s**, dure désormais **0,45 s** (environ 2,8 fois plus rapide). La phase de transition ne modifie pas le parcours du cheval, le score, les obstacles ni les points de sauvegarde.
+- Pendant la marche, les deux jambes sont animées ; sur le cheval, une seule jambe pleine et sa chaussure restent visibles de profil.
+- Le bouton pause, l'accessibilité et la musique préservent l'état « approaching » pour éviter toute apparition prématurée du cavalier sur la selle.
+- Contrôler les états ready → approaching → mounting → running, le temps de chacun, la conservation des points, puis toutes les poses (cabré, saut, descente).
