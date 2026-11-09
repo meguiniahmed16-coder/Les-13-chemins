@@ -350,3 +350,12 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Les dix autres vignettes correspondent toujours aux étapes 4 à 13, affichées comme chapitres 2 à 11. L’atlas original conserve ses treize scènes géographiques ; la nouvelle présentation ne modifie pas le manuscrit.
 - Le compteur du plateau indique le nombre de chapitres terminés sur onze ; les récompenses du premier chapitre figurent ensemble dans le sac, mais les points et bonus déjà attribués ne sont pas effacés.
 - Tests à conserver : ordre des scènes, migration, chargement JS, progrès incomplet, reprise de sauvegarde, achèvement 3/3, accès Sarajevo, contrôle des autres niveaux et construction Netlify.
+
+### 2026-11-09 — Chapitre 2 « Même pas mal », quiz d’intrigue commun au chapitre 1
+- **Chapitre 2 :** la vignette Sarajevo (ancien identifiant interne 4) utilise la **même présentation pleine largeur** que le chapitre 1, avec le titre public « Chapitre 2 — « Même pas mal » », une scène « Sarajevo · Le choc de l’arrivée », et son mini-jeu « Entre les rafales » inchangé.
+- **Quiz narratif :** remplacer la question isolée sur le lieu des Marmousets par « Quelle suite d’événements raconte le chapitre 1, « La salle d’attente » ? ». La bonne réponse résume l’intrigue : retrouver le petit frère, fuir le lycée, puis se débrouiller à Barcelone.
+- **Un quiz pour trois jeux :** la question du chapitre 1 apparaît une seule fois au début. Les anciennes questions du lycée et de Barcelone sont masquées dans le plateau : les mini-jeux suivent directement, dans l’ordre Marmousets → lycée → Barcelone. Les jeux autonomes restent accessibles à leur URL habituelle.
+- **Points :** le quiz commun peut accorder ses points une seule fois ; les bonus de mini-jeux et les cinq ventes de Barcelone restent inchangés. Aucun +100 automatique n’est attribué aux parties 2 ou 3.
+- **Sauvegardes :** les identifiants historiques (1, 2, 3, 4), les parties interrompues, les IDs de session et les points sont préservés. Préparer automatiquement le jeu suivant avec correct:true, sans redemander un quiz et sans rejouer les chapitres terminés.
+- **Déblocage :** Sarajevo demeure inaccessible tant que les trois mini-jeux du chapitre 1 n’ont pas été réussis. Les cartes du manuscrit et les scènes de l’atlas conservent leur ordre et leurs identifiants.
+- **Tests :** nouveau titre et style de carte, quiz sur l’intrigue, une seule attribution de points, reprise des sessions et progression conditionnelle.
