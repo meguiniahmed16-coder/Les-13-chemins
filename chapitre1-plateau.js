@@ -84,20 +84,24 @@
     n===4?chapterTwoName+' · '+flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length+'/3 scènes terminées':
     'Chapitre '+i+' — '+LEVELS[n-1].title+(finished?' terminé':!allowed?' verrouillé':''));
    if(n===1){
-    button.querySelector('.chapter-card-status').textContent=finished?'✓ Les trois scènes sont terminées':flow.scenePassedCount(state)+' / 3 scènes terminées · ouvrir pour continuer';
+    button.querySelector('.chapter-card-status').textContent=finished?
+     (flow.chapterHasSkips(state,1)?'↷ Les trois scènes sont parcourues':'✓ Les trois scènes sont réussies'):
+     flow.scenePassedCount(state)+' / 3 scènes parcourues · ouvrir pour continuer';
     for(const badge of button.querySelectorAll('[data-part]')){
      const p=Number(badge.dataset.part);
      badge.classList.toggle('passed',flow.partDone(state,p));
-     badge.textContent=(flow.partDone(state,p)?'✓ ':'')+captions[p-1];
+     badge.textContent=(flow.wasSkipped(state,p)?'↷ ':flow.partDone(state,p)?'✓ ':'')+captions[p-1];
     }
    }else{
     if(n===4){
      const count=flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length;
-     button.querySelector('.chapter-card-status').textContent=finished?'✓ Les trois scènes sont terminées':count+' / 3 scènes terminées · ouvrir pour continuer';
+     button.querySelector('.chapter-card-status').textContent=finished?
+      (flow.chapterHasSkips(state,2)?'↷ Les trois scènes sont parcourues':'✓ Les trois scènes sont réussies'):
+      count+' / 3 scènes parcourues · ouvrir pour continuer';
      for(const badge of button.querySelectorAll('[data-chapter-two-part]')){
       const part=Number(badge.dataset.chapterTwoPart);
       badge.classList.toggle('passed',flow.chapter2PartDone(state,part));
-      badge.textContent=(flow.chapter2PartDone(state,part)?'✓ ':'')+chapterTwoCaptions[part-1];
+      badge.textContent=(flow.wasSkipped(state,part===1?'4':part===2?'5:dance':'5:prison')?'↷ ':flow.chapter2PartDone(state,part)?'✓ ':'')+chapterTwoCaptions[part-1];
      }
     }
     button.querySelector('.board-badge').textContent=finished?'✓':icons[i];
@@ -124,11 +128,12 @@
  const oldRollTravel=rollTravel;
  rollTravel=function(n){
   if(boardRolling||n!==state.selected)return;
-  // All internal scene-to-scene transitions now use the same dotted-line map,
-  // including within chapters (1→2, 2→3, 4→5).
-  if(n===1||n===2||n===4){
-   const finished=n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n);
-   if(!finished)return;
+  // Passage d'une scène à l'autre, gagnée OU volontairement passée.
+  // The historic IDs and save format are retained; only wins pay points.
+  if(n>=1&&n<=5){
+   const traversed=n<=3?flow.partDone(state,n):
+    n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
+   if(!traversed)return;
    if(!window.TreizeVoyage){arriveAtStage(n+1);return;}
    boardRolling=true;
    const next=n+1;
@@ -137,21 +142,20 @@
     onFinish:()=>{
      boardRolling=false;finishBoardRoll=null;
      if(state.selected!==n)return;
-     if(!(n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n)))return;
-     arriveAtStage(next);
+     const stillPassed=n<=3?flow.partDone(state,n):
+      n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
+     if(stillPassed)arriveAtStage(next);
     }
    });
    return;
   }
-  if(n===3&&!flow.done(state))return;
-  if(n===5&&!flow.chapter2Done(state))return;
   oldRollTravel(n);
  };
  const oldSave=save;
  save=function(){oldSave();updateProgressBar();};
  function updateProgressBar(){
   const count=flow.chaptersDone(state);
-  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 10 chapitres · '+state.points+' points';
+  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 10 chapitres parcourus · '+state.points+' points';
   $('count').textContent=count+'/10';
   $('stage').textContent=flow.chapterReached(state);
  }
@@ -224,8 +228,12 @@
    $('levelTag').textContent='CHAPITRE '+flow.chapterOf(n)+' / 10';
   }
   const rewards=[];
-  if(flow.done(state))rewards.push('<span class="item">✦ '+chapterName+'</span>');
-  if(flow.chapter2Done(state))rewards.push('<span class="item">✦ '+chapterTwoName+'</span>');
+  if(flow.done(state))rewards.push('<span class="item">'+
+   (flow.chapterHasSkips(state,1)?'◇ ':'✦ ')+chapterName+
+   (flow.chapterHasSkips(state,1)?' · parcouru':'')+'</span>');
+  if(flow.chapter2Done(state))rewards.push('<span class="item">'+
+   (flow.chapterHasSkips(state,2)?'◇ ':'✦ ')+chapterTwoName+
+   (flow.chapterHasSkips(state,2)?' · parcouru':'')+'</span>');
   for(const number of state.completed.filter(n=>n>=6).sort((a,b)=>a-b))
    rewards.push('<span class="item">✦ '+esc(LEVELS[number-1].reward)+'</span>');
   $('inventory').innerHTML=rewards.length?rewards.join(''):'<span class="muted">Le sac est encore vide. Termine les trois parties du premier chapitre !</span>';
@@ -270,5 +278,9 @@
  });
  for(const [n,id]of [[1,'marmousetsClose'],[2,'arcadeClose'],[3,'catalogneClose'],[4,'bosnieClose']])
   $(id)?.addEventListener('click',()=>afterClose(n));
+ window.TreizeSceneNavigation={
+  cancelAutomatic(){pendingAuto=0;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;},
+  continue(){if(!boardRolling)rollTravel(state.selected);}
+ };
  window.addEventListener('focus',updateProgressBar);
 })();
