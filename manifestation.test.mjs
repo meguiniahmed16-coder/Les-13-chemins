@@ -56,7 +56,13 @@ test('L’incrustation du chapitre et les pancartes restent visibles',()=>{
  const html=read('jeu-manifestation.html'),js=read('manifestation-app.js');
  assert.match(html,/Chapitre 4 — « Drapeau rouge »/);
  assert.match(html,/p\. 59–60/);
- assert.match(js,/CHAPITRE 4/);assert.match(js,/DRAPEAU ROUGE · P\. 59–60/);
+ assert.match(html,/id="chapter-sky"/);
+ assert.match(html,/<textPath href="#chapitreQuatreArc"/);
+ assert.match(html,/class="chapter-arc"/);
+ assert.match(html,/class="chapter-pages"/);
+ assert.match(html,/\.chapter-sky\{[^}]*pointer-events:none/);
+ assert.doesNotMatch(html,/chapter-stamp/,'Aucun encart rectangulaire ne doit masquer la vidéo');
+ assert.ok(!js.includes('chapterWall(root)'), 'La référence ne doit plus être répétée sur un mur');
  for(const text of ['NON À LE PEN','LIBERTÉ ÉGALITÉ FRATERNITÉ','ENSEMBLE CONTRE LA HAINE','RÉPUBLIQUE — BASTILLE'])
   assert.ok(js.includes(text),'Pancarte ou banderole '+text);
  assert.ok(js.includes('GLTFLoader'));assert.ok(js.includes('cloneSkinned'));
@@ -149,9 +155,9 @@ test('Un seul bouton jaune suffit : libellés et cache navigateur mis à jour',(
  assert.ok(app.includes('voiceCamarades()'));
  assert.ok(app.includes('const onStatue=run.phase===2'));
  assert.ok(app.includes('statuePanel.hidden=!up'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261109-auto-call4'));
- assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-auto-call4'));
- assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-auto-call4'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261109-sky-reader5'));
+ assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-sky-reader5'));
+ assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-sky-reader5'));
 });
 
 test('La manette de la statue existe une seule fois et ses commandes sont raccordées',()=>{
@@ -162,4 +168,20 @@ test('La manette de la statue existe une seule fois et ses commandes sont raccor
  }
  assert.ok(app.includes("$('statueCall').onclick=callCrowd"));
  assert.ok(app.includes("$('statueDescend').onclick=yellowPress"));
+});
+
+test('Bonne feuille du Chemin III : même lecture immersive que les autres jeux',()=>{
+ const ui=read('chapitre1-plateau.js'),controller=read('rendezvous-plateau.js');
+ assert.ok(ui.includes("#rendezvousDialog{position:fixed;inset:0;box-sizing:border-box;width:100vw"));
+ assert.ok(ui.includes("max-width:790px;margin:0 auto"));
+ assert.ok(ui.includes("font:clamp(20px,2.15vw,25px)/1.86 Georgia,serif"));
+ assert.ok(ui.includes("background:none;border:0;padding:0"));
+ assert.ok(ui.includes("readerKicker.textContent='Vous êtes arrivé à'"));
+ assert.ok(ui.includes("readerArea.className='rendezvous-area'"));
+ assert.ok(ui.includes("readerReference.className='rendezvous-reference'"));
+ assert.ok(ui.includes("const thirdExtract="),'Le passage original est inchangé');
+ assert.ok(controller.includes("info.after(partNav)"),'La navigation vient après la lecture');
+ assert.ok(controller.includes("function reachedReadingEnd()"));
+ assert.ok(controller.includes("excerpt.getBoundingClientRect().bottom<=reader.getBoundingClientRect().bottom-18"));
+ assert.ok(controller.includes("},1150)"),'Transition temporisée comme les autres extraits');
 });
