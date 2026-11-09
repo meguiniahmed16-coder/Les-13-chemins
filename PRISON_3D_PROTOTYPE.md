@@ -1,4 +1,4 @@
-# Refonte du jeu de prison — prototype 3D isolé (v0.1)
+# Refonte du jeu de prison — prototype 3D isolé (v0.2)
 
 ## Objectif
 Ne pas remplacer le jeu officiel avant la validation du prototype.
@@ -13,6 +13,31 @@ revient et le prisonnier peut se cacher. Score : 3 × 10 = 30.
 - build-prison-3d-prototype.mjs : compilation de Three.js ;
 - prison-3d-prototype-runtime.js : code généré pendant le build ;
 - prison-3d-prototype.test.mjs : vérifications du corps, décor et règles.
+- prison-3d-loader.js : téléchargement interrompable et contrôle du modèle complet ;
+- prison-3d-loading.test.mjs : démarrage, progression, erreurs et relance ;
+- prison-3d-visibility.test.mjs : visibilité de la scène en portrait et paysage.
+
+## Correction du chargement — 9 novembre 2026
+Le bouton affichait encore « Chargement du personnage 3D… » après réussite.
+La porte fermée, restée devant la caméra extérieure, masquait aussi le centre
+de la cellule : environ 23 % des rayons en paysage et 46 % en portrait.
+La paroi avant est désormais traitée entièrement en coupe (porte, guichet
+et poignée compris) lorsque la caméra est dehors. La porte conserve sa
+position fermée et reste visible depuis une caméra située dans la cellule.
+
+Le bouton « Entrer dans la cellule » n'est activé qu'après le chargement
+du corps et une première image rendue. L'écran de préparation est indépendant
+du programme 3D : script manquant, fichier GLB incomplet, délai dépassé ou
+perte du contexte graphique donnent un message et « Réessayer le chargement ».
+Le téléchargement du corps est interrompu au bout de 30 secondes ; le démarrage
+complet dispose de 45 secondes. Le profil mobile limite la résolution à 1×,
+désactive l'anticrénelage et les ombres dynamiques pour alléger la mémoire GPU.
+
+Vérification : transfert et analyse du véritable GLB, états de chargement
+et erreurs, géométrie et lignes de vue avec Three.js en portrait/paysage,
+puis construction publique. Le navigateur cloud disponible ne fournit pas
+de contexte WebGL : il permet de contrôler la page et sa reprise après erreur,
+mais pas de valider le rendu animé sur le téléphone de l'auteur.
 
 Le prototype ne remplace pas jeu-yoyo.html et ne touche ni aux points,
 ni aux données de progression, ni aux messages de crédit du jeu officiel.

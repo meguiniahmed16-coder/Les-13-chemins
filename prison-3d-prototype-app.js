@@ -5,6 +5,7 @@
  */
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {loadActorBytes} from './prison-3d-loader.js';
 import {createGame,startGame,continueGame,move,actionDown,actionUp,advance,aligned,
  ropePosition,slitCenters,setWindowAspect,PARTS,clamp} from './yoyo-core.js';
 
@@ -21,17 +22,25 @@ const $=id=>document.getElementById(id);
 const screen=$('world'),status=$('status'),stageText=$('stage'),scoreText=$('score');
 const feedback=$('feedback'),guardText=$('guard'),overlay=$('overlay');
 const playButton=$('start'),retryButton=$('retry'),pauseButton=$('pause');
+const loading=window.Prison3DLoading;
+const mobile=window.matchMedia?.('(pointer: coarse)').matches||screen.clientWidth<720;
+loading?.phase('Préparation du décor 3D…',8);
 let renderer;
 try{
- renderer=new T.WebGLRenderer({canvas:screen,antialias:true,powerPreference:'high-performance'});
+ renderer=new T.WebGLRenderer({canvas:screen,antialias:!mobile,powerPreference:mobile?'default':'high-performance'});
  renderer.outputColorSpace=T.SRGBColorSpace;
  renderer.toneMapping=T.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.4;
- renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+ renderer.shadowMap.enabled=!mobile;renderer.shadowMap.type=T.PCFSoftShadowMap;
 }catch(e){
- status.textContent='Cet appareil ne permet pas de lancer la 3D WebGL : '+e.message;
+ loading?.fail('Le navigateur n’a pas pu activer l’affichage 3D. Ferme les autres jeux ouverts, puis réessaie. Sur téléphone, tu peux aussi ouvrir ce lien directement dans Chrome.');
  playButton.disabled=true;throw e;
 }
+let contextLost=false,firstActorFrame=false;
+screen.addEventListener('webglcontextlost',e=>{
+ e.preventDefault();contextLost=true;
+ loading?.fail('L’affichage 3D a été interrompu. Relance la cellule pour reprendre.');
+});
 
 const scene=new T.Scene();scene.background=new T.Color(0x626e68);
 scene.fog=new T.Fog(0x626e68,10,31);
@@ -89,9 +98,11 @@ for(const x of [-1.16,1.16])cub(.68,1.35,.16,x,1.60,-1.55,concrete);
 cub(1.72,.09,.31,0,.97,-1.53,ceramic).name='AppuiFenetre';
 cub(3,.10,3,0,2.74,0,new T.MeshStandardMaterial({color:0x8a8e83,roughness:1})).name='Plafond';
 // Camera-facing wall intentionally omitted for the cutaway third-person view.
-const door=cub(.83,2.23,.07,.83,1.13,1.47,steel);door.name='PorteCellule';
-cub(.39,.19,.045,.82,1.47,1.42,black);
-cylinder([1.20,1.05,1.37],[1.35,1.05,1.37],.018,ceramic);
+// The closed door and its hardware belong to that same cutaway wall.
+const frontWall=new T.Group();frontWall.name='ParoiAvantVueEnCoupe';scene.add(frontWall);
+const door=cub(.83,2.23,.07,.83,1.13,1.47,steel,frontWall);door.name='PorteCellule';
+cub(.39,.19,.045,.82,1.47,1.42,black,frontWall);
+cylinder([1.20,1.05,1.37],[1.35,1.05,1.37],.018,ceramic,frontWall);
 
 // Visible iron bars, measured openings of 21 cm and narrow bag width.
 for(let i=-3;i<=3;i++)cylinder([i*.21,1.03,-1.665],[i*.21,2.28,-1.665],.018,steel).name='Barreau'+(i+4);
@@ -198,7 +209,14 @@ function skinColors(body){
 }
 async function loadActor(){
  try{
-  const gltf=await new GLTFLoader().loadAsync(PROTOTYPE_ASSETS.actor);
+  loading?.phase('Chargement du personnage…',18);
+  const modelUrl=new URL(PROTOTYPE_ASSETS.actor,document.baseURI);
+  const bytes=await loadActorBytes(modelUrl,{onProgress:value=>{
+   const percent=value===null?null:Math.round(value*100);
+   loading?.phase('Chargement du personnage'+(percent===null?'…':' · '+percent+' %'),percent===null?null:18+value*70);
+  }});
+  loading?.phase('Préparation du corps articulé…',90);
+  const gltf=await new GLTFLoader().parseAsync(bytes,new URL('.',modelUrl).href);
   const root=gltf.scene;
   const needed=['pelvis','spine_02','upperarm_l','lowerarm_l','upperarm_r','lowerarm_r','thigh_l','thigh_r','calf_l','calf_r','Head'];
   const bones={},rest={};
@@ -223,16 +241,14 @@ async function loadActor(){
   heldBrush.rotation.set(-.42,0,.18);
   heldBrush.visible=false;
   actor={root,bones,rest,skins};
-  status.textContent='Personnage 3D CC0 chargé. Les trois épreuves sont prêtes.';
-  playButton.disabled=false;
   screen.dataset.rig='quaternius-cc0-humanoid';
+  loading?.phase('Affichage de la cellule…',96);
  }catch(e){
   modelError=String(e.message||e);
-  status.textContent='Le personnage libre n’a pas chargé : '+modelError;
+  loading?.fail('Le personnage n’a pas pu être chargé. '+modelError);
   screen.dataset.rig='missing';playButton.disabled=true;
  }
 }
-loadActor();
 
 const game=createGame(),keys=new Set();
 let mode='ready',paused=false,holding=false,startedAt=performance.now(),last=startedAt;
@@ -255,7 +271,7 @@ function card(title,paragraph,button,action){
  const b=overlay.querySelector('button');b.textContent=button;b.onclick=action;
 }
 function begin(){
- if(!actor)return;
+ if(!actor||!firstActorFrame||contextLost)return;
  startGame(game);mode='playing';paused=false;holding=false;interaction=0;
  overlay.hidden=true;pauseButton.textContent='Pause';
  text('Déplace le personnage jusqu’à la brosse. Quand le cercle est vert, attrape-la.');
@@ -368,11 +384,17 @@ function pose(t,dt){
  heldBrush.visible=game.part>0;
  interaction=Math.max(0,interaction-dt*.9);
 }
+function updateCutaway(){
+ // From the corridor, omit the entire near wall, including its closed door.
+ // From inside, retain the door in its original position and closed orientation.
+ frontWall.visible=camera.position.z<1.43;
+}
 function setCamera(){
  const target=actor?actor.root.position.x:0;
  const wide=screen.clientWidth<720,offset=wide?.77:.93;
  camera.position.set(target+offset,1.78,wide?3.17:3.32);
  camera.lookAt(target-.10,1.37,-1.36);
+ updateCutaway();
 }
 function positionScene(dt,time){
  if(mode==='playing'&&!paused){
@@ -402,17 +424,27 @@ function positionScene(dt,time){
 }
 let previous=performance.now(),width=0,height=0;
 function render(now){
+ if(contextLost)return;
  const dt=Math.min(.08,(now-previous)/1000);previous=now;
  const w=Math.max(320,screen.clientWidth),h=Math.max(190,screen.clientHeight);
  if(w!==width||h!==height){
   width=w;height=h;
   renderer.setSize(w,h,false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1:1.5));
   camera.aspect=w/h;camera.updateProjectionMatrix();
   setWindowAspect(game,camera.aspect);
  }
- positionScene(dt,now);
- renderer.render(scene,camera);
+ try{
+  positionScene(dt,now);
+  renderer.render(scene,camera);
+  if(actor&&!firstActorFrame){
+   firstActorFrame=true;
+   loading?.ready();
+  }
+ }catch(error){
+  loading?.fail('L’affichage de la cellule a été interrompu. Relance le chargement.');
+  console.error('Cellule 3D :',error);return;
+ }
  requestAnimationFrame(render);
 }
-notify();requestAnimationFrame(render);
+notify();loadActor();requestAnimationFrame(render);
