@@ -15,7 +15,7 @@ export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function newRun(){
  return {
   phase:1,steps:[],x:0,z:-7,height:0,
-  climbed:false,climb:null,mobilisation:0,cohesion:77,leaderZ:-8,
+  climbed:false,climb:null,rallying:false,mobilisation:0,cohesion:77,leaderZ:-8,
   clock:0,finished:false,events:[]
  };
 }
@@ -26,7 +26,7 @@ export function progress(run,step){
  if(step===3){run.finished=true;run.events.push({type:'won'});}
  else{
   run.phase=step+1;run.climbed=false;run.climb=null;
-  run.height=0;run.mobilisation=0;run.x=0;
+  run.height=0;run.rallying=false;run.mobilisation=0;run.x=0;
   run.z=step===1?-8:0;run.leaderZ=-8;run.cohesion=77;
  }
  return true;
@@ -69,6 +69,7 @@ function animateClimb(run,t){
  }
  if(p>=1){
   run.climbed=c.direction==='up';
+  if(!run.climbed)run.rallying=false;
   run.x=STATUE.footX;
   run.z=run.climbed?STATUE.topZ:STATUE.footZ;
   run.height=run.climbed?STATUE.topHeight:0;
@@ -99,7 +100,7 @@ export function advance(run,dt,input){
  const moving=Math.hypot(x,y)>.15;
  if(run.phase===2&&run.climbed){
   advanceOnStatue(run,dx,dz,moving,t);
-  if(input.red)run.mobilisation=clamp(run.mobilisation+48*t,0,100);
+  if(input.red||run.rallying)run.mobilisation=clamp(run.mobilisation+48*t,0,100);
   if(run.mobilisation>=100)progress(run,2);
   return;
  }
@@ -125,10 +126,15 @@ export function advance(run,dt,input){
 export function yellow(run){
  if(run.phase===1&&distance(run,{x:4.1,z:12})<3.3)return progress(run,1);
  if(run.phase!==2||run.climb)return false;
- if(run.climbed){startClimb(run,'down');return true;}
+ if(run.climbed){run.rallying=false;startClimb(run,'down');return true;}
  if(distance(run,{x:STATUE.x,z:STATUE.z})<4.35){
   startClimb(run,'up');return true;
  }
  return false;
+}
+export function callFromStatue(run){
+ if(run.phase!==2||!run.climbed||run.climb)return false;
+ run.rallying=true;
+ return true;
 }
 export function canNext(run){return run.finished||run.steps.includes(1);}
