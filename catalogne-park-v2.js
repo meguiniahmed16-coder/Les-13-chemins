@@ -210,6 +210,17 @@ function crowd(g,person,x,depth,cam,t){
  drawParkPerson(g,x,y,person.kind==='group'?'tourist':'passer',t*(person.kind==='solo'?.28:.05),
   person.variant%2?-1:1,person.variant,person.kind==='group'?.63:.72);
 }
+const CHAPITRE_PELOUSE='chapitre 1 — « La salle d’attente », p 9-10';
+function lawnChapterTitle(g,cam){
+ const x=1180-cam;
+ if(x<-230||x>W+230)return;
+ // Texte blanc peint sur la pelouse, avec une petite ombre pour le contraste.
+ const lines=[['chapitre 1 —',151,15],['« La salle d’attente »',171,16],['p 9-10',191,15]];
+ for(const [line,y,size] of lines){
+  tx(g,line,x+2,y+2,size,'#406b5377');
+  tx(g,line,x,y,size,'#ffffff');
+ }
+}
 function drawForeground(g,run,phase,particles,cam,t,clients,policeBases){
  const playerX=run.x-cam;
  const dynamic=[];
@@ -224,22 +235,22 @@ function drawForeground(g,run,phase,particles,cam,t,clients,policeBases){
    if(x<-50||x>W+50)return;
    const y=302+depth*.73,done=run.sold.includes(c.id);
    drawParkPerson(g,x,y,'client',t*.18,c.x<run.x?-1:1,idx,1.06);
-   C(g,x-17,y-86,34,21,done?'#507c5f':'#f7df9e');
-   tx(g,done?'✓':'◆',x,y-68,17,done?'#d6f3c2':'#987347');
-   if(!done)tx(g,'CLIENT',x,y-91,10,'#25483f');
+   C(g,x-24,y-98,48,28,done?'#507c5f':'#f7df9e');
+   tx(g,done?'✓':'◆',x,y-77,20,done?'#d6f3c2':'#987347');
+   if(!done)tx(g,'CLIENT',x,y-103,12,'#25483f');
   }});
  }
  for(const [idx,base] of policeBases.entries()){
-  const p=run.policeState?.[idx]||{x:base,lane:[-85,75][idx]},x=p.x-cam,depth=p.lane;
+  const p=run.policeState?.[idx]||{x:base,lane:[-85,75][idx],dir:idx===0?1:-1},x=p.x-cam,depth=p.lane;
   dynamic.push({depth,x,draw:()=>{
    if(x<-50||x>W+50)return;
    const y=302+depth*.73;
-   drawParkPerson(g,x,y,'police',phase==='running'?t*1.7:0,x<playerX?-1:1,idx,1.03);
-   const chase=Math.abs(p.x-run.x)<190&&Math.abs(depth-run.lane)<96;
-   if(chase){
-    ellipse(g,x,y+6,24,7,'#cb6c5b33');
-    tx(g,'POLICÍA',x,y-74,10,'#204f66');
-   }
+   drawParkPerson(g,x,y,'police',phase==='running'?t*1.7:0,p.dir||1,idx,1.03);
+   ellipse(g,x,y+6,24,7,'#cb6c5b33');
+   C(g,x-44,y-114,88,37,'#f5f3e2');
+   C(g,x-41,y-111,82,31,'#315e70');
+   tx(g,'GUARDIA',x,y-97,12,'#fff9e9');
+   tx(g,'CIVIL',x,y-83,12,'#fff9e9');
   }});
  }
  dynamic.push({depth:run.lane||0,x:playerX,draw:()=>{
@@ -271,7 +282,7 @@ export function drawCatalognePark(scene,run,phase,particles=[],clock=0,clients=[
  scene.camera=clamp(curr.x-(curr.facing===-1?435:255),0,PARK_LAYOUT.width-W);
  const cam=scene.camera;
  c.clearRect(0,0,W,H);
- townBackdrop(g,cam);paths(g,cam);garden(g,cam);
+ townBackdrop(g,cam);paths(g,cam);garden(g,cam);lawnChapterTitle(g,cam);
  for(const fx of [505,1510]){
   const x=fx-cam;if(x>-140&&x<W+140)fountain(g,x,289,clock);
  }
@@ -286,7 +297,7 @@ export function drawCatalognePark(scene,run,phase,particles=[],clock=0,clients=[
  tx(g,'ALLÉE '+(curr.lane<-42?'NORD':curr.lane>42?'SUD':'CENTRALE'),W-94,27,12,'#fff5d9');
  if(scene.c?.setAttribute){
   scene.c.setAttribute('aria-label',
-   'Grand parc en 2D, plusieurs allées, groupes de promeneurs et policiers mobiles. '
+   'Grand parc en 2D, plusieurs allées, groupes de promeneurs et deux policiers en patrouille aller-retour. '
    +curr.sold.length+' clients servis sur 5. '
    +'Position dans le parc : allée '+(curr.lane<-42?'nord':curr.lane>42?'sud':'centrale')+'.');
  }
