@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
-import {newRun,advance,yellow,progress,OBJECTIFS} from './manifestation-core.js';
+import {newRun,advance,yellow,progress,callFromStatue,OBJECTIFS} from './manifestation-core.js';
 const read=f=>readFileSync(new URL('./'+f,import.meta.url),'utf8');
 test('Trois épreuves, jamais de points en double',()=>{
  const r=newRun();assert.equal(progress(r,2),false);
@@ -118,4 +118,53 @@ test('Les commandes du socle restent lisibles sur téléphone',()=>{
  assert.ok(app.includes("if(run.phase===2&&run.climbed)"));
  assert.ok(app.includes("hero.rotation.y=0"));
  assert.ok(app.includes("Marches claires sur la face avant gauche"));
+});
+
+test('Un seul appui sur le rouge lance le cri sans maintien et débloque Bastille',()=>{
+ const r=newRun();progress(r,1);r.x=0;r.z=1.94;
+ assert.equal(callFromStatue(r),false,'Impossible de crier avant la montée');
+ assert.equal(yellow(r),true);
+ for(let i=0;i<52;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.climbed,true);
+ assert.equal(callFromStatue(r),true,'Le premier appui est pris en compte');
+ assert.equal(r.rallying,true);
+ const at=r.mobilisation;
+ // Aucun doigt ne reste sur le bouton : red:false pendant tout le déroulement.
+ for(let i=0;i<10;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.ok(r.mobilisation>at,'Le cri doit continuer après le relâchement du bouton rouge');
+ for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.phase,3,'La suite vers Bastille devient accessible automatiquement');
+ assert.deepEqual(r.steps,[1,2],'Un seul succès de mobilisation est accordé');
+ assert.equal(r.rallying,false,'L’état du cri est réinitialisé après la transition');
+});
+test('Le jaune redescend et arrête la mobilisation sans bloquer le joystick',()=>{
+ const r=newRun();progress(r,1);r.x=0;r.z=1.94;
+ yellow(r);for(let i=0;i<52;i++)advance(r,.05,{x:0,y:0,red:false});
+ callFromStatue(r);
+ for(let i=0;i<8;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.ok(r.mobilisation>0);
+ const distanceBefore=r.x;for(let i=0;i<7;i++)advance(r,.05,{x:1,y:0,red:false});
+ assert.ok(r.x>distanceBefore,'Le joystick change toujours la position en hauteur');
+ assert.equal(yellow(r),true);
+ assert.equal(r.rallying,false);
+ for(let i=0;i<45;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.height,0);
+ assert.equal(r.climbed,false);
+ const p=r.mobilisation;
+ for(let i=0;i<10;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.mobilisation,p,'La mobilisation ne progresse pas à terre');
+});
+test('Les commandes au sommet restent accessibles et la version mobile est rafraîchie',()=>{
+ const html=read('jeu-manifestation.html'),app=read('manifestation-app.js');
+ const controller=read('rendezvous-plateau.js'),plateau=read('jeu.html');
+ for(const id of ['statueControls','statueProgress','statueCall','statueDescend'])
+  assert.ok(html.includes('id="'+id+'"'),'Contrôle visible '+id);
+ assert.ok(html.includes('statue-buttons button{min-height:54px'),'Tailles tactiles suffisantes');
+ assert.ok(app.includes("$('statueCall').onclick=callCrowd"));
+ assert.ok(app.includes("$('statueDescend').onclick=yellowPress"));
+ assert.ok(app.includes('const onStatue=run.phase===2'),'Caméra fixe sur le socle');
+ assert.ok(app.includes('statuePanel.hidden=!up'),'Les commandes apparaissent quand la montée termine');
+ assert.ok(html.includes('manifestation-runtime.js?v=20261109-statuerepair3'));
+ assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-statuerepair3'));
+ assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-statuerepair3'));
 });
