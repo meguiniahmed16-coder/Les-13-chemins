@@ -20,7 +20,8 @@ for (const args of [
   ['--test', 'a410-pixel-v2.test.mjs'],
   ['--test', 'catalogne-park-v2.test.mjs'],
   ['--test', 'ordre-lecture.test.mjs'],
-  ['--test', 'chapitre1-flow.test.mjs'],  // verify the grouped chapter and preserve the thirteen scene IDs
+  ['--test', 'chapitre1-flow.test.mjs'],
+  ['--test', 'journey.test.mjs'], // verify the five-step route between chapters 1 and 2  // verify the grouped chapter and preserve the thirteen scene IDs
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
   if (stdout.trim()) console.log(stdout.trim());

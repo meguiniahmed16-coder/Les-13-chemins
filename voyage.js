@@ -23,14 +23,30 @@
  .journey-stop{display:grid;place-items:center;border:1px solid #675637;border-radius:50%;background:#f9edcf;color:#3d5746;font:bold 12px Arial;box-shadow:0 1px 4px #293d3335}
  .journey-pointer{display:block;width:27px;height:27px;border-radius:50% 50% 50% 2px;transform:rotate(-45deg);background:#ad7739;border:3px solid #fff8e3;box-shadow:0 0 0 7px #ad773933,0 3px 8px #233b3b66}
  .journey-pointer:after{content:'';position:absolute;width:7px;height:7px;left:7px;top:7px;background:#fff8e3;border-radius:50%}
+ .journey-route-stop{background:transparent;border:0}
+ .journey-route-stop .journey-place-name{display:inline-block;transform:translate(-35%,-130%);white-space:nowrap;padding:4px 7px;border:1px solid #7d6846;border-radius:7px;background:#fbf0d8;color:#3c5148;font:bold 11px Arial,sans-serif;box-shadow:0 3px 7px #182c2640}
+ .journey-route-stop .journey-place-name:before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#9b7241;border:2px solid #fff7df;margin-right:5px;vertical-align:middle}
+ @media(max-width:600px){.journey-route-stop .journey-place-name{font-size:10px;padding:3px 5px}}
  @media(max-width:600px){#diceDialog.journey-open{width:100vw;max-width:100vw;border-width:3px;padding:12px;border-radius:0}#journeyFrame{height:53dvh;min-height:220px}}
  `;
  function install(){if(document.getElementById('journeyStyles'))return;const s=document.createElement('style');s.id='journeyStyles';s.textContent=styles;document.head.append(s);}
  // Shared by the controller and tests: every exit settles once, including timeouts.
  function onceFinish(complete,cleanup){let done=false;return ()=>{if(done)return;done=true;cleanup();complete();};}
+ // Itinéraire explicitement choisi pour la transition entre les chapitres 1 et 2.
+ // La trace est une ligne de récit entre des centres de villes, pas une route GPS.
+ function chapter2Itinerary(from,to,origin,destination){
+  if(from!==3||to!==4)return null;
+  return [
+   {name:'Barcelone',coordinates:origin||[41.387,2.17]},
+   {name:'Ferney-Voltaire',coordinates:[46.258,6.108]},
+   {name:'Vannes (Bretagne)',coordinates:[47.6587,-2.7599]},
+   {name:'Poitiers',coordinates:[46.5803,0.3402]},
+   {name:'Sarajevo',coordinates:destination||[43.856,18.413]}
+  ];
+ }
  function start({from,to,fromPlateau=1,toPlateau=1,title,onFinish}){
   install();const modal=document.getElementById('diceDialog'),status=document.getElementById('diceStatus'),heading=document.getElementById('diceTitle');
-  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches,session=crypto.randomUUID();
+  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches,session=crypto.randomUUID(),hasChapterRoute=from===3&&to===4&&fromPlateau===1&&toPlateau===1;
   const frame=document.createElement('iframe');frame.id='journeyFrame';frame.title='Voyage sur la carte des treize chemins';frame.hidden=true;
   document.getElementById('diceRule').before(frame);
   let ready=false,diceDone=false,started=false,closed=false;const timers=new Set();
@@ -38,9 +54,9 @@
   const finish=onceFinish(onFinish,()=>{closed=true;timers.forEach(clearTimeout);timers.clear();removeEventListener('message',message);modal.removeEventListener('close',finish);frame.remove();modal.classList.remove('journey-open');modal.dataset.phase='idle';if(modal.open)modal.close();});
   function beginMap(){
    if(!diceDone||!ready||started||closed)return;
-   started=true;modal.dataset.phase='overview';heading.textContent='Tous les chemins';status.textContent='Les lieux du récit se rassemblent…';
+   started=true;modal.dataset.phase='overview';heading.textContent=hasChapterRoute?'Du chapitre 1 au chapitre 2':'Tous les chemins';status.textContent=hasChapterRoute?'Barcelone → Ferney-Voltaire → Vannes → Poitiers → Sarajevo':'Les lieux du récit se rassemblent…';
    frame.contentWindow.postMessage({type:'journey:start',session},location.origin);
-   later(finish,11000);
+   later(finish,hasChapterRoute?14500:11000);
   }
   function message(e){
    if(e.origin!==location.origin||e.source!==frame.contentWindow||e.data?.session!==session||closed)return;
@@ -79,6 +95,7 @@
   install();document.documentElement.classList.add('journey-map');
   const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
   const origin=fromStage?.coordinates||centers[from-1],destination=toStage?.coordinates||centers[to-1],ribbon=document.querySelector('.map-ribbon');
+  const waypointRoute=fromPlateau===1&&toPlateau===1?chapter2Itinerary(from,to,origin,destination):null;
   let started=false,raf=0;const timers=[];
   const send=(type,extra={})=>parent.postMessage({type,session,...extra},location.origin);
   const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
@@ -91,6 +108,43 @@
   const at=t=>[origin[0]+(destination[0]-origin[0])*t+Math.sin(Math.PI*t)*Math.min(1.2,Math.abs(destination[1]-origin[1])*.08),origin[1]+(destination[1]-origin[1])*t];
   function arrive(){cancelAnimationFrame(raf);pointer.setLatLng(destination);map.setView(destination,reduced?travelZoom:Math.min(12,travelZoom+1),{animate:false});phase('arrival',(toStage?.city||places[to-1])+' · '+(toStage?.passage?.scene||titles[to-1]));root.TreizeEscale?.addCharacters(map,to,toPlateau);later(()=>send('journey:done'),2400);}
   function travel(){
+   if(waypointRoute){
+    // Le personnage avance sur quatre tronçons pointillés, dans l'ordre demandé.
+    // Chaque arrêt possède un marqueur et son nom, sans modifier l'atlas source.
+    stops.forEach(m=>marks.removeLayer(m));
+    for(const point of waypointRoute){
+     const icon=L.divIcon({className:'journey-route-stop',html:'<span class="journey-place-name">'+point.name+'</span>',iconSize:[14,14],iconAnchor:[7,7]});
+     L.marker(point.coordinates,{interactive:false,icon}).addTo(marks);
+    }
+    trace.addTo(map);
+    const coordinates=waypointRoute.map(p=>p.coordinates);
+    if(reduced){
+     trace.setLatLngs(coordinates);
+     pointer.setLatLng(destination);
+     phase('travel',waypointRoute.map(p=>p.name).join(' → '));
+     later(arrive,650);return;
+    }
+    const duration=4400,segments=coordinates.length-1,began=performance.now();
+    let lastLeg=-1,lastPan=0;
+    function tick(now){
+     const raw=Math.min(1,(now-began)/duration);
+     const scaled=raw*segments,leg=Math.min(segments-1,Math.floor(scaled));
+     const local=scaled-leg,eased=local*local*(3-2*local);
+     const a=coordinates[leg],b=coordinates[leg+1];
+     const p=[a[0]+(b[0]-a[0])*eased,a[1]+(b[1]-a[1])*eased];
+     pointer.setLatLng(p);
+     trace.setLatLngs([...coordinates.slice(0,leg+1),p]);
+     if(leg!==lastLeg){
+      lastLeg=leg;
+      phase('travel',waypointRoute[leg].name+' → '+waypointRoute[leg+1].name);
+     }
+     if(now-lastPan>45){map.panTo(p,{animate:false});lastPan=now;}
+     if(raw<1)raf=requestAnimationFrame(tick);
+    }
+    raf=requestAnimationFrame(tick);
+    later(arrive,duration+80);
+    return;
+   }
    phase('travel',(fromStage?.city||places[from-1])+' → '+(toStage?.city||places[to-1]));stops.forEach((m,i)=>{if(i!==from-1&&i!==to-1)marks.removeLayer(m);});trace.addTo(map);
    if(reduced){trace.setLatLngs([origin,destination]);later(arrive,350);return;}
    const duration=3500,began=performance.now();let lastPan=0;
@@ -103,12 +157,12 @@
    later(()=>{map.stop();map.setView(origin,travelZoom,{animate:false});travel();},reduced?350:1550);
   }
   function message(e){if(e.source!==parent||e.origin!==location.origin||e.data?.type!=='journey:start'||e.data.session!==session||started)return;started=true;
-   map.invalidateSize({animate:false});map.stop();map.fitBounds(L.latLngBounds(points.map(p=>[+p.latitude,+p.longitude])).pad(.08),{animate:false,padding:[22,36]});
+   map.invalidateSize({animate:false});map.stop();map.fitBounds(L.latLngBounds((waypointRoute?waypointRoute.map(p=>p.coordinates):points.map(p=>[+p.latitude,+p.longitude])).map(p=>[+p[0],+p[1]])).pad(.08),{animate:false,padding:[22,36]});
    phase('overview','Tous les lieux, treize étapes');later(depart,reduced?350:1300);
   }
   addEventListener('message',message);send('journey:ready');
   addEventListener('pagehide',()=>{cancelAnimationFrame(raf);timers.forEach(clearTimeout);removeEventListener('message',message);},{once:true});
  }
- root.TreizeVoyage={start,initMap,onceFinish};
+ root.TreizeVoyage={start,initMap,onceFinish,chapter2Itinerary};
  if(typeof document!=='undefined')install();
 })(typeof window==='undefined'?globalThis:window);
