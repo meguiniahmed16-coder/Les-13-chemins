@@ -97,7 +97,7 @@ test('The fingers and opposable thumb close around the palm instead of rotating 
  settle(arms,camera,{gripping:true});
  const closed=at(arms,'middle_04_leaf_r').distanceTo(arms.grip);
  assert.ok(closed<open*.40);assert.ok(closed<.04);
- assert.ok(at(arms,'thumb_03_r').distanceTo(arms.grip)<.04,'The thumb pad opposes the curled fingers at the handle');
+ assert.ok(at(arms,'thumb_04_leaf_r').distanceTo(at(arms,'index_03_r'))<.025,'The thumb closes onto the index finger');
  assert.ok(at(arms,'middle_01_r').distanceTo(at(arms,'middle_02_r'))>.035);
  assert.ok(at(arms,'middle_01_r').distanceTo(at(arms,'middle_02_r'))<.04);
  const pose=Object.values(arms.bones).map(bone=>bone.quaternion.clone()),grip=arms.grip.clone();
@@ -189,8 +189,29 @@ test('The actual palm and all five skinned digits envelop a 32 mm handle with ra
    const next=i===contactAngles.length-1?contactAngles[0]+2*Math.PI:contactAngles[i+1];
    largestGap=Math.max(largestGap,next-contactAngles[i]);
   }
-  assert.ok(2*Math.PI-largestGap>300*Math.PI/180,'The palm, finger pads and opposing thumb surround the cylinder');
+  assert.ok(2*Math.PI-largestGap>270*Math.PI/180,'The palm and finger pads surround the cylinder while the thumb closes onto the index');
   assertLengths(arms);
+ }
+ arms.dispose();
+});
+
+test('The thumb bends back toward the palm and index instead of curling away from the hand',async()=>{
+ const {arms,camera}=await setup(),target=new Vector3(.24,1.3,.54);
+ const chain=['thumb_01_r','thumb_02_r','thumb_03_r','thumb_04_leaf_r'];
+ const lengths=chain.slice(1).map((name,i)=>at(arms,name).distanceTo(at(arms,chain[i])));
+ for(const handleAxis of [new Vector3(0,1,0),new Vector3(.2,.4,-.8).normalize()]){
+  settle(arms,camera,{target,reach:1,gripping:true,handleAxis});
+  const finger=at(arms,'middle_01_r').sub(at(arms,'hand_r')).normalize();
+  const palmNormal=new Vector3().crossVectors(finger,at(arms,'pinky_01_r').sub(at(arms,'index_01_r'))).normalize();
+  const proximal=at(arms,'thumb_03_r').sub(at(arms,'thumb_02_r')).normalize();
+  const distal=at(arms,'thumb_04_leaf_r').sub(at(arms,'thumb_03_r')).normalize();
+  const towardIndex=at(arms,'index_03_r').sub(at(arms,'thumb_03_r')).normalize();
+  assert.ok(distal.dot(towardIndex)>.8,'The final phalanx points into the curled index finger');
+  assert.ok(distal.dot(finger)>.8,'The thumb tip points toward the fingers, not back toward the wrist');
+  assert.ok(distal.dot(palmNormal)<-.15,'The distal joint turns back toward the palm surface');
+  assert.ok(proximal.dot(palmNormal)>distal.dot(palmNormal)+.4,'The thumb forms a returning bend, not an outward hook');
+  assert.ok(at(arms,'thumb_04_leaf_r').distanceTo(at(arms,'index_03_r'))<.020,'The thumb closes against the index rather than floating beside it');
+  chain.slice(1).forEach((name,i)=>assert.ok(Math.abs(at(arms,name).distanceTo(at(arms,chain[i]))-lengths[i])<2e-6));
  }
  arms.dispose();
 });

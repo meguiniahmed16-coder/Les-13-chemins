@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {loadActorBytes} from './prison-3d-loader.js';
 
-const html=readFileSync(new URL('./prison-3d-prototype.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('./jeu-yoyo.html',import.meta.url),'utf8');
 const bootCode=html.match(/<script id="prison-loading-bootstrap">([\s\S]*?)<\/script>/)[1];
 function bootstrap(){
  const nodes=new Map(),events=new Map();let timeout,reloads=0;
@@ -31,7 +31,7 @@ function bootstrap(){
  return {node,controls,api:window.Prison3DLoading,events,
   expire:()=>timeout?.(),reloads:()=>reloads};
 }
-test('Loading finishes with an enabled tour start and no lingering loading label',()=>{
+test('The official prison page finishes loading with an enabled tour and no lingering loading label',()=>{
  const ui=bootstrap();
  assert.ok(ui.controls.every(button=>button.disabled));
  assert.equal(ui.node('joystick').attributes['aria-disabled'],'true');

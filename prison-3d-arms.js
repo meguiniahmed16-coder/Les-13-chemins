@@ -133,13 +133,15 @@ export function createPrisonArms(gltf){
   const thumbBase=thumb.getWorldPosition(new Vector3());
   const thumbTip=bones['thumb_04_leaf_'+side].getWorldPosition(new Vector3());
   const before=thumbTip.sub(thumbBase).normalize();
-  // Opposition puts the thumb pad on the other side of the cylinder; aiming
-  // the thumb tip at the cylinder centre would drive its skin through it.
-  const thumbTarget=hand.worldToLocal(palmPoint.clone().addScaledVector(finger,-.045).addScaledVector(palm,.030));
-  const thumbFlex=new Vector3().crossVectors(before,palm).normalize();
+  // The thumb crosses toward the index, on the palm side of the handle.
+  // Its distal joints flex back toward the palm rather than opening outward.
+  const thumbSide=index.clone().sub(middle);
+  thumbSide.addScaledVector(finger,-thumbSide.dot(finger)).addScaledVector(palm,-thumbSide.dot(palm)).normalize();
+  const thumbTarget=hand.worldToLocal(palmPoint.clone().addScaledVector(finger,.018).addScaledVector(palm,.022).addScaledVector(thumbSide,.035));
+  const thumbFlex=new Vector3().crossVectors(before,palm).normalize().negate();
   for(let joint=2;joint<=3;joint++){
    const bone=bones[`thumb_0${joint}_${side}`];
-   joints.push({bone,axis:thumbFlex.clone().applyQuaternion(bone.getWorldQuaternion(new Quaternion()).invert()),angle:joint===2?1.0:1.15});
+   joints.push({bone,axis:thumbFlex.clone().applyQuaternion(bone.getWorldQuaternion(new Quaternion()).invert()),angle:joint===2?.60:.65});
   }
   return {side,upper,lower,hand,joints,gripLocal,thumb,thumbTarget,thumbTip:bones['thumb_04_leaf_'+side],
    upperLength:upper.getWorldPosition(new Vector3()).distanceTo(lower.getWorldPosition(new Vector3())),

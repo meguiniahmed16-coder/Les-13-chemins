@@ -1,10 +1,32 @@
-# Cellule immersive — prototype indépendant v0.4
+# Cellule immersive — jeu officiel v0.5
 
-## Ajustements de confort v0.4
+## Version officielle v0.5
+
+La cellule en vue subjective remplace désormais l’ancien jeu sur **`jeu-yoyo.html`**.
+Le plateau ouvre directement cette page ; il ne propose plus une seconde version
+immersive en dessous. L’ancienne adresse `prison-3d-prototype.html` redirige vers
+la même cellule en conservant les paramètres et l’ancre. L’ancien HTML est conservé
+pour historique dans `archive/jeu-yoyo-v10.html`, hors de la publication.
+
+Le pouce se replie maintenant vers la paume et contre l’index. Son axe de flexion
+et sa cible d’opposition ont été corrigés sans modifier la paume, les quatre autres
+doigts, le point d’attache ou les dimensions de la prise. Un test anatomique contrôle
+le sens de la dernière phalange sur un manche vertical et incliné, en complément
+du contrôle de contact sur les triangles du vrai maillage.
+
+Le module `prison-3d-session.js` raccorde les trois épreuves au protocole existant
+du plateau : chargement prêt, initialisation de session, victoire de 30 points,
+confirmation et nouvelle session pour rejouer. Seul le parent de même origine
+peut initialiser la partie et seul `plateaux-core.js` crédite la sauvegarde.
+Le premier succès donne 30 points ; un doublon ou une nouvelle partie ne donne
+aucun crédit supplémentaire. Le bouton « Continuer le voyage » revient au plateau.
+L’accès direct reste jouable sans modifier une progression de parcours.
+
+## Ajustements de confort v0.4 conservés
 
 Le manche est placé sous les têtes des métacarpiens pour que les quatre doigts
 l'entourent. Chaque doigt dispose d'une fermeture adaptée à sa longueur ; le pouce
-rejoint le côté opposé du manche. Les dimensions de la main et du manche restent
+se referme contre l’index autour du manche. Les dimensions de la main et du manche restent
 identiques. Les contacts sont vérifiés sur les triangles réellement déformés du GLB.
 
 Pour récupérer les sacs, il suffit maintenant de **maintenir Saisir** à la fenêtre.
@@ -81,8 +103,8 @@ espacés de 210 mm. La progression du tirage est bloquée hors d'une ouverture. 
 conserve l'axe du sac dans son ouverture après l'accroche, même si le joueur déplace la caméra.
 Le cintre est présenté de profil et la tête de brosse tournée pour présenter son épaisseur.
 
-Ce prototype ne remplace pas `jeu-yoyo.html`, ne transmet aucun crédit au plateau et
-n'accède pas aux sauvegardes de la progression officielle.
+La réussite est transmise au plateau par la session courante et termine la partie 3/3
+du chapitre 2. Le jeu ne lit ni n’écrit directement les sauvegardes de progression.
 
 ## Ressources et licences
 
@@ -101,7 +123,8 @@ Les modèles sont servis par le même site que le jeu.
 - `prison-3d-camera.js` : visite, vue subjective, regard, déplacement et collisions.
 - `prison-3d-arms.js` : géométrie des bras, squelette, préhension et attache du manche.
 - `prison-3d-controls.js` : joystick, doigts indépendants, clavier et remise à zéro.
-- `prison-3d-balance.js` : rythme doux du prototype, sans modifier les valeurs par défaut du yo-yo.
+- `prison-3d-session.js` : intégration au plateau, victoire unique, nouvelle session et retour.
+- `prison-3d-balance.js` : rythme doux de la cellule, sans modifier les valeurs par défaut du yo-yo.
 - `prison-3d-spatial.js` : conversion des ouvertures physiques et collision latérale du sac.
 - `prison-3d-loader.js` et le bootstrap HTML : transfert interrompable, modèle complet,
   progression, première image et écran de reprise après erreur.
@@ -111,6 +134,8 @@ les vrais GLB, les bras déformés, la fermeture des doigts, la caméra portrait
 les commandes multi-touch, les dimensions des ouvertures et les erreurs de chargement.
 Un parcours d'intégration exécute l'application, ses contrôles et ses règles jusqu'à
 30/30 par simple maintien, y compris visite, pause, surveillant, brosse, tabac et café.
+Il utilise le vrai moteur de progression du plateau pour vérifier les 30 points et
+l’ouverture du niveau suivant ; les tests de session couvrent aussi les doublons et replays.
 Les durées du surveillant, le tirage en deux secondes et les réglages historiques du
 jeu précédent font l'objet de vérifications distinctes. Seuls DOM, renderer
 WebGL et parsing des textures du tabouret sont simulés dans ce parcours CPU.

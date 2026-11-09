@@ -1,5 +1,235 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1c2629"><title>Un fil entre les barreaux · Les treize chemins</title><style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#172024;color:#eee8db;font:14px/1.5 system-ui,sans-serif}body{background:radial-gradient(ellipse at top,#36454a,#151b1f 75%)}button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid #f5c578;outline-offset:4px}button:disabled{cursor:default;opacity:.6}[hidden]{display:none!important}.shell{max-width:1040px;margin:auto;padding:12px 16px 22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px}.kicker{font-size:10px;letter-spacing:.19em;color:#bcae94;text-transform:uppercase}.top h1{font:400 clamp(21px,4vw,32px)/1.2 Georgia,serif;margin:4px 0}.tools{display:flex;gap:6px}.small{white-space:nowrap;border:1px solid #677477;color:#ece5d5;background:#263338;border-radius:5px;padding:9px 11px;min-height:42px}.screen{position:relative;isolation:isolate;aspect-ratio:16/9;overflow:hidden;border:1px solid #87918a;border-radius:10px;background:#131b20;box-shadow:0 16px 40px #0006}canvas{width:100%;height:100%;display:block}.cinema{position:absolute;inset:0;z-index:0}#handOpen2D,#handGrip2D{position:absolute;left:50%;width:auto;max-width:none;object-fit:contain;pointer-events:none;user-select:none;z-index:2;filter:drop-shadow(0 5px 8px #0004)}#handOpen2D{top:57%;height:100%;transform:translateX(-51%)}#handGrip2D{top:17%;height:103%;transform:translateX(-73%)}#game{position:relative;z-index:3;pointer-events:none}.screen:after{content:'';pointer-events:none;position:absolute;inset:0;z-index:2;box-shadow:inset 0 0 70px #0004}.caption{position:absolute;bottom:6%;left:10%;right:10%;text-align:center;font:clamp(14px,2.3vw,21px)/1.45 Georgia,serif;text-shadow:0 2px 7px #000;color:#fff8ea;z-index:3}.caption span{background:#142025bb;padding:5px 10px;box-decoration-break:clone;-webkit-box-decoration-break:clone}.film-label{position:absolute;top:17px;left:20px;font-size:10px;letter-spacing:.16em;color:#f5eddb;z-index:3}.skip{position:absolute;right:14px;bottom:14px;z-index:5;background:#152329d9;color:#f4ecdc;border:1px solid #d5c8ae77;border-radius:4px;padding:8px 10px;min-height:42px}.overlay{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#0e191fee,#0e191fb0);padding:24px}.card{width:min(580px,95%);text-align:center}.card .eyebrow{color:#c5aa76;letter-spacing:.18em;text-transform:uppercase;font-size:10px}.card h2{font:400 clamp(28px,5vw,48px)/1.08 Georgia,serif;margin:10px 0 16px}.card p{font-size:clamp(13px,1.7vw,16px);color:#d2d8d5;max-width:460px;margin:12px auto}.primary{background:#dfb975;border:1px solid #f9d99b;color:#202727;border-radius:5px;font-weight:750;min-height:50px;padding:12px 22px;margin:10px 3px}.secondary{background:transparent;border:1px solid #a4aea7;color:#e5e9e4;border-radius:5px;min-height:46px;padding:10px 16px;margin:7px 3px}.hud{display:flex;justify-content:space-between;align-items:center;padding:11px 4px;gap:8px}.objective{font-size:15px;font-weight:650}.progress{color:#dcb577;white-space:nowrap}.guard{font-size:12px;color:#bac5bf}.guard.warn{color:#ffd58a}.guard.danger{color:#ff988b}.notice{min-height:25px;text-align:center;font-size:13px;color:#d4c7ac;margin:0 0 6px}.console{display:flex;align-items:center;justify-content:space-around;gap:20px;max-width:680px;margin:0 auto;border:2px solid #080d10;border-radius:18px;background:repeating-linear-gradient(0deg,#20272b 0px,#20272b 3px,#171e22 4px,#171e22 6px);box-shadow:inset 0 2px #657073,0 12px 25px #0005;padding:12px 24px;touch-action:none;user-select:none;-webkit-user-select:none}.joystick{position:relative;width:132px;height:124px;touch-action:none;flex-shrink:0}.joy-base{position:absolute;left:22px;top:18px;width:88px;height:88px;border-radius:50%;background:repeating-radial-gradient(ellipse,#11181b 0px,#11181b 5px,#374047 6px,#10171a 8px);border:2px solid #3d484d;box-shadow:0 8px 12px #0009}.stick{position:absolute;left:43px;top:16px;width:46px;height:65px;border-radius:50% 50% 35% 35%;background:linear-gradient(90deg,#070d11,#515b60 35%,#20272e 60%,#080e12);box-shadow:8px 12px 9px #0008;border:1px solid #4c575c;pointer-events:none;transform-origin:50% 100%}.stick:before{content:'';position:absolute;left:-2px;top:-8px;width:48px;height:34px;border-radius:50%;background:radial-gradient(ellipse at 35% 25%,#727d82,#232a30 50%,#090d11 80%);border:1px solid #596268}.dir{position:absolute;color:#b7b6ac;font:10px monospace}.dir.l{left:0;top:50px}.dir.r{right:0;top:50px}.dir.d{bottom:0;left:48px;font-size:9px}.console-brand{color:#b4aa8d;letter-spacing:.14em;font:11px/1.8 monospace;text-align:center}.fire-wrap{text-align:center}.fire{width:72px;height:72px;border-radius:50%;border:7px solid #080c0f;color:#fff;background:radial-gradient(circle at 35% 25%,#fa6e51,#bd3324 62%,#72231d);box-shadow:0 6px 0 #080c0f,0 10px 15px #0007,inset 1px 2px 3px #ffb8a0;touch-action:none}.fire:active,.fire.pressed{transform:translateY(4px);box-shadow:0 2px 0 #080c0f,inset 1px 2px 5px #691c15}.fire-wrap small{display:block;font-size:9px;color:#b6b7ac;margin-top:10px;letter-spacing:.12em}.instructions{text-align:center;color:#aebbb6;font-size:11px;margin:12px 0 0}.guide{max-width:670px;margin:16px auto;padding:18px 24px;border-left:2px solid #c3a36c;background:#263338}.guide h2{font:26px Georgia,serif;margin:0 0 12px}.guide p{color:#d0d8d1}.guide ol{padding-left:20px}.guide li{margin:8px 0}.guide .primary{display:block;width:100%;margin:16px 0 0}.badges{display:flex;gap:8px;justify-content:center;margin:14px 0}.badges span{border:1px solid #61716a;border-radius:4px;padding:7px;font-size:12px}.score-pop{font:50px Georgia,serif;color:#f1ce89}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-@media(max-width:600px){.shell{padding:8px 8px 14px}.top h1{font-size:19px}.kicker{font-size:8px}.small{font-size:11px;padding:8px}.screen{aspect-ratio:1.16;border-radius:7px}.card{width:100%}.overlay{padding:16px}.card h2{font-size:29px;margin:8px 0}.card p{font-size:13px;margin:9px auto}.film-label{top:10px;left:12px;font-size:8px}.caption{bottom:20%;left:8%;right:8%;font-size:15px}.console{padding:7px 13px;border-radius:13px;gap:10px}.joystick{height:116px;width:124px}.console-brand{font-size:8px}.fire{width:68px;height:68px}.objective{font-size:13px}.guard{font-size:11px}.guide{padding:15px;font-size:13px}.hud{padding:10px 2px}.notice{font-size:12px}.instructions{font-size:10px}.badges span{padding:5px;font-size:10px}}
-@media(max-height:560px) and (min-width:600px){.shell{max-width:780px}.screen{aspect-ratio:2.6}.top{margin-bottom:4px}.top h1{font-size:20px}.console{padding:0 20px}.joystick{height:98px}.dir.d{bottom:-1px}.instructions{margin:4px}}
-</style></head><body><main class="shell"><header class="top"><div><!-- Main fixe v10 : référence conservée pour le contrôle des deux mains statiques. --><div class="kicker">Chapitre 2 — « Même pas mal » · Partie 3/3 · Strasbourg</div><h1>Un fil entre les barreaux</h1></div><div class="tools"><button class="small" id="sound" aria-pressed="true" aria-label="Couper le son">Son : oui</button><button class="small" id="help" hidden>Aide</button><button class="small" id="pause">Pause</button></div></header><section class="screen" id="screen" aria-label="La cellule et le jeu"><canvas id="game" width="1200" height="675" aria-label="Vue du jeu de yo-yo"></canvas><div class="cinema" id="cinema"></div><img id="handOpen2D" src="main-ouverte-dos-v10.avif" class="game-hand" aria-hidden="true" draggable="false" hidden><img id="handGrip2D" src="main_brosse_dos_fixee.webp" class="game-hand" aria-hidden="true" draggable="false" hidden><div class="film-label" id="filmLabel">STRASBOURG · NEUF MÈTRES CARRÉS</div><div class="caption" id="caption"></div><button class="skip" id="skip" hidden>Passer la visite →</button><div class="overlay" id="overlay"><div class="card"><div class="eyebrow">Un geste venu de l’autre côté</div><h2>Un fil entre<br>les barreaux</h2><p>Une cellule. Une voix au-dessus de toi.<br>Et, au bout d’un drap, de quoi tenir.</p><div class="badges"><span>3 épreuves</span><span>30 points</span><span>Casque conseillé</span></div><button class="primary" id="begin">Entrer dans la cellule →</button><p>La visite est sonore, sans musique.</p></div></div></section><div class="hud"><div><div class="objective" id="objective">La visite de la cellule</div><div class="guard" id="guard">Portes, clés et voix du couloir</div></div><div class="progress" id="score">0 / 30</div></div><p class="notice" id="notice" role="status" aria-live="polite">Prends le temps de regarder autour de toi.</p><section class="guide" id="guide" hidden><h2>Le yo-yo : un fil entre les cellules</h2><p>En prison, le « yo-yo » est un moyen de communication et de livraison entre cellules. Des bandes de drap nouées forment une corde. Le drap est enroulé autour de la grande barre d’un cintre retourné ; le crochet du cintre soutient la poignée du sac. On descend le sac puis on le fait osciller devant une autre fenêtre. Café, tabac, nourriture ou messages passent ainsi d’une personne à l’autre.</p><p>Ton bras ne suffit pas : la brosse à toilette te permettra d’attraper la corde à travers les barreaux.</p><ol><li><b>Trouve la brosse</b> dans la cellule : déplace la main vers le manche. Quand le cercle devient vert, appuie sur le bouton rouge. +10 points.</li><li><b>Attrape le tabac</b> : déplace la tête de la brosse sous la corde. Le cercle devient vert lorsque la corde passe <b>dans un espace entre deux barreaux</b> et que la brosse est alignée : appuie sur le rouge pour l’accrocher. Puis déplace doucement la manette pour faire passer le sac et ton bras <b>par ce même espace</b>. Ce n’est que dans une ouverture que tu pourras tirer. Si tu relâches, le sac s’arrête ; appuie à nouveau pour continuer. Il reste bloqué s’il touche un barreau. Après le premier sac, le bâtiment gris commence à prendre des couleurs. +10 points.</li><li><b>Attrape le café</b> de la même façon, en faisant passer le deuxième sac dans un intervalle. Le bâtiment déjà légèrement coloré devient entièrement éclatant. +10 points.</li></ol><p><b>Des pas et des clés ? Joystick vers le bas pour te cacher.</b> Reste à l’abri jusqu’à ce que le surveillant s’éloigne. Un mouvement à gauche ou à droite te fait ressortir. S’il te surprend, tu recommences les trois épreuves.</p><p>Dans le passage du livre, tout arrive dans un seul sac. Le jeu sépare les deux livraisons.</p><button class="primary" id="play">Jouer les trois épreuves →</button></section><section id="lesson" class="guide" hidden><h2>Le geste, en trois temps</h2><ol><li><b>Place la brosse sous la corde</b> avec la manette. La tête de la brosse doit croiser la corde.</li><li><b>Attends le cercle vert</b>, puis appuie sur le bouton rouge.</li><li><b>Déplace doucement la manette</b> pour faire passer le sac et le bras entre deux barreaux. Quand l’espace est libre, <b>maintiens le rouge</b> pour ramener le sac. Un barreau bloque réellement le mouvement.</li></ol><p>Relâcher arrête le sac, sans perdre ta prise. Au bruit des clés, manette vers le bas ; tu pourras reprendre après le passage du surveillant.</p><button class="primary" id="lessonPlay">J’ai compris · Attraper le tabac →</button></section><section class="console" id="console" hidden aria-label="Manette rétro"><div class="joystick" id="joystick" role="group" aria-label="Manette : gauche, droite ; bas pour se cacher" tabindex="0"><div class="joy-base"></div><div class="stick" id="stick"></div><span class="dir l">◀</span><span class="dir r">▶</span><span class="dir d">▼ ABRI</span></div><div class="console-brand">UN FIL<br>ENTRE<br>LES BARREAUX<br><span style="color:#8a6c48">━━━━━━</span></div><div class="fire-wrap"><button class="fire" id="fire" aria-label="Attraper puis maintenir pour tirer"></button><small>ATTRAPER / TIRER</small></div></section><p class="instructions" id="keys" hidden>← → viser · ↓ se cacher · Espace : attraper / maintenir pour tirer · P : pause<br>Sur téléphone : manette à gauche, bouton rouge à droite.</p><p style="text-align:center;margin:15px 0 7px;font-size:13px"><a href="prison-3d-prototype.html" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 18px;border:1px solid #b5a078;border-radius:8px;color:#f5e4b9;background:#293b3a;line-height:1.5">🧱 Essayer la nouvelle cellule entièrement en 3D — prototype gratuit et indépendant</a></p><p style="text-align:center;font-size:11px;color:#bac8bf;margin:0 0 10px">Cette préversion ne modifie pas les points de ton parcours.</p><span class="sr" id="live" aria-live="polite"></span></main><script src="yoyo-runtime.js?v=20261108-dos-cafe-v10"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#18201f">
+<title>La cellule — Un fil entre les barreaux · Les Treize Chemins</title>
+<style>
+:root{color-scheme:dark;--ink:#f0ede4;--muted:#bac6c1;--line:#acb7ad5c;--gold:#e8c68b;--glass:#16201edb}
+*{box-sizing:border-box}
+html,body{margin:0;background:#101715;color:var(--ink);font:15px/1.45 system-ui,-apple-system,sans-serif}
+body{overscroll-behavior-y:none}
+a{color:#e4d3ae;text-underline-offset:3px}
+button{font:600 14px/1.25 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+button:focus-visible,a:focus-visible,#joystick:focus-visible{outline:3px solid #f1d39b;outline-offset:4px}
+button:disabled{opacity:.4;cursor:wait}
+button[hidden],[hidden]{display:none!important}
+nav{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 clamp(12px,2.5vw,30px)}
+.brand{font:600 16px Georgia,serif;text-decoration:none}
+.tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b6c2b9;white-space:nowrap}
+main{margin:0 auto;max-width:1800px}
+.scene{position:relative;height:calc(100dvh - 48px);min-height:420px;overflow:hidden;isolation:isolate;background:#4a504a;border-top:1px solid #7c898359}
+#world{display:block;width:100%;height:100%;image-rendering:auto;touch-action:none;outline:none}
+.scene:fullscreen{width:100vw;height:100dvh;min-height:0;border:0}
+.scene::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;box-shadow:inset 0 90px 80px -65px #07100bc9,inset 0 -100px 90px -55px #07100bbd}
+.hud{position:absolute;inset:0;z-index:2;pointer-events:none;padding:18px max(18px,env(safe-area-inset-right)) 18px max(18px,env(safe-area-inset-left))}
+.hud-top{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.objective{text-shadow:0 2px 5px #000c;max-width:min(620px,70%)}
+.chapter{margin:0 0 4px;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#d3d8cd}
+h1{font:500 clamp(20px,2.8vw,30px)/1.1 Georgia,serif;margin:0 0 7px}
+.mission-line{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#stage{font-size:13px;font-weight:600}
+#score{color:#e8c68b;font-size:13px;font-weight:700;white-space:nowrap}
+.toolbar{display:flex;gap:7px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+.tool-button{min-height:42px;padding:10px 13px;border:1px solid var(--line);border-radius:9px;color:#e8eee7;background:var(--glass);backdrop-filter:blur(8px)}
+#guard{display:inline-block;margin:14px 0 0;padding:6px 10px;border-radius:6px;background:#16251cd6;color:#cae3cc;border:1px solid #94b29b55;font-size:11px;font-weight:600;text-shadow:none}
+#guard[data-alert=approaching]{color:#ffe2a2;background:#46371bdd;border-color:#b9984e}
+#guard[data-alert=watching]{color:#ffd5c9;background:#592a22ed;border-color:#d7957d}
+#feedback{position:absolute;left:50%;bottom:190px;transform:translateX(-50%);width:min(600px,calc(100% - 40px));margin:0;text-align:center;text-wrap:balance;font-size:14px;line-height:1.45;text-shadow:0 2px 5px #000,0 0 18px #000;pointer-events:none}
+#status{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);width:min(530px,calc(100% - 260px));font-size:10px;text-align:center;color:#bdc9bd;margin:0;text-shadow:0 1px 4px #000}
+.controls{position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;-webkit-user-select:none}
+.stick-cluster{position:absolute;left:max(26px,env(safe-area-inset-left));bottom:max(24px,env(safe-area-inset-bottom));display:grid;justify-items:center;gap:9px}
+#joystick{position:relative;width:124px;height:124px;border:1px solid #d7e3d17a;border-radius:50%;background:radial-gradient(circle at 50% 42%,#afbebc24,#0f191bc2 74%);box-shadow:0 8px 25px #0005,inset 0 0 0 10px #d8e6db0a,inset 0 2px 5px #ffffff16;touch-action:none;pointer-events:auto}
+#joystick::before{content:"";position:absolute;inset:20px;border:1px solid #e6f0e324;border-radius:50%;pointer-events:none}
+#joystick[aria-disabled=true]{opacity:.35;pointer-events:none}
+#joystick-knob{position:absolute;left:50%;top:50%;width:58px;height:58px;transform:translate(-50%,-50%);border:1px solid #d4e1d2a3;border-radius:50%;background:radial-gradient(circle at 36% 28%,#aebcb1,#63746b 56%,#344840);box-shadow:0 8px 15px #0007,inset 0 1px 2px #efffe760;pointer-events:none;will-change:transform}
+.control-caption{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#d3dfd2;text-shadow:0 2px 4px #000b}
+.action-cluster{position:absolute;right:max(26px,env(safe-area-inset-right));bottom:max(24px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:16px}
+.round-control{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:50%;touch-action:none;pointer-events:auto;-webkit-tap-highlight-color:transparent;box-shadow:0 7px 20px #0007,inset 0 1px 2px #fff5;text-transform:none;transition:filter .12s,box-shadow .12s}
+.round-control:active,.round-control[data-held=true]{filter:brightness(1.15);box-shadow:0 3px 9px #0008,inset 0 2px 8px #0004}
+#action{width:102px;height:102px;border:2px solid #f1deb7;background:radial-gradient(circle at 35% 22%,#f3d69c,#d7b16d 64%,#ad8347);color:#23332c;font-size:16px;font-weight:750}
+#action span{font-size:11px;font-weight:600;opacity:.75}
+#hide{width:74px;height:74px;margin-bottom:8px;border:1px solid #b8cabbaa;background:linear-gradient(145deg,#50655b,#273d33);color:#edf0e5;font-size:11px;padding:8px}
+.start-panel{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);width:min(330px,calc(100% - 40px));padding:21px;text-align:center;background:#15221fe8;border:1px solid #9cae9d70;border-radius:14px;box-shadow:0 16px 55px #0006;backdrop-filter:blur(10px)}
+.start-panel p{margin:0 0 15px;font-size:13px;color:#d0dbce;line-height:1.6}
+.primary,.secondary{border-radius:8px;padding:13px 18px;min-height:48px}
+.primary{border:1px solid #fae5b5;background:#e8c78b;color:#20382d}
+.secondary{background:#22382d;color:#e8e7dc;border:1px solid #82937f}
+#start{width:100%}
+#skip-tour{position:absolute;z-index:4;right:20px;top:110px;background:#172720dc;backdrop-filter:blur(6px)}
+body[data-mode=tour] .controls,body[data-mode=tour] #feedback,body[data-mode=tour] .start-panel{visibility:hidden}
+body[data-mode=playing] .start-panel,body[data-mode=between] .start-panel,body[data-mode=won] .start-panel,body[data-mode=caught] .start-panel{display:none}
+#tour-caption{display:none;position:absolute;left:50%;bottom:65px;transform:translateX(-50%);width:min(580px,calc(100% - 44px));margin:0;text-align:center;font:500 clamp(17px,2vw,23px)/1.4 Georgia,serif;text-shadow:0 2px 7px #000,0 0 22px #000b}
+body[data-mode=tour] #tour-caption{display:block}
+#overlay,#loading{position:absolute;inset:0;display:grid;place-items:center;padding:18px;background:#10201bd9}
+#overlay{z-index:8}
+#loading{z-index:10}
+.overlay-card{width:min(500px,96%);max-height:100%;overflow:auto;background:#f0e8d8;color:#263d32;padding:clamp(22px,4vw,38px);border-radius:13px;text-align:center;box-shadow:0 18px 50px #0008}
+.overlay-card h2{font:500 clamp(26px,4vw,36px)/1.16 Georgia,serif;margin:0 0 15px}
+.overlay-card p{font-size:15px;line-height:1.65}
+.overlay-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.loading-card a{font-size:13px;color:#355344}
+#loading-progress{display:block;width:100%;height:10px;accent-color:#50725c;margin:20px 0}
+#loading-retry{margin-bottom:15px}
+.below-game{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;padding:14px clamp(14px,3vw,30px);border-top:1px solid #39473f}
+.below-game p{margin:0;font-size:12px;color:#bac7bb;max-width:660px}
+.below-game button{min-height:42px;font-size:12px}
+footer{padding:0 clamp(14px,3vw,30px) 22px;color:#9eafa3;font-size:12px}
+footer .links{display:flex;gap:20px;flex-wrap:wrap;margin:5px 0 17px}
+details{max-width:920px;border-top:1px solid #3c4b40;padding-top:13px}
+summary{cursor:pointer}
+details p{line-height:1.7}
+@media(max-width:520px){
+ nav{height:42px;padding:0 12px}.brand{font-size:14px}.tag{font-size:9px;letter-spacing:.06em}
+ .scene{height:calc(100dvh - 42px);min-height:420px}.hud{padding:14px 12px}.chapter{font-size:9px;letter-spacing:.08em}
+ h1{font-size:22px}.objective{max-width:63%}.mission-line{display:block}#stage{font-size:11px}#score{display:block;margin-top:4px;font-size:12px}
+ .toolbar{gap:5px;max-width:110px}.tool-button{min-height:40px;font-size:10px;padding:8px 9px}
+ #guard{font-size:10px;margin-top:10px;max-width:185px}
+ .stick-cluster{left:max(18px,env(safe-area-inset-left));bottom:max(28px,env(safe-area-inset-bottom));gap:8px}
+ #joystick{width:108px;height:108px}#joystick-knob{width:52px;height:52px}
+ .action-cluster{right:max(16px,env(safe-area-inset-right));bottom:max(27px,env(safe-area-inset-bottom));gap:10px}
+ #action{width:88px;height:88px;font-size:14px}#hide{width:63px;height:63px;font-size:10px;margin-bottom:4px}
+ #feedback{bottom:171px;width:calc(100% - 30px);font-size:12px}
+ #status{bottom:10px;font-size:9px;width:calc(100% - 60px)}
+ #skip-tour{top:135px;right:12px;min-height:42px;font-size:12px}
+ .below-game{align-items:flex-start}.below-game p{max-width:calc(100% - 135px);font-size:11px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ nav{height:34px}.scene{height:calc(100dvh - 34px);min-height:260px}
+ .hud{padding:10px 15px}.chapter{display:none}h1{font-size:18px;margin-bottom:4px}
+ #guard{margin-top:7px;padding:4px 8px}.mission-line{display:flex}#score{display:inline}
+ .stick-cluster{bottom:16px;left:22px;gap:4px}#joystick{width:90px;height:90px}#joystick-knob{width:45px;height:45px}
+ .control-caption{font-size:9px}.action-cluster{bottom:17px;right:22px;gap:12px}#action{width:78px;height:78px;font-size:13px}#hide{width:60px;height:60px;margin-bottom:4px}
+ #feedback{bottom:50px;width:calc(100% - 390px);font-size:11px}
+ #status{bottom:10px;width:calc(100% - 360px);font-size:9px}
+ .start-panel{padding:15px;max-width:320px}.start-panel p{font-size:12px;margin-bottom:9px}
+ #skip-tour{top:65px;right:15px;min-height:40px}
+ .overlay-card{padding:18px 26px}.overlay-card h2{font-size:25px}.overlay-card p{font-size:13px;line-height:1.45}
+}
+@media(prefers-reduced-motion:reduce){.round-control{transition:none}}
+body[data-embedded=true] nav,body[data-embedded=true] footer,body[data-embedded=true] .below-game{display:none}
+body[data-embedded=true] main{max-width:none}
+body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
+</style>
+</head>
+<body data-mode="ready">
+<nav aria-label="Navigation du jeu">
+<a class="brand" href="jeu.html?niveau=5" target="_top" data-return-plateau>Les Treize Chemins</a>
+<span class="tag">Cellule immersive · v0.5</span>
+</nav>
+<main>
+<section class="scene" id="game-shell" aria-label="Jeu de la cellule en vue subjective">
+<canvas id="world" tabindex="0" role="img" aria-label="Vue immersive depuis les yeux du prisonnier. Fais glisser l’image pour regarder autour de toi."></canvas>
+<div class="hud">
+<div class="hud-top">
+<div class="objective">
+<p class="chapter">Chapitre 2 — « Même pas mal » · Partie 3/3 · Strasbourg</p>
+<h1>Un fil entre les barreaux</h1>
+<div class="mission-line"><span id="stage">1 / 3 · Saisir la brosse</span><span id="score">0 / 30</span></div>
+<p id="guard">Couloir calme</p>
+</div>
+<div class="toolbar" role="group" aria-label="Affichage et pause">
+<button class="tool-button" id="pause" type="button" data-game-control disabled>Pause</button>
+<button class="tool-button" id="fullscreen" type="button" data-game-control disabled>Plein écran</button>
+</div>
+</div>
+<p id="feedback" aria-live="polite">Une visite de la cellule, puis le jeu à travers les yeux du prisonnier.</p>
+<p id="tour-caption">Neuf mètres carrés. Un fil vers les autres.</p>
+<p id="status" aria-live="polite">Préparation de la cellule…</p>
+</div>
+<div class="controls" role="group" aria-label="Commandes tactiles du prisonnier">
+<div class="stick-cluster">
+<div id="joystick" role="group" tabindex="0" aria-label="Joystick : avancer, reculer et se déplacer sur les côtés" aria-disabled="true"><span id="joystick-knob" aria-hidden="true"></span></div>
+<span class="control-caption">Marcher</span>
+</div>
+<div class="action-cluster">
+<button id="hide" class="round-control" type="button" data-game-control aria-label="Maintenir pour se cacher" disabled>Se cacher</button>
+<button id="action" class="round-control" type="button" data-game-control aria-label="Maintenir pour saisir ou tirer" disabled>Saisir<span>ou tirer</span></button>
+</div>
+</div>
+<div class="start-panel" id="start-panel">
+<p>Découvre la cellule, puis regarde autour de toi et tends les bras vers les objets.</p>
+<button class="primary" id="start" type="button" data-game-control disabled>Chargement de la cellule…</button>
+</div>
+<button class="secondary" id="skip-tour" type="button" hidden>Passer la visite</button>
+<div id="loading" role="status" aria-live="polite" aria-busy="true"><div class="overlay-card loading-card">
+<h2 id="loading-title">La cellule prend forme</h2>
+<p id="loading-detail">Préparation du jeu 3D…</p>
+<progress id="loading-progress" max="100" value="0" aria-label="Chargement de la cellule"></progress>
+<button id="loading-retry" class="primary" type="button" hidden>Réessayer le chargement</button>
+<div><a href="jeu.html?niveau=5" target="_top" data-return-plateau>Retour au plateau</a></div>
+</div></div>
+<div id="overlay" hidden><div class="overlay-card">
+<h2>La cellule</h2><p>Un jeu de yo-yo au travers des barreaux.</p>
+<div class="overlay-actions"><button class="primary" type="button">Continuer</button>
+<button class="secondary" id="overlay-replay" type="button" hidden>Rejouer</button></div>
+</div></div>
+</section>
+<div class="below-game">
+<p>Le joystick te déplace. Fais glisser l’image pour regarder. Pour le sac, maintiens simplement <strong>Saisir</strong>. Si des pas approchent, maintiens <strong>Se cacher</strong>.</p>
+<button class="secondary" id="retry" type="button" data-game-control disabled>Recommencer</button>
+</div>
+<footer>
+<div class="links"><a href="jeu.html?niveau=5" target="_top" data-return-plateau>Retour au plateau</a></div>
+<details><summary>Commandes clavier et ressources libres</summary>
+<p>Clavier : ZQSD ou WASD et les flèches pour marcher, Espace pour saisir, C ou Ctrl pour se cacher, P pour mettre en pause. Fais glisser l’image avec la souris pour regarder.</p>
+<p>Bras articulés : <a href="https://quaternius.com/packs/universalbasecharacters.html" target="_blank" rel="noopener">Quaternius — Universal Base Characters</a>, licence CC0. Tabouret texturé : <a href="https://polyhaven.com/a/metal_stool_02" target="_blank" rel="noopener">Metal Stool 02, Ulan Cabanilla / Poly Haven</a>, licence CC0. Le reste du décor est modélisé en trois dimensions pour cette cellule.</p>
+<p>Trois épreuves : saisir la brosse, récupérer le tabac, puis le café. En jouant depuis le plateau, réussir la cellule termine le chapitre et rapporte 30 points à la première réussite.</p>
+</details>
+</footer>
+</main>
+<noscript><p>Active JavaScript dans ton navigateur pour ouvrir la cellule 3D.</p></noscript>
+<!-- This loader remains usable even when the large 3D program cannot start. -->
+<script id="prison-loading-bootstrap">
+(()=>{
+ const $=id=>document.getElementById(id);
+ const panel=$('loading'),title=$('loading-title'),detail=$('loading-detail');
+ const progress=$('loading-progress'),retry=$('loading-retry'),start=$('start');
+ const status=$('status'),canvas=$('world'),joystick=$('joystick');
+ const controls=[...document.querySelectorAll('[data-game-control]')];
+ let state='loading';
+ const timer=setTimeout(()=>fail('Le chargement prend trop de temps. Vérifie ta connexion, puis réessaie.'),45000);
+ const disable=value=>{
+  controls.forEach(button=>{button.disabled=value;});
+  joystick.setAttribute('aria-disabled',String(value));
+ };
+ disable(true);canvas.dataset.loadState='loading';
+ function fail(message){
+  if(state==='error')return;
+  state='error';clearTimeout(timer);disable(true);
+  canvas.dataset.loadState='error';panel.hidden=false;
+  panel.setAttribute('aria-busy','false');panel.setAttribute('role','alert');
+  title.textContent='La cellule n’a pas pu s’ouvrir';
+  detail.textContent=message;status.textContent=message;
+  progress.hidden=true;retry.hidden=false;
+  start.textContent='Chargement interrompu';
+ }
+ window.Prison3DLoading={
+  phase(message,value){
+   if(state!=='loading')return;
+   detail.textContent=message;status.textContent=message;
+   if(value===null)progress.removeAttribute('value');else progress.value=value;
+  },
+  ready(){
+   if(state!=='loading')return false;
+   state='ready';clearTimeout(timer);disable(false);
+   canvas.dataset.loadState='ready';panel.hidden=true;
+   panel.setAttribute('aria-busy','false');
+   start.textContent='Commencer la visite';
+   status.textContent='La cellule est prête.';
+   return true;
+  },
+  fail
+ };
+ retry.addEventListener('click',()=>location.reload());
+ window.addEventListener('error',event=>{
+  const source=event.target?.src||event.filename||'';
+  if(state==='loading'&&source.includes('prison-3d-prototype-runtime.js'))
+   fail('Le programme 3D n’a pas pu démarrer. Réessaie le chargement.');
+ },true);
+})();
+</script>
+<script src="prison-3d-prototype-runtime.js?v=20261109-5" defer></script>
+</body>
+</html>
