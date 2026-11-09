@@ -109,7 +109,8 @@ function horse(c,r,t,ground,person){
  // Reins attach to the muzzle, without appearing glued to the face.
  shape(c,'M87 -152L100 -119L118 -115M102 -119L100 -109Q81 -98 43 -110',null,'#624331',2.4);
  // Narrator: a five-year-old (oversized head / correctly scaled limbs).
- const p=r.phase;const mounted=p==='ready'||p==='won'?0:p==='mounting'?r.mount:p==='reunion'?Math.max(0,1-r.phaseTime):1;
+ const p=r.phase==='paused'&&r.pausePhase?r.pausePhase:r.phase;
+ const mounted=p==='ready'||p==='approaching'||p==='won'?0:p==='mounting'?r.mount:p==='reunion'?Math.max(0,1-r.phaseTime):1;
  // Tant que l'enfant a les pieds au sol, afficher le personnage entier a deux jambes.
  // Ne passer a la silhouette de cavalier qu'une fois les pieds leves.
  if(mounted>0&&!(p==='mounting'&&r.mount<=.32)){const q=mounted,dx=-92*(1-q),dy=102*(1-q);
@@ -130,9 +131,12 @@ function horse(c,r,t,ground,person){
   c.restore();}
  c.restore();
  // Debout et en debut de montee : dessin complet avec DEUX jambes.
- if(p==='ready'||(p==='mounting'&&r.mount<=.32)){
+ if(p==='ready'||p==='approaching'||(p==='mounting'&&r.mount<=.32)){
+  // Sur le sol : deux jambes. La marche precede la montee en selle.
   const m=p==='mounting'?r.mount:0;
-  person(x-88+72*m,ground-76*m,{s:.78+.25*m,color:'#3e799e',child:true,variant:0});
+  const atX=p==='approaching'?x-150+62*clamp(r.approach||0,0,1):p==='ready'?x-150:x-88+72*m;
+  const walking=p==='approaching'?r.phaseTime*15:0;
+  person(atX,ground-76*m,{s:.78+.25*m,color:'#3e799e',child:true,variant:0,walk:walking});
  }
  if(p==='reunion'||p==='won'){
   const v=p==='won'?5.2:r.phaseTime,walk=Math.max(0,v-1),heroX=x+80+Math.min(75,walk*50)+Math.max(0,v-3.1)*44,
