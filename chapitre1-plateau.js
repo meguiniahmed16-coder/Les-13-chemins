@@ -28,7 +28,7 @@
  css.textContent+=`
 #boardTargets .rendezvous-card .chapter-part-state{color:#e1dcc9}
 #boardTargets .rendezvous-card[aria-disabled=true] .chapter-card-title{color:#fff9e5}
-#rendezvousDialog{position:fixed;inset:0;box-sizing:border-box;display:block;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border:0;border-radius:0;background:#fff9ed;color:#283b36;overflow:auto;overscroll-behavior:contain;text-align:left}
+#rendezvousDialog{position:fixed;inset:0;box-sizing:border-box;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border:0;border-radius:0;background:#fff9ed;color:#283b36;overflow:auto;overscroll-behavior:contain;text-align:left}
 #rendezvousDialog::backdrop{background:#19332cd9}
 #rendezvousDialog .rendezvous-top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px clamp(14px,3vw,36px);background:#263e3a;color:#fff3dc;font:600 12px/1.4 'DM Sans',sans-serif;border:0}
 #rendezvousDialog .rendezvous-top strong{font:600 12px/1.4 'DM Sans',sans-serif}
