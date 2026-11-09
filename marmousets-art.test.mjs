@@ -50,3 +50,11 @@ test('Schoolchild handwriting writes the exact chapter reference in the sky',()=
  assert.ok(page.includes("c.fillText(caption,0,0)"));
  assert.ok(page.includes('c.measureText(caption).width<=765'));
 });
+
+test('Location strip is at the bottom of the scene, beneath the schoolbook sky caption',()=>{
+ const page=read('arcade-marmousets.html');
+ assert.ok(page.includes('<span class="scene-label">FERNEY → PRÉVESSIN</span>'));
+ assert.match(page,/\.screen \.scene-label\{top:auto;bottom:12px;left:12px\}/);
+ assert.match(page,/@media\(max-width:760px\)\{\.screen \.scene-label\{top:auto;bottom:8px;left:8px\}\}/);
+ assert.ok(page.includes('this.chapterSky();'));
+});
