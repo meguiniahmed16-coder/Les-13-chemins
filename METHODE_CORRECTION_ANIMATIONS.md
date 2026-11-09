@@ -325,3 +325,11 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - Ressources **CC0** réellement intégrées : Kenney Tiny Town pour textures de feuillage, Pixel-Boy & AAA Ninja Adventure pour quelques figurants spéciaux. Source et licence détaillées dans `CATALOGNE_ASSETS_CC0.md`.
 - Conservation de la précédente mise en scène dans `ParkScene.legacyDraw` pour retour arrière ; changement de l’affichage principal uniquement.
 - Ne jamais modifier `score`, `catalogne:sale`, `catalogne:credited`, l’identité des cinq clients, les voix et musiques déjà en place. Tests structurels, déplacement, police, ressources et intégrité de l’arcade.
+
+### 2026-11-09 — Catalogne : aire de jeu plus lisible et difficulté réduite
+- Affichage : la borne et le jeu prennent désormais **toute la largeur disponible**, le panneau de score passant en dessous, avec une largeur maximale de **1 280 px**. Le format de l’image reste 16:9 (pas de déformation des personnages).
+- Bouton facultatif **« ⛶ AGRANDIR »** : plein écran englobant la zone de jeu et ses commandes, avec mode de repli sans l’API plein écran ; le mobile conserve sa mise en page adaptative.
+- Police : **2 patrouilles espacées** (positions x=560 et 1 490, allées −85 et +75) au lieu des quatre ; vitesse de poursuite réduite (64 sur X, 45 entre les allées), détection réduite. Les policiers restent mobiles et peuvent toujours intercepter.
+- Caméra : davantage de visibilité devant le joueur (décalage 255 px à droite, 435 px lorsqu’il retourne à gauche), sans réduire la taille des personnages ni changer les limites du monde.
+- Invariants : conserver les cinq clients, l’accès aux allées, les interactions, les musiques, la question, les ventes +2, les sauvegardes et les messages vers le plateau.
+- Tests : police et positionnement, compatibilité des objectifs, plein écran et commandes, construction publique, autres mini-jeux.
