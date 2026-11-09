@@ -110,12 +110,15 @@ function horse(c,r,t,ground,person){
  shape(c,'M87 -152L100 -119L118 -115M102 -119L100 -109Q81 -98 43 -110',null,'#624331',2.4);
  // Narrator: a five-year-old (oversized head / correctly scaled limbs).
  const p=r.phase;const mounted=p==='ready'||p==='won'?0:p==='mounting'?r.mount:p==='reunion'?Math.max(0,1-r.phaseTime):1;
- if(mounted>0){const q=mounted,dx=-92*(1-q),dy=102*(1-q);
+ // Tant que l'enfant a les pieds au sol, afficher le personnage entier a deux jambes.
+ // Ne passer a la silhouette de cavalier qu'une fois les pieds leves.
+ if(mounted>0&&!(p==='mounting'&&r.mount<=.32)){const q=mounted,dx=-92*(1-q),dy=102*(1-q);
   c.save();c.translate(dx,dy);c.translate(-5,-112);c.scale(.87,.87);c.translate(5,112);
-  // En profil, une seule jambe du jeune cavalier est visible ;
-  // l'autre reste derriere le cheval, ce qui affirme l'assise a califourchon.
-  shape(c,'M-10 -115Q2 -108 16 -98L28 -82Q31 -78 27 -73L17 -73Q11 -77 13 -84L4 -92Q-7 -101 -14 -111Z',null,'#2f536d',2);
-  shape(c,'M17 -73L29 -73',null,'#4d3931',4);
+  // Cavalier assis a califourchon : seule la jambe du cote visible apparait.
+  // Le pantalon et la chaussure sont des surfaces pleines, pas de simples traits.
+  shape(c,'M-12 -116Q-2 -115 9 -109Q17 -104 18 -95L26 -82Q29 -78 25 -73L15 -73Q11 -76 11 -83L5 -95Q-5 -100 -15 -108Z','#2f536d',INK,2);
+  shape(c,'M15 -77Q21 -81 27 -77L35 -74Q40 -71 37 -68L32 -66L18 -67Q15 -69 15 -73Z','#453832',INK,1.7);
+  shape(c,'M15 -69L33 -68',null,'#bbab90',1.1);
   shape(c,'M-24 -155Q-8 -160 4 -151L9 -124Q-10 -115 -22 -127Z','#3e799e',INK,2);
   shape(c,'M-12 -149L0 -145',null,'#8db8be',2);
   shape(c,'M1 -147Q10 -132 24 -124L40 -115',null,'#ba865f',5);
@@ -126,7 +129,11 @@ function horse(c,r,t,ground,person){
   oval(c,-3,-170,1.6,1.9,'#2c3633');shape(c,'M-3 -161Q1 -159 4 -162',null,'#9a614c',1.4);
   c.restore();}
  c.restore();
- if(p==='ready')person(x-88,ground,{s:.78,color:'#3e799e',child:true,variant:0});
+ // Debout et en debut de montee : dessin complet avec DEUX jambes.
+ if(p==='ready'||(p==='mounting'&&r.mount<=.32)){
+  const m=p==='mounting'?r.mount:0;
+  person(x-88+72*m,ground-76*m,{s:.78+.25*m,color:'#3e799e',child:true,variant:0});
+ }
  if(p==='reunion'||p==='won'){
   const v=p==='won'?5.2:r.phaseTime,walk=Math.max(0,v-1),heroX=x+80+Math.min(75,walk*50)+Math.max(0,v-3.1)*44,
    brotherX=3420+Math.max(0,v-3.1)*44;
