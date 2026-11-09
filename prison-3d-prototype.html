@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#172522">
+<title>La cellule 3D — Prototype du yo-yo · Les Treize Chemins</title>
+<style>
+:root{color-scheme:dark;--ink:#e9e3d5;--line:#87917d;--dark:#14211d;--green:#294438;--cream:#ebc88a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#384740,#121e1b 80%);color:var(--ink);font:15px/1.55 system-ui,-apple-system,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:14px clamp(10px,2vw,30px) 40px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 15px}
+a{color:#efdaaf;text-underline-offset:3px}
+.brand{font:600 16px Georgia,serif;text-decoration:none;letter-spacing:.03em}
+.tag{padding:5px 10px;border-radius:20px;border:1px solid #9e9474;color:#ecd9b5;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+header{margin-bottom:12px}
+header p{color:#b9c7b8;margin:4px 0 0}
+h1{font:500 clamp(29px,4vw,43px)/1.15 Georgia,serif;margin:0}
+h1 em{color:#efcb88}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 235px;gap:16px}
+.scene{position:relative;min-width:0;border:2px solid #9d957f;border-radius:12px;overflow:hidden;background:#26342f;box-shadow:0 24px 55px #0007}
+#world{display:block;width:100%;height:min(65vh,660px);min-height:350px}
+#overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:#15241ddf}
+#overlay[hidden]{display:none}
+.overlay-card{width:min(550px,95%);background:#f0e8d8;color:#263d32;padding:clamp(18px,3vw,35px);border-radius:12px;text-align:center;box-shadow:0 18px 50px #0008}
+.overlay-card h2{font:500 clamp(25px,4vw,39px)/1.15 Georgia,serif;margin:0 0 14px}
+.overlay-card p{line-height:1.7}
+.game-help{border:1px solid #7c8f7e;border-radius:11px;background:#22362c;padding:17px 16px;display:flex;flex-direction:column;gap:14px}
+.game-help h2{font:600 15px/1.3 Georgia,serif;margin:0}
+.score{font:700 28px/1.1 Georgia,serif;color:#f2d28a}
+.level{font:600 16px/1.4 Georgia,serif;color:#fff3d8}
+#guard{font-weight:700;padding:10px;border:1px solid #7d947e;border-radius:7px;color:#bfe8c2}
+#guard[data-alert=approaching]{color:#ffe6aa;border-color:#b9a15f}
+#guard[data-alert=watching]{color:#ffb2a6;border-color:#db7d70}
+#status,#feedback{font-size:13px;color:#d6dcca;margin:0}
+#feedback{min-height:74px}
+.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:13px 0 12px;touch-action:manipulation}
+button{font:700 14px/1.3 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+.controls button{border-radius:11px;min-height:62px;padding:10px 6px;border:1px solid #bcb494;background:#31443b;color:#f6e8cb;user-select:none;touch-action:none}
+.controls button:active{background:#50725c;transform:translateY(2px)}
+.controls .action{background:#d8b777;color:#172b22;border-color:#f1d79c}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 0}
+.primary,.secondary{border-radius:7px;padding:12px 20px;min-height:48px}
+.primary{border:1px solid #fae5b5;background:#e8c78b;color:#20382d}
+.primary:disabled{opacity:.45;cursor:wait}
+.secondary{background:#293f34;color:#e8e7dc;border:1px solid #82937f}
+button:focus-visible,a:focus-visible{outline:3px solid #fae29c;outline-offset:3px}
+small,.small{font-size:12px;color:#c9d5c7}
+details{margin-top:16px;border-top:1px solid #748575;padding-top:14px;color:#d2d9ce}
+summary{font-weight:700;cursor:pointer}
+details p{max-width:850px}
+.comparison{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-top:16px}
+.comparison a{background:#1e3028;border:1px solid #64776b;padding:9px 14px;border-radius:7px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.game-help{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.game-help h2{grid-column:1/-1}#world{height:min(59vh,540px)}}
+@media(max-width:520px){main{padding:9px 7px 28px}nav{margin-bottom:11px}header{padding:0 8px}.scene{border-radius:7px}#world{height:53dvh;min-height:290px}.game-help{grid-template-columns:1fr;gap:6px}.game-help h2{grid-column:1}#feedback{min-height:45px}.controls{gap:5px}.controls button{font-size:12px;min-height:55px;padding:8px 3px}.toolbar>*{flex:1}}
+@media(prefers-reduced-motion:reduce){.controls button:active{transform:none}}
+</style>
+</head>
+<body>
+<main>
+<nav>
+<a class="brand" href="jeu.html">✦ Les Treize Chemins</a>
+<span class="tag">Prototype 3D autonome · CC0</span>
+</nav>
+<header><h1>La cellule — <em>Un fil entre les barreaux</em></h1>
+<p>Chapitre 2 « Même pas mal » · Strasbourg · Comparaison sans remplacement du jeu officiel</p></header>
+<div class="layout">
+<section>
+<div class="scene">
+<canvas id="world" role="img" aria-label="Cellule de prison entièrement en trois dimensions, avec un prisonnier animé, deux lits superposés, un lavabo, un WC, une table, une armoire et une fenêtre à barreaux."></canvas>
+<div id="overlay" hidden><div class="overlay-card">
+<h2>La cellule</h2><p>Un jeu de yo-yo au travers des barreaux.</p>
+<button class="primary" type="button">Continuer</button>
+</div></div>
+</div>
+<div class="controls" role="group" aria-label="Manette du prisonnier">
+<button id="left" type="button" aria-label="Déplacer vers la gauche">◀ Gauche</button>
+<button id="right" type="button" aria-label="Déplacer vers la droite">Droite ▶</button>
+<button id="hide" type="button" aria-label="S'accroupir pour échapper au surveillant">↓ Cache-toi</button>
+<button id="action" class="action" type="button" aria-label="Attraper ou tirer, maintenir">● Saisir / Tirer</button>
+</div>
+<div class="toolbar">
+<button class="primary" id="start" type="button" disabled>Chargement du personnage 3D…</button>
+<button class="secondary" id="pause" type="button">Pause</button>
+<button class="secondary" id="retry" type="button">Recommencer</button>
+</div>
+<p class="small">Sur clavier : ← → ou A / D pour déplacer, ↓ ou S pour se cacher, maintenir Espace pour saisir et tirer, P pour pause.</p>
+</section>
+<aside class="game-help" aria-live="polite">
+<h2>Mission · Le yo-yo</h2>
+<div><div class="level" id="stage">1 / 3 · Saisir la brosse</div>
+<div class="score" id="score">0 / 30</div></div>
+<p id="guard">Couloir calme</p>
+<p id="feedback">La brosse, puis deux sacs à attraper entre les barreaux.</p>
+<p id="status">Chargement du corps articulé Quaternius CC0…</p>
+<small>Cette version n’écrit aucun point ni aucune sauvegarde dans le parcours principal.</small>
+</aside>
+</div>
+<div class="comparison">
+<a href="jeu-yoyo.html">Comparer avec la version actuelle du yo-yo</a>
+<a href="jeu.html">Revenir aux deux chapitres du plateau</a>
+</div>
+<details><summary>Ressources libres et provenance du prototype</summary>
+<p>Personnage articulé : <a href="https://quaternius.com/packs/universalbasecharacters.html" target="_blank" rel="noopener">Quaternius — Universal Base Characters</a>, modèle masculin déjà présent dans le projet, licence CC0. Décor et accessoires : maillage 3D original construit pour l’essai, sans ressources payantes. Pour une version plus détaillée, les meubles du <a href="https://kenney.nl/assets/furniture-kit" target="_blank" rel="noopener">Furniture Kit de Kenney</a> (CC0) pourront remplacer les volumes actuels, tandis que les textures de <a href="https://polyhaven.com" target="_blank" rel="noopener">Poly Haven</a> (CC0) pourront enrichir la pierre et les métaux.</p>
+<p>Le prototype réutilise les règles du yo-yo original : brosse, tabac, café, passages du surveillant, interception uniquement dans un passage entre les barreaux, et total de 30 points.</p>
+</details>
+</main>
+<script src="prison-3d-prototype-runtime.js" defer></script>
+</body>
+</html>
