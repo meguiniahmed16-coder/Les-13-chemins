@@ -17,6 +17,7 @@ for (const args of [
   ['build-bosnie-addon.mjs'],
   ['build-danse.mjs'],
   ['--test', 'marmousets-art.test.mjs'],
+  ['--test', 'a410-pixel-v2.test.mjs'],
   ['--test', 'ordre-lecture.test.mjs'],  // compile true stage characters from sources, never reuse stale runtime
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
@@ -43,6 +44,7 @@ const publicFiles = [
   'editeurs.js',
   'editorial.css',
   'arcade-a410.html',
+  'a410-pixel-v2.js',
   'arcade-catalogne.html',
   'arcade-marmousets.html',
   'marmousets-art-v2.js',
