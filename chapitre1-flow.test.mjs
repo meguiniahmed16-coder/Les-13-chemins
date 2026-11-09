@@ -105,14 +105,14 @@ test('Step two keeps a single featured card and distinguishes the three book cha
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js');
  const levels=JSON.parse(html.match(/const LEVELS=(\[.*?\]);\s*const AVATARS=/s)[1]);
  assert.equal(levels[3].title,'Même pas mal');
- assert.ok(ui.includes('Bloc 2 · Le météore'));
+ assert.ok(ui.includes('Chemin 2 · Le météore'));
  assert.ok(ui.includes('chapter-literary-part'));
  assert.ok(!ui.includes('De Sarajevo à Strasbourg'),'No invented collective title replaces the three chapter names');
  assert.ok(ui.includes('chapterTitle'),'The card renders titles from the distinct chapter metadata');
  assert.ok(ui.includes("scene===1||scene===4?' chapter-featured'"));
  assert.ok(ui.includes('if(scene===1||scene===4)'));
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
- assert.ok(ui.includes("' / 2 blocs · '"));
+ assert.ok(ui.includes("' / 2 chemins · '"));
  assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
  assert.ok(ui.includes('Chapitre '),'The active game retains its book chapter heading');
  assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
@@ -248,7 +248,7 @@ test('One step groups the three games while each page and dialog names its own b
  assert.ok(u.includes("const changed2=state.selected===5&&flow.prepareChapter2Dance(state)"));
  assert.ok(u.includes("'bosnie:won':4"));
  assert.ok(u.includes("'bosnieClose'"));
- assert.ok(game.includes('0 / 2 blocs · 0 points'));
+ assert.ok(game.includes('0 / 2 chemins · 0 points'));
  assert.ok(game.includes('<b id="count">0/2</b>'));
  assert.match(p,/Chapitre 3[^\n]*Le coup du bus/);
  assert.match(p,/Chapitre 4[^\n]*Le drapeau rouge/);
@@ -256,6 +256,6 @@ test('One step groups the three games while each page and dialog names its own b
   ['jeu-danse.html',3,'Le coup du bus',2],['jeu-yoyo.html',4,'Le drapeau rouge',3]]){
   const page=read('./'+file);
   assert.match(page,new RegExp('Chapitre '+chapter+'[^<\\n]*'+title,'i'),file+' displays its book chapter');
-  assert.match(page,new RegExp('(?:Étape|Bloc) 2[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
+  assert.match(page,new RegExp('Chemin 2[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
  }
 });

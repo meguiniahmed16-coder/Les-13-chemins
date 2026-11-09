@@ -5,7 +5,7 @@
   if(level<=3)return 'Chapitre 1 — « La salle d’attente »';
   if(level===4)return 'Chapitre 2 — « Même pas mal »';
   if(level===5)return Number(plateau)===2?'Chapitre 4 — « Le drapeau rouge »':'Chapitre 3 — « Le coup du bus »';
-  return 'Bloc '+(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
+  return 'Chemin '+(level-3)+' — '+String(titles[level-1]||'La suite du voyage');
  }
  const styles=`
  #diceDialog.journey-open{width:min(920px,96vw);max-width:96vw;padding:18px;overflow:hidden}
