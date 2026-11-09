@@ -3,6 +3,19 @@
     "level": 1,
     "chapter": "01",
     "title": "La salle d’attente",
+    "scene": "Les Marmousets, le cheval et mon petit frère",
+    "pages": [
+      17,
+      19
+    ],
+    "pageLabel": "pages 17–19",
+    "quote": "J’ai cinq ans quand mes parents nous accompagnent, mon frère et moi, à l’orphelinat. Mon frère est près de moi. Maintenant, ils nous expliquent que nous allons rester.\n\n— On reviendra.\n\n— Quand ?\n\nMa mère regarde mon père.\n\n— On reviendra te voir.\n\n— Demain ?\n\n— Ahmed…\n\n— Demain ?\n\nJe tiens son vêtement. Elle essaie de dégager ma main.\n\n— Lâche, tu vas le déchirer.\n\nJe serre plus fort.\n\n— Je viens avec vous.\n\n— Tu restes ici avec ton frère.\n\n— Je veux pas rester.\n\n— Tu n’es pas tout seul.\n\nJe le sais. Mustapha est là. Mais ce sont eux qui s’en vont. Je pleure, je hurle.\n\nDans cet orphelinat, il y avait un cheval. Quelqu’un me soulève et me pose dessus pour me calmer.\n\n— Tiens-toi bien.\n\nJe suis haut. Pendant un instant, je regarde son encolure. Puis je cherche mes parents.\n\n— Vous partez ?\n\nLa personne près de moi dit quelque chose sur le cheval. Je n’écoute plus.\n\n— Maman !\n\n— Regarde devant toi.\n\n— Descends-moi.\n\n— Attends, tiens-toi…\n\n— Descends-moi !\n\nJe suis content d’être sur ce cheval. Je voudrais que mes parents restent pour me regarder. Je voudrais qu’on me fasse monter dessus quand ils ne sont pas en train de partir.\n\n— Je veux descendre.\n\nJe ne me calme pas. Être dessus m’empêche de continuer à m’agripper à mes parents. Je ne peux plus les retenir. Je comprends que j’ai perdu.\n\nJ’ai six ans quand on quitte l’orphelinat des Marmousets, à Ferney-Voltaire, pour une famille d’accueil à Prévessin-Moëns. Je ne comprends pas très bien où on nous emmène. Une fois arrivé, je ne comprends toujours pas pourquoi on est là.\n\nC’est une maison de campagne pleine d’enfants de tous âges. Ils se connaissent tous. Moi, je suis avec mon petit frère. Ma mère m’a demandé de le protéger.\n\n— Tu restes avec moi ?\n\n— Oui.\n\n— Même pour dormir ?\n\nJe ne sais même pas où on va dormir.\n\n— Viens près de moi.",
+    "source": "La Tectonique des âmes, chapitre 1 — La salle d’attente, pages 17–19"
+  },
+  {
+    "level": 2,
+    "chapter": "01",
+    "title": "La salle d’attente",
     "scene": "Le départ du lycée et le baladeur",
     "pages": [
       7,
@@ -13,7 +26,7 @@
     "source": "La Tectonique des âmes, chapitre 1 — La salle d’attente, pages 7–9"
   },
   {
-    "level": 2,
+    "level": 3,
     "chapter": "01",
     "title": "La salle d’attente",
     "scene": "Michel, le matériel et les policiers",
@@ -24,19 +37,6 @@
     "pageLabel": "pages 9–10",
     "quote": "Je suis parti à Barcelone. Dès le premier jour, un grand blond est venu vers moi. Il s’appelait Michel. C’était un Belge très sympathique, d’une trentaine d’années. Il survivait sur la place de Catalogne en vendant du haschich aux touristes. J’ai très vite compris qu’il était recherché par la police dans son pays pour trafic de stupéfiants.\n\nJe l’accompagnais parfois lorsqu’il allait acheter le shit qu’il revendrait ensuite. J’avais peur d’être arrêté par la police.\n\n— Je vais en ville. Tu peux rester là un moment ? J’en ai pas pour longtemps.\n\n— Pour garder ton shit ?\n\n— J’ai quelques courses à faire.\n\nJe regarde autour de nous.\n\n— J’aime pas trop ça. À cause des flics.\n\n— Moi aussi, j’en ai peur, tu sais.\n\n— Alors reste. Ou je viens avec toi.\n\nIl sourit.\n\n— Et on laisse ça tout seul ?\n\nJe ne réponds pas. Je regarde encore autour de moi.\n\n— Tu cherches les flics ?\n\n— Non. J’espère ne pas les trouver.\n\nIl rit. Moi aussi, un peu.\n\n— Bon, je vais faire vite. Je te ramène quoi à manger ?\n\n— Ce que tu veux. J’ai faim.\n\nJe le regarde s’éloigner. Je reste avec la marchandise, cachée dans le parc. Il m’arrive aussi d’en vendre un peu aux touristes. Michel me donne parfois un billet ; d’autres fois, il m’achète à manger.\n\nÇa m’évite de voler ma nourriture.\n\nJe n’avais jamais rencontré de délinquants avant ça.",
     "source": "La Tectonique des âmes, chapitre 1 — La salle d’attente, pages 9–10"
-  },
-  {
-    "level": 3,
-    "chapter": "01",
-    "title": "La salle d’attente",
-    "scene": "Les Marmousets, le cheval et mon petit frère",
-    "pages": [
-      17,
-      19
-    ],
-    "pageLabel": "pages 17–19",
-    "quote": "J’ai cinq ans quand mes parents nous accompagnent, mon frère et moi, à l’orphelinat. Mon frère est près de moi. Maintenant, ils nous expliquent que nous allons rester.\n\n— On reviendra.\n\n— Quand ?\n\nMa mère regarde mon père.\n\n— On reviendra te voir.\n\n— Demain ?\n\n— Ahmed…\n\n— Demain ?\n\nJe tiens son vêtement. Elle essaie de dégager ma main.\n\n— Lâche, tu vas le déchirer.\n\nJe serre plus fort.\n\n— Je viens avec vous.\n\n— Tu restes ici avec ton frère.\n\n— Je veux pas rester.\n\n— Tu n’es pas tout seul.\n\nJe le sais. Mustapha est là. Mais ce sont eux qui s’en vont. Je pleure, je hurle.\n\nDans cet orphelinat, il y avait un cheval. Quelqu’un me soulève et me pose dessus pour me calmer.\n\n— Tiens-toi bien.\n\nJe suis haut. Pendant un instant, je regarde son encolure. Puis je cherche mes parents.\n\n— Vous partez ?\n\nLa personne près de moi dit quelque chose sur le cheval. Je n’écoute plus.\n\n— Maman !\n\n— Regarde devant toi.\n\n— Descends-moi.\n\n— Attends, tiens-toi…\n\n— Descends-moi !\n\nJe suis content d’être sur ce cheval. Je voudrais que mes parents restent pour me regarder. Je voudrais qu’on me fasse monter dessus quand ils ne sont pas en train de partir.\n\n— Je veux descendre.\n\nJe ne me calme pas. Être dessus m’empêche de continuer à m’agripper à mes parents. Je ne peux plus les retenir. Je comprends que j’ai perdu.\n\nJ’ai six ans quand on quitte l’orphelinat des Marmousets, à Ferney-Voltaire, pour une famille d’accueil à Prévessin-Moëns. Je ne comprends pas très bien où on nous emmène. Une fois arrivé, je ne comprends toujours pas pourquoi on est là.\n\nC’est une maison de campagne pleine d’enfants de tous âges. Ils se connaissent tous. Moi, je suis avec mon petit frère. Ma mère m’a demandé de le protéger.\n\n— Tu restes avec moi ?\n\n— Oui.\n\n— Même pour dormir ?\n\nJe ne sais même pas où on va dormir.\n\n— Viens près de moi.",
-    "source": "La Tectonique des âmes, chapitre 1 — La salle d’attente, pages 17–19"
   },
   {
     "level": 4,
