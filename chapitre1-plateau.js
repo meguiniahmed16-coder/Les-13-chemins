@@ -8,21 +8,22 @@
  css.id='chapitre1-board-styles';
  css.textContent="#board{aspect-ratio:auto!important;min-height:0!important;overflow:visible!important;background:linear-gradient(145deg,#f1e2c5,#e6d2ae);padding:13px!important;touch-action:pan-y}\n#board picture{display:none!important}\n#boardTargets{position:relative!important;inset:auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}\n#boardTargets .board-target{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:100%!important;height:auto!important;min-height:130px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px 12px 39px;border-radius:10px;text-align:left;background:linear-gradient(155deg,#fff6df,#edddbc);border:2px solid #c5a679;box-shadow:0 3px 0 #ad8a5c33;color:#4f3c2a;overflow:hidden}\n#boardTargets .board-target:before{content:'';position:absolute;right:-26px;top:-32px;width:95px;height:95px;border:1px solid #ddc29b;border-radius:50%;pointer-events:none}\n#boardTargets .board-target[aria-disabled=true]{opacity:.6;filter:saturate(.6);cursor:not-allowed}\n#boardTargets .board-target[aria-pressed=true]{border-color:#31594c;background:linear-gradient(145deg,#fff4dc,#e6edd8);box-shadow:inset 0 0 0 2px #fff9eb}\n#boardTargets .board-target.done{background:linear-gradient(145deg,#e9efdb,#d1ddc5);border-color:#7e9d76}\n#boardTargets .chapter-featured{grid-column:1/-1;min-height:178px!important;background:linear-gradient(110deg,#32564b 0%,#527768 48%,#739377 100%)!important;border:3px solid #bd995e!important;color:#fff5dc!important;padding:20px 22px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 1.35fr;align-content:center;column-gap:22px;row-gap:9px}\n#boardTargets .chapter-featured[aria-disabled=true]{opacity:1;filter:none}\n#boardTargets .chapter-featured[aria-pressed=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}\n#boardTargets .chapter-featured.done{background:linear-gradient(110deg,#2d584a,#466d54,#70855c)!important}\n#boardTargets .chapter-featured:before{right:-22px;top:-42px;width:230px;height:230px;border:2px solid #f7eaca30}\n#boardTargets .chapter-featured .chapter-card-kicker{color:#f0d6a2}\n#boardTargets .chapter-featured .chapter-card-title{color:#fff9e5;font-size:clamp(24px,3vw,37px)}\n#boardTargets .chapter-featured .chapter-card-place{color:#e3e9d3}\n#boardTargets .chapter-card-kicker{font:700 10px/1.2 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8b6740;position:relative}\n#boardTargets .chapter-card-title{font:700 clamp(19px,2.2vw,25px)/1.06 'Cormorant Garamond',Georgia,serif;position:relative;max-width:100%}\n#boardTargets .chapter-card-place{font:11px/1.4 'DM Sans',sans-serif;color:#836a49;position:relative}\n#boardTargets .chapter-card-route{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;grid-column:2;grid-row:1 / span 3;align-self:center;position:relative}\n#boardTargets .chapter-card-route span{flex:1 1 90px;min-width:0;text-align:center;border:1px solid #eed9ae70;padding:12px 6px;border-radius:7px;background:#1d403749;font:700 11px/1.45 'DM Sans',sans-serif;color:#fff8dc}\n#boardTargets .chapter-card-route span.passed{background:#e4eed3;color:#28503d}\n#boardTargets .chapter-card-status{font:600 11px/1.3 'DM Sans',sans-serif;margin-top:auto;color:#dceacf;grid-column:1;position:relative}\n#boardTargets .board-badge{position:absolute;right:8px;bottom:8px;top:auto;z-index:1;width:24px;height:24px;font-size:12px}\n#boardTargets .chapter-featured .board-badge{right:12px;bottom:12px;width:31px;height:31px;font-size:17px}\n#chapter1Sequence{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0;padding:11px;border:1px solid #bbad84;border-radius:8px;background:#f5ecd7}\n#chapter1Sequence .chapter1-part{border:1px solid #bba778;border-radius:5px;background:#fff9ea;color:#52613e;padding:8px 10px;min-height:43px;font:600 12px 'DM Sans',sans-serif;flex:1 1 120px;cursor:pointer}\n#chapter1Sequence .chapter1-part.active{background:#315b49;color:#fff9e2;border-color:#315b49}\n#chapter1Sequence .chapter1-part.passed{border-color:#638869}\n#chapter1Sequence .chapter1-part:disabled{opacity:.46;cursor:not-allowed}\n#chapter1Header{font:700 17px/1.25 'Cormorant Garamond',Georgia,serif;color:#6b5637;margin:0 0 7px}\n#chapter1Header[hidden],#chapter1Sequence[hidden]{display:none!important}\n@media(max-width:760px){#boardTargets{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#boardTargets .board-target{min-height:135px;padding:11px 10px 35px}#boardTargets .chapter-featured{grid-column:1/-1;grid-template-columns:1fr;min-height:195px!important;padding:17px!important}#boardTargets .chapter-card-route{grid-column:1;grid-row:auto;gap:5px}#boardTargets .chapter-card-route span{flex:1 1 85px;padding:9px 4px;font-size:10px}}\n@media(max-width:390px){#boardTargets .chapter-card-title{font-size:19px}#boardTargets .chapter-card-route{flex-wrap:wrap}}";
  document.head.append(css);
- $('board').setAttribute('aria-label','Plateau de onze chapitres. Le premier réunit trois scènes de jeu.');
+ $('board').setAttribute('aria-label','Plateau de dix chapitres. Les deux premiers réunissent chacun trois scènes de jeu.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Onze chapitres · treize scènes de jeu. Les trois premiers jeux sont réunis dans le chapitre 1.';
+ if(intro)intro.textContent='Dix chapitres · treize scènes de jeu. Les chapitres 1 et 2 réunissent chacun trois jeux.';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
  const chapterName='Chapitre 1 — « La salle d’attente »';
  const chapterTwoName='Chapitre 2 — « Même pas mal »';
- const icons=['🌳','🪖','🎭','🗝️','🦋','🤝','🪶','🥾','⛺','💍','⛵'];
+ const icons=['🌳','🪖','🗝️','🦋','🤝','🪶','🥾','⛺','💍','⛵'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
+ const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison'];
  const makeSpan=(name,label)=>{const el=document.createElement('span');el.className=name;el.textContent=label;return el;};
  function paintTargets(){
-  const host=$('boardTargets'),current=state.selected<=3?1:state.selected;
-  if(host.dataset.mode!=='chapters-v1'){
-   host.dataset.mode='chapters-v1';
+  const host=$('boardTargets'),current=state.selected<=3?1:state.selected<=5?4:state.selected;
+  if(host.dataset.mode!=='chapters-v2'){
+   host.dataset.mode='chapters-v2';
    host.replaceChildren(...flow.CARDS.map((scene,i)=>{
     const button=document.createElement('button');button.type='button';
     button.className='board-target'+(scene===1||scene===4?' chapter-featured':'');
@@ -40,14 +41,18 @@
       }
       button.append(route,makeSpan('chapter-card-status','0 / 3 scènes terminées'));
      }else{
-      route.append(makeSpan('chapter-part-label','🪖 Sarajevo · Le choc de l’arrivée'));
-      button.append(route,makeSpan('chapter-card-status','Une scène · Entre les rafales'));
+      for(let part=1;part<=3;part++){
+       const tile=makeSpan('chapter-part-label',chapterTwoCaptions[part-1]);
+       tile.dataset.chapterTwoPart=String(part);route.append(tile);
+      }
+      button.append(route,makeSpan('chapter-card-status','0 / 3 scènes terminées'));
      }
     }
     button.append(makeSpan('board-badge',icons[i]));
     button.onclick=()=>{
      if(boardRolling)return;
-     const n=scene===1?(flow.done(state)?1:flow.nextPart(state)):scene;
+     const n=scene===1?(flow.done(state)?1:flow.nextPart(state)):
+      scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene;
      if(!flow.canEnter(state,n))return;
      if(state.selected!==n)select(n);
      if(matchMedia('(max-width:900px)').matches)$('questTitle').scrollIntoView({behavior:'instant',block:'start'});
@@ -57,13 +62,15 @@
   }
   for(const button of host.querySelectorAll('[data-chapter]')){
    const n=Number(button.dataset.level),i=Number(button.dataset.chapter);
-   const finished=n===1?flow.done(state):state.completed.includes(n);
+   const finished=n===1?flow.done(state):n===4?flow.chapter2Done(state):state.completed.includes(n);
    const allowed=n===1||flow.canEnter(state,n),active=n===current;
    button.classList.toggle('done',finished);
    button.setAttribute('aria-disabled',String(!allowed));
    button.setAttribute('aria-pressed',String(active));
    button.tabIndex=allowed?0:-1;
-   button.setAttribute('aria-label',n===1?chapterName+' · '+flow.scenePassedCount(state)+'/3 scènes terminées':'Chapitre '+i+' — '+LEVELS[n-1].title+(finished?' terminé':!allowed?' verrouillé':''));
+   button.setAttribute('aria-label',n===1?chapterName+' · '+flow.scenePassedCount(state)+'/3 scènes terminées':
+    n===4?chapterTwoName+' · '+flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length+'/3 scènes terminées':
+    'Chapitre '+i+' — '+LEVELS[n-1].title+(finished?' terminé':!allowed?' verrouillé':''));
    if(n===1){
     button.querySelector('.chapter-card-status').textContent=finished?'✓ Les trois scènes sont terminées':flow.scenePassedCount(state)+' / 3 scènes terminées · ouvrir pour continuer';
     for(const badge of button.querySelectorAll('[data-part]')){
@@ -72,18 +79,32 @@
      badge.textContent=(flow.partDone(state,p)?'✓ ':'')+captions[p-1];
     }
    }else{
-    if(n===4)button.querySelector('.chapter-card-status').textContent=finished?'✓ Sarajevo · chapitre terminé':'🪖 Sarajevo · une scène à accomplir';
+    if(n===4){
+     const count=flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length;
+     button.querySelector('.chapter-card-status').textContent=finished?'✓ Les trois scènes sont terminées':count+' / 3 scènes terminées · ouvrir pour continuer';
+     for(const badge of button.querySelectorAll('[data-chapter-two-part]')){
+      const part=Number(badge.dataset.chapterTwoPart);
+      badge.classList.toggle('passed',flow.chapter2PartDone(state,part));
+      badge.textContent=(flow.chapter2PartDone(state,part)?'✓ ':'')+chapterTwoCaptions[part-1];
+     }
+    }
     button.querySelector('.board-badge').textContent=finished?'✓':icons[i];
    }
   }
   const n=state.selected;
-  const canContinue=n<=3?flow.partDone(state,n):state.completed.includes(n);
+  const canContinue=n<=3?flow.partDone(state,n):n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state):state.completed.includes(n);
   const mayTravel=canContinue&&n<13;
   $('boardRoll').hidden=!mayTravel;
   $('boardRoll').disabled=!!boardRolling;
-  $('boardRoll').textContent=n<=2?'Partie suivante du chapitre →':n===3?'Vers le chapitre 2 →':'Étape suivante →';
+  $('boardRoll').textContent=n<=2?'Partie suivante du chapitre →':
+   n===3?'Vers le chapitre 2 →':n===4?'Continuer : Le danseur →':
+   n===5?'Vers le chapitre 3 →':'Étape suivante →';
   $('boardRoll').onclick=()=>rollTravel(state.selected);
-  $('travelHint').textContent=flow.done(state)&&n<=3?'Les trois jeux du chapitre 1 sont terminés. Sarajevo est la prochaine étape.':n<=3?flow.scenePassedCount(state)+'/3 scènes terminées · Les trois jeux forment un seul chapitre.':mayTravel?'Le trésor est acquis. Les dés et la carte accompagnent la suite.':'Termine l’épreuve en cours pour poursuivre.';
+  $('travelHint').textContent=flow.done(state)&&n<=3?'Les trois jeux du chapitre 1 sont terminés. Sarajevo ouvre le chapitre 2.':
+   n<=3?flow.scenePassedCount(state)+'/3 scènes terminées · Un seul chapitre.':
+   n<=5?flow.CHAPTER2_PARTS.filter(p=>flow.chapter2PartDone(state,p.part)).length+'/3 scènes terminées · Sarajevo, le danseur, la prison.':
+   mayTravel?'Le chapitre est terminé. Les dés et la carte accompagnent la suite.':
+   'Termine l’épreuve en cours pour poursuivre.';
  }
  drawBoard=paintTargets;
  const oldSelect=select;
@@ -96,26 +117,31 @@
    arriveAtStage(n+1);return;
   }
   if(n===3&&!flow.done(state))return;
+  if(n===4){
+   if(!flow.chapter2PartDone(state,1))return;
+   arriveAtStage(5);return; // Sarajevo -> danse, sans changement de chapitre
+  }
+  if(n===5&&!flow.chapter2Done(state))return; // Prison obligatoirement réussie
   oldRollTravel(n);
  };
  const oldSave=save;
  save=function(){oldSave();updateProgressBar();};
  function updateProgressBar(){
   const count=flow.chaptersDone(state);
-  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 11 chapitres · '+state.points+' points';
-  $('count').textContent=count+'/11';
+  if($('shared-progress'))$('shared-progress').textContent='✦ '+count+' / 10 chapitres · '+state.points+' points';
+  $('count').textContent=count+'/10';
   $('stage').textContent=flow.chapterReached(state);
  }
  function paintChapterSection(){
   updateProgressBar();
   const n=state.selected;
-  header.hidden=n>3;sequence.hidden=n>3;
-  $('question').hidden=n===2||n===3;
-  $('options').hidden=n===2||n===3;
+  header.hidden=n>5;sequence.hidden=n>5;
+  $('question').hidden=n===2||n===3||n===5;
+  $('options').hidden=n===2||n===3||n===5;
   if(n<=3){
    header.textContent=chapterName;
    const part=flow.PARTS[n-1];
-   $('levelTag').textContent='CHAPITRE 1 / 11 · PARTIE '+n+' / 3';
+   $('levelTag').textContent='CHAPITRE 1 / 10 · PARTIE '+n+' / 3';
    $('questTitle').textContent=part.title;
    sequence.replaceChildren(...flow.PARTS.map((p,i)=>{
     const b=document.createElement('button');b.type='button';b.className='chapter1-part';
@@ -140,40 +166,73 @@
     $('status').textContent='Partie 2 / 3 : réussis la fuite vers l’A410. Le quiz commun du chapitre a déjà été validé.';
    if(n===3&&!flow.partDone(state,3))
     $('status').textContent='Partie 3 / 3 : sers les cinq clients à Barcelone pour terminer le chapitre. Le quiz commun est déjà validé.';
+  }else if(n===4||n===5){
+   header.textContent=chapterTwoName;
+   sequence.setAttribute('aria-label','Trois parties du chapitre 2');
+   const secondDone=flow.chapter2PartDone(state,2);
+   const activePart=n===4?1:secondDone?3:2;
+   $('levelTag').textContent='CHAPITRE 2 / 10 · PARTIE '+activePart+' / 3';
+   $('questTitle').textContent=n===4?'Sarajevo':secondDone?'La prison':'Le danseur';
+   sequence.replaceChildren(...flow.CHAPTER2_PARTS.map(p=>{
+    const b=document.createElement('button');b.type='button';b.className='chapter1-part';
+    b.classList.toggle('active',activePart===p.part);
+    b.classList.toggle('passed',flow.chapter2PartDone(state,p.part));
+    b.textContent=(flow.chapter2PartDone(state,p.part)?'✓ ':'')+p.part+' · '+p.title;
+    b.disabled=!flow.canEnter(state,p.scene)||boardRolling||
+     (p.part===3&&!flow.chapter2PartDone(state,2));
+    b.setAttribute('aria-current',activePart===p.part?'step':'false');
+    b.onclick=()=>select(p.scene);
+    return b;
+   }));
+   const finished=n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state);
+   $('next').hidden=!finished;
+   $('mobileNext').hidden=!finished;
+   $('next').textContent=n===4?'Continuer : Le danseur →':'Chapitre 3 →';
+   $('mobileNext').textContent=$('next').textContent;
+   if(finished)$('mobileGameDock').hidden=false;
+   if(n===4&&!finished)
+    $('status').textContent='Partie 1 / 3 : franchis Sarajevo pour retrouver la suite du chapitre.';
+   if(n===5&&!flow.chapter2Done(state)){
+    $('status').textContent=secondDone?
+     'Partie 3 / 3 : termine le jeu du yo-yo en prison pour achever « Même pas mal ».':
+     'Partie 2 / 3 : réussis la danse pour poursuivre vers la prison.';
+   }
   }else{
-   $('levelTag').textContent='CHAPITRE '+flow.chapterOf(n)+' / 11'+(n===5?' · PLATEAU '+(TreizePlateaux.progress(state,5).finished.includes(1)?2:1)+' / 2':'');
-   if(n===4)$('questTitle').textContent=chapterTwoName;
+   $('levelTag').textContent='CHAPITRE '+flow.chapterOf(n)+' / 10';
   }
   const rewards=[];
   if(flow.done(state))rewards.push('<span class="item">✦ '+chapterName+'</span>');
-  for(const number of state.completed.filter(n=>n>=4).sort((a,b)=>a-b))
+  if(flow.chapter2Done(state))rewards.push('<span class="item">✦ '+chapterTwoName+'</span>');
+  for(const number of state.completed.filter(n=>n>=6).sort((a,b)=>a-b))
    rewards.push('<span class="item">✦ '+esc(LEVELS[number-1].reward)+'</span>');
   $('inventory').innerHTML=rewards.length?rewards.join(''):'<span class="muted">Le sac est encore vide. Termine les trois parties du premier chapitre !</span>';
   paintTargets();
  }
  const oldRender=render;
  render=function(){
-  if(flow.preparePart(state,state.selected,()=>crypto.randomUUID()))save();
+  const changed1=flow.preparePart(state,state.selected,()=>crypto.randomUUID());
+  const changed2=state.selected===5&&flow.prepareChapter2Dance(state);
+  if(changed1||changed2)save();
   oldRender();paintChapterSection();
  };
  if(flow.reconcile(state))save();
  render();
  let pendingAuto=0;
- const finishes={'marmousets:won':1,'a410:escaped':2,'catalogne:sale':3};
- const closes={'marmousets:close':1,'a410:close':2,'catalogne:close':3};
+ const finishes={'marmousets:won':1,'a410:escaped':2,'catalogne:sale':3,'bosnie:won':4};
+ const closes={'marmousets:close':1,'a410:close':2,'catalogne:close':3,'bosnie:close':4};
  function afterClose(n){
-  if(pendingAuto!==n||state.selected!==n||!flow.partDone(state,n))return;
+  if(pendingAuto!==n||state.selected!==n||!(n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n)))return;
   pendingAuto=0;
-  if(n<3)queueMicrotask(()=>{if(state.selected===n&&flow.partDone(state,n))arriveAtStage(n+1);});
+  if(n<3||n===4)queueMicrotask(()=>{if(state.selected===n&&(n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n)))arriveAtStage(n+1);});
   else render();
  }
  window.addEventListener('message',event=>{
   if(event.origin!==location.origin||!event.data)return;
   const type=event.data.type,finished=finishes[type],closed=closes[type];
-  if(finished&&state.selected===finished&&flow.partDone(state,finished))pendingAuto=finished;
+  if(finished&&state.selected===finished&&(finished===4?flow.chapter2PartDone(state,1):flow.partDone(state,finished)))pendingAuto=finished;
   if(closed)afterClose(closed);
  });
- for(const [n,id]of [[1,'marmousetsClose'],[2,'arcadeClose'],[3,'catalogneClose']])
+ for(const [n,id]of [[1,'marmousetsClose'],[2,'arcadeClose'],[3,'catalogneClose'],[4,'bosnieClose']])
   $(id)?.addEventListener('click',()=>afterClose(n));
  window.addEventListener('focus',updateProgressBar);
 })();
