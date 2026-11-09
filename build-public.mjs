@@ -15,7 +15,8 @@ for (const args of [
   ['build-yoyo.mjs'],
   ['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs'],
   ['build-bosnie-addon.mjs'],
-  ['build-danse.mjs'], // compile true stage characters from sources, never reuse stale runtime
+  ['build-danse.mjs'],
+  ['--test', 'ordre-lecture.test.mjs'],  // compile true stage characters from sources, never reuse stale runtime
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
   if (stdout.trim()) console.log(stdout.trim());
@@ -27,6 +28,7 @@ const publicFiles = [
   'presentation.html',
   'carte.html',
   'jeu.html',
+  'ordre-lecture.js',
   'lecture.html',
   'mode_emploi.html',
   'mode_emploi_treize_chemins.html',
