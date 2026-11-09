@@ -1,6 +1,6 @@
 /* Chemin III — « Camarades ! » : logique pure, testable sans navigateur.
- * Phase 2 : montée visible sur le socle, déplacements contrôlés en hauteur,
- * bouton jaune = redescendre ; jamais de blocage permanent du joystick.
+ * Phase 2 : un appui pour monter, cri automatique « Camarades ! » au sommet,
+ * courte halte visible, descente automatique ; aucun second bouton requis.
  */
 export const OBJECTIFS=Object.freeze(['Le drapeau français','Camarades !','La rencontre des cortèges']);
 export const MAX_POINTS=30;
@@ -15,7 +15,7 @@ export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function newRun(){
  return {
   phase:1,steps:[],x:0,z:-7,height:0,
-  climbed:false,climb:null,rallying:false,mobilisation:0,cohesion:77,leaderZ:-8,
+  climbed:false,climb:null,rallying:false,shoutRemaining:0,statueShouted:false,mobilisation:0,cohesion:77,leaderZ:-8,
   clock:0,finished:false,events:[]
  };
 }
@@ -26,9 +26,18 @@ export function progress(run,step){
  if(step===3){run.finished=true;run.events.push({type:'won'});}
  else{
   run.phase=step+1;run.climbed=false;run.climb=null;
-  run.height=0;run.rallying=false;run.mobilisation=0;run.x=0;
+  run.height=0;run.rallying=false;run.statueShouted=false;run.shoutRemaining=0;run.mobilisation=0;run.x=0;
   run.z=step===1?-8:0;run.leaderZ=-8;run.cohesion=77;
  }
+ return true;
+}
+function shoutOnStatue(run){
+ if(run.phase!==2||!run.climbed||run.climb||run.statueShouted)return false;
+ run.statueShouted=true;
+ run.rallying=true;
+ run.shoutRemaining=.95; // Le temps d'entendre « Camarades ! », avant la descente.
+ run.mobilisation=100;
+ run.events.push({type:'shout'});
  return true;
 }
 function startClimb(run,direction){
@@ -75,6 +84,8 @@ function animateClimb(run,t){
   run.height=run.climbed?STATUE.topHeight:0;
   run.climb=null;
   run.events.push({type:run.climbed?'summit':'ground'});
+  if(run.climbed)shoutOnStatue(run);
+  else if(run.statueShouted)progress(run,2);
  }
 }
 function advanceOnStatue(run,dx,dz,moving,t){
@@ -97,11 +108,15 @@ export function advance(run,dt,input){
  run.clock+=t;
  // La montée est une animation réelle (pas une téléportation dans la statue).
  if(run.phase===2&&run.climb){animateClimb(run,t);return;}
+ if(run.phase===2&&run.climbed&&run.statueShouted){
+  run.shoutRemaining=Math.max(0,run.shoutRemaining-t);
+  if(run.shoutRemaining===0)startClimb(run,'down');
+  return;
+ }
  const moving=Math.hypot(x,y)>.15;
  if(run.phase===2&&run.climbed){
+  // Le cri a déjà déclenché la descente. Les commandes restent de secours.
   advanceOnStatue(run,dx,dz,moving,t);
-  if(input.red||run.rallying)run.mobilisation=clamp(run.mobilisation+48*t,0,100);
-  if(run.mobilisation>=100)progress(run,2);
   return;
  }
  const speed=run.phase===3?5.6:4.9;
@@ -126,15 +141,16 @@ export function advance(run,dt,input){
 export function yellow(run){
  if(run.phase===1&&distance(run,{x:4.1,z:12})<3.3)return progress(run,1);
  if(run.phase!==2||run.climb)return false;
- if(run.climbed){run.rallying=false;startClimb(run,'down');return true;}
+ if(run.climbed){run.shoutRemaining=0;startClimb(run,'down');return true;}
  if(distance(run,{x:STATUE.x,z:STATUE.z})<4.35){
   startClimb(run,'up');return true;
  }
  return false;
 }
 export function callFromStatue(run){
+ // Compatibilité du bouton rouge : le cri a normalement lieu automatiquement.
  if(run.phase!==2||!run.climbed||run.climb)return false;
- run.rallying=true;
- return true;
+ if(run.statueShouted)return true;
+ return shoutOnStatue(run);
 }
 export function canNext(run){return run.finished||run.steps.includes(1);}
