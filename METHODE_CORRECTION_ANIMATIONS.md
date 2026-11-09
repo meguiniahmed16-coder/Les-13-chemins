@@ -272,3 +272,8 @@ Demande exacte de l'auteur : écrire sur les murs existants, comme un graffiti �
 - **Mise en scène :** une écriture d'écolier (police Schoolbell avec secours cursif) dessinée directement en haut du ciel, centrée et dotée d'un léger contour clair pour le contraste, sans toucher aux obstacles, personnages ni score.
 - **Technique :** chargement de Schoolbell via Google Fonts, puis dessin Canvas renouvelé après chargement de la fonte ; largeur mesurée pour tenir dans la scène 960×540 et dans le cadrage mobile.
 - **Contrôle :** test de non-régression du libellé, de l'ordre de dessin et de l'intégration des gestes précédents.
+
+### 2026-11-09 — Marmousets : bandeau de localisation en bas
+- Déplacer « FERNEY → PRÉVESSIN » du haut vers le bas gauche de l'image, en dehors de l'inscription scolaire dans le ciel.
+- Sur petits écrans, préserver une marge de 8 px. Le bandeau reste masqué uniquement pendant la victoire, comme auparavant.
+- Aucun changement au gameplay, aux points, au cheval ni aux autres scènes.
