@@ -76,7 +76,7 @@ test('Atlas has 13 underlying scenes, but the plateau exposes 10 visual chapter 
  assert.ok(ui.includes('scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene'));
  assert.ok(ui.includes("if(n>=1&&n<=5)"));
  assert.ok(ui.includes("from:n,to:next"));
- assert.ok(ui.includes("if(n===3&&!flow.done(state))return;"));
+ assert.ok(ui.includes("const traversed=n<=3?flow.partDone(state,n):"));
  assert.ok(ui.includes('Chapitre 1 — « La salle d’attente »'));
  assert.ok(ui.includes("drawBoard=paintTargets"));
  assert.ok(build.includes("'chapitre1-flow.js'"));
@@ -95,7 +95,7 @@ test('Chapter 2 uses the same featured card as chapter 1 and the title Même pas
  assert.ok(ui.includes("scene===1||scene===4?' chapter-featured'"));
  assert.ok(ui.includes('if(scene===1||scene===4)'));
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
- assert.ok(ui.includes("' / 10 chapitres · '"));
+ assert.ok(ui.includes("' / 10 chapitres parcourus · '"));
  assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
  assert.ok(ui.includes("header.textContent=chapterTwoName"));
  assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
@@ -224,7 +224,7 @@ test('Chapter 2 title and gate are displayed on one card with three named mini-g
  assert.ok(u.includes("button.className='board-target'+(scene===1||scene===4?' chapter-featured':''"));
  assert.ok(u.includes("scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene"));
  assert.ok(u.includes("n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state)"));
- assert.ok(u.includes("if(n===5&&!flow.chapter2Done(state))return;"));
+ assert.ok(u.includes("n===4?flow.chapter2PartDone(state,1):flow.chapter2Done(state)"));
  assert.ok(u.includes("if(n>=1&&n<=5)"));
  assert.ok(u.includes("from:n,to:next"));
  assert.ok(u.includes("arriveAtStage(next)"));
