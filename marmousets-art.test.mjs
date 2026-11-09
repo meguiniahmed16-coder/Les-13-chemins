@@ -61,7 +61,9 @@ test('Location strip is at the bottom of the scene, beneath the schoolbook sky c
 
 test('Rider silhouette keeps exactly one visible leg in side profile',()=>{
  const horse=art.slice(art.indexOf('function horse('));
- const mounted=horse.slice(horse.indexOf('if(mounted>0)'),horse.indexOf('c.restore();}',horse.indexOf('if(mounted>0)')));
+ const start=horse.indexOf('if(mounted>0&&');
+ assert.ok(start>=0);
+ const mounted=horse.slice(start,horse.indexOf('c.restore();}',start));
  assert.ok(mounted.includes("M-12 -116Q-2 -115 9 -109"));
  assert.ok(mounted.includes("M15 -77Q21 -81 27 -77"));
  assert.ok(mounted.includes("'#2f536d',INK,2"));
