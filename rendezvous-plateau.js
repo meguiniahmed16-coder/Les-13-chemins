@@ -8,6 +8,7 @@
  if(!app||!flow||!$('rendezvousDialog'))return;
  const reader=$('rendezvousDialog'),title=reader.querySelector('h2'),excerpt=reader.querySelector('.rendezvous-excerpt');
  const kicker=reader.querySelector('.rendezvous-kicker'),info=reader.querySelector('.rendezvous-future');
+ const readerArea=reader.querySelector('.rendezvous-area'),readerReference=reader.querySelector('.rendezvous-reference');
  const infoHeading=info.querySelector('strong'),infoBody=info.querySelector('p');
  const parts=app.parts;
  let activePart=1,autoTimer=0,autoLaunched=false,loading=false;
@@ -24,7 +25,7 @@
   const b=document.createElement('button');b.type='button';b.dataset.part=String(i+1);b.textContent='Chapitre '+parts[i].chapter+' · Jeu '+(i+1)+'/3';
   b.onclick=()=>showPart(i+1);partNav.append(b);
  }
- kicker.before(partNav);
+ info.after(partNav); // Comme les autres bonnes feuilles : le texte d'abord, les choix ensuite.
  const launch=document.createElement('button');launch.type='button';launch.id='rendezvousPlay';launch.textContent='🎮 Jouer à Camarades ! — 30 points';
  info.append(launch);launch.onclick=beginGame;
  const awarded=()=>Array.isArray(state.rdvManifestationPassed)?state.rdvManifestationPassed.filter(n=>[1,2,3].includes(n)):[];
@@ -50,15 +51,18 @@
   activePart=n;clearTimeout(autoTimer);autoLaunched=false;
   for(const b of partNav.children){const active=Number(b.dataset.part)===n;b.setAttribute('aria-current',active?'step':'false');}
   if(n===1){
-   kicker.textContent='Bonne feuille 1 / 3 · Chapitre 4 — « Drapeau rouge »';
-   title.textContent='République–Bastille · Avril 2002';
+   kicker.textContent='Vous êtes arrivé à';
+   title.textContent='République–Bastille';
+   readerArea.textContent='Paris · avril 2002';readerArea.hidden=false;
+   readerReference.textContent='Extrait du chapitre 4 — « Drapeau rouge », p. 59–60.';readerReference.hidden=false;
    excerpt.hidden=false;
    infoHeading.textContent='Jeu 1 / 3 · Camarades !';
    infoBody.textContent='Trois épreuves : le drapeau français, la prise de parole sur la statue, puis la rencontre des deux cortèges. Joystick, jaune et rouge. 10 points par épreuve réussie, une seule fois.';
    launch.hidden=false;
   }else{
-   kicker.textContent='Bonne feuille '+n+' / 3 · Chapitre '+parts[n-1].chapter;
+   kicker.textContent='Chemin III · Les rendez-vous';
    title.textContent='Chapitre '+parts[n-1].chapter+' — « '+parts[n-1].title+' »';
+   readerArea.hidden=true;readerReference.hidden=true;
    excerpt.hidden=true;
    infoHeading.textContent='Jeu '+n+' / 3 · À concevoir';
    infoBody.textContent='Le passage de ce chapitre sera choisi et validé avant la création du jeu. Aucun récit ni point n’est inventé.';
@@ -123,13 +127,21 @@
    state.rdvManifestationFinished=true;state.rdvManifestationSkipped=false;save();render();
   }
  });
- // Allow reading first; passing the last line starts the mini-game.
+ // Même règle que les lecteurs des autres jeux : la dernière phrase doit être
+ // entièrement visible, puis un court délai lance le défi. Pas besoin de
+ // parcourir les menus situés APRES l'extrait pour activer le jeu.
+ function reachedReadingEnd(){
+  if(reader.scrollTop<32||!reader.open||excerpt.hidden)return false;
+  return excerpt.getBoundingClientRect().bottom<=reader.getBoundingClientRect().bottom-18;
+ }
  reader.addEventListener('scroll',()=>{
   if(activePart!==1||autoLaunched||!reader.open)return;
-  const bottom=reader.scrollTop+reader.clientHeight>=reader.scrollHeight-85;
-  if(!bottom){clearTimeout(autoTimer);return;}
-  clearTimeout(autoTimer);
-  autoTimer=setTimeout(()=>{if(reader.open&&activePart===1&&!autoLaunched&&reader.scrollTop+reader.clientHeight>=reader.scrollHeight-85)openDialog();},1150);
+  if(!reachedReadingEnd()){clearTimeout(autoTimer);autoTimer=0;return;}
+  if(autoTimer)return;
+  autoTimer=setTimeout(()=>{
+   autoTimer=0;
+   if(reader.open&&activePart===1&&!autoLaunched&&reachedReadingEnd())openDialog();
+  },1150);
  },{passive:true});
  const oldRender=render;
  render=function(){oldRender();updateThird();};
