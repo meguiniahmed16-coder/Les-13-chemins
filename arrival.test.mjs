@@ -189,7 +189,63 @@ test('Closing reader without using skip does not change progress or trigger next
 test('The board and the prison reader expose the skip option for every mini-game',()=>{
  const html=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8'),
   plates=fs.readFileSync(new URL('./plateaux.js',import.meta.url),'utf8');
- assert.ok(html.includes('onSkip:()=>window.TreizeLibreParcours?.next()'));
+ assert.ok(html.includes("onSkip:()=>window.TreizeLibreParcours?.next(prison?'5:prison':n===5?'5:dance':String(n))"));
  assert.ok(plates.includes("onSkip:()=>window.TreizeLibreParcours?.next('5:prison')"));
  assert.ok(html.includes('src="libre-parcours.js"'));
+});
+
+test('Clicking Les Marmousets first opens its immersive text, inline plot quiz, then the game',()=>{
+ const html=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8');
+ const fn=html.slice(html.indexOf('function arriveAtStage(n){'),html.indexOf('function rollTravel(n){'));
+ const selectFn=html.slice(html.indexOf('function select(n){'),html.indexOf('function answer(i){'));
+ const events=[],state={selected:1,unlocked:1,completed:[],marmousetsPending:null,points:0};
+ const levels=Array.from({length:13},(_,i)=>({
+  title:'Scène '+(i+1),question:'Question '+i,options:['Choix 1','Choix 2','Choix 3'],correct:1
+ }));
+ let options;
+ const ctx=vm.createContext({state,LEVELS:levels,save:()=>{},render:()=>{},
+  document:{getElementById:id=>{
+   if(id==='marmousetsLaunch')return{disabled:false,click:()=>events.push('marmousets-game')};
+   if(id==='questTitle')return{focus(){},scrollIntoView(){}};
+   return{textContent:''};
+  }},
+  TreizeEscale:{openReader(n,opts){events.push('reading-'+n);options=opts;}},
+  answer(index){events.push('quiz-'+index);state.marmousetsPending={id:'first',correct:index===1};}
+ });
+ ctx.window=ctx;
+ vm.runInContext(selectFn+fn+';arriveAtStage(1)',ctx);
+ assert.deepEqual(events,['reading-1'],'First click must not jump straight to the mini-game');
+ assert.equal(options.autoAdvanceOnEnd,true,'The first passage uses automatic scrolling');
+ assert.equal(options.inlineQuiz.question,'Question 0','The chapter plot quiz is embedded in reading');
+ assert.equal(options.inlineQuiz.correct,1);
+ options.inlineQuiz.onAnswer(1);
+ assert.deepEqual(events,['reading-1','quiz-1']);
+ options.onChallenge();
+ assert.deepEqual(events,['reading-1','quiz-1','marmousets-game']);
+ assert.equal(state.points,0,'Opening the game does not fabricate quiz or game points');
+});
+test('All reading surfaces fill the full screen, without stretching long paragraphs',()=>{
+ const immersive=fs.readFileSync(new URL('./escale.js',import.meta.url),'utf8');
+ const standalone=fs.readFileSync(new URL('./lecture.html',import.meta.url),'utf8');
+ assert.ok(immersive.includes(':is(#arrivalReader,#characterReader){position:fixed;inset:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh'));
+ assert.ok(immersive.includes('max-width:860px;margin:0 auto'));
+ assert.ok(immersive.includes("font:clamp(20px,2.2vw,25px)/1.86 Georgia"));
+ assert.ok(standalone.includes('min-height:100dvh'));
+ assert.ok(standalone.includes('max-width:860px'));
+ assert.ok(standalone.includes('body{margin:0;background:#fff9ec}'));
+});
+test('No original board bitmap or thirteen old hitboxes appear before the two new chapters',()=>{
+ const html=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8'),
+  ui=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
+ assert.ok(!html.includes('<picture>'));
+ assert.ok(!html.includes('plateau-large.webp'));
+ assert.ok(!html.includes('plateau-mobile.webp'));
+ assert.ok(!html.includes('function boardGeometry(){'));
+ assert.ok(!html.includes('host.replaceChildren(...positions.map'));
+ assert.ok(html.includes('function drawBoard(){}'));
+ assert.ok(ui.includes("host.dataset.mode='chapters-minimal-v1'"));
+ assert.ok(ui.includes('host.replaceChildren(...flow.CARDS.map'));
+ assert.ok(ui.includes("const icons=['🌳','🪖']"));
+ assert.ok(ui.includes('marmousetsReadingStart'));
+ assert.ok(ui.includes('b.onclick=()=>arriveAtStage(p.scene)'));
 });
