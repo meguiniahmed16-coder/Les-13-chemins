@@ -1,6 +1,6 @@
 /* Chemin III — « Camarades ! » : logique pure, testable sans navigateur.
- * Phase 2 : un appui pour monter, cri automatique « Camarades ! » au sommet,
- * courte halte visible, descente automatique ; aucun second bouton requis.
+ * Phase 2 : jaune pour monter, cri « Camarades ! » déclenché au bouton,
+ * puis descente automatique ; la foule reste derrière le narrateur.
  */
 export const OBJECTIFS=Object.freeze(['Le drapeau français','Camarades !','La rencontre des cortèges']);
 export const MAX_POINTS=30;
@@ -84,8 +84,8 @@ function animateClimb(run,t){
   run.height=run.climbed?STATUE.topHeight:0;
   run.climb=null;
   run.events.push({type:run.climbed?'summit':'ground'});
-  if(run.climbed)shoutOnStatue(run);
-  else if(run.statueShouted)progress(run,2);
+  // Au sommet, attendre que le joueur déclenche lui-même « Camarades ! ».
+  if(!run.climbed&&run.statueShouted)progress(run,2);
  }
 }
 function advanceOnStatue(run,dx,dz,moving,t){
@@ -115,7 +115,7 @@ export function advance(run,dt,input){
  }
  const moving=Math.hypot(x,y)>.15;
  if(run.phase===2&&run.climbed){
-  // Le cri a déjà déclenché la descente. Les commandes restent de secours.
+  // Le joystick reste actif avant le cri ; il ne déclenche pas la mobilisation.
   advanceOnStatue(run,dx,dz,moving,t);
   return;
  }
@@ -132,7 +132,9 @@ export function advance(run,dt,input){
  run.x=nx;run.z=nz;run.height=0;
  if(run.phase===3){
   const gap=run.z-run.leaderZ;
-  run.leaderZ+=clamp(gap-5,-1.7,1.6)*t*(input.red?2.2:1);
+  // Suivre le meneur sans passer devant lui, y compris après densification.
+  run.leaderZ+=clamp(run.z-8-run.leaderZ,-6,6)*t*2.4*(input.red?1.25:1);
+  run.leaderZ=Math.min(run.leaderZ,run.z-6);
   const tooFar=gap>10;
   run.cohesion=clamp(run.cohesion+t*((input.red?23:0)+(moving?(tooFar?-11:-1.2):10.8)),0,100);
   if(run.z>=99&&run.cohesion>=62)progress(run,3);
@@ -148,9 +150,10 @@ export function yellow(run){
  return false;
 }
 export function callFromStatue(run){
- // Compatibilité du bouton rouge : le cri a normalement lieu automatiquement.
+ // Le cri attend ce bouton, jamais la seule arrivée au sommet.
  if(run.phase!==2||!run.climbed||run.climb)return false;
  if(run.statueShouted)return true;
  return shoutOnStatue(run);
 }
+export const behindNarrator=(narratorZ,candidateZ,gap=4.5)=>Math.min(candidateZ,narratorZ-gap);
 export function canNext(run){return run.finished||run.steps.includes(1);}

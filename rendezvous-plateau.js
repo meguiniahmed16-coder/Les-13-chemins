@@ -82,7 +82,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261109-sky-reader5';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261109-crowd-behind6';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){

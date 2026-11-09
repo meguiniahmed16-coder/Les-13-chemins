@@ -4,14 +4,14 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {newRun,advance,yellow,callFromStatue,clamp,distance,OBJECTIFS} from './manifestation-core.js';
+import {newRun,advance,yellow,callFromStatue,clamp,distance,OBJECTIFS,behindNarrator} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
 const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
 const meter=$('meter'),meterValue=$('meterValue');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 let sessionId='standalone',serverSteps=[],run=newRun(),playing=false,paused=false,gameReady=false;
-let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],redHeld=false,soundOn=false,voices=null,cheerUntil=0;
+let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
 const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
@@ -263,7 +263,7 @@ function banner(root,text,x,z,width=6.0){
 function sceneFor(phase){
  if(sceneGroup)world.remove(sceneGroup);
  sceneGroup=new T.Group();world.add(sceneGroup);
- stageFlags=[];crowdActors=[];staticFar=[];
+ stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;
  const root=sceneGroup;
  const sky=phase===1?0xb8c7d3:phase===2?0xb8cdd5:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
@@ -278,8 +278,10 @@ function sceneFor(phase){
   addBox(root,4.1,.28,12,2.2,.56,2.3,0xc9bea6);
  }else if(phase===2){
   buildings(root,-23,46);statue(root);
-  crowdActors=makeCrowd(root,33,5,{spread:8});
-  distantCrowd(root,20,190);
+  // République : le cortège initial reste dans le dos du joueur.
+  // L'ancienne densification à z=+20 plaçait la foule devant la statue.
+  crowdActors=makeCrowd(root,24,-13,{spread:7});
+  distantCrowd(root,-27,100);
   for(let i=0;i<5;i++)flag(root,i%3===0?'france':'red',(rnd(i+11)-.5)*14,0,3+(rnd(i+73)-.5)*17,3.3);
   protestSign(root,'NON À LE PEN',-4,8,3.2);
   protestSign(root,'LIBERTÉ ÉGALITÉ FRATERNITÉ',5,13,4.9);
@@ -287,8 +289,11 @@ function sceneFor(phase){
   banner(root,'LA RÉPUBLIQUE POUR TOUS',0,19,7.2);
  }else{
   buildings(root,-7,135);
-  crowdActors=makeCrowd(root,38,-8,{spread:6});
-  distantCrowd(root,113,230);
+  // La foule de République suit derrière ; Bastille apparaît près de la rencontre.
+  crowdActors=makeCrowd(root,25,-12,{spread:6});
+  distantCrowd(root,-27,100);
+  bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
+  distantCrowd(bastilleCrowd,110,110);
   for(let i=0;i<6;i++)flag(root,i%3===0?'france':'red',(rnd(i+25)-.5)*12,0,98+(rnd(i+66)-.5)*18,3.2);
   banner(root,'RÉPUBLIQUE — BASTILLE',0,92,7.6);
   protestSign(root,'NON À LE PEN',-5,84,3.0);
@@ -313,11 +318,11 @@ function refreshHUD(){
  $('meterLabel').textContent=p===2?'MOBILISATION':p===1?'PRÉPARATION':'COHÉSION DU CORTÈGE';
  if(p===1)hint.textContent='Joystick : avance vers le drapeau français devant l’école. Jaune pour grimper et le prendre.';
  else if(p===2){
-  if(run.climb)hint.textContent=run.climb.direction==='up'?'Montée sur les marches… Le cri « Camarades ! » se déclenche au sommet.':'Descente automatique vers la rue. Tu pourras ensuite guider le cortège.';
-  else if(run.climbed)hint.textContent='— CAMARADES ! La foule répond. Descente automatique dans un instant.';
-  else hint.textContent='Approche des marches et presse JAUNE : montée, cri « Camarades ! » et descente s’enchaînent automatiquement.';
+  if(run.climb)hint.textContent=run.climb.direction==='up'?'Montée sur les marches… En haut, appuie sur « Camarades ! ».':'Descente vers la rue ; les manifestants sont derrière toi.';
+  else if(run.climbed)hint.textContent=run.statueShouted?'— CAMARADES ! La foule répond ; tu redescends.':'En haut, appuie sur « Camarades ! » pour appeler la foule.';
+  else hint.textContent='Approche des marches et presse JAUNE pour monter, puis « Camarades ! » en haut.';
  }
- else hint.textContent=run.cohesion<60?'La foule s’étire : arrête-toi et maintiens le rouge pour rassembler.':'Avance vers Bastille en gardant la foule avec toi. Rouge : appeler les retardataires.';
+ else hint.textContent=run.cohesion<60?'La foule est derrière toi mais s’étire : ralentis et utilise le rouge.':'Avance vers Bastille ; ta foule te suit derrière. Rouge : rassembler les retardataires.';
  if(run.finished)hint.textContent='Les deux cortèges se retrouvent à mi-chemin. « — Par là. »';
  const up=playing&&!paused&&run.phase===2&&run.climbed&&!run.climb&&!run.statueShouted;
  const statuePanel=$('statueControls');
@@ -343,7 +348,7 @@ function drain(){
    messageFeedback(words[e.step-1],1.8);sound(600+80*e.step,.18);
   }
   if(e.type==='summit'){
-   messageFeedback('Sur la statue !',.8);sound(660,.22);
+   messageFeedback('Sur la statue ! Appuie sur « Camarades ! »',2.2);sound(660,.22);
   }
   if(e.type==='shout'){
    voiceCamarades();
@@ -396,8 +401,8 @@ function voiceCamarades(){
 function callCrowd(){
  if(!playing||paused)return;
  if(run.phase===2&&run.climbed&&!run.climb){
-  // Le premier cri est déjà automatique : n'en créer aucun second.
-  if(!run.statueShouted&&callFromStatue(run))voiceCamarades();
+  // Le joueur déclenche le cri ici ; son événement joue la voix une seule fois.
+  if(!run.statueShouted&&callFromStatue(run)){drain();refreshHUD();}
   return;
  }
  if(run.phase===3)messageFeedback('On reste ensemble !',1.0);
@@ -409,7 +414,7 @@ function yellowPress(){
  const result=yellow(run);
  if(result){
   if(before===2&&run.climb){
-   messageFeedback(run.climb.direction==='up'?'Montée… « Camarades ! » retentira au sommet.':'Descente vers le cortège…',2.2);
+   messageFeedback(run.climb.direction==='up'?'Montée… appuie sur « Camarades ! » en haut.':'Descente ; la foule est derrière toi.',2.2);
    sound(520,.16);
   }else actionTransition=.45;
   drain();refreshHUD();
@@ -491,12 +496,14 @@ function animateActors(dt,t){
  }else if(run.phase===2){
   for(const a of crowdActors){walking(a.guy,t,run.climbed?run.mobilisation/130:.13);
    const swell=run.climbed?run.mobilisation/100:0;
-   a.guy.position.x=a.x*(1+swell*.08);a.guy.position.z=a.z+swell*(rnd(a.seed+37)-.5)*1.0;
+   a.guy.position.x=a.x*(1+swell*.08);
+   a.guy.position.z=behindNarrator(run.z,a.z+swell*(rnd(a.seed+37)-.5)*1.0,4.5);
    a.guy.rotation.y=.12*Math.sin(t*.6+a.seed);}
  }else{
+  if(bastilleCrowd)bastilleCrowd.visible=run.z>=83;
   for(const a of crowdActors){
-   const offset=(a.z+8)/2.6;
-   const z=run.leaderZ-2+offset+Math.sin(t*.7+a.seed)*.18;
+   const offset=(a.z+12)/2.6;
+   const z=behindNarrator(run.z,run.leaderZ-2+offset+Math.sin(t*.7+a.seed)*.18,5.5);
    const x=a.x*.60+(rnd(a.seed+92)-.5)*(100-run.cohesion)*.030;
    a.guy.position.set(x,0,z);walking(a.guy,t,.9);
    a.guy.rotation.y=Math.sin(t*.42+a.seed)*.12;
@@ -561,7 +568,7 @@ async function loadCharacters(){
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Paris, avril 2002. Trois épreuves : récupérer le drapeau, monter sur la statue (cri automatique puis descente), et réunir les cortèges jusqu’à Bastille. Joystick pour marcher ; jaune pour monter ; rouge pour rassembler la foule en chemin.';
+  $('overlayText').textContent='Paris, avril 2002. Récupère le drapeau, monte sur la statue au bouton jaune, puis appuie sur « Camarades ! » en haut. Après la descente, avance vers Bastille avec les manifestants derrière toi.';
   $('start').disabled=false;
   send('manifestation:ready');
  }catch(e){

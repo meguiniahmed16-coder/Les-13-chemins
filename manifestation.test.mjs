@@ -1,21 +1,20 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
-import {newRun,advance,yellow,progress,callFromStatue,OBJECTIFS} from './manifestation-core.js';
+import {newRun,advance,yellow,progress,callFromStatue,behindNarrator,OBJECTIFS} from './manifestation-core.js';
 const read=f=>readFileSync(new URL('./'+f,import.meta.url),'utf8');
-test('Trois épreuves, un seul jaune lance cri et descente avant le chemin de Bastille',()=>{
+test('Trois épreuves : monter, crier, redescendre et suivre avec la foule derrière',()=>{
  const r=newRun();assert.equal(progress(r,2),false);
- r.x=4.1;r.z=12;assert.equal(yellow(r),true);assert.deepEqual(r.steps,[1]);assert.equal(progress(r,1),false);
- r.x=0;r.z=1.94;
- assert.equal(yellow(r),true);
+ r.x=4.1;r.z=12;assert.equal(yellow(r),true);
+ r.x=0;r.z=1.94;assert.equal(yellow(r),true);
  for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.statueShouted,true,'Cri automatique dès le sommet');
- assert.equal(r.climbed,true,'Le personnage est d’abord en haut');
- assert.equal(r.phase,2,'Pas de points avant la descente');
+ assert.equal(r.climbed,true);assert.equal(r.statueShouted,false);
+ for(let i=0;i<34;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.phase,2,'Sans le bouton Camarades, on attend en haut');
+ assert.equal(callFromStatue(r),true);
  for(let i=0;i<90&&r.phase===2;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.deepEqual(r.steps,[1,2]);assert.equal(r.phase,3);
- assert.equal(r.height,0,'La suite s’ouvre après le retour au sol');
+ assert.equal(r.phase,3);assert.equal(r.height,0);assert.ok(r.leaderZ<=r.z-6);
  r.z=99;r.cohesion=95;advance(r,.05,{x:0,y:0,red:false});
- assert.deepEqual(r.steps,[1,2,3]);assert.equal(r.finished,true);assert.equal(progress(r,3),false);
- assert.deepEqual(r.events.filter(e=>e.type==='progress').map(e=>e.step),[1,2,3]);
+ assert.deepEqual(r.steps,[1,2,3]);assert.equal(r.finished,true);
+ assert.equal(progress(r,3),false);
 });
 
 test('La cohésion dépend de la cadence et du rappel, sans effacer les points',()=>{
@@ -69,40 +68,27 @@ test('L’incrustation du chapitre et les pancartes restent visibles',()=>{
  assert.ok(js.includes('x:-clamp(joy.x+right-left,-1,1)'),'Manette corrigée');
 });
 
-test('Régression statue : montée visible, cri immédiat et descente automatique',()=>{
- const r=newRun();progress(r,1);r.x=0;r.z=1.94;
- assert.equal(yellow(r),true,'Un seul appui jaune');
- assert.ok(r.climb);assert.equal(r.climb.direction,'up');
- advance(r,.05,{x:0,y:0,red:false});
- assert.ok(r.climb);assert.ok(r.height<3.32);
- for(let i=0;i<24;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.ok(r.height>0&&r.height<3.32,'Position intermédiaire visible');
- for(let i=0;i<24;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.climbed,true);assert.equal(r.statueShouted,true);
- assert.equal(r.mobilisation,100);
- assert.equal(r.events.filter(e=>e.type==='shout').length,1,'Un seul cri');
- assert.equal(r.phase,2);
- let sawDescent=false;
- for(let i=0;i<90&&r.phase===2;i++){
-  advance(r,.05,{x:0,y:0,red:false});
-  if(r.climb?.direction==='down')sawDescent=true;
- }
- assert.equal(sawDescent,true);
- assert.equal(r.phase,3,'Le cortège part automatiquement après la descente');
- assert.deepEqual(r.steps,[1,2]);
- assert.equal(r.height,0);
- assert.equal(r.events.filter(e=>e.type==='shout').length,1,'Aucun cri répété');
+test('Montée visible ; bouton Camarades nécessaire puis descente automatique',()=>{
+ const r=newRun();progress(r,1);r.x=0;r.z=1.94;assert.equal(yellow(r),true);
+ advance(r,.05,{x:0,y:0,red:false});assert.ok(r.height<3.32);
+ for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.climbed,true);assert.equal(r.statueShouted,false);
+ assert.equal(r.events.filter(e=>e.type==='shout').length,0);
+ assert.equal(callFromStatue(r),true);assert.equal(callFromStatue(r),true);
+ assert.equal(r.events.filter(e=>e.type==='shout').length,1);
+ let down=false;
+ for(let i=0;i<90&&r.phase===2;i++){advance(r,.05,{x:0,y:0,red:false});if(r.climb?.direction==='down')down=true;}
+ assert.equal(down,true);assert.equal(r.phase,3);assert.deepEqual(r.steps,[1,2]);assert.equal(r.height,0);
 });
 
-test('Collision au pied de la statue puis sortie vers Bastille sans bouton rouge',()=>{
+test('Pas de collision ni départ sans le cri ; Bastille seulement après le bouton',()=>{
  const r=newRun();progress(r,1);r.x=0;r.z=1.94;
  for(let i=0;i<15;i++)advance(r,.05,{x:0,y:1,red:false});
- assert.ok(r.z<=1.97,'On ne pénètre pas le socle');
- assert.equal(yellow(r),true);
- for(let i=0;i<125&&r.phase===2;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.phase,3);
- assert.equal(r.climbed,false);assert.equal(r.height,0);
- assert.deepEqual(r.steps,[1,2]);
+ assert.ok(r.z<=1.97);assert.equal(yellow(r),true);
+ for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.phase,2);assert.equal(callFromStatue(r),true);
+ for(let i=0;i<90&&r.phase===2;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.phase,3);assert.equal(r.height,0);assert.deepEqual(r.steps,[1,2]);
 });
 
 test('Les commandes du socle restent lisibles sur téléphone',()=>{
@@ -116,48 +102,35 @@ test('Les commandes du socle restent lisibles sur téléphone',()=>{
  assert.ok(app.includes("Marches claires sur la face avant gauche"));
 });
 
-test('Le cri se déclenche seul au sommet ; le rouge est facultatif et ne double pas le cri',()=>{
- const r=newRun();progress(r,1);r.x=0;r.z=1.94;
- assert.equal(callFromStatue(r),false,'On ne crie pas depuis la rue');
- assert.equal(yellow(r),true);
- for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.climbed,true);
- assert.equal(r.statueShouted,true);
+test('Le cri au sommet nécessite un appui et ne se répète pas',()=>{
+ const r=newRun();progress(r,1);r.x=0;r.z=1.94;assert.equal(callFromStatue(r),false);
+ yellow(r);for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
+ assert.equal(r.statueShouted,false);
+ assert.equal(r.events.filter(e=>e.type==='shout').length,0);
+ assert.equal(callFromStatue(r),true);assert.equal(callFromStatue(r),true);
  assert.equal(r.events.filter(e=>e.type==='shout').length,1);
- assert.equal(callFromStatue(r),true,'L’ancien bouton reste compatible');
- assert.equal(r.events.filter(e=>e.type==='shout').length,1,'Aucun second cri');
  for(let i=0;i<90&&r.phase===2;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.phase,3,'Bastille débloqué automatiquement');
- assert.deepEqual(r.steps,[1,2]);
+ assert.equal(r.phase,3);
 });
 
-test('Le jaune peut toujours redescendre plus tôt après le cri',()=>{
- const r=newRun();progress(r,1);r.x=0;r.z=1.94;
- assert.equal(yellow(r),true);
+test('Le jaune reste un raccourci de descente après le cri',()=>{
+ const r=newRun();progress(r,1);r.x=0;r.z=1.94;yellow(r);
  for(let i=0;i<48;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.statueShouted,true);
- assert.equal(yellow(r),true,'Descente manuelle disponible pendant le cri');
+ assert.equal(callFromStatue(r),true);assert.equal(yellow(r),true);
  assert.equal(r.climb.direction,'down');
  for(let i=0;i<50&&r.phase===2;i++)advance(r,.05,{x:0,y:0,red:false});
- assert.equal(r.phase,3);
- assert.equal(r.height,0);
- assert.equal(r.climbed,false);
- assert.deepEqual(r.steps,[1,2]);
+ assert.equal(r.phase,3);assert.equal(r.height,0);assert.deepEqual(r.steps,[1,2]);
 });
 
-test('Un seul bouton jaune suffit : libellés et cache navigateur mis à jour',()=>{
+test('Commandes statue et cache navigateur réinitialisés pour la foule derrière',()=>{
  const html=read('jeu-manifestation.html'),app=read('manifestation-app.js');
  const controller=read('rendezvous-plateau.js'),plateau=read('jeu.html');
- for(const id of ['statueControls','statueProgress','statueCall','statueDescend'])
-  assert.ok(html.includes('id="'+id+'"'),'Contrôle de secours '+id);
- assert.ok(html.includes('statue-buttons button{min-height:54px'));
- assert.ok(app.includes("if(e.type==='shout')"));
- assert.ok(app.includes('voiceCamarades()'));
- assert.ok(app.includes('const onStatue=run.phase===2'));
+ for(const id of ['statueControls','statueProgress','statueCall','statueDescend'])assert.ok(html.includes('id="'+id+'"'));
+ assert.ok(app.includes("if(e.type==='shout')"));assert.ok(app.includes('voiceCamarades()'));
  assert.ok(app.includes('statuePanel.hidden=!up'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261109-sky-reader5'));
- assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-sky-reader5'));
- assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-sky-reader5'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261109-crowd-behind6'));
+ assert.ok(controller.includes('jeu-manifestation.html?embedded=1&v=20261109-crowd-behind6'));
+ assert.ok(plateau.includes('rendezvous-plateau.js?v=20261109-crowd-behind6'));
 });
 
 test('La manette de la statue existe une seule fois et ses commandes sont raccordées',()=>{
@@ -184,4 +157,18 @@ test('Bonne feuille du Chemin III : même lecture immersive que les autres jeux'
  assert.ok(controller.includes("function reachedReadingEnd()"));
  assert.ok(controller.includes("excerpt.getBoundingClientRect().bottom<=reader.getBoundingClientRect().bottom-18"));
  assert.ok(controller.includes("},1150)"),'Transition temporisée comme les autres extraits');
+});
+
+test('Régression densification : foule de République toujours derrière',()=>{
+ const src=read('manifestation-app.js');
+ assert.ok(src.includes('makeCrowd(root,24,-13'));
+ assert.ok(src.includes('distantCrowd(root,-27,100)'));
+ assert.ok(src.includes('makeCrowd(root,25,-12'));
+ assert.ok(!src.includes('distantCrowd(root,20,190)'));
+ assert.ok(!src.includes('distantCrowd(root,113,230)'));
+ assert.ok(src.includes('bastilleCrowd.visible=run.z>=83'));
+ for(let z=0;z<107;z+=7)for(let candidate=z-30;candidate<z+30;candidate+=3)
+  assert.ok(behindNarrator(z,candidate,5.5)<=z-5.5);
+ const run=newRun();progress(run,1);progress(run,2);
+ for(let i=0;i<240;i++){advance(run,.05,{x:0,y:1,red:i%20<7});assert.ok(run.leaderZ<=run.z-6);}
 });
