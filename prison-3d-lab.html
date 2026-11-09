@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#202b29">
+<title>Un fil entre les barreaux — prototype 3D</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark}
+html,body{margin:0;min-height:100%;background:#172322;color:#f0ecd9;font-family:system-ui,-apple-system,sans-serif}
+body{background:radial-gradient(ellipse at top,#34443e,#172322 70%)}
+button,a{font:inherit}button{cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid #ffd28e;outline-offset:3px}
+.shell{width:min(1190px,100%);margin:auto;padding:13px 16px 32px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:9px 0 18px}
+.kicker{font-size:11px;letter-spacing:.16em;color:#e0c59c;text-transform:uppercase;margin:0 0 5px}
+h1{font:400 clamp(29px,5vw,48px)/1.08 Georgia,serif;margin:0}
+nav{display:flex;gap:10px;flex-wrap:wrap}
+a{color:#efdfb5;text-decoration-thickness:1px;text-underline-offset:4px}
+nav a{padding:9px 10px;background:#354841;border:1px solid #8d8a76;border-radius:5px}
+.lead{max-width:900px;color:#d6d9ce;font-size:14px;line-height:1.6;margin:0 0 16px}
+.viewport{position:relative;isolation:isolate;aspect-ratio:16/9;min-height:250px;background:#37423d;border:2px solid #a18d6b;border-radius:11px;overflow:hidden;box-shadow:0 20px 55px #07121188}
+#world{width:100%;height:100%;display:block;touch-action:pan-y}
+.scene-label{position:absolute;left:12px;top:12px;padding:7px 12px;border:1px solid #c0aa7c;background:#172522d9;border-radius:5px;color:#fae8c5;font-weight:700;font-size:11px;pointer-events:none}
+.hud{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:12px 3px}
+#objective{font:700 clamp(16px,2vw,21px)/1.3 Georgia,serif}
+#state,#score{white-space:nowrap;border:1px solid #868a79;padding:7px 11px;background:#2d413a;border-radius:5px;font-weight:700;font-size:13px}
+#status{margin:6px 0 15px;min-height:30px;color:#e0d8bf;font-size:14px;line-height:1.5}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.controls button,.actions button{min-height:52px;border:1px solid #c4af86;border-radius:7px;background:#334940;color:#f5edcf;font-weight:750;padding:10px}
+.controls .primary,.actions .primary{background:#f0d098;color:#273830;border-color:#fbe2ae}
+.controls button:active{transform:translateY(2px);background:#5c7160}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.actions button{min-height:46px;padding:10px 16px}
+.actions button:disabled{opacity:.45;cursor:not-allowed}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:17px 0}
+.card{padding:15px 17px;border:1px solid #617165;background:#233833b3;border-radius:9px;font-size:13px;line-height:1.65}
+.card h2{font:400 24px Georgia,serif;margin:0 0 6px;color:#f0d6a9}
+.card ol{padding-left:21px;margin:8px 0}
+#loader{color:#e1c696;font-size:13px;margin:7px 0;min-height:21px}
+.note{font-size:12px;color:#b6c9bb;margin:18px 0;line-height:1.6}
+[hidden]{display:none!important}
+@media(max-width:680px){
+ .shell{padding:10px 9px 26px}
+ header{gap:10px}nav a{font-size:12px}
+ .viewport{aspect-ratio:4/3;min-height:245px}
+ .hud{grid-template-columns:1fr auto;gap:6px}#objective{grid-column:1/-1}
+ .controls{grid-template-columns:repeat(2,1fr)}
+ .info{grid-template-columns:1fr;gap:10px}
+ .scene-label{left:6px;top:6px;font-size:9px;padding:5px 7px}
+}
+@media(prefers-reduced-motion:reduce){.controls button:active{transform:none}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header>
+ <div>
+  <p class="kicker">Chapitre 2 — « Même pas mal » · Étude 3D indépendante</p>
+  <h1>Un fil entre les barreaux</h1>
+ </div>
+ <nav aria-label="Navigation">
+  <a href="jeu-yoyo.html">↶ Jeu actuel</a>
+  <a href="jeu.html">Plateau</a>
+ </nav>
+</header>
+<p class="lead">Une cellule reconstruite en volumes : deux lits superposés, table, armoire, sanitaires, fenêtre grillagée, voisin d’en face, corde et sacs. Le détenu est un véritable personnage articulé Quaternius CC0. Les trois gestes du yo-yo sont conservés.</p>
+<div id="loader" role="status">Initialisation de la cellule…</div>
+<section class="viewport" aria-label="Vue interactive de la cellule de prison en 3D">
+ <canvas id="world" width="1200" height="675" aria-label="Scène 3D interactive avec un corps entier articulé, les barreaux et le yo-yo"></canvas>
+ <div class="scene-label">STRASBOURG · CELLULE D'ENVIRON 9 M² · 3D</div>
+</section>
+<div class="hud" aria-live="polite">
+ <span id="objective">Découvrir la cellule</span>
+ <span id="state">Prêt</span>
+ <span id="score">0 / 30</span>
+</div>
+<p id="status" role="status">Chargement du personnage…</p>
+<div class="actions">
+ <button id="play" class="primary" disabled>Commencer les trois épreuves</button>
+ <button id="next" class="primary" hidden>Épreuve suivante →</button>
+ <button id="retry" hidden>Recommencer ↻</button>
+ <button id="view">Vue rapprochée</button>
+ <button id="pause">Pause</button>
+ <button id="hint">Aide</button>
+</div>
+<div class="controls" aria-label="Manette de contrôle">
+ <button id="left" aria-label="Viser vers la gauche">◀ Gauche</button>
+ <button id="right" aria-label="Viser vers la droite">Droite ▶</button>
+ <button id="hide">Se cacher</button>
+ <button id="fire" class="primary">● Attraper / tirer</button>
+</div>
+<div class="info">
+ <section class="card" id="guide">
+  <h2>Trois gestes, une rencontre</h2>
+  <ol>
+   <li>Repère la brosse dans la cellule, oriente le corps et saisis-la.</li>
+   <li>Accroche la corde et fais passer le tabac entre deux barreaux.</li>
+   <li>Recommence pour le café sans alerter le surveillant.</li>
+  </ol>
+  <p>Un cercle vert signale l’alignement. Maintiens « Attraper / tirer » pendant la livraison. Les barreaux bloquent réellement le mouvement dans la logique du jeu.</p>
+ </section>
+ <section class="card">
+  <h2>Commandes et prototype</h2>
+  <p>Clavier : flèches gauche/droite pour viser, espace pour attraper, H pour se cacher, V pour changer de vue, Entrée pour continuer. Sur mobile, les boutons et le toucher de la scène fonctionnent.</p>
+  <p>Cette étude est indépendante : <strong>aucun point n'est ajouté au plateau principal</strong>. Elle ne remplace pas la version actuelle avant validation du personnage, des bras et du décor.</p>
+ </section>
+</div>
+<p class="note">Corps : Quaternius, Universal Base Characters — CC0. Cellule et accessoires : géométries originales Three.js. Cette reconstitution est narrative et ne prétend pas reproduire au centimètre une cellule historique particulière.</p>
+</main>
+<script src="prison-3d-lab-runtime.js"></script>
+</body>
+</html>
