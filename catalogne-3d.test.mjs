@@ -90,7 +90,7 @@ test('Scène 3D : vente confiée au plateau, confirmation sans double comptage',
  assert.ok(app.includes('result.client.id'));
  assert.ok(app.includes('m.finished'));
  assert.ok(app.includes("m.sold.filter"));
- assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v2'));
+ assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v3'));
  assert.ok(html.includes('id="saleDialogue"'));
  assert.ok(app.includes("MODEL_PATHS"));
 });
@@ -98,7 +98,7 @@ test('Préserver le jeu 2D original et vérifier le raccord au plateau',()=>{
  const base=read('arcade-catalogne.html'),page=read('jeu.html'),build=read('build-public.mjs');
  assert.ok(base.includes('function nearbyClient(r)'));
  assert.ok(base.includes('const WORLD=1960'));
- assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v2'"));
+ assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v3'"));
  assert.ok(build.includes("'arcade-catalogne.html'"));
  assert.ok(build.includes("'arcade-catalogne-3d.html'"));
  assert.ok(build.includes("'catalogne-3d-runtime.js'"));
@@ -212,4 +212,11 @@ test('Les passants viennent vers le joueur et repartent : moitié dans chaque se
  const singles=Array.from({length:16},(_,i)=>i%2===0?-1:1);
  assert.equal(groups.filter(h=>h<0).length+singles.filter(h=>h<0).length,14);
  assert.equal(groups.filter(h=>h>0).length+singles.filter(h=>h>0).length,14);
+});
+
+test('Les cinq clients ont des orientations alternées et font face à l acheteur à proximité',()=>{
+ const js=read('catalogne-3d-app.js');
+ assert.ok(js.includes('const near=distance(run,v.client)<7.5'));
+ assert.ok(js.includes('Math.atan2(run.x-v.client.x,run.z-v.client.z)+Math.PI'));
+ assert.ok(js.includes('i%2===0?0:Math.PI'));
 });
