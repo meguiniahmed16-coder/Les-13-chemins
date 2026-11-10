@@ -5,14 +5,14 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {PARK,CLIENTS,PATROLS,newRun,nearestClient,sell,dodge,advance,instruction,distance,clamp} from './catalogne-3d-core.js';
+import {PARK,CLIENTS,PATROLS,newRun,nearestClient,sell,dodge,advance,instruction,distance,clamp,saleDialogue,POLICE_SHOUTS} from './catalogne-3d-core.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(n=>'assets/manifestation/'+n);
 let run=newRun(),sessionId=null,ready=false,replayMode=false,score=0,pendingSale=null,pendingSince=0;
 let paused=false,soundOn=false,lastFrame=0,toastUntil=0,lastInstruction=null,orbital=0,orbitLeft=0,lastPoliceMessage=0,controlsLocked=false;
 const joy={x:0,z:0},keys=new Set();
-let joyPointer=null,clientActors=[],policeActors=[],people=[],hero=null;
+let joyPointer=null,clientActors=[],policeActors=[],people=[],birds=[],hero=null,saleConversation=null;
 const actorTemplates=[],walkMeshes=[],fountainWater=[];
 const rnd=n=>{const v=Math.sin(n*14.29+3.16)*98724.35;return v-Math.floor(v)};
 const world=new T.Scene();world.background=new T.Color(0xa4d0db);world.fog=new T.FogExp2(0xbfd2d2,.006);
@@ -226,14 +226,34 @@ function createCharacters(root){
   const actor=makeActor(i+1,'police');actor.group.position.set(p.homeX,0,p.homeZ);root.add(actor.group);
   return {actor,oldX:p.homeX,oldZ:p.homeZ};
  });
- // Quelques silhouettes promenant dans le parc, sans masquer les clients.
+ // Promeneurs répartis en groupes de deux ou trois, plus quelques solitaires.
+ // Leurs déplacements restent décoratifs et ne bloquent pas les ventes.
  people=[];
+ const gatherings=[
+  {x:-9.2,z:22,number:3},{x:9.0,z:43,number:3},
+  {x:-9.2,z:68,number:3},{x:8.9,z:91,number:3},
+  {x:-8.8,z:115,number:3}
+ ];
+ let personIndex=0;
+ for(let g=0;g<gatherings.length;g++){
+  const group=gatherings[g];
+  for(let j=0;j<group.number;j++){
+   const actor=makeActor(14+personIndex,'walker');
+   const angle=j*2*Math.PI/group.number;
+   const x=group.x+Math.cos(angle)*.85,z=group.z+Math.sin(angle)*.95;
+   actor.group.position.set(x,0,z);root.add(actor.group);
+   people.push({actor,x,z,baseX:x,baseZ:z,member:true,group:g,index:j,
+    seed:personIndex,speed:.20+rnd(personIndex+5)*.2});
+   personIndex++;
+  }
+ }
  for(let i=0;i<11;i++){
-  const actor=makeActor(i+8,'walker');
-  const x=(i%2===0?-1:1)*(8.4+rnd(i+12)*1.2);
-  const z=8+i*10.3;
+  const actor=makeActor(i+40,'walker');
+  const x=(i%2===0?-1:1)*(8.2+rnd(i+12)*1.5);
+  const z=5+i*10.7;
   actor.group.position.set(x,0,z);root.add(actor.group);
-  people.push({actor,x,z,speed:(i%2?1:-1)*(.4+rnd(i+51)*.3)});
+  people.push({actor,x,z,baseX:x,baseZ:z,member:false,seed:personIndex++,
+   speed:(i%2?1:-1)*(.65+rnd(i+51)*.4)});
  }
 }
 function resetClientVisuals(){
@@ -260,16 +280,70 @@ function updateActors(dt,time){
   animateActor(v.actor,dt,Math.hypot(dx,dz)>.001);
   v.oldX=p.x;v.oldZ=p.z;
  });
- people.forEach((v,i)=>{
-  if(run.phase==='running'){
-   v.z+=v.speed*dt;
-   if(v.z<1)v.z=119;if(v.z>119)v.z=1;
+ people.forEach(v=>{
+  let moving=run.phase==='running'&&!paused;
+  if(v.member){
+   // Ils conversent et changent doucement de place au sein du petit groupe.
+   v.x=v.baseX+Math.sin(time*.42+v.seed)*.42;
+   v.z=v.baseZ+Math.cos(time*.32+v.seed)*.35;
+   v.actor.group.rotation.y=Math.sin(time*.38+v.index)*.55;
+   moving=moving&&Math.sin(time*.8+v.seed)>.25;
+  }else{
+   if(moving){
+    v.z+=v.speed*dt;
+    if(v.z<1)v.z=119;if(v.z>119)v.z=1;
+   }
+   v.actor.group.rotation.y=v.speed>0?0:Math.PI;
   }
   v.actor.group.position.set(v.x,0,v.z);
-  v.actor.group.rotation.y=v.speed>0?0:Math.PI;
-  animateActor(v.actor,dt,run.phase==='running');
+  animateActor(v.actor,dt,moving);
+ });
+ birds.forEach(v=>{
+  const phase=time*.37+v.seed*.78;
+  v.group.position.set(
+   Math.sin(phase)*9+Math.sin(v.seed*2.19)*7,
+   5.9+v.seed%4+Math.sin(time*1.2+v.seed)*.55,
+   9+(time*(2.3+v.seed%3)+v.seed*17)%111);
+  v.group.rotation.y=Math.sin(phase)*.43;
+  const flap=Math.sin(time*10+v.seed*1.8)*.60;
+  v.wingL.rotation.z=flap;
+  v.wingR.rotation.z=-flap;
  });
  fountainWater.forEach((v,i)=>{v.position.y=1.25+Math.sin(time*2+i)*.08;});
+}
+function sayLine(text,lang='fr-FR'){
+ if(!soundOn||!('speechSynthesis'in window))return;
+ try{
+  speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang=lang;utterance.rate=1.06;utterance.volume=.85;
+  speechSynthesis.speak(utterance);
+ }catch{}
+}
+function startSaleConversation(id){
+ const lines=saleDialogue(id);
+ if(!lines)return;
+ saleConversation={lines,started:performance.now()/1000,index:-1,clientId:id};
+ $('saleDialogue').hidden=false;
+ updateSaleConversation(performance.now()/1000);
+}
+function updateSaleConversation(time){
+ if(!saleConversation){$('saleDialogue').hidden=true;return;}
+ const elapsed=time-saleConversation.started;
+ const index=Math.floor(elapsed/1.8);
+ if(index>=saleConversation.lines.length){
+  saleConversation=null;$('saleDialogue').hidden=true;return;
+ }
+ if(index!==saleConversation.index){
+  saleConversation.index=index;
+  const line=saleConversation.lines[index];
+  const who=line.speaker==='client'?'CLIENT':'VENDEUR';
+  $('saleDialogue').textContent=who+' — '+line.text;
+  $('saleDialogue').dataset.speaker=line.speaker;
+  sayLine(line.text);
+ }
+ $('saleDialogue').hidden=false;
+ $('saleDialogue').style.opacity=String(Math.min(1,(3.6-elapsed)/.25));
 }
 function showToast(text,duration=1.05){
  const el=$('toast');el.textContent=text;el.hidden=false;el.style.opacity='1';
@@ -303,12 +377,12 @@ function showOverlay(title,text,label='Commencer',showStart=true){
 function closeOverlay(){$('overlay').hidden=true;}
 function start(){
  if(!ready||embedded&&!sessionId)return;
- run=newRun(run.sold);run.phase='running';paused=false;pendingSale=null;
+ run=newRun(run.sold);run.phase='running';paused=false;pendingSale=null;saleConversation=null;
  lastInstruction=null;lastPoliceMessage=0;lastFrame=0;orbital=0;orbitLeft=0;resetClientVisuals();
  closeOverlay();renderHUD();syncInstruction();
 }
 function caught(){
- paused=false;pendingSale=null;showOverlay('Interpellé.','Les clients déjà servis restent validés. Tu peux recommencer dans le parc.','Réessayer');
+ paused=false;pendingSale=null;saleConversation=null;$('saleDialogue').hidden=true;showOverlay('Interpellé.','Les clients déjà servis restent validés. Tu peux recommencer dans le parc.','Réessayer');
  showToast('Évite les policiers !');renderHUD();
 }
 function won(){
@@ -322,6 +396,7 @@ function makeSale(){
  const result=sell(run);
  if(!result.client){showToast('Approche d’un client ◆',.95);return;}
  pendingSale=result.client.id;pendingSince=performance.now()/1000;
+ startSaleConversation(result.client.id);
  resetClientVisuals();renderHUD();
  if(embedded){
   publish('catalogne:sale',{clientId:result.client.id});
@@ -352,7 +427,9 @@ function policeCry(){
  if(run.clock-lastPoliceMessage<4.5)return;
  const chase=run.police.find(p=>p.chasing);
  if(!chase)return;
- lastPoliceMessage=run.clock;showToast(Math.round(run.clock)%2?'¡Alto!':'¡Vuelve aquí!',.8);
+ lastPoliceMessage=run.clock;
+ const line=POLICE_SHOUTS[Math.floor(run.clock/4.5)%POLICE_SHOUTS.length];
+ if(!saleConversation){showToast(line,.95);sayLine(line,'es-ES');}
  beep(290,.1);
 }
 function pause(){
@@ -375,7 +452,9 @@ function input(){
  const right=Number(keys.has('arrowright')||keys.has('d'));
  const ahead=Number(keys.has('arrowup')||keys.has('w')||keys.has('z'));
  const behind=Number(keys.has('arrowdown')||keys.has('s'));
- return {x:clamp(joy.x+right-left,-1,1),z:clamp(joy.z+ahead-behind,-1,1)};
+ // La caméra regarde vers +z : son axe écran droite correspond à -x.
+ // Inverser ici le seul axe horizontal, pas le mouvement visible du bouton.
+ return {x:-clamp(joy.x+right-left,-1,1),z:clamp(joy.z+ahead-behind,-1,1)};
 }
 function bind(){
  $('start').addEventListener('click',endPauseOrStart);
@@ -423,7 +502,7 @@ function bind(){
   if(!already&&key==='escape')pause();
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();release();});
+ window.addEventListener('blur',()=>{keys.clear();release();speechSynthesis?.cancel?.();});
  document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&run.phase==='running'&&!paused)pause();
  });
@@ -484,6 +563,7 @@ function frame(ms){
    }
   }
   const t=ms/1000;
+  updateSaleConversation(t);
   if(!$('toast').hidden){
    const remain=toastUntil-t;
    if(remain<=0)$('toast').hidden=true;
