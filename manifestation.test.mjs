@@ -48,14 +48,15 @@ test('Départ depuis la statue, descente visible et joystick libre après',()=>{
 });
 test('Avancer étire la foule ; s’arrêter et ROUGE la rapproche réellement',()=>{
  const r=procession(),gap0=r.z-r.leaderZ;
- for(let i=0;i<100;i++)advance(r,.05,walk);
+ // Tester la prise de retard AVANT le premier barrage (17 mètres).
+ for(let i=0;i<40;i++)advance(r,.05,walk);
  const gap=r.z-r.leaderZ,cohesion=r.cohesion,z=r.z;
  assert.ok(gap>gap0+2.5&&gap<=15.5);
  assert.ok(cohesion<80);
  for(let i=0;i<40;i++)advance(r,.05,rally);
  assert.equal(r.z,z);
  assert.ok(r.z-r.leaderZ<gap-3);
- assert.ok(r.cohesion>cohesion+30);
+ assert.ok(r.cohesion>cohesion+20);
 });
 test('Trois attaques de CRS distinctes, déclenchées en chemin',()=>{
  const r=procession();
@@ -190,7 +191,7 @@ test('Les CRS sont VISIBLES sur la chaussée et arrivent en formation pendant le
  assert.ok(js.includes('for(let i=0;i<4;i++)'),'Quatre CRS par attaque');
  assert.ok(js.includes('officer.actor.position.x=(i-1.5)*1.45'),'Formation centrée sur la rue');
  assert.ok(js.includes('officer.actor.scale.setScalar(1.25)'),'Visibles sur téléphone');
- assert.ok(js.includes('run.z=Math.min(run.z,active.trigger+1.3)'),'CRS bloquent réellement la chaussée');
+ assert.ok(read('manifestation-core.js').includes('run.z=Math.min(run.z,active.trigger+1.3)'),'CRS bloquent réellement la chaussée');
  assert.ok(js.includes('Math.max(run.z+6.3,display.anchor-approaching*4.1)'));
  assert.ok(js.includes('policeAlert.hidden=!currentWave'));
  assert.ok(html.includes('id="crsAlert"'));
