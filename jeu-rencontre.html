@@ -89,7 +89,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 <p>Film II : <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137" target="_blank" rel="noopener noreferrer">« Night on the Docks - Sax » — Kevin MacLeod (incompetech.com)</a>, sous licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p>
 <p>Les morceaux sont joués comme musique de fond ; leur volume peut être ajusté pour le jeu.</p>
 </details></section>
-<p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. L’ouverture silencieuse (C01) et le tableau final (B07) sont présentés comme des passages illustré et littéraire, sans prétendre qu’une vidéo existe. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
+<p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. L’ouverture silencieuse (C01) est illustrée ; le second film se termine sur le « oui » (B06). La vidéo A08 reste accessible comme bonus facultatif. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
 <dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline muted controls preload="metadata" hidden></video><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
@@ -114,8 +114,7 @@ const SHOTS=[
  ['B03','La conversation et les cigarettes','02-chambre/03-conversation.mp4'],
  ['B04','Elle déplie le canapé-lit','02-chambre/04-canape-lit.mp4'],
  ['B05','Sous les draps','02-chambre/05-sous-les-draps.mp4'],
- ['B06','Le « oui »','02-chambre/06-oui.mp4'],
- ['B07','Dos nu, cigarette, tour Eiffel scintillante','02-chambre/07-tour-eiffel.mp4']
+ ['B06','Le « oui »','02-chambre/06-oui.mp4']
 ];
 /* Versions alternatives : un clip pour chaque Pas maintenant. */
 const ALTERNATES=[
@@ -128,7 +127,7 @@ const ALTERNATES=[
  ["A07","Un autre éclat de rire","02-chambre/alternatives/07-rire.mp4","Rires complices ; le canapé-lit reste fermé."],
  ["A08","Le silence de la nuit","02-chambre/alternatives/08-nuit.mp4","Ils restent sous les draps, échangent un regard tranquille."]
 ];
-/* Références exactes aux 21 créations Higgsfield validées. C01 et B07 n'ont pas de rendu disponible. */
+/* Références exactes aux 21 créations Higgsfield validées. C01 reste une ouverture illustrée. */
 const HIGGS_CDN='https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/';
 const MEDIA={
  C02:HIGGS_CDN+'hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4',
@@ -165,8 +164,7 @@ const STEPS=[
  {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true,alt:'A04'},
  {phase:'chambre',title:'Un dernier verre ?',desc:'Elle propose de prolonger la soirée dans sa petite chambre de bonne mansardée de 26 m².',yes:'Accepter un dernier verre',clips:['B01','B02'],no:true,alt:'A05'},
  {phase:'chambre',title:'La complicité',desc:'Ils discutent, boivent leurs verres et fument. Le temps ralentit.',yes:'Prolonger la conversation',clips:['B03'],no:true,alt:'A06'},
- {phase:'chambre',title:'Rester ensemble ?',desc:'Ils décident ensemble de prolonger ce moment. Le canapé-lit est déplié. Sous les draps, un regard et un « oui ».',yes:'Rester ensemble',clips:['B04','B05','B06'],no:true,alt:'A07'},
- {phase:'chambre',title:'La fenêtre ouverte',desc:'Le dernier plan est contemplatif : de nuit, le garçon nu, vu de dos et en pied, devant la tour Eiffel scintillante. Sa main gauche tient une cigarette fumante près de son oreille.',yes:'Voir le dernier plan',clips:['B07'],no:true,alt:'A08'}
+ {phase:'chambre',title:'Rester ensemble ?',desc:'Ils décident ensemble de prolonger ce moment. Le canapé-lit est déplié. Sous les draps, un regard et un « oui ».',yes:'Rester ensemble',clips:['B04','B05','B06'],no:true,alt:'A07'}
 ];
 const $=id=>document.getElementById(id);
 
@@ -207,7 +205,7 @@ $('toggleMusic').onclick=()=>{
 };
 const KEY='tda-rencontre-storyboard-v1';
 let state={step:0,watched:[],ended:false};
-try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Number.isInteger(previous.step)&&previous.step>=0&&previous.step<=STEPS.length&&Array.isArray(previous.watched)){state={step:previous.step,watched:previous.watched.filter(x=>SHOTS.concat(ALTERNATES).some(y=>y[0]===x)),ended:!!previous.ended}}}catch(e){}
+try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Number.isInteger(previous.step)&&previous.step>=0&&previous.step<=8&&Array.isArray(previous.watched)){state={step:Math.min(STEPS.length,previous.step),watched:previous.watched.filter(x=>SHOTS.concat(ALTERNATES).some(y=>y[0]===x)),ended:!!previous.ended}}}catch(e){}
 let pending=null,movieIndex=0,mode='sequence';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
@@ -223,11 +221,11 @@ function draw(){
  if(isKitchen){$('still').src=state.step>=3?ART.caresse:ART.cuisine;}
  else if(atEnd){$('awaitingArt').firstChild.textContent='Fin de la rencontre';}
  else $('awaitingArt').firstChild.textContent='La chambre mansardée';
- $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/8';
+ $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/'+STEPS.length;
  $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
- $('stepDescription').textContent=atEnd?(state.ended?'Le choix de ne pas poursuivre est respecté. Tu peux recommencer la scène sans perdre le parcours principal.':'La dernière cinématique ferme le récit. Tous les plans du parcours peuvent être rejoués.'):step.desc;
+ $('stepDescription').textContent=atEnd?(state.ended?'Le choix de ne pas poursuivre est respecté. Tu peux recommencer la scène sans perdre le parcours principal.':'La rencontre s’achève sur leur « oui ». Les scènes débloquées peuvent être revues.'):step.desc;
  $('choices').replaceChildren();
- if(atEnd){$('choices').append(button('Recommencer cette histoire','action',reset));}
+ if(atEnd){$('choices').append(button('↻ Rejouer toute la rencontre','action',reset));if(!state.ended)$('choices').append(button('▶ Voir le silence de la nuit (bonus)','outline',()=>beginScene(['A08'],'replay')));}
  else{
    $('choices').append(button(step.yes,'action',()=>beginScene(step.clips,'sequence')));
    if(step.no)$('choices').append(button('Pas maintenant','outline',()=>beginScene([step.alt],'pause')));
@@ -236,10 +234,10 @@ function draw(){
  $('clips').replaceChildren(...SHOTS.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[0]+' · '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
  $('pauseClips').replaceChildren(...ALTERNATES.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
  $('films').replaceChildren();
- for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:7,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:6,ready:state.watched.includes('B06')||state.watched.includes('B07')}]){
+ for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:7,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:6,ready:state.watched.includes('B06')}]){
   const box=document.createElement('div');box.className='film-card';
   const heading=document.createElement('strong');heading.textContent=part.name;
-  const msg=document.createElement('small');msg.textContent=part.count+' séquences animées et 1 tableau narratif · '+(part.ready?'Film à revoir':'À débloquer');
+  const msg=document.createElement('small');msg.textContent=(part.id==='cuisine'?part.count+' clips et une ouverture illustrée':part.count+' clips, fin au « oui »')+' · '+(part.ready?'Film à revoir':'À débloquer');
   box.append(heading,msg);
   if(part.ready){box.append(button('▶ Revoir le film enchaîné','outline',()=>{const ids=SHOTS.filter(s=>s[0].startsWith(part.id==='cuisine'?'C':'B')).map(s=>s[0]);beginScene(ids,'replay')}));}
   $('films').append(box);
@@ -285,9 +283,7 @@ function playCurrent(){
    poster.src=ART.cuisine;
    $('movieStillTitle').textContent='Le silence de la cuisine';
    $('movieStillText').textContent='Il est assis sur le tabouret, la tête baissée. Elle se tient près de l’évier. Aucun geste encore. La musique commencera lorsqu’il relèvera la tête.';
-  }else if(shot[0]==='B07'){
-   $('movieStillTitle').textContent='La fenêtre sur Paris';
-   $('movieStillText').textContent='Il se tient nu, de dos et en pied, devant la fenêtre ouverte. Au loin, la tour Eiffel illumine la nuit et scintille. La main gauche près de l’oreille, il tient une cigarette fumante. Dernier tableau du récit : cette image finale n’a pas encore été animée.';
+
   }else{
    $('movieStillTitle').textContent='Scène littéraire';
    $('movieStillText').textContent=shot[1]+' — séquence non encore disponible.';

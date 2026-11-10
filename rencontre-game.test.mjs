@@ -7,16 +7,16 @@ const html = readFileSync(new URL('./jeu-rencontre.html', import.meta.url), 'utf
 const controller = readFileSync(new URL('./rendezvous-plateau.js', import.meta.url), 'utf8');
 const build = readFileSync(new URL('./build-public.mjs', import.meta.url), 'utf8');
 
-test('The 15 chapter 6 film shots are in their agreed order', () => {
+test('The fourteen scripted scenes retain their order without the missing finale', () => {
   const shotLines = [...html.matchAll(/^\s*\['([CB]\d{2})','[^']+','[^']+\.mp4'\],?$/gm)];
   const keys = shotLines.map(x => x[1]);
   assert.deepEqual(keys, [...Array.from({length:8},(_,i)=>'C'+String(i+1).padStart(2,'0')),
-                         ...Array.from({length:7},(_,i)=>'B'+String(i+1).padStart(2,'0'))]);
+                         ...Array.from({length:6},(_,i)=>'B'+String(i+1).padStart(2,'0'))]);
   for (const path of ['01-cuisine/04-il-lui-caresse-la-joue.mp4',
                       '01-cuisine/05-elle-lui-caresse-la-joue.mp4',
                       '01-cuisine/06-il-lui-caresse-les-cheveux.mp4',
                       '01-cuisine/07-elle-lui-caresse-les-cheveux.mp4',
-                      '02-chambre/07-tour-eiffel.mp4']) {
+                      '02-chambre/06-oui.mp4']) {
     assert.ok(html.includes(path),path);
   }
 });
@@ -25,7 +25,7 @@ test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and int
   const bundles=[...html.matchAll(/clips:\[([^\]]+)\]/g)].map(x=>[...x[1].matchAll(/'([CB]\d{2})'/g)].map(y=>y[1]));
   assert.deepEqual(bundles,[
     ['C01','C02','C03'],['C04','C05'],['C06','C07'],['C08'],
-    ['B01','B02'],['B03'],['B04','B05','B06'],['B07']
+    ['B01','B02'],['B03'],['B04','B05','B06']
   ]);
   assert.ok(html.includes('Pas maintenant'));
   assert.ok(html.includes('state.watched'));
@@ -56,7 +56,7 @@ test('Every Pas maintenant plays a unique optional sequence without advancing th
   const alternatives=[...html.matchAll(/^\s*\["A(0[1-8])","[^"]+","[^"]+\.mp4","[^"]+"\],?$/gm)];
   assert.equal(alternatives.length,8,'There are eight alternative scenes');
   const stepRefs=[...html.matchAll(/alt:'(A0[1-8])'/g)].map(x=>x[1]);
-  assert.deepEqual(stepRefs,Array.from({length:8},(_,i)=>'A'+String(i+1).padStart(2,'0')));
+  assert.deepEqual(stepRefs,Array.from({length:7},(_,i)=>'A'+String(i+1).padStart(2,'0')));
   assert.ok(html.includes("beginScene([step.alt],'pause')"));
   assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not advance the chapter');
   assert.ok(html.includes("finished==='sequence'||finished==='pause'"), 'All seen clips are saved');
@@ -84,7 +84,8 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
  assert.ok(html.includes('nextMovie();},850)'), 'The validated clips must chain into one film');
  assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not move the story forward');
- assert.ok(html.includes('La fenêtre sur Paris'), 'Literary final tableau when B07 has no video');
+ assert.ok(!html.includes('La fenêtre sur Paris')&&!html.includes("clips:['B07']"), 'No literary ending');
+ assert.ok(html.includes("beginScene(['A08'],'replay')"),'The extra night video is preserved');
  assert.ok(html.includes('Le silence de la cuisine'), 'Still intro when C01 has no video');
  assert.ok(html.includes("type:'rencontre:state'"), 'The shared board receives progress');
  assert.ok(controller.includes("e.data.type!=='rencontre:state'"), 'Parent verifies iframe origin and event type');

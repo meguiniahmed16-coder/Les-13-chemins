@@ -49,7 +49,7 @@
  addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==rencontreFrame.contentWindow||!rencontreDialog.open||!e.data||e.data.type!=='rencontre:state')return;
   const step=Number(e.data.step);
-  if(!Number.isInteger(step)||step<0||step>8||typeof e.data.complete!=='boolean'||typeof e.data.ended!=='boolean')return;
+  if(!Number.isInteger(step)||step<0||step>7||typeof e.data.complete!=='boolean'||typeof e.data.ended!=='boolean')return;
   state.rdvRencontreStage=step;
   if(e.data.complete){state.rdvRencontreFinished=true;state.rdvRencontreSkipped=false;}
   else if(e.data.ended&&!state.rdvRencontreFinished){state.rdvRencontreSkipped=true;}
@@ -91,7 +91,7 @@
   }
   const rencontreTraversed=Boolean(state.rdvRencontreFinished||state.rdvRencontreSkipped);
   if(partsCards[2]){
-   partsCards[2].querySelector('.chapter-part-game').textContent='Rencontre · '+Math.min(8,Number(state.rdvRencontreStage)||0)+'/8 choix';
+   partsCards[2].querySelector('.chapter-part-game').textContent='Rencontre · '+Math.min(7,Number(state.rdvRencontreStage)||0)+'/7 choix';
    partsCards[2].querySelector('.chapter-part-state').textContent=state.rdvRencontreFinished?'✓ Rencontre accomplie':state.rdvRencontreSkipped?'↷ Autre fin':cyranoTraversed()?'Jeu 3 / 3 · Cinématiques disponibles':'Après le jeu 2 / 3';
    partsCards[2].classList.toggle('passed',rencontreTraversed);
   }
@@ -142,7 +142,7 @@
    readerArea.hidden=true;readerReference.hidden=true;
    excerpt.hidden=true;
    infoHeading.textContent='Jeu 3 / 3 · Tu veux bien t’occuper de moi ?';
-   infoBody.textContent='Vingt et une cinématiques sont disponibles : dans la cuisine, le regard ouvre la caresse de la joue, puis les cheveux et le baiser. Le dernier verre conduit à la mansarde, à la complicité et au dernier tableau devant Paris. À chaque « Pas maintenant », un autre moment de tendresse se joue. Les films débloqués peuvent être revus ; aucun point supplémentaire n’est attribué.';
+   infoBody.textContent='Vingt et une cinématiques sont disponibles : dans la cuisine, le regard ouvre la caresse de la joue, puis les cheveux et le baiser. Le dernier verre conduit à la mansarde, à la complicité et jusqu’au « oui ». À chaque « Pas maintenant », un autre moment de tendresse se joue. Les films débloqués peuvent être revus ; aucun point supplémentaire n’est attribué.';
    launch.hidden=false;
   }
   reader.scrollTop=0;updateThird();
