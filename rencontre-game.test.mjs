@@ -49,3 +49,27 @@ test('Inline scripts are valid JavaScript', () => {
   assert.ok(scripts.length>=2);
   scripts.forEach((m,i)=>assert.doesNotThrow(()=>new Script(m[1],{filename:'jeu-rencontre-'+i+'.js'})));
 });
+
+
+test('Every Pas maintenant plays a unique optional sequence without advancing the story', () => {
+  const alternatives=[...html.matchAll(/^\s*\["A(0[1-8])","[^"]+","[^"]+\.mp4","[^"]+"\],?$/gm)];
+  assert.equal(alternatives.length,8,'There are eight alternative scenes');
+  const stepRefs=[...html.matchAll(/alt:'(A0[1-8])'/g)].map(x=>x[1]);
+  assert.deepEqual(stepRefs,Array.from({length:8},(_,i)=>'A'+String(i+1).padStart(2,'0')));
+  assert.ok(html.includes("beginScene([step.alt],'pause')"));
+  assert.ok(html.includes("if(mode==='sequence')state.step=Math.min"), 'Pauses do not advance the chapter');
+  assert.ok(html.includes("mode==='sequence'||mode==='pause'"), 'All seen clips are saved');
+  assert.ok(html.includes("id=\"pauseClips\""), 'Alternate clips remain replayable');
+});
+
+test('Felicity starts only when the boy lifts his head, jazz starts in the mansard room', () => {
+  assert.ok(html.includes("id==='C01'||id==='A01')return null"), 'First shot silent');
+  assert.ok(html.includes("if(id.startsWith('B')"),'B scenes map to room soundtrack');
+  assert.ok(html.includes("'Felicity — Scott Buckley'"));
+  assert.ok(html.includes("'Night on the Docks - Sax — Kevin MacLeod'"));
+  assert.ok(html.includes("soundtrackForCurrentShot(shot[0])"),'Audio follows the active shot');
+  assert.ok(html.includes("id=\"toggleMusic\""),'Player can mute the music');
+  assert.match(html,/Felicity[^<]*<\/a>, sous licence/, 'Attribution presented');
+  assert.match(html,/Night on the Docks - Sax[^<]*<\/a>, sous licence/, 'Jazz attribution presented');
+  assert.ok(html.includes("const MEDIA={}"),'Absent film files are not represented as real clips');
+});
