@@ -5,6 +5,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
+import {drawParkMap} from './catalogne-3d-map.js';
 import {PARK,CLIENTS,PATROLS,newRun,nearestClient,sell,dodge,advance,instruction,distance,clamp,saleDialogue,POLICE_SHOUTS} from './catalogne-3d-core.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
@@ -14,6 +15,7 @@ let paused=false,soundOn=true,lastFrame=0,toastUntil=0,lastInstruction=null,orbi
 const joy={x:0,z:0},keys=new Set();
 let joyPointer=null,clientActors=[],policeActors=[],people=[],birds=[],hero=null,saleConversation=null;
 let parkGround=null,parkPaths=[],forestGrid=null,parkGridX=NaN,parkGridZ=NaN,parkPathIndex=NaN;
+let mapOpen=false,lastMapDraw=0;
 const actorTemplates=[],walkMeshes=[],fountainWater=[];
 const rnd=n=>{const v=Math.sin(n*14.29+3.16)*98724.35;return v-Math.floor(v)};
 const world=new T.Scene();world.background=new T.Color(0xa4d0db);world.fog=new T.FogExp2(0xbfd2d2,.006);
@@ -443,6 +445,16 @@ function renderHUD(){
  $('pause').disabled=run.phase!=='running'&&!paused;
  $('pause').textContent=paused?'Reprendre':'Pause';
 }
+function toggleParkMap(open=!mapOpen){
+ mapOpen=Boolean(open);
+ $('parkMap').hidden=!mapOpen;
+ $('mapToggle').setAttribute('aria-expanded',String(mapOpen));
+ if(mapOpen){
+  lastMapDraw=0;
+  drawParkMap($('mapCanvas'),run,CLIENTS,rnd);
+  $('mapClose').focus({preventScroll:true});
+ }else $('mapToggle').focus({preventScroll:true});
+}
 function showOverlay(title,text,label='Commencer',showStart=true){
  $('overlayTitle').textContent=title;$('overlayText').textContent=text;
  $('overlay').hidden=false;$('start').hidden=!showStart;$('start').textContent=label;
@@ -451,6 +463,7 @@ function closeOverlay(){$('overlay').hidden=true;}
 function start(){
  if(!ready||embedded&&!sessionId)return;
  run=newRun(run.sold);run.phase='running';paused=false;pendingSale=null;saleConversation=null;winPending=false;
+ mapOpen=false;$('parkMap').hidden=true;$('mapToggle').setAttribute('aria-expanded','false');
  lastInstruction=null;lastPoliceMessage=0;lastFrame=0;orbital=0;orbitLeft=0;resetClientVisuals();
  closeOverlay();renderHUD();syncInstruction();
 }
@@ -541,6 +554,8 @@ function bind(){
  $('back').addEventListener('click',returnToBoard);
  $('pause').addEventListener('click',pause);
  $('rotate').addEventListener('click',()=>{orbital=0;orbitLeft=Math.PI*2});
+ $('mapToggle').addEventListener('click',()=>toggleParkMap());
+ $('mapClose').addEventListener('click',()=>toggleParkMap(false));
  $('sound').addEventListener('click',()=>{
   soundOn=!soundOn;$('sound').textContent=soundOn?'Son ON':'Son OFF';
   $('sound').setAttribute('aria-pressed',String(soundOn));beep(600,.09);
@@ -575,6 +590,7 @@ function bind(){
  window.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
   if(['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d','z','q',' ','enter','r','escape'].includes(key))e.preventDefault();
+  if(mapOpen){if(key==='escape'){e.preventDefault();toggleParkMap(false);}return;}
   const already=keys.has(key);keys.add(key);
   if(!already&&(key==='r'||key==='enter'))makeSale();
   if(!already&&key===' ')performDodge();
@@ -628,7 +644,7 @@ function frame(ms){
  requestAnimationFrame(frame);
  const dt=Math.min(.06,Math.max(0,(ms-lastFrame)/1000||0));lastFrame=ms;
  try{
-  if(ready&&run.phase==='running'&&!paused){
+  if(ready&&run.phase==='running'&&!paused&&!mapOpen){
    advance(run,dt,input());
    if(run.phase==='caught')caught();
    else{
@@ -643,6 +659,7 @@ function frame(ms){
   }
   const t=ms/1000;
   updateParkEnvironment();
+  if(mapOpen&&ms-lastMapDraw>180){lastMapDraw=ms;drawParkMap($('mapCanvas'),run,CLIENTS,rnd);}
   updateSaleConversation(t);
   if(!$('toast').hidden){
    const remain=toastUntil-t;
@@ -680,7 +697,7 @@ async function initialize(){
  createCharacters(world);ready=true;
  $('start').disabled=embedded&&!sessionId;
  $('start').textContent='Entrer dans le parc';
- $('overlayText').textContent='Michel t’a confié son matériel. Trouve cinq clients, vends avec ROUGE à proximité et évite les policiers avec JAUNE.';
+ $('overlayText').textContent='Michel t’a confié son matériel. Cherche les cinq clients dans les allées et les zones boisées. Utilise la carte pour les repérer, puis ROUGE pour vendre.';
  renderHUD();
  if(embedded)window.parent.postMessage({type:'catalogne:ready'},location.origin);
 }
