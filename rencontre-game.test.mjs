@@ -80,9 +80,9 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  const refs=[...html.matchAll(/^ (C0[2-8]|B0[1-6]|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
  assert.equal(refs.length,21);
  assert.equal(new Set(refs.map(m=>m[1])).size,21);
- assert.equal(new Set(refs.map(m=>m[2])).size,21);
+ assert.equal(new Set(refs.map(m=>m[2])).size,20,'La nouvelle ouverture réutilise volontairement le duo A01');
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
- assert.ok(html.includes('player.muted=false;player.defaultMuted=false;player.volume=1'), 'Sound is on by default for the original videos');
+ assert.ok(html.includes('player.muted=Boolean(FRENCH_LINES[shot[0]])'), 'Les plans avec paroles françaises masquent les paroles étrangères du clip');
  assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
  assert.ok(!/<video\b[^>]*\s(?:muted|controls)(?:\s|=|>)/.test(html), 'Video markup must not force mute or native controls');
  assert.ok(html.includes('id="resumeWithSound"')&&html.includes("$('resumeWithSound').onclick"), 'Mobile autoplay block must show a simple audio-resume action');
