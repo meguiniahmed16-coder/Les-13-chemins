@@ -360,7 +360,7 @@ test('Statue, sa cible et la sélection décalées ensemble',()=>{
  assert.ok(js.includes('function statue(sceneRoot){'));
  assert.ok(js.includes('root.position.x=STATUE.x;sceneRoot.add(root)'));
  assert.ok(js.includes('addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8'));
- assert.ok(js.includes("if(sel.type==='statue')point=new T.Vector3(STATUE.x,6.1,STATUE.z)"));
+ assert.ok(js.includes("if(sel.type==='statue'){point=new T.Vector3(STATUE.x,0,STATUE.z);arrowY=8.7;}"));
  assert.ok(read('manifestation-core.js').includes('insideStatueBase=(x,z)=>x>STATUE.x-3.05'));
 });
 test('Devise complète Liberté Égalité Fraternité',()=>{
