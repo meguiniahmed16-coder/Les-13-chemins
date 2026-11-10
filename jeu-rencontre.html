@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="site-nav.css">
 <style>
 :root{--pine:#233f35;--pine-light:#426353;--paper:#f7eed9;--ochre:#c5a16b;--ink:#293b32}
-*{box-sizing:border-box}[hidden]{display:none!important}
+*{box-sizing:border-box}[hidden]{display:none!important}.embedded .site-nav{display:none!important}
 body{margin:0;background:#e5dac3;color:var(--ink);font:15px/1.6 system-ui,sans-serif}
 main{max-width:1050px;margin:auto;padding:28px 16px 60px}
 h1,h2,h3{font-family:Georgia,serif;font-weight:normal}
@@ -63,6 +63,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 </style>
 </head>
 <body>
+<script>if(new URLSearchParams(location.search).get("embedded")==="1")document.documentElement.classList.add("embedded");</script>
 <nav class="site-nav" aria-label="Navigation principale"><div class="site-nav-inner"><a class="site-brand" href="index.html">✦ Les Treize Chemins</a><div class="site-links"><a href="index.html">⌂ Accueil</a><a href="carte.html">🧭 Cartes</a><a href="jeu.html" aria-current="page">🎲 Jeux</a></div></div></nav>
 <main>
 <header class="banner"><div class="eyebrow">Chemin III · Les rendez-vous · Chapitre 6</div><h1>Tu veux bien t’occuper de moi ?</h1><p>Un récit interactif en deux lieux : la cuisine et la chambre mansardée.</p><div id="progress" class="progress" aria-label="Progression dans le récit"></div></header>
