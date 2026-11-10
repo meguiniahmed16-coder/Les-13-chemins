@@ -44,6 +44,7 @@ for (const args of [
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
   'index.html',
+  'site-nav.css',
   'presentation.html',
   'carte.html',
   'jeu.html',
