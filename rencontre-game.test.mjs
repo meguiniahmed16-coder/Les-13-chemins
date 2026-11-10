@@ -168,7 +168,7 @@ test('Choix superposés à l’image de départ, sans bloc détaillé sous la sc
  assert.ok(!main.includes('class="caption"'));
  assert.ok(!main.includes('class="section"'));
  assert.ok(html.includes("stage.src=MEDIA[shot];stage.load()"));
- assert.ok(html.includes("still.src=ART.cuisine"));
+ assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.cuisine"),"The true paid C02 first frame is shown at the opening");
  assert.ok(html.includes("beginScene([step.alt],'pause')"));
  assert.ok(html.includes('id="replayScene"'));
 });
