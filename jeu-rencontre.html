@@ -102,18 +102,29 @@ const SHOTS=[
  ['B06','Le « oui »','02-chambre/06-oui.mp4'],
  ['B07','Dos nu, cigarette, tour Eiffel scintillante','02-chambre/07-tour-eiffel.mp4']
 ];
+/* Versions alternatives : un clip pour chaque Pas maintenant. */
+const ALTERNATES=[
+ ["A01","Le silence partagé","01-cuisine/alternatives/01-silence.mp4","Silence et champs-contrechamps : leurs regards se croisent, sans geste."],
+ ["A02","La confidence","01-cuisine/alternatives/02-confidence.mp4","Conversation profonde avant de caresser sa joue, sans paroles inventées."],
+ ["A03","Un rire partagé","01-cuisine/alternatives/03-rire.mp4","Éclat de rire spontané avant le geste vers les cheveux."],
+ ["A04","Les regards complices","01-cuisine/alternatives/04-regards.mp4","Champs-contrechamps et sourires avant le baiser."],
+ ["A05","Encore un instant dans la cuisine","01-cuisine/alternatives/05-encore-ici.mp4","Ils prolongent la conversation près de l’évier avant le dernier verre."],
+ ["A06","La conversation continue","02-chambre/alternatives/06-conversation.mp4","Confidences et écoute attentive dans la petite mansarde."],
+ ["A07","Un autre éclat de rire","02-chambre/alternatives/07-rire.mp4","Rires complices ; le canapé-lit reste fermé."],
+ ["A08","Le silence de la nuit","02-chambre/alternatives/08-nuit.mp4","Ils restent sous les draps, échangent un regard tranquille."]
+];
 /* Les vidéos sont reliées ici après validation. Un fichier absent ne doit pas être présenté comme une animation existante. */
 const MEDIA={}; 
 const FILMS={cuisine:null,chambre:null};
 const STEPS=[
- {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C01','C02','C03']},
- {phase:'cuisine',title:'Un geste vers sa joue',desc:'La rencontre peut avancer par un premier geste. Toucher sa joue débloque sa caresse en retour.',yes:'Lui caresser la joue',clips:['C04','C05'],no:true},
- {phase:'cuisine',title:'Les cheveux',desc:'La caresse de la joue ouvre le geste suivant. Chacun peut caresser les cheveux de l’autre.',yes:'Lui caresser les cheveux',clips:['C06','C07'],no:true},
- {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true},
- {phase:'chambre',title:'Un dernier verre ?',desc:'Elle propose de prolonger la soirée dans sa petite chambre de bonne mansardée de 26 m².',yes:'Accepter un dernier verre',clips:['B01','B02'],no:true},
- {phase:'chambre',title:'La complicité',desc:'Ils discutent, boivent leurs verres et fument. Le temps ralentit.',yes:'Prolonger la conversation',clips:['B03'],no:true},
- {phase:'chambre',title:'Rester ensemble ?',desc:'Ils décident ensemble de prolonger ce moment. Le canapé-lit est déplié. Sous les draps, un regard et un « oui ».',yes:'Rester ensemble',clips:['B04','B05','B06'],no:true},
- {phase:'chambre',title:'La fenêtre ouverte',desc:'Le dernier plan est contemplatif : de nuit, le garçon nu, vu de dos et en pied, devant la tour Eiffel scintillante. Sa main gauche tient une cigarette fumante près de son oreille.',yes:'Voir le dernier plan',clips:['B07']}
+ {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C01','C02','C03'],no:true,alt:'A01'},
+ {phase:'cuisine',title:'Un geste vers sa joue',desc:'La rencontre peut avancer par un premier geste. Toucher sa joue débloque sa caresse en retour.',yes:'Lui caresser la joue',clips:['C04','C05'],no:true,alt:'A02'},
+ {phase:'cuisine',title:'Les cheveux',desc:'La caresse de la joue ouvre le geste suivant. Chacun peut caresser les cheveux de l’autre.',yes:'Lui caresser les cheveux',clips:['C06','C07'],no:true,alt:'A03'},
+ {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true,alt:'A04'},
+ {phase:'chambre',title:'Un dernier verre ?',desc:'Elle propose de prolonger la soirée dans sa petite chambre de bonne mansardée de 26 m².',yes:'Accepter un dernier verre',clips:['B01','B02'],no:true,alt:'A05'},
+ {phase:'chambre',title:'La complicité',desc:'Ils discutent, boivent leurs verres et fument. Le temps ralentit.',yes:'Prolonger la conversation',clips:['B03'],no:true,alt:'A06'},
+ {phase:'chambre',title:'Rester ensemble ?',desc:'Ils décident ensemble de prolonger ce moment. Le canapé-lit est déplié. Sous les draps, un regard et un « oui ».',yes:'Rester ensemble',clips:['B04','B05','B06'],no:true,alt:'A07'},
+ {phase:'chambre',title:'La fenêtre ouverte',desc:'Le dernier plan est contemplatif : de nuit, le garçon nu, vu de dos et en pied, devant la tour Eiffel scintillante. Sa main gauche tient une cigarette fumante près de son oreille.',yes:'Voir le dernier plan',clips:['B07'],no:true,alt:'A08'}
 ];
 const $=id=>document.getElementById(id);
 const KEY='tda-rencontre-storyboard-v1';
