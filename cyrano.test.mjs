@@ -66,8 +66,8 @@ test('Détection des mots : accents, singulier et mots entiers',()=>{
  const required=m.required.join(' ').toUpperCase();
  const text=model({...m,required:[]})+'\n'+required;
  assert.equal(validateLetter(text,0).missing.length,0);
- const error=validateLetter(text.replace('TENDRESSE','tendrement'),0);
- assert.ok(error.missing.includes('tendresse'));
+ const error=validateLetter(text.replace('LUMIÈRE','luminaire'),0);
+ assert.ok(error.missing.includes('lumière'));
 });
 test('Cinématique : cellules jumelles, fenêtres, barreaux, fumée et long nez en 3D',()=>{
  const s=read('cyrano-app.js');

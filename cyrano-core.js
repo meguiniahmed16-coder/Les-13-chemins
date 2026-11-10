@@ -46,9 +46,9 @@ export function validateLetter(text,missionIndex=0){
  if(!personal)issues.push('Exprime un sentiment personnel.');
  const emotional=[
   /\bamour|\baim|\btendr|\bdouceur|\baffection/,
-  /\bdesir|\bembrass|\bbaiser|\bcaress|\bc([oœ])eur/,
+  /\bdesir|\bembrass|\bbaiser|\bcaress|\b(coeur|cœur)/,
   /\bmanqu|\babsence|\battend|\bpatien|\bretrouv/,
-  /\bsourir|\bregard|\bemoi|\bbonheur|\bjoie|\bbeaute/,
+  /\bsouri|\bregard|\bemoi|\bbonheur|\bjoie|\bbeaute/,
   /\bensemble|\bpromess|\bavenir|\bconfiance|\bsouvenir/
  ].filter(re=>re.test(norm)).length;
  if(emotional<3)issues.push('On ne sent pas encore assez l’amour, la tendresse ou le désir de retrouver l’autre.');
