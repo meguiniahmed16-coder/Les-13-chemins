@@ -199,7 +199,8 @@ test('Six silhouettes 3D Kenney sous licence CC0 sont toujours présentes',()=>{
 test('Les CRS sont VISIBLES sur la chaussée et arrivent en formation pendant les trois vagues',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes('for(let i=0;i<4;i++)'),'Quatre CRS par attaque');
- assert.ok(js.includes('officer.actor.position.x=(i-1.5)*1.45'),'Formation centrée sur la rue');
+ assert.ok(js.includes('officer.baseX=(i-1.5)*1.45'),'Formation initiale centrée sur la rue');
+ assert.ok(js.includes('officer.actor.position.x=officer.baseX+Math.sin('),'Les CRS peuvent bouger individuellement');
  assert.ok(js.includes('officer.actor.scale.setScalar(1.25)'),'Visibles sur téléphone');
  assert.ok(read('manifestation-core.js').includes('run.z=Math.min(run.z,active.trigger+1.3)'),'CRS bloquent réellement la chaussée');
  assert.ok(js.includes('Math.max(run.z+6.3,display.anchor-approaching*4.1)'));
