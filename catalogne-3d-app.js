@@ -231,7 +231,64 @@ function makePark(){
  }
  return root;
 }
+function policeOfficer(index){
+ // Personnage policier autonome. Plus de mannequin civil Kenney visible
+ // à travers la veste : silhouettes, membres et équipements construits en 3D.
+ const group=new T.Group();
+ const navy=0x17344f,blue=0x23577c,dark=0x162536,reflect=0xe4d06b,skin=0xcaa07e;
+ const legs=[],arms=[];
+ // Torse galbé à épaules carrées, veste bleu nuit complète.
+ const torso=obj(new T.CylinderGeometry(.34,.41,.75,10),createMaterial(navy),0,1.22,0,1,.98,.78);
+ group.add(torso);
+ cube(group,0,1.49,-.03,.68,.14,.44,blue);
+ cube(group,0,.83,-.02,.74,.14,.46,dark); // ceinturon
+ cube(group,0,1.47,-.325,.65,.067,.045,reflect);
+ cube(group,0,1.47,.325,.65,.067,.045,reflect);
+ // Badge et veste de police à fort contraste.
+ const front=sign('POLICÍA',1.15,'#174369','#f7f6eb');
+ front.position.set(0,1.23,-.34);front.rotation.y=Math.PI;group.add(front);
+ const back=sign('POLICÍA',1.48,'#174369','#f7f6eb');
+ back.position.set(0,1.20,.34);group.add(back);
+ // Casquette à visière, face, nez et oreilles sous la casquette.
+ sphere(group,0,1.79,-.03,.22,.25,.19,skin);
+ sphere(group,0,1.74,-.224,.075,.075,.085,skin);
+ for(const side of [-1,1]){
+  sphere(group,side*.19,1.79,-.02,.065,.09,.06,skin);
+  sphere(group,side*.073,1.805,-.205,.021,.022,.012,0x2e3134);
+ }
+ cyl(group,0,2.07,-.03,.30,.18,navy);
+ cube(group,0,2.15,-.03,.55,.060,.51,blue);
+ cube(group,0,1.99,-.305,.55,.068,.34,dark); // large visière noire
+ sphere(group,0,2.08,-.320,.075,.082,.025,reflect); // insigne
+ // Deux jambes distinctes articulées pour une vraie marche.
+ for(const side of [-1,1]){
+  const leg=new T.Group();leg.position.set(side*.19,.81,0);
+  cube(leg,0,-.31,0,.285,.65,.32,navy);
+  cube(leg,0,-.65,-.095,.32,.21,.45,dark);
+  group.add(leg);legs.push(leg);
+  const arm=new T.Group();arm.position.set(side*.44,1.49,0);
+  sphere(arm,0,-.03,0,.19,.18,.21,blue);
+  cyl(arm,side*.02,-.28,-.02,.155,.52,navy);
+  cube(arm,0,-.29,-.19,.21,.12,.065,reflect); // brassard
+  cube(arm,0,-.57,-.035,.22,.15,.18,dark); // gant
+  group.add(arm);arms.push(arm);
+ }
+ // Equipement visible sur la hanche, radio et étui à matraque.
+ cube(group,.45,.83,-.045,.18,.33,.22,dark);
+ cube(group,-.44,.83,-.02,.17,.28,.20,dark);
+ cyl(group,.45,1.08,-.045,.026,.25,0x829499); // antenne radio
+ const baton=cyl(group,-.51,.68,-.14,.044,.66,dark);baton.rotation.z=-.28;
+ // Cartouche toujours face à la caméra : la police reste identifiable sur téléphone.
+ const billboard=new T.Sprite(new T.SpriteMaterial({
+  map:front.material.map,transparent:true,depthTest:false,depthWrite:false
+ }));
+ billboard.position.set(0,2.78,0);billboard.scale.set(2.10,.56,1);
+ group.add(billboard);
+ group.scale.setScalar(1.12);
+ return {group,animation:null,policeRig:{legs,arms,elapsed:index*.8}};
+}
 function makeActor(index,role='walker',color=0x87a988){
+ if(role==='police')return policeOfficer(index);
  const group=new T.Group();
  const clipset=actorTemplates[index%Math.max(1,actorTemplates.length)];
  let animation=null;
@@ -246,38 +303,6 @@ function makeActor(index,role='walker',color=0x87a988){
   cyl(group,0,.94,0,.26,1.0,color);sphere(group,0,1.62,0,.19,.25,.19,0xd5a47c);
   for(const sign of [-1,1])cyl(group,sign*.13,.35,0,.105,.70,0x3b5152);
  }
- if(role==='police'){
-  // Policía : uniforme complet bleu marine, casquette, ceinture, radio, insignes.
-  // L'uniforme doit être identifiable de face, de dos et de profil.
-  const navy=0x193550,blue=0x2b618a,mid=0x254c73,black=0x182431,gold=0xf4dc79;
-  cube(group,0,1.19,-.03,.72,.78,.49,navy); // veste complète
-  cube(group,0,1.54,-.12,.61,.13,.39,blue); // col
-  cube(group,0,.79,-.02,.73,.15,.49,black); // ceinturon
-  cube(group,0,.79,-.294,.62,.07,.045,gold);
-  cube(group,0,1.45,-.298,.61,.077,.04,gold); // bande poitrine
-  cube(group,0,1.45,.226,.61,.077,.04,gold); // bande dorsale
-  for(const side of [-1,1]){
-   sphere(group,side*.39,1.44,-.05,.19,.19,.22,blue); // épaulettes
-   const arm=cyl(group,side*.47,1.13,-.03,.155,.63,navy);
-   arm.rotation.z=side*.16;
-   cube(group,side*.48,1.14,-.207,.20,.23,.07,gold); // insigne manche
-   cube(group,side*.48,.87,-.11,.21,.09,.21,black);
-   cube(group,side*.18,.45,-.04,.27,.67,.32,mid);
-   cube(group,side*.18,.15,-.17,.31,.22,.40,black);
-  }
-  cube(group,-.405,.78,-.06,.15,.27,.22,black); // étui
-  cube(group,.405,.91,-.05,.15,.31,.21,black); // radio
-  cyl(group,.42,1.15,-.06,.025,.20,0x485e69); // antenne
-  cyl(group,0,1.97,-.02,.315,.23,navy); // casquette
-  cube(group,0,2.075,-.02,.56,.055,.51,blue); // calotte
-  cube(group,0,1.87,-.278,.53,.073,.36,black); // visière
-  sphere(group,0,2.017,-.305,.075,.085,.03,gold); // écusson
-  const front=sign('POLICÍA',1.28,'#244d73','#fff7dd');
-  front.position.set(0,1.20,-.317);group.add(front);
-  const back=sign('POLICÍA',1.46,'#244d73','#fff7dd');
-  back.position.set(0,1.25,.273);back.rotation.y=Math.PI;group.add(back);
-  cube(group,0,1.04,.258,.57,.071,.035,gold);
- }
  if(role==='hero'){
   sphere(group,0,1.82,0,.23,.10,.22,0x303e44);
   cube(group,0,1.82,.18,.23,.026,.18,0x303e44);
@@ -288,6 +313,16 @@ function makeActor(index,role='walker',color=0x87a988){
  return {group,animation,oldPos:new T.Vector3(),moving:false};
 }
 function animateActor(actor,dt,moving=false){
+ if(actor?.policeRig){
+  const rig=actor.policeRig;
+  rig.elapsed+=Math.max(0,Math.min(.08,dt))*(moving?7.4:1.5);
+  const swing=moving?.38:.025;
+  rig.legs[0].rotation.x=Math.sin(rig.elapsed)*swing;
+  rig.legs[1].rotation.x=-Math.sin(rig.elapsed)*swing;
+  rig.arms[0].rotation.x=-Math.sin(rig.elapsed)*swing*.65;
+  rig.arms[1].rotation.x=Math.sin(rig.elapsed)*swing*.65;
+  return;
+ }
  if(!actor?.animation)return;
  const a=actor.animation,next=moving?'walk':'idle';
  if(a.state!==next){
@@ -366,7 +401,7 @@ function updateActors(dt,time){
   const v=policeActors[i];if(!v)return;
   const dx=p.x-v.oldX,dz=p.z-v.oldZ;
   v.actor.group.position.set(p.x,0,p.z);
-  if(Math.hypot(dx,dz)>.0005){v.actor.group.rotation.y=Math.atan2(dx,dz);}
+  if(Math.hypot(dx,dz)>.0005){v.actor.group.rotation.y=Math.atan2(dx,dz)+Math.PI;}
   animateActor(v.actor,dt,Math.hypot(dx,dz)>.001);
   v.oldX=p.x;v.oldZ=p.z;
  });
