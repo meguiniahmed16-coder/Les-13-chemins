@@ -1,0 +1,18 @@
+name: Identifier la vidéo partagée - intimité
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/higgsfield-intimacy-check.yml']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Résoudre le lien Higgsfield sans génération
+        run: |
+          node --input-type=module <<'JS'
+          try {
+            const r=await fetch('https://higgsfield.ai/s/LU2FpA6qdjw',{redirect:'follow',headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(14000)});
+            const html=await r.text();
+            console.log('RESULT',JSON.stringify({status:r.status,url:r.url,title:[...html.matchAll(/<title>([^<]+)<\/title>/gi)].map(m=>m[1]).slice(0,2),images:[...html.matchAll(/<meta[^>]+property="og:image"[^>]+>/gi)].map(m=>m[0]).slice(0,3)}));
+          } catch(e) {console.log('FETCH_ERROR',String(e))}
+          JS
