@@ -38,15 +38,35 @@ function defeat(r,id){
  assert.equal(wave.status,'repelled');
  return wave;
 }
-test('Un guide 3D au drapeau rouge accompagne la première étape',()=>{
+test('Guide silencieux sans inscription permanente',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes('const GUIDE_STOPS=['));
- assert.ok(js.includes("redGuide=person(5)"));
+ assert.ok(js.includes('redGuide=person(5)'));
  assert.ok(js.includes("flag(redGuide,'red'"));
- assert.ok(js.includes("function updateRedGuide(dt,time){"));
- assert.ok(js.includes('distance(run,redGuide.position)<6.5'));
- assert.ok(js.includes("messageFeedback('Suis le drapeau rouge !'"));
- assert.ok(html.includes('Suis le personnage au drapeau rouge'));
+ assert.ok(js.includes('function updateRedGuide(dt,time){'));
+ assert.ok(!js.includes('guideCaption'));
+ assert.ok(!js.includes('SUIS LE DRAPEAU ROUGE'));
+ assert.ok(!html.includes('Suis le personnage au drapeau rouge'));
+});
+test('Consignes brèves et temporaires sans panneau fixe',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes("messageFeedback('Monte sur la statue',1.15)"));
+ assert.ok(js.includes("messageFeedback('Crie « Camarades ! »',1.2)"));
+ assert.ok(js.includes("messageFeedback('Prends le ♥',1.0)"));
+ assert.ok(js.includes('Math.min(1.25,Math.max(.6,duration))'));
+ assert.ok(js.includes('pickupTip.hidden=true'));
+ assert.ok(js.includes('speech.style.opacity=String(Math.min(1,remaining/.22))'));
+ assert.ok(html.includes('bottom:22%'));
+});
+test('Paris complété en vue 360 avec des modèles instanciés légers',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes('function parisBackdrop(root,start,end){'));
+ assert.ok(js.includes('const count=36,facades=new T.InstancedMesh'));
+ assert.ok(js.includes('function parisStreetDetails(root,start,end){'));
+ assert.ok(js.includes("'MÉTRO'")&&js.includes("'JOURNAUX'"));
+ assert.ok(js.includes('parisBackdrop(root,-20,38)'));
+ assert.ok(js.includes('parisBackdrop(root,-23,48)'));
+ assert.ok(js.includes('parisBackdrop(sceneGroup,49,139)'));
 });
 test('Sélection visible : deux anneaux, flèche et état confirmé',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
@@ -243,8 +263,8 @@ test('Interface légère, mini-bulle, arme équipée et calligraphie libre',()=>
  assert.ok(html.includes('.chapter-sky{top:22px;'));
  assert.ok(html.includes('id="weaponChip"'));
  assert.ok(html.includes('id="crsMini"'));
- assert.ok(js.includes("messageFeedback('— Camarades !',.9)"));
- assert.ok(js.includes("messageFeedback('✓ Réunis !',2.5)"));
+ assert.ok(js.includes("messageFeedback('Crie « Camarades ! »',1.2)"));
+ assert.ok(js.includes("messageFeedback('✓ Réunis !',1.2)"));
 });
 test('La seconde foule suit après avoir été traversée',()=>{
  const js=read('manifestation-app.js');
@@ -259,9 +279,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-guide-crs-selection-v21'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-guide-crs-selection-v21'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-guide-crs-selection-v21'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-paris-consignes-courtes-v22'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-paris-consignes-courtes-v22'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-paris-consignes-courtes-v22'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -402,5 +422,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-guide-crs-selection-v21'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-paris-consignes-courtes-v22'));
 });
