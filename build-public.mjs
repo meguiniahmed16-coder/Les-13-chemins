@@ -78,6 +78,7 @@ const publicFiles = [
   'jeu-cyrano.html',
   'cyrano-runtime.js',
   'jeu-cyrano-bd.html',
+  'jeu-rencontre.html',
   'assets/manifestation/KENNEY-CC0-LICENSE.txt',
   'assets/manifestation/character-male-a.glb',
   'assets/manifestation/character-male-c.glb',
