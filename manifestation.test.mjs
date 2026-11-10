@@ -21,7 +21,7 @@ function phase3(){
  assert.equal(r.phase,3);return r;
 }
 function defeat(r,id){
- const p=WEAPONS[id-1];r.x=p.x>0?8:-8;r.z=p.z;
+ const p=WEAPONS[id-1];r.x=p.x;r.z=p.z;
  assert.ok(selectTarget(r,{type:'pickup',id}));
  assert.ok(yellow(r));
  assert.equal(r.weapon,p.kind);r.x=0;
@@ -64,19 +64,63 @@ test('Étape 2 : montée et cri sur la statue après le drapeau',()=>{
 test('Armes sur trois trottoirs : cœur, fleur, bisou',()=>{
  assert.deepEqual(WEAPONS.map(w=>w.kind),['heart','flower','kiss']);
  assert.deepEqual(WEAPONS.map(w=>w.icon),['♥','✿','💋']);
- assert.deepEqual(WEAPONS.map(w=>w.z),[9,36,63]);
- assert.ok(WEAPONS[0].x>8&&WEAPONS[1].x< -8&&WEAPONS[2].x>8);
+ assert.deepEqual(WEAPONS.map(w=>w.z),[11,36,63]);
+ assert.ok(WEAPONS[0].x>=-8&&WEAPONS[0].x<=8);
+ assert.ok(WEAPONS[1].x<0&&WEAPONS[2].x>0);
+ assert.ok(WEAPONS.every(p=>Math.abs(p.x)<=8),'Toutes les armes sont accessibles sur le parcours');
  assert.deepEqual(CRS_WAVES.map(w=>w.trigger),[19,46,73]);
+});
+test('Les CRS attendent que le cœur soit ramassé avant de venir',()=>{
+ const r=phase3();r.x=0;
+ for(let i=0;i<140;i++)advance(r,.12,walk);
+ assert.equal(r.crsWaves[0].status,'waiting');
+ assert.ok(r.z<=CRS_WAVES[0].trigger-2+.01,'Le barrage n enferme pas le joueur');
+ assert.ok(!r.events.some(e=>e.type==='crs:incoming'),'Pas de CRS avant le cœur');
+ const p=WEAPONS[0];r.x=p.x;r.z=p.z;
+ advance(r,.12,idle);
+ assert.equal(r.weapon,'heart','Le cœur se récupère en marchant dessus');
+ assert.ok(r.pickups[0].collected);
+ r.x=0;
+ for(let i=0;i<80&&r.crsWaves[0].status==='waiting';i++)advance(r,.12,walk);
+ assert.equal(r.crsWaves[0].status,'active','Les CRS arrivent après récupération');
+});
+test('La fleur et le bisou sont aussi accessibles avant leur vague',()=>{
+ const r=phase3();
+ for(const w of CRS_WAVES){
+  const p=WEAPONS[w.id-1];
+  r.x=0;r.z=w.trigger-5;
+  for(let i=0;i<25;i++)advance(r,.12,walk);
+  assert.equal(r.crsWaves[w.id-1].status,'waiting');
+  assert.ok(r.z<=w.trigger-2+.01);
+  r.x=p.x;r.z=p.z;advance(r,.12,idle);
+  assert.equal(r.weapon,p.kind);
+  r.x=0;
+  for(let i=0;i<70&&r.crsWaves[w.id-1].status==='waiting';i++)advance(r,.12,walk);
+  assert.equal(r.crsWaves[w.id-1].status,'active');
+  for(let id=0;id<4;id++){
+   assert.ok(selectTarget(r,{type:'crs',wave:w.id,id}));
+   assert.ok(red(r));
+   for(let k=0;k<8;k++)advance(r,.12,idle);
+  }
+  assert.equal(r.crsWaves[w.id-1].status,'repelled');
+ }
+});
+test('Les cœurs des compagnons sont vraiment plus gros',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes("makeSymbol(w.kind,w.kind==='heart'?1.25:.85)"));
+ assert.ok(js.includes("duration:.9,baseSize:w.kind==='heart'?1.25:.85"));
+ assert.ok(js.includes("fx.symbol.scale.setScalar(fx.baseSize*(1+.25*Math.sin(p*Math.PI)))"));
+ assert.ok(html.includes('id="weaponPrompt"'));
 });
 test('Sélection obligatoire avant de prendre une arme sur le trottoir',()=>{
  const r=phase3();const p=WEAPONS[0];
- r.x=8;r.z=p.z;assert.equal(yellow(r),false);
+ r.x=p.x;r.z=p.z;assert.equal(yellow(r),false);
  assert.ok(selectTarget(r,{type:'pickup',id:1}));
  assert.ok(yellow(r));assert.equal(r.weapon,'heart');
  assert.equal(r.pickups[0].collected,true);
 });
 test('Sélection individuelle des CRS avant le tir, puis impact différé',()=>{
- const r=phase3();const p=WEAPONS[0];r.x=8;r.z=p.z;
+ const r=phase3();const p=WEAPONS[0];r.x=p.x;r.z=p.z;
  selectTarget(r,{type:'pickup',id:1});yellow(r);r.x=0;
  const w=r.crsWaves[0];
  for(let i=0;i<180&&w.status==='waiting';i++)advance(r,.12,walk);
@@ -91,7 +135,7 @@ test('Sélection individuelle des CRS avant le tir, puis impact différé',()=>{
  assert.ok(r.events.some(e=>e.type==='projectile:hit'&&e.officer===2));
 });
 test('Le bouton Cible fait défiler quatre CRS différents',()=>{
- const r=phase3();const p=WEAPONS[0];r.x=8;r.z=p.z;
+ const r=phase3();const p=WEAPONS[0];r.x=p.x;r.z=p.z;
  selectTarget(r,{type:'pickup',id:1});yellow(r);r.x=0;
  const w=r.crsWaves[0];for(let i=0;i<180&&w.status==='waiting';i++)advance(r,.12,walk);
  const result=[];for(let i=0;i<4;i++){assert.ok(selectNext(r));result.push(r.selected.id);}
@@ -188,9 +232,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-activewave-import-v19'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-activewave-import-v19'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-activewave-import-v19'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-armes-avant-crs-v20'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-armes-avant-crs-v20'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-armes-avant-crs-v20'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -331,5 +375,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-activewave-import-v19'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-armes-avant-crs-v20'));
 });

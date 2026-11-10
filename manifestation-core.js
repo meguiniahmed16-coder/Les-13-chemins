@@ -11,9 +11,9 @@ export const GAME_ID='rendezvous-2002';
 export const STATUE=Object.freeze({x:6,z:5,footX:4.85,exitX:2.4,footZ:.35,topX:4.85,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
 export const FLAG=Object.freeze({x:4.1,z:12});
 export const WEAPONS=Object.freeze([
- Object.freeze({id:1,kind:'heart',icon:'♥',name:'Cœur',x:9.4,z:9}),
- Object.freeze({id:2,kind:'flower',icon:'✿',name:'Fleur',x:-9.4,z:36}),
- Object.freeze({id:3,kind:'kiss',icon:'💋',name:'Bisou',x:9.4,z:63})
+ Object.freeze({id:1,kind:'heart',icon:'♥',name:'Cœur',x:2.4,z:11}),
+ Object.freeze({id:2,kind:'flower',icon:'✿',name:'Fleur',x:-6.2,z:36}),
+ Object.freeze({id:3,kind:'kiss',icon:'💋',name:'Bisou',x:6.2,z:63})
 ]);
 export const CRS_WAVES=Object.freeze([
  Object.freeze({id:1,trigger:19,anchor:28,kind:'heart'}),
@@ -61,8 +61,8 @@ export function selectTarget(run,target){
  }
  if(target.type==='pickup'&&run.phase===3){
   const pickup=run.pickups.find(w=>w.id===Number(target.id));
-  const wave=run.crsWaves.find(w=>w.id===Number(target.id));
-  if(!pickup||pickup.collected||wave.status==='repelled')return false;
+  const waiting=run.crsWaves.find(w=>w.status==='waiting');
+  if(!pickup||pickup.collected||activeWave(run)||waiting?.id!==pickup.id)return false;
   run.selected={type:'pickup',id:pickup.id};run.events.push({type:'selected',target:run.selected});return true;
  }
  if(target.type==='crs'&&run.phase===3){
@@ -82,7 +82,8 @@ export function availableTargets(run){
   return wave.officers.filter(o=>o.status==='standing'&&!o.targeted)
    .map(o=>({type:'crs',wave:wave.id,id:o.id,label:'CRS '+(o.id+1)}));
  }
- const pickup=run.pickups.find(w=>!w.collected&&run.z<=w.z+15&&run.z>=w.z-13);
+ const waiting=run.crsWaves.find(w=>w.status==='waiting');
+ const pickup=run.pickups.find(w=>w.id===waiting?.id&&!w.collected&&run.z<=w.z+15&&run.z>=w.z-13);
  return pickup?[{type:'pickup',id:pickup.id,label:pickup.icon+' '+pickup.name}]:[];
 }
 export function selectNext(run){
@@ -93,6 +94,13 @@ export function selectNext(run){
   (o.wave===undefined||run.selected?.wave===o.wave));
  const next=opts[(i+1)%opts.length];
  return selectTarget(run,next);
+}
+function collectWeapon(run,p){
+ if(run.phase!==3||!p||p.collected||activeWave(run))return false;
+ const next=run.crsWaves.find(w=>w.status==='waiting');
+ if(next?.id!==p.id)return false;
+ p.collected=true;run.weapon=p.kind;run.selected=null;
+ run.events.push({type:'weapon:pickup',kind:p.kind,wave:p.id});return true;
 }
 export function yellow(run){
  if(run.finished)return false;
@@ -116,10 +124,7 @@ export function yellow(run){
  if(run.phase===3&&run.selected?.type==='pickup'){
   const p=run.pickups.find(w=>w.id===run.selected.id);
   if(!p||p.collected||distance(run,p)>3.5)return false;
-  const wave=run.crsWaves.find(w=>w.id===p.id);
-  if(wave.status==='repelled')return false;
-  p.collected=true;run.weapon=p.kind;run.selected=null;
-  run.events.push({type:'weapon:pickup',kind:p.kind,wave:p.id});return true;
+  return collectWeapon(run,p);
  }
  return false;
 }
@@ -189,6 +194,14 @@ export function advance(run,dt,input={}){
   run.facing=Math.atan2(x,y);
  }
  if(run.phase!==3)return;
+ // Toujours récupérer le symbole de la vague avant de rencontrer les CRS.
+ // Le joystick reste actif, mais l'avant de l'avenue attend l'arme manquante.
+ const waiting=run.crsWaves.find(w=>w.status==='waiting');
+ const nextPickup=run.pickups.find(p=>p.id===waiting?.id&&!p.collected);
+ if(nextPickup){
+  if(distance(run,nextPickup)<=1.65)collectWeapon(run,nextPickup);
+  else run.z=Math.min(run.z,waiting.trigger-2);
+ }
  // The rear group gradually lags, then regroups when the player stops.
  if(moving)run.leaderZ+=3.5*t;
  else run.leaderZ=Math.min(run.z-5.8,run.leaderZ+(input.red?9.5:1.8)*t);
@@ -199,7 +212,8 @@ export function advance(run,dt,input={}){
  else run.cohesion=clamp(run.cohesion+t*1.3,0,100);
  let wave=activeWave(run);
  if(!wave){
-  wave=run.crsWaves.find(w=>w.status==='waiting'&&run.z>=w.trigger);
+  wave=run.crsWaves.find(w=>w.status==='waiting'&&run.z>=w.trigger&&
+   run.weapon===w.kind&&run.pickups.some(p=>p.id===w.id&&p.collected));
   if(wave){wave.status='active';wave.startedAt=run.clock;run.events.push({type:'crs:incoming',wave:wave.id,kind:wave.kind});}
  }
  if(wave){

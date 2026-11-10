@@ -471,9 +471,10 @@ function animateProjectiles(dt){
   const fx=allyEffects[i];fx.elapsed+=dt;
   const p=Math.min(1,fx.elapsed/fx.duration);
   fx.symbol.position.lerpVectors(fx.from,fx.to,p);
-  fx.symbol.position.y+=Math.sin(p*Math.PI)*.65;
+  fx.symbol.position.y+=Math.sin(p*Math.PI)*.9;
   fx.symbol.quaternion.copy(camera.quaternion);
-  symbolOpacity(fx.symbol,1-p);
+  fx.symbol.scale.setScalar(fx.baseSize*(1+.25*Math.sin(p*Math.PI)));
+  symbolOpacity(fx.symbol,p>.72?Math.max(0,(1-p)/.28):1);
   if(p>=1){disposeSymbol(fx.symbol);allyEffects.splice(i,1);}
  }
 }
@@ -483,20 +484,25 @@ function animateAllyAttacks(time){
  const w=activeWave(run),display=activePoliceWave(w.id);
  const follower=crowdActors[Math.floor(time*7)%crowdActors.length];
  if(!follower||!display)return;
- const from=new T.Vector3(follower.guy.position.x,1.4,follower.guy.position.z+.3);
+ const from=new T.Vector3(follower.guy.position.x,2.2,follower.guy.position.z+.3);
  // L'attaque alliée ne rejoint volontairement pas le barrage.
- const to=new T.Vector3(run.x+(rnd(time*3)-.5)*5,1.6,run.z+3.5);
- const symbol=makeSymbol(w.kind,.35);symbol.position.copy(from);sceneGroup.add(symbol);
- allyEffects.push({symbol,from,to,elapsed:0,duration:.5});
+ const to=new T.Vector3(run.x+(rnd(time*3)-.5)*4,2.3,run.z+4.0);
+ // Les cœurs alliés sont sensiblement plus gros et restent lisibles en vol.
+ // Leurs tirs ne comptent toujours aucun impact sur les CRS.
+ const symbol=makeSymbol(w.kind,w.kind==='heart'?1.25:.85);
+ symbol.position.copy(from);sceneGroup.add(symbol);
+ allyEffects.push({symbol,from,to,elapsed:0,duration:.9,baseSize:w.kind==='heart'?1.25:.85});
 }
 function weaponPickup(root,pick){
  const group=new T.Group();group.position.set(pick.x,0,pick.z);root.add(group);
  addBox(group,0,.44,0,1.22,.11,1.22,0xd7c89d);
- const symbol=makeSymbol(pick.kind,.78);symbol.position.y=1.48;group.add(symbol);
- const marker=roundedText('PRENDRE  '+pick.icon,2.6,'#fff0d4','#604533');
- marker.position.set(0,2.47,0);group.add(marker);
+ // Gros symbole visible sur le parcours et cible tactile facile à sélectionner.
+ const symbol=makeSymbol(pick.kind,pick.kind==='heart'?1.7:1.25);
+ symbol.position.y=2.05;group.add(symbol);
+ const marker=roundedText('RAMASSER '+pick.icon,3.4,'#fff0d4','#604533');
+ marker.position.set(0,3.2,0);group.add(marker);
  const hit=mesh(gBox,new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),
-  0,1.3,0,2.6,3,2.6);
+  0,1.7,0,3.6,4,3.6);
  hit.userData.pickTarget={type:'pickup',id:pick.id};group.add(hit);pickableMeshes.push(hit);
  pickupActors.push({id:pick.id,group,symbol});
 }
@@ -605,6 +611,11 @@ function refreshHUD(){
  $('meterLabel').textContent=p===3?'CORTÈGE':'';
  hint.hidden=true;hint.textContent='';
  const active=p===3?activeWave(run):null;
+ const waiting=run.crsWaves.find(w=>w.status==='waiting');
+ const needed=run.pickups.find(w=>w.id===waiting?.id&&!w.collected);
+ const pickupTip=$('weaponPrompt');
+ pickupTip.hidden=!(playing&&p===3&&needed&&!active);
+ pickupTip.textContent=needed?'Récupère '+needed.icon+' '+needed.name+' avant les CRS':'';
  const alert=$('crsAlert');
  alert.hidden=true;
  const chip=$('weaponChip'),sel=$('targetChip'),picker=$('chooseTarget');
@@ -645,7 +656,7 @@ function drain(){
   if(e.type==='corner'){cornerTurn=1.55;}
   if(e.type==='summit')messageFeedback('— Camarades !',.7);
   if(e.type==='shout'){voiceCamarades();}
-  if(e.type==='weapon:pickup')messageFeedback('✓ '+(WEAPONS.find(w=>w.kind===e.kind)?.icon||''),.75);
+  if(e.type==='weapon:pickup')messageFeedback('✓ '+(WEAPONS.find(w=>w.kind===e.kind)?.icon||'')+' · Arme récupérée !',1.4);
   if(e.type==='projectile:fire'){sendProjectile(e.wave,e.officer,e.kind,e.duration);sound(710,.1);}
   if(e.type==='projectile:hit'){transformOfficer(e.wave,e.officer,e.kind);sound(920,.1);}
   if(e.type==='crs:repelled')messageFeedback('✓ '+WEAPONS.find(w=>w.kind===e.kind)?.icon,.85);
@@ -841,7 +852,7 @@ function animateActors(dt,time){
   const picked=run.pickups.find(p=>p.id===a.id)?.collected;
   a.group.visible=!picked;
   a.symbol.rotation.y=time*1.2;
-  a.symbol.position.y=1.5+Math.sin(time*2.2+a.id)*.2;
+  a.symbol.position.y=2.05+Math.sin(time*2.2+a.id)*.22;
  }
  if(bastilleCrowd){
   bastilleCrowd.visible=run.z>=92;
