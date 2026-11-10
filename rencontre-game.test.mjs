@@ -10,7 +10,7 @@ const build = readFileSync(new URL('./build-public.mjs', import.meta.url), 'utf8
 test('The thirteen real scripted video scenes retain their order without fabricated frames', () => {
   const shotLines = [...html.matchAll(/^\s*\['([CB]\d{2})','[^']+','[^']+\.mp4'\],?$/gm)];
   const keys = shotLines.map(x => x[1]);
-  assert.deepEqual(keys, [...Array.from({length:7},(_,i)=>'C'+String(i+2).padStart(2,'0')),
+  assert.deepEqual(keys, [...['C01',...Array.from({length:6},(_,i)=>'C'+String(i+3).padStart(2,'0'))],
                          ...Array.from({length:6},(_,i)=>'B'+String(i+1).padStart(2,'0'))]);
   for (const path of ['01-cuisine/04-il-lui-caresse-la-joue.mp4',
                       '01-cuisine/05-elle-lui-caresse-la-joue.mp4',
@@ -24,7 +24,7 @@ test('The thirteen real scripted video scenes retain their order without fabrica
 test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and intimacy', () => {
   const bundles=[...html.matchAll(/clips:\[([^\]]+)\]/g)].map(x=>[...x[1].matchAll(/'([CB]\d{2})'/g)].map(y=>y[1]));
   assert.deepEqual(bundles,[
-    ['C02','C03'],['C04','C05'],['C06','C07'],['C08'],
+    ['C01','C03'],['C04','C05'],['C06','C07'],['C08'],
     ['B01','B02'],['B03'],['B04','B05','B06']
   ]);
   assert.ok(html.includes('Pas maintenant'));
@@ -32,7 +32,7 @@ test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and int
   assert.ok(html.includes('state.step=Math.min'));
   assert.ok(html.includes("const KEY=standaloneReading?'tda-rencontre-lecture-directe-v1':'tda-rencontre-storyboard-v1'"),'Direct preview and main game have separate saves');
   assert.equal((html.match(/^ [CBA]\d{2}:HIGGS_CDN\+'hf_[^']+\.mp4'/gm)||[]).length,21,'21 generated videos must be attached');
-  assert.ok(!html.includes('C01:HIGGS_CDN')&&!html.includes('B07:HIGGS_CDN'),'Do not invent unavailable videos');
+  assert.ok(html.includes('C01:HIGGS_CDN')&&!html.includes('C02:HIGGS_CDN')&&!html.includes('B07:HIGGS_CDN'),'No solo clip in C02');
 });
 
 test('Prototype is wired to the third chapter without altering other games', () => {
@@ -80,7 +80,7 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  const refs=[...html.matchAll(/^ (C0[2-8]|B0[1-6]|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
  assert.equal(refs.length,21);
  assert.equal(new Set(refs.map(m=>m[1])).size,21);
- assert.equal(new Set(refs.map(m=>m[2])).size,21,'Les 21 plans Higgsfield sont tous distincts, y compris le vrai C02');
+ assert.equal(new Set(refs.map(m=>m[2])).size,20,'C01 and A01 temporarily reuse an existing duo shot');
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
  assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'), 'Les plans concernés sont silencieux, sans synthèse vocale ni sous-titres');
  assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
@@ -93,7 +93,7 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(!html.includes('La fenêtre sur Paris')&&!html.includes("clips:['B07']"), 'No literary ending');
  assert.ok(html.includes("beginScene(['A08'],'replay')"),'The extra night video is preserved');
  assert.ok(!html.includes("['C01','La tête baissée'")&&!html.includes("clips:['C01'"),'No invented opening still in a movie');
- assert.ok(html.includes("clips:['C02','C03']"),'The original Higgsfield movie opens the cinematic sequence');
+ assert.ok(html.includes("clips:['C01','C03']"),'The film starts at C01');
  assert.ok(html.includes("type:'rencontre:state'"), 'The shared board receives progress');
  assert.ok(controller.includes("e.data.type!=='rencontre:state'"), 'Parent verifies iframe origin and event type');
  assert.ok(controller.includes('state.rdvRencontreFinished=true'), 'The third Chemin III chapter is completed');
@@ -143,11 +143,11 @@ test('Lecture directe du chapitre 6 sans progression obligatoire des jeux préc�
 });
 
 test('Les voix artificielles et sous-titres ont été retirés sans modifier les films',()=>{
- assert.ok(html.includes("C02:HIGGS_CDN+'hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4'"),'Le film C02 original payé est restauré');
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"),'C01 displays an existing couple shot');
  assert.ok(html.includes('72b06959-a1e1-4fb4-bde5-7939dc8f1b42.png'),'La vraie image de départ accompagne le duo');
  assert.ok(html.includes('still.src=state.step===0?ART.depart:ART.cuisine'),'L’image de départ est visible avant de lancer la séquence');
  assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"),'A01 garde sa place en alternative');
- assert.ok(html.includes("const SILENT_DIALOGUE_SHOTS=new Set(['C02','C03','C07','C08'])"));
+ assert.ok(html.includes("const SILENT_DIALOGUE_SHOTS=new Set(['C01','C03','C07','C08'])"));
  assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'));
  for(const fragment of ['speechSynthesis','SpeechSynthesisUtterance','FRENCH_LINES','frenchDialogue','function speakFrench','function stopFrenchSpeech'])
   assert.ok(!html.includes(fragment),fragment+' must not remain');
@@ -174,11 +174,19 @@ test('Choix superposés à l’image de départ, sans bloc détaillé sous la sc
 });
 
 test('Le film s’ouvre sur le véritable duo de Higgsfield, pas sur une alternative',()=>{
- assert.ok(html.includes("C02:HIGGS_CDN+'hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4'"));
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
  assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
  assert.ok(html.includes("depart:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/72b06959-a1e1-4fb4-bde5-7939dc8f1b42.png'"));
  assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.cuisine"));
- assert.ok(html.includes("clips:['C02','C03']"));
+ assert.ok(html.includes("clips:['C01','C03']"));
  assert.ok(!html.includes('SpeechSynthesisUtterance'));
  assert.ok(!html.includes('frenchDialogue'));
+});
+
+test('La vidéo payante erronée du garçon seul ne figure plus dans le jeu',()=>{
+ assert.ok(!html.includes('e155bc22-bd01-46f7-86a7-029a60d64a6e'));
+ assert.ok(!html.includes('hf_20261110_184312'));
+ assert.ok(!html.includes('C02:HIGGS_CDN'));
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
+ assert.ok(html.includes("clips:['C01','C03']"));
 });

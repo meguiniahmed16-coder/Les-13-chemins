@@ -178,7 +178,7 @@ const ART={
   caresse:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/db6ea871-3557-4b72-8dcb-3c9c68f0871a.png'
 };
 const SHOTS=[
- ['C02','Il relève la tête devant elle','01-cuisine/02-il-releve-la-tete.mp4'],
+ ['C01','La rencontre dans la cuisine','01-cuisine/01-rencontre.mp4'],
  ['C03','Le regard de la jeune femme','01-cuisine/03-elle-le-regarde.mp4'],
  ['C04','Il lui caresse la joue','01-cuisine/04-il-lui-caresse-la-joue.mp4'],
  ['C05','Elle lui caresse la joue','01-cuisine/05-elle-lui-caresse-la-joue.mp4'],
@@ -203,10 +203,10 @@ const ALTERNATES=[
  ["A07","Un autre éclat de rire","02-chambre/alternatives/07-rire.mp4","Rires complices ; le canapé-lit reste fermé."],
  ["A08","Le silence de la nuit","02-chambre/alternatives/08-nuit.mp4","Ils restent sous les draps, échangent un regard tranquille."]
 ];
-/* Références exactes aux 21 créations Higgsfield validées. C01 reste une ouverture illustrée. */
+/* La vidéo du garçon seul a été exclue. C01 utilise provisoirement une scène existante des deux personnages, sans fabriquer de nouveau film. */
 const HIGGS_CDN='https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/';
 const MEDIA={
- C02:HIGGS_CDN+'hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4',
+ C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4',
  C03:HIGGS_CDN+'hf_20261110_184129_21f4448e-c0bf-4504-b0a4-1712344b88e5.mp4',
  C04:HIGGS_CDN+'hf_20261110_184338_cd7ef478-eb5b-4f7d-91dd-f4b9b5292765.mp4',
  C05:HIGGS_CDN+'hf_20261110_184341_77deea16-73e4-4be1-8af2-96c8980b1d86.mp4',
@@ -230,11 +230,11 @@ const MEDIA={
 }; 
 const FILMS={cuisine:null,chambre:null};
 const MUSIC={
- cuisine:{title:'Felicity',name:'Felicity — Scott Buckley',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C02',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
+ cuisine:{title:'Felicity',name:'Felicity — Scott Buckley',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C01',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
  chambre:{title:'Night on the Docks – Sax',name:'Night on the Docks - Sax — Kevin MacLeod',artist:'Kevin MacLeod',license:'CC BY 4.0',source:'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137',file:null,startShot:'B01',credit:'Night on the Docks – Sax — Kevin MacLeod (incompetech.com), CC BY 4.0',src:'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Night%20on%20the%20Docks%20-%20Sax.mp3'}
 };
 const STEPS=[
- {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C02','C03'],no:true,alt:'A01'},
+ {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C01','C03'],no:true,alt:'A01'},
  {phase:'cuisine',title:'Un geste vers sa joue',desc:'La rencontre peut avancer par un premier geste. Toucher sa joue débloque sa caresse en retour.',yes:'Lui caresser la joue',clips:['C04','C05'],no:true,alt:'A02'},
  {phase:'cuisine',title:'Les cheveux',desc:'La caresse de la joue ouvre le geste suivant. Chacun peut caresser les cheveux de l’autre.',yes:'Lui caresser les cheveux',clips:['C06','C07'],no:true,alt:'A03'},
  {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true,alt:'A04'},
@@ -248,7 +248,7 @@ const music=$('backgroundMusic');
 let musicEnabled=true,activeSoundtrack=null;
 music.volume=0.22; // Le jazz et Felicity restent sous les sons propres aux cinématiques.
 function soundtrackForShot(id){
- if(id==='A01')return null; // Le premier film commence avec le vrai plan C02.
+ if(id==='A01')return null; // L'alternative silencieuse ne lance pas la musique.
  if(id.startsWith('B')||['A06','A07','A08'].includes(id))return 'chambre';
  return 'cuisine'; // Le dernier verre est encore proposé dans la cuisine (A05).
 }
@@ -277,7 +277,7 @@ $('toggleMusic').onclick=()=>{
  if(!musicEnabled){music.pause();$('musicStatus').textContent='Musique coupée';return;}
  if(pending&&$('cinema').open){soundtrackForCurrentShot(pending[movieIndex]);return;}
  if(activeSoundtrack){const playing=music.play();if(playing&&playing.catch)playing.catch(()=>{$('musicStatus').textContent='Impossible de charger cette piste depuis sa source externe.';});}
- else $('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';
+ else $('musicStatus').textContent='Silence jusqu’au premier regard (plan C01).';
 };
 const KEY=standaloneReading?'tda-rencontre-lecture-directe-v1':'tda-rencontre-storyboard-v1';
 let state={step:0,watched:[],ended:false};
@@ -288,7 +288,7 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
 const FADE_MS=300;
 /* Les plans autrefois doublés sont silencieux : ni voix artificielle, ni paroles étrangères. */
-const SILENT_DIALOGUE_SHOTS=new Set(['C02','C03','C07','C08']);
+const SILENT_DIALOGUE_SHOTS=new Set(['C01','C03','C07','C08']);
 let advanceTimer=null;
 function stopAdvanceTimer(){if(advanceTimer!==null){clearTimeout(advanceTimer);advanceTimer=null;}}
 function notifyBoard(){if(window.parent===window)return;try{window.parent.postMessage({type:'rencontre:state',step:state.step,complete:state.step>=STEPS.length&&!state.ended,ended:state.ended},location.origin);}catch(e){}}
@@ -425,7 +425,7 @@ function nextMovie(){
   $('choices').append(button('Terminer ici','outline',()=>{state.ended=true;state.step=STEPS.length;save();stopSoundtrack();draw();notifyBoard();}));
  }
 }
-function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';state={step:0,watched:[],ended:false};save();draw();notifyBoard();}
+function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C01).';state={step:0,watched:[],ended:false};save();draw();notifyBoard();}
 $('closeMovie').onclick=()=>{stopAdvanceTimer();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
 $('nextMovie').onclick=nextMovie;
 $('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();$('player').pause();pending=null;stopSoundtrack();});
