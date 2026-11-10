@@ -77,12 +77,24 @@ function pathways(root){
   cube(root,side*9.6,.018,z,1.2,.023,5.8,[0x84ad72,0x90b77c,0x77a56c][(z+22)%3]);
  }
 }
+function decorateParkTile(tile,index){
+ // Bancs, réverbères et massifs suivent les allées au lieu de finir à z=125.
+ for(const localZ of [-24,-10,7,23]){
+  for(const side of [-1,1]){
+   const x=side*(11.1+(index%2)*.4);
+   if((Math.abs(localZ)+index)%3===0)lamp(tile,x,localZ+3);
+   else bench(tile,x,localZ,side);
+  }
+ }
+}
 function createParkGround(root){
  // Sol suffisamment large et mobile : son bord ne peut pas être vu à la caméra.
  parkGround=cube(root,0,-.25,0,650,.48,650,0x77a36b);
  parkPaths=[];
  for(let i=0;i<9;i++){
-  const tile=new T.Group();pathways(tile);root.add(tile);parkPaths.push(tile);
+  const tile=new T.Group();
+  pathways(tile);decorateParkTile(tile,i);
+  root.add(tile);parkPaths.push(tile);
  }
 }
 function updateParkPaths(){
@@ -199,20 +211,8 @@ function makePark(){
  woodedPark(root);
  birds=makeBirds(root);
  updateParkEnvironment();
- // Autant de bancs que de petites haltes, uniquement sur les bas-côtés.
- for(let z=7,i=0;z<124;z+=9.5,i++){
-  for(const side of [-1,1]){
-   const x=side*(11.2+(i%2)*.4);
-   if(i%3!==0)bench(root,x,z,side);
-   if(i%3===0)lamp(root,side*11.3,z+3);
-  }
- }
- for(const side of [-1,1])for(const z of [23,78,115]){
-  const x=side*10.7;
-  cube(root,x,1.12,z,.09,2.1,.09,0x416b5c);
-  const signboard=sign(z===23?'PASSEIG':z===78?'PARC':'SORTIE',1.45,'#e1c77d','#2c564a');
-  signboard.position.set(x,2.38,z);signboard.rotation.y=side===1?-Math.PI/2:Math.PI/2;root.add(signboard);
- }
+ // Pas de panneau SORTIE ni d'extrémité du décor : les bancs et lampadaires
+ // sont désormais rattachés aux tronçons de parc recyclés.
  lakeAndMonuments(root);
  return root;
 }
