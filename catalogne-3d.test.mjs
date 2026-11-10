@@ -249,7 +249,7 @@ test('Carte mobile : clients servis, police mobile, joueur et commande de fermet
  const labels=[],ctx={
   setTransform(){},clearRect(){},fillRect(){},beginPath(){},arc(){},
   fill(){},ellipse(){},stroke(){},strokeRect(){},moveTo(){},lineTo(){},
-  closePath(){},save(){},translate(){},rotate(){},fillText(value){labels.push(value)}
+  closePath(){},save(){},restore(){},translate(){},rotate(){},fillText(value){labels.push(value)}
  };
  const c={width:330,height:260,clientWidth:330,clientHeight:260,getContext(){return ctx}};
  const old=globalThis.window;
