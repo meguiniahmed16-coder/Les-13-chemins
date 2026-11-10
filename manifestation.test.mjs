@@ -38,6 +38,33 @@ function defeat(r,id){
  assert.equal(wave.status,'repelled');
  return wave;
 }
+test('Un guide 3D au drapeau rouge accompagne la première étape',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes('const GUIDE_STOPS=['));
+ assert.ok(js.includes("redGuide=person(5)"));
+ assert.ok(js.includes("flag(redGuide,'red'"));
+ assert.ok(js.includes("function updateRedGuide(dt,time){"));
+ assert.ok(js.includes('distance(run,redGuide.position)<6.5'));
+ assert.ok(js.includes("messageFeedback('Suis le drapeau rouge !'"));
+ assert.ok(html.includes('Suis le personnage au drapeau rouge'));
+});
+test('Sélection visible : deux anneaux, flèche et état confirmé',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes('for(const radius of [1.05,1.45])'));
+ assert.ok(js.includes('selectionMarker.userData={rings,arrow}'));
+ assert.ok(js.includes("sel.classList.toggle('is-selected',!!run.selected)"));
+ assert.ok(js.includes("('✓ SÉLECTIONNÉ : CRS '"));
+ assert.ok(html.includes('.selection-ui span.is-selected'));
+});
+test('CRS distincts et cortège de couleur',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes('officer.baseX=(i-1.5)*2.35'));
+ assert.ok(js.includes('officer.actor.scale.setScalar(1.30)'));
+ assert.ok(js.includes('genouillère'));
+ assert.ok(js.includes("banner(rallyProps,'TOUS ENSEMBLE',0,-5.3,5.5,'#d9514e'"));
+ assert.ok(js.includes("flag(rallyProps,'red'"));
+ assert.ok(js.includes("flag(adverseSymbols,'red'"));
+});
 test('La fonction activeWave est importée pour la troisième étape après la statue',()=>{
  const code=read('manifestation-app.js');
  assert.match(code,/import\s*\{[^}]*\bactiveWave\b[^}]*\}\s*from\s*['"]\.\/manifestation-core\.js['"]/);
@@ -232,9 +259,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-armes-avant-crs-v20'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-armes-avant-crs-v20'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-armes-avant-crs-v20'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-guide-crs-selection-v21'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-guide-crs-selection-v21'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-guide-crs-selection-v21'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -375,5 +402,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-armes-avant-crs-v20'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-guide-crs-selection-v21'));
 });

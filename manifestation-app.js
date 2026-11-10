@@ -19,6 +19,8 @@ let joy={x:0,y:0},pad={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0
 let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0,avenueExtended=false,bastilleReady=false;
 let lastControlDisplay=0,renderFailureReported=false;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,adverseSymbols=null,extraFollowersActive=false;
+let redGuide=null,guideCaption=null,guideStop=0;
+const GUIDE_STOPS=[{x:-2.8,z:-3},{x:0,z:4.2},{x:3.1,z:10}];
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
 const colors={
@@ -283,11 +285,15 @@ function moveEscortInstances(){
 }
 function crowdSymbols(root,tricolor=false){
  rallyProps=new T.Group();root.add(rallyProps);
- protestSign(rallyProps,'NON À LE PEN',-3,-1,2.9);
- protestSign(rallyProps,'LIBERTÉ, ÉGALITÉ, FRATERNITÉ',3,-3,5.9);
- banner(rallyProps,'TOUS ENSEMBLE',0,-5.3,5.5);
- flag(rallyProps,tricolor?'france':'red',-4,0,-3.0,3.1);
- if(tricolor)flag(rallyProps,'france',4,0,-2.0,2.9);
+ protestSign(rallyProps,'NON À LE PEN',-4.1,-1,3.2,'#ffdf80');
+ protestSign(rallyProps,'LIBERTÉ, ÉGALITÉ, FRATERNITÉ',3.1,-3,5.9,'#b7e2ff');
+ protestSign(rallyProps,'SOLIDARITÉ',-1.8,-7.5,3.2,'#ffd2dc');
+ protestSign(rallyProps,'DÉMOCRATIE',5,-9,3.0,'#cdecc1');
+ banner(rallyProps,'TOUS ENSEMBLE',0,-5.3,5.5,'#d9514e','#fff8dc');
+ flag(rallyProps,'red',-5.5,0,-3.0,3.4);
+ flag(rallyProps,'france',4.4,0,-2.0,3.2);
+ flag(rallyProps,'red',-1.2,0,-9.0,3.5);
+ flag(rallyProps,'france',5.9,0,-10,3.1);
 }
 
 
@@ -296,8 +302,8 @@ function protestSign(root,text,x,z,width=3.2,paint='#f3e1b9'){
  const board=roundedText(text,width,paint,'#3d493d');
  board.position.set(x,2.8,z);board.rotation.y=Math.PI;root.add(board);
 }
-function banner(root,text,x,z,width=6.0){
- const fabric=roundedText(text,width,'#fbf1d8','#33453c');
+function banner(root,text,x,z,width=6.0,paint='#fbf1d8',ink='#33453c'){
+ const fabric=roundedText(text,width,paint,ink);
  fabric.rotation.y=Math.PI;fabric.position.set(x,3.3,z);root.add(fabric);
  for(const side of [-1,1])root.add(mesh(gCyl,mat(0x685a48),x+side*width*.5,1.65,z,.035,3.4,.035));
 }
@@ -310,16 +316,24 @@ function riotOfficer(index){
  const chest=mesh(gSphere,navy,0,1.17,0,.33,.47,.23);actor.add(chest);
  const armor=mesh(gBox,mat(0x334f68),0,1.12,-.18,.55,.55,.095);actor.add(armor);
  addBox(actor,0,.77,0,.46,.13,.31,0x172b3d);
+ // Plastron segmenté, distinct des membres et visible même sur un petit écran.
+ addBox(actor,0,1.35,-.235,.46,.10,.055,0x859bab);
+ addBox(actor,0,.96,-.242,.46,.06,.055,0x9db0b8);
  for(const side of [-1,1]){
   const leg=mesh(gCyl,navy,side*.155,.43,0,.11,.77,.11);actor.add(leg);
   const boot=mesh(gBox,dark,side*.155,.12,-.07,.24,.20,.38);actor.add(boot);
+  addBox(actor,side*.155,.52,-.16,.235,.27,.10,0x7892a4); // genouillère
   const arm=mesh(gCyl,navy,side*.36,1.17,-.025,.11,.63,.11);
   arm.rotation.z=side*.16;actor.add(arm);
   actor.add(mesh(gSphere,mat(0x324c63),side*.31,1.41,0,.17,.16,.19));
+  addBox(actor,side*.39,1.30,-.16,.18,.14,.075,0xb2c5d2); // épaulière
+  addBox(actor,side*.36,.96,-.14,.20,.25,.10,0x405a73);
  }
  actor.add(mesh(gSphere,skin,0,1.75,0,.19,.21,.18));
  const helmet=mesh(gSphere,dark,0,1.91,0,.30,.225,.275);actor.add(helmet);
  const brow=mesh(gBox,mat(0x0e1722),0,1.84,-.24,.43,.07,.16);actor.add(brow);
+ addBox(actor,0,2.055,-.07,.46,.075,.34,0x73899e);
+ addBox(actor,0,1.61,-.238,.38,.075,.08,0x182839); // jugulaire
  const visor=mesh(gBox,new T.MeshStandardMaterial({
   color:0x86aabe,transparent:true,opacity:.78,roughness:.20,metalness:.10
  }),0,1.78,-.245,.405,.23,.047);actor.add(visor);
@@ -328,7 +342,9 @@ function riotOfficer(index){
  const frame=mesh(gBox,mat(0x172839),-.47,1.14,-.36,.87,1.16,.075);
  frame.position.z=-.38;frame.scale.set(.88,1.15,.08);
  actor.add(frame);
- const label=roundedText('CRS',.72,'#dce9f0','#15283d');
+ addBox(actor,-.47,1.57,-.50,.75,.08,.035,0xdce7f2);
+ addBox(actor,-.47,.72,-.50,.75,.075,.035,0xdce7f2);
+ const label=roundedText('CRS',.86,'#e4edf6','#10283f');
  label.rotation.y=Math.PI;label.position.set(-.47,1.17,-.49);actor.add(label);
  const baton=mesh(gCyl,dark,.49,1.11,-.28,.044,.79,.044);
  baton.rotation.z=-.22;actor.add(baton);
@@ -341,13 +357,14 @@ function createPoliceWaves(root){
   group.visible=false;group.position.z=wave.anchor;root.add(group);
   for(let i=0;i<4;i++){
    const officer=riotOfficer((wave.id-1)*4+i);
-   officer.baseX=(i-1.5)*1.45;
-   officer.actor.scale.setScalar(1.25);
+   // Quatre CRS séparés de 2,35 m : boucliers et casques ne se chevauchent plus.
+   officer.baseX=(i-1.5)*2.35;
+   officer.actor.scale.setScalar(1.30);
    officer.actor.position.x=officer.baseX;
    officer.actor.position.z=i%2*.25;
    group.add(officer.actor);actors.push(officer);
    const hit=mesh(gBox,new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),
-    officer.baseX,1.4,i%2*.25,1.2,3,.95);
+    officer.baseX,1.5,i%2*.25,1.55,3.35,1.3);
    hit.userData.pickTarget={type:'crs',wave:wave.id,id:i};
    group.add(hit);pickableMeshes.push(hit);
    officer.hit=hit;
@@ -516,17 +533,27 @@ function markSelection(time){
  if(!selectionMarker)return;
  const sel=run.selected;selectionMarker.visible=!!sel;
  if(!sel)return;
- let point=null;
- if(sel.type==='flag')point=new T.Vector3(FLAG.x,3.2,FLAG.z);
- if(sel.type==='statue')point=new T.Vector3(STATUE.x,6.1,STATUE.z);
+ let point=null,arrowY=3.65;
+ if(sel.type==='flag'){point=new T.Vector3(FLAG.x,0,FLAG.z);arrowY=4.8;}
+ if(sel.type==='statue'){point=new T.Vector3(STATUE.x,0,STATUE.z);arrowY=8.7;}
  if(sel.type==='pickup'){
   const p=run.pickups.find(w=>w.id===sel.id);
-  if(p)point=new T.Vector3(p.x,3.4,p.z);
+  if(p)point=new T.Vector3(p.x,0,p.z);
+  arrowY=4.1;
  }
- if(sel.type==='crs')point=officerWorldPoint(sel.wave,sel.id)?.add(new T.Vector3(0,1.0,0));
+ if(sel.type==='crs'){
+  const actorPoint=officerWorldPoint(sel.wave,sel.id);
+  if(actorPoint)point=new T.Vector3(actorPoint.x,0,actorPoint.z);
+  arrowY=3.65;
+ }
  if(point){
-  selectionMarker.position.copy(point);selectionMarker.rotation.y=time*.8;
-  selectionMarker.scale.setScalar(1+Math.sin(time*5)*.1);
+  selectionMarker.position.set(point.x,.12,point.z);
+  selectionMarker.scale.setScalar(1+Math.sin(time*5)*.10);
+  const highlight=sel.type==='crs'?0xff744f:sel.type==='pickup'?0x51f2dc:0xffe16a;
+  selectionMarker.userData.rings.forEach(ring=>ring.material.color.setHex(highlight));
+  selectionMarker.userData.arrow.material.color.setHex(highlight);
+  selectionMarker.userData.arrow.position.y=arrowY+.25*Math.sin(time*5);
+  selectionMarker.userData.arrow.rotation.y=time*1.5;
  }else selectionMarker.visible=false;
 }
 
@@ -541,9 +568,14 @@ function populateBastille(root){
  bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
  bastilleActors=makeCrowd(bastilleCrowd,16,102,{spread:4.8});
  adverseSymbols=new T.Group();bastilleCrowd.add(adverseSymbols);
- banner(adverseSymbols,'RÉPUBLIQUE — BASTILLE',0,97,7.4);
- protestSign(adverseSymbols,'NON À LA HAINE',-4,103,3.1);
- flag(adverseSymbols,'france',3,0,101,3.2);
+ banner(adverseSymbols,'RÉPUBLIQUE — BASTILLE',0,97,7.4,'#f5d16e','#343e53');
+ banner(adverseSymbols,'ENSEMBLE',1,107,5.0,'#9dd0ee','#243c57');
+ protestSign(adverseSymbols,'NON À LA HAINE',-4,103,3.1,'#f6b1ab');
+ protestSign(adverseSymbols,'LIBERTÉ',4.6,106,3.0,'#cfebbe');
+ flag(adverseSymbols,'france',3,0,101,3.4);
+ flag(adverseSymbols,'red',-5.4,0,103,3.5);
+ flag(adverseSymbols,'france',5.8,0,109,3.1);
+ flag(adverseSymbols,'red',-2.6,0,111,3.3);
 }
 function extendMarchScenery(){
  if(run.phase!==3||!sceneGroup)return;
@@ -566,11 +598,12 @@ function sceneFor(phase){
  stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];
  policeGroups=[];heartBursts=[];heartAscents=[];escortInstances=null;rallyProps=null;
  pickableMeshes=[];pickupActors=[];allyEffects=[];adverseSymbols=null;selectionMarker=null;
+ redGuide=null;guideCaption=null;guideStop=0;
  avenueExtended=false;bastilleReady=false;
  const root=sceneGroup,sky=phase===1?0xbed5db:phase===2?0xb8cdd5:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
-  // Rue adjacente : le personnage est SEUL pour chercher le drapeau.
+  // Rue adjacente : un seul manifestant-guide conduit le joueur vers le drapeau.
   buildings(root,-20,38,true);
   addBox(root,0,-.07,22,27,.1,7,0x787a77); // carrefour vers l'avenue
   addBox(root,11.63,3.8,11,.1,7,6,0xd5c5a7);
@@ -578,6 +611,10 @@ function sceneFor(phase){
   school.position.set(11.54,4.7,11);school.rotation.y=-Math.PI/2;root.add(school);
   flag(root,'france',FLAG.x,0,FLAG.z,4.1);
   addSelectable(root,null,FLAG.x,2.1,FLAG.z,3.0,{type:'flag'});
+  redGuide=person(5);redGuide.position.set(-3.1,0,-4.3);root.add(redGuide);
+  flag(redGuide,'red',.25,1.04,.10,3.15);
+  guideCaption=roundedText('SUIS LE DRAPEAU ROUGE',4.65,'#b53038','#fff8e4');
+  root.add(guideCaption);
  }else if(phase===2){
   buildings(root,-23,48,true);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
@@ -592,10 +629,18 @@ function sceneFor(phase){
  hero=person(2,{hero:true});root.add(hero);
  // Le drapeau est vraiment tenu par le personnage après sa récupération.
  if(phase>=2)flag(hero,'france',.40,1.05,0,2.6);
- // Reticle above the SELECTED object/policeman, never a permanent HUD banner.
- selectionMarker=new T.Mesh(new T.TorusGeometry(.42,.075,5,22),
-  new T.MeshBasicMaterial({color:0xffdb5e,depthTest:false}));
- selectionMarker.rotation.x=Math.PI/2;selectionMarker.renderOrder=30;
+ // Sélection explicite : doubles anneaux au sol et grande flèche pulsante.
+ selectionMarker=new T.Group();
+ const rings=[];
+ for(const radius of [1.05,1.45]){
+  const ring=new T.Mesh(new T.TorusGeometry(radius,.13,8,36),
+   new T.MeshBasicMaterial({color:0xffe16a,depthTest:false,transparent:true,opacity:radius>1.2?.8:1}));
+  ring.rotation.x=Math.PI/2;ring.renderOrder=35;selectionMarker.add(ring);rings.push(ring);
+ }
+ const arrow=mesh(gCone,new T.MeshBasicMaterial({color:0xffe16a,depthTest:false}),
+  0,4,0,.46,.75,.46);
+ arrow.rotation.z=Math.PI;arrow.renderOrder=36;selectionMarker.add(arrow);
+ selectionMarker.userData={rings,arrow};
  selectionMarker.visible=false;root.add(selectionMarker);
  stageInWorld=phase;
 }
@@ -603,7 +648,7 @@ function sceneFor(phase){
 function messageFeedback(text,duration=2){speech.textContent=text;speech.hidden=false;showSpeechUntil=performance.now()/1000+duration;}
 function refreshHUD(){
  const p=run.phase,n=run.steps.length;
- title.textContent=p===1?'① Drapeau':p===2?'② République':'③ Bastille';
+ title.textContent=p===1?'① Suis le rouge':p===2?'② République':'③ Bastille';
  label.textContent='';score.textContent=String(serverSteps.length*10);
  steps.forEach((el,i)=>{el.classList.toggle('done',i<n);el.textContent=i<n?'✓':String(i+1);});
  const pct=p===3?run.cohesion:100;
@@ -621,9 +666,11 @@ function refreshHUD(){
  const chip=$('weaponChip'),sel=$('targetChip'),picker=$('chooseTarget');
  chip.hidden=p!==3;chip.textContent=p===3?(WEAPONS.find(w=>w.kind===run.weapon)?.icon||'—'):'';
  const names={flag:'🇫🇷 Drapeau',statue:'Statue',pickup:'Objet',crs:'CRS'};
- sel.textContent=run.selected?.type==='crs'?('◎ CRS '+(run.selected.id+1)):
-  run.selected?.type==='pickup'?('◎ '+run.pickups.find(w=>w.id===run.selected.id)?.icon):
-  run.selected?('◎ '+names[run.selected.type]):'◎ —';
+ sel.textContent=run.selected?.type==='crs'?('✓ SÉLECTIONNÉ : CRS '+(run.selected.id+1)):
+  run.selected?.type==='pickup'?('✓ SÉLECTIONNÉ : '+run.pickups.find(w=>w.id===run.selected.id)?.icon):
+  run.selected?('✓ SÉLECTIONNÉ : '+names[run.selected.type]):'◎ —';
+ sel.classList.toggle('is-selected',!!run.selected);
+ $('chooseTarget').classList.toggle('has-target',!!run.selected);
  picker.hidden=!(playing&&!paused&&(availableTargets(run).length>0));
  const march=$('advanceBastille');march.hidden=!(playing&&p===3);
  $('walkingPad').hidden=!(playing&&!paused&&p===3);
@@ -676,6 +723,7 @@ function start(){
  $('controlsStatus').hidden=true;
  $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;forwardHeld=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
+ messageFeedback('Suis le drapeau rouge !',2.6);
 }
 function pause(){
  if(!playing)return;paused=!paused;
@@ -828,7 +876,30 @@ function bindControls(){
  });
 }
 
+function updateRedGuide(dt,time){
+ if(!redGuide||run.phase!==1)return;
+ let moving=false;
+ const stop=GUIDE_STOPS[guideStop];
+ if(stop&&playing&&!paused&&distance(run,redGuide.position)<6.5){
+  const dx=stop.x-redGuide.position.x,dz=stop.z-redGuide.position.z;
+  const length=Math.hypot(dx,dz);
+  if(length<.35){guideStop++;}
+  else{
+   const step=Math.min(length,Math.min(dt,.08)*2.85);
+   redGuide.position.x+=dx/length*step;
+   redGuide.position.z+=dz/length*step;
+   redGuide.rotation.y=Math.atan2(dx,dz);
+   moving=true;
+  }
+ }
+ walking(redGuide,time,moving?1:.02);
+ if(guideCaption){
+  guideCaption.position.set(redGuide.position.x,4.45+Math.sin(time*2)*.10,redGuide.position.z);
+  guideCaption.quaternion.copy(camera.quaternion);
+ }
+}
 function animateActors(dt,time){
+ updateRedGuide(dt,time);
  if(hero){
   hero.position.set(run.x,run.height||0,run.z);
   const input=changeDir(),moving=Math.abs(input.x)+Math.abs(input.y)>.2&&!paused;
@@ -964,7 +1035,7 @@ async function loadCharacters(){
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Seul dans la rue : choisis le drapeau, puis prends-le avec JAUNE. Tourne vers l’avenue, monte sur la statue et appelle la foule. Sur le boulevard, récupère successivement ♥, ✿ et 💋. Sélectionne un CRS avant de tirer avec ROUGE.';
+  $('overlayText').textContent='Suis le manifestant au drapeau rouge jusqu’au drapeau français : sélectionne celui-ci puis prends-le avec JAUNE. Monte sur la statue et crie « Camarades ! ». Ensuite, récupère ♥, ✿ et 💋 avant l’arrivée des CRS.';
   $('start').disabled=false;
   send('manifestation:ready');
  }catch(e){
