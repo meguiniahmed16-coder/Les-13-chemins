@@ -108,7 +108,7 @@ test('Préserver le jeu 2D original et vérifier le raccord au plateau',()=>{
 test('Commandes gauche et droite corrigées par rapport à la caméra 3D',()=>{
  const app=read('catalogne-3d-app.js');
  assert.ok(app.includes('return {x:-clamp(joy.x+right-left,-1,1)'));
- assert.ok(app.includes('const dx=(e.clientX-r.left-r.width/2)'));
+ assert.ok(app.includes('dx=(e.clientX-r.left-r.width/2)'));
  assert.ok(app.includes('joy.x=clamp(dx/length,-1,1)'));
  const run=newRun();run.phase='running';
  const initial=run.x;advance(run,.08,{x:-1,z:0});assert.ok(run.x<initial,'Vers la droite écran : x monde négatif');
