@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {drawParkMap} from './catalogne-3d-map.js';
+import {VOICE_PROFILES,voiceProfile,voiceGender,assignGameVoices} from './catalogne-3d-voices.js';
 import {PARK,CLIENTS,PATROLS,newRun,advance,sell,dodge,nearestClient,instruction,distance,SALE_DIALOGUES,POLICE_SHOUTS,saleDialogue} from './catalogne-3d-core.js';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 test('Cinq clients uniques, trois chemins, et possibilité de vendre sans orientation imposée',()=>{
@@ -91,7 +92,7 @@ test('Scène 3D : vente confiée au plateau, confirmation sans double comptage',
  assert.ok(app.includes('result.client.id'));
  assert.ok(app.includes('m.finished'));
  assert.ok(app.includes("m.sold.filter"));
- assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v4'));
+ assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v5'));
  assert.ok(html.includes('id="saleDialogue"'));
  assert.ok(app.includes("MODEL_PATHS"));
 });
@@ -99,7 +100,7 @@ test('Préserver le jeu 2D original et vérifier le raccord au plateau',()=>{
  const base=read('arcade-catalogne.html'),page=read('jeu.html'),build=read('build-public.mjs');
  assert.ok(base.includes('function nearbyClient(r)'));
  assert.ok(base.includes('const WORLD=1960'));
- assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v4'"));
+ assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v5'"));
  assert.ok(build.includes("'arcade-catalogne.html'"));
  assert.ok(build.includes("'arcade-catalogne-3d.html'"));
  assert.ok(build.includes("'catalogne-3d-runtime.js'"));
@@ -162,7 +163,7 @@ test('Policiers : interpellations et injures en espagnol maintenues',()=>{
  assert.deepEqual(POLICE_SHOUTS,['¡Gilipollas!','¡Vuelve aquí!']);
  const app=read('catalogne-3d-app.js');
  assert.ok(app.includes('const line=POLICE_SHOUTS['));
- assert.ok(app.includes("sayLine(line,'es-ES')"));
+ assert.ok(app.includes("sayLine(line,policeIndex===0?'police1':'police2')"));
  assert.ok(app.includes('if(!saleConversation)'));
 });
 
@@ -262,4 +263,58 @@ test('Carte mobile : clients servis, police mobile, joueur et commande de fermet
  }
  for(const symbol of ['P','✓','2','3','4','5','↑ AVANT'])
   assert.ok(labels.includes(symbol),'Marqueur manquant : '+symbol);
+});
+
+test('Voix : vendeur masculin, cinq acheteurs variés et deux policiers espagnols',()=>{
+ assert.equal(Object.keys(VOICE_PROFILES).length,8);
+ assert.equal(voiceProfile('vendeur').gender,'male');
+ assert.equal(voiceProfile('vendeur').lang,'fr-FR');
+ for(const id of ['c1','c3','c5'])assert.equal(voiceProfile(id).gender,'female');
+ for(const id of ['c2','c4'])assert.equal(voiceProfile(id).gender,'male');
+ assert.equal(voiceProfile('police1').gender,'male');
+ assert.equal(voiceProfile('police2').gender,'female');
+ assert.equal(voiceProfile('police1').lang,'es-ES');
+ assert.equal(voiceProfile('police2').lang,'es-ES');
+ assert.equal(new Set(Object.values(VOICE_PROFILES).map(v=>v.pitch)).size,8);
+});
+test('Voix distinctes choisies parmi les langues et genres disponibles',()=>{
+ const voices=[
+  {name:'Thomas',lang:'fr-FR',localService:true},
+  {name:'Amélie',lang:'fr-FR',localService:true},
+  {name:'Jacques',lang:'fr-FR',localService:true},
+  {name:'Julie',lang:'fr-FR',localService:true},
+  {name:'Sophie',lang:'fr-FR',localService:true},
+  {name:'Jorge',lang:'es-ES',localService:true},
+  {name:'Mónica',lang:'es-ES',localService:true}
+ ];
+ assert.equal(voiceGender(voices[0]),'male');
+ assert.equal(voiceGender(voices[1]),'female');
+ assert.equal(voiceGender(voices[6]),'female');
+ const roles=assignGameVoices(voices);
+ assert.equal(roles.vendeur.name,'Thomas');
+ assert.equal(roles.c1.name,'Amélie');
+ assert.equal(roles.c2.name,'Jacques');
+ assert.equal(roles.c3.name,'Julie');
+ assert.equal(roles.c5.name,'Sophie');
+ assert.equal(roles.police1.name,'Jorge');
+ assert.equal(roles.police2.name,'Mónica');
+ assert.notEqual(roles.c1,roles.vendeur);
+ assert.notEqual(roles.police1,roles.police2);
+ const onlyFrench=assignGameVoices([{name:'Google français',lang:'fr-FR'}]);
+ assert.equal(onlyFrench.vendeur.name,'Google français');
+ assert.equal(onlyFrench.c1.name,'Google français');
+ assert.equal(onlyFrench.police1,null);
+ assert.notEqual(voiceProfile('vendeur').pitch,voiceProfile('c1').pitch);
+ assert.notEqual(voiceProfile('c1').rate,voiceProfile('c3').rate);
+});
+test('La parole est attribuée au vendeur ou au client précis et aux deux agents',()=>{
+ const app=read('catalogne-3d-app.js');
+ assert.ok(app.includes("sayLine(line.text,line.speaker==='vendeur'?'vendeur':saleConversation.clientId)"));
+ assert.ok(app.includes("sayLine(line,policeIndex===0?'police1':'police2')"));
+ assert.ok(app.includes("window.speechSynthesis?.addEventListener?.('voiceschanged',refreshSpeechVoices)"));
+ assert.ok(app.includes('utterance.voice=assignedSpeechVoices[role]'));
+ assert.ok(app.includes('utterance.pitch=profile.pitch'));
+ assert.ok(app.includes('utterance.rate=profile.rate'));
+ assert.ok(app.includes("synth.cancel();synth.speak(utterance)"));
+ assert.ok(app.includes("if(soundOn)refreshSpeechVoices()"));
 });

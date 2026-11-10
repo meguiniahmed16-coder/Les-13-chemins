@@ -6,6 +6,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {drawParkMap} from './catalogne-3d-map.js';
+import {voiceProfile,assignGameVoices} from './catalogne-3d-voices.js';
 import {PARK,CLIENTS,PATROLS,newRun,nearestClient,sell,dodge,advance,instruction,distance,clamp,saleDialogue,POLICE_SHOUTS} from './catalogne-3d-core.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
@@ -432,14 +433,28 @@ function updateActors(dt,time){
  });
  fountainWater.forEach((v,i)=>{v.position.y=1.25+Math.sin(time*2+i)*.08;});
 }
-function sayLine(text,lang='fr-FR'){
- if(!soundOn||!('speechSynthesis'in window))return;
+// Chaque rôle conserve sa voix, même lors de rencontres successives.
+let assignedSpeechVoices={};
+function refreshSpeechVoices(){
+ const synth=window.speechSynthesis;
+ if(!synth?.getVoices)return;
+ try{assignedSpeechVoices=assignGameVoices(synth.getVoices());}
+ catch(error){console.warn('Voix disponibles :',error);}
+}
+function sayLine(text,role='vendeur'){
+ const synth=window.speechSynthesis;
+ if(!soundOn||!synth||typeof SpeechSynthesisUtterance==='undefined')return;
  try{
-  speechSynthesis.cancel();
+  const profile=voiceProfile(role);
   const utterance=new SpeechSynthesisUtterance(text);
-  utterance.lang=lang;utterance.rate=1.06;utterance.volume=.85;
-  speechSynthesis.speak(utterance);
- }catch{}
+  utterance.lang=profile.lang;
+  utterance.rate=profile.rate;
+  utterance.pitch=profile.pitch;
+  utterance.volume=.9;
+  if(!assignedSpeechVoices[role])refreshSpeechVoices();
+  if(assignedSpeechVoices[role])utterance.voice=assignedSpeechVoices[role];
+  synth.cancel();synth.speak(utterance);
+ }catch(error){console.warn('Voix du personnage indisponible :',error);}
 }
 function startSaleConversation(id){
  const lines=saleDialogue(id);
@@ -463,7 +478,7 @@ function updateSaleConversation(time){
   const who=line.speaker==='client'?'CLIENT':'VENDEUR';
   $('saleDialogue').textContent=who+' — '+line.text;
   $('saleDialogue').dataset.speaker=line.speaker;
-  sayLine(line.text);
+  sayLine(line.text,line.speaker==='vendeur'?'vendeur':saleConversation.clientId);
  }
  $('saleDialogue').hidden=false;
  $('saleDialogue').style.opacity=String(Math.min(1,(3.6-elapsed)/.25));
@@ -568,8 +583,9 @@ function policeCry(){
  const chase=run.police.find(p=>p.chasing);
  if(!chase)return;
  lastPoliceMessage=run.clock;
+ const policeIndex=run.police.indexOf(chase);
  const line=POLICE_SHOUTS[Math.floor(run.clock/4.5)%POLICE_SHOUTS.length];
- if(!saleConversation){showToast(line,.95);sayLine(line,'es-ES');}
+ if(!saleConversation){showToast(line,.95);sayLine(line,policeIndex===0?'police1':'police2');}
  beep(290,.1);
 }
 function pause(){
@@ -597,6 +613,8 @@ function input(){
  return {x:-clamp(joy.x+right-left,-1,1),z:clamp(joy.z+ahead-behind,-1,1)};
 }
 function bind(){
+ refreshSpeechVoices();
+ window.speechSynthesis?.addEventListener?.('voiceschanged',refreshSpeechVoices);
  $('start').addEventListener('click',endPauseOrStart);
  $('return').addEventListener('click',returnToBoard);
  $('back').addEventListener('click',returnToBoard);
@@ -606,7 +624,10 @@ function bind(){
  $('mapClose').addEventListener('click',()=>toggleParkMap(false));
  $('sound').addEventListener('click',()=>{
   soundOn=!soundOn;$('sound').textContent=soundOn?'Son ON':'Son OFF';
-  $('sound').setAttribute('aria-pressed',String(soundOn));beep(600,.09);
+  $('sound').setAttribute('aria-pressed',String(soundOn));
+  if(soundOn)refreshSpeechVoices();
+  else window.speechSynthesis?.cancel?.();
+  beep(600,.09);
  });
  const stick=$('stick'),knob=$('knob');
  function updatePointer(e){
