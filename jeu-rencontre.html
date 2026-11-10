@@ -132,8 +132,8 @@ const ALTERNATES=[
 const MEDIA={}; 
 const FILMS={cuisine:null,chambre:null};
 const MUSIC={
- cuisine:{title:'Felicity',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C02',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0'},
- chambre:{title:'Night on the Docks – Sax',artist:'Kevin MacLeod',license:'CC BY 4.0',source:'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137',file:null,startShot:'B01',credit:'Night on the Docks – Sax — Kevin MacLeod (incompetech.com), CC BY 4.0'}
+ cuisine:{title:'Felicity',name:'Felicity — Scott Buckley',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C02',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
+ chambre:{title:'Night on the Docks – Sax',name:'Night on the Docks - Sax — Kevin MacLeod',artist:'Kevin MacLeod',license:'CC BY 4.0',source:'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137',file:null,startShot:'B01',credit:'Night on the Docks – Sax — Kevin MacLeod (incompetech.com), CC BY 4.0',src:'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Night%20on%20the%20Docks%20-%20Sax.mp3'}
 };
 const STEPS=[
  {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C01','C02','C03'],no:true,alt:'A01'},
@@ -146,10 +146,7 @@ const STEPS=[
  {phase:'chambre',title:'La fenêtre ouverte',desc:'Le dernier plan est contemplatif : de nuit, le garçon nu, vu de dos et en pied, devant la tour Eiffel scintillante. Sa main gauche tient une cigarette fumante près de son oreille.',yes:'Voir le dernier plan',clips:['B07'],no:true,alt:'A08'}
 ];
 const $=id=>document.getElementById(id);
-const MUSIC={
- cuisine:{name:'Felicity — Scott Buckley',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
- chambre:{name:'Night on the Docks - Sax — Kevin MacLeod',src:'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Night%20on%20the%20Docks%20-%20Sax.mp3'}
-};
+
 const music=$('backgroundMusic');
 let musicEnabled=true,activeSoundtrack=null;
 music.volume=0.33;
