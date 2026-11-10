@@ -4,11 +4,11 @@
  */
 export const PARK=Object.freeze({width:24,length:122,walkWidth:10});
 export const CLIENTS=Object.freeze([
- Object.freeze({id:'c1',name:'Client 1',x:-4.4,z:15,color:0xc7829a}),
- Object.freeze({id:'c2',name:'Client 2',x:5.2,z:36,color:0x7cae88}),
- Object.freeze({id:'c3',name:'Client 3',x:-5.2,z:58,color:0xe3bd62}),
- Object.freeze({id:'c4',name:'Client 4',x:5.4,z:83,color:0x9792c8}),
- Object.freeze({id:'c5',name:'Client 5',x:-2.6,z:107,color:0xe0a17c})
+ Object.freeze({id:'c1',name:'Client 1',x:-3.6,z:15,color:0xc7829a,zone:'Allée principale'}),
+ Object.freeze({id:'c2',name:'Client 2',x:17.8,z:25,color:0x7cae88,zone:'Sous les arbres'}),
+ Object.freeze({id:'c3',name:'Client 3',x:-18.2,z:39,color:0xe3bd62,zone:'Clairière ouest'}),
+ Object.freeze({id:'c4',name:'Client 4',x:18.4,z:82,color:0x9792c8,zone:'Sous-bois est'}),
+ Object.freeze({id:'c5',name:'Client 5',x:-18.0,z:112,color:0xe0a17c,zone:'Clairière nord'})
 ]);
 // Dialogues courts propres aux cinq rencontres, sans changer le barème.
 export const SALE_DIALOGUES=Object.freeze({
