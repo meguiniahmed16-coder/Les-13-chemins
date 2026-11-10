@@ -246,4 +246,28 @@ export function red(run){
  if(run.phase===2)return callFromStatue(run);
  return fire(run);
 }
+// Consignes d'action déclenchées une seule fois à chaque changement d'état.
+export function gameInstruction(run){
+ if(run.finished)return {key:'completed',text:'✓ Cortèges réunis !'};
+ if(run.phase===1)return {key:'flag',text:'Prends le drapeau'};
+ if(run.phase===2){
+  if(run.climb)return null;
+  if(run.climbed&&!run.statueShouted)return {key:'call',text:'Crie « Camarades ! »'};
+  if(run.climbed)return {key:'descend',text:'Descends de la statue'};
+  return {key:'statue',text:'Monte sur la statue'};
+ }
+ if(run.phase!==3)return null;
+ const active=activeWave(run);
+ const weaponText=kind=>kind==='heart'?'Envoie des cœurs aux CRS':
+  kind==='flower'?'Envoie des fleurs aux CRS':'Envoie des bisous aux CRS';
+ if(active)return {key:'attack-'+active.id,text:weaponText(active.kind)};
+ const waiting=run.crsWaves.find(w=>w.status==='waiting');
+ if(waiting){
+  const pickup=run.pickups.find(p=>p.id===waiting.id);
+  if(!pickup?.collected)return {key:'pickup-'+waiting.id,text:
+   waiting.kind==='heart'?'Prends le cœur':waiting.kind==='flower'?'Prends la fleur':'Prends le bisou'};
+  return {key:'armed-'+waiting.id,text:weaponText(waiting.kind)};
+ }
+ return {key:'bastille',text:'Rejoins l’autre manif à Bastille'};
+}
 export function canNext(run){return run.finished||run.steps.includes(1);}
