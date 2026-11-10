@@ -10,6 +10,16 @@ export const CLIENTS=Object.freeze([
  Object.freeze({id:'c4',name:'Client 4',x:5.4,z:83,color:0x9792c8}),
  Object.freeze({id:'c5',name:'Client 5',x:-2.6,z:107,color:0xe0a17c})
 ]);
+// Dialogues courts propres aux cinq rencontres, sans changer le barème.
+export const SALE_DIALOGUES=Object.freeze({
+ c1:Object.freeze([{speaker:'client',text:'C’est combien ?'},{speaker:'vendeur',text:'20.'}]),
+ c2:Object.freeze([{speaker:'client',text:'C’est du bon ?'},{speaker:'vendeur',text:'C’est de la frappe.'}]),
+ c3:Object.freeze([{speaker:'client',text:'C’est trop cher.'},{speaker:'vendeur',text:'C’est le prix.'}]),
+ c4:Object.freeze([{speaker:'client',text:'Dépêche-toi, il y a des flics !'},{speaker:'vendeur',text:'T’inquiète.'}]),
+ c5:Object.freeze([{speaker:'client',text:'Il t’en reste ?'},{speaker:'vendeur',text:'Oui, tiens.'}])
+});
+export const POLICE_SHOUTS=Object.freeze(['¡Gilipollas!','¡Vuelve aquí!']);
+export const saleDialogue=id=>SALE_DIALOGUES[id]||null;
 export const PATROLS=Object.freeze([
  Object.freeze({id:'p1',homeX:2.6,homeZ:47,offset:0}),
  Object.freeze({id:'p2',homeX:-2.5,homeZ:91,offset:2.3})
