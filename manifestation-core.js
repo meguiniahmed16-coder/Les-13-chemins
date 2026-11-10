@@ -8,7 +8,7 @@
 export const OBJECTIFS=Object.freeze(['Le drapeau français','Camarades !','Les deux cortèges']);
 export const MAX_POINTS=30;
 export const GAME_ID='rendezvous-2002';
-export const STATUE=Object.freeze({x:6,z:5,footX:2.4,footZ:.35,topX:4.85,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
+export const STATUE=Object.freeze({x:6,z:5,footX:4.85,exitX:2.4,footZ:.35,topX:4.85,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
 export const FLAG=Object.freeze({x:4.1,z:12});
 export const WEAPONS=Object.freeze([
  Object.freeze({id:1,kind:'heart',icon:'♥',name:'Cœur',x:9.4,z:9}),
@@ -150,13 +150,13 @@ function animateClimb(run,t){
   // À la descente, une sortie latérale dégage le joueur du volume du socle.
   // Le passage de l'escalier au trottoir se fait progressivement, sans blocage.
   const exit=clamp((p-.65)/.35,0,1),sideStep=exit*exit*(3-2*exit);
-  run.x=STATUE.topX+(STATUE.footX-STATUE.topX)*sideStep;
+  run.x=STATUE.topX+(STATUE.exitX-STATUE.topX)*sideStep;
   run.z=STATUE.topZ+(STATUE.footZ-STATUE.topZ)*k;
   run.height=STATUE.topHeight*(1-k);
  }
  if(p>=1){
   run.climb=null;run.climbed=up;
-  run.x=up?STATUE.topX:STATUE.footX;
+  run.x=up?STATUE.topX:STATUE.exitX;
   run.z=up?STATUE.topZ:STATUE.footZ;
   run.height=up?STATUE.topHeight:0;
   run.events.push({type:up?'summit':'ground'});

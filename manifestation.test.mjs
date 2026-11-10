@@ -219,7 +219,7 @@ test('Après la descente le joystick permet de reculer puis contourner la statue
  assert.ok(yellow(r),'Descendre avec JAUNE');
  for(let i=0;i<30&&r.phase===2;i++)advance(r,.12,idle);
  assert.equal(r.phase,3);
- assert.equal(r.x,STATUE.footX,'Aucun saut latéral après descente');
+ assert.equal(r.x,STATUE.exitX,'Le pied du socle doit être dégagé après descente');
  assert.equal(r.z,STATUE.footZ,'Aucune téléportation vers Bastille');
  const startZ=r.z;
  for(let i=0;i<6;i++)advance(r,.12,{x:0,y:-1});
@@ -244,7 +244,7 @@ test('La descente sort du socle et permet d avancer sans contournement obligatoi
  for(let i=0;i<40&&r.phase===2;i++)advance(r,.12,idle);
  assert.equal(r.phase,3);
  assert.ok(r.x<STATUE.x-3.05,'Le joueur doit sortir hors de la collision du socle');
- assert.equal(r.x,STATUE.footX);
+ assert.equal(r.x,STATUE.exitX);
  const before=r.z;
  for(let i=0;i<24;i++)advance(r,.12,{x:0,y:1});
  assert.ok(r.z>before+10,'Avancer seul sur le joystick franchit maintenant la statue');
