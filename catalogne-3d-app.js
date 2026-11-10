@@ -475,7 +475,7 @@ function frame(ms){
 }
 async function initialize(){
  if(!renderer)return;
- bind();makePark();
+ makePark();
  try{
   const loader=new GLTFLoader();
   const models=await Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path)));
@@ -486,7 +486,6 @@ async function initialize(){
  $('start').textContent='Entrer dans le parc';
  $('overlayText').textContent='Michel t’a confié son matériel. Trouve cinq clients, vends avec ROUGE à proximité et évite les policiers avec JAUNE.';
  renderHUD();
- if(embedded)publish('catalogne:ready'); // sessionId peut être nul : répondre aussi sans id
  if(embedded)window.parent.postMessage({type:'catalogne:ready'},location.origin);
 }
 bind();
