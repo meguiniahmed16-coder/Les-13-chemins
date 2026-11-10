@@ -1,0 +1,54 @@
+/* Navigation commune aux pages publiques — La Tectonique des âmes. */
+nav.site-nav{
+  position:sticky;top:0;z-index:999;
+  display:block;width:100%;margin:0;padding:0;
+  background:#243e37;color:#fff4df;
+  border:0;border-bottom:3px solid #b68e54;
+  box-shadow:0 3px 15px #182c2540;
+  font:15px/1.65 'DM Sans',system-ui,sans-serif;
+}
+nav.site-nav .site-nav-inner{
+  max-width:1100px;margin:0 auto;padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+nav.site-nav .site-brand,nav.site-nav .site-brand:visited{
+  display:inline-block;white-space:nowrap;flex:none;
+  margin:0;padding:0;border:0;box-shadow:none;background:transparent;
+  font:600 21px Georgia,serif;color:#fff4df;text-decoration:none;
+}
+nav.site-nav .site-links{
+  display:flex;align-items:center;justify-content:flex-end;
+  flex-wrap:wrap;gap:5px;
+}
+nav.site-nav .site-links a,nav.site-nav .site-links a:visited{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:42px;margin:0;padding:8px 12px;border:0;border-radius:6px;
+  background:transparent;color:#fff4df;text-decoration:none;
+  font:600 14px/1.4 'DM Sans',system-ui,sans-serif;
+}
+nav.site-nav .site-links a:hover,
+nav.site-nav .site-links a:focus-visible{
+  background:#4a6251;outline:2px solid #c9ad7d;outline-offset:1px;
+}
+nav.site-nav .site-links a[aria-current="page"]{
+  background:#476958;color:#fff7e5;
+}
+.site-journey-status{
+  padding:7px 16px;text-align:right;background:#ecddc0;
+  color:#4e644f;font:600 11px/1.4 'DM Sans',system-ui,sans-serif;
+  letter-spacing:.05em;
+}
+@media(max-width:700px){
+  nav.site-nav .site-nav-inner{display:block;padding:10px 16px;}
+  nav.site-nav .site-brand{
+    display:block;text-align:center;margin:0 0 8px;
+  }
+  nav.site-nav .site-links{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;
+  }
+  nav.site-nav .site-links a,nav.site-nav .site-links a:visited{
+    min-width:0;min-height:42px;text-align:center;
+    padding:8px 4px;border:1px solid #657d70;
+    font-size:12px;
+  }
+}
