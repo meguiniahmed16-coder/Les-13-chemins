@@ -29,7 +29,12 @@
 .statue-buttons button:last-child{background:#2e5546;color:#f9edcf;border-color:#8ba48b}
 .statue-controls small{display:block;margin-top:8px;font-size:10px;color:#cbdcc9}
 .statue-controls[hidden]{display:none!important}.statue-controls{position:absolute;z-index:4;right:9px;bottom:62px;width:min(300px,calc(100% - 18px));background:#102d27ed;border:2px solid #efce8a;border-radius:12px;padding:9px;color:#fff5d6;box-shadow:0 4px 20px #071a18bb;pointer-events:auto}.statue-controls-title{font:700 10px/1.3 system-ui,sans-serif;letter-spacing:.06em;text-align:center;margin-bottom:6px}.statue-actions{display:flex;gap:7px}.statue-actions button{flex:1;min-width:0;min-height:48px;border-radius:7px;font:800 12px system-ui,sans-serif;touch-action:none}.statue-call{background:#cb4c3d;color:white;border:2px solid #ffddc6}.statue-down{background:#e9c982;color:#263c32;border:2px solid #fff0ca}.statue-arrows{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}.statue-arrows button{min-height:45px;border:1px solid #bed2bd;border-radius:6px;background:#375b4b;color:#fff9df;font-size:20px;touch-action:none}.statue-arrows button.held{background:#719a7d}.speech{position:absolute;z-index:4;top:35%;left:50%;transform:translateX(-50%);border:2px solid #b28d51;background:#fff2d7;color:#1a332e;padding:9px 17px;font:700 clamp(17px,2.5vw,29px) Georgia,serif;box-shadow:2px 4px 12px #0008;pointer-events:none}
-.overlay{position:absolute;inset:0;z-index:5;display:grid;place-items:center;padding:20px;background:#12271ee6;overflow:auto;text-align:center}.overlay-card{max-width:600px}.overlay h1{font:600 clamp(32px,6vw,61px)/1 Georgia,serif;color:#f7e5b7;margin:0 0 14px}.overlay p{line-height:1.7;color:#e0e6d6}.overlay .primary{background:#e9ca8c;color:#20372e;border:2px solid #fff0cd;border-radius:7px;padding:13px 24px;min-height:46px;font-weight:700;margin:7px}.overlay .secondary{background:#2c493f;color:#f8eed7;border:1px solid #d2b783;border-radius:6px;padding:12px 16px;min-height:44px;margin:7px}.result{font:700 32px Georgia,serif;color:#f6d68d}
+.overlay{position:absolute;inset:0;z-index:5;display:grid;place-items:center;padding:20px;background:#12271ee6;overflow:auto;text-align:center}.overlay-card{max-width:465px;width:100%}.overlay h1{font:600 clamp(23px,4.6vw,36px)/1.1 Georgia,serif;color:#f7e5b7;margin:0 0 9px}.overlay p{font-size:clamp(11px,2.6vw,13px);line-height:1.48;color:#e0e6d6;margin:6px auto}
+.intro-symbols{display:flex;justify-content:center;align-items:center;gap:clamp(14px,5vw,32px);margin:9px auto 8px}
+.intro-symbol{display:flex;flex-direction:column;align-items:center;gap:1px;color:#f8e7c4;font:700 10px system-ui,sans-serif}
+.intro-symbol svg{display:block;width:clamp(35px,9vw,49px);height:clamp(35px,9vw,49px);filter:drop-shadow(0 2px 3px #0005)}
+.overlay .intro-final{color:#f4d69a;font-weight:650}
+@media(max-width:650px){.overlay{padding:9px}.overlay-card{max-width:360px}.overlay .primary,.overlay .secondary{min-height:40px;padding:8px 13px;margin:4px;font-size:12px}}.overlay .primary{background:#e9ca8c;color:#20372e;border:2px solid #fff0cd;border-radius:7px;padding:13px 24px;min-height:46px;font-weight:700;margin:7px}.overlay .secondary{background:#2c493f;color:#f8eed7;border:1px solid #d2b783;border-radius:6px;padding:12px 16px;min-height:44px;margin:7px}.result{font:700 32px Georgia,serif;color:#f6d68d}
 .mission{display:flex;justify-content:space-between;align-items:center;gap:15px;font-size:12px;color:#f2e2bd;padding:12px 7px 0}.progress{display:flex;gap:9px}.step{width:33px;height:30px;display:grid;place-items:center;border:1px solid #7b9a80;border-radius:6px;color:#cfe0ce}.step.done{background:#bfdda9;color:#1d3b2a}
 .coherence{display:flex;align-items:center;gap:8px;font-size:11px;color:#d9e4d8;padding:10px 7px 0}.track{height:10px;background:#31453b;border:1px solid #687e69;border-radius:6px;flex:1;overflow:hidden}.track>span{height:100%;width:77%;display:block;background:#a9d8a2;transition:width .1s}.coherence strong{width:35px;text-align:right}
 .deck{display:flex;justify-content:center;align-items:center;gap:clamp(18px,6vw,85px);padding:13px 16px 4px;min-height:155px}.stick-zone{position:relative;width:135px;height:135px;border-radius:50%;border:7px solid #476052;background:radial-gradient(circle,#304a40 0 46%,#1a3029 47% 100%);touch-action:none;box-shadow:inset 0 6px 17px #0008,0 5px 14px #0008}
@@ -64,8 +69,8 @@
 .chapter-sky{top:22px;width:min(79%,610px)}
 @media(max-width:690px){.chapter-sky{top:19px;width:88%}.chapter-sky .chapter-arc{font-size:45px}}
 .hint,.crs-alert{display:none!important}
-.speech{top:auto;bottom:22%;left:50%;transform:translateX(-50%);width:max-content;max-width:64%;padding:4px 9px;border:1px solid #b18b4c;
- background:#fff2d8e9;border-radius:16px;font:700 12px/1.3 Georgia,serif;box-shadow:0 1px 4px #1125;pointer-events:none;white-space:normal;text-align:center;transition:opacity .16s linear}
+.speech{top:13%;bottom:auto;left:50%;transform:translateX(-50%);width:max-content;max-width:72%;padding:3px 8px;border:1px solid #b18b4c;
+ background:#fff2d8df;border-radius:12px;font:700 11px/1.25 system-ui,sans-serif;box-shadow:0 1px 3px #1124;pointer-events:none;white-space:normal;text-align:center;transition:opacity .16s linear}
 .statue-controls{top:auto;bottom:32%;left:auto;right:7px;width:142px;max-width:43%;padding:0;border:0;border-radius:16px;
  background:transparent;box-shadow:none;pointer-events:auto}
 .statue-controls strong,.statue-controls span,.statue-controls small,.statue-controls #statueDescend{display:none!important}
@@ -87,7 +92,7 @@
 .advance-bastille{bottom:91px;left:5px;max-width:44%;min-height:35px;padding:5px 9px;font-size:11px}
 @media(max-width:650px){.advance-bastille{bottom:89px;min-height:35px;max-width:46%;font-size:10px}
  .selection-ui{bottom:48px}.selection-ui button{min-height:38px;font-size:11px}
- .weapon-chip{bottom:45px}.speech{font-size:11px;max-width:65%}}
+ .weapon-chip{bottom:45px}.speech{font-size:10px;max-width:73%}}
 
 </style></head><body>
 <div class="wrap">
@@ -128,7 +133,19 @@
  </div>
  <small>Tu commences sur la statue : crie « Camarades ! », puis descends chercher le drapeau.</small>
 </div>
-<div class="overlay" id="overlay"><div class="overlay-card"><h1 id="overlayTitle">Camarades !</h1><p id="overlayText">① Sélectionne le drapeau 🇫🇷 puis prends-le avec JAUNE. ② Tourne dans l’avenue, monte sur la statue et crie « Camarades ! ». ③ Récupère ♥, ✿ et 💋 sur les trottoirs ; sélectionne chaque CRS avant de tirer avec ROUGE. Traverse ensuite la foule venant de Bastille.</p><button type="button" class="primary" id="start">Commencer le jeu</button><button type="button" class="secondary" id="replay" hidden>Rejouer</button><button type="button" class="secondary" id="quit">Retour au plateau</button></div></div></section>
+<div class="overlay" id="overlay"><div class="overlay-card"><h1 id="overlayTitle">Camarades !</h1><p id="overlayText">Prends le drapeau, monte sur la statue et crie « Camarades ! ». Récupère ensuite les trois symboles et vise les CRS.</p><div class="intro-symbols" aria-label="Les trois projectiles du jeu">
+ <div class="intro-symbol"><svg viewBox="0 0 64 64" role="img" aria-label="Cœur rouge"><path transform="translate(32 36) scale(50 -50)" d="M0 -.23 C-.24 -.04 -.46 .21 -.27 .4 C-.1 .56 0 .37 0 .31 C.05 .47 .19 .53 .3 .36 C.47 .16 .24 -.04 0 -.23 Z" fill="#ff3263" stroke="#ff9fba" stroke-width=".025"/></svg><span>Cœur</span></div>
+ <div class="intro-symbol"><svg viewBox="0 0 64 64" role="img" aria-label="Fleur à six pétales roses">
+  <ellipse cx="32" cy="19" rx="9" ry="14" fill="#ff67bd"/>
+  <ellipse cx="32" cy="19" rx="9" ry="14" fill="#f59ed5" transform="rotate(60 32 32)"/>
+  <ellipse cx="32" cy="19" rx="9" ry="14" fill="#ff67bd" transform="rotate(120 32 32)"/>
+  <ellipse cx="32" cy="19" rx="9" ry="14" fill="#f59ed5" transform="rotate(180 32 32)"/>
+  <ellipse cx="32" cy="19" rx="9" ry="14" fill="#ff67bd" transform="rotate(240 32 32)"/>
+  <ellipse cx="32" cy="19" rx="9" ry="14" fill="#f59ed5" transform="rotate(300 32 32)"/>
+  <circle cx="32" cy="32" r="9" fill="#ffde56"/>
+ </svg><span>Fleur</span></div>
+ <div class="intro-symbol"><svg viewBox="0 0 64 64" role="img" aria-label="Bisou en lèvres roses"><path transform="translate(32 31) scale(49 -49)" d="M-.46 0 C-.33 .16 -.20 .20 -.07 .08 C.02 .18 .12 .20 .22 .08 C.34 .15 .44 .10 .49 0 C.28 -.31 -.20 -.32 -.46 0 Z" fill="#ff3474" stroke="#ff96b4" stroke-width=".025"/></svg><span>Bisou</span></div>
+</div><p class="intro-final">Rejoins l’autre manifestation à Bastille.</p><button type="button" class="primary" id="start">Commencer le jeu</button><button type="button" class="secondary" id="replay" hidden>Rejouer</button><button type="button" class="secondary" id="quit">Retour au plateau</button></div></div></section>
 <div class="mission"><span>Trois épreuves · 10 points chacune</span><div class="progress"><span class="step" id="step1">1</span><span class="step" id="step2">2</span><span class="step" id="step3">3</span></div></div>
 <div class="coherence"><span id="meterLabel">COHÉSION DU CORTÈGE</span><div class="track"><span id="meter"></span></div><strong id="meterValue">77%</strong></div>
 <div class="deck" role="group" aria-label="Manette de jeu"><div><div class="stick-zone" id="stick" aria-label="Joystick de déplacement" role="group"><div class="stick-knob" id="knob"></div></div><span class="dir-label">DÉPLACEMENT</span></div>
@@ -137,4 +154,4 @@
 <p class="instructions">Joystick : avancer, reculer et tourner · JAUNE : agir · ROUGE : crier / lancer · ◎ Cible : sélectionner · ↻ : vue 360°.</p>
 <div class="under-actions"><button type="button" id="back">← Retour au plateau</button><button type="button" id="next">Suivant · Sans points →</button></div>
 </main><div class="footer">Les Treize Chemins · Personnages 3D Kenney Mini Characters (CC0) · Décors créés pour ce jeu · Chapitre 4, p. 59–60.</div></div>
-<script src="manifestation-runtime.js?v=20261110-avenue-degagee-v23"></script></body></html>
+<script src="manifestation-runtime.js?v=20261110-consignes-symboles-v24"></script></body></html>
