@@ -19,7 +19,7 @@ let joy={x:0,y:0},pad={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0
 let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0,avenueExtended=false,bastilleReady=false;
 let lastControlDisplay=0,renderFailureReported=false;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,adverseSymbols=null,extraFollowersActive=false;
-let redGuide=null,guideCaption=null,guideStop=0;
+let redGuide=null,guideStop=0;
 const GUIDE_STOPS=[{x:-2.8,z:-3},{x:0,z:4.2},{x:3.1,z:10}];
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
@@ -651,7 +651,7 @@ function sceneFor(phase){
  stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];
  policeGroups=[];heartBursts=[];heartAscents=[];escortInstances=null;rallyProps=null;
  pickableMeshes=[];pickupActors=[];allyEffects=[];adverseSymbols=null;selectionMarker=null;
- redGuide=null;guideCaption=null;guideStop=0;
+ redGuide=null;guideStop=0;
  avenueExtended=false;bastilleReady=false;
  const root=sceneGroup,sky=phase===1?0xbed5db:phase===2?0xb8cdd5:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
@@ -666,8 +666,7 @@ function sceneFor(phase){
   addSelectable(root,null,FLAG.x,2.1,FLAG.z,3.0,{type:'flag'});
   redGuide=person(5);redGuide.position.set(-3.1,0,-4.3);root.add(redGuide);
   flag(redGuide,'red',.25,1.04,.10,3.15);
-  guideCaption=roundedText('SUIS LE DRAPEAU ROUGE',4.65,'#b53038','#fff8e4');
-  root.add(guideCaption);
+  // Le personnage guide par son déplacement, sans inscription permanente.
  }else if(phase===2){
   buildings(root,-23,48,true);parisBackdrop(root,-23,48);parisStreetDetails(root,-23,48);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
@@ -698,10 +697,13 @@ function sceneFor(phase){
  stageInWorld=phase;
 }
 
-function messageFeedback(text,duration=2){speech.textContent=text;speech.hidden=false;showSpeechUntil=performance.now()/1000+duration;}
+function messageFeedback(text,duration=1.05){
+ speech.textContent=text;speech.hidden=false;speech.style.opacity='1';
+ showSpeechUntil=performance.now()/1000+Math.min(1.25,Math.max(.6,duration));
+}
 function refreshHUD(){
  const p=run.phase,n=run.steps.length;
- title.textContent=p===1?'① Suis le rouge':p===2?'② République':'③ Bastille';
+ title.textContent=p===1?'① Drapeau':p===2?'② République':'③ Bastille';
  label.textContent='';score.textContent=String(serverSteps.length*10);
  steps.forEach((el,i)=>{el.classList.toggle('done',i<n);el.textContent=i<n?'✓':String(i+1);});
  const pct=p===3?run.cohesion:100;
@@ -712,8 +714,7 @@ function refreshHUD(){
  const waiting=run.crsWaves.find(w=>w.status==='waiting');
  const needed=run.pickups.find(w=>w.id===waiting?.id&&!w.collected);
  const pickupTip=$('weaponPrompt');
- pickupTip.hidden=!(playing&&p===3&&needed&&!active);
- pickupTip.textContent=needed?'Récupère '+needed.icon+' '+needed.name+' avant les CRS':'';
+ pickupTip.hidden=true;pickupTip.textContent=''; // Consigne uniquement temporaire.
  const alert=$('crsAlert');
  alert.hidden=true;
  const chip=$('weaponChip'),sel=$('targetChip'),picker=$('chooseTarget');
@@ -749,21 +750,26 @@ function drain(){
     if(!embedded){serverSteps.push(e.step);}
     send('manifestation:progress',{step:e.step});
    }
-   if(e.step===3){messageFeedback('✓ Réunis !',2.5);}
-   else if(e.step===2)messageFeedback('✓ Camarades ! · Avance librement vers Bastille',1.8);
+   if(e.step===3)messageFeedback('✓ Réunis !',1.2);
+   else if(e.step===2)messageFeedback('Prends le ♥',1.0);
+   else if(e.step===1)messageFeedback('Monte sur la statue',1.15);
   }
   if(e.type==='flag:pickup')messageFeedback('✓ 🇫🇷',.75);
   if(e.type==='corner'){cornerTurn=1.55;}
-  if(e.type==='summit')messageFeedback('— Camarades !',.7);
+  if(e.type==='summit')messageFeedback('Crie « Camarades ! »',1.2);
   if(e.type==='shout'){voiceCamarades();}
-  if(e.type==='weapon:pickup')messageFeedback('✓ '+(WEAPONS.find(w=>w.kind===e.kind)?.icon||'')+' · Arme récupérée !',1.4);
+  if(e.type==='weapon:pickup')messageFeedback('✓ '+(WEAPONS.find(w=>w.kind===e.kind)?.icon||'')+' Prête !',.85);
   if(e.type==='projectile:fire'){sendProjectile(e.wave,e.officer,e.kind,e.duration);sound(710,.1);}
   if(e.type==='projectile:hit'){transformOfficer(e.wave,e.officer,e.kind);sound(920,.1);}
-  if(e.type==='crs:repelled')messageFeedback('✓ '+WEAPONS.find(w=>w.kind===e.kind)?.icon,.85);
+  if(e.type==='crs:incoming')messageFeedback('Choisis un CRS',1.0);
+  if(e.type==='crs:repelled'){
+   const next=run.pickups.find(p=>!p.collected);
+   messageFeedback(next?'Prends '+next.icon:'✓ Barrage franchi',1.05);
+  }
   if(e.type==='join:start')messageFeedback('✓ Ensemble !',.9);
   if(e.type==='won'){
    playing=false;paused=false;
-   messageFeedback('✓ Deux cortèges réunis !',3);
+   messageFeedback('✓ Cortèges réunis !',1.2);
    send('manifestation:won');
   }
  }
@@ -776,7 +782,7 @@ function start(){
  $('controlsStatus').hidden=true;
  $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;forwardHeld=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
- messageFeedback('Suis le drapeau rouge !',2.6);
+ messageFeedback('Prends le drapeau 🇫🇷',1.1);
 }
 function pause(){
  if(!playing)return;paused=!paused;
@@ -795,7 +801,7 @@ function sound(freq,length){
  o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+length+.02);}catch{}
 }
 function voiceCamarades(){
- messageFeedback('— Camarades !',.9);
+ messageFeedback('Descends de la statue',1.0);
  if(soundOn&&'speechSynthesis'in window){
   try{
    const q=new SpeechSynthesisUtterance('Camarades !');q.lang='fr-FR';q.rate=1.03;q.volume=.9;
@@ -946,10 +952,7 @@ function updateRedGuide(dt,time){
   }
  }
  walking(redGuide,time,moving?1:.02);
- if(guideCaption){
-  guideCaption.position.set(redGuide.position.x,4.45+Math.sin(time*2)*.10,redGuide.position.z);
-  guideCaption.quaternion.copy(camera.quaternion);
- }
+
 }
 function animateActors(dt,time){
  updateRedGuide(dt,time);
@@ -1031,7 +1034,11 @@ function render(ms){
   }
  }
  const time=ms/1000;
- if(showSpeechUntil<time)speech.hidden=true;
+ if(!speech.hidden){
+  const remaining=showSpeechUntil-time;
+  if(remaining<=0)speech.hidden=true;
+  else speech.style.opacity=String(Math.min(1,remaining/.22));
+ }
  animateActors(dt,time);
  if(cameraOrbitLeft>0&&playing){
   const step=Math.min(cameraOrbitLeft,Math.max(.012,dt)*2.6);
@@ -1088,7 +1095,7 @@ async function loadCharacters(){
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Suis le manifestant au drapeau rouge jusqu’au drapeau français : sélectionne celui-ci puis prends-le avec JAUNE. Monte sur la statue et crie « Camarades ! ». Ensuite, récupère ♥, ✿ et 💋 avant l’arrivée des CRS.';
+  $('overlayText').textContent='Prends le drapeau français avec JAUNE. Monte sur la statue et crie « Camarades ! ». Récupère ♥, ✿ et 💋 avant les CRS. De petites consignes apparaissent brièvement en jeu.';
   $('start').disabled=false;
   send('manifestation:ready');
  }catch(e){
