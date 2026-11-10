@@ -23,6 +23,8 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;pad
 .hud span{background:#143c34c9;padding:5px 8px;border:1px solid #a9bfa45e;border-radius:9px;font:700 12px system-ui,sans-serif}
 .hud strong{color:#ffe59a}
 .toast{position:absolute;z-index:4;left:50%;top:13%;transform:translateX(-50%);max-width:68%;padding:4px 10px;color:#234337;background:#fff0c9e8;border-radius:12px;border:1px solid #c59a63;box-shadow:0 2px 7px #1a382555;font:800 11px/1.3 system-ui;text-align:center;pointer-events:none;transition:opacity .16s linear}
+.sale-dialogue{position:absolute;z-index:5;left:50%;top:23%;transform:translateX(-50%);max-width:76%;width:max-content;padding:6px 12px;border:2px solid #f2cc8d;border-radius:14px;background:#fff0d5ee;color:#274437;box-shadow:0 3px 9px #16382655;font:800 clamp(11px,2.9vw,14px)/1.4 system-ui,sans-serif;text-align:center;pointer-events:none;transition:opacity .16s ease}
+.sale-dialogue[data-speaker="vendeur"]{background:#cfe5d8ee;border-color:#93c3a6;color:#1b4839}
 .status-bottom{position:absolute;z-index:3;bottom:9px;left:9px;right:9px;display:flex;justify-content:space-between;gap:6px;pointer-events:none}
 .status-bottom span{padding:4px 8px;background:#173c37d9;border-radius:10px;color:#ffefc7;font:700 11px system-ui}
 .target-ring{position:absolute;z-index:3;bottom:47px;right:8px;max-width:70%;padding:5px 9px;border:1px solid #fce292;border-radius:9px;background:#365d4be6;color:#fff4c4;font:700 11px system-ui;pointer-events:none}
@@ -68,6 +70,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;pad
 <canvas id="world" aria-label="Parc de la Ciutadella réinterprété en 3D"></canvas>
 <div class="hud"><span>◆ <strong id="clients">0</strong> / 5 clients</span><span id="points">+0 / 10 points</span></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<div id="saleDialogue" class="sale-dialogue" role="status" aria-live="polite" hidden></div>
 <div id="sellHint" class="target-ring" hidden>◆ Client à proximité · Rouge : vendre</div>
 <div class="status-bottom"><span id="policeStatus">Évite les policiers</span><span id="moveStatus">Explore les allées</span></div>
 <div id="overlay" class="overlay"><div class="overlay-card"><h1 id="overlayTitle">Cinq clients.<br>Garde ton calme.</h1>
@@ -83,5 +86,5 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;pad
 <div class="foot"><span>5 clients × 2 points · Les ventes restent acquises</span><button id="back" type="button">← Retour au plateau</button></div>
 </main>
 </div>
-<script src="catalogne-3d-runtime.js?v=barcelone3d-v1"></script>
+<script src="catalogne-3d-runtime.js?v=barcelone3d-v2"></script>
 </body></html>
