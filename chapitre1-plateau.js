@@ -49,7 +49,7 @@
  document.head.append(css);
  $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Chemin I · La salle d’attente ; chemin II · Le météore ; chemin III · Les rendez-vous (trois jeux des chapitres 4, 5 et 6 en préparation).';
+ if(intro)intro.textContent='Chemin I · La salle d’attente ; chemin II · Le météore ; chemin III · Les rendez-vous (Camarades !, Cyrano et un troisième chapitre en préparation).';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
@@ -59,7 +59,7 @@
  const thirdBlockName='Chemin III · Les rendez-vous';
  const thirdParts=Object.freeze([
   {chapter:4,title:'Drapeau rouge',scene:'République–Bastille · Camarades !',game:'jeu-manifestation.html'},
-  {chapter:5,title:'Passe-muraille',scene:'Scène à sélectionner'},
+  {chapter:5,title:'Passe-muraille',scene:'Cyrano · La planche vivante',game:'jeu-cyrano-bd.html'},
   {chapter:6,title:'Tu veux bien t’occuper de moi ?',scene:'Scène à sélectionner'}
  ]);
  const thirdExtract=["Julie est devant la télévision. Elle se retourne vers moi.","— T’es pas au courant ?","— Au courant de quoi ?","— Jean-Marie Le Pen est au deuxième tour.","Je reste là, effondré. Je n’étais pas particulièrement politisé, mais ce scénario me paraissait impossible. Je rentre chez moi. Impossible de dormir. Ça tourne à deux cents à l’heure dans ma tête. Qu’est-ce qui s’est passé ? Est-ce que mon pays est devenu à ce point facho sans que je m’en rende compte ? Ça ne colle pas avec ce que je vis. On ne m’attaque pas dans la rue. Je travaille. Je rencontre des gens. Je traverse Paris toute la journée. Ce n’est pas possible. Mais cette nuit-là, c’est comme ça que je la vivais. Et puisque je ne pouvais pas dormir, j’ai décidé de marcher. J’ai marché sans savoir exactement où j’allais.","Mes pas m’ont doucement conduit vers la place de la République. Au loin, j’aperçois un type avec un drapeau rouge. Il a l’air d’être à peu près dans le même état que moi. Lui non plus, visiblement, n’a pas réussi à aller se coucher. Il va quelque part. Alors je décide de le suivre. Son drapeau rouge, en revanche, ce n’est vraiment pas le mien. Moi, je suis un ancien militaire, fils d’un ancien militaire, serveur devenu chauffeur-livreur. Alors, quand j’aperçois un drapeau français sur le fronton d’une école, j’escalade ce qu’il faut pour le récupérer et le brandir à mon tour. Et nous voilà partis. Lui avec son drapeau rouge.","Quand j’arrive place de la République avec mon drapeau français, je découvre que des milliers de personnes ont eu la même idée. Les téléphones circulent. Des textos appellent au rassemblement :","« Rendez-vous République » et « Rendez-vous Bastille ». ","Et puis, à un moment, je ne sais absolument pas ce qui me prend. Je grimpe sur la statue de la République. Un autre rassemblement se forme à Bastille. Je décide d’aller le rejoindre. Il faut maintenant l’expliquer aux gens. Alors je crie :","— Camarades !","Le mot me surprend moi-même. Camarades ? Je n’ai jamais appelé personne « camarade » de ma vie. À ma surprise, les gens se taisent et m’écoutent. Il y a là peut-être deux mille personnes. Du haut de la statue, je leur annonce que le rassemblement de Bastille nous attend et leur propose de partir le rejoindre. La foule se met en mouvement et devient un cortège. Nous prenons la direction de Bastille.","Là-bas, les autres ont eu la même idée : ils viennent vers nous. Les deux cortèges se rencontrent à mi-chemin. Et là, quelque chose se produit.","Ce qui, quelques heures auparavant, ressemblait à une tragédie se transforme soudain en fête. Les gens sont heureux de se retrouver et d’être sortis de chez eux. Ils ne sont plus seuls devant leur télévision, sidérés. Nous sommes maintenant des milliers à nous regarder avec, au fond, quelque chose d’assez simple à nous dire : Toi aussi, tu es venu. La fête dure. Comme j’avais pris la parole sur la statue et que j’étais assez facilement reconnaissable avec ma casquette de Poulbot, à la Gavroche, une dizaine de personnes viennent vers moi.","— On va où maintenant ?","Intérieurement, je suis effaré. Pourquoi moi ? Je suis arrivé à Paris quelques mois plus tôt. Je connais tellement mal la ville que je me perds encore avec mon camion de chauffeur-livreur. Mais je ne me démonte pas. Je tends le bras.","— Par là.","Et nous partons par là. Voilà, à peu près, comment je suis devenu l’un des visages de ce mouvement parisien. Très vite, les journalistes arrivent. Ils demandent qui ils doivent interviewer. Les gens me désignent. Je ressens alors quelque chose qui ressemble à une mission. Comme citoyen. Comme patriote. Comme ancien militaire. Un Arabe avec une casquette de Gavroche, un drapeau français à la main, au milieu d’une manifestation contre le Front national. Ce drapeau était le mien, à cause de mon histoire, de celle de mon père et de mon passage dans l’armée. Ensuite, tout s’est emballé. Une sorte de boule de neige médiatique."];
@@ -167,7 +167,7 @@
    }
    third.append(makeSpan('chapter-card-kicker','CHEMIN III'),
     makeSpan('chapter-card-title','Les rendez-vous'),
-    makeSpan('chapter-card-place','Trois chapitres · Trois jeux'),
+    makeSpan('chapter-card-place','Trois chapitres · Deux jeux disponibles'),
     thirdRoute,makeSpan('chapter-card-status','À découvrir après le chemin II'),
     makeSpan('board-badge','✦'));
    third.onclick=()=>window.TreizeRendezVous?.open?.();
@@ -217,7 +217,7 @@
    third.setAttribute('aria-label',thirdBlockName+' · Chapitres 4, 5 et 6 · '+(allowed?'Lire la première bonne feuille':'À découvrir après le chemin II'));
    third.tabIndex=allowed?0:-1;
    third.querySelector('.chapter-card-status').textContent=allowed?
-    'Première bonne feuille disponible · 3 jeux à concevoir':'À découvrir après le chemin II';
+    'Première bonne feuille disponible · Camarades ! puis Cyrano':'À découvrir après le chemin II';
   }
   const n=state.selected;
   const canContinue=n<=3?flow.partDone(state,n):n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state):state.completed.includes(n);
