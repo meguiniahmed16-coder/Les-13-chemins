@@ -180,9 +180,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-jaune-descente-v15'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-jaune-descente-v15'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-jaune-descente-v15'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-joystick-descente-v16'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-joystick-descente-v16'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-joystick-descente-v16'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -209,6 +209,31 @@ test('Marches accessibles, cri, descente et reprise de marche',()=>{
  for(let i=0;i<36&&r.phase===2;i++)advance(r,.12,idle);
  assert.equal(r.phase,3);
  const z=r.z;advance(r,.12,walk);assert.ok(r.z>z);
+});
+test('Après la descente le joystick permet de reculer puis contourner la statue',()=>{
+ const r=phase2();r.x=STATUE.footX;r.z=STATUE.footZ;
+ assert.ok(yellow(r));
+ for(let i=0;i<25&&r.climb;i++)advance(r,.12,idle);
+ assert.equal(r.climbed,true);
+ assert.ok(yellow(r),'Descendre avec JAUNE');
+ for(let i=0;i<30&&r.phase===2;i++)advance(r,.12,idle);
+ assert.equal(r.phase,3);
+ assert.equal(r.x,STATUE.footX,'Aucun saut latéral après descente');
+ assert.equal(r.z,STATUE.footZ,'Aucune téléportation vers Bastille');
+ const startZ=r.z;
+ for(let i=0;i<6;i++)advance(r,.12,{x:0,y:-1});
+ assert.ok(r.z<startZ-2,'Le joueur peut reculer de la statue');
+ for(let i=0;i<7;i++)advance(r,.12,{x:-1,y:0});
+ assert.ok(r.x<STATUE.x-3.05,'Le joueur peut sortir du côté du socle');
+ for(let i=0;i<25;i++)advance(r,.12,{x:0,y:1});
+ assert.ok(r.z>8,'Le joueur peut contourner complètement la statue');
+ const before=r.z;advance(r,.12,{x:0,y:-1});
+ assert.ok(r.z<before,'Le joystick reste bidirectionnel après contournement');
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes('buildings(root,-7,138,true);statue(root);'),'La statue reste visible durant la marche');
+ const transition=js.slice(js.indexOf('if(phase!==run.phase){'),js.indexOf('const time=ms/1000;',js.indexOf('if(phase!==run.phase){')));
+ assert.ok(!transition.includes('joy={x:0,y:0}'),'Le joystick actif ne doit pas être réinitialisé à la descente');
+ assert.ok(!transition.includes('keys.clear()'),'Les touches maintenues restent actives');
 });
 test('Statue, sa cible et la sélection décalées ensemble',()=>{
  const js=read('manifestation-app.js');
@@ -257,5 +282,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-jaune-descente-v15'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-joystick-descente-v16'));
 });

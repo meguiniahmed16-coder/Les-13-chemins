@@ -546,7 +546,7 @@ function sceneFor(phase){
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
   addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8,{type:'statue'});
  }else{
-  buildings(root,-7,138,true);
+  buildings(root,-7,138,true);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
   for(const pick of WEAPONS)weaponPickup(root,pick);
@@ -829,7 +829,7 @@ function render(ms){
   advance(run,dt,changeDir());
   drain();
   if(phase!==run.phase){
-   if(run.phase===3){forwardHeld=false;joy={x:0,y:0};keys.clear();redHeld=false;}
+   if(run.phase===3){forwardHeld=false;redHeld=false;} // Garder le joystick et les touches pendant la transition.
    sceneFor(run.phase);
    refreshHUD();
   }

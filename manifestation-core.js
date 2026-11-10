@@ -42,7 +42,9 @@ export function progress(run,step){
   run.hasFlag=true;run.x=6;run.z=-7;run.facing=-Math.PI/2;
   run.events.push({type:'corner'});
  }else{
-  run.x=0;run.z=0;run.leaderZ=-7;run.cohesion=82;
+  // Continuité : la marche vers Bastille commence au pied de la statue,
+  // sans téléporter le joueur au milieu de la chaussée.
+  run.leaderZ=run.z-7.35;run.cohesion=82;
   run.events.push({type:'march'});
  }
  return true;
@@ -177,7 +179,7 @@ export function advance(run,dt,input={}){
   run.z=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?116:22);
   run.facing=Math.atan2(x,y);
  }
- if(run.phase===2&&run.z>=2&&run.z<=8&&Math.abs(run.x-STATUE.x)<3.05){
+ if((run.phase===2||run.phase===3)&&run.z>=2&&run.z<=8&&Math.abs(run.x-STATUE.x)<3.05){
   run.z=run.z<=5?1.94:8.1;
  }
  if(run.phase!==3)return;
