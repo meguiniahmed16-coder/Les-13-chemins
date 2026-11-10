@@ -329,7 +329,7 @@ test('Après la descente le joystick permet de reculer puis contourner la statue
  const before=r.z;advance(r,.12,{x:0,y:-1});
  assert.ok(r.z<before,'Le joystick reste bidirectionnel après contournement');
  const js=read('manifestation-app.js');
- assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('buildings(root,-23,48,true);statue(root);'),'La statue reste visible et la scène est conservée');
+ assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('parisStreetDetails(root,-23,48);statue(root);'),'La statue reste visible et la scène est conservée');
  const transition=js.slice(js.indexOf('if(phase!==run.phase){'),js.indexOf('const time=ms/1000;',js.indexOf('if(phase!==run.phase){')));
  assert.ok(!transition.includes('joy={x:0,y:0}'),'Le joystick actif ne doit pas être réinitialisé à la descente');
  assert.ok(!transition.includes('keys.clear()'),'Les touches maintenues restent actives');
@@ -421,6 +421,6 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
- assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
+ assert.ok(html.includes('JAUNE : agir'));
  assert.ok(html.includes('manifestation-runtime.js?v=20261110-paris-consignes-courtes-v22'));
 });
