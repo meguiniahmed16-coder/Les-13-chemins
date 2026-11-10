@@ -22,6 +22,8 @@ export const CRS_WAVES=Object.freeze([
 ]);
 export const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+// Une collision simple autour du socle, sans téléportation : chaque axe glisse librement.
+export const insideStatueBase=(x,z)=>x>STATUE.x-3.05&&x<STATUE.x+3.05&&z>1.85&&z<8.15;
 export const behindNarrator=(z,candidate,gap=4.6)=>Math.min(candidate,z-gap);
 export const activeWave=run=>run.crsWaves.find(w=>w.status==='active')||null;
 export function newRun(){
@@ -179,12 +181,12 @@ export function advance(run,dt,input={}){
  }
  if(moving){
   const speed=run.phase===3?5.6:4.9;
-  run.x=clamp(run.x+x/mag*speed*t,-8,8);
-  run.z=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?116:22);
+  const nextX=clamp(run.x+x/mag*speed*t,-8,8);
+  const nextZ=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?116:22);
+  // Vérifier les axes séparément pour marcher le long du socle, jamais se retrouver coincé.
+  if(!insideStatueBase(nextX,run.z))run.x=nextX;
+  if(!insideStatueBase(run.x,nextZ))run.z=nextZ;
   run.facing=Math.atan2(x,y);
- }
- if((run.phase===2||run.phase===3)&&run.z>=2&&run.z<=8&&Math.abs(run.x-STATUE.x)<3.05){
-  run.z=run.z<=5?1.94:8.1;
  }
  if(run.phase!==3)return;
  // The rear group gradually lags, then regroups when the player stops.

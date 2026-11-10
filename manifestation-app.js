@@ -16,7 +16,8 @@ const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
 let joy={x:0,y:0},pad={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,forwardHeld=false,lastHud=0;
-let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0;
+let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0,avenueExtended=false,bastilleReady=false;
+let lastControlDisplay=0,renderFailureReported=false;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,adverseSymbols=null,extraFollowersActive=false;
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
 const mat=(c,metal=0)=>new T.MeshStandardMaterial({color:c,roughness:.86,metalness:metal});
@@ -523,12 +524,43 @@ function markSelection(time){
  }else selectionMarker.visible=false;
 }
 
+function populateMarch(root){
+ // Ajouter la suite de la manifestation sans recréer le héros ni la caméra 3D.
+ for(const pick of WEAPONS)weaponPickup(root,pick);
+ createPoliceWaves(root);
+}
+function populateBastille(root){
+ if(bastilleReady)return;
+ bastilleReady=true;
+ bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
+ bastilleActors=makeCrowd(bastilleCrowd,16,102,{spread:4.8});
+ adverseSymbols=new T.Group();bastilleCrowd.add(adverseSymbols);
+ banner(adverseSymbols,'RÉPUBLIQUE — BASTILLE',0,97,7.4);
+ protestSign(adverseSymbols,'NON À LA HAINE',-4,103,3.1);
+ flag(adverseSymbols,'france',3,0,101,3.2);
+}
+function extendMarchScenery(){
+ if(run.phase!==3||!sceneGroup)return;
+ if(!avenueExtended&&run.z>=18){
+  avenueExtended=true;buildings(sceneGroup,46,138,true);
+ }
+ if(!bastilleReady&&run.z>=75)populateBastille(sceneGroup);
+}
 function sceneFor(phase){
+ if(phase===3&&stageInWorld===2&&sceneGroup){
+  // Correction mobile : garder intacte toute la scène de République.
+  // L'ancien remplacement complet pouvait figer le rendu et les commandes tactiles.
+  stageInWorld=3;
+  populateMarch(sceneGroup);
+  world.background.setHex(0xc3d4d9);world.fog.color.setHex(0xc3d4d9);
+  return;
+ }
  if(sceneGroup)world.remove(sceneGroup);
  sceneGroup=new T.Group();world.add(sceneGroup);
  stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];
  policeGroups=[];heartBursts=[];heartAscents=[];escortInstances=null;rallyProps=null;
  pickableMeshes=[];pickupActors=[];allyEffects=[];adverseSymbols=null;selectionMarker=null;
+ avenueExtended=false;bastilleReady=false;
  const root=sceneGroup,sky=phase===1?0xbed5db:phase===2?0xb8cdd5:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
@@ -546,17 +578,10 @@ function sceneFor(phase){
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
   addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8,{type:'statue'});
  }else{
-  buildings(root,-7,138,true);statue(root);
+  buildings(root,-23,48,true);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
-  for(const pick of WEAPONS)weaponPickup(root,pick);
-  bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
-  bastilleActors=makeCrowd(bastilleCrowd,16,102,{spread:4.8});
-  adverseSymbols=new T.Group();bastilleCrowd.add(adverseSymbols);
-  banner(adverseSymbols,'RÉPUBLIQUE — BASTILLE',0,97,7.4);
-  protestSign(adverseSymbols,'NON À LA HAINE',-4,103,3.1);
-  flag(adverseSymbols,'france',3,0,101,3.2);
-  createPoliceWaves(root);
+  populateMarch(root);
  }
  hero=person(2,{hero:true});root.add(hero);
  // Le drapeau est vraiment tenu par le personnage après sa récupération.
@@ -636,6 +661,8 @@ function drain(){
 function card(titleText,bodyText){overlay.hidden=false;$('overlayTitle').textContent=titleText;$('overlayText').textContent=bodyText;}
 function start(){
  if(!gameReady)return;
+ $('renderError').hidden=true;renderFailureReported=false;lastControlDisplay=0;
+ $('controlsStatus').hidden=true;
  $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;forwardHeld=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
 }
@@ -851,11 +878,16 @@ function animateActors(dt,time){
 }
 function render(ms){
  if(!renderer)return;
+ // Programmer l'image suivante avant les calculs : une exception isolée ne tue
+ // plus définitivement la boucle de rendu et toutes les commandes mobiles.
+ requestAnimationFrame(render);
+ try{
  const dt=Math.min(.12,(ms-previous)/1000||0);previous=ms;
  if(playing&&!paused){
   if(stageInWorld!==run.phase)sceneFor(run.phase);
   const phase=run.phase;
   advance(run,dt,changeDir());
+  extendMarchScenery();
   drain();
   if(phase!==run.phase){
    if(run.phase===3){forwardHeld=false;redHeld=false;} // Garder le joystick et les touches pendant la transition.
@@ -888,7 +920,22 @@ function render(ms){
  }
  renderer.render(world,camera);
  if(playing&&ms-lastHud>180){lastHud=ms;refreshHUD();}
- requestAnimationFrame(render);
+ if(playing&&run.phase===3&&ms-lastControlDisplay>300){
+  lastControlDisplay=ms;
+  const input=changeDir(),status=$('controlsStatus');
+  status.hidden=false;
+  const moving=Math.abs(input.x)+Math.abs(input.y)>.15;
+  status.textContent='JEU ACTIF · '+(moving?'DÉPLACEMENT':'MANETTE AU REPOS')+
+   ' · position '+run.x.toFixed(1)+' / '+run.z.toFixed(1);
+ }
+ }catch(error){
+  console.error('Camarades — erreur dans la boucle de jeu :',error);
+  if(!renderFailureReported){
+   renderFailureReported=true;
+   const warning=$('renderError');warning.hidden=false;
+   warning.textContent='⚠️ Erreur 3D : '+String(error?.message||error).slice(0,130)+'. Les commandes restent actives.';
+  }
+ }
 }
 
 async function loadCharacters(){

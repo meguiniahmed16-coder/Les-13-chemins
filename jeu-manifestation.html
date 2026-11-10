@@ -42,6 +42,9 @@
 .walking-pad button{min-width:64px;min-height:52px;border:2px solid #e9c984;border-radius:10px;background:#315b4d;color:#fff2d1;font:800 21px system-ui,sans-serif;touch-action:none;user-select:none}
 .walking-pad button.held,.walking-pad button:active{background:#6e9a7c;transform:translateY(2px)}
 .walking-pad[hidden]{display:none!important}
+.controls-status{max-width:520px;margin:4px auto 6px;text-align:center;font:600 10px system-ui,sans-serif;color:#dcecc2;letter-spacing:.02em}
+.render-error{position:absolute;z-index:8;left:4px;right:4px;bottom:6px;padding:9px;background:#722c2ce8;color:white;font:700 11px system-ui,sans-serif;pointer-events:none}
+.controls-status[hidden],.render-error[hidden]{display:none!important}
 @media(max-width:690px){.statue-controls{top:auto;right:5px;left:5px;bottom:46px;width:auto;padding:9px 10px}
 .statue-controls strong{font-size:12px}.statue-controls span{font-size:11px;margin:4px 0 6px}
 .statue-buttons{display:grid;grid-template-columns:1.4fr 1fr;gap:7px}
@@ -103,6 +106,7 @@
 <button type="button" id="advanceBastille" class="advance-bastille" hidden aria-label="Maintenir appuyé pour marcher vers Bastille">Maintenir pour avancer ▶</button>
 <button type="button" class="turn-360" id="turn360" aria-label="Faire tourner la caméra et le personnage à 360 degrés">↻ Vue 360°</button>
 <div id="crsAlert" class="crs-alert" role="status" aria-live="polite" hidden>🚨 CRS SUR LA CHAUSSÉE · ❤️ 0/4</div>
+<div id="renderError" class="render-error" role="alert" hidden></div>
 <div class="selection-ui" role="group" aria-label="Sélectionner puis agir">
  <button type="button" id="chooseTarget" aria-label="Sélectionner le drapeau, une arme ou un CRS">◎ Cible</button>
  <span id="targetChip" aria-live="polite">◎ —</span>
@@ -132,7 +136,8 @@
  <button type="button" data-move="up" aria-label="Avancer">▲</button>
  <button type="button" data-move="right" aria-label="Marcher à droite">▶</button>
 </div>
+<div id="controlsStatus" class="controls-status" role="status" hidden></div>
 <p class="instructions">Mobile : touche l'objet ou le CRS, ou utilise ◎ Cible ; JAUNE = prendre / monter / redescendre, ROUGE = crier / tirer / rassembler. Joystick = marcher. V = vue 360°. Clavier : Tab = choisir, Entrée = agir, R = lancer.</p>
 <div class="under-actions"><button type="button" id="back">← Retour au plateau</button><button type="button" id="next">Suivant · Sans points →</button></div>
 </main><div class="footer">Les Treize Chemins · Personnages 3D Kenney Mini Characters (CC0) · Décors créés pour ce jeu · Chapitre 4, p. 59–60.</div></div>
-<script src="manifestation-runtime.js?v=20261110-deblocage-tactile-v17"></script></body></html>
+<script src="manifestation-runtime.js?v=20261110-transition-sans-gel-v18"></script></body></html>

@@ -181,9 +181,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-deblocage-tactile-v17'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-deblocage-tactile-v17'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-deblocage-tactile-v17'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-transition-sans-gel-v18'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-transition-sans-gel-v18'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-transition-sans-gel-v18'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -235,6 +235,27 @@ test('Après la descente le joystick permet de reculer puis contourner la statue
  const transition=js.slice(js.indexOf('if(phase!==run.phase){'),js.indexOf('const time=ms/1000;',js.indexOf('if(phase!==run.phase){')));
  assert.ok(!transition.includes('joy={x:0,y:0}'),'Le joystick actif ne doit pas être réinitialisé à la descente');
  assert.ok(!transition.includes('keys.clear()'),'Les touches maintenues restent actives');
+});
+test('Le socle arrête la marche frontale mais laisse glisser latéralement',()=>{
+ const r=phase2();r.x=5;r.z=.35;
+ for(let i=0;i<35;i++)advance(r,.12,{x:0,y:1});
+ assert.ok(r.z<2,'Le socle ne doit pas être traversé');
+ const blockedZ=r.z;
+ for(let i=0;i<12;i++)advance(r,.12,{x:-1,y:0});
+ assert.ok(r.x<STATUE.x-3.05,'Déplacement latéral autorisé');
+ assert.equal(r.z,blockedZ);
+ for(let i=0;i<30;i++)advance(r,.12,{x:0,y:1});
+ assert.ok(r.z>8,'On peut contourner le socle sans téléportation');
+});
+test('La transition conserve le héros, la caméra et la boucle de rendu',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){'));
+ const transition=js.slice(js.indexOf('if(phase===3&&stageInWorld===2&&sceneGroup){'),js.indexOf('if(sceneGroup)world.remove(sceneGroup);',js.indexOf('if(phase===3&&stageInWorld===2&&sceneGroup){')));
+ assert.ok(transition.includes('populateMarch(sceneGroup)'));
+ assert.ok(!transition.includes('sceneGroup=new T.Group'));
+ assert.ok(js.includes('requestAnimationFrame(render);\n try{'));
+ assert.ok(js.includes("status.textContent='JEU ACTIF"));
+ assert.ok(js.includes("function extendMarchScenery(){"));
 });
 test('La descente sort du socle et permet d avancer sans contournement obligatoire',()=>{
  const r=phase2();r.x=4.85;r.z=.35;
@@ -303,5 +324,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-deblocage-tactile-v17'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-transition-sans-gel-v18'));
 });
