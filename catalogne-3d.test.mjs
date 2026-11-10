@@ -120,16 +120,17 @@ test('Plus de bâtiments ni banderole au parc : arbres, bancs, oiseaux et groupe
  assert.ok(!js.includes('sign(\'PARC DE LA CIUTADELLA\''));
  assert.ok(!js.includes('PLAÇA CATALUNYA'));
  assert.ok(!js.includes('Terrasse avec auvent'));
- assert.ok(js.includes('const total=156'));
+ assert.ok(js.includes('const capacity=1300'));
  assert.ok(js.includes('woodedPark(root)'));
- assert.ok(js.includes('const shrubCount=95'));
+ assert.ok(js.includes('function updateForestGrid(force=false)'));
  assert.ok(js.includes('birds=makeBirds(root)'));
  assert.ok(js.includes('for(let i=0;i<12;i++)'));
  assert.ok(js.includes('v.wingL.rotation.z=flap'));
  assert.ok(js.includes('const gatherings=['));
  assert.ok(js.includes('member:true'));
  assert.ok(js.includes('member:false'));
- assert.ok(js.includes('if(i%3!==0)bench(root,x,z,side)'));
+ assert.ok(js.includes('function decorateParkTile(tile,index)'));
+ assert.ok(js.includes('pathways(tile);decorateParkTile(tile,i)'));
 });
 test('Dialogues des cinq ventes : alternance client puis vendeur',()=>{
  const expected={
@@ -162,4 +163,51 @@ test('Policiers : interpellations et injures en espagnol maintenues',()=>{
  assert.ok(app.includes('const line=POLICE_SHOUTS['));
  assert.ok(app.includes("sayLine(line,'es-ES')"));
  assert.ok(app.includes('if(!saleConversation)'));
+});
+
+test('Le parc est continu après la cinquième vente et dans le sens inverse',()=>{
+ const r=newRun();r.phase='running';
+ r.x=0;r.z=115;
+ for(let i=0;i<500;i++)advance(r,.08,{x:0,z:1});
+ assert.ok(r.z>340,'Le joueur doit pouvoir continuer bien après la fin initiale');
+ for(let i=0;i<1000;i++)advance(r,.08,{x:0,z:-1});
+ assert.ok(r.z<0,'Aucune barrière invisible non plus derrière lui');
+ const app=read('catalogne-3d-app.js');
+ assert.ok(app.includes('const PARK_TILE=64'));
+ assert.ok(app.includes('parkPaths[i].position.z=(cell+i-4)*PARK_TILE'));
+ assert.ok(app.includes('function updateParkEnvironment()'));
+ assert.ok(app.includes('function updateForestGrid(force=false)'));
+ assert.ok(app.includes('parkGround.position.set(run.x,-.25,run.z)'));
+ assert.ok(app.includes('function decorateParkTile(tile,index)'));
+ assert.ok(!app.includes("sign(z===23?'PASSEIG'"));
+ assert.ok(!app.includes("'SORTIE'"));
+});
+test('Les policiers ont un uniforme complet immédiatement reconnaissable',()=>{
+ const app=read('catalogne-3d-app.js');
+ assert.ok(app.includes("if(role==='police'){"));
+ for(const marker of [
+  'const navy=0x193550,blue=0x2b618a',
+  "sign('POLICÍA',1.28",
+  "sign('POLICÍA',1.46",
+  'back.rotation.y=Math.PI',
+  'cube(group,0,.79,-.02,.73,.15,.49,black)',
+  'cyl(group,0,1.97,-.02,.315,.23,navy)',
+  'cube(group,.405,.91,-.05,.15,.31,.21,black)'
+ ])assert.ok(app.includes(marker),marker);
+});
+test('Les passants viennent vers le joueur et repartent : moitié dans chaque sens',()=>{
+ const app=read('catalogne-3d-app.js');
+ assert.ok(app.includes('for(let i=0;i<16;i++)'));
+ assert.ok(app.includes("heading:i%2===0?-1:1")||app.includes("heading=i%2===0?-1:1"));
+ assert.ok(app.includes('if(walkingNow)v.baseZ+=v.heading*v.speed*dt'));
+ assert.ok(app.includes('v.actor.group.rotation.y=v.heading<0?0:Math.PI'));
+ assert.ok(app.includes('if(v.baseZ<run.z-33)v.baseZ+=144'));
+ assert.ok(app.includes('else if(v.baseZ>run.z+111)v.baseZ-=144'));
+ assert.ok(app.includes('animateActor(v.actor,dt,walkingNow)'));
+ // Quatre groupes de 3 = 6 vers soi et 6 qui s'éloignent,
+ // seize promeneurs isolés = 8 vers soi et 8 qui s'éloignent.
+ const groups=[-1,1,1,-1].flatMap(heading=>Array(3).fill(heading));
+ const singles=Array.from({length:16},(_,i)=>i%2===0?-1:1);
+ assert.equal(groups.filter(h=>h<0).length+singles.filter(h=>h<0).length,14);
+ assert.equal(groups.filter(h=>h>0).length+singles.filter(h=>h>0).length,14);
 });
