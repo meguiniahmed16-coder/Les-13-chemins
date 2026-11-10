@@ -210,6 +210,58 @@ function buildings(root,start,end,light=false){
   root.add(mesh(gSphere,canopy,side*10.25,4.35,z+8,1.45,1.9,1.35));
  }
 }
+
+function parisBackdrop(root,start,end){
+ // Horizon parisien 360° à coût faible : seulement trois instanced meshes.
+ const count=36,facades=new T.InstancedMesh(gBox,mat(0xffffff),count);
+ const roofs=new T.InstancedMesh(gBox,mat(0xffffff),count);
+ const chimneys=new T.InstancedMesh(gBox,mat(0xffffff),count);
+ const obj=new T.Object3D(),center=(start+end)/2,radius=Math.min(92,Math.max(53,(end-start)*.54));
+ const shades=[0xd6c7b2,0xe7d6be,0xbcc5bd,0xc4beb9,0xe0d2c1,0xc8c4b5];
+ for(let i=0;i<count;i++){
+  const angle=i*2*Math.PI/count,rad=radius+(i%3)*3.5;
+  const x=Math.cos(angle)*rad,z=center+Math.sin(angle)*rad;
+  const h=13+rnd(i+12)*16,width=9+rnd(i+29)*5;
+  obj.rotation.set(0,-angle,0);
+  obj.position.set(x,h/2,z);obj.scale.set(width,h,9.6);obj.updateMatrix();
+  facades.setMatrixAt(i,obj.matrix);facades.setColorAt(i,new T.Color(shades[i%shades.length]));
+  obj.position.y=h+.65;obj.scale.set(width+1.3,1.3,10.4);obj.updateMatrix();
+  roofs.setMatrixAt(i,obj.matrix);roofs.setColorAt(i,new T.Color(i%3===0?0x526174:0x707d84));
+  obj.position.y=h+2;obj.position.x=x+Math.sin(angle)*2;
+  obj.scale.set(.7,1.75,.6);obj.updateMatrix();chimneys.setMatrixAt(i,obj.matrix);
+  chimneys.setColorAt(i,new T.Color(0xb39278));
+ }
+ root.add(facades,roofs,chimneys);
+}
+function parisStreetDetails(root,start,end){
+ // Bancs, bornes, commerces, stores, une entrée de métro et un kiosque.
+ for(let i=0,z=start+13;z<end-6;z+=27,i++){
+  const side=i%2===0?-1:1,x=side*9.7;
+  addBox(root,x,.47,z,1.7,.16,.50,0x395648);
+  addBox(root,x,.88,z-.19,1.7,.72,.14,0x3c5b4d);
+  for(const dx of [-.68,.68])addBox(root,x+dx,.24,z,.12,.46,.38,0x243c39);
+  for(const dz of [-2.3,2.3]){
+   root.add(mesh(gCyl,mat(0x364644),side*8.1,.47,z+dz,.14,.90,.14));
+   root.add(mesh(gSphere,mat(0x6f786e),side*8.1,.95,z+dz,.17,.14,.17));
+  }
+  const awning=addBox(root,side*11.25,3.1,z+5,1.8,.15,3.7,
+   [0xb64338,0x4c7768,0xe5b35b][i%3]);awning.rotation.z=side*.14;
+  for(const dz of [-1.4,0,1.4])addBox(root,side*11.25,2.98,z+5+dz,1.7,.035,.06,0xf4eedf);
+ }
+ const metroZ=Math.max(start+7,-8),mx=-9.65;
+ for(const side of [-1,1]){
+  addBox(root,mx+side*.98,.87,metroZ,.12,1.6,.12,0x3e6d57);
+  root.add(mesh(gSphere,mat(0x416f55),mx+side*.98,1.74,metroZ,.15,.15,.15));
+ }
+ const metro=roundedText('MÉTRO',2.1,'#ce3e36','#fff8e8');
+ metro.position.set(mx,2.03,metroZ);metro.rotation.y=Math.PI/2;root.add(metro);
+ const z=start+26,x=10.25;
+ addBox(root,x,1.35,z,2.3,2.65,1.5,0x375449);
+ addBox(root,x,2.83,z,2.8,.28,2.1,0x60745e);
+ addBox(root,x,1.49,z-.79,1.5,1.0,.09,0xe6d4aa);
+ const news=roundedText('JOURNAUX',2.2,'#ebc56e','#3e504a');
+ news.position.set(x,2.5,z-.87);root.add(news);
+}
 function statue(sceneRoot){
  const root=new T.Group();root.position.x=STATUE.x;sceneRoot.add(root);
  // Monument interprété : le joueur monte par un escalier visible sur le socle.
@@ -581,6 +633,7 @@ function extendMarchScenery(){
  if(run.phase!==3||!sceneGroup)return;
  if(!avenueExtended&&run.z>=18){
   avenueExtended=true;buildings(sceneGroup,46,138,true);
+  parisStreetDetails(sceneGroup,49,135);parisBackdrop(sceneGroup,49,139);
  }
  if(!bastilleReady&&run.z>=75)populateBastille(sceneGroup);
 }
@@ -604,7 +657,7 @@ function sceneFor(phase){
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
   // Rue adjacente : un seul manifestant-guide conduit le joueur vers le drapeau.
-  buildings(root,-20,38,true);
+  buildings(root,-20,38,true);parisBackdrop(root,-20,38);parisStreetDetails(root,-20,38);
   addBox(root,0,-.07,22,27,.1,7,0x787a77); // carrefour vers l'avenue
   addBox(root,11.63,3.8,11,.1,7,6,0xd5c5a7);
   const school=roundedText('ÉCOLE',2.6);
@@ -616,12 +669,12 @@ function sceneFor(phase){
   guideCaption=roundedText('SUIS LE DRAPEAU ROUGE',4.65,'#b53038','#fff8e4');
   root.add(guideCaption);
  }else if(phase===2){
-  buildings(root,-23,48,true);statue(root);
+  buildings(root,-23,48,true);parisBackdrop(root,-23,48);parisStreetDetails(root,-23,48);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
   addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8,{type:'statue'});
  }else{
-  buildings(root,-23,48,true);statue(root);
+  buildings(root,-23,48,true);parisBackdrop(root,-23,48);parisStreetDetails(root,-23,48);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
   populateMarch(root);
