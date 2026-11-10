@@ -1,0 +1,30 @@
+name: Diagnostic temporaire lien Higgsfield C01
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/higgsfield-c01-check.yml']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lire les métadonnées publiques du lien C01
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const url='https://higgsfield.ai/s/v6gQCtg6rHA';
+          for(const agent of ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128 Safari/537.36','GitHub-Actions C01 Media Check']){
+            try{
+              const r=await fetch(url,{headers:{'user-agent':agent,accept:'text/html,application/xhtml+xml'},redirect:'follow',signal:AbortSignal.timeout(12000)});
+              const text=await r.text();
+              console.log('STATUS',r.status,'FINAL_URL',r.url,'TYPE',r.headers.get('content-type'),'LEN',text.length);
+              const meta=[...text.matchAll(/<meta[^>]+(?:og:video|twitter:player|og:image|og:url|twitter:player:stream)[^>]+>/gi)].slice(0,15);
+              console.log('META',JSON.stringify(meta.map(m=>m[0].slice(0,800))));
+              const urls=[...text.matchAll(/https?:\\?\\?\/\/[^"'<>\\s]{10,400}?(?:\\.mp4|\\.m3u8|\\.webm)[^"'<>\\s]*/gi)].slice(0,15);
+              console.log('VIDEOS',JSON.stringify(urls.map(m=>m[0].slice(0,650))));
+              const ids=[...text.matchAll(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)].slice(0,15);
+              console.log('IDS',JSON.stringify([...new Set(ids.map(m=>m[0]))]));
+              console.log('HTML_START',text.slice(0,300).replace(/\s+/g,' '));
+              break;
+            }catch(e){console.log('FETCH_ERROR',String(e).slice(0,300))}
+          }
+          JS
