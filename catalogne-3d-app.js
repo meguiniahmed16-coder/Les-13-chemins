@@ -294,13 +294,14 @@ function createCharacters(root){
   const actor=makeActor(i+1,'police');actor.group.position.set(p.homeX,0,p.homeZ);root.add(actor.group);
   return {actor,oldX:p.homeX,oldZ:p.homeZ};
  });
- // Promeneurs répartis en groupes de deux ou trois, plus quelques solitaires.
- // Leurs déplacements restent décoratifs et ne bloquent pas les ventes.
+ // Trafic piéton à double sens, 14 visiteurs vers le joueur et 14 qui repartent.
+ // Les quatre petits groupes marchent réellement, même lorsqu'ils discutent.
  people=[];
  const gatherings=[
-  {x:-9.2,z:22,number:3},{x:9.0,z:43,number:3},
-  {x:-9.2,z:68,number:3},{x:8.9,z:91,number:3},
-  {x:-8.8,z:115,number:3}
+  {x:-8.7,z:23,number:3,heading:-1},
+  {x:8.8,z:49,number:3,heading:1},
+  {x:-8.7,z:77,number:3,heading:1},
+  {x:8.8,z:103,number:3,heading:-1}
  ];
  let personIndex=0;
  for(let g=0;g<gatherings.length;g++){
@@ -308,20 +309,20 @@ function createCharacters(root){
   for(let j=0;j<group.number;j++){
    const actor=makeActor(14+personIndex,'walker');
    const angle=j*2*Math.PI/group.number;
-   const x=group.x+Math.cos(angle)*.85,z=group.z+Math.sin(angle)*.95;
+   const x=group.x+Math.cos(angle)*.8,z=group.z+Math.sin(angle)*.86;
    actor.group.position.set(x,0,z);root.add(actor.group);
    people.push({actor,x,z,baseX:x,baseZ:z,member:true,group:g,index:j,
-    seed:personIndex,speed:.20+rnd(personIndex+5)*.2});
+    heading:group.heading,seed:personIndex,speed:1.15+rnd(personIndex+5)*.35});
    personIndex++;
   }
  }
- for(let i=0;i<11;i++){
+ for(let i=0;i<16;i++){
   const actor=makeActor(i+40,'walker');
-  const x=(i%2===0?-1:1)*(8.2+rnd(i+12)*1.5);
-  const z=5+i*10.7;
+  const x=(i%2===0?-1:1)*(8.05+rnd(i+12)*1.3);
+  const z=6+i*7.05,heading=i%2===0?-1:1;
   actor.group.position.set(x,0,z);root.add(actor.group);
-  people.push({actor,x,z,baseX:x,baseZ:z,member:false,seed:personIndex++,
-   speed:(i%2?1:-1)*(.65+rnd(i+51)*.4)});
+  people.push({actor,x,z,baseX:x,baseZ:z,member:false,
+   heading,seed:personIndex++,speed:1.1+rnd(i+51)*.5});
  }
 }
 function resetClientVisuals(){
@@ -349,29 +350,25 @@ function updateActors(dt,time){
   v.oldX=p.x;v.oldZ=p.z;
  });
  people.forEach(v=>{
-  let moving=run.phase==='running'&&!paused;
-  if(v.member){
-   // Ils conversent et changent doucement de place au sein du petit groupe.
-   v.x=v.baseX+Math.sin(time*.42+v.seed)*.42;
-   v.z=v.baseZ+Math.cos(time*.32+v.seed)*.35;
-   v.actor.group.rotation.y=Math.sin(time*.38+v.index)*.55;
-   moving=moving&&Math.sin(time*.8+v.seed)>.25;
-  }else{
-   if(moving){
-    v.z+=v.speed*dt;
-    if(v.z<1)v.z=119;if(v.z>119)v.z=1;
-   }
-   v.actor.group.rotation.y=v.speed>0?0:Math.PI;
-  }
+  const walkingNow=run.phase==='running'&&!paused;
+  if(walkingNow)v.baseZ+=v.heading*v.speed*dt;
+  // Repositionner discrètement ceux qui ont quitté le champ.
+  // Le cortège piéton continue après le dernier client, sans scène vide.
+  if(v.baseZ<run.z-33)v.baseZ+=144;
+  else if(v.baseZ>run.z+111)v.baseZ-=144;
+  v.x=v.baseX+(v.member?Math.sin(time*.38+v.seed)*.18:0);
+  v.z=v.baseZ+(v.member?Math.cos(time*.34+v.seed)*.15:0);
+  // La moitié des promeneurs sont de face, l'autre marche dans l'autre sens.
+  v.actor.group.rotation.y=v.heading<0?0:Math.PI;
   v.actor.group.position.set(v.x,0,v.z);
-  animateActor(v.actor,dt,moving);
+  animateActor(v.actor,dt,walkingNow);
  });
  birds.forEach(v=>{
   const phase=time*.37+v.seed*.78;
   v.group.position.set(
-   Math.sin(phase)*9+Math.sin(v.seed*2.19)*7,
+   run.x+Math.sin(phase)*9+Math.sin(v.seed*2.19)*7,
    5.9+v.seed%4+Math.sin(time*1.2+v.seed)*.55,
-   9+(time*(2.3+v.seed%3)+v.seed*17)%111);
+   run.z-12+(time*(2.3+v.seed%3)+v.seed*17)%94);
   v.group.rotation.y=Math.sin(phase)*.43;
   const flap=Math.sin(time*10+v.seed*1.8)*.60;
   v.wingL.rotation.z=flap;
