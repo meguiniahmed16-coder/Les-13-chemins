@@ -336,6 +336,12 @@ function updateActors(dt,time){
  hero.group.position.set(run.x,0,run.z);hero.group.rotation.y=run.facing;
  animateActor(hero,dt,Math.hypot(joy.x,joy.z)>.12||keys.size>0||run.dodgeTime>0);
  clientActors.forEach((v,i)=>{
+  // Les clients ne tournent pas tous le dos : orientations variées, puis
+  // regard vers le narrateur lorsqu'il s'approche pour une vente.
+  const near=distance(run,v.client)<7.5;
+  v.actor.group.rotation.y=near?
+   Math.atan2(run.x-v.client.x,run.z-v.client.z)+Math.PI:
+   i%2===0?0:Math.PI;
   animateActor(v.actor,dt,false);
   v.diamond.position.y=3.0+Math.sin(time*3+i)*.22;
   v.diamond.rotation.y=time*1.6;
