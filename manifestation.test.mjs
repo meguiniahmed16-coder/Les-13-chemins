@@ -77,15 +77,15 @@ test('Maintenir ROUGE envoie des cœurs à la vague présente, jamais aux autres
  assert.equal(r.crsWaves[1].hearts,0);
  assert.equal(r.crsWaves[2].hearts,0);
 });
-test('Sans repousser les CRS, atteindre Bastille ne donne pas la victoire',()=>{
+test('Sans repousser les CRS, leur barrage empêche de rejoindre Bastille',()=>{
  const r=procession();
- for(let i=0;i<190&&r.z<99;i++)advance(r,.12,walk);
- assert.ok(r.z>=99);
- for(let i=0;i<70;i++)advance(r,.12,rest);
+ for(let i=0;i<190;i++)advance(r,.12,walk);
+ assert.ok(r.z<=CRS_WAVES[0].trigger+1.3);
+ assert.equal(r.crsWaves[0].status,'active');
  assert.equal(r.finished,false);
  assert.equal(r.phase,3);
- assert.ok(r.crsWaves.some(w=>w.status!=='repelled'));
 });
+
 test('Après les trois attaques et le regroupement final, victoire et 30 points',()=>{
  const r=procession();
  for(const wave of CRS_WAVES)repelWave(r,wave);
@@ -96,12 +96,20 @@ test('Après les trois attaques et le regroupement final, victoire et 30 points'
  assert.equal(progress(r,3),false);
  assert.equal(r.events.filter(e=>e.type==='progress').length,3);
 });
-test('La cohésion ne bloque jamais le joystick, même pendant une attaque',()=>{
+test('La cohésion ne bloque pas le joystick, les CRS empêchent seulement de franchir leur ligne',()=>{
  const r=procession();toWave(r,CRS_WAVES[0]);
  r.cohesion=0;const before=r.z;
+ advance(r,.12,{x:1,y:0,red:false});
+ assert.ok(r.x>0,'On peut se déplacer latéralement');
  advance(r,.12,walk);
- assert.ok(r.z>before);
+ assert.ok(r.z<=CRS_WAVES[0].trigger+1.3);
+ const wave=r.crsWaves[0];
+ for(let i=0;i<30&&wave.status==='active';i++)advance(r,.12,rally);
+ assert.equal(wave.status,'repelled');
+ advance(r,.12,walk);
+ assert.ok(r.z>before,'La marche reprend après les cœurs');
 });
+
 test('Le décor ajoute les CRS avec casques, boucliers et matraques',()=>{
  const src=read('manifestation-app.js');
  assert.ok(src.includes('function riotOfficer('));
@@ -110,6 +118,7 @@ test('Le décor ajoute les CRS avec casques, boucliers et matraques',()=>{
  assert.ok(src.includes('const helmet=mesh('));
  assert.ok(src.includes('const shield=mesh('));
  assert.ok(src.includes('const baton=mesh('));
+ assert.ok(src.includes("const sign=roundedText('CRS · ♥ ♥ ♥'"));
  assert.ok(src.includes('createPoliceWaves(root)'));
  assert.ok(src.includes("e.type==='crs:incoming'"));
  assert.ok(src.includes("e.type==='crs:repelled'"));
@@ -122,14 +131,14 @@ test('Le bouton ROUGE projette de vrais cœurs animés et fait fuir les policier
  assert.ok(src.includes("if(e.type==='heart'){sendHearts(e.wave)"));
  assert.ok(src.includes("wave.status==='active'"));
  assert.ok(src.includes('elapsed<2.2'),'Les CRS fuient après l’envoi des cœurs');
- assert.ok(src.includes('Math.max(run.z+4.1,display.anchor-approaching*4.1)'));
+ assert.ok(src.includes('Math.max(run.z+6.3,display.anchor-approaching*4.1)'));
  assert.ok(src.includes('updatePoliceWaves(t)'));
 });
 test('La manifestation de Bastille apparaît ensemble et seulement à la fin',()=>{
  const src=read('manifestation-app.js');
  assert.ok(src.includes('bastilleCrowd.visible=run.z>=93'));
  assert.ok(!src.includes('distantCrowd(bastilleCrowd,'),'The other group must use the same models, not boxes');
- assert.ok(src.includes('bastilleActors=makeCrowd(bastilleCrowd,20,102,{reveal:true,spread:5.6})'));
+ assert.ok(src.includes('bastilleActors=makeCrowd(bastilleCrowd,16,102,{spread:4.8})'));
  assert.ok(src.includes("banner(bastilleCrowd,'RÉPUBLIQUE — BASTILLE'"));
  assert.ok(src.includes("protestSign(bastilleCrowd,'NON À LA HAINE'"));
  assert.ok(!src.includes("banner(root,'RÉPUBLIQUE — BASTILLE'"));
@@ -181,7 +190,8 @@ test('Les CRS sont VISIBLES sur la chaussée et arrivent en formation pendant le
  assert.ok(js.includes('for(let i=0;i<4;i++)'),'Quatre CRS par attaque');
  assert.ok(js.includes('officer.actor.position.x=(i-1.5)*1.45'),'Formation centrée sur la rue');
  assert.ok(js.includes('officer.actor.scale.setScalar(1.25)'),'Visibles sur téléphone');
- assert.ok(js.includes('Math.max(run.z+4.1,display.anchor-approaching*4.1)'));
+ assert.ok(js.includes('run.z=Math.min(run.z,active.trigger+1.3)'),'CRS bloquent réellement la chaussée');
+ assert.ok(js.includes('Math.max(run.z+6.3,display.anchor-approaching*4.1)'));
  assert.ok(js.includes('policeAlert.hidden=!currentWave'));
  assert.ok(html.includes('id="crsAlert"'));
  assert.ok(html.includes('CRS SUR LA CHAUSSÉE'));
@@ -189,8 +199,19 @@ test('Les CRS sont VISIBLES sur la chaussée et arrivent en formation pendant le
 test('Le cortège de Bastille est de même qualité graphique que celui de République',()=>{
  const js=read('manifestation-app.js');
  assert.ok(js.includes('crowdActors=makeCrowd(root,16,-7.5'),'Même fonction de personnages');
- assert.ok(js.includes('bastilleActors=makeCrowd(bastilleCrowd,20,102,{reveal:true,spread:5.6})'));
+ assert.ok(js.includes('bastilleActors=makeCrowd(bastilleCrowd,16,102,{spread:4.8})'));
  assert.ok(!js.includes('distantCrowd(bastilleCrowd,'),'Pas de foule en cubes pour Bastille');
  assert.ok(js.includes('walking(a.guy,t,.66)'),'Le cortège adverse avance');
  assert.ok(js.includes('bastilleCrowd.visible=run.z>=93'),'La foule et les banderoles arrivent ensemble');
+});
+
+test('Après avoir repoussé le groupe, le barrage s’ouvre',()=>{
+ const r=procession(),wave=toWave(r,CRS_WAVES[0]);
+ for(let i=0;i<20;i++)advance(r,.12,walk);
+ const blocked=r.z;
+ assert.ok(blocked<=CRS_WAVES[0].trigger+1.3);
+ for(let i=0;i<30&&wave.status==='active';i++)advance(r,.12,rally);
+ assert.equal(wave.status,'repelled');
+ advance(r,.12,walk);
+ assert.ok(r.z>blocked);
 });

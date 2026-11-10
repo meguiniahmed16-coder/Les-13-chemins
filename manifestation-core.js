@@ -85,6 +85,9 @@ export function advance(run,dt,input={}){
   if(active){active.status='active';active.startedAt=run.clock;active.cooldown=0;run.events.push({type:'crs:incoming',wave:active.id});}
  }
  if(active){
+  // Le barrage occupe la chaussée : seules les vagues repoussées laissent passer.
+  // Le joueur peut toujours reculer ou se déplacer sur les côtés.
+  run.z=Math.min(run.z,active.trigger+1.3);
   active.cooldown=Math.max(0,active.cooldown-t);
   if(input.red&&active.cooldown<=0){
    active.hearts++;

@@ -300,23 +300,31 @@ function banner(root,text,x,z,width=6.0){
 }
 
 function riotOfficer(index){
- // Low-poly 3D officer with recognisable dark helmet, visor, baton and shield.
- // No injury or physical combat: the hearts make the unit withdraw.
+ // Silhouette 3D dédiée. L'ancien corps Kenney était mis à l'échelle,
+ // mais casque et bouclier ne l'étaient pas : ils finissaient sur le torse.
  const actor=new T.Group();
- const personBody=person(310+index);
- personBody.rotation.y=Math.PI;actor.add(personBody);
- const vest=mesh(gBox,mat(0x273e54),0,1.08,0,.39,.48,.32);actor.add(vest);
- const belt=mesh(gBox,mat(0x1b2634),0,.77,0,.41,.08,.32);actor.add(belt);
- const helmet=mesh(gSphere,mat(0x1c2b3d),0,1.68,0,.27,.20,.25);actor.add(helmet);
- const visor=mesh(gBox,new T.MeshStandardMaterial({color:0x829ca8,transparent:true,opacity:.75,roughness:.33}),
-   0,1.61,-.21,.32,.16,.03);actor.add(visor);
- // Front-facing shield, toward the player's path, plus a baton in the other hand.
- const shield=mesh(gBox,mat(0x667d8c,.18),-.42,1.13,-.34,.82,1.04,.11);actor.add(shield);
- const label=roundedText('CRS',.66,'#e4ebed','#152b3d');label.rotation.y=Math.PI;
- label.position.set(-.42,1.14,-.415);actor.add(label);
- const baton=mesh(gCyl,mat(0x17202a),.43,1.22,-.2,.035,.42,.035);
- baton.rotation.z=-.26;actor.add(baton);
- return {actor,personBody};
+ const navy=mat(0x233449),dark=mat(0x151e29),skin=mat(0xc99b7c);
+ addBox(actor,0,1.13,0,.55,.78,.35,0x314861);
+ addBox(actor,0,.73,0,.54,.15,.34,0x19283b);
+ for(const side of [-1,1]){
+  addBox(actor,side*.16,.40,0,.19,.73,.23,0x1d2e43);
+  addBox(actor,side*.16,.10,-.08,.23,.19,.38,0x18222b);
+  const arm=mesh(gCyl,navy,side*.37,1.15,-.03,.105,.65,.105);
+  arm.rotation.z=side*.12;actor.add(arm);
+ }
+ actor.add(mesh(gSphere,skin,0,1.76,0,.19,.21,.18));
+ const helmet=mesh(gSphere,dark,0,1.91,0,.28,.21,.27);
+ actor.add(helmet);
+ const visor=mesh(gBox,new T.MeshStandardMaterial({color:0x9fb5c4,transparent:true,opacity:.86,roughness:.21}),
+  0,1.79,-.245,.39,.20,.045);
+ actor.add(visor);
+ const shield=mesh(gBox,mat(0x71899a,.16),-.48,1.12,-.41,.78,1.12,.12);
+ actor.add(shield);
+ const label=roundedText('CRS',.67,'#e1e9ec','#16283e');
+ label.rotation.y=Math.PI;label.position.set(-.48,1.18,-.50);actor.add(label);
+ const baton=mesh(gCyl,dark,.49,1.10,-.28,.041,.74,.041);
+ baton.rotation.z=-.22;actor.add(baton);
+ return {actor};
 }
 function createPoliceWaves(root){
  policeGroups=[];
@@ -329,6 +337,10 @@ function createPoliceWaves(root){
    officer.actor.position.x=(i-1.5)*1.45;
    group.add(officer.actor);actors.push(officer);
   }
+  const sign=roundedText('CRS · ♥ ♥ ♥',4.6,'#24405b','#fff3d9');
+  sign.rotation.y=Math.PI;
+  sign.position.set(0,3.4,-.10);
+  group.add(sign);
   policeGroups.push({id:wave.id,group,actors,anchor:wave.anchor});
  }
 }
@@ -342,7 +354,7 @@ function updatePoliceWaves(t){
    display.group.visible=true;
    const approaching=Math.max(0,run.clock-wave.startedAt);
    display.group.position.set(Math.sin(t*.6+wave.id)*.25,0,
-    Math.max(run.z+4.1,display.anchor-approaching*4.1));
+    Math.max(run.z+6.3,display.anchor-approaching*4.1));
   }else{
    const elapsed=run.clock-wave.repelledAt;
    display.group.visible=elapsed<2.2;
@@ -352,8 +364,8 @@ function updatePoliceWaves(t){
    }
   }
   if(display.group.visible)for(const officer of display.actors){
-   walking(officer.personBody,t,.87);
-   officer.actor.rotation.y=wave.status==='repelled'?-0.5*Math.sign(wave.id%2?1:-1):0;
+   officer.actor.position.y=Math.sin(t*5+officer.actor.position.x)*.045;
+   officer.actor.rotation.y=wave.status==='repelled'?Math.PI*.6:0;
   }
  }
 }
@@ -420,9 +432,9 @@ function sceneFor(phase){
   crowdSymbols(root,true);
   // The other procession appears TOGETHER, not as early, orphaned banners.
   bastilleCrowd=new T.Group();bastilleCrowd.visible=false;root.add(bastilleCrowd);
-  // The opposite demonstration uses the SAME rigged animated Kenney models
-  // as the nearby followers, rather than the crude distantCrowd boxes.
-  bastilleActors=makeCrowd(bastilleCrowd,20,102,{reveal:true,spread:5.6});
+  // Même variété de personnages Kenney, mêmes proportions et même densité
+  // que les manifestants qui suivent le joueur.
+  bastilleActors=makeCrowd(bastilleCrowd,16,102,{spread:4.8});
   banner(bastilleCrowd,'RÉPUBLIQUE — BASTILLE',0,97,7.4);
   protestSign(bastilleCrowd,'NON À LA HAINE',-4,103,3.1);
   flag(bastilleCrowd,'france',3,0,101,3.2);
