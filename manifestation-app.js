@@ -15,7 +15,7 @@ let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlag
 const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
-let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,forwardHeld=false,lastHud=0;
+let joy={x:0,y:0},pad={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,forwardHeld=false,lastHud=0;
 let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,adverseSymbols=null,extraFollowersActive=false;
 const rnd=(n)=>{let x=Math.sin(n*289.117+21.7)*43931.883;return x-Math.floor(x);};
@@ -590,6 +590,7 @@ function refreshHUD(){
   run.selected?('◎ '+names[run.selected.type]):'◎ —';
  picker.hidden=!(playing&&!paused&&(availableTargets(run).length>0));
  const march=$('advanceBastille');march.hidden=!(playing&&p===3);
+ $('walkingPad').hidden=!(playing&&!paused&&p===3);
  const panel=$('statueControls');panel.hidden=!(playing&&p===2&&run.climbed&&!run.statueShouted&&!run.climb);
  $('red').textContent=p===3?(WEAPONS.find(w=>w.kind===run.weapon)?.icon||'●'):'●';
  $('yellowLabel').textContent=p===1?'PRENDRE':p===2?(run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'):'RAMASSER';
@@ -613,7 +614,7 @@ function drain(){
     send('manifestation:progress',{step:e.step});
    }
    if(e.step===3){messageFeedback('✓ Réunis !',2.5);}
-   else if(e.step===2)messageFeedback('✓ Camarades ! · Contourne le socle par la gauche',1.8);
+   else if(e.step===2)messageFeedback('✓ Camarades ! · Avance librement vers Bastille',1.8);
   }
   if(e.type==='flag:pickup')messageFeedback('✓ 🇫🇷',.75);
   if(e.type==='corner'){cornerTurn=1.55;}
@@ -685,8 +686,8 @@ function changeDir(){
  const left=Number(keys.has('arrowleft')||keys.has('q')||keys.has('a'));
  const fwd=Number(keys.has('arrowup')||keys.has('z')||keys.has('w'));
  const back=Number(keys.has('arrowdown')||keys.has('s'));
- const manualY=clamp(joy.y+fwd-back,-1,1);
- return {x:-clamp(joy.x+right-left,-1,1),
+ const manualY=clamp(joy.y+pad.y+fwd-back,-1,1);
+ return {x:-clamp(joy.x+pad.x+right-left,-1,1),
   y:clamp(manualY+Number(run.phase===3&&forwardHeld),-1,1),
   red:redHeld||keys.has('r')};
 }
@@ -704,6 +705,34 @@ function bindControls(){
  function release(e){if(e&&pointerId!==e.pointerId)return;pointerId=null;joy={x:0,y:0};knob.style.transform='translate(0,0)';}
  for(const name of ['pointerup','pointercancel'])zone.addEventListener(name,release);
  zone.addEventListener('lostpointercapture',()=>release());
+ // Secours tactile : flèches indépendantes du joystick, maintenables ou cliquables.
+ // Une pression courte avance réellement, même si le navigateur perd le pointer capture.
+ const heldPad=new Map();
+ const padVectors={left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:1},down:{x:0,y:-1}};
+ function syncPad(){
+  const dirs=[...heldPad.values()].map(item=>item.dir);
+  pad={x:Number(dirs.includes('right'))-Number(dirs.includes('left')),
+   y:Number(dirs.includes('up'))-Number(dirs.includes('down'))};
+ }
+ for(const button of document.querySelectorAll('#walkingPad [data-move]')){
+  const dir=button.dataset.move;
+  button.addEventListener('pointerdown',e=>{
+   if(!playing||paused||run.phase!==3)return;
+   e.preventDefault();
+   try{button.setPointerCapture(e.pointerId);}catch{}
+   heldPad.set(e.pointerId,{dir,button});button.classList.add('held');syncPad();
+  });
+  function releasePad(e){
+   if(e && heldPad.get(e.pointerId)?.button!==button)return;
+   for(const [id,item] of heldPad)if(item.button===button)heldPad.delete(id);
+   button.classList.remove('held');syncPad();
+  }
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,releasePad);
+  button.addEventListener('click',()=>{
+   if(!playing||paused||run.phase!==3)return;
+   advance(run,.12,padVectors[dir]);drain();refreshHUD();
+  });
+ }
  const yellowBtn=$('yellow');
  yellowBtn.addEventListener('pointerdown',e=>{e.preventDefault();yellowBtn.classList.add('held');yellowPress();});
  for(const event of ['pointerup','pointercancel'])yellowBtn.addEventListener(event,()=>yellowBtn.classList.remove('held'));
@@ -737,7 +766,7 @@ function bindControls(){
   if(!has&&key==='v'&&playing){cameraOrbit=0;cameraOrbitLeft=Math.PI*2;}
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();redHeld=false;forwardHeld=false;up();release();});
+ window.addEventListener('blur',()=>{keys.clear();redHeld=false;forwardHeld=false;heldPad.clear();pad={x:0,y:0};up();release();});
  $('start').onclick=()=>{if(paused){paused=false;overlay.hidden=true;return;}start();};
  $('replay').onclick=start;
  $('quit').onclick=()=>send('manifestation:close');

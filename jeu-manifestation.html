@@ -37,6 +37,11 @@
 .face-buttons{display:flex;gap:22px}.face-unit{text-align:center}.round{width:78px;height:78px;display:grid;place-items:center;border-radius:50%;border:4px solid #e7c98d;box-shadow:0 7px 0 #13241e,0 9px 16px #0008;touch-action:none;font:800 28px Arial}.yellow{background:radial-gradient(circle at 32% 27%,#fff2ab,#e5bb32 72%);color:#5a481b}.red{background:radial-gradient(circle at 33% 28%,#ff9b86,#c94739 70%);border-color:#ffd5c4;color:#fff8f0}.round:active,.round.held{transform:translateY(4px);box-shadow:0 3px 0 #13241e}.red.awaiting{border-color:#fff7c4;box-shadow:0 0 0 6px #fff4ce33,0 7px 0 #13241e;animation:readyCall 1.2s ease-in-out infinite}@keyframes readyCall{50%{box-shadow:0 0 0 10px #fff4ce15,0 7px 0 #13241e}}@media(prefers-reduced-motion:reduce){.red.awaiting{animation:none}}.face-unit small{display:block;color:#ecdfbe;font-size:11px;margin-top:10px;font-weight:700}.instructions{max-width:700px;margin:10px auto 0;text-align:center;color:#bbccb9;font-size:11px}
 .under-actions{display:flex;justify-content:space-between;gap:10px;margin:15px 0 0}.under-actions button{flex:1;min-width:0;background:#2a483d;color:#fff1d8;border:1px solid #b9a174;padding:12px;border-radius:7px;min-height:45px;font-weight:700}.under-actions #next{background:#e9ca8c;color:#27382d}
 .footer{text-align:center;color:#96ad9a;font-size:10px;padding-top:10px}
+.walking-pad{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:8px auto 2px;max-width:420px}
+.walking-pad span{flex-basis:100%;text-align:center;color:#f4db9e;font:700 10px system-ui,sans-serif;letter-spacing:.08em}
+.walking-pad button{min-width:64px;min-height:52px;border:2px solid #e9c984;border-radius:10px;background:#315b4d;color:#fff2d1;font:800 21px system-ui,sans-serif;touch-action:none;user-select:none}
+.walking-pad button.held,.walking-pad button:active{background:#6e9a7c;transform:translateY(2px)}
+.walking-pad[hidden]{display:none!important}
 @media(max-width:690px){.statue-controls{top:auto;right:5px;left:5px;bottom:46px;width:auto;padding:9px 10px}
 .statue-controls strong{font-size:12px}.statue-controls span{font-size:11px;margin:4px 0 6px}
 .statue-buttons{display:grid;grid-template-columns:1.4fr 1fr;gap:7px}
@@ -120,7 +125,14 @@
 <div class="coherence"><span id="meterLabel">COHÉSION DU CORTÈGE</span><div class="track"><span id="meter"></span></div><strong id="meterValue">77%</strong></div>
 <div class="deck" role="group" aria-label="Manette de jeu"><div><div class="stick-zone" id="stick" aria-label="Joystick de déplacement" role="group"><div class="stick-knob" id="knob"></div></div><span class="dir-label">DÉPLACEMENT</span></div>
 <div class="face-buttons"><div class="face-unit"><button type="button" id="yellow" class="round yellow" aria-label="Jaune : agir et grimper">▲</button><small id="yellowLabel">AGIR / GRIMPER</small></div><div class="face-unit"><button type="button" id="red" class="round red" aria-label="Rouge : appeler et rassembler">●</button><small id="redLabel">RASSEMBLER</small></div></div></div>
+<div id="walkingPad" class="walking-pad" role="group" aria-label="Flèches de marche après la statue" hidden>
+ <span>APRÈS LA STATUE · COMMANDES DE MARCHE</span>
+ <button type="button" data-move="left" aria-label="Marcher à gauche">◀</button>
+ <button type="button" data-move="down" aria-label="Reculer">▼</button>
+ <button type="button" data-move="up" aria-label="Avancer">▲</button>
+ <button type="button" data-move="right" aria-label="Marcher à droite">▶</button>
+</div>
 <p class="instructions">Mobile : touche l'objet ou le CRS, ou utilise ◎ Cible ; JAUNE = prendre / monter / redescendre, ROUGE = crier / tirer / rassembler. Joystick = marcher. V = vue 360°. Clavier : Tab = choisir, Entrée = agir, R = lancer.</p>
 <div class="under-actions"><button type="button" id="back">← Retour au plateau</button><button type="button" id="next">Suivant · Sans points →</button></div>
 </main><div class="footer">Les Treize Chemins · Personnages 3D Kenney Mini Characters (CC0) · Décors créés pour ce jeu · Chapitre 4, p. 59–60.</div></div>
-<script src="manifestation-runtime.js?v=20261110-joystick-descente-v16"></script></body></html>
+<script src="manifestation-runtime.js?v=20261110-deblocage-tactile-v17"></script></body></html>
