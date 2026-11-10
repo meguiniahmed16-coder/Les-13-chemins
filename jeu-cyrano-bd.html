@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d2528"><title>Cyrano — Planche vivante · Les Treize Chemins</title>
+<style>
+:root{--ink:#181f24;--gold:#eacfa0;--paper:#f6ead3;--night:#101920;--blue:#9ab7ba;--stroke:#826c52}
+*{box-sizing:border-box}
+[hidden]{display:none!important}html{scroll-behavior:smooth}
+html,body{margin:0;min-height:100%;background:#10191d;color:#f3ede1;font:14px/1.4 system-ui,Arial,sans-serif}
+button,textarea{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,textarea:focus-visible{outline:3px solid #f4c778;outline-offset:3px}
+.wrap{max-width:1150px;margin:auto;padding:clamp(5px,1.7vw,22px)}
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 3px 10px}
+.brand{color:#eacb92;text-decoration:none;font:600 clamp(17px,2.8vw,25px) Georgia,serif}
+.header small{font-size:10px;color:#acb8b8;letter-spacing:.11em}
+.introhead{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:9px}
+.introhead h1{margin:0;font:600 clamp(23px,4.4vw,42px)/1.08 Georgia,serif;letter-spacing:.01em;color:#f2dcbb}
+.introhead p{margin:0;font:500 11px Georgia,serif;color:#becbc6;text-align:right;max-width:170px}
+.stage{position:relative;width:100%;height:clamp(380px,64dvh,700px);overflow:hidden;background:radial-gradient(circle at 45% 45%,#2b3638,#0b1217 83%);border:1px solid #ac8a5d;border-radius:12px;isolation:isolate;box-shadow:0 18px 45px #05090e99;touch-action:pan-y}
+.stage::before{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,#0a101744 0%,transparent 20%,transparent 58%,#080f16ac 100%);pointer-events:none}
+.board{position:absolute;left:0;top:0;width:1020px;height:1180px;transform-origin:0 0;will-change:transform;transition:transform 1250ms cubic-bezier(.23,.74,.18,1);background:#171d20;border-radius:6px;box-shadow:0 10px 60px #0009}
+.panel{position:absolute;overflow:hidden;background:#293338;border:5px solid #e5d1ae;border-radius:4px;box-shadow:0 4px 8px #000a;cursor:pointer;transition:filter .35s,border-color .35s}
+.panel[data-room="b"]{border-color:#bbced0}.panel[data-room="wall"]{border-color:#bdab93}
+.panel.active{border-color:#ffd58e;box-shadow:0 0 0 3px #fff2bd99,0 6px 23px #000b}
+.panel .photo{position:absolute;inset:0;background-repeat:no-repeat;background-color:#1b2021;background-size:400% 200%;filter:contrast(1.05) saturate(.86)}
+.panel .photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#060c133e,transparent 30%,#060c1322)}
+.panel .tag{position:absolute;top:9px;left:10px;background:#111f21aa;color:#fff2dc;padding:4px 8px;font:700 10px system-ui;letter-spacing:.065em;border-radius:2px}
+.panel .index{position:absolute;bottom:9px;right:11px;color:#f5e6c8bb;font:700 13px Georgia,serif}
+.stage-top{position:absolute;left:10px;right:10px;top:9px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:7px;pointer-events:none}
+.stage-top span{padding:5px 8px;border:1px solid #d8be9170;border-radius:8px;background:#142027d1;color:#f0dfc5;font:700 11px system-ui;white-space:nowrap}
+.speech{position:absolute;z-index:6;left:50%;bottom:13px;transform:translateX(-50%);width:min(92%,860px);min-height:88px;max-height:42%;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:12px 16px;border-radius:18px 18px 18px 5px;border:2px solid #e4c28b;background:#fcf0dff3;color:#2c302e;box-shadow:0 7px 25px #0009;transition:opacity .3s,transform .35s}
+.speech[data-who="cedric"]{background:#dae7e6f5;border-color:#90b6c1;border-radius:18px 18px 5px 18px}
+.speech[data-who="ambiance"]{background:#1c2b31ec;color:#f4e6d0;border-color:#c0a780;border-radius:10px}
+.speech .who{font:800 10px system-ui;letter-spacing:.115em;color:#805b30}
+.speech[data-who="cedric"] .who{color:#315968}
+.speech[data-who="ambiance"] .who{color:#e4d2b5}
+.speech .words{font:500 clamp(15px,2.6vw,22px)/1.4 Georgia,serif;white-space:pre-wrap;overflow-wrap:anywhere}
+.speech .caret{display:inline-block;width:2px;height:1em;background:currentColor;margin-left:3px;vertical-align:-.12em;animation:blink .7s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.story-intro{position:absolute;inset:0;z-index:10;display:grid;place-items:center;background:#0f1a21dd;padding:14px}
+.intro-card{width:min(480px,93%);padding:clamp(16px,4vw,35px);border:1px solid #d6b989;background:#142128f3;border-radius:12px;box-shadow:0 10px 28px #0008;text-align:center}
+.intro-card h2{font:600 clamp(34px,7vw,56px) Georgia,serif;color:#f1d3a0;margin:0 0 9px}
+.intro-card p{font:14px/1.55 Georgia,serif;color:#e6e3d6}
+.intro-card small{display:block;color:#c2c9c7;margin:11px 0}
+.control-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:11px 2px 6px;flex-wrap:wrap}
+.buttons{display:flex;flex-wrap:wrap;gap:7px}
+button{min-height:44px;border:1px solid #7e8b87;border-radius:9px;background:#2a3e42;color:#f6f0df;padding:8px 13px;font-weight:750}
+button:disabled{opacity:.42;cursor:not-allowed}
+button.primary{color:#212e30;border-color:#eecb94;background:#e6c593}
+button.secondary{background:#46504b;border-color:#a9a48c}
+button.pill{border-radius:25px}
+.counter{font-size:11px;color:#b9c6c4;text-align:right}
+.readnote{font:11px/1.5 system-ui;color:#b4c1c0;margin:7px 4px 14px}
+.readnote b{color:#dcc295}
+.paper-section{margin-top:20px;padding:clamp(12px,3vw,26px);border:1px solid #897756;border-radius:12px;background:linear-gradient(145deg,#26363b,#252b2b);box-shadow:0 13px 30px #0008}
+.paper-section h2{font:600 clamp(24px,4vw,36px) Georgia,serif;margin:0;color:#f0d3a0}
+.paper-section p{color:#e7dccb;line-height:1.6}
+.letters-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0 18px}
+.letters-progress span{padding:7px 3px;text-align:center;border:1px solid #738582;border-radius:8px;color:#bed0c5;background:#354443;font-size:11px;font-weight:800}
+.letters-progress span.active{border-color:#e5c491;background:#635740;color:#fae6c2}
+.letters-progress span.done{background:#3a6751;color:#e6f5de;border-color:#8cc0a2}
+.required{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 13px}
+.required .word{border:1px solid #d0af70;background:#514d3d;color:#f9e6c4;border-radius:18px;padding:6px 11px;font-weight:800;font-size:12px}
+.required .word.found{background:#315d48;border-color:#a8d3a5;color:#e8ffe8}
+.letter-paper{background:#faefdc;border:8px double #dfc9a3;color:#2b302d;border-radius:9px;padding:10px;box-shadow:inset 0 1px 9px #714e351d}
+.letter-paper label{display:block;margin:0 5px 7px;color:#7f6146;font:700 12px Georgia,serif}
+#letter{display:block;width:100%;min-height:clamp(260px,42dvh,510px);padding:11px 14px;border:1px solid #d5c3a6;border-radius:5px;resize:vertical;color:#282d29;background:#fff9ed;font:16px/1.68 Georgia,serif}
+#letter::placeholder{color:#9d8c78}
+.editor-meta{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#75674f;margin:6px 4px 0}
+.editor-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.feedback{background:#2a3636;border:1px solid #ceac76;border-radius:9px;padding:13px;color:#efe0c8}
+.feedback ul{margin:6px 0;padding-left:20px}
+.feedback.ok{background:#325a49;border-color:#b1d8ad;color:#f0fff0}
+.written{border:1px solid #d9be89;padding:20px;border-radius:12px;background:#233c37;text-align:center}
+.written h2{font:600 30px Georgia,serif;color:#f4d7ac}
+footer{color:#899f9c;text-align:center;font:11px/1.6 system-ui;margin:14px 0 8px}
+@media(max-width:590px){
+ .wrap{padding:6px 5px}.header small{display:none}
+ .stage{height:clamp(395px,68dvh,650px)}
+ .stage-top span{font-size:10px}.speech{padding:10px 12px;max-height:48%;min-height:88px}
+ .control-row{gap:6px}.control-row .buttons{width:100%;justify-content:space-between}
+ button{padding:8px 10px;font-size:12px}.counter{width:100%;text-align:left}
+ .introhead p{font-size:9px}.paper-section{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){.board{transition:none}.speech .caret{animation:none}}
+</style></head><body>
+<div class="wrap">
+ <header class="header">
+  <a class="brand" href="jeu.html">✦ Les Treize Chemins</a>
+  <small>CHAPITRE V · PASSE-MURAILLE · CYRANO</small>
+ </header>
+ <main>
+  <div class="introhead"><h1>Cyrano — la planche vivante</h1><p>Deux cellules. Un mur. Des lettres d’amour.</p></div>
+  <section id="story" aria-label="Bande dessinée photographique animée de Cyrano">
+   <div class="stage" id="stage" tabindex="0">
+    <div id="board" class="board" aria-label="Planche de huit vignettes photoréalistes"></div>
+    <div class="stage-top"><span id="panelTitle">UNE PLANCHE, DEUX CELLULES</span><span id="frameNumber">INTRODUCTION</span></div>
+    <div class="speech" id="speech" data-who="ambiance" hidden>
+     <div class="who" id="speechWho">NARRATION</div>
+     <div class="words"><span id="speechText"></span><span class="caret" id="caret"></span></div>
+    </div>
+    <div class="story-intro" id="storyIntro">
+     <div class="intro-card">
+      <h2>Cyrano</h2>
+      <p>Un homme trouve les mots. Un autre les recopie pour la femme qu’il aime. Entre les deux, un mur de prison.</p>
+      <small>Roman-photo interactif · 14 répliques et interludes de la V17 · images réalistes et caméra mobile</small>
+      <button type="button" class="primary" id="startStory">▶ Entrer dans la planche</button>
+     </div>
+    </div>
+   </div>
+   <div class="control-row">
+    <div class="buttons">
+      <button id="prev" type="button">← Avant</button>
+      <button id="next" type="button" class="primary">Réplique suivante →</button>
+      <button id="overview" type="button">▦ La planche</button>
+      <button id="autoplay" type="button" aria-pressed="false">▶ Auto</button>
+    </div>
+    <div class="buttons">
+      <button id="sound" type="button" aria-pressed="false">Son OFF</button>
+      <button id="toLetters" type="button" class="secondary">✎ Écrire les lettres</button>
+    </div>
+    <span class="counter" id="counter">Choisis « Entrer dans la planche »</span>
+   </div>
+   <p class="readnote"><b>Mode d’emploi :</b> les vignettes restent photographiques et immobiles ; seuls la caméra et les textes bougent. Appuie sur « Réplique suivante » pour poursuivre le dialogue ou active la lecture automatique.</p>
+  </section>
+  <section id="letters" class="paper-section" hidden aria-label="Jeu des trois lettres d'amour">
+   <div class="letters-progress" id="lettersProgress"><span class="active">I · Rencontre</span><span>II · Distance</span><span>III · Promesse</span></div>
+   <h2 id="letterTitle">Lettre I — La rencontre</h2>
+   <p id="letterPrompt">Écris une véritable lettre d’amour en intégrant les cinq mots imposés.</p>
+   <div class="required" id="required" aria-label="Cinq mots à intégrer"></div>
+   <div class="letter-paper">
+    <label for="letter">La feuille de Cyrano</label>
+    <textarea id="letter" spellcheck="true" placeholder="Mon amour,&#10;&#10;Je t’écris pour te dire…"></textarea>
+    <div class="editor-meta"><span id="letterCount">0 mot · minimum 65</span><span id="dictationInfo">Clavier ou microphone</span></div>
+   </div>
+   <div class="editor-actions">
+    <button id="dictate" type="button">🎙 Dicter</button>
+    <button id="copyLetter" type="button">Copier</button>
+    <button id="checkLetter" class="primary" type="button">✓ Vérifier la lettre</button>
+    <button id="nextLetter" class="primary" type="button" hidden>Lettre suivante →</button>
+    <button id="returnFilm" type="button">↩ Revoir la BD</button>
+   </div>
+   <div id="letterFeedback" class="feedback" role="status" aria-live="polite" hidden></div>
+   <p class="readnote">Les lettres restent sur ton appareil pendant la partie. La vérification est locale : elle contrôle les mots imposés, la forme et la dimension amoureuse du texte, mais ne prétend pas juger sa valeur littéraire.</p>
+  </section>
+  <section id="complete" class="written" hidden>
+   <h2>Trois lettres. Un passage dans le mur.</h2>
+   <p>La correspondance peut continuer. Les trois lettres ont été acceptées.</p>
+   <button id="replay" type="button">↻ Recommencer</button>
+   <button id="finish" type="button" class="primary">← Retour aux treize chemins</button>
+  </section>
+ </main>
+ <footer>Les Treize Chemins · « Cyrano », chapitre 5 de la V17 · personnages mis en scène à partir d’images de préproduction</footer>
+</div>
+<script type="module" src="cyrano-bd-app.js?v=cyrano-bd-v1"></script>
+</body></html>
