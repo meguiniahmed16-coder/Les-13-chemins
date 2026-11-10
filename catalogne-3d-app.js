@@ -77,19 +77,6 @@ function pathways(root){
   cube(root,side*8.7,.031,z,1.5,.023,6.4,green);
  }
 }
-function backgroundBuildings(root){
- const n=24,facades=new T.InstancedMesh(boxGeo,createMaterial(0xffffff),n);
- const roofs=new T.InstancedMesh(boxGeo,createMaterial(0x6a7180),n);
- const dummy=new T.Object3D(),palette=[0xe9cb9f,0xd8b8a7,0xf1d7b9,0xc9c9ad,0xc5d8d3];
- for(let i=0;i<n;i++){
-  const side=i%2===0?-1:1,k=Math.floor(i/2),x=side*(31+k%3*3),z=-5+k*12.4;
-  const h=10+rnd(i+51)*8;
-  dummy.position.set(x,h/2,z);dummy.scale.set(8,h,9);dummy.rotation.set(0,0,0);dummy.updateMatrix();
-  facades.setMatrixAt(i,dummy.matrix);facades.setColorAt(i,new T.Color(palette[i%5]));
-  dummy.position.y=h+.55;dummy.scale.set(8.6,1.1,9.4);dummy.updateMatrix();roofs.setMatrixAt(i,dummy.matrix);
- }
- root.add(facades,roofs);
-}
 function lakeAndMonuments(root){
  // Lac à gauche, cascade sculptée et fontaine légère sur le côté droit.
  const lake=obj(new T.CylinderGeometry(1,1,.05,44),new T.MeshStandardMaterial({color:0x72b9c6,metalness:.16,roughness:.3}),
@@ -108,20 +95,71 @@ function lakeAndMonuments(root){
   19,1.23,36,4.15,1,4.15);root.add(pool);
  cyl(root,19,1.65,36,.53,1.7,0xb7a88e);
  sphere(root,19,2.58,36,.82,.24,.82,0xd6ccae);
- const plaza=sign('PARC DE LA CIUTADELLA',6,'#f2ddaa','#38524d');
- plaza.position.set(0,3.85,-4);root.add(plaza);
+ // Pas de banderole à l'entrée : perspective libre sur les allées du parc.
+}
+function woodedPark(root){
+ // Sous-bois dense, des deux côtés des promenades : 156 arbres instanciés.
+ // Les troncs et feuillages ne mordent jamais sur |x| <= 10 (zone jouable).
+ const total=156;
+ const trunks=new T.InstancedMesh(cylGeo,createMaterial(0x796248),total);
+ const canopy=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),total);
+ const shrubCount=95,shrubs=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),shrubCount);
+ const dummy=new T.Object3D(),greens=[0x456b4d,0x588557,0x6f975b,0x7da260,0x426f53,0x8ca968];
+ let filled=0,bush=0;
+ for(let row=0;row<26;row++)for(let column=0;column<6;column++){
+  const side=column<3?-1:1,depth=column%3;
+  const x=side*(12.9+depth*5.2+rnd(row*9+column)*2.0);
+  const z=2+row*4.7+(rnd(row*13+column*5)-.5)*2.7;
+  // Garder les eaux du lac et le monument dégagés.
+  if(side<0&&z>48&&z<88&&depth>0){continue;}
+  const h=2.5+rnd(row*9+column)*1.75;
+  dummy.rotation.set(0,0,0);
+  dummy.position.set(x,h/2,z);dummy.scale.set(.19+rnd(row+column)*.11,h,.21);
+  dummy.updateMatrix();trunks.setMatrixAt(filled,dummy.matrix);
+  dummy.position.set(x, h+1.35,z);
+  dummy.scale.set(1.1+rnd(row*19+column)*.78,1.65+rnd(row*3+column)*.62,1.18+rnd(row*8+column)*.6);
+  dummy.updateMatrix();canopy.setMatrixAt(filled,dummy.matrix);
+  canopy.setColorAt(filled,new T.Color(greens[(row+column)%greens.length]));
+  if(bush<shrubCount&&(row+column)%2===0){
+   dummy.position.set(x+side*(1.25+rnd(row+8)*1.1),.55,z+.75);
+   dummy.scale.set(.85+rnd(column+row)*.38,.70,.87);
+   dummy.updateMatrix();shrubs.setMatrixAt(bush,dummy.matrix);
+   shrubs.setColorAt(bush,new T.Color(greens[(row+column+2)%greens.length]));
+   bush++;
+  }
+  filled++;
+ }
+ trunks.count=filled;canopy.count=filled;shrubs.count=bush;
+ root.add(trunks,canopy,shrubs);
+}
+function makeBirds(root){
+ // Petits moineaux qui traversent les allées et battent des ailes.
+ const flock=[];
+ for(let i=0;i<12;i++){
+  const group=new T.Group();
+  const body=obj(sphereGeo,createMaterial(i%2?0x4c5355:0x63584c),0,0,0,.22,.16,.38);
+  const head=obj(sphereGeo,createMaterial(0x655b50),0,.10,.25,.13,.14,.13);
+  const beak=obj(new T.ConeGeometry(.08,.20,5),createMaterial(0xc69a55),0,.06,.40,.75,1,.75);
+  beak.rotation.x=Math.PI/2;
+  const wingL=obj(sphereGeo,createMaterial(0x424a48),-.27,.06,-.04,.35,.055,.15);
+  const wingR=obj(sphereGeo,createMaterial(0x424a48),.27,.06,-.04,.35,.055,.15);
+  group.add(body,head,beak,wingL,wingR);
+  root.add(group);
+  flock.push({group,wingL,wingR,seed:i});
+ }
+ return flock;
 }
 function makePark(){
  const root=new T.Group();world.add(root);
- pathways(root);backgroundBuildings(root);
- // Arbres en retrait des itinéraires et du lac.
- for(let z=2,i=0;z<125;z+=6.6,i++){
+ pathways(root);
+ woodedPark(root);
+ birds=makeBirds(root);
+ // Autant de bancs que de petites haltes, uniquement sur les bas-côtés.
+ for(let z=7,i=0;z<124;z+=9.5,i++){
   for(const side of [-1,1]){
-   const x=side*(13.1+(i%3)*3.0);
-   if(side<0&&z>51&&z<86)continue;
-   drawTree(root,x,z,i+(side>0?22:0));
-   if(i%3===0)lamp(root,side*10.8,z+3);
-   if(i%4===0)bench(root,side*10.4,z+5,side);
+   const x=side*(11.2+(i%2)*.4);
+   if(i%3!==0)bench(root,x,z,side);
+   if(i%3===0)lamp(root,side*11.3,z+3);
   }
  }
  for(const side of [-1,1])for(const z of [23,78,115]){
@@ -131,13 +169,6 @@ function makePark(){
   signboard.position.set(x,2.38,z);signboard.rotation.y=side===1?-Math.PI/2:Math.PI/2;root.add(signboard);
  }
  lakeAndMonuments(root);
- // Terrasse avec auvent jaune, au-delà de la zone de jeu.
- cube(root,19,.74,104,6.0,1.48,5.5,0x7c5841);
- cube(root,19,2.65,104,7,.20,6.4,0xc46a51);
- for(const x of [17,19,21]){
-  cube(root,x,1.9,103.7,.09,1.4,.09,0xe6d8b9);
-  sphere(root,x,2.74,103.7,.18,.14,.18,0xffdd91);
- }
  return root;
 }
 function makeActor(index,role='walker',color=0x87a988){
