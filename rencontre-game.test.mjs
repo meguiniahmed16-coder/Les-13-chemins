@@ -8,10 +8,10 @@ const controller = readFileSync(new URL('./rendezvous-plateau.js', import.meta.u
 const build = readFileSync(new URL('./build-public.mjs', import.meta.url), 'utf8');
 
 test('The thirteen real scripted video scenes retain their order without fabricated frames', () => {
-  const shotLines = [...html.matchAll(/^\s*\['([CB]\d{2})','[^']+','[^']+\.mp4'\],?$/gm)];
+  const shotLines = [...html.matchAll(/^\s*\['(C\d{2}|B\d{2}(?:bis)?)','[^']+','[^']+\.mp4'\],?$/gm)];
   const keys = shotLines.map(x => x[1]);
   assert.deepEqual(keys, [...['C01',...Array.from({length:6},(_,i)=>'C'+String(i+3).padStart(2,'0'))],
-                         ...Array.from({length:6},(_,i)=>'B'+String(i+1).padStart(2,'0'))]);
+                         ...['B01','B02','B03','B04','B05','B05bis','B06']]);
   for (const path of ['01-cuisine/04-il-lui-caresse-la-joue.mp4',
                       '01-cuisine/05-elle-lui-caresse-la-joue.mp4',
                       '01-cuisine/06-il-lui-caresse-les-cheveux.mp4',
@@ -22,16 +22,16 @@ test('The thirteen real scripted video scenes retain their order without fabrica
 });
 
 test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and intimacy', () => {
-  const bundles=[...html.matchAll(/clips:\[([^\]]+)\]/g)].map(x=>[...x[1].matchAll(/'([CB]\d{2})'/g)].map(y=>y[1]));
+  const bundles=[...html.matchAll(/clips:\[([^\]]+)\]/g)].map(x=>[...x[1].matchAll(/'(C\d{2}|B\d{2}(?:bis)?)'/g)].map(y=>y[1]));
   assert.deepEqual(bundles,[
     ['C01','C03'],['C04','C05'],['C06','C07'],['C08'],
-    ['B01','B02'],['B03'],['B04','B05','B06']
+    ['B01','B02'],['B03','B04'],['B06','B05','B05bis']
   ]);
   assert.ok(html.includes('Pas maintenant'));
   assert.ok(html.includes('state.watched'));
   assert.ok(html.includes('state.step=Math.min'));
   assert.ok(html.includes("const KEY=standaloneReading?'tda-rencontre-lecture-directe-v1':'tda-rencontre-storyboard-v1'"),'Direct preview and main game have separate saves');
-  assert.equal((html.match(/^ [CBA]\d{2}:HIGGS_CDN\+'hf_[^']+\.mp4'/gm)||[]).length,21,'21 generated videos must be attached');
+  assert.equal((html.match(/^ (?:[CBA]\d{2}|B05bis):HIGGS_CDN\+'hf_[^']+\.mp4'/gm)||[]).length,22,'22 vidéo-références Higgsfield sont attachées');
   assert.ok(html.includes('C01:HIGGS_CDN')&&!html.includes('C02:HIGGS_CDN')&&!html.includes('B07:HIGGS_CDN'),'No solo clip in C02');
 });
 
@@ -77,10 +77,10 @@ test('Felicity starts only when the boy lifts his head, jazz starts in the mansa
 });
 
 test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes alternatives', () => {
- const refs=[...html.matchAll(/^ (C01|C0[3-8]|B0[1-6]|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
- assert.equal(refs.length,21);
- assert.equal(new Set(refs.map(m=>m[1])).size,21);
- assert.equal(new Set(refs.map(m=>m[2])).size,21,'C01 et A01 sont deux créations différentes');
+ const refs=[...html.matchAll(/^ (C01|C0[3-8]|B0[1-6]|B05bis|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
+ assert.equal(refs.length,22);
+ assert.equal(new Set(refs.map(m=>m[1])).size,22);
+ assert.equal(new Set(refs.map(m=>m[2])).size,22,'Les 22 vidéos sont distinctes');
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
  assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'), 'Les plans concernés sont silencieux, sans synthèse vocale ni sous-titres');
  assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
@@ -206,8 +206,8 @@ test('Image d’attente du premier plan issue exactement du même C01 validé',(
 
 test('Le clip partagé LU2FpA6qdjw est explicitement accessible lors de l’intimité',()=>{
  assert.ok(html.includes("B05:HIGGS_CDN+'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4'"));
- assert.ok(html.includes("clips:['B04','B05','B06']"),'B05 reste au centre de la scène principale');
- assert.ok(html.includes("state.step===6")&&html.includes("beginScene(['B05'],'replay')"),'Lecture directe du clip B05 sur l’écran des choix');
+ assert.ok(html.includes("clips:['B06','B05','B05bis']"),'B05 reste au centre de la scène principale');
+ assert.ok(html.includes("state.step===6")&&html.includes("beginScene(['B05','B05bis'],'replay')"),'Lecture directe du clip B05 sur l’écran des choix');
  assert.ok(!html.includes("shot[0]==='B04'&&pending[movieIndex+1]==='B05'"),'B05 ne doit jamais être bloqué par un clic sous la vidéo');
  assert.ok(html.includes("nextMovie();},FADE_MS)"),'B04 s’enchaîne automatiquement sur B05 puis B06');
 });
@@ -216,9 +216,19 @@ test('Le lien partagé Higgsfield LU2FpA6qdjw apparaît sans interruption dans l
  const media=html.match(/^ B05:HIGGS_CDN\+'([^']+\.mp4)'/m);
  assert.ok(media,'Le fichier B05 est branché');
  assert.equal(media[1],'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4');
- const sequence=html.match(/clips:\['B04','B05','B06'\]/);
- assert.ok(sequence,'B04, B05 et B06 se suivent');
+ const sequence=html.match(/clips:\['B06','B05','B05bis'\]/);
+ assert.ok(sequence,'Le oui ouvre les deux prises sous les draps');
  assert.ok(!html.includes("shot[0]==='B04'&&pending[movieIndex+1]==='B05'"),'Pas d’arrêt manuel entre B04 et B05');
  assert.ok(html.includes('advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$(\'cinema\').open)nextMovie();},FADE_MS)'),'La lecture continue automatiquement');
- assert.ok(html.includes("beginScene(['B05'],'replay')"),'B05 peut être rejouée directement');
+ assert.ok(html.includes("beginScene(['B05','B05bis'],'replay')"),'B05 peut être rejouée directement');
+});
+
+test('L’intimité commence au oui et inclut les deux vidéos originales Higgsfield',()=>{
+ assert.ok(html.includes("clips:['B03','B04']"),'Le canapé est préparé avant l’intimité');
+ assert.ok(html.includes("clips:['B06','B05','B05bis']"),'Le oui ouvre les deux scènes sous les draps');
+ assert.ok(html.includes("B05:HIGGS_CDN+'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4'"));
+ assert.ok(html.includes("B05bis:HIGGS_CDN+'hf_20261110_192813_d55de648-8b2e-4f45-bed2-3a5c5fcb1779.mp4'"));
+ assert.ok(html.includes("beginScene(['B05','B05bis'],'replay')"));
+ assert.ok(html.includes("const shot=atEnd?'B05bis':step.clips[0]"));
+ assert.ok(!html.includes('B07:HIGGS_CDN'),'La fin abandonnée n’est pas réintroduite');
 });

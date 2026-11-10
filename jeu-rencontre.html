@@ -189,7 +189,8 @@ const SHOTS=[
  ['B02','Les deux verres de vodka','02-chambre/02-vodka.mp4'],
  ['B03','La conversation et les cigarettes','02-chambre/03-conversation.mp4'],
  ['B04','Elle déplie le canapé-lit','02-chambre/04-canape-lit.mp4'],
- ['B05','Sous les draps','02-chambre/05-sous-les-draps.mp4'],
+ ['B05','Sous les draps — première prise','02-chambre/05-sous-les-draps.mp4'],
+ ['B05bis','Sous les draps — deuxième prise','02-chambre/05bis-sous-les-draps.mp4'],
  ['B06','Le « oui »','02-chambre/06-oui.mp4']
 ];
 /* Versions alternatives : un clip pour chaque Pas maintenant. */
@@ -218,6 +219,7 @@ const MEDIA={
  B03:HIGGS_CDN+'hf_20261110_193843_f54c5f30-3c06-46de-baaf-e18cba7abac5.mp4',
  B04:HIGGS_CDN+'hf_20261110_194016_5acc85e9-b602-4532-9e7b-26605fbec9a1.mp4',
  B05:HIGGS_CDN+'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4',
+ B05bis:HIGGS_CDN+'hf_20261110_192813_d55de648-8b2e-4f45-bed2-3a5c5fcb1779.mp4',
  B06:HIGGS_CDN+'hf_20261110_194022_76f3f56c-3687-4048-9092-8e06cd07cdc9.mp4',
  A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4',
  A02:HIGGS_CDN+'hf_20261110_194230_cab0bfb9-807e-42fd-91e8-852b1cd4be39.mp4',
@@ -239,8 +241,8 @@ const STEPS=[
  {phase:'cuisine',title:'Les cheveux',desc:'La caresse de la joue ouvre le geste suivant. Chacun peut caresser les cheveux de l’autre.',yes:'Lui caresser les cheveux',clips:['C06','C07'],no:true,alt:'A03'},
  {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true,alt:'A04'},
  {phase:'chambre',title:'Un dernier verre ?',desc:'Elle propose de prolonger la soirée dans sa petite chambre de bonne mansardée de 26 m².',yes:'Accepter un dernier verre',clips:['B01','B02'],no:true,alt:'A05'},
- {phase:'chambre',title:'La complicité',desc:'Ils discutent, boivent leurs verres et fument. Le temps ralentit.',yes:'Prolonger la conversation',clips:['B03'],no:true,alt:'A06'},
- {phase:'chambre',title:'Rester ensemble ?',desc:'Ils décident ensemble de prolonger ce moment. Le canapé-lit est déplié. Sous les draps, un regard et un « oui ».',yes:'Rester ensemble',clips:['B04','B05','B06'],no:true,alt:'A07'}
+ {phase:'chambre',title:'La complicité',desc:'Ils discutent, boivent leurs verres et fument. Le temps ralentit.',yes:'Prolonger la conversation',clips:['B03','B04'],no:true,alt:'A06'},
+ {phase:'chambre',title:'Rester ensemble ?',desc:'Le « oui » ouvre les deux scènes sous les draps.',yes:'Rester ensemble',clips:['B06','B05','B05bis'],no:true,alt:'A07'}
 ];
 const $=id=>document.getElementById(id);
 
@@ -302,7 +304,7 @@ function draw(){
   stage.hidden=true;stage.pause();
   still.hidden=false;still.src=state.step===0?ART.depart:ART.caresse;fallback.hidden=true;
  }else{
-  const shot=atEnd?'B06':step.clips[0];
+  const shot=atEnd?'B05bis':step.clips[0];
   if(MEDIA[shot]){
    still.hidden=true;fallback.hidden=true;stage.hidden=false;stage.muted=true;
    if(stage.dataset.shot!==shot){stage.pause();stage.dataset.shot=shot;stage.src=MEDIA[shot];stage.load();}
@@ -313,11 +315,11 @@ function draw(){
  $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/'+STEPS.length;
  $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
  $('choices').replaceChildren();
- if(atEnd){$('choices').append(button('↻ Rejouer toute la rencontre','action',reset));if(!state.ended){$('choices').append(button('▶ Revoir « Sous les draps »','outline',()=>beginScene(['B05'],'replay')));$('choices').append(button('▶ Voir le silence de la nuit (bonus)','outline',()=>beginScene(['A08'],'replay')));}}
+ if(atEnd){$('choices').append(button('↻ Rejouer toute la rencontre','action',reset));if(!state.ended){$('choices').append(button('▶ Revoir les deux scènes sous les draps','outline',()=>beginScene(['B05','B05bis'],'replay')));$('choices').append(button('▶ Voir le silence de la nuit (bonus)','outline',()=>beginScene(['A08'],'replay')));}}
  else{
    $('choices').append(button(step.yes,'action',()=>beginScene(step.clips,'sequence')));
    if(step.no)$('choices').append(button('Pas maintenant','outline',()=>beginScene([step.alt],'pause')));
-   if(state.step===6)$('choices').append(button('▶ Voir « Sous les draps »','outline',()=>beginScene(['B05'],'replay')));
+   if(state.step===6)$('choices').append(button('▶ Voir les deux scènes sous les draps','outline',()=>beginScene(['B05','B05bis'],'replay')));
  }
 
 }
