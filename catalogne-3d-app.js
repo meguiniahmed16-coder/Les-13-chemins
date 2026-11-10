@@ -425,7 +425,12 @@ function resize(){
  const width=canvas.clientWidth,height=canvas.clientHeight;
  if(!width||!height||!renderer)return;
  const aspect=width/height;
- if(Math.abs(camera.aspect-aspect)>.02||!renderer.domElement.width){
+ const ratio=renderer.getPixelRatio();
+ // Corrige aussi les écrans dont le ratio est 16/9 : la résolution doit suivre
+ // la vraie taille CSS du canvas, et non rester à 300 × 150 pixels.
+ if(Math.abs(camera.aspect-aspect)>.005||
+    canvas.width!==Math.floor(width*ratio)||
+    canvas.height!==Math.floor(height*ratio)){
   renderer.setSize(width,height,false);camera.aspect=aspect;camera.updateProjectionMatrix();
  }
 }
