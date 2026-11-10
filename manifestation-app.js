@@ -613,7 +613,7 @@ function drain(){
     send('manifestation:progress',{step:e.step});
    }
    if(e.step===3){messageFeedback('✓ Réunis !',2.5);}
-   else if(e.step===2)messageFeedback('✓ Camarades !',.9);
+   else if(e.step===2)messageFeedback('✓ Camarades ! · Contourne le socle par la gauche',1.8);
   }
   if(e.type==='flag:pickup')messageFeedback('✓ 🇫🇷',.75);
   if(e.type==='corner'){cornerTurn=1.55;}

@@ -114,6 +114,7 @@ test('Traverser la foule adverse puis recevoir les seize nouveaux suiveurs',()=>
 });
 test('Le regroupement par le rouge à l’arrêt fonctionne encore',()=>{
  const r=phase3();
+ r.x=0; // Tester la cohésion sur la chaussée dégagée, indépendamment du socle.
  for(let i=0;i<18;i++)advance(r,.12,walk);
  const beforeGap=r.z-r.leaderZ,beforeCohesion=r.cohesion,z=r.z;
  for(let i=0;i<30;i++)advance(r,.12,{x:0,y:0,red:true});
