@@ -155,6 +155,9 @@ function updateForestGrid(force=false){
   const z=gz*TREE_GRID+(rnd(n+41)-.5)*2.8;
   // Laisser les chemins, les clients, le joueur et les monuments sans arbres.
   if(Math.abs(x)<11.5)continue;
+  // Ne jamais masquer un client par un tronc : chaque emplacement
+  // en sous-bois conserve une clairière de cinq mètres autour de lui.
+  if(CLIENTS.some(c=>Math.hypot(x-c.x,z-c.z)<5.8))continue;
   if(Math.hypot(x-run.x,z-run.z)<4.5)continue;
   if(((x+20)/12)**2+((z-68)/21)**2<1.18)continue; // lac
   if(Math.hypot(x-19,z-36)<6.1)continue; // fontaine
@@ -170,7 +173,8 @@ function updateForestGrid(force=false){
   dummy.updateMatrix();leaves.setMatrixAt(count,dummy.matrix);
   leaves.setColorAt(count,new T.Color(greens[Math.abs((gx+gz)%greens.length)]));
   count++;
-  if((gx+2*gz)%3===0&&bushCount<bushes.instanceMatrix.count){
+  if((gx+2*gz)%3===0&&bushCount<bushes.instanceMatrix.count&&
+     !CLIENTS.some(c=>Math.hypot(x+1.2-c.x,z+.65-c.z)<5.7)){
    dummy.position.set(x+1.2,.58,z+.65);
    dummy.scale.set(.85, .72,.9);dummy.updateMatrix();
    bushes.setMatrixAt(bushCount,dummy.matrix);
@@ -216,6 +220,15 @@ function makePark(){
  // Pas de panneau SORTIE ni d'extrémité du décor : les bancs et lampadaires
  // sont désormais rattachés aux tronçons de parc recyclés.
  lakeAndMonuments(root);
+ // Petites clairières praticables à côté des chemins : accès libre.
+ for(const c of CLIENTS.filter(item=>Math.abs(item.x)>11)){
+  const patch=new T.Mesh(new T.CircleGeometry(3.45,28),
+   new T.MeshStandardMaterial({color:0xb9bd8c,roughness:1,side:T.DoubleSide}));
+  patch.rotation.x=-Math.PI/2;patch.position.set(c.x,.052,c.z);
+  root.add(patch);
+  const side=c.x>0?1:-1;
+  bench(root,c.x+side*3.8,c.z+2.8,side);
+ }
  return root;
 }
 function makeActor(index,role='walker',color=0x87a988){
