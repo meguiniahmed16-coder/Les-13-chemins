@@ -360,11 +360,8 @@ function playCurrent(){
     player.classList.remove('video-fading');
     replay.hidden=false;
     $('nextMovie').textContent='Continuer l’histoire →';
-   }else if(shot[0]==='B04'&&pending[movieIndex+1]==='B05'){
-    // Le plan d'intimité est choisi explicitement : aucune lecture automatique ne peut le sauter.
-    player.classList.remove('video-fading');
-    $('nextMovie').textContent='Voir « Sous les draps » →';
    }else{
+    // Enchaîner automatiquement B04 → B05 → B06, sans bouton caché sous la vidéo.
     player.classList.add('video-fading');
     $('nextMovie').textContent='Continuer →';
     advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$('cinema').open)nextMovie();},FADE_MS);

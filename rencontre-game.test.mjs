@@ -208,6 +208,17 @@ test('Le clip partagé LU2FpA6qdjw est explicitement accessible lors de l’inti
  assert.ok(html.includes("B05:HIGGS_CDN+'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4'"));
  assert.ok(html.includes("clips:['B04','B05','B06']"),'B05 reste au centre de la scène principale');
  assert.ok(html.includes("state.step===6")&&html.includes("beginScene(['B05'],'replay')"),'Lecture directe du clip B05 sur l’écran des choix');
- assert.ok(html.includes("shot[0]==='B04'&&pending[movieIndex+1]==='B05'"),'Transition B04→B05 validée par un clic pour ne pas sauter le plan');
- assert.ok(html.includes("Voir « Sous les draps » →"));
+ assert.ok(!html.includes("shot[0]==='B04'&&pending[movieIndex+1]==='B05'"),'B05 ne doit jamais être bloqué par un clic sous la vidéo');
+ assert.ok(html.includes("nextMovie();},FADE_MS)"),'B04 s’enchaîne automatiquement sur B05 puis B06');
+});
+
+test('Le lien partagé Higgsfield LU2FpA6qdjw apparaît sans interruption dans la séquence intime',()=>{
+ const media=html.match(/^ B05:HIGGS_CDN\+'([^']+\.mp4)'/m);
+ assert.ok(media,'Le fichier B05 est branché');
+ assert.equal(media[1],'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4');
+ const sequence=html.match(/clips:\['B04','B05','B06'\]/);
+ assert.ok(sequence,'B04, B05 et B06 se suivent');
+ assert.ok(!html.includes("shot[0]==='B04'&&pending[movieIndex+1]==='B05'"),'Pas d’arrêt manuel entre B04 et B05');
+ assert.ok(html.includes('advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$(\'cinema\').open)nextMovie();},FADE_MS)'),'La lecture continue automatiquement');
+ assert.ok(html.includes("beginScene(['B05'],'replay')"),'B05 peut être rejouée directement');
 });
