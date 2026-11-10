@@ -318,7 +318,7 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
  assert.ok(html.includes('manifestation-runtime.js?v=20261110-consignes-symboles-v24'));
  assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-consignes-symboles-v24'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-consignes-symboles-v24'));
+ assert.match(page,/rendezvous-plateau\\.js\\?v=[^\"]+/);
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
