@@ -248,7 +248,10 @@ test('One step groups the three games while each page and dialog names its own b
  assert.ok(u.includes("const changed2=state.selected===5&&flow.prepareChapter2Dance(state)"));
  assert.ok(u.includes("'bosnie:won':4"));
  assert.ok(u.includes("'bosnieClose'"));
- assert.ok(game.includes('0 / 3 chemins · 0 points'));
+ assert.ok(game.includes('id="shared-progress">✦ 0 / 13 trésors · 0 points'), 'Progress indicator uses thirteen treasures');
+ assert.ok(game.includes('class="site-links"'), 'Plateau uses the homepage navigation');
+ assert.ok(game.includes('class="voyager-inventory"'), 'Symbolic inventory is at the bottom of the plateau');
+ assert.ok(game.includes('const REWARD_ICONS='), 'Every treasure has a vector pictogram');
  assert.ok(game.includes('<b id="count">0/3</b>'));
  assert.match(p,/Chapitre 3[^\n]*Le coup du bus/);
  assert.match(p,/Chapitre 4[^\n]*Le drapeau rouge/);
