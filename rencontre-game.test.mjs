@@ -73,14 +73,14 @@ test('Felicity starts only when the boy lifts his head, jazz starts in the mansa
   assert.match(html,/Felicity[^<]*<\/a>, sous licence/, 'Attribution presented');
   assert.match(html,/Night on the Docks - Sax[^<]*<\/a>, sous licence/, 'Jazz attribution presented');
   assert.ok(html.includes("const MEDIA={"),'Video registry is present');
-  assert.ok(html.includes('Felicity commence')&&html.includes("'C02'"),'The start of the music is C02');
+  assert.ok(html.includes('Felicity commence')&&html.includes("'C01'"),'The music belongs to the correct C01');
 });
 
 test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes alternatives', () => {
- const refs=[...html.matchAll(/^ (C0[2-8]|B0[1-6]|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
+ const refs=[...html.matchAll(/^ (C01|C0[3-8]|B0[1-6]|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
  assert.equal(refs.length,21);
  assert.equal(new Set(refs.map(m=>m[1])).size,21);
- assert.equal(new Set(refs.map(m=>m[2])).size,20,'C01 and A01 temporarily reuse an existing duo shot');
+ assert.equal(new Set(refs.map(m=>m[2])).size,21,'C01 et A01 sont deux créations différentes');
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
  assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'), 'Les plans concernés sont silencieux, sans synthèse vocale ni sous-titres');
  assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
@@ -92,7 +92,7 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not move the story forward');
  assert.ok(!html.includes('La fenêtre sur Paris')&&!html.includes("clips:['B07']"), 'No literary ending');
  assert.ok(html.includes("beginScene(['A08'],'replay')"),'The extra night video is preserved');
- assert.ok(!html.includes("['C01','La tête baissée'")&&!html.includes("clips:['C01'"),'No invented opening still in a movie');
+ assert.ok(!html.includes("['C01','La tête baissée'"),'Aucune scène fictive ne précède le vrai film C01');
  assert.ok(html.includes("clips:['C01','C03']"),'The film starts at C01');
  assert.ok(html.includes("type:'rencontre:state'"), 'The shared board receives progress');
  assert.ok(controller.includes("e.data.type!=='rencontre:state'"), 'Parent verifies iframe origin and event type');
@@ -145,7 +145,7 @@ test('Lecture directe du chapitre 6 sans progression obligatoire des jeux préc�
 test('Les voix artificielles et sous-titres ont été retirés sans modifier les films',()=>{
  assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4'"),'C01 displays an existing couple shot');
  assert.ok(html.includes('cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg'),'Le décor de référence de C01 est celui de sa génération Higgsfield');
- assert.ok(html.includes('still.src=state.step===0?ART.cuisine:ART.caresse'),'L’image de départ est visible avant de lancer la séquence');
+ assert.ok(html.includes('still.src=state.step===0?ART.depart:ART.caresse'),'L’image de départ est visible avant de lancer la séquence');
  assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"),'A01 garde sa place en alternative');
  assert.ok(html.includes("const SILENT_DIALOGUE_SHOTS=new Set(['C01','C03','C07','C08'])"));
  assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'));
@@ -168,7 +168,7 @@ test('Choix superposés à l’image de départ, sans bloc détaillé sous la sc
  assert.ok(!main.includes('class="caption"'));
  assert.ok(!main.includes('class="section"'));
  assert.ok(html.includes("stage.src=MEDIA[shot];stage.load()"));
- assert.ok(html.includes("still.src=state.step===0?ART.cuisine:ART.caresse"),"The true paid C02 first frame is shown at the opening");
+ assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.caresse"),"The true paid C02 first frame is shown at the opening");
  assert.ok(html.includes("beginScene([step.alt],'pause')"));
  assert.ok(html.includes('id="replayScene"'));
 });
@@ -177,7 +177,7 @@ test('Le film s’ouvre sur le véritable duo de Higgsfield, pas sur une alterna
  assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4'"));
  assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
  assert.ok(html.includes("cuisine:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg'"));
- assert.ok(html.includes("still.src=state.step===0?ART.cuisine:ART.caresse"));
+ assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.caresse"));
  assert.ok(html.includes("clips:['C01','C03']"));
  assert.ok(!html.includes('SpeechSynthesisUtterance'));
  assert.ok(!html.includes('frenchDialogue'));
@@ -197,4 +197,9 @@ test('C01 pointe vers le plan authentique donné par le lien partagé',()=>{
  assert.ok(!html.includes('e155bc22-bd01-46f7-86a7-029a60d64a6e'),'La vidéo erronée du garçon seul est exclue');
  assert.ok(!html.includes('72b06959-a1e1-4fb4-bde5-7939dc8f1b42'),'L’ancienne image de départ a été retirée');
  assert.ok(html.includes("clips:['C01','C03']"),'Le premier plan du récit est C01');
+});
+
+test('Image d’attente du premier plan issue exactement du même C01 validé',()=>{
+ assert.ok(html.includes("depart:'https://cdn.higgsfield.ai/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f_thumbnail.webp'"));
+ assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.caresse"));
 });
