@@ -502,7 +502,7 @@ function bind(){
   if(!already&&key==='escape')pause();
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();release();speechSynthesis?.cancel?.();});
+ window.addEventListener('blur',()=>{keys.clear();release();window.speechSynthesis?.cancel?.();});
  document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&run.phase==='running'&&!paused)pause();
  });
