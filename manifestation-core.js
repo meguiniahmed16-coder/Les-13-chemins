@@ -21,7 +21,9 @@ export function newRun(){
  return {phase:1,steps:[],x:STATUE.topX,z:STATUE.topZ,height:STATUE.topHeight,facing:0,
  climbed:true,climb:null,statueShouted:false,shoutRemaining:0,mobilisation:0,
  cohesion:80,leaderZ:-9,clock:0,finished:false,events:[],
- crsWaves:CRS_WAVES.map(w=>({...w,status:'waiting',hearts:0,startedAt:0,repelledAt:0,cooldown:0}))};
+ crsWaves:CRS_WAVES.map(w=>({...w,status:'waiting',hearts:0,startedAt:0,repelledAt:0,cooldown:0,
+  officers:Array.from({length:4},(_,id)=>({id,status:'standing',targeted:false,hitAt:0})),
+  shots:[]}))};
 }
 export function progress(run,step){
  if(run.finished||step!==run.steps.length+1||step<1||step>3)return false;
@@ -85,17 +87,34 @@ export function advance(run,dt,input={}){
   if(active){active.status='active';active.startedAt=run.clock;active.cooldown=0;run.events.push({type:'crs:incoming',wave:active.id});}
  }
  if(active){
-  // Le barrage occupe la chaussée : seules les vagues repoussées laissent passer.
-  // Le joueur peut toujours reculer ou se déplacer sur les côtés.
+  // Le barrage arrête l'avancée, pas les mouvements latéraux ou la retraite.
   run.z=Math.min(run.z,active.trigger+1.3);
   active.cooldown=Math.max(0,active.cooldown-t);
-  if(input.red&&active.cooldown<=0){
-   active.hearts++;
-   active.cooldown=.38;
-   run.events.push({type:'heart',wave:active.id,hit:active.hearts});
-   if(active.hearts>=4){
-    active.status='repelled';active.repelledAt=run.clock;
-    run.events.push({type:'crs:repelled',wave:active.id});
+  // Chaque cœur met réellement du temps à atteindre UN CRS identifié.
+  // Le policier ne disparaît pas au lancement, mais à l'impact.
+  for(let i=active.shots.length-1;i>=0;i--){
+   const shot=active.shots[i];shot.elapsed+=t;
+   if(shot.elapsed>=shot.duration){
+    const officer=active.officers[shot.officer];
+    active.shots.splice(i,1);
+    if(officer.status!=='standing')continue;
+    officer.status='heart';officer.targeted=false;officer.hitAt=run.clock;
+    active.hearts++;
+    run.events.push({type:'heart:hit',wave:active.id,officer:officer.id,hit:active.hearts});
+   }
+  }
+  if(active.officers.every(o=>o.status==='heart')){
+   active.status='repelled';active.repelledAt=run.clock;
+   run.events.push({type:'crs:repelled',wave:active.id});
+  }else if(input.red&&active.cooldown<=0){
+   // Une cible différente par cœur, sans tir simultané ni dégâts collectifs.
+   const officer=active.officers.find(o=>o.status==='standing'&&!o.targeted);
+   if(officer){
+    officer.targeted=true;
+    const duration=.82;
+    active.shots.push({officer:officer.id,elapsed:0,duration});
+    active.cooldown=.62;
+    run.events.push({type:'heart:fire',wave:active.id,officer:officer.id,duration});
    }
   }
  }

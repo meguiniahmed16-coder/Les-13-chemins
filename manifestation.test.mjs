@@ -67,14 +67,19 @@ test('Trois attaques de CRS distinctes, déclenchées en chemin',()=>{
  assert.deepEqual(r.crsWaves.map(w=>w.status),['repelled','repelled','repelled']);
  assert.equal(r.events.filter(e=>e.type==='crs:incoming').length,3);
  assert.equal(r.events.filter(e=>e.type==='crs:repelled').length,3);
- assert.equal(r.events.filter(e=>e.type==='heart').length,12);
+ assert.equal(r.events.filter(e=>e.type==='heart:fire').length,12);
+ assert.equal(r.events.filter(e=>e.type==='heart:hit').length,12);
+ assert.equal(new Set(r.events.filter(e=>e.type==='heart:hit').map(e=>e.wave+':'+e.officer)).size,12,'12 CRS distincts sont touchés');
 });
 test('Maintenir ROUGE envoie des cœurs à la vague présente, jamais aux autres',()=>{
  const r=procession();
  const wave=toWave(r,CRS_WAVES[0]);
  assert.equal(wave.hearts,0);
  advance(r,.12,rally);
- assert.equal(wave.hearts,1);
+ assert.equal(wave.hearts,0,'Le CRS ne doit pas être touché avant l’arrivée du cœur');
+ assert.equal(wave.shots.length,1);
+ assert.equal(wave.shots[0].officer,0);
+ assert.equal(wave.officers[0].targeted,true);
  assert.equal(r.crsWaves[1].hearts,0);
  assert.equal(r.crsWaves[2].hearts,0);
 });
@@ -124,16 +129,21 @@ test('Le décor ajoute les CRS avec casques, boucliers et matraques',()=>{
  assert.ok(src.includes("e.type==='crs:incoming'"));
  assert.ok(src.includes("e.type==='crs:repelled'"));
 });
-test('Le bouton ROUGE projette de vrais cœurs animés et fait fuir les policiers',()=>{
+test('Chaque cœur est un vrai projectile visible et chaque CRS vaincu monte au ciel',()=>{
  const src=read('manifestation-app.js');
- assert.ok(src.includes('const heartGeometry=new T.ShapeGeometry(heartShape'));
- assert.ok(src.includes('function sendHearts(waveId)'));
- assert.ok(src.includes('function animateHearts(dt)'));
- assert.ok(src.includes("if(e.type==='heart'){sendHearts(e.wave)"));
- assert.ok(src.includes("wave.status==='active'"));
- assert.ok(src.includes('elapsed<2.2'),'Les CRS fuient après l’envoi des cœurs');
- assert.ok(src.includes('Math.max(run.z+6.3,display.anchor-approaching*4.1)'));
+ assert.ok(src.includes('const heartGeometry=new T.ExtrudeGeometry(heartShape'),'Cœur avec relief 3D');
+ assert.ok(src.includes('function sendHearts(waveId,officerId,duration=.82)'));
+ assert.ok(src.includes('const from=new T.Vector3(run.x,run.height+1.55,run.z+.46)'));
+ assert.ok(src.includes('fx.heart.position.lerpVectors(fx.from,goal,p)'));
+ assert.ok(src.includes('fx.heart.quaternion.copy(camera.quaternion)'));
+ assert.ok(src.includes('function transformOfficerToHeart(waveId,officerId)'));
+ assert.ok(src.includes('officer.actor.visible=false'));
+ assert.ok(src.includes('heartAscents.push('));
+ assert.ok(src.includes('fx.y+fx.elapsed*3.2'));
+ assert.ok(src.includes("if(e.type==='heart:fire'){sendHearts(e.wave,e.officer,e.duration)"));
+ assert.ok(src.includes("if(e.type==='heart:hit')"));
  assert.ok(src.includes('updatePoliceWaves(t)'));
+ assert.ok(src.includes('animateHearts(dt)'));
 });
 test('La manifestation de Bastille apparaît ensemble et seulement à la fin',()=>{
  const src=read('manifestation-app.js');
@@ -159,7 +169,7 @@ test('Le cartouche du haut est discret et l’arc Chapitre 4 reste dégagé',()=
  assert.ok(page.includes(".chapter-sky{position:absolute;z-index:2;left:50%;top:28px"));
  assert.ok(page.includes('id="chapter-sky"'));
  assert.ok(page.includes('id="redLabel"'));
- assert.ok(page.includes('manifestation-runtime.js?v=20261110-crs-visible-v11'));
+ assert.ok(page.includes('manifestation-runtime.js?v=20261110-coeurs-individuels-v12'));
 });
 test('Le décor parisien et le drapeau sans bloc blanc sont conservés',()=>{
  const src=read('manifestation-app.js');
@@ -173,8 +183,8 @@ test('Lecture, score 10 points par étape, versions à jour',()=>{
  assert.ok(book.includes('Les deux cortèges se rencontrent à mi-chemin.'));
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-crs-visible-v11'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-crs-visible-v11'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-coeurs-individuels-v12'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-coeurs-individuels-v12'));
 });
 test('Six silhouettes 3D Kenney sous licence CC0 sont toujours présentes',()=>{
  for(const sex of ['male','female'])for(const variant of ['a','c','e']){
@@ -215,4 +225,46 @@ test('Après avoir repoussé le groupe, le barrage s’ouvre',()=>{
  assert.equal(wave.status,'repelled');
  advance(r,.12,walk);
  assert.ok(r.z>blocked);
+});
+
+test('Chaque CRS possède son propre état, sans disparition collective',()=>{
+ const r=procession(),wave=toWave(r,CRS_WAVES[0]);
+ assert.equal(wave.officers.length,4);
+ assert.deepEqual(wave.officers.map(o=>o.status),['standing','standing','standing','standing']);
+ advance(r,.12,rally);
+ assert.equal(wave.officers[0].targeted,true);
+ assert.equal(wave.officers[1].targeted,false);
+ assert.equal(wave.status,'active','Un projectile lancé ne termine pas la vague');
+ // Le projectile traverse la rue : il n'a pas encore atteint sa cible.
+ for(let i=0;i<4;i++)advance(r,.12,rest);
+ assert.equal(wave.hearts,0);
+ assert.equal(wave.officers[0].status,'standing');
+ for(let i=0;i<4;i++)advance(r,.12,rest);
+ assert.equal(wave.hearts,1);
+ assert.equal(wave.officers[0].status,'heart');
+ assert.deepEqual(wave.officers.slice(1).map(o=>o.status),['standing','standing','standing']);
+ assert.equal(wave.status,'active','Les trois autres CRS restent à affronter');
+ const fire=r.events.findIndex(e=>e.type==='heart:fire'&&e.wave===1&&e.officer===0);
+ const hit=r.events.findIndex(e=>e.type==='heart:hit'&&e.wave===1&&e.officer===0);
+ assert.ok(fire>=0&&hit>fire,'Le tir précède toujours l’impact');
+});
+test('Quatre CRS sont transformés individuellement avant la retraite du groupe',()=>{
+ const r=procession(),wave=toWave(r,CRS_WAVES[0]);
+ for(let i=0;i<45&&wave.status==='active';i++)advance(r,.12,rally);
+ assert.equal(wave.status,'repelled');
+ assert.deepEqual(wave.officers.map(o=>o.id),[0,1,2,3]);
+ assert.ok(wave.officers.every(o=>o.status==='heart'));
+ const hits=r.events.filter(e=>e.type==='heart:hit'&&e.wave===1);
+ assert.deepEqual(hits.map(e=>e.officer),[0,1,2,3]);
+ assert.equal(r.events.filter(e=>e.type==='crs:repelled'&&e.wave===1).length,1);
+});
+test('Les CRS sont animés indépendamment dans la scène, avec leur transformation au contact',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes("officer.actor.visible=state.status==='standing'"));
+ assert.ok(js.includes('officer.actor.position.x=officer.baseX+Math.sin('));
+ assert.ok(js.includes('officer.actor.position.z=(i%2)*.25+Math.cos('));
+ assert.ok(js.includes('officer.actor.rotation.y=Math.sin('));
+ assert.ok(js.includes('sceneGroup.add(heart)'));
+ assert.ok(js.includes('fx.heart.scale.setScalar(.36+2.15*grow)'));
+ assert.ok(js.includes("const duration=.82;")||read('manifestation-core.js').includes('const duration=.82;'));
 });

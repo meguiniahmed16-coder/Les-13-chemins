@@ -11,7 +11,7 @@ const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
 const meter=$('meter'),meterValue=$('meterValue');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 let sessionId='standalone',serverSteps=[],run=newRun(),playing=false,paused=false,gameReady=false;
-let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,bastilleActors=[],policeGroups=[],heartBursts=[],escortInstances=null,rallyProps=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
+let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,bastilleActors=[],policeGroups=[],heartBursts=[],heartAscents=[],escortInstances=null,rallyProps=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
 const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
@@ -333,82 +333,131 @@ function createPoliceWaves(root){
   group.visible=false;group.position.z=wave.anchor;root.add(group);
   for(let i=0;i<4;i++){
    const officer=riotOfficer((wave.id-1)*4+i);
-   officer.actor.scale.setScalar(1.25); // Easily recognisable on mobile.
-   officer.actor.position.x=(i-1.5)*1.45;
+   officer.baseX=(i-1.5)*1.45;
+   officer.actor.scale.setScalar(1.25);
+   officer.actor.position.x=officer.baseX;
+   officer.actor.position.z=i%2*.25;
    group.add(officer.actor);actors.push(officer);
   }
   const sign=roundedText('CRS · ♥ ♥ ♥',4.6,'#24405b','#fff3d9');
-  sign.rotation.y=Math.PI;
-  sign.position.set(0,3.4,-.10);
-  group.add(sign);
-  policeGroups.push({id:wave.id,group,actors,anchor:wave.anchor});
+  sign.rotation.y=Math.PI;sign.position.set(0,3.4,-.10);group.add(sign);
+  policeGroups.push({id:wave.id,group,actors,anchor:wave.anchor,sign});
  }
 }
 function activePoliceWave(id){return policeGroups.find(w=>w.id===id);}
+function officerWorldPoint(waveId,officerId){
+ const display=activePoliceWave(waveId),officer=display?.actors[officerId];
+ if(!officer)return null;
+ display.group.updateMatrixWorld(true);
+ return officer.actor.localToWorld(new T.Vector3(0,1.42,-.32));
+}
 function updatePoliceWaves(t){
  if(run.phase!==3)return;
  for(const display of policeGroups){
   const wave=run.crsWaves.find(w=>w.id===display.id);
   if(!wave||wave.status==='waiting'){display.group.visible=false;continue;}
-  if(wave.status==='active'){
-   display.group.visible=true;
-   const approaching=Math.max(0,run.clock-wave.startedAt);
-   display.group.position.set(Math.sin(t*.6+wave.id)*.25,0,
-    Math.max(run.z+6.3,display.anchor-approaching*4.1));
-  }else{
-   const elapsed=run.clock-wave.repelledAt;
-   display.group.visible=elapsed<2.2;
-   if(display.group.visible){
-    display.group.position.set((wave.id%2?1:-1)*elapsed*3.4,0,
-     Math.max(run.z+5,display.anchor)+elapsed*8);
-   }
-  }
-  if(display.group.visible)for(const officer of display.actors){
-   officer.actor.position.y=Math.sin(t*5+officer.actor.position.x)*.045;
-   officer.actor.rotation.y=wave.status==='repelled'?Math.PI*.6:0;
+  // La ligne est formée de QUATRE policiers indépendants et ne disparaît pas
+  // d'un seul bloc. Un CRS touché laisse ses camarades encore debout.
+  display.group.visible=wave.status==='active';
+  if(!display.group.visible)continue;
+  const approaching=Math.max(0,run.clock-wave.startedAt);
+  display.group.position.set(Math.sin(t*.6+wave.id)*.18,0,
+   Math.max(run.z+6.3,display.anchor-approaching*4.1));
+  const standing=wave.officers.filter(o=>o.status==='standing').length;
+  display.sign.visible=standing>0;
+  for(let i=0;i<display.actors.length;i++){
+   const officer=display.actors[i],state=wave.officers[i];
+   officer.actor.visible=state.status==='standing';
+   if(!officer.actor.visible)continue;
+   // Décalage de pas individuel pour rompre le mouvement en bloc.
+   officer.actor.position.x=officer.baseX+Math.sin(t*.83+i*1.7+wave.id)*.22;
+   officer.actor.position.z=(i%2)*.25+Math.cos(t*1.2+i*.91)*.16;
+   officer.actor.position.y=Math.sin(t*4.5+i*1.8)*.055;
+   officer.actor.rotation.y=Math.sin(t*.7+i*1.3)*.13;
   }
  }
 }
 const heartShape=new T.Shape();
-heartShape.moveTo(0,-.18);
-heartShape.bezierCurveTo(-.22,.01,-.42,.22,-.24,.37);
-heartShape.bezierCurveTo(-.08,.52,0,.35,0,.29);
-heartShape.bezierCurveTo(.02,.40,.15,.49,.26,.35);
-heartShape.bezierCurveTo(.44,.17,.22,0,0,-.18);
-const heartGeometry=new T.ShapeGeometry(heartShape,8);
-const heartMaterial=new T.MeshBasicMaterial({color:0xff426d,side:T.DoubleSide,transparent:true,opacity:.96,depthWrite:false});
-function sendHearts(waveId){
- const police=activePoliceWave(waveId);
- if(!police||!hero||!sceneGroup)return;
- const from=new T.Vector3(run.x,run.height+1.50,run.z+.40);
- const to=new T.Vector3(police.group.position.x,1.3,police.group.position.z);
- for(let i=0;i<3;i++){
-  const heart=new T.Mesh(heartGeometry,heartMaterial.clone());
-  const start=from.clone().add(new T.Vector3((i-1)*.13,(i%2)*.10,0));
-  const end=to.clone().add(new T.Vector3((i-1)*1.0,(i%2)*.32,0));
-  heart.position.copy(start);
-  heart.scale.setScalar(.72);
-  sceneGroup.add(heart);
-  heartBursts.push({heart,start,end,elapsed:0,duration:.72+i*.10,phase:i*.8});
- }
+heartShape.moveTo(0,-.23);
+heartShape.bezierCurveTo(-.24,-.04,-.46,.21,-.27,.40);
+heartShape.bezierCurveTo(-.10,.56,0,.37,0,.31);
+heartShape.bezierCurveTo(.05,.47,.19,.53,.30,.36);
+heartShape.bezierCurveTo(.47,.16,.24,-.04,0,-.23);
+const heartGeometry=new T.ExtrudeGeometry(heartShape,{
+ depth:.12,steps:1,bevelEnabled:true,bevelSize:.045,bevelThickness:.04,bevelSegments:1
+});
+function makeHeart(color=0xff3264,scale=1){
+ const shape=new T.Mesh(heartGeometry,new T.MeshBasicMaterial({
+  color,side:T.DoubleSide,transparent:true,opacity:1,depthWrite:false
+ }));
+ shape.scale.setScalar(scale);
+ return shape;
+}
+// Un appui = UN projectile clairement visible, depuis la poitrine du héros
+// jusqu'à l'emplacement du CRS visé. Pas de dégâts de groupe.
+function sendHearts(waveId,officerId,duration=.82){
+ const target=officerWorldPoint(waveId,officerId);
+ if(!target||!sceneGroup)return;
+ const from=new T.Vector3(run.x,run.height+1.55,run.z+.46);
+ const heart=makeHeart(0xff225c,1.45);
+ heart.position.copy(from);
+ sceneGroup.add(heart);
+ heartBursts.push({heart,wave:waveId,officer:officerId,from,elapsed:0,duration});
+}
+function transformOfficerToHeart(waveId,officerId){
+ const display=activePoliceWave(waveId),officer=display?.actors[officerId];
+ if(!officer||!sceneGroup)return;
+ // L'ancien policier devient un cœur à l'impact : transformation individuelle.
+ const at=officerWorldPoint(waveId,officerId);
+ if(!at)return;
+ officer.actor.visible=false;
+ const heart=makeHeart(0xff3b78,.36);
+ heart.position.copy(at);
+ sceneGroup.add(heart);
+ heartAscents.push({heart,x:at.x,y:at.y,z:at.z,elapsed:0,duration:3.1,
+  twist:officerId*.79+waveId*.42});
+ // Les cœurs tirés sont achevés à l'impact, pas coupés en plein vol.
+ const projectile=heartBursts.find(h=>h.wave===waveId&&h.officer===officerId);
+ if(projectile)projectile.elapsed=projectile.duration;
 }
 function animateHearts(dt){
  for(let i=heartBursts.length-1;i>=0;i--){
-  const v=heartBursts[i];v.elapsed+=dt;
-  const p=Math.min(1,v.elapsed/v.duration);
-  v.heart.position.lerpVectors(v.start,v.end,p);
-  v.heart.position.y+=Math.sin(p*Math.PI)*.15;
-  v.heart.rotation.y+=dt*4.6;
-  v.heart.rotation.z=Math.sin(v.elapsed*5+v.phase)*.2;
-  v.heart.material.opacity=Math.max(0,.96*(1-p*.78));
-  if(p>=1){v.heart.parent?.remove(v.heart);v.heart.material.dispose();heartBursts.splice(i,1);}
+  const fx=heartBursts[i];fx.elapsed+=dt;
+  const p=Math.min(1,fx.elapsed/fx.duration);
+  const goal=officerWorldPoint(fx.wave,fx.officer);
+  if(goal){
+   fx.heart.position.lerpVectors(fx.from,goal,p);
+   fx.heart.position.y+=Math.sin(p*Math.PI)*.33;
+  }
+  fx.heart.quaternion.copy(camera.quaternion); // Cœur toujours visible sur mobile.
+  fx.heart.scale.setScalar(1.3+Math.sin(p*Math.PI)*.38);
+  fx.heart.material.opacity=p>.88?Math.max(.05,(1-p)/.12):1;
+  if(p>=1){
+   fx.heart.parent?.remove(fx.heart);fx.heart.material.dispose();
+   heartBursts.splice(i,1);
+  }
+ }
+ for(let i=heartAscents.length-1;i>=0;i--){
+  const fx=heartAscents[i];fx.elapsed+=dt;
+  const p=Math.min(1,fx.elapsed/fx.duration);
+  // L'impact gonfle le cœur ; il s'envole ensuite vers le ciel bleu.
+  const grow=Math.min(1,fx.elapsed/.34);
+  fx.heart.scale.setScalar(.36+2.15*grow);
+  fx.heart.position.set(fx.x+Math.sin(fx.elapsed*2.2+fx.twist)*.52,
+   fx.y+fx.elapsed*3.2,fx.z+.12*fx.elapsed);
+  fx.heart.quaternion.copy(camera.quaternion);
+  fx.heart.rotation.z+=Math.sin(fx.elapsed*1.6+fx.twist)*.16;
+  fx.heart.material.opacity=p>.72?Math.max(0,(1-p)/.28):1;
+  if(p>=1){
+   fx.heart.parent?.remove(fx.heart);fx.heart.material.dispose();
+   heartAscents.splice(i,1);
+  }
  }
 }
-
 function sceneFor(phase){
  if(sceneGroup)world.remove(sceneGroup);
  sceneGroup=new T.Group();world.add(sceneGroup);
- stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];policeGroups=[];heartBursts=[];escortInstances=null;rallyProps=null;
+ stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];policeGroups=[];heartBursts=[];heartAscents=[];escortInstances=null;rallyProps=null;
  const root=sceneGroup,sky=phase===1?0xb8cdd5:phase===2?0xb8c7d3:0xc3d4d9;
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
@@ -462,7 +511,7 @@ function refreshHUD(){
  else{
   const active=run.crsWaves.find(w=>w.status==='active');
   const repelled=run.crsWaves.filter(w=>w.status==='repelled').length;
-  if(active)hint.textContent='🚔 CRS '+active.id+'/3 ! Maintiens ROUGE pour envoyer des cœurs. Arrête-toi aussi pour regrouper ta foule.';
+  if(active)hint.textContent='🚔 CRS '+active.id+'/3 ! ROUGE : un cœur part de toi et frappe un CRS à la fois. Chacun devient un cœur qui s’envole.';
   else if(run.z>=99&&repelled<3)hint.textContent='Il reste des CRS à repousser avec les cœurs : '+repelled+'/3 vagues.';
   else hint.textContent='Vers Bastille : '+Math.min(100,Math.floor(run.z))+'/100 · CRS repoussés : '+repelled+'/3. Arrête-toi et maintiens ROUGE pour rassembler la foule.';
  }
@@ -476,7 +525,7 @@ function refreshHUD(){
  if(policeAlert){
   const currentWave=run.phase===3?run.crsWaves.find(w=>w.status==='active'):null;
   policeAlert.hidden=!currentWave;
-  if(currentWave)policeAlert.textContent='🚨 CRS SUR LA CHAUSSÉE · Attaque '+currentWave.id+'/3 · ❤️ '+currentWave.hearts+'/4';
+  if(currentWave)policeAlert.textContent='🚨 CRS SUR LA CHAUSSÉE · Vague '+currentWave.id+'/3 · '+currentWave.hearts+'/4 CRS transformés en cœurs';
  }
  $('red').classList.toggle('awaiting',up);
  $('red').textContent=p===3?'♥':'●';
@@ -503,13 +552,18 @@ function drain(){
    voiceCamarades();
   }
   if(e.type==='crs:incoming'){
-   messageFeedback('CRS en approche ! ROUGE : envoie-leur des cœurs !',2.2);
+   messageFeedback('CRS en approche ! ROUGE : vise-les un par un avec des cœurs !',2.2);
    sound(260,.16);
   }
-  if(e.type==='heart'){sendHearts(e.wave);sound(750,.09);}
+  if(e.type==='heart:fire'){sendHearts(e.wave,e.officer,e.duration);sound(750,.12);}
+  if(e.type==='heart:hit'){
+   transformOfficerToHeart(e.wave,e.officer);
+   messageFeedback('❤️ CRS touché ! '+e.hit+'/4 · Il devient un cœur !',.8);
+   sound(960,.13);
+  }
   if(e.type==='crs:repelled'){
    const cleared=run.crsWaves.filter(w=>w.status==='repelled').length;
-   messageFeedback('❤️ Les CRS battent en retraite ! '+cleared+' / '+CRS_WAVES.length,2.5);
+   messageFeedback('❤️ Quatre CRS transformés en cœurs ! Vague '+cleared+' / '+CRS_WAVES.length,2.5);
    sound(830,.18);
   }
   if(e.type==='ground'){
@@ -566,7 +620,7 @@ function callCrowd(){
  }
  if(run.phase===3){
   const active=run.crsWaves.find(w=>w.status==='active');
-  messageFeedback(active?'❤️ Des cœurs pour faire fuir les CRS !':'— Ensemble ! Restez avec moi !',1.0);
+  messageFeedback(active?'❤️ Un cœur, un CRS : regarde-le s’envoler !':'— Ensemble ! Restez avec moi !',1.0);
  }
  sound(310,.08);
 }
