@@ -130,7 +130,7 @@ test('La rue adjacente est vide, puis drapeau porté, puis foule',()=>{
  assert.ok(!alley.includes('makeCrowd(root,'));
  assert.ok(scene.includes('statue(root)'));
  assert.ok(scene.includes("if(phase>=2)flag(hero,'france'"));
- assert.ok(scene.includes('for(const pick of WEAPONS)weaponPickup(root,pick)'));
+ assert.ok(js.includes('function populateMarch(root){')&&js.includes('for(const pick of WEAPONS)weaponPickup(root,pick)'));
 });
 test('Sélection tactile des objets/CRS et commande Cible accessible',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
@@ -231,7 +231,7 @@ test('Après la descente le joystick permet de reculer puis contourner la statue
  const before=r.z;advance(r,.12,{x:0,y:-1});
  assert.ok(r.z<before,'Le joystick reste bidirectionnel après contournement');
  const js=read('manifestation-app.js');
- assert.ok(js.includes('buildings(root,-7,138,true);statue(root);'),'La statue reste visible durant la marche');
+ assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('buildings(root,-23,48,true);statue(root);'),'La statue reste visible et la scène est conservée');
  const transition=js.slice(js.indexOf('if(phase!==run.phase){'),js.indexOf('const time=ms/1000;',js.indexOf('if(phase!==run.phase){')));
  assert.ok(!transition.includes('joy={x:0,y:0}'),'Le joystick actif ne doit pas être réinitialisé à la descente');
  assert.ok(!transition.includes('keys.clear()'),'Les touches maintenues restent actives');
@@ -283,7 +283,7 @@ test('Statue, sa cible et la sélection décalées ensemble',()=>{
  assert.ok(js.includes('root.position.x=STATUE.x;sceneRoot.add(root)'));
  assert.ok(js.includes('addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8'));
  assert.ok(js.includes("if(sel.type==='statue')point=new T.Vector3(STATUE.x,6.1,STATUE.z)"));
- assert.ok(read('manifestation-core.js').includes('Math.abs(run.x-STATUE.x)<3.05'));
+ assert.ok(read('manifestation-core.js').includes('insideStatueBase=(x,z)=>x>STATUE.x-3.05'));
 });
 test('Devise complète Liberté Égalité Fraternité',()=>{
  const js=read('manifestation-app.js');
