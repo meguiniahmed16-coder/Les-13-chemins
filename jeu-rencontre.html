@@ -173,11 +173,12 @@ main{max-width:1120px;margin:0 auto;padding:12px 12px 16px}
 const standaloneExtract=["Nous avons une amie en commun. Elle me raconte la cérémonie. Elle me dit que c'était beau, qu'ils avaient lâché des ballons pour que je sois symboliquement présent avec eux, malgré ma détention.","Elle me raconte aussi les circonstances de sa mort.","Lionel était reparti de Strasbourg, où il avait échappé de justesse à la rafle des policiers du RAID, après que l'occupation de l'annexe du ministère de la Justice avait été qualifiée de prise d'otages.","Quand il était arrivé à Paris, il l'avait appelée. Il était paniqué. Elle l'avait rejoint chez lui. Il était très anxieux, très agité.","Comme il était resté quelque temps à Strasbourg, il n'avait plus rien à manger. Elle lui avait donné quelques calmants avant de partir lui faire des courses.","Quand elle est revenue, les pompiers étaient là.","Lionel était par terre.","Elle me rapporte aussi un détail troublant. Les voisins auraient entendu Lionel crier pendant sa chute.","Il avait crié.","Je ne sais pas pourquoi, mais ce détail me trouble particulièrement.","Ce soir-là, avec cette amie, nous avons dormi ensemble, chez Lionel.","Et nous avons fait l'amour.","C'est très étrange. Je ne suis même pas sûr que nous ayons eu beaucoup de désir l'un pour l'autre.","C'est, à ce jour, la seule fois de ma vie où j'ai fait l'amour comme un hommage.","Entre-temps, j’ai été expulsé de mon appartement. Un copain m’héberge. Je ne suis pas au meilleur de ma forme : je bois beaucoup trop et je n’ai pratiquement que les vêtements que je porte. Le mercredi suivant, je vais quand même à cet anniversaire. Je suis sale et surtout très éméché. À la soirée, je suis une sorte de guest star : le petit Che Guevara du quartier vient de sortir de prison, sauf qu’il titube. À un moment, je me retrouve dans la cuisine.","Dans les soirées, il y a toujours une deuxième soirée dans la cuisine. Deux jeunes types commencent à me parler.","— Alors ? C’était comment, la prison ?","Et là, je pars en mode soûlard pathétique. Je parle en regardant le sol, avec une articulation approximative et la conviction, propre aux gens très ivres, que ce qu’ils racontent est passionnant. Au bout d’un moment, je relève la tête : les deux types sont partis. Pendant une seconde, je réalise que je parle peut-être tout seul. Puis je tourne la tête. Il reste une jeune femme, à peu près de mon âge.","Elle a de grands yeux bleus soulignés d’eye-liner. Deux papillons.","— Je suis fatigué.","Elle me répond :","— Je sais.","Je lui pose une question étrange à une inconnue dans une cuisine :","— Tu veux bien t’occuper de moi ?","— Oui.","Elle appelle un taxi et décide de me ramener chez elle, dans sa chambre de bonne, au 30 avenue Rapp."];
 const standaloneReading=!document.documentElement.classList.contains('embedded')&&new URLSearchParams(location.search).get('lecture')==='1';
 const ART={
+  depart:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/72b06959-a1e1-4fb4-bde5-7939dc8f1b42.png',
   cuisine:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg',
   caresse:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/db6ea871-3557-4b72-8dcb-3c9c68f0871a.png'
 };
 const SHOTS=[
- ['C02','Ils se découvrent dans la cuisine','01-cuisine/02-il-releve-la-tete.mp4'],
+ ['C02','Il relève la tête devant elle','01-cuisine/02-il-releve-la-tete.mp4'],
  ['C03','Le regard de la jeune femme','01-cuisine/03-elle-le-regarde.mp4'],
  ['C04','Il lui caresse la joue','01-cuisine/04-il-lui-caresse-la-joue.mp4'],
  ['C05','Elle lui caresse la joue','01-cuisine/05-elle-lui-caresse-la-joue.mp4'],
@@ -205,7 +206,7 @@ const ALTERNATES=[
 /* Références exactes aux 21 créations Higgsfield validées. C01 reste une ouverture illustrée. */
 const HIGGS_CDN='https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/';
 const MEDIA={
- C02:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4',
+ C02:HIGGS_CDN+'hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4',
  C03:HIGGS_CDN+'hf_20261110_184129_21f4448e-c0bf-4504-b0a4-1712344b88e5.mp4',
  C04:HIGGS_CDN+'hf_20261110_184338_cd7ef478-eb5b-4f7d-91dd-f4b9b5292765.mp4',
  C05:HIGGS_CDN+'hf_20261110_184341_77deea16-73e4-4be1-8af2-96c8980b1d86.mp4',
@@ -299,7 +300,7 @@ function draw(){
  const still=$('still'),stage=$('stageFrame'),fallback=$('awaitingArt');
  if(isKitchen){
   stage.hidden=true;stage.pause();
-  still.hidden=false;still.src=ART.cuisine;fallback.hidden=true;
+  still.hidden=false;still.src=state.step===0?ART.depart:ART.cuisine;fallback.hidden=true;
  }else{
   const shot=atEnd?'B06':step.clips[0];
   if(MEDIA[shot]){
