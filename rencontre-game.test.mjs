@@ -30,7 +30,7 @@ test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and int
   assert.ok(html.includes('Pas maintenant'));
   assert.ok(html.includes('state.watched'));
   assert.ok(html.includes('state.step=Math.min'));
-  assert.ok(html.includes("const KEY='tda-rencontre-storyboard-v1'"),'separate storage');
+  assert.ok(html.includes("const KEY=standaloneReading?'tda-rencontre-lecture-directe-v1':'tda-rencontre-storyboard-v1'"),'Direct preview and main game have separate saves');
   assert.equal((html.match(/^ [CBA]\d{2}:HIGGS_CDN\+'hf_[^']+\.mp4'/gm)||[]).length,21,'21 generated videos must be attached');
   assert.ok(!html.includes('C01:HIGGS_CDN')&&!html.includes('B07:HIGGS_CDN'),'Do not invent unavailable videos');
 });
