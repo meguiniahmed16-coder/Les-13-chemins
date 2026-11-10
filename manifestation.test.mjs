@@ -38,6 +38,13 @@ function defeat(r,id){
  assert.equal(wave.status,'repelled');
  return wave;
 }
+test('La fonction activeWave est importée pour la troisième étape après la statue',()=>{
+ const code=read('manifestation-app.js');
+ assert.match(code,/import\s*\{[^}]*\bactiveWave\b[^}]*\}\s*from\s*['"]\.\/manifestation-core\.js['"]/);
+ assert.match(code,/const active=p===3\?activeWave\(run\)/);
+ assert.match(code,/function updatePoliceWaves\(time\)/);
+ assert.match(code,/if\(run\.phase!==3\)return;/);
+});
 test('Le jeu commence seul dans une rue adjacente, avant la statue',()=>{
  const r=newRun();
  assert.equal(r.phase,1);assert.equal(r.hasFlag,false);
@@ -181,9 +188,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-transition-sans-gel-v18'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-transition-sans-gel-v18'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-transition-sans-gel-v18'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-activewave-import-v19'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-activewave-import-v19'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-activewave-import-v19'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -324,5 +331,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-transition-sans-gel-v18'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-activewave-import-v19'));
 });

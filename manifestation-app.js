@@ -4,7 +4,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
+import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,activeWave,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
 const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');

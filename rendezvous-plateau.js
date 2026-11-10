@@ -82,7 +82,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-transition-sans-gel-v18';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-activewave-import-v19';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){
