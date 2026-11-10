@@ -11,7 +11,7 @@ function phase2(){
  assert.equal(r.phase,2);return r;
 }
 function phase3(){
- const r=phase2();r.x=0;r.z=1.94;
+ const r=phase2();r.x=STATUE.footX;r.z=STATUE.footZ;
  assert.equal(selectTarget(r,{type:'statue'}),true);
  assert.equal(yellow(r),true);
  for(let i=0;i<25&&r.climb;i++)advance(r,.12,idle);
@@ -180,9 +180,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-armes-selection-v13'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-armes-selection-v13'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-armes-selection-v13'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-statue-cote-v14'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-statue-cote-v14'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-statue-cote-v14'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -192,4 +192,34 @@ test('Personnages Kenney animés CC0 inchangés',()=>{
   assert.match(b.toString('latin1',20,110000),/"walk"/);
  }
  assert.match(read('assets/manifestation/KENNEY-CC0-LICENSE.txt'),/Creative Commons Zero/);
+});
+
+test('Statue sur le côté, avenue centrale libre',()=>{
+ const r=phase2();assert.equal(STATUE.x,6);
+ r.x=0;r.z=0;for(let i=0;i<30;i++)advance(r,.12,walk);
+ assert.ok(r.z>8,'On passe sans heurter la statue au milieu de l’avenue');
+});
+test('Marches accessibles, cri, descente et reprise de marche',()=>{
+ const r=phase2();r.x=STATUE.footX;r.z=STATUE.footZ;
+ assert.ok(selectTarget(r,{type:'statue'}));
+ assert.ok(yellow(r),'Monter depuis le pied des marches');
+ for(let i=0;i<30&&r.climb;i++)advance(r,.12,idle);
+ assert.equal(r.climbed,true);assert.equal(r.x,STATUE.topX);
+ assert.ok(callFromStatue(r));
+ for(let i=0;i<36&&r.phase===2;i++)advance(r,.12,idle);
+ assert.equal(r.phase,3);
+ const z=r.z;advance(r,.12,walk);assert.ok(r.z>z);
+});
+test('Statue, sa cible et la sélection décalées ensemble',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes('function statue(sceneRoot){'));
+ assert.ok(js.includes('root.position.x=STATUE.x;sceneRoot.add(root)'));
+ assert.ok(js.includes('addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8'));
+ assert.ok(js.includes("if(sel.type==='statue')point=new T.Vector3(STATUE.x,6.1,STATUE.z)"));
+ assert.ok(read('manifestation-core.js').includes('Math.abs(run.x-STATUE.x)<3.05'));
+});
+test('Devise complète Liberté Égalité Fraternité',()=>{
+ const js=read('manifestation-app.js');
+ assert.ok(js.includes("'LIBERTÉ, ÉGALITÉ, FRATERNITÉ'"));
+ assert.ok(!js.includes("'LIBERTÉ ÉGALITÉ'"));
 });

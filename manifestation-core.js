@@ -8,7 +8,7 @@
 export const OBJECTIFS=Object.freeze(['Le drapeau français','Camarades !','Les deux cortèges']);
 export const MAX_POINTS=30;
 export const GAME_ID='rendezvous-2002';
-export const STATUE=Object.freeze({x:0,z:5,footX:-1.15,footZ:.35,topX:-1.15,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
+export const STATUE=Object.freeze({x:6,z:5,footX:4.85,footZ:.35,topX:4.85,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
 export const FLAG=Object.freeze({x:4.1,z:12});
 export const WEAPONS=Object.freeze([
  Object.freeze({id:1,kind:'heart',icon:'♥',name:'Cœur',x:9.4,z:9}),
@@ -96,8 +96,8 @@ export function yellow(run){
   run.events.push({type:'flag:pickup'});return progress(run,1);
  }
  if(run.phase===2&&!run.climbed&&!run.climb&&!run.statueShouted&&
-    (run.selected?.type==='statue'||distance(run,{x:STATUE.x,z:STATUE.z})<4.4)&&
-    distance(run,{x:STATUE.x,z:STATUE.z})<4.4){
+    (run.selected?.type==='statue'||distance(run,{x:STATUE.x,z:STATUE.z})<5.25)&&
+    distance(run,{x:STATUE.x,z:STATUE.z})<5.25){
   run.climb={direction:'up',elapsed:0,duration:STATUE.ascendTime,fromX:run.x,fromZ:run.z};
   run.selected=null;return true;
  }
@@ -169,7 +169,7 @@ export function advance(run,dt,input={}){
   run.z=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?116:22);
   run.facing=Math.atan2(x,y);
  }
- if(run.phase===2&&run.z>=2&&run.z<=8&&Math.abs(run.x)<3.05){
+ if(run.phase===2&&run.z>=2&&run.z<=8&&Math.abs(run.x-STATUE.x)<3.05){
   run.z=run.z<=5?1.94:8.1;
  }
  if(run.phase!==3)return;

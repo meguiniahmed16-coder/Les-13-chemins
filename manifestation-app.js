@@ -4,7 +4,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG} from './manifestation-core.js';
+import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
 const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
@@ -207,7 +207,8 @@ function buildings(root,start,end,light=false){
   root.add(mesh(gSphere,canopy,side*10.25,4.35,z+8,1.45,1.9,1.35));
  }
 }
-function statue(root){
+function statue(sceneRoot){
+ const root=new T.Group();root.position.x=STATUE.x;sceneRoot.add(root);
  // Monument interprété : le joueur monte par un escalier visible sur le socle.
  addBox(root,0,.3,5,6,1.0,6,0xa5a39a);
  addBox(root,0,1.05,5,4.5,.55,4.5,0xbdb6a3);
@@ -282,7 +283,7 @@ function moveEscortInstances(){
 function crowdSymbols(root,tricolor=false){
  rallyProps=new T.Group();root.add(rallyProps);
  protestSign(rallyProps,'NON À LE PEN',-3,-1,2.9);
- protestSign(rallyProps,'LIBERTÉ ÉGALITÉ',3,-3,3.4);
+ protestSign(rallyProps,'LIBERTÉ, ÉGALITÉ, FRATERNITÉ',3,-3,5.9);
  banner(rallyProps,'TOUS ENSEMBLE',0,-5.3,5.5);
  flag(rallyProps,tricolor?'france':'red',-4,0,-3.0,3.1);
  if(tricolor)flag(rallyProps,'france',4,0,-2.0,2.9);
@@ -510,7 +511,7 @@ function markSelection(time){
  if(!sel)return;
  let point=null;
  if(sel.type==='flag')point=new T.Vector3(FLAG.x,3.2,FLAG.z);
- if(sel.type==='statue')point=new T.Vector3(0,6.1,5);
+ if(sel.type==='statue')point=new T.Vector3(STATUE.x,6.1,STATUE.z);
  if(sel.type==='pickup'){
   const p=run.pickups.find(w=>w.id===sel.id);
   if(p)point=new T.Vector3(p.x,3.4,p.z);
@@ -543,7 +544,7 @@ function sceneFor(phase){
   buildings(root,-23,48,true);statue(root);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
   distantCrowd(root,-8,24,true);crowdSymbols(root,true);
-  addSelectable(root,null,0,3.6,5,5.8,{type:'statue'});
+  addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8,{type:'statue'});
  }else{
   buildings(root,-7,138,true);
   crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
