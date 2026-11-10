@@ -82,7 +82,7 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.equal(new Set(refs.map(m=>m[1])).size,21);
  assert.equal(new Set(refs.map(m=>m[2])).size,20,'La nouvelle ouverture réutilise volontairement le duo A01');
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
- assert.ok(html.includes('player.muted=Boolean(FRENCH_LINES[shot[0]])'), 'Les plans avec paroles françaises masquent les paroles étrangères du clip');
+ assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'), 'Les plans concernés sont silencieux, sans synthèse vocale ni sous-titres');
  assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
  const playerTag=html.match(/<video id="player"[^>]*>/)?.[0];
  assert.ok(playerTag&&!/\s(?:muted|controls)(?:\s|=|>)/.test(playerTag), 'The cinematic player must not force mute or native controls');
