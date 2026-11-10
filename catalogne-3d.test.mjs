@@ -167,6 +167,8 @@ test('Policiers : interpellations et injures en espagnol maintenues',()=>{
 
 test('Le parc est continu après la cinquième vente et dans le sens inverse',()=>{
  const r=newRun();r.phase='running';
+ // Écarter les patrouilles pour tester uniquement la liberté de déplacement.
+ for(const cop of r.police){cop.x=200;cop.homeX=200;}
  r.x=0;r.z=115;
  for(let i=0;i<500;i++)advance(r,.08,{x:0,z:1});
  assert.ok(r.z>340,'Le joueur doit pouvoir continuer bien après la fin initiale');
