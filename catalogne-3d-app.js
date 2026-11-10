@@ -10,7 +10,7 @@ const $=id=>document.getElementById(id),canvas=$('world');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(n=>'assets/manifestation/'+n);
 let run=newRun(),sessionId=null,ready=false,replayMode=false,score=0,pendingSale=null,pendingSince=0;
-let paused=false,soundOn=false,lastFrame=0,toastUntil=0,lastInstruction=null,orbital=0,orbitLeft=0,lastPoliceMessage=0,controlsLocked=false;
+let paused=false,soundOn=true,lastFrame=0,toastUntil=0,lastInstruction=null,orbital=0,orbitLeft=0,lastPoliceMessage=0,controlsLocked=false,winPending=false;
 const joy={x:0,z:0},keys=new Set();
 let joyPointer=null,clientActors=[],policeActors=[],people=[],birds=[],hero=null,saleConversation=null;
 const actorTemplates=[],walkMeshes=[],fountainWater=[];
@@ -332,7 +332,9 @@ function updateSaleConversation(time){
  const elapsed=time-saleConversation.started;
  const index=Math.floor(elapsed/1.8);
  if(index>=saleConversation.lines.length){
-  saleConversation=null;$('saleDialogue').hidden=true;return;
+  saleConversation=null;$('saleDialogue').hidden=true;
+  if(winPending){winPending=false;presentWin();}
+  return;
  }
  if(index!==saleConversation.index){
   saleConversation.index=index;
@@ -377,7 +379,7 @@ function showOverlay(title,text,label='Commencer',showStart=true){
 function closeOverlay(){$('overlay').hidden=true;}
 function start(){
  if(!ready||embedded&&!sessionId)return;
- run=newRun(run.sold);run.phase='running';paused=false;pendingSale=null;saleConversation=null;
+ run=newRun(run.sold);run.phase='running';paused=false;pendingSale=null;saleConversation=null;winPending=false;
  lastInstruction=null;lastPoliceMessage=0;lastFrame=0;orbital=0;orbitLeft=0;resetClientVisuals();
  closeOverlay();renderHUD();syncInstruction();
 }
@@ -385,10 +387,16 @@ function caught(){
  paused=false;pendingSale=null;saleConversation=null;$('saleDialogue').hidden=true;showOverlay('Interpellé.','Les clients déjà servis restent validés. Tu peux recommencer dans le parc.','Réessayer');
  showToast('Évite les policiers !');renderHUD();
 }
-function won(){
- run.phase='won';pendingSale=null;paused=false;
+function presentWin(){
  showOverlay('Mission accomplie !','Les cinq clients sont servis. Dix points au maximum, sans doublon.','',false);
  showToast('✓ Cinq clients !');renderHUD();
+}
+function won(){
+ run.phase='won';pendingSale=null;paused=false;
+ // Laisser entendre et lire les deux répliques du cinquième client
+ // avant d'afficher l'écran final, qui masquerait sinon la conversation.
+ if(saleConversation){winPending=true;renderHUD();return;}
+ presentWin();
 }
 function makeSale(){
  if(!ready||paused||run.phase!=='running')return;
@@ -514,7 +522,7 @@ function bind(){
    sessionId=m.id;replayMode=!!m.replay;score=Number.isFinite(m.score)?m.score:score;
    const sold=Array.isArray(m.sold)?m.sold:[];
    if(newSession||run.phase==='ready'||pendingSale){
-    run=newRun(sold);run.phase='ready';pendingSale=null;paused=false;lastInstruction=null;
+    run=newRun(sold);run.phase='ready';pendingSale=null;paused=false;lastInstruction=null;winPending=false;saleConversation=null;
     resetClientVisuals();showOverlay('Cinq clients. Garde ton calme.','Michel t’a confié son matériel. Explore le parc, retrouve cinq clients et échappe aux policiers. Deux points par vente.','Entrer dans le parc');
    }else if(sold.length>run.sold.length){run.sold=[...sold];resetClientVisuals();}
    $('start').disabled=!ready;renderHUD();
