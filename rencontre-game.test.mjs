@@ -60,7 +60,7 @@ test('Every Pas maintenant plays a unique optional sequence without advancing th
   assert.ok(html.includes("beginScene([step.alt],'pause')"));
   assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not advance the chapter');
   assert.ok(html.includes("finished==='sequence'||finished==='pause'"), 'All seen clips are saved');
-  assert.ok(html.includes("id=\"pauseClips\""), 'Alternate clips remain replayable');
+  assert.ok(!html.includes('id="pauseClips"'),'No catalog of detailed scenes is shown under the image');
 });
 
 test('Felicity starts only when the boy lifts his head, jazz starts in the mansard room', () => {
@@ -149,4 +149,22 @@ test('L’ouverture montre deux personnages et les dialogues sont rendus en fran
  assert.ok(html.includes("player.muted=Boolean(FRENCH_LINES[shot[0]])"));
  assert.ok(html.includes("speakFrench(shot[0])"));
  assert.ok(html.includes('id="frenchDialogue"'));
+});
+
+test('Choix superposés à l’image de départ, sans bloc détaillé sous la scène',()=> {
+ const main=html.slice(html.indexOf('<main>'),html.indexOf('</main>')+7);
+ assert.ok(main.includes('id="visual" class="visual"'));
+ assert.ok(main.includes('id="still"'));
+ assert.ok(main.includes('id="stageFrame"'));
+ assert.ok(main.includes('id="choices"'));
+ assert.ok(main.includes('id="toggleMusic"'));
+ assert.ok(main.indexOf('id="visual"')<main.indexOf('class="panel"'));
+ assert.ok(html.includes('.visual>.panel{position:absolute'));
+ for(const id of ['stepDescription','pauseClips','films','clips','cinematics','soundtrackTitle','feedback'])assert.ok(!main.includes('id="'+id+'"'),id+' must not be visible');
+ assert.ok(!main.includes('class="caption"'));
+ assert.ok(!main.includes('class="section"'));
+ assert.ok(html.includes("stage.src=MEDIA[shot];stage.load()"));
+ assert.ok(html.includes("still.src=ART.cuisine"));
+ assert.ok(html.includes("beginScene([step.alt],'pause')"));
+ assert.ok(html.includes('id="replayScene"'));
 });

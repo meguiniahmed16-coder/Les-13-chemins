@@ -91,6 +91,49 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 #standaloneReader .rendezvous-future button{width:100%;border:0;border-radius:7px;background:#2a5545;color:#fff6d9;font-weight:750;min-height:55px;font-size:16px}
 @media(max-width:600px){#standaloneReader .rendezvous-content{padding:25px 20px 78px}#standaloneReader .rendezvous-excerpt{font-size:20px;line-height:1.8}#standaloneReader .rendezvous-top{font-size:11px;padding:10px 12px}}
 
+
+/* Choix sur l'image fixe : aucune carte, description ou liste en dessous. */
+body{min-height:100dvh;background:#20392f}
+main{max-width:1120px;margin:0 auto;padding:12px 12px 16px}
+.grid{display:block;margin:0}
+.visual{position:relative;display:block;width:100%;height:clamp(420px,77dvh,860px);min-height:0;aspect-ratio:auto;overflow:hidden;border:2px solid #ba9b69;border-radius:12px;outline:0;background:#182a24;box-shadow:0 12px 28px #0004}
+.visual>img,.visual>video{position:absolute;inset:0;display:block;width:100%;height:100%;max-height:none;object-fit:cover}
+.visual>video[hidden],.visual>img[hidden]{display:none!important}
+.visual::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,#0b21154d,transparent 28%,transparent 45%,#0a1b13aa)}
+.visual::after{z-index:2;inset:6px;border-radius:8px}
+.scene-tools{position:absolute;z-index:4;top:13px;left:14px;right:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:none}
+.scene-tools>*{pointer-events:auto}
+.scene-name{max-width:70%;font:600 11px/1.3 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#fff5db;text-shadow:0 1px 4px #001d13}
+.scene-tools .music-toggle{min-height:38px;min-width:44px;padding:7px 9px;background:#163b2dba;border:1px solid #eed5a9bb;border-radius:999px;color:#fff2d8;box-shadow:0 2px 8px #0004}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.visual>.panel{position:absolute;z-index:5;left:50%;bottom:clamp(18px,3.5vh,34px);transform:translateX(-50%);width:min(460px,calc(100% - 22px));margin:0;padding:14px 16px 15px;border:1px solid #e0c4928c;border-radius:12px;background:#173d30bf;color:#fff6e5;box-shadow:0 8px 24px #081d14aa;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-align:center}
+.visual>.panel .eyebrow{color:#e6cea5;font-size:10px;letter-spacing:.1em}
+.visual>.panel h2{color:#fff5df;font:500 clamp(19px,3vw,25px)/1.16 Georgia,serif;margin:5px 0 10px}
+.visual>.panel .progress{display:flex;gap:4px;margin:8px auto 12px;max-width:220px}
+.visual>.panel .progress span{height:3px}
+.visual>.panel .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0}
+.visual>.panel .actions button{min-height:48px;padding:9px 10px;font:650 clamp(12px,1.8vw,14px)/1.25 system-ui,sans-serif;border-radius:7px;white-space:normal}
+.visual>.panel .actions button.action{background:#e8d2a8;color:#243f33;border:1px solid #f8e6c6}
+.visual>.panel .actions button.outline{background:#163d2eb0;color:#fff6e5;border:1px solid #e6d6b7b0}
+.visual>.panel .actions button:hover{filter:brightness(1.1)}
+.visual>.panel .actions button:only-child{grid-column:1/-1}
+.visual>.awaiting-art{position:absolute;inset:0;display:grid;place-items:center;z-index:0;padding:25px;color:#fff0d2;text-align:center;font:italic 25px Georgia,serif;background:linear-gradient(150deg,#243c31,#182c28)}
+.visual>.music-credits{position:absolute;z-index:4;left:14px;top:55px;width:max-content;max-width:min(320px,calc(100% - 28px));padding:0;background:transparent;border:0;color:#f8e8c9;font-size:11px;margin:0}
+.visual>.music-credits summary{font:600 11px/1.2 system-ui,sans-serif;color:#fff0d2;text-shadow:0 1px 4px #000b;cursor:pointer}
+.visual>.music-credits[open]{background:#183629ec;border:1px solid #d3b789a6;border-radius:9px;padding:11px 12px;box-shadow:0 8px 16px #0018}
+.visual>.music-credits p,.visual>.music-credits a{color:#fff0d2;font-size:11px}
+.embedded main{padding:8px}
+.embedded .visual{height:calc(100dvh - 16px);border-radius:5px}
+@media(max-width:780px){
+ main{padding:9px 9px 12px}
+ .visual{height:calc(100dvh - 195px);min-height:370px;aspect-ratio:auto}
+ .visual>.panel{bottom:12px;padding:12px 10px 12px;width:calc(100% - 20px)}
+ .visual>.panel h2{font-size:21px}
+ .scene-tools{top:10px;left:11px;right:11px}
+ .visual>.music-credits{top:52px;left:11px}
+ .embedded .visual{height:calc(100dvh - 16px);min-height:370px}
+}
+
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.movie-frame video{transition:none}}
 </style>
 </head>
@@ -109,22 +152,18 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
  </div>
 </dialog>
 <main>
-<header class="banner"><div class="eyebrow">Chemin III · Les rendez-vous · Chapitre 6</div><h1>Tu veux bien t’occuper de moi ?</h1><p>Un récit interactif en deux lieux : la cuisine et la chambre mansardée.</p><div id="progress" class="progress" aria-label="Progression dans le récit"></div><div class="music-strip"><button type="button" id="toggleMusic" class="music-toggle" aria-pressed="true">♫ Musique activée</button><span class="music-status" id="musicStatus" role="status" aria-live="polite">Silence jusqu’au moment où il relève la tête.</span></div></header>
-<div class="grid">
-<div>
- <div id="visual" class="visual"><img id="still" alt="Illustration de référence des personnages dans la cuisine" src="" loading="eager"><div id="awaitingArt" class="awaiting-art" hidden>La chambre mansardée<small>Paris, la nuit. Le bar, les conversations et le canapé-lit : la suite de leur rencontre.</small></div></div>
- <p class="caption">Les gestes, les rencontres et les silences se révèlent au rythme des décisions. Les deux images de la cuisine servent uniquement d’ambiance et de repères pour les personnages.</p>
-</div>
-<section class="panel" aria-live="polite"><div id="stepLabel" class="eyebrow"></div><h2 id="stepTitle"></h2><p id="stepDescription"></p><div id="choices" class="actions"></div><div id="feedback" class="feedback" hidden></div></section>
-</div>
-<section class="section" aria-labelledby="soundtrackTitle"><h2 id="soundtrackTitle">Les musiques des deux films</h2><p><strong>La cuisine :</strong> « Felicity » — Scott Buckley. Le début reste silencieux ; la musique commence uniquement lorsque le garçon relève la tête (plan C02).</p><p><strong>La chambre :</strong> « Night on the Docks – Sax » — Kevin MacLeod. Musique d’ambiance dès l’arrivée dans la mansarde (plan B01).</p><p class="caption">Musiques choisies sous licence CC BY 4.0, avec attribution. Leur lecture utilise les fichiers des auteurs ; si une piste externe n’est pas accessible, le récit reste jouable sans musique.</p></section>
-<section class="section" aria-labelledby="cinematics"><h2 id="cinematics">Cinématiques et récompenses</h2><p>À chaque choix qui fait progresser l'histoire, le lecteur débloque les plans associés. Chaque clip sera montré dans son intégralité, puis rejoindra la collection. Les deux films complets seront accessibles à la fin de leur parcours respectif.</p><div id="clips" class="clip-list" role="list"></div><h3 class="alternative-heading">Les séquences « Pas maintenant »</h3><p class="alternative-description">Une confidence, un rire ou un regard : chaque étape possède une autre possibilité.</p><div id="pauseClips" class="clip-list" role="list"></div><div id="films" class="library"></div>
-<details class="music-credits"><summary>Crédits musicaux — Creative Commons</summary>
+<div class="grid"><div id="visual" class="visual" aria-label="Image fixe de la scène et choix du récit">
+ <img id="still" alt="Les deux personnages réunis dans la cuisine" src="" loading="eager">
+ <video id="stageFrame" playsinline muted preload="auto" aria-hidden="true" hidden></video>
+ <div id="awaitingArt" class="awaiting-art" hidden>La chambre mansardée</div>
+ <div class="scene-tools"><span class="scene-name">Chemin III · Tu veux bien t’occuper de moi ?</span><button type="button" id="toggleMusic" class="music-toggle" aria-pressed="true" aria-label="Activer ou couper la musique">♫</button><span id="musicStatus" class="sr-only" role="status" aria-live="polite">Silence jusqu’au premier regard.</span></div>
+ <section class="panel" aria-label="Choix de la scène" aria-live="polite"><div id="stepLabel" class="eyebrow"></div><h2 id="stepTitle"></h2><div id="progress" class="progress" aria-label="Progression dans le récit"></div><div id="choices" class="actions"></div></section>
+ <details class="music-credits"><summary>ⓘ Crédits musicaux</summary>
 <p>Film I : <a href="https://www.scottbuckley.com.au/library/felicity/" target="_blank" rel="noopener noreferrer">« Felicity » — Scott Buckley</a>, sous licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · www.scottbuckley.com.au.</p>
 <p>Film II : <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137" target="_blank" rel="noopener noreferrer">« Night on the Docks - Sax » — Kevin MacLeod (incompetech.com)</a>, sous licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p>
 <p>Les morceaux sont joués comme musique de fond ; leur volume peut être ajusté pour le jeu.</p>
-</details></section>
-<p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. Le film commence directement par la vidéo Higgsfield C02 : ils sont ensemble dans la cuisine, il a la tête baissée puis la relève. Le second film se termine sur le « oui » (B06). La vidéo A08 reste accessible comme bonus facultatif. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
+</details>
+</div></div>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
 <dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><div id="frenchDialogue" class="french-dialogue" hidden aria-live="off"></div><button type="button" id="replayScene" class="replay-overlay" hidden>↻ Rejouer la scène</button><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
@@ -213,7 +252,7 @@ function soundtrackForShot(id){
  return 'cuisine'; // Le dernier verre est encore proposé dans la cuisine (A05).
 }
 function updateMusicControl(){
- $('toggleMusic').textContent=musicEnabled?'♫ Musique activée':'♫ Musique coupée';
+ $('toggleMusic').textContent=musicEnabled?'♫':'♫̸';
  $('toggleMusic').setAttribute('aria-pressed',String(musicEnabled));
 }
 function stopSoundtrack(){
@@ -271,31 +310,28 @@ function draw(){
  $('progress').replaceChildren(...STEPS.map((_,i)=>{const d=document.createElement('span');d.className=i<state.step?'done':i===state.step?'current':'';return d;}));
  const atEnd=state.step>=STEPS.length,step=STEPS[Math.min(state.step,STEPS.length-1)];
  const isKitchen=!atEnd&&step.phase==='cuisine';
- $('still').hidden=!isKitchen;$('awaitingArt').hidden=isKitchen;
- if(isKitchen){$('still').src=ART.caresse;}
- else if(atEnd){$('awaitingArt').firstChild.textContent='Fin de la rencontre';}
- else $('awaitingArt').firstChild.textContent='La chambre mansardée';
+ const still=$('still'),stage=$('stageFrame'),fallback=$('awaitingArt');
+ if(isKitchen){
+  stage.hidden=true;stage.pause();
+  still.hidden=false;still.src=ART.cuisine;fallback.hidden=true;
+ }else{
+  const shot=atEnd?'B06':step.clips[0];
+  if(MEDIA[shot]){
+   still.hidden=true;fallback.hidden=true;stage.hidden=false;stage.muted=true;
+   if(stage.dataset.shot!==shot){stage.pause();stage.dataset.shot=shot;stage.src=MEDIA[shot];stage.load();}
+  }else{
+   still.hidden=true;stage.hidden=true;fallback.hidden=false;fallback.textContent=atEnd?'Fin de la rencontre':'La chambre mansardée';
+  }
+ }
  $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/'+STEPS.length;
  $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
- $('stepDescription').textContent=atEnd?(state.ended?'Le choix de ne pas poursuivre est respecté. Tu peux recommencer la scène sans perdre le parcours principal.':'La rencontre s’achève sur leur « oui ». Les scènes débloquées peuvent être revues.'):step.desc;
  $('choices').replaceChildren();
  if(atEnd){$('choices').append(button('↻ Rejouer toute la rencontre','action',reset));if(!state.ended)$('choices').append(button('▶ Voir le silence de la nuit (bonus)','outline',()=>beginScene(['A08'],'replay')));}
  else{
    $('choices').append(button(step.yes,'action',()=>beginScene(step.clips,'sequence')));
    if(step.no)$('choices').append(button('Pas maintenant','outline',()=>beginScene([step.alt],'pause')));
  }
- if(!atEnd){$('feedback').hidden=true;$('feedback').textContent='';}
- $('clips').replaceChildren(...SHOTS.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[0]+' · '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
- $('pauseClips').replaceChildren(...ALTERNATES.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
- $('films').replaceChildren();
- for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:7,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:6,ready:state.watched.includes('B06')}]){
-  const box=document.createElement('div');box.className='film-card';
-  const heading=document.createElement('strong');heading.textContent=part.name;
-  const msg=document.createElement('small');msg.textContent=(part.id==='cuisine'?part.count+' véritables clips Higgsfield':part.count+' clips, fin au « oui »')+' · '+(part.ready?'Film à revoir':'À débloquer');
-  box.append(heading,msg);
-  if(part.ready){box.append(button('▶ Revoir le film enchaîné','outline',()=>{const ids=SHOTS.filter(s=>s[0].startsWith(part.id==='cuisine'?'C':'B')).map(s=>s[0]);beginScene(ids,'replay')}));}
-  $('films').append(box);
- }
+
 }
 function beginScene(ids,kind){
  if(!Array.isArray(ids)||!ids.length)return;
@@ -402,9 +438,7 @@ function nextMovie(){
  pending=null;draw();notifyBoard();
  if(state.step>=STEPS.length)stopSoundtrack();
  if(finished==='pause'&&state.step<STEPS.length){
-  $('feedback').hidden=false;
-  $('feedback').textContent='Le dialogue continue, les regards se croisent. Le choix reste ouvert : vous pouvez prolonger encore ce moment.';
-  $('choices').append(button('Terminer la rencontre ici','outline',()=>{state.ended=true;state.step=STEPS.length;save();stopSoundtrack();draw();notifyBoard();}));
+  $('choices').append(button('Terminer ici','outline',()=>{state.ended=true;state.step=STEPS.length;save();stopSoundtrack();draw();notifyBoard();}));
  }
 }
 function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';state={step:0,watched:[],ended:false};save();draw();notifyBoard();}
