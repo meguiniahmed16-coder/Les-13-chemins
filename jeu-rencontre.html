@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Tu veux bien t’occuper de moi ? — Chemin III</title>
+<link rel="stylesheet" href="site-nav.css">
+<style>
+:root{--pine:#233f35;--pine-light:#426353;--paper:#f7eed9;--ochre:#c5a16b;--ink:#293b32}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:#e5dac3;color:var(--ink);font:15px/1.6 system-ui,sans-serif}
+main{max-width:1050px;margin:auto;padding:28px 16px 60px}
+h1,h2,h3{font-family:Georgia,serif;font-weight:normal}
+.banner{border:1px solid #b69869;background:var(--pine);color:#fff1d6;text-align:center;padding:27px 18px;box-shadow:0 8px 25px #1e39272c}
+.eyebrow{color:#bda372;letter-spacing:.17em;font-size:11px;text-transform:uppercase;font-weight:700}
+.banner h1{font-size:clamp(30px,5vw,54px);line-height:1.15;margin:10px 0}
+.banner p{margin:8px 0;color:#e0d2b6}
+.progress{display:flex;gap:6px;max-width:600px;margin:16px auto 0}
+.progress span{height:5px;flex:1;background:#6e7f69;border-radius:9px}
+.progress span.done{background:#d6b677}
+.progress span.current{background:#fff2cc}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(275px,.85fr);gap:19px;align-items:start;margin-top:20px}
+.visual{border:6px solid #7f6747;outline:1px solid #bba276;background:#21372d;aspect-ratio:16/10;display:grid;place-items:center;overflow:hidden;position:relative;box-shadow:0 10px 26px #3f2e1d20}
+.visual img{display:block;width:100%;height:100%;object-fit:cover}
+.visual .awaiting-art{color:#f9edd6;text-align:center;padding:28px;max-width:430px;font:italic 23px/1.5 Georgia,serif}
+.visual .awaiting-art small{display:block;color:#c6b590;font:12px system-ui;margin-top:10px}
+.visual::after{content:"";pointer-events:none;position:absolute;inset:7px;border:1px solid #efdcb65e}
+.caption{font-size:11px;color:#746956;margin:11px 0}
+.panel{border:1px solid #bda680;background:#fff8ea;padding:25px;box-shadow:0 4px 15px #3c2e1b14}
+.panel h2{font-size:clamp(26px,3vw,35px);line-height:1.15;margin:9px 0}
+.panel p{margin:0 0 12px;color:#5b645c}
+button{font:600 14px/1.4 system-ui,sans-serif;min-height:49px;cursor:pointer;border-radius:6px;padding:12px 14px}
+.action{background:#294d3f;color:#fff4da;border:1px solid #244436}
+.action:hover{background:#426956}.outline{background:transparent;color:#355444;border:1px solid #a38c64}
+.outline:hover{background:#eae2ce}
+.actions{display:grid;gap:9px;margin-top:20px}
+.feedback{margin-top:15px;background:#f0eadb;border-left:3px solid #a58a56;padding:11px 14px;font-size:13px}
+.section{margin:22px 0;padding:20px;border:1px solid #c6ad85;background:#f5ead2}
+.section h2{margin:4px 0 9px;font-size:28px}.section p{margin:6px 0;color:#666251}
+.library{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
+.film-card{display:flex;flex-direction:column;gap:5px;background:#fffbef;border:1px solid #c7b28f;padding:13px}
+.film-card strong{font:600 20px/1.1 Georgia,serif}.film-card small{color:#726c5b}
+.clip-list{display:flex;gap:6px;flex-wrap:wrap;list-style:none;padding:0;margin:12px 0}
+.clip-list li{font-size:11px;background:#f6efdd;padding:6px 9px;border:1px solid #d3c09d;border-radius:5px;color:#786c58}
+.clip-list li.unlocked{color:#2b533c;border-color:#95a786;background:#e8efdf}
+dialog{border:5px solid #bd9e68;border-radius:8px;max-width:min(820px,95vw);width:100%;padding:0;color:#fff0d7;background:#1b352d;box-shadow:0 15px 55px #0008;max-height:92dvh}
+dialog::backdrop{background:#0e201cd9}
+.movie-head{padding:14px 18px;border-bottom:1px solid #bea27673}
+.movie-head strong{font:500 25px Georgia,serif}.movie-head p{margin:5px 0;color:#dccba6;font-size:12px}
+.movie-frame{position:relative;display:grid;place-items:center;min-height:230px;background:#152922}
+.movie-frame video,.movie-frame img{display:block;width:100%;max-height:52vh;aspect-ratio:16/9;object-fit:contain}
+.movie-frame .movie-placeholder{padding:36px 22px;text-align:center;color:#eee0bd}
+.movie-placeholder strong{display:block;font:italic 26px Georgia,serif}
+.movie-placeholder small{display:block;margin:12px 0;font-size:12px}
+.movie-actions{display:flex;justify-content:space-between;gap:10px;padding:14px 18px;flex-wrap:wrap}
+.movie-actions button{flex:1 1 200px}.movie-actions .outline{color:#fff3dc;border-color:#bba478}
+.movie-actions .outline:hover{background:#335244}
+.dummy-tag{color:#efd3a1;font:12px system-ui;margin-top:10px}
+a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3px}
+@media(max-width:780px){.grid{grid-template-columns:1fr}.visual{aspect-ratio:4/3}.panel{padding:20px}.library{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<nav class="site-nav" aria-label="Navigation principale"><div class="site-nav-inner"><a class="site-brand" href="index.html">✦ Les Treize Chemins</a><div class="site-links"><a href="index.html">⌂ Accueil</a><a href="carte.html">🧭 Cartes</a><a href="jeu.html" aria-current="page">🎲 Jeux</a></div></div></nav>
+<main>
+<header class="banner"><div class="eyebrow">Chemin III · Les rendez-vous · Chapitre 6</div><h1>Tu veux bien t’occuper de moi ?</h1><p>Un récit interactif en deux lieux : la cuisine et la chambre mansardée.</p><div id="progress" class="progress" aria-label="Progression dans le récit"></div></header>
+<div class="grid">
+<div>
+ <div id="visual" class="visual"><img id="still" alt="Illustration de référence des personnages dans la cuisine" src="" loading="eager"><div id="awaitingArt" class="awaiting-art" hidden>La chambre mansardée<small>Visuel à préparer à partir des références du récit</small></div></div>
+ <p class="caption">Références artistiques fixes : personnages et cuisine validés. Les cinématiques Higgsfield seront ajoutées après contrôle.</p>
+</div>
+<section class="panel" aria-live="polite"><div id="stepLabel" class="eyebrow"></div><h2 id="stepTitle"></h2><p id="stepDescription"></p><div id="choices" class="actions"></div><div id="feedback" class="feedback" hidden></div></section>
+</div>
+<section class="section" aria-labelledby="cinematics"><h2 id="cinematics">Cinématiques et récompenses</h2><p>À chaque choix qui fait progresser l'histoire, le lecteur débloque les plans associés. Chaque clip sera montré dans son intégralité, puis rejoindra la collection. Les deux films complets seront accessibles à la fin de leur parcours respectif.</p><div id="clips" class="clip-list" role="list"></div><div id="films" class="library"></div></section>
+<p class="caption">Prototype du parcours narratif : les choix fonctionnent, mais les animations et la scène mansardée restent à produire. Aucun point ni trésor n'est attribué en l'absence des cinématiques. Le jeu ne modifie pas la sauvegarde des autres chapitres.</p>
+</main>
+<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline preload="metadata" hidden></video><div id="moviePlaceholder" class="movie-placeholder"><strong>Animation à produire</strong><small>Le clip sélectionné n'est pas encore disponible. L'illustration de référence et l'ordre des scènes sont conservés.</small><span id="movieFile" class="dummy-tag"></span></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
+<script>
+(function(){
+'use strict';
+const ART={
+  cuisine:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg',
+  caresse:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/db6ea871-3557-4b72-8dcb-3c9c68f0871a.png'
+};
+const SHOTS=[
+ ['C01','La tête baissée','01-cuisine/01-tete-baissee.mp4'],
+ ['C02','Il relève la tête','01-cuisine/02-il-releve-la-tete.mp4'],
+ ['C03','Le regard de la jeune femme','01-cuisine/03-elle-le-regarde.mp4'],
+ ['C04','Il lui caresse la joue','01-cuisine/04-il-lui-caresse-la-joue.mp4'],
+ ['C05','Elle lui caresse la joue','01-cuisine/05-elle-lui-caresse-la-joue.mp4'],
+ ['C06','Il lui caresse les cheveux','01-cuisine/06-il-lui-caresse-les-cheveux.mp4'],
+ ['C07','Elle lui caresse les cheveux','01-cuisine/07-elle-lui-caresse-les-cheveux.mp4'],
+ ['C08','Le baiser','01-cuisine/08-baiser.mp4'],
+ ['B01','L’arrivée dans la mansarde','02-chambre/01-arrivee.mp4'],
+ ['B02','Les deux verres de vodka','02-chambre/02-vodka.mp4'],
+ ['B03','La conversation et les cigarettes','02-chambre/03-conversation.mp4'],
+ ['B04','Elle déplie le canapé-lit','02-chambre/04-canape-lit.mp4'],
+ ['B05','Sous les draps','02-chambre/05-sous-les-draps.mp4'],
+ ['B06','Le « oui »','02-chambre/06-oui.mp4'],
+ ['B07','Dos nu, cigarette, tour Eiffel scintillante','02-chambre/07-tour-eiffel.mp4']
+];
+/* Les vidéos sont reliées ici après validation. Un fichier absent ne doit pas être présenté comme une animation existante. */
+const MEDIA={}; 
+const FILMS={cuisine:null,chambre:null};
+const STEPS=[
+ {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C01','C02','C03']},
+ {phase:'cuisine',title:'Un geste vers sa joue',desc:'La rencontre peut avancer par un premier geste. Toucher sa joue débloque sa caresse en retour.',yes:'Lui caresser la joue',clips:['C04','C05'],no:true},
+ {phase:'cuisine',title:'Les cheveux',desc:'La caresse de la joue ouvre le geste suivant. Chacun peut caresser les cheveux de l’autre.',yes:'Lui caresser les cheveux',clips:['C06','C07'],no:true},
+ {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true},
+ {phase:'chambre',title:'Un dernier verre ?',desc:'Elle propose de prolonger la soirée dans sa petite chambre de bonne mansardée de 26 m².',yes:'Accepter un dernier verre',clips:['B01','B02'],no:true},
+ {phase:'chambre',title:'La complicité',desc:'Ils discutent, boivent leurs verres et fument. Le temps ralentit.',yes:'Prolonger la conversation',clips:['B03'],no:true},
+ {phase:'chambre',title:'Rester ensemble ?',desc:'Ils décident ensemble de prolonger ce moment. Le canapé-lit est déplié. Sous les draps, un regard et un « oui ».',yes:'Rester ensemble',clips:['B04','B05','B06'],no:true},
+ {phase:'chambre',title:'La fenêtre ouverte',desc:'Le dernier plan est contemplatif : de nuit, le garçon nu, vu de dos et en pied, devant la tour Eiffel scintillante. Sa main gauche tient une cigarette fumante près de son oreille.',yes:'Voir le dernier plan',clips:['B07']}
+];
+const $=id=>document.getElementById(id);
+const KEY='tda-rencontre-storyboard-v1';
+let state={step:0,watched:[],ended:false};
+try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Number.isInteger(previous.step)&&previous.step>=0&&previous.step<=STEPS.length&&Array.isArray(previous.watched)){state={step:previous.step,watched:previous.watched.filter(x=>SHOTS.some(y=>y[0]===x)),ended:!!previous.ended}}}catch(e){}
+let pending=null,movieIndex=0,mode='sequence';
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
+const shotInfo=id=>SHOTS.find(s=>s[0]===id);
+function button(label,css,cb){const b=document.createElement('button');b.type='button';b.className=css;b.textContent=label;b.onclick=cb;return b;}
+function draw(){
+ $('progress').replaceChildren(...STEPS.map((_,i)=>{const d=document.createElement('span');d.className=i<state.step?'done':i===state.step?'current':'';return d;}));
+ const atEnd=state.step>=STEPS.length,step=STEPS[Math.min(state.step,STEPS.length-1)];
+ const isKitchen=!atEnd&&step.phase==='cuisine';
+ $('still').hidden=!isKitchen;$('awaitingArt').hidden=isKitchen;
+ if(isKitchen){$('still').src=state.step>=3?ART.caresse:ART.cuisine;}
+ $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/8';
+ $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
+ $('stepDescription').textContent=atEnd?(state.ended?'Le choix de ne pas poursuivre est respecté. Tu peux recommencer la scène sans perdre le parcours principal.':'La dernière cinématique ferme le récit. Tous les plans du parcours peuvent être rejoués.'):step.desc;
+ $('choices').replaceChildren();
+ if(atEnd){$('choices').append(button('Recommencer cette histoire','action',reset));}
+ else{
+   $('choices').append(button(step.yes,'action',()=>beginScene(step.clips,'sequence')));
+   if(step.no)$('choices').append(button('Pas maintenant','outline',()=>{state.ended=false;$('feedback').hidden=false;$('feedback').textContent='La scène peut rester suspendue ici. Tu peux reprendre le geste plus tard ou terminer cette version de la rencontre.';$('choices').append(button('Terminer sur cet instant','outline',()=>{state.ended=true;state.step=STEPS.length;save();draw()}));}));
+ }
+ if(!atEnd){$('feedback').hidden=true;$('feedback').textContent='';}
+ $('clips').replaceChildren(...SHOTS.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';li.textContent=(state.watched.includes(s[0])?'✓ ':'○ ')+s[0]+' · '+s[1];return li}));
+ $('films').replaceChildren();
+ for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:8,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:7,ready:state.watched.includes('B07')}]){
+  const box=document.createElement('div');box.className='film-card';
+  const heading=document.createElement('strong');heading.textContent=part.name;
+  const msg=document.createElement('small');msg.textContent=part.count+' plans · '+(part.ready?'Parcours débloqué':'À débloquer');
+  box.append(heading,msg);
+  if(part.ready){box.append(button(FILMS[part.id]?'Voir le film complet':'Revoir le storyboard complet','outline',()=>{const ids=SHOTS.filter(s=>s[0].startsWith(part.id==='cuisine'?'C':'B')).map(s=>s[0]);beginScene(ids,'replay')}));}
+  $('films').append(box);
+ }
+}
+function beginScene(ids,kind){
+ if(!Array.isArray(ids)||!ids.length)return;
+ pending=ids.slice();movieIndex=0;mode=kind;$('cinema').showModal();playCurrent();
+}
+function playCurrent(){
+ const shot=shotInfo(pending[movieIndex]);if(!shot)return;
+ $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
+ $('cinemaTitle').textContent=shot[1];
+ $('cinemaDescription').textContent='Cette cinématique sera visionnée entièrement avant de poursuivre lorsque son fichier sera disponible.';
+ $('movieFile').textContent=shot[2];
+ const player=$('player');player.pause();player.removeAttribute('src');player.hidden=true;
+ $('nextMovie').disabled=false;$('nextMovie').textContent=movieIndex+1<pending.length?'Plan suivant →':'Terminer la séquence →';
+ if(MEDIA[shot[0]]){
+  $('moviePlaceholder').hidden=true;player.hidden=false;player.src=MEDIA[shot[0]];player.load();$('nextMovie').disabled=true;
+  player.onended=()=>{$('nextMovie').disabled=false;};
+  player.onerror=()=>{player.hidden=true;$('moviePlaceholder').hidden=false;$('nextMovie').disabled=false;};
+  player.play().catch(()=>{player.controls=true;$('nextMovie').disabled=false;});
+ }else{$('moviePlaceholder').hidden=false;}
+}
+function nextMovie(){
+ if(!$('player').hidden&&$('nextMovie').disabled)return;
+ movieIndex++;
+ if(movieIndex<pending.length){playCurrent();return;}
+ $('player').pause();$('cinema').close();
+ if(mode==='sequence'){
+  state.watched=[...new Set(state.watched.concat(pending))];
+  state.step=Math.min(STEPS.length,state.step+1);save();
+ }
+ pending=null;draw();
+}
+function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;state={step:0,watched:[],ended:false};save();draw();}
+$('closeMovie').onclick=()=>{$('player').pause();$('cinema').close();pending=null;draw()};
+$('nextMovie').onclick=nextMovie;
+$('cinema').addEventListener('cancel',()=>{$('player').pause();pending=null});
+draw();
+})();
+</script>
+</body>
+</html>
