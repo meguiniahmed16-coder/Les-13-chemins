@@ -232,13 +232,36 @@ function makeActor(index,role='walker',color=0x87a988){
   for(const sign of [-1,1])cyl(group,sign*.13,.35,0,.105,.70,0x3b5152);
  }
  if(role==='police'){
-  sphere(group,0,1.12,-.13,.34,.42,.25,0x315f7b);
-  cube(group,0,1.19,.13,.36,.08,.07,0xe2c766);
-  cyl(group,0,1.80,0,.28,.16,0x243d59);
-  cube(group,0,1.84,-.23,.39,.035,.23,0x203a50);
-  const name=sign('POLICIA',.88,'#315c77','#fff9d9');
-  name.position.set(0,1.18,-.40);group.add(name);
-  for(const side of [-1,1])cube(group,side*.39,1.33,-.11,.14,.13,.17,0x9db1bd);
+  // Policía : uniforme complet bleu marine, casquette, ceinture, radio, insignes.
+  // L'uniforme doit être identifiable de face, de dos et de profil.
+  const navy=0x193550,blue=0x2b618a,mid=0x254c73,black=0x182431,gold=0xf4dc79;
+  cube(group,0,1.19,-.03,.72,.78,.49,navy); // veste complète
+  cube(group,0,1.54,-.12,.61,.13,.39,blue); // col
+  cube(group,0,.79,-.02,.73,.15,.49,black); // ceinturon
+  cube(group,0,.79,-.294,.62,.07,.045,gold);
+  cube(group,0,1.45,-.298,.61,.077,.04,gold); // bande poitrine
+  cube(group,0,1.45,.226,.61,.077,.04,gold); // bande dorsale
+  for(const side of [-1,1]){
+   sphere(group,side*.39,1.44,-.05,.19,.19,.22,blue); // épaulettes
+   const arm=cyl(group,side*.47,1.13,-.03,.155,.63,navy);
+   arm.rotation.z=side*.16;
+   cube(group,side*.48,1.14,-.207,.20,.23,.07,gold); // insigne manche
+   cube(group,side*.48,.87,-.11,.21,.09,.21,black);
+   cube(group,side*.18,.45,-.04,.27,.67,.32,mid);
+   cube(group,side*.18,.15,-.17,.31,.22,.40,black);
+  }
+  cube(group,-.405,.78,-.06,.15,.27,.22,black); // étui
+  cube(group,.405,.91,-.05,.15,.31,.21,black); // radio
+  cyl(group,.42,1.15,-.06,.025,.20,0x485e69); // antenne
+  cyl(group,0,1.97,-.02,.315,.23,navy); // casquette
+  cube(group,0,2.075,-.02,.56,.055,.51,blue); // calotte
+  cube(group,0,1.87,-.278,.53,.073,.36,black); // visière
+  sphere(group,0,2.017,-.305,.075,.085,.03,gold); // écusson
+  const front=sign('POLICÍA',1.28,'#244d73','#fff7dd');
+  front.position.set(0,1.20,-.317);group.add(front);
+  const back=sign('POLICÍA',1.46,'#244d73','#fff7dd');
+  back.position.set(0,1.25,.273);back.rotation.y=Math.PI;group.add(back);
+  cube(group,0,1.04,.258,.57,.071,.035,gold);
  }
  if(role==='hero'){
   sphere(group,0,1.82,0,.23,.10,.22,0x303e44);
