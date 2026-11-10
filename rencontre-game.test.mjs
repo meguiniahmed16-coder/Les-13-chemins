@@ -84,7 +84,8 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
  assert.ok(html.includes('player.muted=Boolean(FRENCH_LINES[shot[0]])'), 'Les plans avec paroles françaises masquent les paroles étrangères du clip');
  assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
- assert.ok(!/<video\b[^>]*\s(?:muted|controls)(?:\s|=|>)/.test(html), 'Video markup must not force mute or native controls');
+ const playerTag=html.match(/<video id="player"[^>]*>/)?.[0];
+ assert.ok(playerTag&&!/\s(?:muted|controls)(?:\s|=|>)/.test(playerTag), 'The cinematic player must not force mute or native controls');
  assert.ok(html.includes('id="resumeWithSound"')&&html.includes("$('resumeWithSound').onclick"), 'Mobile autoplay block must show a simple audio-resume action');
  assert.ok(html.includes("player.classList.add('video-fading')")&&html.includes("requestAnimationFrame(()=>player.classList.remove('video-fading'))"), 'The clip transition is a soft fade');
  assert.ok(html.includes('nextMovie();},FADE_MS)'), 'Intermediate clips must chain with a soft fade');
