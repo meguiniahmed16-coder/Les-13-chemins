@@ -68,8 +68,10 @@ export function advance(run,dt,input={}){
  const magnitude=Math.hypot(x,z),moving=magnitude>.12;
  if(moving){
   const speed=run.dodgeTime>0?9.2:5.8;
-  run.x=clamp(run.x+x/magnitude*speed*t,-PARK.walkWidth,PARK.walkWidth);
-  run.z=clamp(run.z+z/magnitude*speed*t,.4,PARK.length-2);
+  // Le parc ne s'arrête pas à 120 m : marcher librement dans les deux sens
+  // et sur les pelouses ne rencontre plus de limite invisible.
+  run.x+=x/magnitude*speed*t;
+  run.z+=z/magnitude*speed*t;
   run.facing=Math.atan2(x,z);
   run.steps+=t*(speed/5.8);
  }
