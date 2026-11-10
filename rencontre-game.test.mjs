@@ -87,7 +87,7 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(!/<video\b[^>]*\s(?:muted|controls)(?:\s|=|>)/.test(html), 'Video markup must not force mute or native controls');
  assert.ok(html.includes('id="resumeWithSound"')&&html.includes("$('resumeWithSound').onclick"), 'Mobile autoplay block must show a simple audio-resume action');
  assert.ok(html.includes("player.classList.add('video-fading')")&&html.includes("requestAnimationFrame(()=>player.classList.remove('video-fading'))"), 'The clip transition is a soft fade');
- assert.ok(html.includes('nextMovie();},FADE_MS)'), 'The validated clips must chain into one film after a fade');
+ assert.ok(html.includes('nextMovie();},FADE_MS)'), 'Intermediate clips must chain with a soft fade');
  assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not move the story forward');
  assert.ok(!html.includes('La fenêtre sur Paris')&&!html.includes("clips:['B07']"), 'No literary ending');
  assert.ok(html.includes("beginScene(['A08'],'replay')"),'The extra night video is preserved');
@@ -96,4 +96,27 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(controller.includes("e.data.type!=='rencontre:state'"), 'Parent verifies iframe origin and event type');
  assert.ok(controller.includes('state.rdvRencontreFinished=true'), 'The third Chemin III chapter is completed');
  assert.ok(!html.includes('Photo du pèlerin'), 'No unrelated artwork is included');
+});
+
+test('Chapitre 6 : bonne feuille complète fidèle à la V17 et lecture avant le jeu', () => {
+ const match=controller.match(/const rencontreExtract=(\[[^\n]*\]);/);
+ assert.ok(match,'The original excerpt is present in the reader');
+ const paragraphs=JSON.parse(match[1]);
+ assert.ok(paragraphs.length>=18,'The excerpt includes the grief and the whole birthday scene');
+ assert.ok(paragraphs[0].startsWith('Nous avons une amie en commun. Elle me raconte la cérémonie.'));
+ assert.equal(paragraphs.at(-1),'Elle appelle un taxi et décide de me ramener chez elle, dans sa chambre de bonne, au 30 avenue Rapp.');
+ const content=paragraphs.join('\n');
+ for(const line of ['Lionel était par terre.','Il avait crié.','Dans les soirées, il y a toujours une deuxième soirée dans la cuisine.','— Tu veux bien t’occuper de moi ?','— Oui.'])assert.ok(content.includes(line),line);
+ assert.ok(controller.includes('putExcerpt(rencontreExtract);excerpt.hidden=false;'));
+ assert.ok(controller.includes('activePart===3?openRencontreDialog:activePart===2?openCyranoDialog:openDialog'));
+ assert.ok(controller.includes('clearTimeout(autoTimer);autoTimer=0;autoLaunched=true;'));
+});
+test('Le bouton Rejouer la scène est sur la vidéo à la fin de chaque séquence', () => {
+ assert.match(html,/id="replayScene" class="replay-overlay" hidden/);
+ assert.match(html,/\$\('replayScene'\)\.onclick=\(\)=>/);
+ assert.ok(html.includes('if(movieIndex+1===pending.length)'));
+ assert.ok(html.includes('replay.hidden=false'));
+ assert.ok(html.includes('stopAdvanceTimer();movieIndex=0;playCurrent();'));
+ assert.ok(html.includes("'Continuer l’histoire →'"));
+ assert.ok(!html.includes('clips:[\'B07\']'),'No missing literary finale');
 });

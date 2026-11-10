@@ -41,6 +41,7 @@
  document.head.append(rencontreStyle);
  function openRencontreDialog(){
   if(!flow.chapter2Done(state)||!cyranoTraversed())return;
+  clearTimeout(autoTimer);autoTimer=0;autoLaunched=true;
   if(reader.open)reader.close();
   if(!rencontreDialog.open)rencontreDialog.showModal();
   if(!rencontreLoading){rencontreLoading=true;rencontreFrame.src='jeu-rencontre.html?embedded=1';}
@@ -62,6 +63,8 @@
  style.textContent+=`#cyranoDialog{padding:0;width:min(1220px,98vw);height:98dvh;max-width:98vw;max-height:98dvh;border:2px solid #c09c6c;border-radius:10px;background:#10191e;color:#f7ebd7;overflow:hidden}#cyranoDialog[open]{display:flex;flex-direction:column}#cyranoDialog::backdrop{background:#102021e0}#cyranoDialog .arcade-dialog-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 13px;background:#233d3e;border-bottom:1px solid #ad987a;font-size:11px}#cyranoDialog .arcade-dialog-bar button{background:#325450;color:#fff0d8;border:1px solid #ac9875;border-radius:5px;padding:9px 12px;min-height:42px}#cyranoFrame{width:100%;min-height:0;flex:1;border:0;background:#10191e}#cyranoDialog .arcade-under-actions{display:flex;gap:8px;padding:8px 12px;background:#213f3b;border-top:1px solid #b6a27e}#cyranoDialog .arcade-under-actions button{flex:1;min-width:0;min-height:44px;border-radius:6px;padding:8px;font-weight:700;border:1px solid #baa77d;cursor:pointer}#cyranoBack{background:#3b5a54;color:#fff5de}#cyranoNext{background:#ebd2a7;color:#264238}@media(max-width:650px){#cyranoDialog{max-width:100vw;width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}#cyranoDialog .arcade-dialog-bar{font-size:10px;padding:5px 7px}#cyranoDialog .arcade-dialog-bar button{font-size:10px;padding:7px}#cyranoDialog .arcade-under-actions{padding:5px 7px}}`;
  document.head.append(style);
  const cyranoExtract=["Cédric Aubert, mon voisin d’isolement dans la cellule d’à côté, finit par me parler d’un problème. Le détenu qui occupait ma cellule avant moi écrivait ses lettres d’amour. Mon voisin avait une copine dehors, mais complexait sur son orthographe et ne savait pas lui parler d’amour. Mon prédécesseur écrivait les lettres ; lui les recopiait avant de les envoyer. Il me demande :","— Est-ce que toi, tu te sens de faire le boulot ?","— Écoute, ça tombe plutôt bien. Moi, j’ai pas de copine à qui écrire.","Ça peut être marrant. Me voilà écrivain public sentimental au quartier d’isolement.","Un problème me vient quand même à l’esprit :","— Mais attends. Si je me mets à écrire à la place de l’autre, elle va forcément s’en rendre compte. Je ne sais pas ce que le mec écrivait, moi.","— Si, si. J’ai gardé tous les brouillons.","— Tous les brouillons ?","— Oui. Comme je recopiais ses lettres, je les ai gardés. Je te les file. Tu t’en inspires et tu gardes le même style.","Je trouve ça génial. Maintenant, il fallait en plus que j’assure la continuité éditoriale d’une correspondance amoureuse clandestine.","— Bon. Et comment on fait ? On passe par le yo-yo ?","Le yo-yo : une petite corde faite avec des bandes de drap, un sac plastique accroché au bout, qu’on fait circuler de cellule en cellule.","— Pour le paquet avec les anciens brouillons, oui, on passe par le yo-yo. Mais après, pour les lettres, il y a plus simple.","— Quoi ?","— Avec celui qui occupait ta cellule avant toi, on a creusé un trou.","Je reste silencieux.","— Vous avez fait quoi ?","— Un trou. Dans le mur.","Il m’indique l’endroit. Le trou traverse le mur entre nos deux cellules. Il suffit de rouler une feuille très serrée, d’en faire un petit tube et de la glisser à travers. Je regarde le trou. Les bras m’en tombent. Ces deux types ont creusé un passage dans le mur d’une prison, non pour s’évader ni faire passer de la drogue, mais pour faire passer des lettres d’amour.","Je les écris. Cédric les recopie avant de les envoyer à sa copine."];
+ // Extrait littéral du manuscrit V17 : de l'amie commune de Lionel à l'appel du taxi.
+ const rencontreExtract=["Nous avons une amie en commun. Elle me raconte la cérémonie. Elle me dit que c'était beau, qu'ils avaient lâché des ballons pour que je sois symboliquement présent avec eux, malgré ma détention.","Elle me raconte aussi les circonstances de sa mort.","Lionel était reparti de Strasbourg, où il avait échappé de justesse à la rafle des policiers du RAID, après que l'occupation de l'annexe du ministère de la Justice avait été qualifiée de prise d'otages.","Quand il était arrivé à Paris, il l'avait appelée. Il était paniqué. Elle l'avait rejoint chez lui. Il était très anxieux, très agité.","Comme il était resté quelque temps à Strasbourg, il n'avait plus rien à manger. Elle lui avait donné quelques calmants avant de partir lui faire des courses.","Quand elle est revenue, les pompiers étaient là.","Lionel était par terre.","Elle me rapporte aussi un détail troublant. Les voisins auraient entendu Lionel crier pendant sa chute.","Il avait crié.","Je ne sais pas pourquoi, mais ce détail me trouble particulièrement.","Ce soir-là, avec cette amie, nous avons dormi ensemble, chez Lionel.","Et nous avons fait l'amour.","C'est très étrange. Je ne suis même pas sûr que nous ayons eu beaucoup de désir l'un pour l'autre.","C'est, à ce jour, la seule fois de ma vie où j'ai fait l'amour comme un hommage.","Entre-temps, j’ai été expulsé de mon appartement. Un copain m’héberge. Je ne suis pas au meilleur de ma forme : je bois beaucoup trop et je n’ai pratiquement que les vêtements que je porte. Le mercredi suivant, je vais quand même à cet anniversaire. Je suis sale et surtout très éméché. À la soirée, je suis une sorte de guest star : le petit Che Guevara du quartier vient de sortir de prison, sauf qu’il titube. À un moment, je me retrouve dans la cuisine.","Dans les soirées, il y a toujours une deuxième soirée dans la cuisine. Deux jeunes types commencent à me parler.","— Alors ? C’était comment, la prison ?","Et là, je pars en mode soûlard pathétique. Je parle en regardant le sol, avec une articulation approximative et la conviction, propre aux gens très ivres, que ce qu’ils racontent est passionnant. Au bout d’un moment, je relève la tête : les deux types sont partis. Pendant une seconde, je réalise que je parle peut-être tout seul. Puis je tourne la tête. Il reste une jeune femme, à peu près de mon âge.","Elle a de grands yeux bleus soulignés d’eye-liner. Deux papillons.","— Je suis fatigué.","Elle me répond :","— Je sais.","Je lui pose une question étrange à une inconnue dans une cuisine :","— Tu veux bien t’occuper de moi ?","— Oui.","Elle appelle un taxi et décide de me ramener chez elle, dans sa chambre de bonne, au 30 avenue Rapp."];
  const partNav=document.createElement('nav');partNav.className='rendezvous-part-nav';partNav.setAttribute('aria-label','Les trois jeux du chemin III');
  for(let i=0;i<3;i++){
   const b=document.createElement('button');b.type='button';b.dataset.part=String(i+1);b.textContent='Chapitre '+parts[i].chapter+' · Jeu '+(i+1)+'/3';
@@ -139,10 +142,11 @@
    readerHeading.textContent='LES TREIZE CHEMINS · CHEMIN III · CHAPITRE 6';
    kicker.textContent='Chemin III · Les rendez-vous';
    title.textContent='Chapitre '+parts[n-1].chapter+' — « '+parts[n-1].title+' »';
-   readerArea.hidden=true;readerReference.hidden=true;
-   excerpt.hidden=true;
+   readerArea.textContent='Paris · souvenir de Lionel · soirée d’anniversaire';readerArea.hidden=false;
+   readerReference.textContent='Extrait du chapitre 6 — « Tu veux bien t’occuper de moi ? » · manuscrit V17.';readerReference.hidden=false;
+   putExcerpt(rencontreExtract);excerpt.hidden=false;
    infoHeading.textContent='Jeu 3 / 3 · Tu veux bien t’occuper de moi ?';
-   infoBody.textContent='Vingt et une cinématiques sont disponibles : dans la cuisine, le regard ouvre la caresse de la joue, puis les cheveux et le baiser. Le dernier verre conduit à la mansarde, à la complicité et jusqu’au « oui ». À chaque « Pas maintenant », un autre moment de tendresse se joue. Les films débloqués peuvent être revus ; aucun point supplémentaire n’est attribué.';
+   infoBody.textContent='Lis ce passage intégralement : le jeu commence à la fin de la bonne feuille. Vingt et une cinématiques sont disponibles : dans la cuisine, le regard ouvre la caresse de la joue, puis les cheveux et le baiser. Le dernier verre conduit à la mansarde, à la complicité et jusqu’au « oui ». À chaque « Pas maintenant », un autre moment de tendresse se joue. Les films débloqués peuvent être revus ; aucun point supplémentaire n’est attribué.';
    launch.hidden=false;
   }
   reader.scrollTop=0;updateThird();
@@ -272,12 +276,12 @@
   return excerpt.getBoundingClientRect().bottom<=reader.getBoundingClientRect().bottom-18;
  }
  reader.addEventListener('scroll',()=>{
-  if((activePart!==1&&activePart!==2)||autoLaunched||!reader.open)return;
+  if(autoLaunched||!reader.open)return;
   if(!reachedReadingEnd()){clearTimeout(autoTimer);autoTimer=0;return;}
   if(autoTimer)return;
   autoTimer=setTimeout(()=>{
    autoTimer=0;
-   if(reader.open&&(activePart===1||activePart===2)&&!autoLaunched&&reachedReadingEnd())(activePart===2?openCyranoDialog:openDialog)();
+   if(reader.open&&!autoLaunched&&reachedReadingEnd())(activePart===3?openRencontreDialog:activePart===2?openCyranoDialog:openDialog)();
   },1150);
  },{passive:true});
  const oldRender=render;

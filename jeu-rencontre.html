@@ -60,7 +60,7 @@ dialog::backdrop{background:#0e201cd9}
 .movie-frame video,.movie-frame img{display:block;width:100%;max-height:52vh;aspect-ratio:16/9;object-fit:contain}
 .movie-frame video{opacity:1;transition:opacity 300ms ease-in-out}
 .movie-frame video.video-fading{opacity:0}
-.movie-frame .resume-sound{position:absolute;z-index:2;left:50%;bottom:20px;transform:translateX(-50%);background:#f3deaa;color:#213e35;border:1px solid #ae8b53;box-shadow:0 4px 20px #0006;min-width:min(280px,85%);cursor:pointer}
+.movie-frame .replay-overlay{position:absolute;z-index:3;left:50%;bottom:24px;transform:translateX(-50%);min-width:min(250px,85%);padding:13px 20px;border:1px solid #e4c693;border-radius:999px;background:#1d3f34e8;color:#fff4d9;box-shadow:0 6px 24px #0009;cursor:pointer;font:700 15px system-ui,sans-serif;backdrop-filter:blur(5px)}.movie-frame .replay-overlay:hover,.movie-frame .replay-overlay:focus-visible{background:#375d4bed}.movie-frame .resume-sound{position:absolute;z-index:2;left:50%;bottom:20px;transform:translateX(-50%);background:#f3deaa;color:#213e35;border:1px solid #ae8b53;box-shadow:0 4px 20px #0006;min-width:min(280px,85%);cursor:pointer}
 .movie-frame .movie-placeholder{padding:36px 22px;text-align:center;color:#eee0bd}
 .movie-placeholder strong{display:block;font:italic 26px Georgia,serif}
 .movie-placeholder small{display:block;margin:12px auto;font-size:13px;line-height:1.6;max-width:550px}.movie-placeholder img{width:100%;max-width:690px;height:auto;max-height:40vh;object-fit:contain;margin:auto auto 14px;border:1px solid #bba57c}.movie-placeholder a{display:block;color:#ecd39e;margin-top:12px;font-weight:700;font-size:13px}
@@ -95,7 +95,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 <p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. L’ouverture silencieuse (C01) est illustrée ; le second film se termine sur le « oui » (B06). La vidéo A08 reste accessible comme bonus facultatif. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
-<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
+<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><button type="button" id="replayScene" class="replay-overlay" hidden>↻ Rejouer la scène</button><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
 <script>
 (function(){
 'use strict';
@@ -259,7 +259,7 @@ function playCurrent(){
  $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
  $('cinemaTitle').textContent=shot[1];
  $('cinemaDescription').textContent=shot[3]||'Un moment de leur rencontre, à voir jusqu’au bout avant de poursuivre.';
- const player=$('player'),resume=$('resumeWithSound');
+ const player=$('player'),resume=$('resumeWithSound'),replay=$('replayScene');replay.hidden=true;
  player.pause();player.onended=null;player.onerror=null;player.onplaying=null;
  player.removeAttribute('src');player.load();player.hidden=true;
  // Pas de contrôles de lecteur : la cinématique se joue avec son original.
@@ -279,10 +279,18 @@ function playCurrent(){
   };
   player.onended=()=>{
    if(!pending||!$('cinema').open)return;
-   player.classList.add('video-fading');resume.hidden=true;
+   resume.hidden=true;
    $('nextMovie').disabled=false;
-   $('nextMovie').textContent=movieIndex+1<pending.length?'Continuer →':'Terminer la cinématique →';
-   advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$('cinema').open)nextMovie();},FADE_MS);
+   if(movieIndex+1===pending.length){
+    // La récompense a été vue : conserver l'écran de la scène et offrir une relecture immédiate.
+    player.classList.remove('video-fading');
+    replay.hidden=false;
+    $('nextMovie').textContent='Continuer l’histoire →';
+   }else{
+    player.classList.add('video-fading');
+    $('nextMovie').textContent='Continuer →';
+    advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$('cinema').open)nextMovie();},FADE_MS);
+   }
   };
   player.onerror=()=>{
    if(!pending||!$('cinema').open)return;
@@ -310,6 +318,10 @@ function playCurrent(){
   }
  }
 }
+$('replayScene').onclick=()=>{
+ if(!pending||!$('cinema').open)return;
+ stopAdvanceTimer();movieIndex=0;playCurrent();
+};
 $('resumeWithSound').onclick=()=>{
  if(!pending||!$('cinema').open)return;
  const player=$('player'),shot=shotInfo(pending[movieIndex]);
