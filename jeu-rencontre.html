@@ -43,7 +43,7 @@ button{font:600 14px/1.4 system-ui,sans-serif;min-height:49px;cursor:pointer;bor
 .film-card strong{font:600 20px/1.1 Georgia,serif}.film-card small{color:#726c5b}
 .clip-list{display:flex;gap:6px;flex-wrap:wrap;list-style:none;padding:0;margin:12px 0}
 .clip-list li{font-size:11px;background:#f6efdd;padding:6px 9px;border:1px solid #d3c09d;border-radius:5px;color:#786c58}
-.clip-list li.unlocked{color:#2b533c;border-color:#95a786;background:#e8efdf}
+.clip-list li.unlocked{color:#2b533c;border-color:#95a786;background:#e8efdf}.alternative-heading{font:500 23px Georgia,serif;margin:23px 0 5px;color:#2c4b3e}.alternative-description{font-size:12px;color:#6b685f}#pauseClips button{background:#e4efdc;color:#264b37;border:1px solid #93ab8d;border-radius:5px;padding:6px 11px;cursor:pointer;font:600 12px system-ui}#pauseClips button:hover{background:#d5e6cd}
 dialog{border:5px solid #bd9e68;border-radius:8px;max-width:min(820px,95vw);width:100%;padding:0;color:#fff0d7;background:#1b352d;box-shadow:0 15px 55px #0008;max-height:92dvh}
 dialog::backdrop{background:#0e201cd9}
 .movie-head{padding:14px 18px;border-bottom:1px solid #bea27673}
@@ -74,7 +74,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 </div>
 <section class="panel" aria-live="polite"><div id="stepLabel" class="eyebrow"></div><h2 id="stepTitle"></h2><p id="stepDescription"></p><div id="choices" class="actions"></div><div id="feedback" class="feedback" hidden></div></section>
 </div>
-<section class="section" aria-labelledby="cinematics"><h2 id="cinematics">Cinématiques et récompenses</h2><p>À chaque choix qui fait progresser l'histoire, le lecteur débloque les plans associés. Chaque clip sera montré dans son intégralité, puis rejoindra la collection. Les deux films complets seront accessibles à la fin de leur parcours respectif.</p><div id="clips" class="clip-list" role="list"></div><div id="films" class="library"></div></section>
+<section class="section" aria-labelledby="cinematics"><h2 id="cinematics">Cinématiques et récompenses</h2><p>À chaque choix qui fait progresser l'histoire, le lecteur débloque les plans associés. Chaque clip sera montré dans son intégralité, puis rejoindra la collection. Les deux films complets seront accessibles à la fin de leur parcours respectif.</p><div id="clips" class="clip-list" role="list"></div><h3 class="alternative-heading">Les séquences « Pas maintenant »</h3><p class="alternative-description">Une confidence, un rire ou un regard : chaque étape possède une autre possibilité.</p><div id="pauseClips" class="clip-list" role="list"></div><div id="films" class="library"></div></section>
 <p class="caption">Prototype du parcours narratif : les choix fonctionnent, mais les animations et la scène mansardée restent à produire. Aucun point ni trésor n'est attribué en l'absence des cinématiques. Le jeu ne modifie pas la sauvegarde des autres chapitres.</p>
 </main>
 <dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline preload="metadata" hidden></video><div id="moviePlaceholder" class="movie-placeholder"><strong>Animation à produire</strong><small>Le clip sélectionné n'est pas encore disponible. L'illustration de référence et l'ordre des scènes sont conservés.</small><span id="movieFile" class="dummy-tag"></span></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
@@ -129,10 +129,10 @@ const STEPS=[
 const $=id=>document.getElementById(id);
 const KEY='tda-rencontre-storyboard-v1';
 let state={step:0,watched:[],ended:false};
-try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Number.isInteger(previous.step)&&previous.step>=0&&previous.step<=STEPS.length&&Array.isArray(previous.watched)){state={step:previous.step,watched:previous.watched.filter(x=>SHOTS.some(y=>y[0]===x)),ended:!!previous.ended}}}catch(e){}
+try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Number.isInteger(previous.step)&&previous.step>=0&&previous.step<=STEPS.length&&Array.isArray(previous.watched)){state={step:previous.step,watched:previous.watched.filter(x=>SHOTS.concat(ALTERNATES).some(y=>y[0]===x)),ended:!!previous.ended}}}catch(e){}
 let pending=null,movieIndex=0,mode='sequence';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
-const shotInfo=id=>SHOTS.find(s=>s[0]===id);
+const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
 function button(label,css,cb){const b=document.createElement('button');b.type='button';b.className=css;b.textContent=label;b.onclick=cb;return b;}
 function draw(){
  $('progress').replaceChildren(...STEPS.map((_,i)=>{const d=document.createElement('span');d.className=i<state.step?'done':i===state.step?'current':'';return d;}));
@@ -147,10 +147,11 @@ function draw(){
  if(atEnd){$('choices').append(button('Recommencer cette histoire','action',reset));}
  else{
    $('choices').append(button(step.yes,'action',()=>beginScene(step.clips,'sequence')));
-   if(step.no)$('choices').append(button('Pas maintenant','outline',()=>{state.ended=false;$('feedback').hidden=false;$('feedback').textContent='La scène peut rester suspendue ici. Tu peux reprendre le geste plus tard ou terminer cette version de la rencontre.';$('choices').append(button('Terminer sur cet instant','outline',()=>{state.ended=true;state.step=STEPS.length;save();draw()}));}));
+   if(step.no)$('choices').append(button('Pas maintenant','outline',()=>beginScene([step.alt],'pause')));
  }
  if(!atEnd){$('feedback').hidden=true;$('feedback').textContent='';}
  $('clips').replaceChildren(...SHOTS.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';li.textContent=(state.watched.includes(s[0])?'✓ ':'○ ')+s[0]+' · '+s[1];return li}));
+ $('pauseClips').replaceChildren(...ALTERNATES.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
  $('films').replaceChildren();
  for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:8,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:7,ready:state.watched.includes('B07')}]){
   const box=document.createElement('div');box.className='film-card';
@@ -169,7 +170,7 @@ function playCurrent(){
  const shot=shotInfo(pending[movieIndex]);if(!shot)return;
  $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
  $('cinemaTitle').textContent=shot[1];
- $('cinemaDescription').textContent='Cette cinématique sera visionnée entièrement avant de poursuivre lorsque son fichier sera disponible.';
+ $('cinemaDescription').textContent=shot[3]||'Cette cinématique sera visionnée entièrement avant de poursuivre lorsque son fichier sera disponible.';
  $('movieFile').textContent=shot[2];
  const player=$('player');player.pause();player.removeAttribute('src');player.hidden=true;
  $('nextMovie').disabled=false;$('nextMovie').textContent=movieIndex+1<pending.length?'Plan suivant →':'Terminer la séquence →';
@@ -185,11 +186,18 @@ function nextMovie(){
  movieIndex++;
  if(movieIndex<pending.length){playCurrent();return;}
  $('player').pause();$('cinema').close();
- if(mode==='sequence'){
+ const finished=mode;
+ if(mode==='sequence'||mode==='pause'){
   state.watched=[...new Set(state.watched.concat(pending))];
-  state.step=Math.min(STEPS.length,state.step+1);save();
+  if(mode==='sequence')state.step=Math.min(STEPS.length,state.step+1);
+  save();
  }
  pending=null;draw();
+ if(finished==='pause'&&state.step<STEPS.length){
+  $('feedback').hidden=false;
+  $('feedback').textContent='La scène se prolonge autrement. Tu peux choisir plus tard ou terminer ici.';
+  $('choices').append(button('Terminer la rencontre ici','outline',()=>{state.ended=true;state.step=STEPS.length;save();draw();}));
+ }
 }
 function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;state={step:0,watched:[],ended:false};save();draw();}
 $('closeMovie').onclick=()=>{$('player').pause();$('cinema').close();pending=null;draw()};
