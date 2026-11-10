@@ -4,7 +4,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,activeWave,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
+import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,activeWave,gameInstruction,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
 const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
@@ -17,7 +17,7 @@ const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-ma
 let crowdLoading=false;
 let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,lastHud=0;
 let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0,avenueExtended=false,bastilleReady=false;
-let lastControlDisplay=0,renderFailureReported=false;
+let lastControlDisplay=0,renderFailureReported=false,lastInstructionKey=null;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,adverseSymbols=null,extraFollowersActive=false;
 let redGuide=null,guideStop=0;
 const GUIDE_STOPS=[{x:-2.8,z:-3},{x:0,z:4.2},{x:3.1,z:10}];
@@ -732,7 +732,14 @@ function sceneFor(phase){
 
 function messageFeedback(text,duration=1.05){
  speech.textContent=text;speech.hidden=false;speech.style.opacity='1';
- showSpeechUntil=performance.now()/1000+Math.min(1.25,Math.max(.6,duration));
+ showSpeechUntil=performance.now()/1000+Math.min(1.12,Math.max(.65,duration));
+}
+function syncInstruction(){
+ if(!playing||paused)return;
+ const instruction=gameInstruction(run);
+ if(!instruction||instruction.key===lastInstructionKey)return;
+ lastInstructionKey=instruction.key;
+ messageFeedback(instruction.text,1.05);
 }
 function refreshHUD(){
  const p=run.phase,n=run.steps.length;
@@ -776,32 +783,18 @@ function refreshHUD(){
 const send=(type,extra={})=>{if(embedded)parent.postMessage({type,id:sessionId,...extra},location.origin);};
 function drain(){
  for(const e of run.events.splice(0)){
-  if(e.type==='progress'){
-   if(!serverSteps.includes(e.step)){
-    if(!embedded){serverSteps.push(e.step);}
-    send('manifestation:progress',{step:e.step});
-   }
-   if(e.step===3)messageFeedback('✓ Réunis !',1.2);
-   else if(e.step===2)messageFeedback('Prends le ♥',1.0);
-   else if(e.step===1)messageFeedback('Monte sur la statue',1.15);
+  if(e.type==='progress'&&!serverSteps.includes(e.step)){
+   if(!embedded)serverSteps.push(e.step);
+   send('manifestation:progress',{step:e.step});
   }
-  if(e.type==='flag:pickup')messageFeedback('✓ 🇫🇷',.75);
-  if(e.type==='corner'){cornerTurn=1.55;}
-  if(e.type==='summit')messageFeedback('Crie « Camarades ! »',1.2);
-  if(e.type==='shout'){voiceCamarades();}
-  if(e.type==='weapon:pickup')messageFeedback('✓ '+(WEAPONS.find(w=>w.kind===e.kind)?.icon||'')+' Prête !',.85);
+  if(e.type==='corner')cornerTurn=1.55;
+  if(e.type==='shout')voiceCamarades();
   if(e.type==='projectile:fire'){sendProjectile(e.wave,e.officer,e.kind,e.duration);sound(710,.1);}
   if(e.type==='projectile:hit'){transformOfficer(e.wave,e.officer,e.kind);sound(920,.1);}
-  if(e.type==='crs:incoming')messageFeedback('Choisis un CRS',1.0);
-  if(e.type==='crs:repelled'){
-   const next=run.pickups.find(p=>!p.collected);
-   messageFeedback(next?'Prends '+next.icon:'✓ Barrage franchi',1.05);
-  }
-  if(e.type==='join:start')messageFeedback('✓ Ensemble !',.9);
   if(e.type==='won'){
-   playing=false;paused=false;
-   messageFeedback('✓ Cortèges réunis !',1.2);
+   messageFeedback('✓ Cortèges réunis !',1.05);
    send('manifestation:won');
+   playing=false;paused=false;
   }
  }
 }
@@ -809,11 +802,11 @@ function drain(){
 function card(titleText,bodyText){overlay.hidden=false;$('overlayTitle').textContent=titleText;$('overlayText').textContent=bodyText;}
 function start(){
  if(!gameReady)return;
- $('renderError').hidden=true;renderFailureReported=false;lastControlDisplay=0;
+ $('renderError').hidden=true;renderFailureReported=false;lastControlDisplay=0;lastInstructionKey=null;
  $('controlsStatus').hidden=true;
  $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
- messageFeedback('Prends le drapeau 🇫🇷',1.1);
+ syncInstruction();
 }
 function pause(){
  if(!playing)return;paused=!paused;
@@ -832,7 +825,6 @@ function sound(freq,length){
  o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+length+.02);}catch{}
 }
 function voiceCamarades(){
- messageFeedback('Descends de la statue',1.0);
  if(soundOn&&'speechSynthesis'in window){
   try{
    const q=new SpeechSynthesisUtterance('Camarades !');q.lang='fr-FR';q.rate=1.03;q.volume=.9;
@@ -845,13 +837,13 @@ function voiceCamarades(){
 function callCrowd(){
  if(!playing||paused)return;
  const fired=red(run);
- if(fired){drain();refreshHUD();}
+ if(fired){drain();syncInstruction();refreshHUD();}
  // Without a selected CRS, holding red while stationary still gathers allies.
 }
 function yellowPress(){
  if(!playing||paused||actionTransition>0)return;
  const result=yellow(run);
- if(result){drain();refreshHUD();}
+ if(result){drain();syncInstruction();refreshHUD();}
 }
 function chooseTarget(){
  if(!playing||paused)return;
@@ -1030,6 +1022,7 @@ function render(ms){
    refreshHUD();
   }
  }
+ syncInstruction();
  const time=ms/1000;
  if(!speech.hidden){
   const remaining=showSpeechUntil-time;
@@ -1092,7 +1085,7 @@ async function loadCharacters(){
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Prends le drapeau français avec JAUNE. Monte sur la statue et crie « Camarades ! ». Récupère ♥, ✿ et 💋 avant les CRS. De petites consignes apparaissent brièvement en jeu.';
+  $('overlayText').textContent='Prends le drapeau, monte sur la statue et crie « Camarades ! ». Récupère ensuite les trois symboles et vise les CRS.';
   $('start').disabled=false;
   send('manifestation:ready');
  }catch(e){
