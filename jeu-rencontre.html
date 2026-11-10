@@ -313,10 +313,11 @@ function draw(){
  $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/'+STEPS.length;
  $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
  $('choices').replaceChildren();
- if(atEnd){$('choices').append(button('↻ Rejouer toute la rencontre','action',reset));if(!state.ended)$('choices').append(button('▶ Voir le silence de la nuit (bonus)','outline',()=>beginScene(['A08'],'replay')));}
+ if(atEnd){$('choices').append(button('↻ Rejouer toute la rencontre','action',reset));if(!state.ended){$('choices').append(button('▶ Revoir « Sous les draps »','outline',()=>beginScene(['B05'],'replay')));$('choices').append(button('▶ Voir le silence de la nuit (bonus)','outline',()=>beginScene(['A08'],'replay')));}}
  else{
    $('choices').append(button(step.yes,'action',()=>beginScene(step.clips,'sequence')));
    if(step.no)$('choices').append(button('Pas maintenant','outline',()=>beginScene([step.alt],'pause')));
+   if(state.step===6)$('choices').append(button('▶ Voir « Sous les draps »','outline',()=>beginScene(['B05'],'replay')));
  }
 
 }
@@ -359,6 +360,10 @@ function playCurrent(){
     player.classList.remove('video-fading');
     replay.hidden=false;
     $('nextMovie').textContent='Continuer l’histoire →';
+   }else if(shot[0]==='B04'&&pending[movieIndex+1]==='B05'){
+    // Le plan d'intimité est choisi explicitement : aucune lecture automatique ne peut le sauter.
+    player.classList.remove('video-fading');
+    $('nextMovie').textContent='Voir « Sous les draps » →';
    }else{
     player.classList.add('video-fading');
     $('nextMovie').textContent='Continuer →';
