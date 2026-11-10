@@ -29,6 +29,7 @@ for (const args of [
   ['--test', 'cyrano.test.mjs'],
   ['--test', 'cyrano-bd.test.mjs'],
   ['--check', 'rendezvous-plateau.js'],
+  ['--test', 'rencontre-game.test.mjs'],
   ['--test', 'marmousets-art.test.mjs'],
   ['--test', 'a410-pixel-v2.test.mjs'],
   ['--test', 'catalogne-park-v2.test.mjs'],
