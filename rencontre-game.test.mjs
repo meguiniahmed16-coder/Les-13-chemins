@@ -143,9 +143,9 @@ test('Lecture directe du chapitre 6 sans progression obligatoire des jeux préc�
 });
 
 test('Les voix artificielles et sous-titres ont été retirés sans modifier les films',()=>{
- assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"),'C01 displays an existing couple shot');
- assert.ok(html.includes('72b06959-a1e1-4fb4-bde5-7939dc8f1b42.png'),'La vraie image de départ accompagne le duo');
- assert.ok(html.includes('still.src=state.step===0?ART.depart:ART.cuisine'),'L’image de départ est visible avant de lancer la séquence');
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4'"),'C01 displays an existing couple shot');
+ assert.ok(html.includes('cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg'),'Le décor de référence de C01 est celui de sa génération Higgsfield');
+ assert.ok(html.includes('still.src=state.step===0?ART.cuisine:ART.caresse'),'L’image de départ est visible avant de lancer la séquence');
  assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"),'A01 garde sa place en alternative');
  assert.ok(html.includes("const SILENT_DIALOGUE_SHOTS=new Set(['C01','C03','C07','C08'])"));
  assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'));
@@ -168,16 +168,16 @@ test('Choix superposés à l’image de départ, sans bloc détaillé sous la sc
  assert.ok(!main.includes('class="caption"'));
  assert.ok(!main.includes('class="section"'));
  assert.ok(html.includes("stage.src=MEDIA[shot];stage.load()"));
- assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.cuisine"),"The true paid C02 first frame is shown at the opening");
+ assert.ok(html.includes("still.src=state.step===0?ART.cuisine:ART.caresse"),"The true paid C02 first frame is shown at the opening");
  assert.ok(html.includes("beginScene([step.alt],'pause')"));
  assert.ok(html.includes('id="replayScene"'));
 });
 
 test('Le film s’ouvre sur le véritable duo de Higgsfield, pas sur une alternative',()=>{
- assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4'"));
  assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
- assert.ok(html.includes("depart:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/72b06959-a1e1-4fb4-bde5-7939dc8f1b42.png'"));
- assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.cuisine"));
+ assert.ok(html.includes("cuisine:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg'"));
+ assert.ok(html.includes("still.src=state.step===0?ART.cuisine:ART.caresse"));
  assert.ok(html.includes("clips:['C01','C03']"));
  assert.ok(!html.includes('SpeechSynthesisUtterance'));
  assert.ok(!html.includes('frenchDialogue'));
@@ -187,6 +187,14 @@ test('La vidéo payante erronée du garçon seul ne figure plus dans le jeu',()=
  assert.ok(!html.includes('e155bc22-bd01-46f7-86a7-029a60d64a6e'));
  assert.ok(!html.includes('hf_20261110_184312'));
  assert.ok(!html.includes('C02:HIGGS_CDN'));
- assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4'"));
  assert.ok(html.includes("clips:['C01','C03']"));
+});
+
+test('C01 pointe vers le plan authentique donné par le lien partagé',()=>{
+ assert.ok(html.includes("C01:HIGGS_CDN+'hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4'"));
+ assert.ok(html.includes("A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
+ assert.ok(!html.includes('e155bc22-bd01-46f7-86a7-029a60d64a6e'),'La vidéo erronée du garçon seul est exclue');
+ assert.ok(!html.includes('72b06959-a1e1-4fb4-bde5-7939dc8f1b42'),'L’ancienne image de départ a été retirée');
+ assert.ok(html.includes("clips:['C01','C03']"),'Le premier plan du récit est C01');
 });
