@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {newRun,advance,yellow,red,selectTarget,selectNext,callFromStatue,FLAG,STATUE,WEAPONS,CRS_WAVES} from './manifestation-core.js';
+import {newRun,advance,yellow,red,selectTarget,selectNext,callFromStatue,gameInstruction,FLAG,STATUE,WEAPONS,CRS_WAVES} from './manifestation-core.js';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 const idle={x:0,y:0,red:false},walk={x:0,y:1,red:false};
 function phase2(){
@@ -48,15 +48,52 @@ test('Guide silencieux sans inscription permanente',()=>{
  assert.ok(!js.includes('SUIS LE DRAPEAU ROUGE'));
  assert.ok(!html.includes('Suis le personnage au drapeau rouge'));
 });
-test('Consignes brèves et temporaires sans panneau fixe',()=>{
+test('Les instructions se suivent selon l état réel du jeu, jusqu à Bastille',()=>{
+ const r=newRun();
+ assert.equal(gameInstruction(r).text,'Prends le drapeau');
+ r.phase=2;
+ assert.equal(gameInstruction(r).text,'Monte sur la statue');
+ r.climb={direction:'up'};
+ assert.equal(gameInstruction(r),null,'Aucun message ne gêne la montée');
+ r.climb=null;r.climbed=true;
+ assert.equal(gameInstruction(r).text,'Crie « Camarades ! »');
+ r.statueShouted=true;
+ assert.equal(gameInstruction(r).text,'Descends de la statue');
+ r.phase=3;r.climbed=false;
+ assert.equal(gameInstruction(r).text,'Prends le cœur');
+ for(const w of r.crsWaves){
+  const p=r.pickups.find(item=>item.id===w.id);
+  p.collected=true;r.weapon=w.kind;
+  const expected=w.kind==='heart'?'Envoie des cœurs aux CRS':
+   w.kind==='flower'?'Envoie des fleurs aux CRS':'Envoie des bisous aux CRS';
+  assert.equal(gameInstruction(r).text,expected);
+  w.status='active';
+  assert.equal(gameInstruction(r).text,expected);
+  w.status='repelled';
+ }
+ assert.equal(gameInstruction(r).text,'Rejoins l’autre manif à Bastille');
+ r.finished=true;
+ assert.equal(gameInstruction(r).text,'✓ Cortèges réunis !');
+});
+test('Chaque consigne est éphémère et ne se trouve pas écrasée par les points',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
- assert.ok(js.includes("messageFeedback('Monte sur la statue',1.15)"));
- assert.ok(js.includes("messageFeedback('Crie « Camarades ! »',1.2)"));
- assert.ok(js.includes("messageFeedback('Prends le ♥',1.0)"));
- assert.ok(js.includes('Math.min(1.25,Math.max(.6,duration))'));
- assert.ok(js.includes('pickupTip.hidden=true'));
+ assert.ok(js.includes('function syncInstruction(){'));
+ assert.ok(js.includes('instruction.key===lastInstructionKey'));
+ assert.ok(js.includes('Math.min(1.12,Math.max(.65,duration))'));
  assert.ok(js.includes('speech.style.opacity=String(Math.min(1,remaining/.22))'));
- assert.ok(html.includes('bottom:22%'));
+ assert.ok(js.includes('syncInstruction();'));
+ assert.ok(html.includes('.speech{top:13%;'));
+ assert.ok(!js.includes("messageFeedback('✓ Réunis !',1.2)"));
+});
+test('Accueil compact : cœur, fleur et bisou dessinés comme dans le jeu',()=>{
+ const html=read('jeu-manifestation.html');
+ assert.ok(html.includes('clamp(23px,4.6vw,36px)'));
+ assert.ok(html.includes('class="intro-symbols"'));
+ for(const label of ['Cœur','Fleur','Bisou'])assert.ok(html.includes('<span>'+label+'</span>'));
+ assert.ok(html.includes('d="M0 -.23 C-.24 -.04'));
+ assert.ok(html.includes('d="M-.46 0 C-.33 .16'));
+ assert.ok(html.includes('fill="#ffde56"'));
+ assert.equal((html.match(/class="intro-symbol"/g)||[]).length,3);
 });
 test('Paris complété en vue 360 avec des modèles instanciés légers',()=>{
  const js=read('manifestation-app.js');
@@ -263,8 +300,8 @@ test('Interface légère, mini-bulle, arme équipée et calligraphie libre',()=>
  assert.ok(html.includes('.chapter-sky{top:22px;'));
  assert.ok(html.includes('id="weaponChip"'));
  assert.ok(html.includes('id="crsMini"'));
- assert.ok(js.includes("messageFeedback('Crie « Camarades ! »',1.2)"));
- assert.ok(js.includes("messageFeedback('✓ Réunis !',1.2)"));
+ assert.ok(js.includes('function syncInstruction(){'));
+ assert.ok(js.includes('gameInstruction(run)'));
 });
 test('La seconde foule suit après avoir été traversée',()=>{
  const js=read('manifestation-app.js');
@@ -279,9 +316,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-avenue-degagee-v23'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-avenue-degagee-v23'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-avenue-degagee-v23'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-consignes-symboles-v24'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-consignes-symboles-v24'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-consignes-symboles-v24'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -431,5 +468,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE : agir'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-avenue-degagee-v23'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-consignes-symboles-v24'));
 });
