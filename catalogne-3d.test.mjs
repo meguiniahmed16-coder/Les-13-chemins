@@ -75,7 +75,7 @@ test('Scène 3D : modèles Kenney, parc libre, clients et policiers propres',()=
   "function makeSale","function bind","function frame"
  ])assert.ok(app.includes(marker),marker);
  assert.ok(app.includes("role==='police'"));
- assert.ok(app.includes("'POLICIA'"));
+ assert.ok(app.includes("'POLICÍA'"));
  assert.ok(app.includes('const near=nearestClient(run)'));
  assert.ok(!app.includes("face au client"));
  assert.ok(!app.includes("Math.sign(c.x-run.x)"));
