@@ -57,7 +57,7 @@
    readerReference.textContent='Extrait du chapitre 4 — « Drapeau rouge », p. 59–60.';readerReference.hidden=false;
    excerpt.hidden=false;
    infoHeading.textContent='Jeu 1 / 3 · Camarades !';
-   infoBody.textContent='Trois épreuves : appeler la foule depuis la statue, récupérer le drapeau français, puis marcher vers Bastille en s'arrêtant pour regrouper la foule avec ROUGE et repousser trois attaques de CRS, un par un, avec des cœurs qui les transforment et s'envolent vers le ciel. Joystick, jaune et rouge. 10 points par épreuve réussie, une seule fois.';
+   infoBody.textContent='Le drapeau dans une rue adjacente, puis la statue. Trois objets à récupérer (cœur, fleur, bisou) avant les attaques. Sélectionne chaque CRS, lance, puis réunis les deux cortèges. 10 points par étape.';
    launch.hidden=false;
   }else{
    kicker.textContent='Chemin III · Les rendez-vous';
@@ -82,7 +82,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-coeurs-individuels-v12';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-armes-selection-v13';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){

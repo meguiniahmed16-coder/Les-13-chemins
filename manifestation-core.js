@@ -1,132 +1,219 @@
-/* Camarades ! — règles pures : départ statue → drapeau → République–Bastille.
- * Le joueur avance librement. Le cortège suit en retard ; s'arrêter et maintenir
- * ROUGE le regroupe. La cohésion conditionne la rencontre, jamais les commandes.
+/* CAMARADES ! — logique testable sans rendu.
+ * Étape 1 : seul dans la rue adjacente, sélectionner et prendre le drapeau.
+ * Étape 2 : tourner dans l'avenue, retrouver la foule, monter, crier « Camarades ! ».
+ * Étape 3 : récupérer ♥, ✿, 💋 à chaque trottoir, sélectionner chaque CRS,
+ * tirer individuellement, traverser le cortège de Bastille et être suivi.
+ * Les alliés ne comptent aucun impact : seuls les tirs du joueur le font.
  */
-export const OBJECTIFS=Object.freeze(['La République — « Camarades ! »','Retrouver le drapeau français','La rencontre des cortèges']);
+export const OBJECTIFS=Object.freeze(['Le drapeau français','Camarades !','Les deux cortèges']);
 export const MAX_POINTS=30;
 export const GAME_ID='rendezvous-2002';
-export const STATUE=Object.freeze({x:0,z:5,footX:-1.15,footZ:.35,topX:-1.15,topZ:3.48,topHeight:3.32,descendTime:2});
+export const STATUE=Object.freeze({x:0,z:5,footX:-1.15,footZ:.35,topX:-1.15,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
 export const FLAG=Object.freeze({x:4.1,z:12});
-// Three distinct approaches on the boulevard; the police are fictional game
-// opponents repelled by hearts, not by physical violence.
+export const WEAPONS=Object.freeze([
+ Object.freeze({id:1,kind:'heart',icon:'♥',name:'Cœur',x:9.4,z:9}),
+ Object.freeze({id:2,kind:'flower',icon:'✿',name:'Fleur',x:-9.4,z:36}),
+ Object.freeze({id:3,kind:'kiss',icon:'💋',name:'Bisou',x:9.4,z:63})
+]);
 export const CRS_WAVES=Object.freeze([
- Object.freeze({id:1,trigger:17,anchor:27}),
- Object.freeze({id:2,trigger:44,anchor:54}),
- Object.freeze({id:3,trigger:71,anchor:81}),
+ Object.freeze({id:1,trigger:19,anchor:28,kind:'heart'}),
+ Object.freeze({id:2,trigger:46,anchor:55,kind:'flower'}),
+ Object.freeze({id:3,trigger:73,anchor:82,kind:'kiss'})
 ]);
 export const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-export const behindNarrator=(narratorZ,candidateZ,gap=4.5)=>Math.min(candidateZ,narratorZ-gap);
+export const behindNarrator=(z,candidate,gap=4.6)=>Math.min(candidate,z-gap);
+export const activeWave=run=>run.crsWaves.find(w=>w.status==='active')||null;
 export function newRun(){
- return {phase:1,steps:[],x:STATUE.topX,z:STATUE.topZ,height:STATUE.topHeight,facing:0,
- climbed:true,climb:null,statueShouted:false,shoutRemaining:0,mobilisation:0,
- cohesion:80,leaderZ:-9,clock:0,finished:false,events:[],
- crsWaves:CRS_WAVES.map(w=>({...w,status:'waiting',hearts:0,startedAt:0,repelledAt:0,cooldown:0,
-  officers:Array.from({length:4},(_,id)=>({id,status:'standing',targeted:false,hitAt:0})),
-  shots:[]}))};
+ return {phase:1,steps:[],x:-4,z:-7,height:0,facing:0,
+  climbed:false,climb:null,statueShouted:false,shoutRemaining:0,
+  clock:0,finished:false,events:[],selected:null,hasFlag:false,
+  weapon:null,pickups:WEAPONS.map(w=>({...w,collected:false})),
+  crsWaves:CRS_WAVES.map(w=>({...w,status:'waiting',cooldown:0,startedAt:0,repelledAt:0,
+    officers:Array.from({length:4},(_,id)=>({id,status:'standing',targeted:false,hitAt:0})),shots:[]})),
+  leaderZ:-7,cohesion:82,joined:0,joining:false};
 }
 export function progress(run,step){
  if(run.finished||step!==run.steps.length+1||step<1||step>3)return false;
  run.steps.push(step);run.events.push({type:'progress',step});
  if(step===3){run.finished=true;run.events.push({type:'won'});return true;}
- run.phase=step+1;run.climb=null;run.climbed=false;run.height=0;
- run.statueShouted=false;run.shoutRemaining=0;run.mobilisation=0;run.facing=0;
- run.cohesion=80;
- if(step===1){run.x=STATUE.footX;run.z=STATUE.footZ;run.leaderZ=run.z-7;}
- else{run.x=0;run.z=0;run.leaderZ=-7.0;}
+ run.phase=step+1;run.selected=null;run.height=0;run.climb=null;run.climbed=false;run.facing=0;
+ if(step===1){
+  run.hasFlag=true;run.x=6;run.z=-7;run.facing=-Math.PI/2;
+  run.events.push({type:'corner'});
+ }else{
+  run.x=0;run.z=0;run.leaderZ=-7;run.cohesion=82;
+  run.events.push({type:'march'});
+ }
  return true;
+}
+export function selectTarget(run,target){
+ if(!target||run.finished)return false;
+ if(target.type==='flag'&&run.phase===1){
+  run.selected={type:'flag'};run.events.push({type:'selected',target:run.selected});return true;
+ }
+ if(target.type==='statue'&&run.phase===2&&!run.climbed&&!run.climb){
+  run.selected={type:'statue'};run.events.push({type:'selected',target:run.selected});return true;
+ }
+ if(target.type==='pickup'&&run.phase===3){
+  const pickup=run.pickups.find(w=>w.id===Number(target.id));
+  const wave=run.crsWaves.find(w=>w.id===Number(target.id));
+  if(!pickup||pickup.collected||wave.status==='repelled')return false;
+  run.selected={type:'pickup',id:pickup.id};run.events.push({type:'selected',target:run.selected});return true;
+ }
+ if(target.type==='crs'&&run.phase===3){
+  const wave=activeWave(run),officer=wave?.officers[Number(target.id)];
+  if(!wave||wave.id!==Number(target.wave)||!officer||officer.status!=='standing'||officer.targeted)return false;
+  run.selected={type:'crs',wave:wave.id,id:officer.id};
+  run.events.push({type:'selected',target:run.selected});return true;
+ }
+ return false;
+}
+export function availableTargets(run){
+ if(run.phase===1)return [{type:'flag',label:'🇫🇷 Drapeau'}];
+ if(run.phase===2&&!run.climbed&&!run.climb)return [{type:'statue',label:'Statue'}];
+ if(run.phase!==3)return [];
+ const wave=activeWave(run);
+ if(wave){
+  return wave.officers.filter(o=>o.status==='standing'&&!o.targeted)
+   .map(o=>({type:'crs',wave:wave.id,id:o.id,label:'CRS '+(o.id+1)}));
+ }
+ const pickup=run.pickups.find(w=>!w.collected&&run.z<=w.z+15&&run.z>=w.z-13);
+ return pickup?[{type:'pickup',id:pickup.id,label:pickup.icon+' '+pickup.name}]:[];
+}
+export function selectNext(run){
+ const opts=availableTargets(run);
+ if(!opts.length)return false;
+ const i=opts.findIndex(o=>run.selected?.type===o.type&&
+  (o.id===undefined||run.selected?.id===o.id)&&
+  (o.wave===undefined||run.selected?.wave===o.wave));
+ const next=opts[(i+1)%opts.length];
+ return selectTarget(run,next);
+}
+export function yellow(run){
+ if(run.finished)return false;
+ if(run.phase===1&&run.selected?.type==='flag'&&distance(run,FLAG)<=3.4){
+  run.events.push({type:'flag:pickup'});return progress(run,1);
+ }
+ if(run.phase===2&&!run.climbed&&!run.climb&&!run.statueShouted&&
+    (run.selected?.type==='statue'||distance(run,{x:STATUE.x,z:STATUE.z})<4.4)&&
+    distance(run,{x:STATUE.x,z:STATUE.z})<4.4){
+  run.climb={direction:'up',elapsed:0,duration:STATUE.ascendTime,fromX:run.x,fromZ:run.z};
+  run.selected=null;return true;
+ }
+ if(run.phase===3&&run.selected?.type==='pickup'){
+  const p=run.pickups.find(w=>w.id===run.selected.id);
+  if(!p||p.collected||distance(run,p)>3.5)return false;
+  const wave=run.crsWaves.find(w=>w.id===p.id);
+  if(wave.status==='repelled')return false;
+  p.collected=true;run.weapon=p.kind;run.selected=null;
+  run.events.push({type:'weapon:pickup',kind:p.kind,wave:p.id});return true;
+ }
+ return false;
 }
 export function callFromStatue(run){
- if(run.phase!==1||!run.climbed||run.climb||run.statueShouted||run.finished)return false;
- run.statueShouted=true;run.shoutRemaining=.85;run.events.push({type:'shout'});
+ if(run.phase!==2||!run.climbed||run.climb||run.statueShouted)return false;
+ run.statueShouted=true;run.shoutRemaining=.85;run.events.push({type:'shout'});return true;
+}
+export function fire(run){
+ if(run.finished||run.phase!==3||run.selected?.type!=='crs')return false;
+ const wave=activeWave(run);
+ if(!wave||run.selected.wave!==wave.id||run.weapon!==wave.kind||wave.cooldown>0)return false;
+ const officer=wave.officers[run.selected.id];
+ if(!officer||officer.status!=='standing'||officer.targeted)return false;
+ officer.targeted=true;const duration=.78;
+ wave.shots.push({officer:officer.id,elapsed:0,duration});
+ wave.cooldown=.22;
+ run.events.push({type:'projectile:fire',wave:wave.id,officer:officer.id,kind:wave.kind,duration});
+ run.selected=null;
  return true;
 }
-function descend(run,dt){
- const c=run.climb;
- c.elapsed=Math.min(c.duration,c.elapsed+dt);
- const t=c.elapsed/c.duration,k=t*t*(3-2*t);
- run.x=STATUE.topX;run.z=STATUE.topZ+(STATUE.footZ-STATUE.topZ)*k;
- run.height=STATUE.topHeight*(1-k);
- if(t>=1){run.climb=null;run.climbed=false;run.height=0;run.events.push({type:'ground'});progress(run,1);}
+function animateClimb(run,t){
+ const c=run.climb;c.elapsed=Math.min(c.duration,c.elapsed+t);
+ const p=clamp(c.elapsed/c.duration,0,1),up=c.direction==='up';
+ const k=p*p*(3-2*p);
+ if(up){
+  run.x=c.fromX+(STATUE.topX-c.fromX)*k;
+  run.z=c.fromZ+(STATUE.topZ-c.fromZ)*k;
+  run.height=STATUE.topHeight*k;
+ }else{
+  run.x=STATUE.topX;run.z=STATUE.topZ+(STATUE.footZ-STATUE.topZ)*k;
+  run.height=STATUE.topHeight*(1-k);
+ }
+ if(p>=1){
+  run.climb=null;run.climbed=up;
+  run.x=up?STATUE.topX:STATUE.footX;
+  run.z=up?STATUE.topZ:STATUE.footZ;
+  run.height=up?STATUE.topHeight:0;
+  run.events.push({type:up?'summit':'ground'});
+  if(!up&&run.statueShouted)progress(run,2);
+ }
 }
 export function advance(run,dt,input={}){
  if(run.finished)return;
  const t=clamp(Number(dt)||0,0,.12);
  const x=clamp(Number(input.x)||0,-1,1),y=clamp(Number(input.y)||0,-1,1);
- const mag=Math.max(1,Math.hypot(x,y));run.clock+=t;
- if(run.phase===1){
-  if(run.climb){descend(run,t);return;}
-  run.facing=(run.facing+x*t*2.5)%(Math.PI*2);
+ const moving=Math.hypot(x,y)>.15,mag=Math.max(1,Math.hypot(x,y));
+ run.clock+=t;
+ if(run.phase===2&&run.climb){animateClimb(run,t);return;}
+ if(run.phase===2&&run.climbed){
   if(run.statueShouted){
    run.shoutRemaining=Math.max(0,run.shoutRemaining-t);
    if(run.shoutRemaining===0)run.climb={direction:'down',elapsed:0,duration:STATUE.descendTime};
-  }
+  }else run.facing=(run.facing+x*t*2)%(Math.PI*2);
   return;
  }
- const moving=Math.hypot(x,y)>.15;
- const speed=run.phase===3?5.6:4.9;
- run.x=clamp(run.x+x/mag*speed*t,-8,8);
- run.z=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?106:20);
- if(moving)run.facing=Math.atan2(x,y);
- if(run.phase!==3)return;
- // Une vraie séparation spatiale qui se voit à l'écran :
- // le joueur marche plus vite que ses camarades.
- const gapBefore=run.z-run.leaderZ;
  if(moving){
-  run.leaderZ+=3.5*t;
- }else{
-  run.leaderZ=Math.min(run.z-5.8,run.leaderZ+(input.red?9.5:1.8)*t);
+  const speed=run.phase===3?5.6:4.9;
+  run.x=clamp(run.x+x/mag*speed*t,-8,8);
+  run.z=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?116:22);
+  run.facing=Math.atan2(x,y);
  }
+ if(run.phase===2&&run.z>=2&&run.z<=8&&Math.abs(run.x)<3.05){
+  run.z=run.z<=5?1.94:8.1;
+ }
+ if(run.phase!==3)return;
+ // The rear group gradually lags, then regroups when the player stops.
+ if(moving)run.leaderZ+=3.5*t;
+ else run.leaderZ=Math.min(run.z-5.8,run.leaderZ+(input.red?9.5:1.8)*t);
  run.leaderZ=clamp(run.leaderZ,run.z-15.5,run.z-5.5);
  const gap=run.z-run.leaderZ;
- // La police intervient trois fois. Un appui maintenu sur ROUGE envoie des
- // cœurs successifs (maximum 4 par vague), qui font fuir les CRS.
- let active=run.crsWaves.find(w=>w.status==='active');
- if(!active){
-  active=run.crsWaves.find(w=>w.status==='waiting'&&run.z>=w.trigger);
-  if(active){active.status='active';active.startedAt=run.clock;active.cooldown=0;run.events.push({type:'crs:incoming',wave:active.id});}
+ if(moving)run.cohesion=clamp(run.cohesion-t*(gap>10?3.4:1.9),0,100);
+ else if(input.red)run.cohesion=clamp(run.cohesion+t*22,0,100);
+ else run.cohesion=clamp(run.cohesion+t*1.3,0,100);
+ let wave=activeWave(run);
+ if(!wave){
+  wave=run.crsWaves.find(w=>w.status==='waiting'&&run.z>=w.trigger);
+  if(wave){wave.status='active';wave.startedAt=run.clock;run.events.push({type:'crs:incoming',wave:wave.id,kind:wave.kind});}
  }
- if(active){
-  // Le barrage arrête l'avancée, pas les mouvements latéraux ou la retraite.
-  run.z=Math.min(run.z,active.trigger+1.3);
-  active.cooldown=Math.max(0,active.cooldown-t);
-  // Chaque cœur met réellement du temps à atteindre UN CRS identifié.
-  // Le policier ne disparaît pas au lancement, mais à l'impact.
-  for(let i=active.shots.length-1;i>=0;i--){
-   const shot=active.shots[i];shot.elapsed+=t;
+ if(wave){
+  run.z=Math.min(run.z,wave.trigger+1.3);
+  wave.cooldown=Math.max(0,wave.cooldown-t);
+  for(let i=wave.shots.length-1;i>=0;i--){
+   const shot=wave.shots[i];shot.elapsed+=t;
    if(shot.elapsed>=shot.duration){
-    const officer=active.officers[shot.officer];
-    active.shots.splice(i,1);
-    if(officer.status!=='standing')continue;
-    officer.status='heart';officer.targeted=false;officer.hitAt=run.clock;
-    active.hearts++;
-    run.events.push({type:'heart:hit',wave:active.id,officer:officer.id,hit:active.hearts});
+    const officer=wave.officers[shot.officer];wave.shots.splice(i,1);
+    if(officer.status==='standing'){
+     officer.status='transformed';officer.hitAt=run.clock;
+     run.events.push({type:'projectile:hit',wave:wave.id,officer:officer.id,kind:wave.kind});
+    }
    }
   }
-  if(active.officers.every(o=>o.status==='heart')){
-   active.status='repelled';active.repelledAt=run.clock;
-   run.events.push({type:'crs:repelled',wave:active.id});
-  }else if(input.red&&active.cooldown<=0){
-   // Une cible différente par cœur, sans tir simultané ni dégâts collectifs.
-   const officer=active.officers.find(o=>o.status==='standing'&&!o.targeted);
-   if(officer){
-    officer.targeted=true;
-    const duration=.82;
-    active.shots.push({officer:officer.id,elapsed:0,duration});
-    active.cooldown=.62;
-    run.events.push({type:'heart:fire',wave:active.id,officer:officer.id,duration});
-   }
+  if(wave.officers.every(o=>o.status==='transformed')){
+   wave.status='repelled';wave.repelledAt=run.clock;run.weapon=null;run.selected=null;
+   run.events.push({type:'crs:repelled',wave:wave.id,kind:wave.kind});
   }
  }
- if(moving)run.cohesion=clamp(run.cohesion-t*(gap>10?4.0:2.3),0,100);
- else if(input.red)run.cohesion=clamp(run.cohesion+t*23,0,100);
- else run.cohesion=clamp(run.cohesion+t*1.4,0,100);
- // Ni ralentissement ni blocage du joystick. La rencontre attend le groupe.
- if(run.z>=99&&run.cohesion>=68&&gap<=9.5&&run.crsWaves.every(w=>w.status==='repelled'))progress(run,3);
+ const allDone=run.crsWaves.every(w=>w.status==='repelled');
+ if(allDone&&run.z>=99){
+  if(!run.joining){run.joining=true;run.events.push({type:'join:start'});}
+  run.joined=clamp(Math.floor((run.z-99)/9*16),0,16);
+ }
+ // Win only when through the OTHER crowd, and whole larger group follows.
+ if(allDone&&run.z>=109&&run.joined===16&&run.cohesion>=58)progress(run,3);
 }
-export function yellow(run){
- if(run.phase===1)return callFromStatue(run);
- if(run.phase===2&&distance(run,FLAG)<3.3)return progress(run,2);
- return false;
+export function red(run){
+ if(run.phase===2)return callFromStatue(run);
+ return fire(run);
 }
 export function canNext(run){return run.finished||run.steps.includes(1);}
