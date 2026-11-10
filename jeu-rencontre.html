@@ -124,7 +124,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 <p>Film II : <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137" target="_blank" rel="noopener noreferrer">« Night on the Docks - Sax » — Kevin MacLeod (incompetech.com)</a>, sous licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p>
 <p>Les morceaux sont joués comme musique de fond ; leur volume peut être ajusté pour le jeu.</p>
 </details></section>
-<p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. L’ouverture silencieuse (C01) est illustrée ; le second film se termine sur le « oui » (B06). La vidéo A08 reste accessible comme bonus facultatif. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
+<p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. Le film commence directement par la vidéo Higgsfield C02 : ils sont ensemble dans la cuisine, il a la tête baissée puis la relève. Le second film se termine sur le « oui » (B06). La vidéo A08 reste accessible comme bonus facultatif. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
 <dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><button type="button" id="replayScene" class="replay-overlay" hidden>↻ Rejouer la scène</button><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
@@ -138,7 +138,6 @@ const ART={
   caresse:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/db6ea871-3557-4b72-8dcb-3c9c68f0871a.png'
 };
 const SHOTS=[
- ['C01','La tête baissée','01-cuisine/01-tete-baissee.mp4'],
  ['C02','Il relève la tête','01-cuisine/02-il-releve-la-tete.mp4'],
  ['C03','Le regard de la jeune femme','01-cuisine/03-elle-le-regarde.mp4'],
  ['C04','Il lui caresse la joue','01-cuisine/04-il-lui-caresse-la-joue.mp4'],
@@ -195,7 +194,7 @@ const MUSIC={
  chambre:{title:'Night on the Docks – Sax',name:'Night on the Docks - Sax — Kevin MacLeod',artist:'Kevin MacLeod',license:'CC BY 4.0',source:'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137',file:null,startShot:'B01',credit:'Night on the Docks – Sax — Kevin MacLeod (incompetech.com), CC BY 4.0',src:'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Night%20on%20the%20Docks%20-%20Sax.mp3'}
 };
 const STEPS=[
- {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C01','C02','C03'],no:true,alt:'A01'},
+ {phase:'cuisine',title:'L’épuisement et les regards',desc:'Le garçon est assis face à elle, près de l’évier. Il relève les yeux. Elle le regarde avec tendresse.',yes:'Regarder la rencontre',clips:['C02','C03'],no:true,alt:'A01'},
  {phase:'cuisine',title:'Un geste vers sa joue',desc:'La rencontre peut avancer par un premier geste. Toucher sa joue débloque sa caresse en retour.',yes:'Lui caresser la joue',clips:['C04','C05'],no:true,alt:'A02'},
  {phase:'cuisine',title:'Les cheveux',desc:'La caresse de la joue ouvre le geste suivant. Chacun peut caresser les cheveux de l’autre.',yes:'Lui caresser les cheveux',clips:['C06','C07'],no:true,alt:'A03'},
  {phase:'cuisine',title:'Le baiser',desc:'Les caresses échangées ouvrent la possibilité d’un baiser.',yes:'L’embrasser',clips:['C08'],no:true,alt:'A04'},
@@ -209,7 +208,7 @@ const music=$('backgroundMusic');
 let musicEnabled=true,activeSoundtrack=null;
 music.volume=0.22; // Le jazz et Felicity restent sous les sons propres aux cinématiques.
 function soundtrackForShot(id){
- if(id==='C01'||id==='A01')return null; // SILENCE : la musique ne commence pas avant qu’il lève la tête.
+ if(id==='A01')return null; // Le premier film commence avec le vrai plan C02.
  if(id.startsWith('B')||['A06','A07','A08'].includes(id))return 'chambre';
  return 'cuisine'; // Le dernier verre est encore proposé dans la cuisine (A05).
 }
@@ -257,7 +256,7 @@ function draw(){
  const atEnd=state.step>=STEPS.length,step=STEPS[Math.min(state.step,STEPS.length-1)];
  const isKitchen=!atEnd&&step.phase==='cuisine';
  $('still').hidden=!isKitchen;$('awaitingArt').hidden=isKitchen;
- if(isKitchen){$('still').src=state.step>=3?ART.caresse:ART.cuisine;}
+ if(isKitchen){$('still').src=ART.caresse;}
  else if(atEnd){$('awaitingArt').firstChild.textContent='Fin de la rencontre';}
  else $('awaitingArt').firstChild.textContent='La chambre mansardée';
  $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/'+STEPS.length;
@@ -276,7 +275,7 @@ function draw(){
  for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:7,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:6,ready:state.watched.includes('B06')}]){
   const box=document.createElement('div');box.className='film-card';
   const heading=document.createElement('strong');heading.textContent=part.name;
-  const msg=document.createElement('small');msg.textContent=(part.id==='cuisine'?part.count+' clips et une ouverture illustrée':part.count+' clips, fin au « oui »')+' · '+(part.ready?'Film à revoir':'À débloquer');
+  const msg=document.createElement('small');msg.textContent=(part.id==='cuisine'?part.count+' véritables clips Higgsfield':part.count+' clips, fin au « oui »')+' · '+(part.ready?'Film à revoir':'À débloquer');
   box.append(heading,msg);
   if(part.ready){box.append(button('▶ Revoir le film enchaîné','outline',()=>{const ids=SHOTS.filter(s=>s[0].startsWith(part.id==='cuisine'?'C':'B')).map(s=>s[0]);beginScene(ids,'replay')}));}
   $('films').append(box);
@@ -342,15 +341,9 @@ function playCurrent(){
    $('musicStatus').textContent='Touche « Reprendre avec le son » pour autoriser la lecture.';
   });
  }else{
-  still.hidden=false;poster.hidden=shot[0]!=='C01';
-  if(shot[0]==='C01'){
-   poster.src=ART.cuisine;
-   $('movieStillTitle').textContent='Le silence de la cuisine';
-   $('movieStillText').textContent='Il est assis sur le tabouret, la tête baissée. Elle se tient près de l’évier. Aucun geste encore. La musique commencera lorsqu’il relèvera la tête.';
-  }else{
-   $('movieStillTitle').textContent='Vidéo non disponible';
-   $('movieStillText').textContent=shot[1]+' — aucune vidéo disponible pour cette séquence.';
-  }
+  still.hidden=false;poster.hidden=true;
+  $('movieStillTitle').textContent='Vidéo non disponible';
+  $('movieStillText').textContent=shot[1]+' — aucune vidéo disponible pour cette séquence.';
  }
 }
 $('replayScene').onclick=()=>{

@@ -7,10 +7,10 @@ const html = readFileSync(new URL('./jeu-rencontre.html', import.meta.url), 'utf
 const controller = readFileSync(new URL('./rendezvous-plateau.js', import.meta.url), 'utf8');
 const build = readFileSync(new URL('./build-public.mjs', import.meta.url), 'utf8');
 
-test('The fourteen scripted scenes retain their order without the missing finale', () => {
+test('The thirteen real scripted video scenes retain their order without fabricated frames', () => {
   const shotLines = [...html.matchAll(/^\s*\['([CB]\d{2})','[^']+','[^']+\.mp4'\],?$/gm)];
   const keys = shotLines.map(x => x[1]);
-  assert.deepEqual(keys, [...Array.from({length:8},(_,i)=>'C'+String(i+1).padStart(2,'0')),
+  assert.deepEqual(keys, [...Array.from({length:7},(_,i)=>'C'+String(i+2).padStart(2,'0')),
                          ...Array.from({length:6},(_,i)=>'B'+String(i+1).padStart(2,'0'))]);
   for (const path of ['01-cuisine/04-il-lui-caresse-la-joue.mp4',
                       '01-cuisine/05-elle-lui-caresse-la-joue.mp4',
@@ -24,7 +24,7 @@ test('The fourteen scripted scenes retain their order without the missing finale
 test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and intimacy', () => {
   const bundles=[...html.matchAll(/clips:\[([^\]]+)\]/g)].map(x=>[...x[1].matchAll(/'([CB]\d{2})'/g)].map(y=>y[1]));
   assert.deepEqual(bundles,[
-    ['C01','C02','C03'],['C04','C05'],['C06','C07'],['C08'],
+    ['C02','C03'],['C04','C05'],['C06','C07'],['C08'],
     ['B01','B02'],['B03'],['B04','B05','B06']
   ]);
   assert.ok(html.includes('Pas maintenant'));
@@ -64,7 +64,7 @@ test('Every Pas maintenant plays a unique optional sequence without advancing th
 });
 
 test('Felicity starts only when the boy lifts his head, jazz starts in the mansard room', () => {
-  assert.ok(html.includes("id==='C01'||id==='A01')return null"), 'First shot silent');
+  assert.ok(html.includes("id==='A01')return null"), 'Optional silent alternative remains without fake C01');
   assert.ok(html.includes("if(id.startsWith('B')"),'B scenes map to room soundtrack');
   assert.ok(html.includes("'Felicity — Scott Buckley'"));
   assert.ok(html.includes("'Night on the Docks - Sax — Kevin MacLeod'"));
@@ -91,7 +91,8 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not move the story forward');
  assert.ok(!html.includes('La fenêtre sur Paris')&&!html.includes("clips:['B07']"), 'No literary ending');
  assert.ok(html.includes("beginScene(['A08'],'replay')"),'The extra night video is preserved');
- assert.ok(html.includes('Le silence de la cuisine'), 'Still intro when C01 has no video');
+ assert.ok(!html.includes("['C01','La tête baissée'")&&!html.includes("clips:['C01'"),'No invented opening still in a movie');
+ assert.ok(html.includes("clips:['C02','C03']"),'The original Higgsfield movie opens the cinematic sequence');
  assert.ok(html.includes("type:'rencontre:state'"), 'The shared board receives progress');
  assert.ok(controller.includes("e.data.type!=='rencontre:state'"), 'Parent verifies iframe origin and event type');
  assert.ok(controller.includes('state.rdvRencontreFinished=true'), 'The third Chemin III chapter is completed');
