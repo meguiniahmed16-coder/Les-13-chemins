@@ -82,7 +82,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-paris-consignes-courtes-v22';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-avenue-degagee-v23';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){

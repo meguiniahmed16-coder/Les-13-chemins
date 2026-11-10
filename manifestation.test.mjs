@@ -279,9 +279,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-paris-consignes-courtes-v22'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-paris-consignes-courtes-v22'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-paris-consignes-courtes-v22'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-avenue-degagee-v23'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-avenue-degagee-v23'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-avenue-degagee-v23'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -355,25 +355,34 @@ test('La transition conserve le héros, la caméra et la boucle de rendu',()=>{
  assert.ok(js.includes("status.textContent='JEU ACTIF"));
  assert.ok(js.includes("function extendMarchScenery(){"));
 });
-test('La descente sort du socle et permet d avancer sans contournement obligatoire',()=>{
- const r=phase2();r.x=4.85;r.z=.35;
- assert.ok(yellow(r));
- for(let i=0;i<28&&r.climb;i++)advance(r,.12,idle);
- assert.ok(callFromStatue(r));
- for(let i=0;i<40&&r.phase===2;i++)advance(r,.12,idle);
- assert.equal(r.phase,3);
- assert.ok(r.x<STATUE.x-3.05,'Le joueur doit sortir hors de la collision du socle');
- assert.equal(r.x,STATUE.exitX);
- const before=r.z;
+test('Après la statue, le joystick avance et recule sans commandes superposées',()=>{
+ const r=phase3(),start=r.z;
  for(let i=0;i<24;i++)advance(r,.12,{x:0,y:1});
- assert.ok(r.z>before+10,'Avancer seul sur le joystick franchit maintenant la statue');
- const far=r.z;
+ assert.ok(r.z>start+10,'Le joystick permet toujours de progresser vers Bastille');
+ const forward=r.z;
  for(let i=0;i<4;i++)advance(r,.12,{x:0,y:-1});
- assert.ok(r.z<far,'Le recul reste actif');
- const html=read('jeu-manifestation.html'),js=read('manifestation-app.js');
- for(const dir of ['left','right','up','down'])assert.ok(html.includes('data-move="'+dir+'"'));
- assert.ok(js.includes("document.querySelectorAll('#walkingPad [data-move]')"));
- assert.ok(js.includes("advance(run,.12,padVectors[dir])"),'Les flèches bougent même par simple clic');
+ assert.ok(r.z<forward,'Le joystick permet de revenir en arrière');
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(!js.includes('advanceBastille'));
+ assert.ok(!js.includes('walkingPad'));
+ assert.ok(!js.includes('forwardHeld'));
+ assert.ok(!html.includes('Maintenir pour avancer'));
+ assert.ok(!html.includes('id="advanceBastille"'));
+ assert.ok(!html.includes('id="walkingPad"'));
+ assert.ok(js.includes('const manualY=clamp(joy.y+fwd-back,-1,1)'));
+});
+test('La perspective de l avenue reste ouverte et les détails sont hors chaussée',()=>{
+ const js=read('manifestation-app.js');
+ const back=js.slice(js.indexOf('function parisBackdrop(root,start,end){'),js.indexOf('function parisStreetDetails(root,start,end){'));
+ assert.ok(back.includes('const x=side*(32+(rank%3)*2.4)'));
+ assert.ok(!back.includes('Math.cos(angle)*rad'),'Ne jamais créer de façade au bout de l avenue');
+ for(let i=0;i<36;i++){
+  const x=(i%2===0?-1:1)*(32+(Math.floor(i/2)%3)*2.4);
+  assert.ok(Math.abs(x)-14/2>8,'Les bâtiments ne doivent pas recouvrir la rue');
+ }
+ assert.ok(js.includes('function parisSidewalkPedestrians(root,start,end){'));
+ assert.ok(js.includes('treeX=side*10.45,lightX=side*9.4'));
+ assert.ok(js.includes('const shade=[0xe1c49d'));
 });
 test('Statue, sa cible et la sélection décalées ensemble',()=>{
  const js=read('manifestation-app.js');
@@ -422,5 +431,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE : agir'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-paris-consignes-courtes-v22'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-avenue-degagee-v23'));
 });
