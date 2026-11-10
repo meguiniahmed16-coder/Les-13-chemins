@@ -222,6 +222,7 @@ function draw(){
  $('still').hidden=!isKitchen;$('awaitingArt').hidden=isKitchen;
  if(isKitchen){$('still').src=state.step>=3?ART.caresse:ART.cuisine;}
  else if(atEnd){$('awaitingArt').firstChild.textContent='Fin de la rencontre';}
+ else $('awaitingArt').firstChild.textContent='La chambre mansardée';
  $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/8';
  $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
  $('stepDescription').textContent=atEnd?(state.ended?'Le choix de ne pas poursuivre est respecté. Tu peux recommencer la scène sans perdre le parcours principal.':'La dernière cinématique ferme le récit. Tous les plans du parcours peuvent être rejoués.'):step.desc;

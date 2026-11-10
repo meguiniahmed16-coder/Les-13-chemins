@@ -58,7 +58,7 @@ test('Every Pas maintenant plays a unique optional sequence without advancing th
   const stepRefs=[...html.matchAll(/alt:'(A0[1-8])'/g)].map(x=>x[1]);
   assert.deepEqual(stepRefs,Array.from({length:8},(_,i)=>'A'+String(i+1).padStart(2,'0')));
   assert.ok(html.includes("beginScene([step.alt],'pause')"));
-  assert.ok(html.includes("if(mode==='sequence')state.step=Math.min"), 'Pauses do not advance the chapter');
+  assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not advance the chapter');
   assert.ok(html.includes("mode==='sequence'||mode==='pause'"), 'All seen clips are saved');
   assert.ok(html.includes("id=\"pauseClips\""), 'Alternate clips remain replayable');
 });
