@@ -180,9 +180,9 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-statue-cote-v14'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-statue-cote-v14'));
- assert.ok(page.includes('rendezvous-plateau.js?v=20261110-statue-cote-v14'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-jaune-descente-v15'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261110-jaune-descente-v15'));
+ assert.ok(page.includes('rendezvous-plateau.js?v=20261110-jaune-descente-v15'));
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
  for(const sex of ['male','female'])for(const v of ['a','c','e']){
@@ -222,4 +222,40 @@ test('Devise complète Liberté Égalité Fraternité',()=>{
  const js=read('manifestation-app.js');
  assert.ok(js.includes("'LIBERTÉ, ÉGALITÉ, FRATERNITÉ'"));
  assert.ok(!js.includes("'LIBERTÉ ÉGALITÉ'"));
+});
+
+test('JAUNE redescend du sommet immédiatement après Camarades',()=>{
+ const r=phase2();r.x=STATUE.footX;r.z=STATUE.footZ;
+ assert.ok(selectTarget(r,{type:'statue'}));
+ assert.ok(yellow(r));
+ for(let i=0;i<28&&r.climb;i++)advance(r,.12,idle);
+ assert.equal(r.climbed,true);
+ assert.ok(callFromStatue(r));
+ assert.ok(yellow(r),'Le jaune doit déclencher la descente');
+ assert.equal(r.climb.direction,'down');
+ for(let i=0;i<25&&r.phase===2;i++)advance(r,.12,idle);
+ assert.equal(r.phase,3);assert.equal(r.height,0);
+ assert.deepEqual(r.steps,[1,2]);
+ const z=r.z;advance(r,.12,walk);assert.ok(r.z>z);
+});
+test('Le JAUNE au sommet reste fonctionnel même sans appel rouge préalable',()=>{
+ const r=phase2();r.x=STATUE.footX;r.z=STATUE.footZ;
+ assert.ok(yellow(r));
+ for(let i=0;i<28&&r.climb;i++)advance(r,.12,idle);
+ assert.equal(r.climbed,true);assert.equal(r.statueShouted,false);
+ assert.ok(yellow(r));
+ assert.equal(r.statueShouted,true,'Le cri est conservé, une seule fois');
+ assert.equal(r.events.filter(e=>e.type==='shout').length,1);
+ assert.equal(r.climb.direction,'down');
+ assert.equal(yellow(r),false,'Pas de double déclenchement');
+ for(let i=0;i<26&&r.phase===2;i++)advance(r,.12,idle);
+ assert.equal(r.phase,3);
+ assert.equal(r.events.filter(e=>e.type==='progress'&&e.step===2).length,1);
+});
+test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
+ const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
+ assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
+ assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
+ assert.ok(html.includes('JAUNE = prendre / monter / redescendre'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261110-jaune-descente-v15'));
 });

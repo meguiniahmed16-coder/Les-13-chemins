@@ -95,6 +95,14 @@ export function yellow(run){
  if(run.phase===1&&run.selected?.type==='flag'&&distance(run,FLAG)<=3.4){
   run.events.push({type:'flag:pickup'});return progress(run,1);
  }
+ // JAUNE sert à monter ET à redescendre. Aucun bouton supplémentaire nécessaire.
+ if(run.phase===2&&run.climbed&&!run.climb){
+  if(!run.statueShouted)callFromStatue(run);
+  run.shoutRemaining=0;
+  run.climb={direction:'down',elapsed:0,duration:STATUE.descendTime};
+  run.events.push({type:'descent:start'});
+  return true;
+ }
  if(run.phase===2&&!run.climbed&&!run.climb&&!run.statueShouted&&
     (run.selected?.type==='statue'||distance(run,{x:STATUE.x,z:STATUE.z})<5.25)&&
     distance(run,{x:STATUE.x,z:STATUE.z})<5.25){

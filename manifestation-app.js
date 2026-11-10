@@ -592,9 +592,10 @@ function refreshHUD(){
  const march=$('advanceBastille');march.hidden=!(playing&&p===3);
  const panel=$('statueControls');panel.hidden=!(playing&&p===2&&run.climbed&&!run.statueShouted&&!run.climb);
  $('red').textContent=p===3?(WEAPONS.find(w=>w.kind===run.weapon)?.icon||'●'):'●';
- $('yellowLabel').textContent=p===1?'PRENDRE':p===2?'MONTER':'RAMASSER';
+ $('yellowLabel').textContent=p===1?'PRENDRE':p===2?(run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'):'RAMASSER';
  const caption=$('redLabel');caption.textContent=p===2?'CAMARADES !':p===3?'LANCER':'APPEL';
  $('red').setAttribute('aria-label',p===3?'Lancer vers le CRS sélectionné / regrouper':'Crier Camarades !');
+ $('yellow').setAttribute('aria-label',p===2?(run.climbed?'Jaune : redescendre de la statue':'Jaune : monter sur la statue'):'Jaune : prendre ou agir');
  if(p===3){
   const status=$('crsMini');
   const repelled=run.crsWaves.filter(w=>w.status==='repelled').length;
@@ -751,7 +752,7 @@ function bindControls(){
  march.addEventListener('keyup',()=>forwardHeld=false);
  $('turn360').onclick=()=>{if(!playing)return;cameraOrbit=0;cameraOrbitLeft=Math.PI*2;};
  $('statueCall').onclick=callCrowd;
- $('statueDescend').onclick=callCrowd;
+ $('statueDescend').onclick=yellowPress;
  $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(soundOn));if(soundOn)sound(450,.13);};
  window.addEventListener('message',e=>{
   if(e.source!==parent||e.origin!==location.origin||!e.data)return;
