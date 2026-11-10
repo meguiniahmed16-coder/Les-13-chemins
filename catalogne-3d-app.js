@@ -13,6 +13,7 @@ let run=newRun(),sessionId=null,ready=false,replayMode=false,score=0,pendingSale
 let paused=false,soundOn=true,lastFrame=0,toastUntil=0,lastInstruction=null,orbital=0,orbitLeft=0,lastPoliceMessage=0,controlsLocked=false,winPending=false;
 const joy={x:0,z:0},keys=new Set();
 let joyPointer=null,clientActors=[],policeActors=[],people=[],birds=[],hero=null,saleConversation=null;
+let parkGround=null,parkPaths=[],forestGrid=null,parkGridX=NaN,parkGridZ=NaN,parkPathIndex=NaN;
 const actorTemplates=[],walkMeshes=[],fountainWater=[];
 const rnd=n=>{const v=Math.sin(n*14.29+3.16)*98724.35;return v-Math.floor(v)};
 const world=new T.Scene();world.background=new T.Color(0xa4d0db);world.fog=new T.FogExp2(0xbfd2d2,.006);
@@ -63,18 +64,33 @@ function lamp(root,x,z){
  cyl(root,x,2.45,z,.065,4.90,0x405449);
  sphere(root,x,4.98,z,.27,.33,.27,0xffe6a8);
 }
+const PARK_TILE=64;
+const TREE_GRID=10.5;
 function pathways(root){
- // Allées larges et raccordées : aucune barrière dans le domaine jouable |x| <= 10.
- cube(root,0,-.25,61,54,.48,139,0x6e9f68);
- cube(root,0,.014,60,5.0,.035,132,0xd8c4a0);
- cube(root,-6.2,.019,60,3.3,.037,132,0xd6bd92);
- cube(root,6.2,.019,60,3.3,.037,132,0xd6bd92);
- for(const z of [12,29,51,73,95,116])cube(root,0,.02,z,21,.037,2.3,0xe1cda7);
- for(const edge of [-1,1])cube(root,edge*11.45,.05,61,.22,.11,126,0xcbbf9a);
- // Pelouses géométriques discontinues, sans collision.
- for(const side of [-1,1])for(let i=0;i<13;i++){
-  const z=7+i*9,green=[0x84ad72,0x90b77c,0x77a56c][i%3];
-  cube(root,side*8.7,.031,z,1.5,.023,6.4,green);
+ // Un morceau de chemins qui se recycle au-delà de la caméra : pas d'extrémité.
+ cube(root,0,.014,0,5.0,.035,PARK_TILE+.7,0xd8c4a0);
+ cube(root,-6.2,.019,0,3.3,.037,PARK_TILE+.7,0xd6bd92);
+ cube(root,6.2,.019,0,3.3,.037,PARK_TILE+.7,0xd6bd92);
+ for(const z of [-18,14])cube(root,0,.022,z,21,.038,2.3,0xe1cda7);
+ // Un peu de texture au bord des promenades, sans barrière.
+ for(const side of [-1,1])for(const z of [-22,-4,19]){
+  cube(root,side*9.6,.018,z,1.2,.023,5.8,[0x84ad72,0x90b77c,0x77a56c][(z+22)%3]);
+ }
+}
+function createParkGround(root){
+ // Sol suffisamment large et mobile : son bord ne peut pas être vu à la caméra.
+ parkGround=cube(root,0,-.25,0,650,.48,650,0x77a36b);
+ parkPaths=[];
+ for(let i=0;i<9;i++){
+  const tile=new T.Group();pathways(tile);root.add(tile);parkPaths.push(tile);
+ }
+}
+function updateParkPaths(){
+ const cell=Math.floor(run.z/PARK_TILE);
+ if(cell===parkPathIndex)return;
+ parkPathIndex=cell;
+ for(let i=0;i<parkPaths.length;i++){
+  parkPaths[i].position.z=(cell+i-4)*PARK_TILE;
  }
 }
 function lakeAndMonuments(root){
@@ -98,39 +114,67 @@ function lakeAndMonuments(root){
  // Pas de banderole à l'entrée : perspective libre sur les allées du parc.
 }
 function woodedPark(root){
- // Sous-bois dense, des deux côtés des promenades : 156 arbres instanciés.
- // Les troncs et feuillages ne mordent jamais sur |x| <= 10 (zone jouable).
- const total=156;
- const trunks=new T.InstancedMesh(cylGeo,createMaterial(0x796248),total);
- const canopy=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),total);
- const shrubCount=95,shrubs=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),shrubCount);
- const dummy=new T.Object3D(),greens=[0x456b4d,0x588557,0x6f975b,0x7da260,0x426f53,0x8ca968];
- let filled=0,bush=0;
- for(let row=0;row<26;row++)for(let column=0;column<6;column++){
-  const side=column<3?-1:1,depth=column%3;
-  const x=side*(12.9+depth*5.2+rnd(row*9+column)*2.0);
-  const z=2+row*4.7+(rnd(row*13+column*5)-.5)*2.7;
-  // Garder les eaux du lac et le monument dégagés.
-  if(side<0&&z>48&&z<88&&depth>0){continue;}
-  const h=2.5+rnd(row*9+column)*1.75;
+ // Arbres, buissons et sous-bois instanciés. Les positions sont recyclées
+ // autour du personnage : le décor continue aussi loin qu'il marche.
+ const capacity=1300;
+ const trunks=new T.InstancedMesh(cylGeo,createMaterial(0x796248),capacity);
+ const leaves=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),capacity);
+ const bushes=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),capacity);
+ trunks.frustumCulled=false;leaves.frustumCulled=false;bushes.frustumCulled=false;
+ forestGrid={trunks,leaves,bushes};
+ root.add(trunks,leaves,bushes);
+ updateForestGrid(true);
+}
+function updateForestGrid(force=false){
+ if(!forestGrid)return;
+ const cx=Math.floor(run.x/TREE_GRID),cz=Math.floor(run.z/TREE_GRID);
+ if(!force&&cx===parkGridX&&cz===parkGridZ)return;
+ parkGridX=cx;parkGridZ=cz;
+ const {trunks,leaves,bushes}=forestGrid;
+ const dummy=new T.Object3D();
+ const greens=[0x456b4d,0x588557,0x6f975b,0x7da260,0x426f53,0x8ca968];
+ let count=0,bushCount=0;
+ for(let gx=cx-14;gx<=cx+14;gx++)for(let gz=cz-21;gz<=cz+21;gz++){
+  const n=gx*179+gz*83,noise=rnd(n+17);
+  if(noise<.24)continue;
+  const x=gx*TREE_GRID+(rnd(n+21)-.5)*2.4;
+  const z=gz*TREE_GRID+(rnd(n+41)-.5)*2.8;
+  // Laisser les chemins, les clients, le joueur et les monuments sans arbres.
+  if(Math.abs(x)<11.5)continue;
+  if(Math.hypot(x-run.x,z-run.z)<4.5)continue;
+  if(((x+20)/12)**2+((z-68)/21)**2<1.18)continue; // lac
+  if(Math.hypot(x-19,z-36)<6.1)continue; // fontaine
+  if(Math.hypot(x+23,z-83)<7)continue; // cascade
+  if(count>=trunks.instanceMatrix.count)break;
+  const h=2.8+rnd(n+57)*1.5;
   dummy.rotation.set(0,0,0);
-  dummy.position.set(x,h/2,z);dummy.scale.set(.19+rnd(row+column)*.11,h,.21);
-  dummy.updateMatrix();trunks.setMatrixAt(filled,dummy.matrix);
-  dummy.position.set(x, h+1.35,z);
-  dummy.scale.set(1.1+rnd(row*19+column)*.78,1.65+rnd(row*3+column)*.62,1.18+rnd(row*8+column)*.6);
-  dummy.updateMatrix();canopy.setMatrixAt(filled,dummy.matrix);
-  canopy.setColorAt(filled,new T.Color(greens[(row+column)%greens.length]));
-  if(bush<shrubCount&&(row+column)%2===0){
-   dummy.position.set(x+side*(1.25+rnd(row+8)*1.1),.55,z+.75);
-   dummy.scale.set(.85+rnd(column+row)*.38,.70,.87);
-   dummy.updateMatrix();shrubs.setMatrixAt(bush,dummy.matrix);
-   shrubs.setColorAt(bush,new T.Color(greens[(row+column+2)%greens.length]));
-   bush++;
+  dummy.position.set(x,h/2,z);
+  dummy.scale.set(.18+rnd(n+99)*.11,h,.20);
+  dummy.updateMatrix();trunks.setMatrixAt(count,dummy.matrix);
+  dummy.position.set(x,h+1.3,z);
+  dummy.scale.set(1.15+rnd(n+31)*.8,1.65+rnd(n+33)*.60,1.25+rnd(n+35)*.6);
+  dummy.updateMatrix();leaves.setMatrixAt(count,dummy.matrix);
+  leaves.setColorAt(count,new T.Color(greens[Math.abs((gx+gz)%greens.length)]));
+  count++;
+  if((gx+2*gz)%3===0&&bushCount<bushes.instanceMatrix.count){
+   dummy.position.set(x+1.2,.58,z+.65);
+   dummy.scale.set(.85, .72,.9);dummy.updateMatrix();
+   bushes.setMatrixAt(bushCount,dummy.matrix);
+   bushes.setColorAt(bushCount,new T.Color(greens[Math.abs((gx*2+gz)%greens.length)]));
+   bushCount++;
   }
-  filled++;
  }
- trunks.count=filled;canopy.count=filled;shrubs.count=bush;
- root.add(trunks,canopy,shrubs);
+ trunks.count=count;leaves.count=count;bushes.count=bushCount;
+ for(const mesh of [trunks,leaves,bushes]){
+  mesh.instanceMatrix.needsUpdate=true;
+  if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+ }
+}
+function updateParkEnvironment(){
+ if(!parkGround)return;
+ parkGround.position.set(run.x,-.25,run.z);
+ updateParkPaths();
+ updateForestGrid();
 }
 function makeBirds(root){
  // Petits moineaux qui traversent les allées et battent des ailes.
@@ -151,9 +195,10 @@ function makeBirds(root){
 }
 function makePark(){
  const root=new T.Group();world.add(root);
- pathways(root);
+ createParkGround(root);
  woodedPark(root);
  birds=makeBirds(root);
+ updateParkEnvironment();
  // Autant de bancs que de petites haltes, uniquement sur les bas-côtés.
  for(let z=7,i=0;z<124;z+=9.5,i++){
   for(const side of [-1,1]){
@@ -571,6 +616,7 @@ function frame(ms){
    }
   }
   const t=ms/1000;
+  updateParkEnvironment();
   updateSaleConversation(t);
   if(!$('toast').hidden){
    const remain=toastUntil-t;
