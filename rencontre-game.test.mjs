@@ -142,14 +142,15 @@ test('Lecture directe du chapitre 6 sans progression obligatoire des jeux préc�
  assert.ok(html.includes('#standaloneReader .rendezvous-excerpt'),'Keep typography and fullscreen reading style');
 });
 
-test('L’ouverture montre deux personnages et les dialogues sont rendus en français',()=>{
+test('Les voix artificielles et sous-titres ont été retirés sans modifier les films',()=>{
  assert.ok(html.includes("C02:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4'"));
- assert.ok(!html.includes('hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4'),'Le clip isolant le garçon ne doit plus être joué');
- for(const phrase of ['Je suis fatigué.','Je sais.','Tu veux bien t’occuper de moi ?','Oui.'])assert.ok(html.includes(phrase));
- assert.ok(html.includes("utterance.lang='fr-FR'"));
- assert.ok(html.includes("player.muted=Boolean(FRENCH_LINES[shot[0]])"));
- assert.ok(html.includes("speakFrench(shot[0])"));
- assert.ok(html.includes('id="frenchDialogue"'));
+ assert.ok(!html.includes('hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4'));
+ assert.ok(html.includes("const SILENT_DIALOGUE_SHOTS=new Set(['C02','C03','C07','C08'])"));
+ assert.ok(html.includes('player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0])'));
+ for(const fragment of ['speechSynthesis','SpeechSynthesisUtterance','FRENCH_LINES','frenchDialogue','function speakFrench','function stopFrenchSpeech'])
+  assert.ok(!html.includes(fragment),fragment+' must not remain');
+ assert.ok(html.includes('id="replayScene"'),'Existing replay stays');
+ assert.ok(html.includes('id="toggleMusic"'),'Existing music stays');
 });
 
 test('Choix superposés à l’image de départ, sans bloc détaillé sous la scène',()=> {

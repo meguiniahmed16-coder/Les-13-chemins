@@ -60,7 +60,7 @@ dialog::backdrop{background:#0e201cd9}
 .movie-frame video,.movie-frame img{display:block;width:100%;max-height:52vh;aspect-ratio:16/9;object-fit:contain}
 .movie-frame video{opacity:1;transition:opacity 300ms ease-in-out}
 .movie-frame video.video-fading{opacity:0}
-.movie-frame .french-dialogue{position:absolute;z-index:2;left:8%;right:8%;bottom:14%;padding:8px 15px;border-radius:5px;background:#0d221cc9;color:#fff5dc;text-align:center;font:600 clamp(17px,2.3vw,25px)/1.4 Georgia,serif;text-shadow:0 1px 2px #0006;pointer-events:none}.movie-frame .replay-overlay{position:absolute;z-index:3;left:50%;bottom:24px;transform:translateX(-50%);min-width:min(250px,85%);padding:13px 20px;border:1px solid #e4c693;border-radius:999px;background:#1d3f34e8;color:#fff4d9;box-shadow:0 6px 24px #0009;cursor:pointer;font:700 15px system-ui,sans-serif;backdrop-filter:blur(5px)}.movie-frame .replay-overlay:hover,.movie-frame .replay-overlay:focus-visible{background:#375d4bed}.movie-frame .resume-sound{position:absolute;z-index:2;left:50%;bottom:20px;transform:translateX(-50%);background:#f3deaa;color:#213e35;border:1px solid #ae8b53;box-shadow:0 4px 20px #0006;min-width:min(280px,85%);cursor:pointer}
+.movie-frame .replay-overlay{position:absolute;z-index:3;left:50%;bottom:24px;transform:translateX(-50%);min-width:min(250px,85%);padding:13px 20px;border:1px solid #e4c693;border-radius:999px;background:#1d3f34e8;color:#fff4d9;box-shadow:0 6px 24px #0009;cursor:pointer;font:700 15px system-ui,sans-serif;backdrop-filter:blur(5px)}.movie-frame .replay-overlay:hover,.movie-frame .replay-overlay:focus-visible{background:#375d4bed}.movie-frame .resume-sound{position:absolute;z-index:2;left:50%;bottom:20px;transform:translateX(-50%);background:#f3deaa;color:#213e35;border:1px solid #ae8b53;box-shadow:0 4px 20px #0006;min-width:min(280px,85%);cursor:pointer}
 .movie-frame .movie-placeholder{padding:36px 22px;text-align:center;color:#eee0bd}
 .movie-placeholder strong{display:block;font:italic 26px Georgia,serif}
 .movie-placeholder small{display:block;margin:12px auto;font-size:13px;line-height:1.6;max-width:550px}.movie-placeholder img{width:100%;max-width:690px;height:auto;max-height:40vh;object-fit:contain;margin:auto auto 14px;border:1px solid #bba57c}.movie-placeholder a{display:block;color:#ecd39e;margin-top:12px;font-weight:700;font-size:13px}
@@ -166,7 +166,7 @@ main{max-width:1120px;margin:0 auto;padding:12px 12px 16px}
 </div></div>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
-<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><div id="frenchDialogue" class="french-dialogue" hidden aria-live="off"></div><button type="button" id="replayScene" class="replay-overlay" hidden>↻ Rejouer la scène</button><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
+<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><button type="button" id="replayScene" class="replay-overlay" hidden>↻ Rejouer la scène</button><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
 <script>
 (function(){
 'use strict';
@@ -286,22 +286,8 @@ let pending=null,movieIndex=0,mode='sequence';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
 const FADE_MS=300;
-/* Répliques de la V17, en français. Aucune voix payante n'est intégrée à ces vidéos. */
-const FRENCH_LINES={C02:{text:'Je suis fatigué.',speaker:'homme'},C03:{text:'Je sais.',speaker:'femme'},C07:{text:'Tu veux bien t’occuper de moi ?',speaker:'homme'},C08:{text:'Oui.',speaker:'femme'}};
-let activeSpeech=null;
-function stopFrenchSpeech(){if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(e){}}activeSpeech=null;}
-function speakFrench(id){
- stopFrenchSpeech();const line=FRENCH_LINES[id],label=$('frenchDialogue');label.hidden=!line;
- if(!line)return;
- label.textContent='— '+line.text;
- if(!('speechSynthesis' in window))return; // Le texte reste lisible sans synthèse vocale.
- try{
-  const utterance=new SpeechSynthesisUtterance(line.text);utterance.lang='fr-FR';utterance.rate=0.94;
-  const voices=window.speechSynthesis.getVoices().filter(v=>/^fr(?:-|$)/i.test(v.lang));
-  if(voices.length)utterance.voice=voices.find(v=>line.speaker==='femme'?/female|femme|h[eé]l[eè]ne|audrey|marie/i.test(v.name):/male|homme|thomas|paul|mathieu/i.test(v.name))||voices[0];
-  activeSpeech=utterance;window.speechSynthesis.speak(utterance);
- }catch(e){/* Sous-titres français toujours disponibles. */}
-}
+/* Les plans autrefois doublés sont silencieux : ni voix artificielle, ni paroles étrangères. */
+const SILENT_DIALOGUE_SHOTS=new Set(['C02','C03','C07','C08']);
 let advanceTimer=null;
 function stopAdvanceTimer(){if(advanceTimer!==null){clearTimeout(advanceTimer);advanceTimer=null;}}
 function notifyBoard(){if(window.parent===window)return;try{window.parent.postMessage({type:'rencontre:state',step:state.step,complete:state.step>=STEPS.length&&!state.ended,ended:state.ended},location.origin);}catch(e){}}
@@ -339,7 +325,7 @@ function beginScene(ids,kind){
 }
 function playCurrent(){
  if(!pending||!$('cinema').open)return;
- stopAdvanceTimer();stopFrenchSpeech();
+ stopAdvanceTimer();
  const shot=shotInfo(pending[movieIndex]);if(!shot)return;
  soundtrackForCurrentShot(shot[0]);
  $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
@@ -349,7 +335,7 @@ function playCurrent(){
  player.pause();player.onended=null;player.onerror=null;player.onplaying=null;
  player.removeAttribute('src');player.load();player.hidden=true;
  // Pas de contrôles de lecteur : la cinématique se joue avec son original.
- player.controls=false;player.muted=Boolean(FRENCH_LINES[shot[0]]);player.defaultMuted=player.muted;player.volume=1;
+ player.controls=false;player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0]);player.defaultMuted=player.muted;player.volume=1;
  player.classList.add('video-fading');resume.hidden=true;
  const still=$('moviePlaceholder'),poster=$('moviePoster'),link=$('movieExternal');
  poster.hidden=true;link.hidden=true;link.removeAttribute('href');$('movieFile').textContent='';
@@ -361,7 +347,6 @@ function playCurrent(){
   player.onplaying=()=>{
    if(!pending||!$('cinema').open)return;
    resume.hidden=true;
-   speakFrench(shot[0]);
    requestAnimationFrame(()=>player.classList.remove('video-fading'));
   };
   player.onended=()=>{
@@ -381,7 +366,6 @@ function playCurrent(){
   };
   player.onerror=()=>{
    if(!pending||!$('cinema').open)return;
-   stopFrenchSpeech();$('frenchDialogue').hidden=true;
    resume.hidden=true;player.hidden=true;still.hidden=false;poster.hidden=true;
    $('movieStillTitle').textContent='Vidéo momentanément inaccessible';
    $('movieStillText').textContent='La vidéo validée n’a pas pu être chargée. Tu peux l’ouvrir directement ou poursuivre le récit.';
@@ -395,7 +379,6 @@ function playCurrent(){
    $('musicStatus').textContent='Touche « Reprendre avec le son » pour autoriser la lecture.';
   });
  }else{
-  $('frenchDialogue').hidden=true;
   still.hidden=false;poster.hidden=true;
   $('movieStillTitle').textContent='Vidéo non disponible';
   $('movieStillText').textContent=shot[1]+' — aucune vidéo disponible pour cette séquence.';
@@ -409,7 +392,7 @@ $('resumeWithSound').onclick=()=>{
  if(!pending||!$('cinema').open)return;
  const player=$('player'),shot=shotInfo(pending[movieIndex]);
  if(!shot||!MEDIA[shot[0]])return;
- player.muted=Boolean(FRENCH_LINES[shot[0]]);player.defaultMuted=player.muted;player.controls=false;
+ player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0]);player.defaultMuted=player.muted;player.controls=false;
  const attempt=player.play();
  if(attempt&&typeof attempt.catch==='function')attempt.then(()=>{
   $('resumeWithSound').hidden=true;
@@ -428,7 +411,7 @@ function nextMovie(){
  stopAdvanceTimer();
  movieIndex++;
  if(movieIndex<pending.length){playCurrent();return;}
- $('player').pause();stopFrenchSpeech();$('frenchDialogue').hidden=true;$('cinema').close();
+ $('player').pause();$('cinema').close();
  const finished=mode;
  if(finished==='sequence'||finished==='pause'){
   state.watched=[...new Set(state.watched.concat(pending))];
@@ -442,9 +425,9 @@ function nextMovie(){
  }
 }
 function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';state={step:0,watched:[],ended:false};save();draw();notifyBoard();}
-$('closeMovie').onclick=()=>{stopAdvanceTimer();stopFrenchSpeech();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
+$('closeMovie').onclick=()=>{stopAdvanceTimer();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
 $('nextMovie').onclick=nextMovie;
-$('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();stopFrenchSpeech();$('player').pause();pending=null;stopSoundtrack();});
+$('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();$('player').pause();pending=null;stopSoundtrack();});
 
 function initStandaloneReading(){
  if(!standaloneReading)return;
