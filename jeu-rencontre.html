@@ -51,7 +51,7 @@ button{font:600 14px/1.4 system-ui,sans-serif;min-height:49px;cursor:pointer;bor
 .music-credits{margin:17px 0 0;padding:10px 13px;border-top:1px solid #c6af87;font-size:12px;color:#6a655b}
 .music-credits summary{cursor:pointer;color:#385243;font-weight:700}
 .music-credits p{margin:8px 0 0;line-height:1.6}
-.music-credits a{color:#395e50;text-decoration:underline}.alternative-heading{font:500 23px Georgia,serif;margin:23px 0 5px;color:#2c4b3e}.alternative-description{font-size:12px;color:#6b685f}#pauseClips button{background:#e4efdc;color:#264b37;border:1px solid #93ab8d;border-radius:5px;padding:6px 11px;cursor:pointer;font:600 12px system-ui}#pauseClips button:hover{background:#d5e6cd}
+.music-credits a{color:#395e50;text-decoration:underline}.alternative-heading{font:500 23px Georgia,serif;margin:23px 0 5px;color:#2c4b3e}.alternative-description{font-size:12px;color:#6b685f}#clips button,#pauseClips button{background:#e4efdc;color:#264b37;border:1px solid #93ab8d;border-radius:5px;padding:6px 11px;cursor:pointer;font:600 12px system-ui}#clips button:hover,#pauseClips button:hover{background:#d5e6cd}
 dialog{border:5px solid #bd9e68;border-radius:8px;max-width:min(820px,95vw);width:100%;padding:0;color:#fff0d7;background:#1b352d;box-shadow:0 15px 55px #0008;max-height:92dvh}
 dialog::backdrop{background:#0e201cd9}
 .movie-head{padding:14px 18px;border-bottom:1px solid #bea27673}
@@ -60,7 +60,7 @@ dialog::backdrop{background:#0e201cd9}
 .movie-frame video,.movie-frame img{display:block;width:100%;max-height:52vh;aspect-ratio:16/9;object-fit:contain}
 .movie-frame .movie-placeholder{padding:36px 22px;text-align:center;color:#eee0bd}
 .movie-placeholder strong{display:block;font:italic 26px Georgia,serif}
-.movie-placeholder small{display:block;margin:12px 0;font-size:12px}
+.movie-placeholder small{display:block;margin:12px auto;font-size:13px;line-height:1.6;max-width:550px}.movie-placeholder img{width:100%;max-width:690px;height:auto;max-height:40vh;object-fit:contain;margin:auto auto 14px;border:1px solid #bba57c}.movie-placeholder a{display:block;color:#ecd39e;margin-top:12px;font-weight:700;font-size:13px}
 .movie-actions{display:flex;justify-content:space-between;gap:10px;padding:14px 18px;flex-wrap:wrap}
 .movie-actions button{flex:1 1 200px}.movie-actions .outline{color:#fff3dc;border-color:#bba478}
 .movie-actions .outline:hover{background:#335244}
@@ -77,22 +77,22 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 <header class="banner"><div class="eyebrow">Chemin III · Les rendez-vous · Chapitre 6</div><h1>Tu veux bien t’occuper de moi ?</h1><p>Un récit interactif en deux lieux : la cuisine et la chambre mansardée.</p><div id="progress" class="progress" aria-label="Progression dans le récit"></div><div class="music-strip"><button type="button" id="toggleMusic" class="music-toggle" aria-pressed="true">♫ Musique activée</button><span class="music-status" id="musicStatus" role="status" aria-live="polite">Silence jusqu’au moment où il relève la tête.</span></div></header>
 <div class="grid">
 <div>
- <div id="visual" class="visual"><img id="still" alt="Illustration de référence des personnages dans la cuisine" src="" loading="eager"><div id="awaitingArt" class="awaiting-art" hidden>La chambre mansardée<small>Visuel à préparer à partir des références du récit</small></div></div>
- <p class="caption">Références artistiques fixes : personnages et cuisine validés. Les cinématiques Higgsfield seront ajoutées après contrôle.</p>
+ <div id="visual" class="visual"><img id="still" alt="Illustration de référence des personnages dans la cuisine" src="" loading="eager"><div id="awaitingArt" class="awaiting-art" hidden>La chambre mansardée<small>Paris, la nuit. Le bar, les conversations et le canapé-lit : la suite de leur rencontre.</small></div></div>
+ <p class="caption">Les gestes, les rencontres et les silences se révèlent au rythme des décisions. Les deux images de la cuisine servent uniquement d’ambiance et de repères pour les personnages.</p>
 </div>
 <section class="panel" aria-live="polite"><div id="stepLabel" class="eyebrow"></div><h2 id="stepTitle"></h2><p id="stepDescription"></p><div id="choices" class="actions"></div><div id="feedback" class="feedback" hidden></div></section>
 </div>
-<section class="section" aria-labelledby="soundtrackTitle"><h2 id="soundtrackTitle">Les musiques des deux films</h2><p><strong>La cuisine :</strong> « Felicity » — Scott Buckley. Le début reste silencieux ; la musique commence uniquement lorsque le garçon relève la tête (plan C02).</p><p><strong>La chambre :</strong> « Night on the Docks – Sax » — Kevin MacLeod. Musique d’ambiance dès l’arrivée dans la mansarde (plan B01).</p><p class="caption">Sélections musicales validées · CC BY 4.0, attribution requise. Les fichiers audio ne sont pas encore intégrés ; la lecture restera silencieuse jusqu’à leur ajout.</p></section>
+<section class="section" aria-labelledby="soundtrackTitle"><h2 id="soundtrackTitle">Les musiques des deux films</h2><p><strong>La cuisine :</strong> « Felicity » — Scott Buckley. Le début reste silencieux ; la musique commence uniquement lorsque le garçon relève la tête (plan C02).</p><p><strong>La chambre :</strong> « Night on the Docks – Sax » — Kevin MacLeod. Musique d’ambiance dès l’arrivée dans la mansarde (plan B01).</p><p class="caption">Musiques choisies sous licence CC BY 4.0, avec attribution. Leur lecture utilise les fichiers des auteurs ; si une piste externe n’est pas accessible, le récit reste jouable sans musique.</p></section>
 <section class="section" aria-labelledby="cinematics"><h2 id="cinematics">Cinématiques et récompenses</h2><p>À chaque choix qui fait progresser l'histoire, le lecteur débloque les plans associés. Chaque clip sera montré dans son intégralité, puis rejoindra la collection. Les deux films complets seront accessibles à la fin de leur parcours respectif.</p><div id="clips" class="clip-list" role="list"></div><h3 class="alternative-heading">Les séquences « Pas maintenant »</h3><p class="alternative-description">Une confidence, un rire ou un regard : chaque étape possède une autre possibilité.</p><div id="pauseClips" class="clip-list" role="list"></div><div id="films" class="library"></div>
 <details class="music-credits"><summary>Crédits musicaux — Creative Commons</summary>
 <p>Film I : <a href="https://www.scottbuckley.com.au/library/felicity/" target="_blank" rel="noopener noreferrer">« Felicity » — Scott Buckley</a>, sous licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · www.scottbuckley.com.au.</p>
 <p>Film II : <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100137" target="_blank" rel="noopener noreferrer">« Night on the Docks - Sax » — Kevin MacLeod (incompetech.com)</a>, sous licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p>
 <p>Les morceaux sont joués comme musique de fond ; leur volume peut être ajusté pour le jeu.</p>
 </details></section>
-<p class="caption">Prototype du parcours narratif : les choix fonctionnent, mais les animations et la scène mansardée restent à produire. Aucun point ni trésor n'est attribué en l'absence des cinématiques. Le jeu ne modifie pas la sauvegarde des autres chapitres.</p>
+<p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. L’ouverture silencieuse (C01) et le tableau final (B07) sont présentés comme des passages illustré et littéraire, sans prétendre qu’une vidéo existe. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
-<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline preload="metadata" hidden></video><div id="moviePlaceholder" class="movie-placeholder"><strong>Animation à produire</strong><small>Le clip sélectionné n'est pas encore disponible. L'illustration de référence et l'ordre des scènes sont conservés.</small><span id="movieFile" class="dummy-tag"></span></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
+<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline muted controls preload="metadata" hidden></video><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
 <script>
 (function(){
 'use strict';
@@ -128,8 +128,31 @@ const ALTERNATES=[
  ["A07","Un autre éclat de rire","02-chambre/alternatives/07-rire.mp4","Rires complices ; le canapé-lit reste fermé."],
  ["A08","Le silence de la nuit","02-chambre/alternatives/08-nuit.mp4","Ils restent sous les draps, échangent un regard tranquille."]
 ];
-/* Les vidéos sont reliées ici après validation. Un fichier absent ne doit pas être présenté comme une animation existante. */
-const MEDIA={}; 
+/* Références exactes aux 21 créations Higgsfield validées. C01 et B07 n'ont pas de rendu disponible. */
+const HIGGS_CDN='https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/';
+const MEDIA={
+ C02:HIGGS_CDN+'hf_20261110_184312_e155bc22-bd01-46f7-86a7-029a60d64a6e.mp4',
+ C03:HIGGS_CDN+'hf_20261110_184129_21f4448e-c0bf-4504-b0a4-1712344b88e5.mp4',
+ C04:HIGGS_CDN+'hf_20261110_184338_cd7ef478-eb5b-4f7d-91dd-f4b9b5292765.mp4',
+ C05:HIGGS_CDN+'hf_20261110_184341_77deea16-73e4-4be1-8af2-96c8980b1d86.mp4',
+ C06:HIGGS_CDN+'hf_20261110_193652_a6c7d632-bc9c-4184-b2e4-db88c84f64c8.mp4',
+ C07:HIGGS_CDN+'hf_20261110_193654_6d054a1d-d9c6-4fe0-8870-7a517d5579d6.mp4',
+ C08:HIGGS_CDN+'hf_20261110_193657_3161d0d8-6614-48e3-a54c-43d965d1fb1a.mp4',
+ B01:HIGGS_CDN+'hf_20261110_193835_471a3e2c-a7d5-4bb0-a300-4f61e759c708.mp4',
+ B02:HIGGS_CDN+'hf_20261110_193839_cf5dc506-3d8e-4204-864b-7f91ed247675.mp4',
+ B03:HIGGS_CDN+'hf_20261110_193843_f54c5f30-3c06-46de-baaf-e18cba7abac5.mp4',
+ B04:HIGGS_CDN+'hf_20261110_194016_5acc85e9-b602-4532-9e7b-26605fbec9a1.mp4',
+ B05:HIGGS_CDN+'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4',
+ B06:HIGGS_CDN+'hf_20261110_194022_76f3f56c-3687-4048-9092-8e06cd07cdc9.mp4',
+ A01:HIGGS_CDN+'hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4',
+ A02:HIGGS_CDN+'hf_20261110_194230_cab0bfb9-807e-42fd-91e8-852b1cd4be39.mp4',
+ A03:HIGGS_CDN+'hf_20261110_194412_8a5d09b9-2079-4a98-baf8-2577b78957e0.mp4',
+ A04:HIGGS_CDN+'hf_20261110_194415_552f97ec-18ba-4238-8729-73a62b45e954.mp4',
+ A05:HIGGS_CDN+'hf_20261110_194420_725e180b-2319-4d7b-aafd-104b2f3b1394.mp4',
+ A06:HIGGS_CDN+'hf_20261110_194605_9d971eb9-b62d-4342-9b1c-c47a9a9e3046.mp4',
+ A07:HIGGS_CDN+'hf_20261110_194610_25bacf25-04f1-49b2-98a6-e7db3a1d2b16.mp4',
+ A08:HIGGS_CDN+'hf_20261110_194644_e396ef78-ecec-493f-be2b-da6fdb7027c7.mp4'
+}; 
 const FILMS={cuisine:null,chambre:null};
 const MUSIC={
  cuisine:{title:'Felicity',name:'Felicity — Scott Buckley',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C02',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
@@ -188,6 +211,9 @@ try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Nu
 let pending=null,movieIndex=0,mode='sequence';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
+let advanceTimer=null;
+function stopAdvanceTimer(){if(advanceTimer!==null){clearTimeout(advanceTimer);advanceTimer=null;}}
+function notifyBoard(){if(window.parent===window)return;try{window.parent.postMessage({type:'rencontre:state',step:state.step,complete:state.step>=STEPS.length&&!state.ended,ended:state.ended},location.origin);}catch(e){}}
 function button(label,css,cb){const b=document.createElement('button');b.type='button';b.className=css;b.textContent=label;b.onclick=cb;return b;}
 function draw(){
  $('progress').replaceChildren(...STEPS.map((_,i)=>{const d=document.createElement('span');d.className=i<state.step?'done':i===state.step?'current':'';return d;}));
@@ -195,6 +221,7 @@ function draw(){
  const isKitchen=!atEnd&&step.phase==='cuisine';
  $('still').hidden=!isKitchen;$('awaitingArt').hidden=isKitchen;
  if(isKitchen){$('still').src=state.step>=3?ART.caresse:ART.cuisine;}
+ else if(atEnd){$('awaitingArt').firstChild.textContent='Fin de la rencontre';}
  $('stepLabel').textContent=atEnd?'Chemin III · Épilogue':(step.phase==='cuisine'?'Film 1 · La cuisine':'Film 2 · La mansarde')+' · Étape '+(state.step+1)+'/8';
  $('stepTitle').textContent=atEnd?(state.ended?'Un autre chemin':'La rencontre — fin de la séquence'):step.title;
  $('stepDescription').textContent=atEnd?(state.ended?'Le choix de ne pas poursuivre est respecté. Tu peux recommencer la scène sans perdre le parcours principal.':'La dernière cinématique ferme le récit. Tous les plans du parcours peuvent être rejoués.'):step.desc;
@@ -205,63 +232,92 @@ function draw(){
    if(step.no)$('choices').append(button('Pas maintenant','outline',()=>beginScene([step.alt],'pause')));
  }
  if(!atEnd){$('feedback').hidden=true;$('feedback').textContent='';}
- $('clips').replaceChildren(...SHOTS.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';li.textContent=(state.watched.includes(s[0])?'✓ ':'○ ')+s[0]+' · '+s[1];return li}));
+ $('clips').replaceChildren(...SHOTS.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[0]+' · '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
  $('pauseClips').replaceChildren(...ALTERNATES.map(s=>{const li=document.createElement('li');li.setAttribute('role','listitem');li.className=state.watched.includes(s[0])?'unlocked':'';if(state.watched.includes(s[0]))li.append(button('↻ '+s[1],'',()=>beginScene([s[0]],'replay')));else li.textContent='○ '+s[0]+' · '+s[1];return li;}));
  $('films').replaceChildren();
- for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:8,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:7,ready:state.watched.includes('B07')}]){
+ for(const part of [{id:'cuisine',name:'Film I — La cuisine',count:7,ready:state.watched.includes('C08')},{id:'chambre',name:'Film II — La mansarde',count:6,ready:state.watched.includes('B06')||state.watched.includes('B07')}]){
   const box=document.createElement('div');box.className='film-card';
   const heading=document.createElement('strong');heading.textContent=part.name;
-  const msg=document.createElement('small');msg.textContent=part.count+' plans · '+(part.ready?'Parcours débloqué':'À débloquer');
+  const msg=document.createElement('small');msg.textContent=part.count+' séquences animées et 1 tableau narratif · '+(part.ready?'Film à revoir':'À débloquer');
   box.append(heading,msg);
-  if(part.ready){box.append(button(FILMS[part.id]?'Voir le film complet':'Revoir le storyboard complet','outline',()=>{const ids=SHOTS.filter(s=>s[0].startsWith(part.id==='cuisine'?'C':'B')).map(s=>s[0]);beginScene(ids,'replay')}));}
+  if(part.ready){box.append(button('▶ Revoir le film enchaîné','outline',()=>{const ids=SHOTS.filter(s=>s[0].startsWith(part.id==='cuisine'?'C':'B')).map(s=>s[0]);beginScene(ids,'replay')}));}
   $('films').append(box);
  }
 }
 function beginScene(ids,kind){
  if(!Array.isArray(ids)||!ids.length)return;
- pending=ids.slice();movieIndex=0;mode=kind;$('cinema').showModal();playCurrent();
+ stopAdvanceTimer();pending=ids.slice();movieIndex=0;mode=kind;$('cinema').showModal();playCurrent();
 }
 function playCurrent(){
+ if(!pending||!$('cinema').open)return;
+ stopAdvanceTimer();
  const shot=shotInfo(pending[movieIndex]);if(!shot)return;
  soundtrackForCurrentShot(shot[0]);
  $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
  $('cinemaTitle').textContent=shot[1];
- $('cinemaDescription').textContent=shot[3]||'Cette cinématique sera visionnée entièrement avant de poursuivre lorsque son fichier sera disponible.';
- $('movieFile').textContent=shot[2];
- const player=$('player');player.pause();player.removeAttribute('src');player.hidden=true;
- $('nextMovie').disabled=false;$('nextMovie').textContent=movieIndex+1<pending.length?'Plan suivant →':'Terminer la séquence →';
+ $('cinemaDescription').textContent=shot[3]||'Un moment de leur rencontre, à voir jusqu’au bout avant de poursuivre.';
+ const player=$('player');player.pause();player.onended=null;player.onerror=null;player.removeAttribute('src');player.load();player.hidden=true;player.muted=true;
+ const still=$('moviePlaceholder'),poster=$('moviePoster'),link=$('movieExternal');
+ poster.hidden=true;link.hidden=true;link.removeAttribute('href');$('movieFile').textContent='';
+ $('nextMovie').disabled=false;
+ $('nextMovie').textContent=movieIndex+1<pending.length?'Plan suivant →':'Terminer la séquence →';
  if(MEDIA[shot[0]]){
-  $('moviePlaceholder').hidden=true;player.hidden=false;player.src=MEDIA[shot[0]];player.load();$('nextMovie').disabled=true;
-  player.onended=()=>{$('nextMovie').disabled=false;};
-  player.onerror=()=>{player.hidden=true;$('moviePlaceholder').hidden=false;$('nextMovie').disabled=false;};
-  player.play().catch(()=>{player.controls=true;$('nextMovie').disabled=false;});
- }else{$('moviePlaceholder').hidden=false;}
+  still.hidden=true;player.hidden=false;player.src=MEDIA[shot[0]];player.load();$('nextMovie').disabled=true;
+  player.onended=()=>{
+   if(!pending||!$('cinema').open)return;
+   $('nextMovie').disabled=false;
+   $('nextMovie').textContent=movieIndex+1<pending.length?'Continuer →':'Terminer la cinématique →';
+   advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$('cinema').open)nextMovie();},850);
+  };
+  player.onerror=()=>{
+   if(!pending||!$('cinema').open)return;
+   player.hidden=true;still.hidden=false;poster.hidden=true;
+   $('movieStillTitle').textContent='Vidéo momentanément inaccessible';
+   $('movieStillText').textContent='Le lien vers la création validée existe, mais le lecteur n’a pas pu la charger. Tu peux l’ouvrir directement ou poursuivre le récit.';
+   link.href=MEDIA[shot[0]];link.hidden=false;$('nextMovie').disabled=false;
+  };
+  const p=player.play();
+  if(p&&typeof p.catch==='function')p.catch(()=>{if(!pending)return;player.controls=true;$('nextMovie').disabled=false;$('nextMovie').textContent='Continuer ou lire la vidéo →';});
+ }else{
+  still.hidden=false;poster.hidden=shot[0]!=='C01';
+  if(shot[0]==='C01'){
+   poster.src=ART.cuisine;
+   $('movieStillTitle').textContent='Le silence de la cuisine';
+   $('movieStillText').textContent='Il est assis sur le tabouret, la tête baissée. Elle se tient près de l’évier. Aucun geste encore. La musique commencera lorsqu’il relèvera la tête.';
+  }else if(shot[0]==='B07'){
+   $('movieStillTitle').textContent='La fenêtre sur Paris';
+   $('movieStillText').textContent='Il se tient nu, de dos et en pied, devant la fenêtre ouverte. Au loin, la tour Eiffel illumine la nuit et scintille. La main gauche près de l’oreille, il tient une cigarette fumante. Dernier tableau du récit : cette image finale n’a pas encore été animée.';
+  }else{
+   $('movieStillTitle').textContent='Scène littéraire';
+   $('movieStillText').textContent=shot[1]+' — séquence non encore disponible.';
+  }
+ }
 }
 function nextMovie(){
- if(!$('player').hidden&&$('nextMovie').disabled)return;
+ if(!pending||!$('cinema').open||$('nextMovie').disabled)return;
+ stopAdvanceTimer();
  movieIndex++;
  if(movieIndex<pending.length){playCurrent();return;}
  $('player').pause();$('cinema').close();
  const finished=mode;
- if(mode==='sequence'||mode==='pause'){
+ if(finished==='sequence'||finished==='pause'){
   state.watched=[...new Set(state.watched.concat(pending))];
-  if(mode==='sequence')state.step=Math.min(STEPS.length,state.step+1);
-  save();
+  if(finished==='sequence')state.step=Math.min(STEPS.length,state.step+1);
+  state.ended=false;save();
  }
- pending=null;draw();
+ pending=null;draw();notifyBoard();
  if(state.step>=STEPS.length)stopSoundtrack();
- else if(finished==='replay'&&state.step>=4) soundtrackForCurrentShot('B01');
  if(finished==='pause'&&state.step<STEPS.length){
   $('feedback').hidden=false;
-  $('feedback').textContent='La scène se prolonge autrement. Tu peux choisir plus tard ou terminer ici.';
-  $('choices').append(button('Terminer la rencontre ici','outline',()=>{state.ended=true;state.step=STEPS.length;save();draw();}));
+  $('feedback').textContent='Le dialogue continue, les regards se croisent. Le choix reste ouvert : vous pouvez prolonger encore ce moment.';
+  $('choices').append(button('Terminer la rencontre ici','outline',()=>{state.ended=true;state.step=STEPS.length;save();stopSoundtrack();draw();notifyBoard();}));
  }
 }
-function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';state={step:0,watched:[],ended:false};save();draw();}
-$('closeMovie').onclick=()=>{$('player').pause();$('cinema').close();pending=null;draw()};
+function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';state={step:0,watched:[],ended:false};save();draw();notifyBoard();}
+$('closeMovie').onclick=()=>{stopAdvanceTimer();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
 $('nextMovie').onclick=nextMovie;
-$('cinema').addEventListener('cancel',()=>{$('player').pause();pending=null});
-draw();
+$('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();$('player').pause();pending=null;stopSoundtrack();});
+draw();notifyBoard();
 })();
 </script>
 </body>

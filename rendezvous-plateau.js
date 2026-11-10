@@ -45,7 +45,16 @@
   if(!rencontreDialog.open)rencontreDialog.showModal();
   if(!rencontreLoading){rencontreLoading=true;rencontreFrame.src='jeu-rencontre.html?embedded=1';}
  }
- function closeRencontreDialog(){if(rencontreDialog.open)rencontreDialog.close();rencontreFrame.removeAttribute('src');rencontreLoading=false;$('chemin-iii')?.focus({preventScroll:true});}
+ function closeRencontreDialog(){if(rencontreDialog.open)rencontreDialog.close();rencontreFrame.removeAttribute('src');rencontreLoading=false;render();$('chemin-iii')?.focus({preventScroll:true});}
+ addEventListener('message',e=>{
+  if(e.origin!==location.origin||e.source!==rencontreFrame.contentWindow||!rencontreDialog.open||!e.data||e.data.type!=='rencontre:state')return;
+  const step=Number(e.data.step);
+  if(!Number.isInteger(step)||step<0||step>8||typeof e.data.complete!=='boolean'||typeof e.data.ended!=='boolean')return;
+  state.rdvRencontreStage=step;
+  if(e.data.complete){state.rdvRencontreFinished=true;state.rdvRencontreSkipped=false;}
+  else if(e.data.ended&&!state.rdvRencontreFinished){state.rdvRencontreSkipped=true;}
+  save();render();
+ });
  $('rencontreClose').onclick=closeRencontreDialog;
  rencontreDialog.addEventListener('cancel',e=>{e.preventDefault();closeRencontreDialog();});
  const style=document.createElement('style');
@@ -80,9 +89,15 @@
    partsCards[1].querySelector('.chapter-part-state').textContent=state.rdvCyranoFinished?'✓ Trois lettres réussies':state.rdvCyranoSkipped?'↷ Parcouru sans terminer':hasTraversed()?'Jeu 2 / 3 · lecture disponible':'Après le jeu 1 / 3';
    partsCards[1].classList.toggle('passed',cyranoTraversed());
   }
-  const done=[hasTraversed(),cyranoTraversed()].filter(Boolean).length;
+  const rencontreTraversed=Boolean(state.rdvRencontreFinished||state.rdvRencontreSkipped);
+  if(partsCards[2]){
+   partsCards[2].querySelector('.chapter-part-game').textContent='Rencontre · '+Math.min(8,Number(state.rdvRencontreStage)||0)+'/8 choix';
+   partsCards[2].querySelector('.chapter-part-state').textContent=state.rdvRencontreFinished?'✓ Rencontre accomplie':state.rdvRencontreSkipped?'↷ Autre fin':cyranoTraversed()?'Jeu 3 / 3 · Cinématiques disponibles':'Après le jeu 2 / 3';
+   partsCards[2].classList.toggle('passed',rencontreTraversed);
+  }
+  const done=[hasTraversed(),cyranoTraversed(),rencontreTraversed].filter(Boolean).length;
   card.querySelector('.chapter-card-status').textContent=allowed?
-   (done>=2?'2 / 3 jeux parcourus · dernier chapitre accessible':done===1?'1 / 3 jeux parcourus · Cyrano disponible':'0 / 3 jeux parcourus · première bonne feuille disponible'):
+   (done>=3?'3 / 3 jeux parcourus':done>=2?'2 / 3 jeux parcourus · dernier chapitre accessible':done===1?'1 / 3 jeux parcourus · Cyrano disponible':'0 / 3 jeux parcourus · première bonne feuille disponible'):
    'À découvrir après le chemin II';
   card.querySelector('.chapter-card-place').textContent='Chapitres 4, 5 et 6 · Jeux et parcours narratif';
   card.setAttribute('aria-label','Chemin III Les rendez-vous · '+(count+cyranoCount)*10+' points acquis sur 60 dans les deux jeux disponibles');
@@ -127,7 +142,7 @@
    readerArea.hidden=true;readerReference.hidden=true;
    excerpt.hidden=true;
    infoHeading.textContent='Jeu 3 / 3 · Tu veux bien t’occuper de moi ?';
-   infoBody.textContent='Dans la cuisine, chaque geste ouvre le suivant : joue, cheveux et baiser. Accepter un dernier verre ouvre la soirée dans la chambre mansardée, puis la complicité, l’intimité partagée et le dernier plan devant la tour Eiffel. Prototype jouable : animations à produire, aucun point attribué.';
+   infoBody.textContent='Vingt et une cinématiques sont disponibles : dans la cuisine, le regard ouvre la caresse de la joue, puis les cheveux et le baiser. Le dernier verre conduit à la mansarde, à la complicité et au dernier tableau devant Paris. À chaque « Pas maintenant », un autre moment de tendresse se joue. Les films débloqués peuvent être revus ; aucun point supplémentaire n’est attribué.';
    launch.hidden=false;
   }
   reader.scrollTop=0;updateThird();

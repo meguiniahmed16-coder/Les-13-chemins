@@ -31,7 +31,8 @@ test('Cheek precedes hair, hair precedes kiss, drink precedes complicity and int
   assert.ok(html.includes('state.watched'));
   assert.ok(html.includes('state.step=Math.min'));
   assert.ok(html.includes("const KEY='tda-rencontre-storyboard-v1'"),'separate storage');
-  assert.ok(html.includes('const MEDIA={}'),'no fictional videos');
+  assert.equal((html.match(/^ [CBA]\d{2}:HIGGS_CDN\+'hf_[^']+\.mp4'/gm)||[]).length,21,'21 generated videos must be attached');
+  assert.ok(!html.includes('C01:HIGGS_CDN')&&!html.includes('B07:HIGGS_CDN'),'Do not invent unavailable videos');
 });
 
 test('Prototype is wired to the third chapter without altering other games', () => {
@@ -71,5 +72,22 @@ test('Felicity starts only when the boy lifts his head, jazz starts in the mansa
   assert.ok(html.includes("id=\"toggleMusic\""),'Player can mute the music');
   assert.match(html,/Felicity[^<]*<\/a>, sous licence/, 'Attribution presented');
   assert.match(html,/Night on the Docks - Sax[^<]*<\/a>, sous licence/, 'Jazz attribution presented');
-  assert.ok(html.includes("const MEDIA={}"),'Absent film files are not represented as real clips');
+  assert.ok(html.includes("const MEDIA={"),'Video registry is present');
+  assert.ok(html.includes('Felicity commence')&&html.includes("'C02'"),'The start of the music is C02');
+});
+
+test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes alternatives', () => {
+ const refs=[...html.matchAll(/^ (C0[2-8]|B0[1-6]|A0[1-8]):HIGGS_CDN\+'(hf_[^']+\.mp4)'/gm)];
+ assert.equal(refs.length,21);
+ assert.equal(new Set(refs.map(m=>m[1])).size,21);
+ assert.equal(new Set(refs.map(m=>m[2])).size,21);
+ assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
+ assert.ok(html.includes('nextMovie();},850)'), 'The validated clips must chain into one film');
+ assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not move the story forward');
+ assert.ok(html.includes('La fenêtre sur Paris'), 'Literary final tableau when B07 has no video');
+ assert.ok(html.includes('Le silence de la cuisine'), 'Still intro when C01 has no video');
+ assert.ok(html.includes("type:'rencontre:state'"), 'The shared board receives progress');
+ assert.ok(controller.includes("e.data.type!=='rencontre:state'"), 'Parent verifies iframe origin and event type');
+ assert.ok(controller.includes('state.rdvRencontreFinished=true'), 'The third Chemin III chapter is completed');
+ assert.ok(!html.includes('Photo du pèlerin'), 'No unrelated artwork is included');
 });
