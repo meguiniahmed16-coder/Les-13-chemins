@@ -15,7 +15,7 @@ let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlag
 const templates=[];
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
-let joy={x:0,y:0},pad={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,forwardHeld=false,lastHud=0;
+let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,lastHud=0;
 let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0,avenueExtended=false,bastilleReady=false;
 let lastControlDisplay=0,renderFailureReported=false;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,adverseSymbols=null,extraFollowersActive=false;
@@ -173,7 +173,7 @@ function buildings(root,start,end,light=false){
   // Quelques façades haussmanniennes crème, avec fenêtres et balcons en fer.
   for(let z=start;z<end;z+=light?20:14){
    const idx=Math.abs(Math.floor(z/9+side*11));
-   const shade=[0xd7c7ab,0xe0d4be,0xcabda8,0xeadfc8,0xd4c1a2][idx%5];
+   const shade=[0xe1c49d,0xe0c5b9,0xb8cbd0,0xd4c09e,0xc4d4be,0xe5cfad,0xc9bac9][idx%7];
    const h=12+rnd(idx+3)*5.2;
    addBox(root,side*13.8,h/2,z+5,5.1,h,12,shade);
    addBox(root,side*13.8,h+.15,z+5,5.25,.55,12.4,0x69747b);
@@ -212,24 +212,24 @@ function buildings(root,start,end,light=false){
 }
 
 function parisBackdrop(root,start,end){
- // Horizon parisien 360° à coût faible : seulement trois instanced meshes.
+ // L'ancienne couronne bouchait la perspective : façades uniquement sur les flancs.
+ // 36 maisons à x >= 32, en laissant l'avenue centrale totalement dégagée.
  const count=36,facades=new T.InstancedMesh(gBox,mat(0xffffff),count);
  const roofs=new T.InstancedMesh(gBox,mat(0xffffff),count);
  const chimneys=new T.InstancedMesh(gBox,mat(0xffffff),count);
- const obj=new T.Object3D(),center=(start+end)/2,radius=Math.min(92,Math.max(53,(end-start)*.54));
- const shades=[0xd6c7b2,0xe7d6be,0xbcc5bd,0xc4beb9,0xe0d2c1,0xc8c4b5];
+ const obj=new T.Object3D();
+ const shades=[0xd9b69f,0xebd2b5,0xb2ced1,0xd4c4aa,0xd7b4ae,0xc4d0b9,0xd2c0d3];
  for(let i=0;i<count;i++){
-  const angle=i*2*Math.PI/count,rad=radius+(i%3)*3.5;
-  const x=Math.cos(angle)*rad,z=center+Math.sin(angle)*rad;
-  const h=13+rnd(i+12)*16,width=9+rnd(i+29)*5;
-  obj.rotation.set(0,-angle,0);
+  const side=i%2===0?-1:1,rank=Math.floor(i/2);
+  const x=side*(32+(rank%3)*2.4),z=start-10+rank*(end-start+26)/17;
+  const h=15+rnd(i+12)*13,width=9+rnd(i+29)*5;
+  obj.rotation.set(0,0,0);
   obj.position.set(x,h/2,z);obj.scale.set(width,h,9.6);obj.updateMatrix();
   facades.setMatrixAt(i,obj.matrix);facades.setColorAt(i,new T.Color(shades[i%shades.length]));
   obj.position.y=h+.65;obj.scale.set(width+1.3,1.3,10.4);obj.updateMatrix();
-  roofs.setMatrixAt(i,obj.matrix);roofs.setColorAt(i,new T.Color(i%3===0?0x526174:0x707d84));
-  obj.position.y=h+2;obj.position.x=x+Math.sin(angle)*2;
-  obj.scale.set(.7,1.75,.6);obj.updateMatrix();chimneys.setMatrixAt(i,obj.matrix);
-  chimneys.setColorAt(i,new T.Color(0xb39278));
+  roofs.setMatrixAt(i,obj.matrix);roofs.setColorAt(i,new T.Color(i%3===0?0x526174:0x75838b));
+  obj.position.set(x+side*1.1,h+2,z);obj.scale.set(.7,1.75,.6);obj.updateMatrix();
+  chimneys.setMatrixAt(i,obj.matrix);chimneys.setColorAt(i,new T.Color(0xb39278));
  }
  root.add(facades,roofs,chimneys);
 }
@@ -261,6 +261,39 @@ function parisStreetDetails(root,start,end){
  addBox(root,x,1.49,z-.79,1.5,1.0,.09,0xe6d4aa);
  const news=roundedText('JOURNAUX',2.2,'#ebc56e','#3e504a');
  news.position.set(x,2.5,z-.87);root.add(news);
+ // Végétation et éclairage sur les trottoirs, jamais devant le joueur.
+ for(let row=0,at=start+7;at<end-5;at+=19,row++){
+  for(const side of [-1,1]){
+   const treeX=side*10.45,lightX=side*9.4;
+   root.add(mesh(gCyl,mat(0x725b43),treeX,1.75,at,.22,3.5,.22));
+   root.add(mesh(gSphere,mat(row%2?0x64855b:0x769661),treeX,4.35,at,1.18,1.75,1.18));
+   root.add(mesh(gCyl,mat(0x334745),lightX,2.6,at+8,.065,5.2,.065));
+   root.add(mesh(gSphere,new T.MeshBasicMaterial({color:0xffe6aa}),lightX,5.25,at+8,.22,.26,.22));
+  }
+ }
+ parisSidewalkPedestrians(root,start,end);
+}
+// Passants légers instanciés : 16 silhouettes exclusivement sur les trottoirs.
+function parisSidewalkPedestrians(root,start,end){
+ const count=16,body=new T.InstancedMesh(gCyl,mat(0xffffff),count);
+ const heads=new T.InstancedMesh(gSphere,mat(0xffffff),count);
+ const legs=new T.InstancedMesh(gBox,mat(0x374553),count*2);
+ const obj=new T.Object3D(),coats=[0x9c685c,0x59766b,0x5f6882,0xb08a5a,0x986c86,0x436b78];
+ for(let i=0;i<count;i++){
+  const side=i%2===0?-1:1,rank=Math.floor(i/2);
+  const x=side*(10.1+(rank%3)*.55),z=start+6+rank*(end-start-9)/8;
+  const height=.9+rnd(i+11)*.14;
+  obj.rotation.set(0,0,0);
+  obj.position.set(x,1.10,z);obj.scale.set(.30,height,.23);obj.updateMatrix();
+  body.setMatrixAt(i,obj.matrix);body.setColorAt(i,new T.Color(coats[i%coats.length]));
+  obj.position.set(x,1.73+height*.17,z);obj.scale.set(.20,.21,.20);obj.updateMatrix();
+  heads.setMatrixAt(i,obj.matrix);heads.setColorAt(i,new T.Color(i%3===0?0xbc8f6f:0xdfb994));
+  for(let leg=0;leg<2;leg++){
+   obj.position.set(x+(leg?.11:-.11),.43,z+(leg?.11:-.11));
+   obj.scale.set(.13,.72,.15);obj.updateMatrix();legs.setMatrixAt(i*2+leg,obj.matrix);
+  }
+ }
+ root.add(body,heads,legs);
 }
 function statue(sceneRoot){
  const root=new T.Group();root.position.x=STATUE.x;sceneRoot.add(root);
@@ -726,8 +759,6 @@ function refreshHUD(){
  sel.classList.toggle('is-selected',!!run.selected);
  $('chooseTarget').classList.toggle('has-target',!!run.selected);
  picker.hidden=!(playing&&!paused&&(availableTargets(run).length>0));
- const march=$('advanceBastille');march.hidden=!(playing&&p===3);
- $('walkingPad').hidden=!(playing&&!paused&&p===3);
  const panel=$('statueControls');panel.hidden=!(playing&&p===2&&run.climbed&&!run.statueShouted&&!run.climb);
  $('red').textContent=p===3?(WEAPONS.find(w=>w.kind===run.weapon)?.icon||'●'):'●';
  $('yellowLabel').textContent=p===1?'PRENDRE':p===2?(run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'):'RAMASSER';
@@ -780,7 +811,7 @@ function start(){
  if(!gameReady)return;
  $('renderError').hidden=true;renderFailureReported=false;lastControlDisplay=0;
  $('controlsStatus').hidden=true;
- $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;forwardHeld=false;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
+ $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
  messageFeedback('Prends le drapeau 🇫🇷',1.1);
 }
@@ -831,9 +862,9 @@ function changeDir(){
  const left=Number(keys.has('arrowleft')||keys.has('q')||keys.has('a'));
  const fwd=Number(keys.has('arrowup')||keys.has('z')||keys.has('w'));
  const back=Number(keys.has('arrowdown')||keys.has('s'));
- const manualY=clamp(joy.y+pad.y+fwd-back,-1,1);
- return {x:-clamp(joy.x+pad.x+right-left,-1,1),
-  y:clamp(manualY+Number(run.phase===3&&forwardHeld),-1,1),
+ const manualY=clamp(joy.y+fwd-back,-1,1);
+ return {x:-clamp(joy.x+right-left,-1,1),
+  y:manualY,
   red:redHeld||keys.has('r')};
 }
 
@@ -850,34 +881,6 @@ function bindControls(){
  function release(e){if(e&&pointerId!==e.pointerId)return;pointerId=null;joy={x:0,y:0};knob.style.transform='translate(0,0)';}
  for(const name of ['pointerup','pointercancel'])zone.addEventListener(name,release);
  zone.addEventListener('lostpointercapture',()=>release());
- // Secours tactile : flèches indépendantes du joystick, maintenables ou cliquables.
- // Une pression courte avance réellement, même si le navigateur perd le pointer capture.
- const heldPad=new Map();
- const padVectors={left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:1},down:{x:0,y:-1}};
- function syncPad(){
-  const dirs=[...heldPad.values()].map(item=>item.dir);
-  pad={x:Number(dirs.includes('right'))-Number(dirs.includes('left')),
-   y:Number(dirs.includes('up'))-Number(dirs.includes('down'))};
- }
- for(const button of document.querySelectorAll('#walkingPad [data-move]')){
-  const dir=button.dataset.move;
-  button.addEventListener('pointerdown',e=>{
-   if(!playing||paused||run.phase!==3)return;
-   e.preventDefault();
-   try{button.setPointerCapture(e.pointerId);}catch{}
-   heldPad.set(e.pointerId,{dir,button});button.classList.add('held');syncPad();
-  });
-  function releasePad(e){
-   if(e && heldPad.get(e.pointerId)?.button!==button)return;
-   for(const [id,item] of heldPad)if(item.button===button)heldPad.delete(id);
-   button.classList.remove('held');syncPad();
-  }
-  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,releasePad);
-  button.addEventListener('click',()=>{
-   if(!playing||paused||run.phase!==3)return;
-   advance(run,.12,padVectors[dir]);drain();refreshHUD();
-  });
- }
  const yellowBtn=$('yellow');
  yellowBtn.addEventListener('pointerdown',e=>{e.preventDefault();yellowBtn.classList.add('held');yellowPress();});
  for(const event of ['pointerup','pointercancel'])yellowBtn.addEventListener(event,()=>yellowBtn.classList.remove('held'));
@@ -911,19 +914,13 @@ function bindControls(){
   if(!has&&key==='v'&&playing){cameraOrbit=0;cameraOrbitLeft=Math.PI*2;}
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();redHeld=false;forwardHeld=false;heldPad.clear();pad={x:0,y:0};up();release();});
+ window.addEventListener('blur',()=>{keys.clear();redHeld=false;up();release();});
  $('start').onclick=()=>{if(paused){paused=false;overlay.hidden=true;return;}start();};
  $('replay').onclick=start;
  $('quit').onclick=()=>send('manifestation:close');
  $('back').onclick=()=>send('manifestation:close');
  $('next').onclick=()=>send('manifestation:next');
  $('pause').onclick=pause;
- const march=$('advanceBastille');
- march.addEventListener('pointerdown',e=>{if(run.phase!==3||!playing)return;e.preventDefault();forwardHeld=true;try{march.setPointerCapture(e.pointerId);}catch{}});
- for(const event of ['pointerup','pointercancel','lostpointercapture','pointerleave'])
-  march.addEventListener(event,()=>forwardHeld=false);
- march.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)&&run.phase===3){forwardHeld=true;e.preventDefault();}});
- march.addEventListener('keyup',()=>forwardHeld=false);
  $('turn360').onclick=()=>{if(!playing)return;cameraOrbit=0;cameraOrbitLeft=Math.PI*2;};
  $('statueCall').onclick=callCrowd;
  $('statueDescend').onclick=yellowPress;
@@ -1028,7 +1025,7 @@ function render(ms){
   extendMarchScenery();
   drain();
   if(phase!==run.phase){
-   if(run.phase===3){forwardHeld=false;redHeld=false;} // Garder le joystick et les touches pendant la transition.
+   if(run.phase===3){redHeld=false;} // Garder le joystick et les touches pendant la transition.
    sceneFor(run.phase);
    refreshHUD();
   }
