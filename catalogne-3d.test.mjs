@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {drawParkMap} from './catalogne-3d-map.js';
 import {PARK,CLIENTS,PATROLS,newRun,advance,sell,dodge,nearestClient,instruction,distance,SALE_DIALOGUES,POLICE_SHOUTS,saleDialogue} from './catalogne-3d-core.js';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 test('Cinq clients uniques, trois chemins, et possibilité de vendre sans orientation imposée',()=>{
@@ -90,7 +91,7 @@ test('Scène 3D : vente confiée au plateau, confirmation sans double comptage',
  assert.ok(app.includes('result.client.id'));
  assert.ok(app.includes('m.finished'));
  assert.ok(app.includes("m.sold.filter"));
- assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v3'));
+ assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v4'));
  assert.ok(html.includes('id="saleDialogue"'));
  assert.ok(app.includes("MODEL_PATHS"));
 });
@@ -98,7 +99,7 @@ test('Préserver le jeu 2D original et vérifier le raccord au plateau',()=>{
  const base=read('arcade-catalogne.html'),page=read('jeu.html'),build=read('build-public.mjs');
  assert.ok(base.includes('function nearbyClient(r)'));
  assert.ok(base.includes('const WORLD=1960'));
- assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v3'"));
+ assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v4'"));
  assert.ok(build.includes("'arcade-catalogne.html'"));
  assert.ok(build.includes("'arcade-catalogne-3d.html'"));
  assert.ok(build.includes("'catalogne-3d-runtime.js'"));
@@ -184,18 +185,19 @@ test('Le parc est continu après la cinquième vente et dans le sens inverse',()
  assert.ok(!app.includes("sign(z===23?'PASSEIG'"));
  assert.ok(!app.includes("'SORTIE'"));
 });
-test('Les policiers ont un uniforme complet immédiatement reconnaissable',()=>{
- const app=read('catalogne-3d-app.js');
- assert.ok(app.includes("if(role==='police'){"));
+test('Policiers 3D autonomes, casquettes, badges et rig animée',()=>{
+ const js=read('catalogne-3d-app.js');
  for(const marker of [
-  'const navy=0x193550,blue=0x2b618a',
-  "sign('POLICÍA',1.28",
-  "sign('POLICÍA',1.46",
-  'back.rotation.y=Math.PI',
-  'cube(group,0,.79,-.02,.73,.15,.49,black)',
-  'cyl(group,0,1.97,-.02,.315,.23,navy)',
-  'cube(group,.405,.91,-.05,.15,.31,.21,black)'
- ])assert.ok(app.includes(marker),marker);
+  'function policeOfficer(index){',
+  "if(role==='police')return policeOfficer(index)",
+  'new T.CylinderGeometry(.34,.41,.75,10)',
+  "sign('POLICÍA',1.15",
+  "sign('POLICÍA',1.48",
+  'const billboard=new T.Sprite',
+  'policeRig:{legs,arms,elapsed:index*.8}',
+  'rig.legs[0].rotation.x',
+  'group.scale.setScalar(1.12)'
+ ])assert.ok(js.includes(marker),marker);
 });
 test('Les passants viennent vers le joueur et repartent : moitié dans chaque sens',()=>{
  const app=read('catalogne-3d-app.js');
@@ -219,4 +221,45 @@ test('Les cinq clients ont des orientations alternées et font face à l acheteu
  assert.ok(js.includes('const near=distance(run,v.client)<7.5'));
  assert.ok(js.includes('Math.atan2(run.x-v.client.x,run.z-v.client.z)+Math.PI'));
  assert.ok(js.includes('i%2===0?0:Math.PI'));
+});
+
+test('Cinq clients répartis entre allée principale et clairières boisées',()=>{
+ assert.equal(CLIENTS.length,5);
+ assert.ok(CLIENTS.filter(c=>Math.abs(c.x)>11).length>=3);
+ assert.ok(CLIENTS.some(c=>Math.abs(c.x)<8));
+ assert.ok(CLIENTS.some(c=>c.x>14)&&CLIENTS.some(c=>c.x< -14));
+ assert.ok(CLIENTS.every(c=>typeof c.zone==='string'));
+ for(const c of CLIENTS){
+  const r=newRun();r.phase='running';r.x=c.x;r.z=c.z;
+  assert.equal(nearestClient(r).client.id,c.id);
+  assert.equal(sell(r).client.id,c.id);
+ }
+ const js=read('catalogne-3d-app.js');
+ assert.ok(js.includes('CLIENTS.some(c=>Math.hypot(x-c.x,z-c.z)<5.8)'));
+ assert.ok(js.includes('new T.CircleGeometry(3.45,28)'));
+});
+test('Carte mobile : clients servis, police mobile, joueur et commande de fermeture',()=>{
+ const js=read('catalogne-3d-app.js'),html=read('arcade-catalogne-3d.html');
+ for(const id of ['mapToggle','mapClose','parkMap','mapCanvas'])
+  assert.ok(html.includes('id="'+id+'"'),id);
+ assert.ok(js.includes('function toggleParkMap(open=!mapOpen)'));
+ assert.ok(js.includes("drawParkMap($('mapCanvas'),run,CLIENTS,rnd)"));
+ assert.ok(js.includes('!paused&&!mapOpen'));
+ assert.ok(js.includes("if(mapOpen){if(key==='escape')"));
+ const labels=[],ctx={
+  setTransform(){},clearRect(){},fillRect(){},beginPath(){},arc(){},
+  fill(){},ellipse(){},stroke(){},strokeRect(){},moveTo(){},lineTo(){},
+  closePath(){},save(){},translate(){},rotate(){},fillText(value){labels.push(value)}
+ };
+ const c={width:330,height:260,clientWidth:330,clientHeight:260,getContext(){return ctx}};
+ const old=globalThis.window;
+ try{
+  globalThis.window={devicePixelRatio:1};
+  assert.equal(drawParkMap(c,newRun(['c1']),CLIENTS,n=>Math.abs(Math.sin(n*.71))),true);
+ }finally{
+  if(old===undefined)delete globalThis.window;
+  else globalThis.window=old;
+ }
+ for(const symbol of ['P','✓','2','3','4','5','↑ AVANT'])
+  assert.ok(labels.includes(symbol),'Marqueur manquant : '+symbol);
 });
