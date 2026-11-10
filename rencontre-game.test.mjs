@@ -203,3 +203,11 @@ test('Image d’attente du premier plan issue exactement du même C01 validé',(
  assert.ok(html.includes("depart:'https://cdn.higgsfield.ai/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f_thumbnail.webp'"));
  assert.ok(html.includes("still.src=state.step===0?ART.depart:ART.caresse"));
 });
+
+test('Le clip partagé LU2FpA6qdjw est explicitement accessible lors de l’intimité',()=>{
+ assert.ok(html.includes("B05:HIGGS_CDN+'hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4'"));
+ assert.ok(html.includes("clips:['B04','B05','B06']"),'B05 reste au centre de la scène principale');
+ assert.ok(html.includes("state.step===6")&&html.includes("beginScene(['B05'],'replay')"),'Lecture directe du clip B05 sur l’écran des choix');
+ assert.ok(html.includes("shot[0]==='B04'&&pending[movieIndex+1]==='B05'"),'Transition B04→B05 validée par un clic pour ne pas sauter le plan');
+ assert.ok(html.includes("Voir « Sous les draps » →"));
+});
