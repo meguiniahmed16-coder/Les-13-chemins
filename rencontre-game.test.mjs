@@ -120,3 +120,22 @@ test('Le bouton Rejouer la scène est sur la vidéo à la fin de chaque séquenc
  assert.ok(html.includes("'Continuer l’histoire →'"));
  assert.ok(!html.includes('clips:[\'B07\']'),'No missing literary finale');
 });
+
+test('Lecture directe du chapitre 6 sans progression obligatoire des jeux précédents', () => {
+ const match=html.match(/const standaloneExtract=(\[[^\n]+\]);/);
+ const fromBoard=controller.match(/const rencontreExtract=(\[[^\n]+\]);/);
+ assert.ok(match&&fromBoard,'Both reading entry points must contain chapter text');
+ const text=JSON.parse(match[1]), boardText=JSON.parse(fromBoard[1]);
+ assert.equal(text.length,26);
+ assert.deepEqual(text,boardText,'Direct reading must use exactly the same V17 excerpt as the Chemin III reader');
+ assert.ok(text.at(0).startsWith('Nous avons une amie en commun.'));
+ assert.ok(text.at(-1).startsWith('Elle appelle un taxi'));
+ assert.ok(html.includes("new URLSearchParams(location.search).get('lecture')==='1'"),'Link activates standalone reading');
+ assert.ok(html.includes("const KEY=standaloneReading?'tda-rencontre-lecture-directe-v1'"),'Standalone visit must not override main game saves');
+ assert.ok(html.includes("if(standaloneReading)state={step:0,watched:[],ended:false};"),'Link starts at scene one');
+ assert.ok(html.includes("if(!standaloneReading)return;"),'Embedded route must not show the story twice');
+ assert.ok(html.includes("reader.showModal()"),'Reading begins before game');
+ assert.ok(html.includes("if(startFilm)beginScene(STEPS[0].clips,'sequence')"),'Continue directly into first cinematics');
+ assert.ok(html.includes('id="standaloneStart"'),'Start video after reading');
+ assert.ok(html.includes('#standaloneReader .rendezvous-excerpt'),'Keep typography and fullscreen reading style');
+});

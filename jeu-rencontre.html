@@ -70,12 +70,44 @@ dialog::backdrop{background:#0e201cd9}
 .dummy-tag{color:#efd3a1;font:12px system-ui;margin-top:10px}
 a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3px}
 @media(max-width:780px){.grid{grid-template-columns:1fr}.visual{aspect-ratio:4/3}.panel{padding:20px}.library{grid-template-columns:1fr}}
+
+/* Lecture directe du chapitre 6 : même bonne feuille plein écran que les autres jeux. */
+#standaloneReader{position:fixed;inset:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border:0;border-radius:0;background:#fff9ed;color:#283b36;overflow-y:auto;overscroll-behavior:contain;text-align:left}
+#standaloneReader::backdrop{background:#19332cd9}
+#standaloneReader .rendezvous-top{position:sticky;top:0;z-index:4;display:flex;justify-content:space-between;align-items:center;gap:15px;padding:12px clamp(14px,3vw,36px);background:#263e3a;color:#fff3dc;font:600 12px/1.4 system-ui,sans-serif}
+#standaloneReader .rendezvous-top strong{font:600 12px/1.4 system-ui,sans-serif}
+#standaloneReader .rendezvous-top button{border:1px solid #c9b28b;background:#305448;color:#fff3dc;padding:8px 13px;min-height:44px;border-radius:5px;font-size:12px;cursor:pointer}
+#standaloneReader .rendezvous-content{max-width:790px;margin:0 auto;padding:clamp(24px,4vw,55px) clamp(20px,5vw,64px) 90px}
+#standaloneReader .rendezvous-kicker{font:600 12px/1.5 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#88673d;margin:0 0 8px}
+#standaloneReader h2{font:600 clamp(32px,5vw,47px)/1.08 Georgia,serif;margin:0 0 12px}
+#standaloneReader .rendezvous-area{font:15px/1.6 system-ui,sans-serif;margin:0 0 12px;color:#536558}
+#standaloneReader .rendezvous-reference{font:14px/1.6 system-ui,sans-serif;margin:0}
+#standaloneReader .rendezvous-excerpt{font:clamp(20px,2.15vw,25px)/1.86 Georgia,serif;letter-spacing:.005em;margin:30px 0 40px;background:none;border:0;padding:0}
+#standaloneReader .rendezvous-excerpt p{margin:0 0 1.1em}
+#standaloneReader .rendezvous-excerpt p:last-child{margin-bottom:0}
+#standaloneReader .rendezvous-future{margin:25px 0 0;padding:22px 24px;background:#eee6d3;border:1px solid #b7a179;border-radius:9px;font:14px/1.6 system-ui,sans-serif}
+#standaloneReader .rendezvous-future strong{display:block;font:700 22px Georgia,serif;margin-bottom:10px;color:#324d42}
+#standaloneReader .rendezvous-future p{margin:0 0 16px}
+#standaloneReader .rendezvous-future button{width:100%;border:0;border-radius:7px;background:#2a5545;color:#fff6d9;font-weight:750;min-height:55px;font-size:16px}
+@media(max-width:600px){#standaloneReader .rendezvous-content{padding:25px 20px 78px}#standaloneReader .rendezvous-excerpt{font-size:20px;line-height:1.8}#standaloneReader .rendezvous-top{font-size:11px;padding:10px 12px}}
+
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.movie-frame video{transition:none}}
 </style>
 </head>
 <body>
 <script>if(new URLSearchParams(location.search).get("embedded")==="1")document.documentElement.classList.add("embedded");</script>
 <nav class="site-nav" aria-label="Navigation principale"><div class="site-nav-inner"><a class="site-brand" href="index.html">✦ Les Treize Chemins</a><div class="site-links"><a href="index.html">⌂ Accueil</a><a href="carte.html">🧭 Cartes</a><a href="jeu.html" aria-current="page">🎲 Jeux</a></div></div></nav>
+<dialog id="standaloneReader" aria-labelledby="standaloneReaderTitle">
+ <div class="rendezvous-top"><strong>LES TREIZE CHEMINS · CHEMIN III · CHAPITRE 6</strong><button type="button" id="standaloneSkipReading">Aller au jeu →</button></div>
+ <div class="rendezvous-content">
+  <p class="rendezvous-kicker">Bonne feuille · L’extrait du livre</p>
+  <h2 id="standaloneReaderTitle">Tu veux bien t’occuper de moi ?</h2>
+  <p class="rendezvous-area">Paris · Le souvenir de Lionel · La soirée d’anniversaire</p>
+  <p class="rendezvous-reference">Chapitre 6 · Manuscrit V17</p>
+  <div id="standaloneExcerpt" class="rendezvous-excerpt"></div>
+  <section class="rendezvous-future"><strong>La rencontre continue en images</strong><p>Tu as terminé la lecture. Découvre maintenant les choix et les cinématiques du mini-jeu, sans passer par les niveaux précédents.</p><button type="button" id="standaloneStart">🎮 Commencer les cinématiques</button></section>
+ </div>
+</dialog>
 <main>
 <header class="banner"><div class="eyebrow">Chemin III · Les rendez-vous · Chapitre 6</div><h1>Tu veux bien t’occuper de moi ?</h1><p>Un récit interactif en deux lieux : la cuisine et la chambre mansardée.</p><div id="progress" class="progress" aria-label="Progression dans le récit"></div><div class="music-strip"><button type="button" id="toggleMusic" class="music-toggle" aria-pressed="true">♫ Musique activée</button><span class="music-status" id="musicStatus" role="status" aria-live="polite">Silence jusqu’au moment où il relève la tête.</span></div></header>
 <div class="grid">
@@ -99,6 +131,8 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 <script>
 (function(){
 'use strict';
+const standaloneExtract=["Nous avons une amie en commun. Elle me raconte la cérémonie. Elle me dit que c'était beau, qu'ils avaient lâché des ballons pour que je sois symboliquement présent avec eux, malgré ma détention.","Elle me raconte aussi les circonstances de sa mort.","Lionel était reparti de Strasbourg, où il avait échappé de justesse à la rafle des policiers du RAID, après que l'occupation de l'annexe du ministère de la Justice avait été qualifiée de prise d'otages.","Quand il était arrivé à Paris, il l'avait appelée. Il était paniqué. Elle l'avait rejoint chez lui. Il était très anxieux, très agité.","Comme il était resté quelque temps à Strasbourg, il n'avait plus rien à manger. Elle lui avait donné quelques calmants avant de partir lui faire des courses.","Quand elle est revenue, les pompiers étaient là.","Lionel était par terre.","Elle me rapporte aussi un détail troublant. Les voisins auraient entendu Lionel crier pendant sa chute.","Il avait crié.","Je ne sais pas pourquoi, mais ce détail me trouble particulièrement.","Ce soir-là, avec cette amie, nous avons dormi ensemble, chez Lionel.","Et nous avons fait l'amour.","C'est très étrange. Je ne suis même pas sûr que nous ayons eu beaucoup de désir l'un pour l'autre.","C'est, à ce jour, la seule fois de ma vie où j'ai fait l'amour comme un hommage.","Entre-temps, j’ai été expulsé de mon appartement. Un copain m’héberge. Je ne suis pas au meilleur de ma forme : je bois beaucoup trop et je n’ai pratiquement que les vêtements que je porte. Le mercredi suivant, je vais quand même à cet anniversaire. Je suis sale et surtout très éméché. À la soirée, je suis une sorte de guest star : le petit Che Guevara du quartier vient de sortir de prison, sauf qu’il titube. À un moment, je me retrouve dans la cuisine.","Dans les soirées, il y a toujours une deuxième soirée dans la cuisine. Deux jeunes types commencent à me parler.","— Alors ? C’était comment, la prison ?","Et là, je pars en mode soûlard pathétique. Je parle en regardant le sol, avec une articulation approximative et la conviction, propre aux gens très ivres, que ce qu’ils racontent est passionnant. Au bout d’un moment, je relève la tête : les deux types sont partis. Pendant une seconde, je réalise que je parle peut-être tout seul. Puis je tourne la tête. Il reste une jeune femme, à peu près de mon âge.","Elle a de grands yeux bleus soulignés d’eye-liner. Deux papillons.","— Je suis fatigué.","Elle me répond :","— Je sais.","Je lui pose une question étrange à une inconnue dans une cuisine :","— Tu veux bien t’occuper de moi ?","— Oui.","Elle appelle un taxi et décide de me ramener chez elle, dans sa chambre de bonne, au 30 avenue Rapp."];
+const standaloneReading=!document.documentElement.classList.contains('embedded')&&new URLSearchParams(location.search).get('lecture')==='1';
 const ART={
   cuisine:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/cfc2ea53-67f2-43f7-b749-8ccf73365b90.jpg',
   caresse:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/db6ea871-3557-4b72-8dcb-3c9c68f0871a.png'
@@ -206,9 +240,10 @@ $('toggleMusic').onclick=()=>{
  if(activeSoundtrack){const playing=music.play();if(playing&&playing.catch)playing.catch(()=>{$('musicStatus').textContent='Impossible de charger cette piste depuis sa source externe.';});}
  else $('musicStatus').textContent='Silence jusqu’au premier regard (plan C02).';
 };
-const KEY='tda-rencontre-storyboard-v1';
+const KEY=standaloneReading?'tda-rencontre-lecture-directe-v1':'tda-rencontre-storyboard-v1';
 let state={step:0,watched:[],ended:false};
 try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Number.isInteger(previous.step)&&previous.step>=0&&previous.step<=8&&Array.isArray(previous.watched)){state={step:Math.min(STEPS.length,previous.step),watched:previous.watched.filter(x=>SHOTS.concat(ALTERNATES).some(y=>y[0]===x)),ended:!!previous.ended}}}catch(e){}
+if(standaloneReading)state={step:0,watched:[],ended:false};
 let pending=null,movieIndex=0,mode='sequence';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
@@ -364,7 +399,27 @@ function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et le
 $('closeMovie').onclick=()=>{stopAdvanceTimer();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
 $('nextMovie').onclick=nextMovie;
 $('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();$('player').pause();pending=null;stopSoundtrack();});
-draw();notifyBoard();
+
+function initStandaloneReading(){
+ if(!standaloneReading)return;
+ const reader=$('standaloneReader');
+ const content=$('standaloneExcerpt');
+ content.replaceChildren(...standaloneExtract.map(text=>{
+  const p=document.createElement('p');p.textContent=text;return p;
+ }));
+ const enter=(startFilm)=>{
+  if(reader.open)reader.close();
+  window.scrollTo(0,0);
+  if(startFilm)beginScene(STEPS[0].clips,'sequence');
+ };
+ $('standaloneStart').onclick=()=>enter(true);
+ $('standaloneSkipReading').onclick=()=>enter(false);
+ reader.addEventListener('cancel',event=>{event.preventDefault();enter(false);});
+ reader.showModal();
+ reader.scrollTop=0;
+}
+
+draw();notifyBoard();initStandaloneReading();
 })();
 </script>
 </body>
