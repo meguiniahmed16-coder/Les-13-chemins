@@ -58,6 +58,9 @@ dialog::backdrop{background:#0e201cd9}
 .movie-head strong{font:500 25px Georgia,serif}.movie-head p{margin:5px 0;color:#dccba6;font-size:12px}
 .movie-frame{position:relative;display:grid;place-items:center;min-height:230px;background:#152922}
 .movie-frame video,.movie-frame img{display:block;width:100%;max-height:52vh;aspect-ratio:16/9;object-fit:contain}
+.movie-frame video{opacity:1;transition:opacity 300ms ease-in-out}
+.movie-frame video.video-fading{opacity:0}
+.movie-frame .resume-sound{position:absolute;z-index:2;left:50%;bottom:20px;transform:translateX(-50%);background:#f3deaa;color:#213e35;border:1px solid #ae8b53;box-shadow:0 4px 20px #0006;min-width:min(280px,85%);cursor:pointer}
 .movie-frame .movie-placeholder{padding:36px 22px;text-align:center;color:#eee0bd}
 .movie-placeholder strong{display:block;font:italic 26px Georgia,serif}
 .movie-placeholder small{display:block;margin:12px auto;font-size:13px;line-height:1.6;max-width:550px}.movie-placeholder img{width:100%;max-width:690px;height:auto;max-height:40vh;object-fit:contain;margin:auto auto 14px;border:1px solid #bba57c}.movie-placeholder a{display:block;color:#ecd39e;margin-top:12px;font-weight:700;font-size:13px}
@@ -67,7 +70,7 @@ dialog::backdrop{background:#0e201cd9}
 .dummy-tag{color:#efd3a1;font:12px system-ui;margin-top:10px}
 a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3px}
 @media(max-width:780px){.grid{grid-template-columns:1fr}.visual{aspect-ratio:4/3}.panel{padding:20px}.library{grid-template-columns:1fr}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.movie-frame video{transition:none}}
 </style>
 </head>
 <body>
@@ -92,7 +95,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #c79b58;outline-offset:3p
 <p class="caption">Jeu narratif constitué de 21 vidéos Higgsfield déjà produites. L’ouverture silencieuse (C01) est illustrée ; le second film se termine sur le « oui » (B06). La vidéo A08 reste accessible comme bonus facultatif. Les récompenses sont les cinématiques débloquées, sans dépenses de crédits et sans modification des points des autres jeux.</p>
 </main>
 <audio id="backgroundMusic" loop preload="none" aria-hidden="true"></audio>
-<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline muted controls preload="metadata" hidden></video><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
+<dialog id="cinema" aria-labelledby="cinemaTitle"><div class="movie-head"><div class="eyebrow" id="cinemaStep"></div><strong id="cinemaTitle"></strong><p id="cinemaDescription"></p></div><div class="movie-frame"><video id="player" playsinline webkit-playsinline preload="auto" disablepictureinpicture hidden></video><button type="button" id="resumeWithSound" class="resume-sound" hidden>▶ Reprendre avec le son</button><div id="moviePlaceholder" class="movie-placeholder"><img id="moviePoster" alt="Cuisine, avant la rencontre" hidden><strong id="movieStillTitle">Un instant suspendu</strong><small id="movieStillText"></small><span id="movieFile" class="dummy-tag"></span><a id="movieExternal" href="" target="_blank" rel="noopener noreferrer" hidden>Voir cette vidéo directement</a></div></div><div class="movie-actions"><button class="outline" id="closeMovie" type="button">Revenir au choix</button><button class="action" id="nextMovie" type="button">Plan suivant →</button></div></dialog>
 <script>
 (function(){
 'use strict';
@@ -170,7 +173,7 @@ const $=id=>document.getElementById(id);
 
 const music=$('backgroundMusic');
 let musicEnabled=true,activeSoundtrack=null;
-music.volume=0.33;
+music.volume=0.22; // Le jazz et Felicity restent sous les sons propres aux cinématiques.
 function soundtrackForShot(id){
  if(id==='C01'||id==='A01')return null; // SILENCE : la musique ne commence pas avant qu’il lève la tête.
  if(id.startsWith('B')||['A06','A07','A08'].includes(id))return 'chambre';
@@ -209,6 +212,7 @@ try{const previous=JSON.parse(localStorage.getItem(KEY)||'null');if(previous&&Nu
 let pending=null,movieIndex=0,mode='sequence';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
+const FADE_MS=300;
 let advanceTimer=null;
 function stopAdvanceTimer(){if(advanceTimer!==null){clearTimeout(advanceTimer);advanceTimer=null;}}
 function notifyBoard(){if(window.parent===window)return;try{window.parent.postMessage({type:'rencontre:state',step:state.step,complete:state.step>=STEPS.length&&!state.ended,ended:state.ended},location.origin);}catch(e){}}
@@ -255,41 +259,75 @@ function playCurrent(){
  $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
  $('cinemaTitle').textContent=shot[1];
  $('cinemaDescription').textContent=shot[3]||'Un moment de leur rencontre, à voir jusqu’au bout avant de poursuivre.';
- const player=$('player');player.pause();player.onended=null;player.onerror=null;player.removeAttribute('src');player.load();player.hidden=true;player.muted=true;
+ const player=$('player'),resume=$('resumeWithSound');
+ player.pause();player.onended=null;player.onerror=null;player.onplaying=null;
+ player.removeAttribute('src');player.load();player.hidden=true;
+ // Pas de contrôles de lecteur : la cinématique se joue avec son original.
+ player.controls=false;player.muted=false;player.defaultMuted=false;player.volume=1;
+ player.classList.add('video-fading');resume.hidden=true;
  const still=$('moviePlaceholder'),poster=$('moviePoster'),link=$('movieExternal');
  poster.hidden=true;link.hidden=true;link.removeAttribute('href');$('movieFile').textContent='';
  $('nextMovie').disabled=false;
  $('nextMovie').textContent=movieIndex+1<pending.length?'Plan suivant →':'Terminer la séquence →';
  if(MEDIA[shot[0]]){
-  still.hidden=true;player.hidden=false;player.src=MEDIA[shot[0]];player.load();$('nextMovie').disabled=true;
+  still.hidden=true;player.hidden=false;player.src=MEDIA[shot[0]];player.load();
+  $('nextMovie').disabled=true;
+  player.onplaying=()=>{
+   if(!pending||!$('cinema').open)return;
+   resume.hidden=true;
+   requestAnimationFrame(()=>player.classList.remove('video-fading'));
+  };
   player.onended=()=>{
    if(!pending||!$('cinema').open)return;
+   player.classList.add('video-fading');resume.hidden=true;
    $('nextMovie').disabled=false;
    $('nextMovie').textContent=movieIndex+1<pending.length?'Continuer →':'Terminer la cinématique →';
-   advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$('cinema').open)nextMovie();},850);
+   advanceTimer=setTimeout(()=>{advanceTimer=null;if(pending&&$('cinema').open)nextMovie();},FADE_MS);
   };
   player.onerror=()=>{
    if(!pending||!$('cinema').open)return;
-   player.hidden=true;still.hidden=false;poster.hidden=true;
+   resume.hidden=true;player.hidden=true;still.hidden=false;poster.hidden=true;
    $('movieStillTitle').textContent='Vidéo momentanément inaccessible';
-   $('movieStillText').textContent='Le lien vers la création validée existe, mais le lecteur n’a pas pu la charger. Tu peux l’ouvrir directement ou poursuivre le récit.';
+   $('movieStillText').textContent='La vidéo validée n’a pas pu être chargée. Tu peux l’ouvrir directement ou poursuivre le récit.';
    link.href=MEDIA[shot[0]];link.hidden=false;$('nextMovie').disabled=false;
   };
-  const p=player.play();
-  if(p&&typeof p.catch==='function')p.catch(()=>{if(!pending)return;player.controls=true;$('nextMovie').disabled=false;$('nextMovie').textContent='Continuer ou lire la vidéo →';});
+  const attempt=player.play();
+  if(attempt&&typeof attempt.catch==='function')attempt.catch(()=>{
+   if(!pending||!$('cinema').open||shot[0]!==pending[movieIndex])return;
+   // Sur certains mobiles, l’autoplay AVEC son exige un second geste : garder la vidéo et proposer ce geste.
+   resume.hidden=false;$('nextMovie').disabled=true;
+   $('musicStatus').textContent='Touche « Reprendre avec le son » pour autoriser la lecture.';
+  });
  }else{
   still.hidden=false;poster.hidden=shot[0]!=='C01';
   if(shot[0]==='C01'){
    poster.src=ART.cuisine;
    $('movieStillTitle').textContent='Le silence de la cuisine';
    $('movieStillText').textContent='Il est assis sur le tabouret, la tête baissée. Elle se tient près de l’évier. Aucun geste encore. La musique commencera lorsqu’il relèvera la tête.';
-
   }else{
-   $('movieStillTitle').textContent='Scène littéraire';
-   $('movieStillText').textContent=shot[1]+' — séquence non encore disponible.';
+   $('movieStillTitle').textContent='Vidéo non disponible';
+   $('movieStillText').textContent=shot[1]+' — aucune vidéo disponible pour cette séquence.';
   }
  }
 }
+$('resumeWithSound').onclick=()=>{
+ if(!pending||!$('cinema').open)return;
+ const player=$('player'),shot=shotInfo(pending[movieIndex]);
+ if(!shot||!MEDIA[shot[0]])return;
+ player.muted=false;player.defaultMuted=false;player.controls=false;
+ const attempt=player.play();
+ if(attempt&&typeof attempt.catch==='function')attempt.then(()=>{
+  $('resumeWithSound').hidden=true;
+ }).catch(()=>{
+  // Ne jamais réactiver le lecteur natif ; proposer le lien vers l’original à la place.
+  player.hidden=true;$('resumeWithSound').hidden=true;
+  $('moviePlaceholder').hidden=false;$('moviePoster').hidden=true;
+  $('movieStillTitle').textContent='Lecture avec son indisponible dans ce navigateur';
+  $('movieStillText').textContent='La vidéo originale reste accessible dans un nouvel onglet.';
+  const link=$('movieExternal');link.href=MEDIA[shot[0]];link.hidden=false;
+  $('nextMovie').disabled=false;
+ });
+};
 function nextMovie(){
  if(!pending||!$('cinema').open||$('nextMovie').disabled)return;
  stopAdvanceTimer();

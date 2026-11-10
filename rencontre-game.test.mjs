@@ -82,7 +82,12 @@ test('Cinématiques Higgsfield réelles, relecture enchaînée et vraies scènes
  assert.equal(new Set(refs.map(m=>m[1])).size,21);
  assert.equal(new Set(refs.map(m=>m[2])).size,21);
  assert.ok(html.includes('player.onended=()=>'), 'The player must complete each clip');
- assert.ok(html.includes('nextMovie();},850)'), 'The validated clips must chain into one film');
+ assert.ok(html.includes('player.muted=false;player.defaultMuted=false;player.volume=1'), 'Sound is on by default for the original videos');
+ assert.ok(html.includes('player.controls=false'), 'No browser player controls may appear');
+ assert.ok(!/<video\b[^>]*\s(?:muted|controls)(?:\s|=|>)/.test(html), 'Video markup must not force mute or native controls');
+ assert.ok(html.includes('id="resumeWithSound"')&&html.includes("$('resumeWithSound').onclick"), 'Mobile autoplay block must show a simple audio-resume action');
+ assert.ok(html.includes("player.classList.add('video-fading')")&&html.includes("requestAnimationFrame(()=>player.classList.remove('video-fading'))"), 'The clip transition is a soft fade');
+ assert.ok(html.includes('nextMovie();},FADE_MS)'), 'The validated clips must chain into one film after a fade');
  assert.ok(html.includes("if(finished==='sequence')state.step=Math.min"), 'Pauses do not move the story forward');
  assert.ok(!html.includes('La fenêtre sur Paris')&&!html.includes("clips:['B07']"), 'No literary ending');
  assert.ok(html.includes("beginScene(['A08'],'replay')"),'The extra night video is preserved');
