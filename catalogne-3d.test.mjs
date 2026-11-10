@@ -151,7 +151,10 @@ test('Dialogues des cinq ventes : alternance client puis vendeur',()=>{
  assert.ok(app.includes("const index=Math.floor(elapsed/1.8)"));
  assert.ok(app.includes("line.speaker==='client'?'CLIENT':'VENDEUR'"));
  assert.ok(app.includes('updateSaleConversation(t)'));
+ assert.ok(app.includes('if(saleConversation){winPending=true;renderHUD();return;}'));
+ assert.ok(app.includes('if(winPending){winPending=false;presentWin();}'));
  assert.ok(html.includes('id="saleDialogue"'));
+ assert.ok(html.includes('Son ON'));
 });
 test('Policiers : interpellations et injures en espagnol maintenues',()=>{
  assert.deepEqual(POLICE_SHOUTS,['¡Gilipollas!','¡Vuelve aquí!']);
