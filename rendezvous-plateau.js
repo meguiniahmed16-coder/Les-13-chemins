@@ -30,6 +30,24 @@
  document.body.append(cyranoDialog);
  const cyranoFrame=$('cyranoFrame');
  let cyranoLoading=false;
+ let rencontreLoading=false;
+ const rencontreDialog=document.createElement('dialog');
+ rencontreDialog.id='rencontreDialog';rencontreDialog.setAttribute('aria-label','Chemin III — Chapitre 6 — Tu veux bien t’occuper de moi ?');
+ rencontreDialog.innerHTML='<div class="arcade-dialog-bar"><strong>CHEMIN III · CHAPITRE 6 · TU VEUX BIEN T’OCCUPER DE MOI ?</strong><button type="button" id="rencontreClose">Retour au plateau ×</button></div><iframe id="rencontreFrame" title="Tu veux bien t’occuper de moi ? — parcours interactif" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+ document.body.append(rencontreDialog);
+ const rencontreFrame=$('rencontreFrame');
+ const rencontreStyle=document.createElement('style');
+ rencontreStyle.textContent='#rencontreDialog{padding:0;width:min(1180px,98vw);height:96dvh;max-width:98vw;max-height:96dvh;border:2px solid #b68e54;border-radius:9px;overflow:hidden;background:#1b352b;color:#fff6df;box-shadow:0 24px 80px #0008}#rencontreDialog[open]{display:flex;flex-direction:column}#rencontreDialog::backdrop{background:#0c201de0}#rencontreDialog .arcade-dialog-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 15px;background:#203d33;border-bottom:1px solid #a9926d;font-size:12px}#rencontreDialog .arcade-dialog-bar button{min-height:42px;border:1px solid #bba27b;border-radius:6px;padding:9px 14px;background:#33564a;color:#fff7e5;cursor:pointer}#rencontreFrame{width:100%;height:100%;flex:1;min-height:0;border:0;background:#f3e5c9}@media(max-width:700px){#rencontreDialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}#rencontreDialog .arcade-dialog-bar{padding:7px 9px;font-size:10px}#rencontreDialog .arcade-dialog-bar button{padding:8px}}';
+ document.head.append(rencontreStyle);
+ function openRencontreDialog(){
+  if(!flow.chapter2Done(state)||!cyranoTraversed())return;
+  if(reader.open)reader.close();
+  if(!rencontreDialog.open)rencontreDialog.showModal();
+  if(!rencontreLoading){rencontreLoading=true;rencontreFrame.src='jeu-rencontre.html?embedded=1';}
+ }
+ function closeRencontreDialog(){if(rencontreDialog.open)rencontreDialog.close();rencontreFrame.removeAttribute('src');rencontreLoading=false;$('chemin-iii')?.focus({preventScroll:true});}
+ $('rencontreClose').onclick=closeRencontreDialog;
+ rencontreDialog.addEventListener('cancel',e=>{e.preventDefault();closeRencontreDialog();});
  const style=document.createElement('style');
  style.textContent='#manifestationDialog{padding:0;width:min(1220px,98vw);height:98dvh;max-width:98vw;max-height:98dvh;border:2px solid #b68e54;border-radius:10px;background:#172b29;color:#faeed7;overflow:hidden}#manifestationDialog[open]{display:flex;flex-direction:column}#manifestationDialog::backdrop{background:#0c201de0}#manifestationDialog .arcade-dialog-bar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 15px;font-size:12px;border-bottom:1px solid #b6a27e}#manifestationDialog .arcade-dialog-bar button{background:#2d5044;border:1px solid #c4a979;border-radius:5px;color:#fff2d4;padding:9px 13px;min-height:42px}#manifestationFrame{width:100%;min-height:0;flex:1;border:0;background:#14251f}#manifestationDialog .arcade-under-actions{display:flex;gap:9px;padding:8px 12px;background:#19362d;border-top:1px solid #b6a27e}#manifestationDialog .arcade-under-actions button{flex:1;min-width:0;min-height:46px;padding:9px;border:1px solid #bda67c;border-radius:6px;font-weight:700;cursor:pointer}.arcade-under-actions #manifestationBack{background:#3b574e;color:#fff5de}.arcade-under-actions #manifestationNext{background:#f0d4a1;color:#294435}#rendezvousDialog #rendezvousPlay{display:block;margin:14px 0 0;width:100%;min-height:52px;border:0;border-radius:7px;background:#2a5545;color:#fff6d9;font-weight:750;cursor:pointer;font-size:16px}#rendezvousDialog .rendezvous-part-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:18px 0}#rendezvousDialog .rendezvous-part-nav button{padding:10px 8px;background:#f4e6c7;border:1px solid #baa071;border-radius:6px;color:#385347;min-height:46px;font-weight:700;font-size:12px}#rendezvousDialog .rendezvous-part-nav button[aria-current=step]{background:#335746;color:#fff3d8}#rendezvousDialog .rendezvous-part-nav button:disabled{opacity:.55}#rendezvousDialog [hidden]{display:none!important}@media(max-width:650px){#manifestationDialog{max-width:100vw;width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}#manifestationDialog .arcade-dialog-bar{padding:6px 8px;font-size:10px}#manifestationDialog .arcade-dialog-bar button{font-size:10px;padding:7px 8px}#manifestationDialog .arcade-under-actions{padding:6px 8px}#rendezvousDialog .rendezvous-part-nav button{font-size:10px;padding:8px 4px}}';
  style.textContent+=`#cyranoDialog{padding:0;width:min(1220px,98vw);height:98dvh;max-width:98vw;max-height:98dvh;border:2px solid #c09c6c;border-radius:10px;background:#10191e;color:#f7ebd7;overflow:hidden}#cyranoDialog[open]{display:flex;flex-direction:column}#cyranoDialog::backdrop{background:#102021e0}#cyranoDialog .arcade-dialog-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 13px;background:#233d3e;border-bottom:1px solid #ad987a;font-size:11px}#cyranoDialog .arcade-dialog-bar button{background:#325450;color:#fff0d8;border:1px solid #ac9875;border-radius:5px;padding:9px 12px;min-height:42px}#cyranoFrame{width:100%;min-height:0;flex:1;border:0;background:#10191e}#cyranoDialog .arcade-under-actions{display:flex;gap:8px;padding:8px 12px;background:#213f3b;border-top:1px solid #b6a27e}#cyranoDialog .arcade-under-actions button{flex:1;min-width:0;min-height:44px;border-radius:6px;padding:8px;font-weight:700;border:1px solid #baa77d;cursor:pointer}#cyranoBack{background:#3b5a54;color:#fff5de}#cyranoNext{background:#ebd2a7;color:#264238}@media(max-width:650px){#cyranoDialog{max-width:100vw;width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}#cyranoDialog .arcade-dialog-bar{font-size:10px;padding:5px 7px}#cyranoDialog .arcade-dialog-bar button{font-size:10px;padding:7px}#cyranoDialog .arcade-under-actions{padding:5px 7px}}`;
@@ -42,7 +60,7 @@
  }
  info.after(partNav); // Comme les autres bonnes feuilles : le texte d'abord, les choix ensuite.
  const launch=document.createElement('button');launch.type='button';launch.id='rendezvousPlay';launch.textContent='🎮 Jouer à Camarades ! — 30 points';
- info.append(launch);launch.onclick=()=>activePart===2?openCyranoDialog():beginGame();
+ info.append(launch);launch.onclick=()=>activePart===3?openRencontreDialog():activePart===2?openCyranoDialog():beginGame();
  const awarded=()=>Array.isArray(state.rdvManifestationPassed)?state.rdvManifestationPassed.filter(n=>[1,2,3].includes(n)):[];
  const hasTraversed=()=>Boolean(state.rdvManifestationFinished||state.rdvManifestationSkipped);
  const cyranoAwarded=()=>Array.isArray(state.rdvCyranoPassed)?state.rdvCyranoPassed.filter((n,i,a)=>[1,2,3].includes(n)&&a.indexOf(n)===i).sort((a,b)=>a-b):[];
@@ -64,9 +82,9 @@
   }
   const done=[hasTraversed(),cyranoTraversed()].filter(Boolean).length;
   card.querySelector('.chapter-card-status').textContent=allowed?
-   (done>=2?'2 / 3 jeux parcourus · dernier chapitre en préparation':done===1?'1 / 3 jeux parcourus · Cyrano disponible':'0 / 3 jeux parcourus · première bonne feuille disponible'):
+   (done>=2?'2 / 3 jeux parcourus · dernier chapitre accessible':done===1?'1 / 3 jeux parcourus · Cyrano disponible':'0 / 3 jeux parcourus · première bonne feuille disponible'):
    'À découvrir après le chemin II';
-  card.querySelector('.chapter-card-place').textContent='Chapitres 4, 5 et 6 · Deux jeux disponibles';
+  card.querySelector('.chapter-card-place').textContent='Chapitres 4, 5 et 6 · Jeux et parcours narratif';
   card.setAttribute('aria-label','Chemin III Les rendez-vous · '+(count+cyranoCount)*10+' points acquis sur 60 dans les deux jeux disponibles');
   for(const b of partNav.children){
    const n=Number(b.dataset.part);b.disabled=(n===2&&!hasTraversed())||(n===3&&!cyranoTraversed());
@@ -75,6 +93,7 @@
   $('cyranoNext').textContent=state.rdvCyranoFinished?'Suivant · Chapitre 6 →':'Suivant · Passer sans points →';
   if(activePart===1)launch.textContent=state.rdvManifestationFinished?'↻ Rejouer Camarades !':'🎮 Jouer à Camarades ! — 30 points';
   if(activePart===2)launch.textContent=state.rdvCyranoFinished?'↻ Rejouer Cyrano — La planche vivante':'🎮 Jouer à Cyrano — 30 points';
+  if(activePart===3)launch.textContent='🎮 Jouer à Tu veux bien t’occuper de moi ?';
  }
  function showPart(n){
   if(n===2&&!hasTraversed())n=1;
@@ -107,9 +126,9 @@
    title.textContent='Chapitre '+parts[n-1].chapter+' — « '+parts[n-1].title+' »';
    readerArea.hidden=true;readerReference.hidden=true;
    excerpt.hidden=true;
-   infoHeading.textContent='Jeu '+n+' / 3 · À concevoir';
-   infoBody.textContent='Le passage de ce chapitre sera choisi et validé avant la création du jeu. Aucun récit ni point n’est inventé.';
-   launch.hidden=true;
+   infoHeading.textContent='Jeu 3 / 3 · Tu veux bien t’occuper de moi ?';
+   infoBody.textContent='Dans la cuisine, chaque geste ouvre le suivant : joue, cheveux et baiser. Accepter un dernier verre ouvre la soirée dans la chambre mansardée, puis la complicité, l’intimité partagée et le dernier plan devant la tour Eiffel. Prototype jouable : animations à produire, aucun point attribué.';
+   launch.hidden=false;
   }
   reader.scrollTop=0;updateThird();
  }
