@@ -63,7 +63,7 @@
  const secondBlockName='Chemin II · Le météore';
  const thirdBlockName='Chemin III · Les rendez-vous';
  const thirdParts=Object.freeze([
-  {chapter:4,title:'Drapeau rouge',scene:'République–Bastille · Camarades !',game:'jeu-manifestation.html'},
+  {chapter:4,title:'Le drapeau rouge',scene:'Strasbourg · La prison',game:'jeu-yoyo.html'},
   {chapter:5,title:'Passe-muraille',scene:'Cyrano · La planche vivante',game:'jeu-cyrano-bd.html'},
   {chapter:6,title:'Tu veux bien t’occuper de moi ?',scene:'Scène à sélectionner'}
  ]);
@@ -100,7 +100,7 @@
  const pathNumeral=n=>['I','II','III','IV','V','VI','VII','VIII','IX','X'][n-1]||String(n);
  const icons=['🌳','🪖'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
- const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison'];
+ const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','📣 Camarades !'];
  const makeSpan=(name,label)=>{const el=document.createElement('span');el.className=name;el.textContent=label;return el;};
  function openChapterOnePart(part){
   if(boardRolling)return;
@@ -115,7 +115,8 @@
   if(!flow.canEnter(state,n)||(part===3&&!flow.chapter2PartDone(state,2)))return;
   window.TreizeSceneNavigation?.cancelAutomatic?.();
   if(part===1){arriveAtStage(4);return;}
-  window.TreizePlateauxNavigation?.openPart?.(part===2?'dance':'prison');
+  if(part===3){window.TreizeRendezVous?.openManifestation?.();return;}
+  window.TreizePlateauxNavigation?.openPart?.('dance');
  }
  function paintTargets(){
   const host=$('boardTargets'),current=state.selected<=3?1:state.selected<=5?4:state.selected;
@@ -198,7 +199,7 @@
     tile.className='chapter-part-label chapter-literary-part';tile.dataset.rendezvousPart=String(i+1);
     tile.append(makeSpan('chapter-part-number','CHAPITRE '+p.chapter),
      makeSpan('chapter-part-title','« '+p.title+' »'),
-     makeSpan('chapter-part-game',i===0?'📣 Camarades !':i===1?'💌 Cyrano':'❤️ Rencontre'),
+     makeSpan('chapter-part-game',i===0?'🔒 La prison':i===1?'💌 Cyrano':'❤️ Rencontre'),
      makeSpan('chapter-part-state',i===0?'Jeu 1 / 3':'Jeu '+(i+1)+' / 3'));
     tile.onclick=()=>window.TreizeRendezVous?.open?.(i+1);
     thirdRoute.append(tile);
@@ -250,7 +251,7 @@
        (part===3&&!flow.chapter2PartDone(state,2));
       badge.setAttribute('aria-label',(flow.chapter2PartDone(state,part)?'Rejouer ':'Jouer ')+
        'au chapitre '+flow.CHAPTER2_PARTS[part-1].chapter+' · '+flow.CHAPTER2_PARTS[part-1].title);
-      const skipped=flow.wasSkipped(state,part===1?'4':part===2?'5:dance':'5:prison');
+      const skipped=part===3?Boolean(state.rdvManifestationSkipped):flow.wasSkipped(state,part===1?'4':'5:dance');
       badge.querySelector('.chapter-part-state').textContent='Jeu '+part+' / 3'+(skipped?' · ↷ parcouru':flow.chapter2PartDone(state,part)?' · ✓ réussi':'');
      }
     }
@@ -266,7 +267,7 @@
    third.tabIndex=-1;
    third.querySelector('.chapter-card-main').disabled=!allowed||!!boardRolling;
    third.querySelector('.chapter-card-status').textContent=allowed?
-    'Première bonne feuille disponible · Camarades ! puis Cyrano':'À découvrir après le chemin II';
+    'La prison disponible · puis Cyrano et Rencontre':'À découvrir après le chemin II';
   }
   const n=state.selected;
   const canContinue=n<=3?flow.partDone(state,n):n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state):state.completed.includes(n);
@@ -275,7 +276,7 @@
   $('boardRoll').disabled=!!boardRolling;
   $('boardRoll').textContent=n<=2?'Partie suivante du chapitre →':
    n===3?'Vers le chapitre 2 →':n===4?'Continuer : Le danseur →':
-   n===5?'Chemin III · Les rendez-vous →':'Étape suivante →';
+   n===5?'Chemin III · La prison →':'Étape suivante →';
   $('boardRoll').onclick=()=>rollTravel(state.selected);
   $('travelHint').textContent=flow.done(state)&&n<=3?'Les trois jeux du chapitre 1 sont terminés. Sarajevo ouvre le chapitre 2.':
    n<=3?flow.scenePassedCount(state)+'/3 scènes terminées · Un seul chapitre.':
@@ -372,7 +373,7 @@
    const activeChapter=flow.CHAPTER2_PARTS[activePart-1];
    header.textContent='Chapitre '+activeChapter.chapter+' — « '+activeChapter.chapterTitle+' »';
    $('levelTag').textContent='CHEMIN II · JEU '+activePart+' / 3';
-   $('questTitle').textContent=n===4?'Sarajevo':secondDone?'La prison':'Le danseur';
+   $('questTitle').textContent=n===4?'Sarajevo':secondDone?'Camarades !':'Le danseur';
    sequence.replaceChildren(...flow.CHAPTER2_PARTS.map(p=>{
     const b=document.createElement('button');b.type='button';b.className='chapter1-part';
     b.classList.toggle('active',activePart===p.part);
@@ -395,7 +396,7 @@
     $('status').textContent='Jeu 1 / 3 · Chapitre 2 — Même pas mal : franchis Sarajevo pour poursuivre dans le même chemin.';
    if(n===5&&!flow.chapter2Done(state)){
     $('status').textContent=secondDone?
-     'Jeu 3 / 3 · Chapitre 4 — Le drapeau rouge : termine les épreuves de la prison pour achever le chemin II.':
+     'Jeu 3 / 3 · Chapitre 4 — Le drapeau rouge : rejoins Camarades ! pour achever le chemin II.':
      'Jeu 2 / 3 · Chapitre 3 — Le coup du bus : réussis la danse pour poursuivre vers le chapitre 4, dans le même chemin.';
    }
   }else{
