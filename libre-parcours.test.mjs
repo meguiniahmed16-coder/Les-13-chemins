@@ -30,8 +30,10 @@ test('Six optional mini-games can be skipped in order, without earning points or
  assert.equal(f.chapter2PartDone(s,2),true);
  assert.deepEqual(Array.from(s.levelPlates[5].finished),[1],'The prison becomes accessible without declaring a dance victory');
  assert.equal(f.chapter2Done(s),false);
- assert.equal(f.skipPart(s,'5:prison'),true);
+ assert.equal(f.skipPart(s,'5:prison'),false,'La prison suit désormais Camarades !');
+ s.rdvManifestationSkipped=true;
  assert.equal(f.chapter2PartDone(s,3),true);
+ assert.equal(f.skipPart(s,'5:prison'),true);
  assert.equal(f.chapter2Done(s),true);
  assert.equal(f.canEnter(s,6),true);
  assert.equal(f.chaptersDone(s),2);
@@ -64,6 +66,7 @@ test('Skipping a partially completed game retains credits, stored IDs and legiti
  assert.equal(f.skipPart(s,'5:dance'),true);
  assert.deepEqual(s.dansePassed,[1,2]);
  assert.equal(s.dansePending,null);
+ s.rdvManifestationSkipped=true;
  s.yoyoPending={id:'prison-1'};assert.equal(f.skipPart(s,'5:prison'),true);
  assert.equal(s.yoyoPending,null);
  assert.equal(s.points,127);
@@ -173,6 +176,7 @@ test('Dance and prison Suivant use existing internal navigation without double p
  assert.equal(ctx.TreizeLibreParcours.next('5:dance'),true);
  assert.ok(events.includes('plate-next-dance'));
  assert.equal(ctx.state.points,57);
+ ctx.state.rdvManifestationSkipped=true;
  assert.equal(ctx.TreizeLibreParcours.next('5:prison'),true);
  assert.ok(events.includes('plate-next-prison'));
  assert.equal(ctx.state.unlocked,6);
