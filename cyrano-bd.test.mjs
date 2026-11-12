@@ -5,9 +5,9 @@ const get=name=>readFileSync(new URL('./'+name,import.meta.url),'utf8');
 const bd=get('jeu-cyrano-bd.html'),journey=get('rendezvous-plateau.js');
 test('Cyrano est le deuxième des trois jeux du Chemin III, après Drapeau rouge',()=>{
  const map=get('chapitre1-plateau.js');
- assert.match(map,/chapter:4,title:'Drapeau rouge'/);
+ assert.match(map,/chapter:4,title:'Le drapeau rouge',scene:'Strasbourg · La prison'/);
  assert.match(map,/chapter:5,title:'Passe-muraille',scene:'Cyrano/);
- assert.match(journey,/if\(n===2&&!hasTraversed\(\)\)n=1/);
+ assert.match(journey,/if\(n===2&&!prisonTraversed\(\)\)return/);
  assert.match(journey,/function openCyranoDialog\(\)/);
  assert.match(journey,/jeu-cyrano-bd\.html\?embedded=1/);
  assert.match(journey,/activePart===2\?openCyranoDialog/);
