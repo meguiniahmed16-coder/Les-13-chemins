@@ -202,7 +202,7 @@ test('The board and the prison reader expose the skip option for every mini-game
   plates=fs.readFileSync(new URL('./plateaux.js',import.meta.url),'utf8');
  assert.ok(html.includes("onSkip:()=>window.TreizeLibreParcours?.next(prison?'5:prison':n===5?'5:dance':String(n))"));
  assert.ok(plates.includes("onSkip:()=>window.TreizeLibreParcours?.next('5:prison')"));
- assert.ok(html.includes('src="libre-parcours.js"'));
+ assert.match(html,/src="libre-parcours\.js(?:\?[^\"]*)?"/,'Le parcours libre reste chargé avec ou sans version de cache');
 });
 
 test('Clicking Les Marmousets first opens its immersive text, inline plot quiz, then the game',()=>{
