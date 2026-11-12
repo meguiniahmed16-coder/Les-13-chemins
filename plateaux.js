@@ -4,7 +4,7 @@
  const css=document.createElement('style');css.textContent='#yoyoDialog{padding:0;width:min(1100px,98vw);height:96dvh;max-width:98vw;max-height:96dvh;border:1px solid #a3977a;border-radius:12px;background:#172024;color:#ede6d6;overflow:hidden}#yoyoDialog[open]{display:flex;flex-direction:column}#yoyoDialog::backdrop{background:#142323ed}#yoyoDialog .arcade-dialog-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;font-size:12px;border-bottom:1px solid #61716a}#yoyoClose{min-height:42px;padding:9px;color:#eee6d3;background:#2c3a3c;border:1px solid #8c8e78;border-radius:5px}#yoyoFrame{flex:1;min-height:0;border:0;width:100%}.plateaux-route{display:flex;gap:8px;margin:12px 0;font-size:12px}.plateaux-route span{border:1px solid #a69874;padding:7px;border-radius:5px}.plateaux-route .active{background:#294f3e;color:#fff4db}@media(max-width:650px){#yoyoDialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}#yoyoDialog .arcade-dialog-bar{font-size:10px;padding:5px 8px}}';document.head.append(css);
  function makeDialog(name,title,url){const d=document.createElement('dialog');d.id=name+'Dialog';d.setAttribute('aria-label',title);d.innerHTML='<div class="arcade-dialog-bar"><strong>'+title+'</strong><button type="button" id="'+name+'Close">Retour au plateau ×</button></div><iframe id="'+name+'Frame" title="'+title+'" allow="autoplay; fullscreen" allowfullscreen></iframe>';document.body.append(d);return{dialog:d,frame:$(name+'Frame'),url,loaded:false};}
  const dance=makeDialog('danse','Chapitre 3 — « Le coup du bus » · Le danseur','jeu-danse.html?embedded=1'),yoyo=makeDialog('yoyo','Chapitre 4 — « Le drapeau rouge » · La prison','jeu-yoyo.html?embedded=1&v=20261109-5');
- let travelTimer=0,prisonExitTimer=0,yoyoWon=false;
+ let travelTimer=0,prisonExitTimer=0,yoyoWon=false,requestedPart=0;
  function progress(){flow.migrate(state);return flow.progress(state,5);}
  function refresh(){try{const latest=JSON.parse(localStorage.getItem(KEY)||'null');if(latest&&Array.isArray(latest.completed))state={...state,...latest};}catch{}flow.migrate(state);}
  function context(which){const p=which===dance?state.dansePending:state.yoyoPending;if(p&&which.dialog.open)which.frame.contentWindow?.postMessage({type:(which===dance?'danse':'yoyo')+':init',...p,passed:score.valid(state),score:state.points},location.origin);}
@@ -17,13 +17,13 @@
   onChallenge:()=>{const p=progress();if(!p.read.includes(2))p.read.push(2);save();render();launchYoyo();},
   onSkip:()=>window.TreizeLibreParcours?.next('5:prison'),
   onDismiss:()=>focusEntry()});}
- function travel(){clearTimeout(travelTimer);if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;dismiss(dance);boardRolling=true;finishBoardRoll=TreizeVoyage.start({from:5,to:5,fromPlateau:1,toPlateau:2,title:'Chapitre 4 — « Le drapeau rouge » · Strasbourg',onFinish:()=>{boardRolling=false;finishBoardRoll=null;if(state.selected!==5)return;render();readStrasbourg();}});}
+ function travel(){requestedPart=3;clearTimeout(travelTimer);if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;dismiss(dance);boardRolling=true;finishBoardRoll=TreizeVoyage.start({from:5,to:5,fromPlateau:1,toPlateau:2,title:'Chapitre 4 — « Le drapeau rouge » · Strasbourg',onFinish:()=>{boardRolling=false;finishBoardRoll=null;if(state.selected!==5)return;render();readStrasbourg();}});}
  function closeDance(){clearTimeout(travelTimer);dismiss(dance);if(progress().finished.includes(1)&&!progress().read.includes(2))travel();else focusEntry();}
  function closeYoyo(){clearTimeout(prisonExitTimer);prisonExitTimer=0;dismiss(yoyo);focusEntry();if(yoyoWon&&state.completed.includes(5))rollTravel(5);}
  $('danseClose').onclick=closeDance;$('yoyoClose').onclick=closeYoyo;
  for(const [which,close] of [[dance,closeDance],[yoyo,closeYoyo]]){which.dialog.addEventListener('cancel',e=>{e.preventDefault();close();});which.frame.addEventListener('load',()=>context(which));}
  answer=function(index){if(state.selected!==5)return oldAnswer(index);refresh();if(state.dansePending){open(dance);return;}if(progress().finished.includes(1)||state.quizPassed?.[5])return;const correct=index===LEVELS[4].correct;if(correct){state.quizPassed??={};state.quizPassed[5]=true;state.points+=100;}else{state.tries[5]=(state.tries[5]||0)+1;state.points=Math.max(0,state.points-10);}score.begin(state,correct,crypto.randomUUID());save();render();focusGameEntry();};
- render=function(){progress();for(const id of ['danseLaunch','yoyoLaunch','danceReplay','plateauxRoute'])$(id)?.remove();$('options').hidden=false;$('question').hidden=false;$('read-stage-link').onclick=null;oldRender();if(state.selected!==5)return;const p=progress(),second=p.finished.includes(1),done=state.completed.includes(5),hasGame=second||!!state.dansePending||!!state.quizPassed?.[5];
+ render=function(){if(state.selected!==5)requestedPart=0;progress();for(const id of ['danseLaunch','yoyoLaunch','danceReplay','plateauxRoute'])$(id)?.remove();$('options').hidden=false;$('question').hidden=false;$('read-stage-link').onclick=null;oldRender();if(state.selected!==5)return;const p=progress(),second=requestedPart===2?false:requestedPart===3?true:p.finished.includes(1),done=state.completed.includes(5),hasGame=second||!!state.dansePending||!!state.quizPassed?.[5];
   const route=document.createElement('div');route.id='plateauxRoute';route.className='plateaux-route';route.innerHTML='<span class="'+(!second?'active':'')+'">'+(second?'✓ ':'')+'Chapitre 3 · Le danseur</span><span class="'+(second?'active':'')+'">'+(state.yoyoFinished?'✓ ':'')+'Chapitre 4 · La prison</span>';$('place').after(route);
   $('levelTag').textContent='Chemin II · Chapitre '+(second?'4':'3')+' · Jeu '+(second?'3':'2')+' / 3';
   $('status').textContent=second?(done?'✓ Les trois jeux de ce chemin sont réussis. Le voyage peut continuer.':'La danse est réussie. Trois épreuves t’attendent à Strasbourg : 30 points.'):(state.dansePending?(state.quizPassed?.[5]?'Quiz du chemin déjà validé. ':'')+'Gagne le jeu de danse pour poursuivre vers Strasbourg.':'Retrouve Lionel dans le chapitre 3 « Le coup du bus », deuxième jeu de ce chemin.');
@@ -45,6 +45,22 @@
  // Navigation sous les deux derniers mini-jeux du chemin II.
  // "Retour" stops automatic chaining, "Suivant" preserves wins or skips.
  window.TreizePlateauxNavigation={
+  resetPart(){requestedPart=0;},
+  openPart(which){
+   const ch=window.TreizeChapitre1;
+   if(boardRolling||!ch?.canEnter(state,5)||(which!=='dance'&&which!=='prison'))return false;
+   if(which==='prison'&&!ch.chapter2PartDone(state,2))return false;
+   window.TreizeSceneNavigation?.cancelAutomatic?.();
+   requestedPart=which==='dance'?2:3;
+   select(5);
+   if(which==='prison'){readStrasbourg();return true;}
+   if(!window.TreizeEscale){launchDance();return true;}
+   TreizeEscale.openReader(5,{plateau:1,autoAdvanceOnEnd:true,
+    onChallenge:()=>launchDance(),
+    onSkip:()=>window.TreizeLibreParcours?.next('5:dance'),
+    onDismiss:()=>focusEntry()});
+   return true;
+  },
   back(which){
    clearTimeout(travelTimer);clearTimeout(prisonExitTimer);
    if(which==='dance')dismiss(dance);
