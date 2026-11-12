@@ -43,6 +43,12 @@
  }
  function done(state){return PARTS.every(p=>partDone(state,p.scene));}
  function nextPart(state){return PARTS.find(p=>!partDone(state,p.scene))?.scene||1;}
+ // Un choix explicite dans le plateau prime toujours sur la reprise automatique.
+ function chapter1SceneForSelection(state,part){
+  if(part===undefined||part===null)return done(state)?1:nextPart(state);
+  if(!Number.isInteger(part)||part<1||part>3||!canEnter(state,part))return null;
+  return part;
+ }
  function chapter2Legacy(state){
   // Les joueurs déjà arrivés après le jeu du yo-yo restent avancés.
   return Array.isArray(state?.completed)&&state.completed.some(n=>n>=6);
@@ -164,7 +170,7 @@
   return true;
  }
  root.TreizeChapitre1={PARTS,CHAPTER2_PARTS,CARDS,ARCHIVED_CARDS,legacy,partDone,done,nextPart,chapter2Legacy,
-  chapter2PartDone,chapter2Progress,chapter2Done,chapter2NextPart,canEnter,chapterOf,
+  chapter1SceneForSelection,chapter2PartDone,chapter2Progress,chapter2Done,chapter2NextPart,canEnter,chapterOf,
   chaptersDone,chapterReached,scenePassedCount,preparePart,prepareChapter2Dance,
   SKIP_KEYS,wasSkipped,chapterHasSkips,skipPart,reconcile};
 })(typeof window==='undefined'?globalThis:window);
