@@ -283,7 +283,7 @@ test('Chemin III Les rendez-vous is one board cartouche for book chapters 4, 5, 
  assert.ok(ui.includes("third.dataset.chemin='3';third.id='chemin-iii';"));
  assert.ok(ui.includes("makeSpan('chapter-card-title','Les rendez-vous')"));
  assert.ok(ui.includes("host.append(third);"));
- assert.ok(ui.includes("third.onclick=()=>window.TreizeRendezVous?.open?.();"));
+ assert.ok(ui.includes("thirdMain.onclick=()=>window.TreizeRendezVous?.open?.();"));
  assert.ok(ui.includes("if(n===5&&flow.chapter2Done(state)){window.TreizeRendezVous?.open?.();return;}"));
  assert.ok(ui.includes("if(!flow.chapter2Done(state)||boardRolling)return;"));
  for(const title of ['Drapeau rouge','Passe-muraille','Tu veux bien t’occuper de moi ?'])assert.ok(ui.includes(title));
@@ -296,6 +296,25 @@ test('Chemin III Les rendez-vous is one board cartouche for book chapters 4, 5, 
  assert.ok(!build.includes("'chemin3.html'"));
 });
 
+test('Chemins I, II et III : mêmes cartouches, trois jeux accessibles indépendamment',()=>{
+ const ui=read('./chapitre1-plateau.js'),game=read('./jeu.html'),plateaux=read('./plateaux.js'),rdv=read('./rendezvous-plateau.js');
+ assert.ok(ui.includes("const button=document.createElement('div')"),'Le chemin I et II utilisent un groupe, pas un bouton contenant des boutons');
+ assert.ok(ui.includes("const third=document.createElement('div')"),'Le chemin III est un groupe lui aussi');
+ assert.ok(ui.includes("main.className='chapter-card-main'"),'Titre principal commun');
+ assert.ok(ui.includes("thirdMain.type='button';thirdMain.className='chapter-card-main'"),'Titre principal du chemin III');
+ assert.ok(ui.includes("tile.onclick=()=>openChapterOnePart(part)"),'Les trois jeux du chemin I sont indépendants');
+ assert.ok(ui.includes("tile.onclick=()=>openChapterTwoPart(p.part)"),'Sarajevo, danse et prison sont indépendants');
+ assert.ok(ui.includes("tile.onclick=()=>window.TreizeRendezVous?.open?.(i+1)"),'Les trois jeux du chemin III sont indépendants');
+ assert.ok(ui.includes("window.TreizePlateauxNavigation?.openPart?.(part===2?'dance':'prison')"),'Le plateau cible le bon mini-jeu même après la danse');
+ assert.ok(plateaux.includes("openPart(which){"),'Le chemin II accepte une sélection explicite');
+ assert.ok(plateaux.includes("requestedPart===2?false:requestedPart===3?true:p.finished.includes(1)"),'Rejouer la danse ne redirige pas vers la prison');
+ assert.ok(plateaux.includes("TreizeEscale.openReader(5,{plateau:1"),'La danse rouvre sa bonne feuille');
+ assert.ok(rdv.includes("app.open=function(requested){"),'Le chemin III rouvre un chapitre précis');
+ assert.ok(rdv.includes("if(part===2&&!hasTraversed()||part===3&&!cyranoTraversed())return"),'Les chapitres non débloqués demeurent fermés');
+ assert.ok(game.includes("plateaux.js?v=20261112-cartouches-v1"),'Le navigateur Android reçoit la nouvelle version');
+ assert.ok(game.includes("chapitre1-plateau.js?v=20261112-cartouches-v1"));
+ assert.ok(game.includes("rendezvous-plateau.js?v=20261112-cartouches-v1"));
+});
 test('Le chemin III conserve le texte validé et le contrôleur de jeu',()=>{
  const ui=read('./chapitre1-plateau.js'),controller=read('./rendezvous-plateau.js');
  assert.ok(ui.includes('Julie est devant la télévision.'));
