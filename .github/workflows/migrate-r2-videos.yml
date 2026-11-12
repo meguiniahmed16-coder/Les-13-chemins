@@ -1,0 +1,69 @@
+name: Transférer les cinématiques vers Cloudflare R2 (manuel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      selection:
+        description: "Copier une vidéo pilote ou toutes les 22 vidéos"
+        type: choice
+        required: true
+        default: pilote
+        options:
+          - pilote
+          - toutes
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r2-video-migration
+  cancel-in-progress: false
+
+jobs:
+  transfert-r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_REMOTE: r2
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      RCLONE_CONFIG_R2_REGION: auto
+    steps:
+      - name: Extraire le dépôt
+        uses: actions/checkout@v4
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrôler la configuration privée
+        shell: bash
+        run: |
+          if [[ -z "$R2_BUCKET" || -z "$R2_ACCOUNT_ID" || -z "$RCLONE_CONFIG_R2_ACCESS_KEY_ID" || -z "$RCLONE_CONFIG_R2_SECRET_ACCESS_KEY" ]]; then
+            echo "::error::Configurer les quatre secrets R2 dans GitHub > Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+      - name: Installer rclone
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y rclone
+          rclone version
+      - name: Vérifier le manifeste contre le jeu publié
+        run: node --test r2-migration.test.mjs
+      - name: Transférer et contrôler
+        shell: bash
+        env:
+          SELECTION: ${{ inputs.selection }}
+        run: |
+          if [[ "$SELECTION" == "pilote" ]]; then
+            node scripts/migrate-videos-r2.mjs --upload --only=C01
+          elif [[ "$SELECTION" == "toutes" ]]; then
+            node scripts/migrate-videos-r2.mjs --upload
+          else
+            echo "::error::Sélection invalide."
+            exit 1
+          fi
