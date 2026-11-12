@@ -106,10 +106,12 @@ test('Both narrative interludes are compact moving maps with a detailed backpack
  for(const name of ['Sarajevo','Genève','Lyon','Louvain-la-Neuve','Paris','Strasbourg'])assert.ok(maps.includes("'"+name+"'"));
  assert.ok(maps.includes("dashArray:'3 8'"));
  assert.ok(maps.includes('mini-atlas-walker'));
+ assert.ok(maps.includes('map.attributionControl.setPrefix(false)'),'No Leaflet Ukrainian flag in either mini-map');
+ assert.ok(maps.includes("attribution:'© OpenStreetMap contributors'"),'Keep required OpenStreetMap attribution');
  assert.ok(maps.includes('requestAnimationFrame(tick)'));
  assert.ok(maps.includes('prefers-reduced-motion: reduce'));
  assert.ok(build.includes("'mini-cartes.js'"));
- assert.ok(page.includes('mini-cartes.js?v=20261112-mini-atlas-v1'));
+ assert.ok(page.includes('mini-cartes.js?v=20261112-sans-drapeau-v2'));
 });
 
 test('Every arrival shows its chapter title and the documented characters on the map',()=>{
