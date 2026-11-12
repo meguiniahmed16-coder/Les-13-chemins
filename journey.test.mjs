@@ -94,14 +94,22 @@ test('Barcelone → Ferney-Voltaire → Vannes → Poitiers → Sarajevo: ordere
  assert.equal(h.sent.at(-1).type,'journey:done','The map finishes and hands control back');
  assert.ok(!h.ctx.TreizeVoyage.chapter2Itinerary(1,2,origin,destination));
 });
-test('The two first chapter cards are linked by a dotted itinerary in the same order',()=>{
+test('Both narrative interludes are compact moving maps with a detailed backpack walker',()=>{
  const ui=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
- assert.ok(ui.includes("className='chapter-journey-route'"));
- assert.ok(ui.includes("host.querySelector('[data-chapter=\"1\"]').after(connector)"));
- assert.ok(ui.includes("['Barcelone','Ferney-Voltaire','Vannes · Bretagne','Poitiers','Sarajevo']"));
- assert.ok(ui.includes('chapterTravelDot'));
- assert.ok(ui.includes('border-top:3px dotted'));
- assert.ok(ui.includes('prefers-reduced-motion:reduce'));
+ const maps=fs.readFileSync(new URL('./mini-cartes.js',import.meta.url),'utf8');
+ const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
+ const page=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8');
+ assert.ok(ui.includes("makeInterlude('one-two'"));
+ assert.ok(ui.includes("makeInterlude('two-three'"));
+ assert.ok(ui.includes('mini-atlas-map{height:185px'));
+ assert.ok(maps.includes("['Vannes',47.6587,-2.7599]"));
+ for(const name of ['Sarajevo','Genève','Lyon','Louvain-la-Neuve','Paris','Strasbourg'])assert.ok(maps.includes("'"+name+"'"));
+ assert.ok(maps.includes("dashArray:'3 8'"));
+ assert.ok(maps.includes('mini-atlas-walker'));
+ assert.ok(maps.includes('requestAnimationFrame(tick)'));
+ assert.ok(maps.includes('prefers-reduced-motion: reduce'));
+ assert.ok(build.includes("'mini-cartes.js'"));
+ assert.ok(page.includes('mini-cartes.js?v=20261112-mini-atlas-v1'));
 });
 
 test('Every arrival shows its chapter title and the documented characters on the map',()=>{
