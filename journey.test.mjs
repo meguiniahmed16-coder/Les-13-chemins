@@ -140,7 +140,7 @@ test('Every arrival shows its chapter title and the documented characters on the
  h.advance(3000);
  assert.equal(h.sent.at(-1).type,'journey:done');
 });
-test('The five game-to-game journeys keep their dotted map and required frame parameters',()=>{
+test('The story transitions keep their map and Camarades now precedes Strasbourg',()=>{
  const src=fs.readFileSync(new URL('./chapitre1-plateau.js',import.meta.url),'utf8');
  const game=fs.readFileSync(new URL('./jeu.html',import.meta.url),'utf8');
  const plates=fs.readFileSync(new URL('./plateaux.js',import.meta.url),'utf8');
@@ -150,7 +150,7 @@ test('The five game-to-game journeys keep their dotted map and required frame pa
  assert.ok(src.includes('rollTravel(n);'));
  assert.ok(game.includes("const buttonId={2:'arcadeLaunch',3:'catalogneLaunch',4:'bosnieLaunch',5:'danseLaunch'}")||
            game.includes("const launch=document.getElementById(buttonId)"));
- assert.ok(plates.includes('from:5,to:5,fromPlateau:1,toPlateau:2'));
+ assert.ok(plates.includes('window.TreizeRendezVous?.openManifestation?.()'),'After the dance, Camarades opens before Strasbourg');
  assert.ok(plates.includes('autoAdvanceOnEnd:true'));
  assert.ok(plates.includes('prisonExitTimer=setTimeout'));
  assert.ok(code.includes("dashArray:'6 7'"));
