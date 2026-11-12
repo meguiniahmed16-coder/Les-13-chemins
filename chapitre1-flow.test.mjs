@@ -101,7 +101,7 @@ test('Atlas keeps 13 historical scenes and the board adds the third path without
  assert.ok(ui.includes("const icons=['🌳','🪖']"));
  assert.ok(ui.includes("arriveAtStage(n);"));
  assert.ok(ui.includes("b.onclick=()=>arriveAtStage(p.scene)"));
- assert.ok(ui.includes('scene===1?(flow.done(state)?1:flow.nextPart(state)):'));
+ assert.ok(ui.includes('scene===1?flow.chapter1SceneForSelection(state):'),'Le chemin reprend sa progression, ses trois jeux gardent un accès direct');
  assert.ok(ui.includes('scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene'));
  assert.ok(ui.includes("if(n>=1&&n<=5)"));
  assert.ok(ui.includes("from:n,to:next"));
