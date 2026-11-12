@@ -20,7 +20,7 @@ test('destination R2 stable et source CDN identique au lecteur',()=>{
   const expected=new Map(references.map(x=>[x[1],cdn+x[2]]));
   for(const item of catalog.items){
     assert.equal(item.sourceUrl,expected.get(item.id),item.id);
-    assert.ok(item.objectKey.startsWith('videos/rencontre/'));
+    assert.ok(item.objectKey.startsWith('rencontre/'));
     assert.ok(item.objectKey.endsWith('.mp4'));
     assert.ok(!item.objectKey.includes('..'));
   }
