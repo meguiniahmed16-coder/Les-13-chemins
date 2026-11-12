@@ -233,7 +233,7 @@ test('L’intimité commence au oui et inclut les deux vidéos originales Higgsf
  assert.ok(!html.includes('B07:HIGGS_CDN'),'La fin abandonnée n’est pas réintroduite');
 });
 
-test('R2 est prioritaire, Higgsfield demeure le recours automatique',()=>{
+test('R2 conservé pour diagnostics, films Higgsfield prioritaires',()=>{
  assert.ok(html.includes("const R2_VIDEO_BASE='https://treize-chemins-videos.meguiniahmed16.workers.dev/rencontre/'"));
  assert.ok(html.includes('const R2_MEDIA=Object.fromEntries('));
  assert.ok(html.includes('const R2_FAILED=new Set()'));
@@ -241,4 +241,15 @@ test('R2 est prioritaire, Higgsfield demeure le recours automatique',()=>{
  assert.ok(html.includes('stage.src=MEDIA[shot];stage.load()'),'Repli Higgsfield du décor vidéo');
  assert.ok(html.includes('R2_FAILED.add(shot[0]);player.src=MEDIA[shot[0]];player.load()'));
  assert.ok(html.includes("clips:['B06','B05','B05bis']"),'Le oui ouvre encore les deux scènes');
+});
+
+
+test('Restauration de la lecture et des transitions sans saut silencieux',()=>{
+ assert.ok(html.includes("get('videoSource')==='r2'"),'R2 uniquement en test explicite');
+ assert.ok(html.includes('const preferredVideoUrl=id=>TRY_R2&&!R2_FAILED.has(id)?(R2_MEDIA[id]||MEDIA[id]):MEDIA[id]'),'Higgsfield par défaut');
+ assert.ok(html.includes('player.onwaiting=()=>watchStall(shot[0])'),'Surveiller les blocages réseau');
+ assert.ok(html.includes('const completed=startedShot&&seen>0.25'),'Vérifier que le film a réellement été lu');
+ assert.ok(html.includes('if(finishedShot!==pending[movieIndex]&&!explicitSkip)return;'),'Aucun saut non confirmé');
+ assert.ok(html.includes('preload="metadata" aria-hidden="true" hidden'),'Réduire le trafic vidéo de fond');
+ assert.ok(html.includes("clips:['B06','B05','B05bis']"),'Préserver les scènes intimes');
 });
