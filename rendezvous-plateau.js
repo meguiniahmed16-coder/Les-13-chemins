@@ -68,13 +68,14 @@
  const partNav=document.createElement('nav');partNav.className='rendezvous-part-nav';partNav.setAttribute('aria-label','Les trois jeux du chemin III');
  for(let i=0;i<3;i++){
   const b=document.createElement('button');b.type='button';b.dataset.part=String(i+1);b.textContent='Chapitre '+parts[i].chapter+' · Jeu '+(i+1)+'/3';
-  b.onclick=()=>showPart(i+1);partNav.append(b);
+  b.onclick=()=>i===0?app.open(1):showPart(i+1);partNav.append(b);
  }
  info.after(partNav); // Comme les autres bonnes feuilles : le texte d'abord, les choix ensuite.
  const launch=document.createElement('button');launch.type='button';launch.id='rendezvousPlay';launch.textContent='🎮 Jouer à Camarades ! — 30 points';
  info.append(launch);launch.onclick=()=>activePart===3?openRencontreDialog():activePart===2?openCyranoDialog():beginGame();
  const awarded=()=>Array.isArray(state.rdvManifestationPassed)?state.rdvManifestationPassed.filter(n=>[1,2,3].includes(n)):[];
  const hasTraversed=()=>Boolean(state.rdvManifestationFinished||state.rdvManifestationSkipped);
+ const prisonTraversed=()=>Boolean(state.yoyoFinished||state.storySkips?.includes('5:prison')||state.completed?.some(n=>n>=6));
  const cyranoAwarded=()=>Array.isArray(state.rdvCyranoPassed)?state.rdvCyranoPassed.filter((n,i,a)=>[1,2,3].includes(n)&&a.indexOf(n)===i).sort((a,b)=>a-b):[];
  const cyranoTraversed=()=>Boolean(state.rdvCyranoFinished||state.rdvCyranoSkipped);
 
@@ -83,13 +84,13 @@
   const count=awarded().length,cyranoCount=cyranoAwarded().length,allowed=flow.chapter2Done(state);
   const partsCards=card.querySelectorAll('.chapter-literary-part');
   if(partsCards[0]){
-   partsCards[0].querySelector('.chapter-part-game').textContent='Camarades ! · '+count*10+'/30 points';
-   partsCards[0].querySelector('.chapter-part-state').textContent=state.rdvManifestationFinished?'✓ Jeu réussi':state.rdvManifestationSkipped?'↷ Parcouru sans points':'Jeu 1 / 3 · République–Bastille';
-   partsCards[0].classList.toggle('passed',hasTraversed());
+   partsCards[0].querySelector('.chapter-part-game').textContent='La prison · '+(state.yoyoFinished?'30/30':'0/30')+' points';
+   partsCards[0].querySelector('.chapter-part-state').textContent=state.yoyoFinished?'✓ Jeu réussi':state.storySkips?.includes('5:prison')?'↷ Parcouru sans points':'Jeu 1 / 3 · Strasbourg';
+   partsCards[0].classList.toggle('passed',prisonTraversed());
   }
   if(partsCards[1]){
    partsCards[1].querySelector('.chapter-part-game').textContent='Cyrano · La planche vivante · '+cyranoCount*10+'/30 points';
-   partsCards[1].querySelector('.chapter-part-state').textContent=state.rdvCyranoFinished?'✓ Trois lettres réussies':state.rdvCyranoSkipped?'↷ Parcouru sans terminer':hasTraversed()?'Jeu 2 / 3 · lecture disponible':'Après le jeu 1 / 3';
+   partsCards[1].querySelector('.chapter-part-state').textContent=state.rdvCyranoFinished?'✓ Trois lettres réussies':state.rdvCyranoSkipped?'↷ Parcouru sans terminer':prisonTraversed()?'Jeu 2 / 3 · lecture disponible':'Après le jeu 1 / 3';
    partsCards[1].classList.toggle('passed',cyranoTraversed());
   }
   const rencontreTraversed=Boolean(state.rdvRencontreFinished||state.rdvRencontreSkipped);
@@ -98,23 +99,23 @@
    partsCards[2].querySelector('.chapter-part-state').textContent=state.rdvRencontreFinished?'✓ Rencontre accomplie':state.rdvRencontreSkipped?'↷ Autre fin':cyranoTraversed()?'Jeu 3 / 3 · Cinématiques disponibles':'Après le jeu 2 / 3';
    partsCards[2].classList.toggle('passed',rencontreTraversed);
   }
-  const done=[hasTraversed(),cyranoTraversed(),rencontreTraversed].filter(Boolean).length;
+  const done=[prisonTraversed(),cyranoTraversed(),rencontreTraversed].filter(Boolean).length;
   card.querySelector('.chapter-card-status').textContent=allowed?
    (done>=3?'3 / 3 jeux parcourus':done>=2?'2 / 3 jeux parcourus · dernier chapitre accessible':done===1?'1 / 3 jeux parcourus · Cyrano disponible':'0 / 3 jeux parcourus · première bonne feuille disponible'):
    'À découvrir après le chemin II';
   card.querySelector('.chapter-card-place').textContent='Chapitres 4, 5 et 6 · Jeux et parcours narratif';
-  card.setAttribute('aria-label','Chemin III Les rendez-vous · '+done+'/3 jeux parcourus · '+(count+cyranoCount)*10+' points acquis sur 60');
+  card.setAttribute('aria-label','Chemin III Les rendez-vous · '+done+'/3 jeux parcourus');
   const playable=card.querySelectorAll('[data-rendezvous-part]');
   for(const tile of playable){
    const part=Number(tile.dataset.rendezvousPart);
    const permitted=allowed&&!boardRolling&&
-    (part===1||part===2&&hasTraversed()||part===3&&cyranoTraversed());
+    (part===1||part===2&&prisonTraversed()||part===3&&cyranoTraversed());
    tile.disabled=!permitted;
    tile.setAttribute('aria-label',permitted?'Lire et '+(tile.classList.contains('passed')?'rejouer ':'jouer ')+'le chapitre '+parts[part-1].chapter+' · '+parts[part-1].title:'Chapitre '+parts[part-1].chapter+' non débloqué');
   }
   card.querySelector('.chapter-card-main').disabled=!allowed||!!boardRolling;
   for(const b of partNav.children){
-   const n=Number(b.dataset.part);b.disabled=(n===2&&!hasTraversed())||(n===3&&!cyranoTraversed());
+   const n=Number(b.dataset.part);b.disabled=(n===2&&!prisonTraversed())||(n===3&&!cyranoTraversed());
   }
   $('manifestationNext').textContent=state.rdvManifestationFinished?'Suivant · Chapitre 5 →':'Suivant · Passer sans points →';
   $('cyranoNext').textContent=state.rdvCyranoFinished?'Suivant · Chapitre 6 →':'Suivant · Passer sans points →';
@@ -123,12 +124,12 @@
   if(activePart===3)launch.textContent='🎮 Jouer à Tu veux bien t’occuper de moi ?';
  }
  function showPart(n){
-  if(n===2&&!hasTraversed())n=1;
-  if(n===3&&!cyranoTraversed())n=hasTraversed()?2:1;
+  if(n===2&&!prisonTraversed())return;
+  if(n===3&&!cyranoTraversed())return;
   activePart=n;clearTimeout(autoTimer);autoTimer=0;autoLaunched=false;
   for(const b of partNav.children){const active=Number(b.dataset.part)===n;b.setAttribute('aria-current',active?'step':'false');}
   if(n===1){
-   readerHeading.textContent='LES TREIZE CHEMINS · CHEMIN III · CHAPITRE 4 — « DRAPEAU ROUGE »';
+   readerHeading.textContent='LES TREIZE CHEMINS · CHEMIN II · CHAPITRE 4 — « DRAPEAU ROUGE »';
    kicker.textContent='Vous êtes arrivé à';
    title.textContent='République–Bastille';
    readerArea.textContent='Paris · avril 2002';readerArea.hidden=false;
@@ -158,19 +159,28 @@
    infoBody.textContent='Lis ce passage intégralement : le jeu commence à la fin de la bonne feuille. Vingt et une cinématiques sont disponibles : dans la cuisine, le regard ouvre la caresse de la joue, puis les cheveux et le baiser. Le dernier verre conduit à la mansarde, à la complicité et jusqu’au « oui ». À chaque « Pas maintenant », un autre moment de tendresse se joue. Les films débloqués peuvent être revus ; aucun point supplémentaire n’est attribué.';
    launch.hidden=false;
   }
+  partNav.hidden=n===1;
   reader.scrollTop=0;updateThird();
  }
  const oldOpen=app.open;
  app.open=function(requested){
   if(!flow.chapter2Done(state))return;
-  const part=requested===undefined?(!hasTraversed()?1:!cyranoTraversed()?2:3):requested;
+  const part=requested===undefined?(!prisonTraversed()?1:!cyranoTraversed()?2:3):requested;
   if(!Number.isInteger(part)||part<1||part>3)return;
-  if(part===2&&!hasTraversed()||part===3&&!cyranoTraversed())return;
+  if(part===1){window.TreizePlateauxNavigation?.openPart?.('prison');return;}
+  if(part===2&&!prisonTraversed()||part===3&&!cyranoTraversed())return;
   oldOpen();showPart(part);
+ };
+ // Première occurrence du « Drapeau rouge » : Camarades ! après la danse.
+ app.openManifestation=function(){
+  if(!flow.chapter2PartDone(state,2)||boardRolling)return;
+  clearTimeout(autoTimer);autoLaunched=false;
+  if(!reader.open)reader.showModal();
+  showPart(1);
  };
  // Le code du plateau appelle désormais window.TreizeRendezVous.open() à chaque ouverture.
  function openDialog(){
-  if(!flow.chapter2Done(state))return;
+  if(!flow.chapter2PartDone(state,2))return;
   clearTimeout(autoTimer);autoLaunched=true;
   if(!state.rdvManifestationPending||!state.rdvManifestationPending.id){
    state.rdvManifestationPending={id:crypto.randomUUID(),chapter:4};
@@ -191,9 +201,8 @@
  function nextGame(){
   if(!state.rdvManifestationFinished&&!state.rdvManifestationSkipped){state.rdvManifestationSkipped=true;save();}
   closeGame();
-  // The next chapter has no authorised scene yet. Show its placeholder inside
-  // this same three-part path, never navigate into an unrelated historic level.
-  app.open();showPart(2);
+  // Deuxième occurrence du « Drapeau rouge » : la prison, puis Cyrano.
+  app.open();
  }
  $('manifestationClose').onclick=closeGame;
  $('manifestationBack').onclick=closeGame;
@@ -226,7 +235,7 @@
 
  // Épreuve 2 / 3 — feuille intégrale puis planche de BD et trois lettres.
  function openCyranoDialog(){
-  if(!flow.chapter2Done(state)||!hasTraversed())return;
+  if(!flow.chapter2Done(state)||!prisonTraversed())return;
   clearTimeout(autoTimer);autoLaunched=true;
   if(!state.rdvCyranoPending?.id){
    state.rdvCyranoPending={id:crypto.randomUUID(),chapter:5};save();
