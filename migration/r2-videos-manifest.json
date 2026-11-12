@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "project": "Les Treize Chemins",
+  "sourceFile": "jeu-rencontre.html",
+  "createdAt": "2026-11-12",
+  "prefix": "videos/rencontre",
+  "items": [
+    {
+      "id": "C01",
+      "label": "La rencontre dans la cuisine",
+      "path": "01-cuisine/01-rencontre.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/01-rencontre.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_190953_98996418-1af1-4e38-a4cd-ce370190446f.mp4"
+    },
+    {
+      "id": "C03",
+      "label": "Le regard de la jeune femme",
+      "path": "01-cuisine/03-elle-le-regarde.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/03-elle-le-regarde.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_184129_21f4448e-c0bf-4504-b0a4-1712344b88e5.mp4"
+    },
+    {
+      "id": "C04",
+      "label": "Il lui caresse la joue",
+      "path": "01-cuisine/04-il-lui-caresse-la-joue.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/04-il-lui-caresse-la-joue.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_184338_cd7ef478-eb5b-4f7d-91dd-f4b9b5292765.mp4"
+    },
+    {
+      "id": "C05",
+      "label": "Elle lui caresse la joue",
+      "path": "01-cuisine/05-elle-lui-caresse-la-joue.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/05-elle-lui-caresse-la-joue.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_184341_77deea16-73e4-4be1-8af2-96c8980b1d86.mp4"
+    },
+    {
+      "id": "C06",
+      "label": "Il lui caresse les cheveux",
+      "path": "01-cuisine/06-il-lui-caresse-les-cheveux.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/06-il-lui-caresse-les-cheveux.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_193652_a6c7d632-bc9c-4184-b2e4-db88c84f64c8.mp4"
+    },
+    {
+      "id": "C07",
+      "label": "Elle lui caresse les cheveux",
+      "path": "01-cuisine/07-elle-lui-caresse-les-cheveux.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/07-elle-lui-caresse-les-cheveux.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_193654_6d054a1d-d9c6-4fe0-8870-7a517d5579d6.mp4"
+    },
+    {
+      "id": "C08",
+      "label": "Le baiser",
+      "path": "01-cuisine/08-baiser.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/01-cuisine/08-baiser.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_193657_3161d0d8-6614-48e3-a54c-43d965d1fb1a.mp4"
+    },
+    {
+      "id": "B01",
+      "label": "L’arrivée dans la mansarde",
+      "path": "02-chambre/01-arrivee.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/01-arrivee.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_193835_471a3e2c-a7d5-4bb0-a300-4f61e759c708.mp4"
+    },
+    {
+      "id": "B02",
+      "label": "Les deux verres de vodka",
+      "path": "02-chambre/02-vodka.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/02-vodka.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_193839_cf5dc506-3d8e-4204-864b-7f91ed247675.mp4"
+    },
+    {
+      "id": "B03",
+      "label": "La conversation et les cigarettes",
+      "path": "02-chambre/03-conversation.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/03-conversation.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_193843_f54c5f30-3c06-46de-baaf-e18cba7abac5.mp4"
+    },
+    {
+      "id": "B04",
+      "label": "Elle déplie le canapé-lit",
+      "path": "02-chambre/04-canape-lit.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/04-canape-lit.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194016_5acc85e9-b602-4532-9e7b-26605fbec9a1.mp4"
+    },
+    {
+      "id": "B05",
+      "label": "Sous les draps — première prise",
+      "path": "02-chambre/05-sous-les-draps.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/05-sous-les-draps.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194019_7622d64a-e3b0-469f-aae2-69f607f43092.mp4"
+    },
+    {
+      "id": "B05bis",
+      "label": "Sous les draps — deuxième prise",
+      "path": "02-chambre/05bis-sous-les-draps.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/05bis-sous-les-draps.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_192813_d55de648-8b2e-4f45-bed2-3a5c5fcb1779.mp4"
+    },
+    {
+      "id": "B06",
+      "label": "Le « oui »",
+      "path": "02-chambre/06-oui.mp4",
+      "kind": "principal",
+      "objectKey": "videos/rencontre/02-chambre/06-oui.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194022_76f3f56c-3687-4048-9092-8e06cd07cdc9.mp4"
+    },
+    {
+      "id": "A01",
+      "label": "Le silence partagé",
+      "path": "01-cuisine/alternatives/01-silence.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/01-cuisine/alternatives/01-silence.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194224_1b39b3b1-d639-4c75-8c72-92070de8e2a9.mp4"
+    },
+    {
+      "id": "A02",
+      "label": "La confidence",
+      "path": "01-cuisine/alternatives/02-confidence.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/01-cuisine/alternatives/02-confidence.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194230_cab0bfb9-807e-42fd-91e8-852b1cd4be39.mp4"
+    },
+    {
+      "id": "A03",
+      "label": "Un rire partagé",
+      "path": "01-cuisine/alternatives/03-rire.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/01-cuisine/alternatives/03-rire.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194412_8a5d09b9-2079-4a98-baf8-2577b78957e0.mp4"
+    },
+    {
+      "id": "A04",
+      "label": "Les regards complices",
+      "path": "01-cuisine/alternatives/04-regards.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/01-cuisine/alternatives/04-regards.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194415_552f97ec-18ba-4238-8729-73a62b45e954.mp4"
+    },
+    {
+      "id": "A05",
+      "label": "Encore un instant dans la cuisine",
+      "path": "01-cuisine/alternatives/05-encore-ici.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/01-cuisine/alternatives/05-encore-ici.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194420_725e180b-2319-4d7b-aafd-104b2f3b1394.mp4"
+    },
+    {
+      "id": "A06",
+      "label": "La conversation continue",
+      "path": "02-chambre/alternatives/06-conversation.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/02-chambre/alternatives/06-conversation.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194605_9d971eb9-b62d-4342-9b1c-c47a9a9e3046.mp4"
+    },
+    {
+      "id": "A07",
+      "label": "Un autre éclat de rire",
+      "path": "02-chambre/alternatives/07-rire.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/02-chambre/alternatives/07-rire.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194610_25bacf25-04f1-49b2-98a6-e7db3a1d2b16.mp4"
+    },
+    {
+      "id": "A08",
+      "label": "Le silence de la nuit",
+      "path": "02-chambre/alternatives/08-nuit.mp4",
+      "kind": "alternative",
+      "objectKey": "videos/rencontre/02-chambre/alternatives/08-nuit.mp4",
+      "sourceUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/hf_20261110_194644_e396ef78-ecec-493f-be2b-da6fdb7027c7.mp4"
+    }
+  ]
+}
