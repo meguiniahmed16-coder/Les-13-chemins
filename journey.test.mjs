@@ -106,17 +106,89 @@ test('Both narrative interludes are compact moving maps with a detailed backpack
  for(const name of ['Sarajevo','Genève','Lyon','Louvain-la-Neuve','Paris','Strasbourg'])assert.ok(maps.includes("'"+name+"'"));
  assert.ok(maps.includes("dashArray:'3 8'"));
  assert.ok(maps.includes('mini-atlas-walker'));
+ assert.ok(maps.includes("dashArray:'2 7'"),'La trace de marche parcourue reste pointillée');
+ assert.ok(maps.includes('pilgrim-leg--near')&&maps.includes('pilgrim-leg--far'),'Deux jambes articulées');
+ assert.ok(ui.includes('pilgrim-near-step')&&ui.includes('pilgrim-far-step'),'Vraie animation des membres');
+ assert.ok(ui.includes('pilgrim-pack-bob'),'Le sac accompagne la marche');
+ assert.equal((ui.match(/Les chemins secrets — à découvrir uniquement dans le livre/g)||[]).length,1,'Le titre apparaît une seule fois');
+ assert.ok(maps.includes("replay.textContent='↻ Rejouer le trajet'"),'Bouton de rejeu explicite');
+ assert.ok(maps.includes('if(!visible||finished||!el.isConnected)return'),'Arrêt de la boucle à la fin');
+
  assert.ok(maps.includes('map.attributionControl.setPrefix(false)'),'No Leaflet Ukrainian flag in either mini-map');
  assert.ok(maps.includes("attribution:'© OpenStreetMap contributors'"),'Keep required OpenStreetMap attribution');
  assert.ok(maps.includes('requestAnimationFrame(tick)'));
  assert.ok(maps.includes('prefers-reduced-motion: reduce'));
  assert.ok(build.includes("'mini-cartes.js'"));
- assert.ok(page.includes('mini-cartes.js?v=20261112-une-fois-v1'));
+ assert.ok(page.includes('mini-cartes.js?v=20261112-marcheur-v2'));
  assert.ok(maps.includes("replay.onclick=()=>"),'Manual replay exists on each map');
  assert.ok(maps.includes("replay.hidden=true"),'Replay button is hidden while travelling');
  assert.ok(maps.includes("finished=true;cancelAnimationFrame(frame)"),'Travel stops at the destination');
  assert.match(maps,/if\(!hasStarted\)\{hasStarted=true;resume\(\);?\}/,'Viewport starts the animation once');
  assert.ok(!maps.includes("(now-started)%duration"),'Previous infinite looping animation is removed');
+});
+
+test('Mini-atlas: one run on reveal, no restart on scrolling, manual replay works',async()=>{
+ const source=fs.readFileSync(new URL('./mini-cartes.js',import.meta.url),'utf8');
+ let clock=0,nextId=0,observer=null,replay=null,walker=null,trail=null,prefix=null;
+ const frames=new Map();
+ const markerElement={querySelector:()=>({classList:{toggle(){},remove(){}}})};
+ const layer=()=>({addTo(){return this;},setLatLng(p){this.position=Array.from(p);this.calls=(this.calls||0)+1;return this;},
+  setLatLngs(p){this.coords=p.map(point=>Array.from(point));return this;},
+  setIcon(icon){this.icon=icon;return this;},getElement(){return markerElement;}});
+ const mapElement={dataset:{route:'one-two'},isConnected:true,
+  parentElement:{insertBefore(b){replay=b;}}};
+ const L={
+  map:()=>({attributionControl:{setPrefix:p=>{prefix=p;}},fitBounds(){},panTo(){},invalidateSize(){}}),
+  tileLayer:()=>layer(),latLngBounds:points=>points,
+  polyline:(_,options)=>{const obj=layer();obj.options=options;if(options.dashArray==='2 7')trail=obj;return obj;},
+  circleMarker:()=>layer(),
+  marker:(_,opt)=>{const obj=layer();if(opt.icon.className==='mini-atlas-walker')walker=obj;return obj;},
+  divIcon:x=>x
+ };
+ const doc={readyState:'complete',styleSheets:[{href:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'}],
+  querySelectorAll:()=>[mapElement],head:{append(){}},
+  createElement:()=>({type:'',hidden:false,setAttribute(){}})};
+ const ctx=vm.createContext({window:{L,addEventListener(){}},document:doc,matchMedia:()=>({matches:false}),
+  IntersectionObserver:class{constructor(callback){observer=callback;}observe(){}disconnect(){}},
+  ResizeObserver:class{observe(){}disconnect(){}},
+  requestAnimationFrame:callback=>{const id=++nextId;frames.set(id,callback);return id;},
+  cancelAnimationFrame:id=>frames.delete(id)
+ });
+ vm.runInContext(source,ctx);
+ await new Promise(resolve=>setImmediate(resolve)); // The Leaflet readiness promise installs the observers.
+ assert.equal(mapElement.dataset.ready,'1');
+ assert.ok(replay,'The user-visible replay control exists');
+ assert.equal(replay.hidden,true,'The button starts hidden until the first arrival');
+ const advance=ms=>{
+  const end=clock+ms;
+  while(clock<end){
+   clock+=16;
+   const callbacks=Array.from(frames.values());
+   frames.clear();
+   callbacks.forEach(cb=>cb(clock));
+  }
+ };
+ observer([{isIntersecting:true}]);
+ assert.equal(mapElement.dataset.walking,'true','Arms and legs are animated while moving');
+ advance(13000);
+ assert.equal(replay.hidden,false,'Replay becomes available at the destination');
+ assert.equal(mapElement.dataset.walking,'false','The walker stops moving at the end');
+ assert.equal(frames.size,0,'No endless animation is scheduled');
+ assert.equal(prefix,false,'No default Leaflet flag');
+ assert.equal(trail.options.dashArray,'2 7','The footstep trail is dotted');
+ assert.equal(trail.coords.length,5,'All five story stops are in the completed trail');
+ const calls=walker.calls;
+ observer([{isIntersecting:false}]);
+ observer([{isIntersecting:true}]);
+ advance(9000);
+ assert.equal(walker.calls,calls,'Scrolling away and back never replays an already completed route');
+ replay.onclick();
+ assert.equal(replay.hidden,true,'Replay explicitly resets the track');
+ assert.equal(mapElement.dataset.walking,'true','The animated limbs restart on manual replay');
+ advance(13000);
+ assert.ok(walker.calls>calls,'The replay really moves the marker');
+ assert.equal(replay.hidden,false,'Replay can be activated again after a second completion');
+ assert.equal(frames.size,0,'Even manual replay finishes without looping');
 });
 
 test('Every arrival shows its chapter title and the documented characters on the map',()=>{
