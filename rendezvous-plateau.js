@@ -188,7 +188,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261110-consignes-symboles-v24';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261112-drapeaux-v1';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){
