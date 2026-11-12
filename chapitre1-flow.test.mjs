@@ -19,7 +19,7 @@ test('Two legacy path cards keep their three games; the third literary path is i
  assert.deepEqual(Array.from(f.ARCHIVED_CARDS),[1,4,6,7,8,9,10,11,12,13]);
  assert.deepEqual(Array.from(f.PARTS,p=>p.scene),[1,2,3]);
  assert.deepEqual(Array.from(f.PARTS,p=>p.game),['arcade-marmousets.html','arcade-a410.html','arcade-catalogne.html']);
- assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.title),['Sarajevo','Le danseur','La prison']);
+ assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.title),['Sarajevo','Le danseur','Camarades !']);
  assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.chapter),[2,3,4]);
  assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>p.chapterTitle),['Même pas mal','Le coup du bus','Le drapeau rouge']);
  assert.deepEqual(Array.from(f.CHAPTER2_PARTS,p=>[p.scene,p.plateau]),[[4,1],[5,1],[5,2]],'The distinct book chapters keep the existing game sessions');
@@ -128,9 +128,9 @@ test('Step two keeps a single featured card and distinguishes the three book cha
  assert.ok(ui.includes('if(scene===1||scene===4)'));
  assert.ok(ui.includes("const currentPart")===false||ui.includes('state.selected<=5?4'));
  assert.ok(ui.includes("' / 3 chemins · '"));
- assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
+ assert.ok(ui.includes("chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','📣 Camarades !']"));
  assert.ok(ui.includes('Chapitre '),'The active game retains its book chapter heading');
- assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'La prison':'Le danseur'"));
+ assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'Camarades !':'Le danseur'"));
  const bosnie=read('./jeu-bosnie.html');
  assert.ok(bosnie.includes('CHAPITRE 2 · « MÊME PAS MAL »'));
  assert.ok(bosnie.includes('CHAPITRE 2 · BOSNIE'));
@@ -252,7 +252,7 @@ test('Incomplete step two resumes at Sarajevo or dancer without losing historic 
 });
 test('One step groups the three games while each page and dialog names its own book chapter',()=>{
  const u=read('./chapitre1-plateau.js'),game=read('./jeu.html'),p=read('./plateaux.js');
- assert.ok(u.includes("const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','🔒 La prison']"));
+ assert.ok(u.includes("const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','📣 Camarades !']"));
  assert.ok(u.includes("button.className='board-target'+(scene===1||scene===4?' chapter-featured':''"));
  assert.ok(u.includes("scene===4?(flow.chapter2Done(state)?4:flow.chapter2PartDone(state,1)?5:4):scene"));
  assert.ok(u.includes("n===4?flow.chapter2PartDone(state,1):n===5?flow.chapter2Done(state)"));
@@ -271,7 +271,7 @@ test('One step groups the three games while each page and dialog names its own b
  assert.match(p,/Chapitre 3[^\n]*Le coup du bus/);
  assert.match(p,/Chapitre 4[^\n]*Le drapeau rouge/);
  for(const [file,chapter,title,index] of [['jeu-bosnie.html',2,'Même pas mal',1],
-  ['jeu-danse.html',3,'Le coup du bus',2],['jeu-yoyo.html',4,'Le drapeau rouge',3]]){
+  ['jeu-danse.html',3,'Le coup du bus',2],['jeu-manifestation.html',4,'Drapeau rouge',3]]){
   const page=read('./'+file);
   assert.match(page,new RegExp('Chapitre '+chapter+'[^<\\n]*'+title,'i'),file+' displays its book chapter');
   assert.match(page,new RegExp('Chemin II[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
@@ -288,7 +288,7 @@ test('Chemin III Les rendez-vous is one board cartouche for book chapters 4, 5, 
  assert.ok(ui.includes("if(!flow.chapter2Done(state)||boardRolling)return;"));
  for(const title of ['Drapeau rouge','Passe-muraille','Tu veux bien t’occuper de moi ?'])assert.ok(ui.includes(title));
  for(const n of [4,5,6])assert.ok(ui.includes('chapter:'+n));
- assert.ok(ui.includes("Jeu 1 / 3 — Camarades !"));
+ assert.ok(ui.includes("Jeu 3 / 3 — Camarades !"));
  assert.ok(ui.includes("const thirdExtract="));
  assert.ok(ui.includes('— Camarades !'));
  assert.ok(game.includes('Trois chemins de jeu'));
@@ -303,17 +303,17 @@ test('Chemins I, II et III : mêmes cartouches, trois jeux accessibles indépend
  assert.ok(ui.includes("main.className='chapter-card-main'"),'Titre principal commun');
  assert.ok(ui.includes("thirdMain.type='button';thirdMain.className='chapter-card-main'"),'Titre principal du chemin III');
  assert.ok(ui.includes("tile.onclick=()=>openChapterOnePart(part)"),'Les trois jeux du chemin I sont indépendants');
- assert.ok(ui.includes("tile.onclick=()=>openChapterTwoPart(p.part)"),'Sarajevo, danse et prison sont indépendants');
+ assert.ok(ui.includes("tile.onclick=()=>openChapterTwoPart(p.part)"),'Sarajevo, danse et Camarades sont indépendants');
  assert.ok(ui.includes("tile.onclick=()=>window.TreizeRendezVous?.open?.(i+1)"),'Les trois jeux du chemin III sont indépendants');
- assert.ok(ui.includes("window.TreizePlateauxNavigation?.openPart?.(part===2?'dance':'prison')"),'Le plateau cible le bon mini-jeu même après la danse');
+ assert.ok(ui.includes("if(part===3){window.TreizeRendezVous?.openManifestation?.();return;}"),'Le plateau ouvre Camarades et non la prison après la danse');
  assert.ok(plateaux.includes("openPart(which){"),'Le chemin II accepte une sélection explicite');
- assert.ok(plateaux.includes("requestedPart===2?false:requestedPart===3?true:p.finished.includes(1)"),'Rejouer la danse ne redirige pas vers la prison');
+ assert.ok(plateaux.includes("const manifestView=danceDone&&!prisonView&&requestedPart!==2"),'Rejouer la danse ne redirige pas vers Camarades par erreur');
  assert.ok(plateaux.includes("TreizeEscale.openReader(5,{plateau:1"),'La danse rouvre sa bonne feuille');
  assert.ok(rdv.includes("app.open=function(requested){"),'Le chemin III rouvre un chapitre précis');
- assert.ok(rdv.includes("if(part===2&&!hasTraversed()||part===3&&!cyranoTraversed())return"),'Les chapitres non débloqués demeurent fermés');
- assert.ok(game.includes("plateaux.js?v=20261112-cartouches-v1"),'Le navigateur Android reçoit la nouvelle version');
- assert.ok(game.includes("chapitre1-plateau.js?v=20261112-cartouches-v1"));
- assert.ok(game.includes("rendezvous-plateau.js?v=20261112-cartouches-v1"));
+ assert.ok(rdv.includes("if(part===2&&!prisonTraversed()||part===3&&!cyranoTraversed())return"),'Les chapitres non débloqués demeurent fermés');
+ assert.ok(game.includes("plateaux.js?v=20261112-drapeaux-v1"),'Le navigateur Android reçoit la nouvelle version');
+ assert.ok(game.includes("chapitre1-plateau.js?v=20261112-drapeaux-v1"));
+ assert.ok(game.includes("rendezvous-plateau.js?v=20261112-drapeaux-v1"));
 });
 test('Le chemin III conserve le texte validé et le contrôleur de jeu',()=>{
  const ui=read('./chapitre1-plateau.js'),controller=read('./rendezvous-plateau.js');
