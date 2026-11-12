@@ -154,7 +154,7 @@ main{max-width:1120px;margin:0 auto;padding:12px 12px 16px}
 <main>
 <div class="grid"><div id="visual" class="visual" aria-label="Image fixe de la scène et choix du récit">
  <img id="still" alt="Les deux personnages réunis dans la cuisine" src="" loading="eager">
- <video id="stageFrame" playsinline muted preload="auto" aria-hidden="true" hidden></video>
+ <video id="stageFrame" playsinline muted preload="metadata" aria-hidden="true" hidden></video>
  <div id="awaitingArt" class="awaiting-art" hidden>La chambre mansardée</div>
  <div class="scene-tools"><span class="scene-name">Chemin III · Tu veux bien t’occuper de moi ?</span><button type="button" id="toggleMusic" class="music-toggle" aria-pressed="true" aria-label="Activer ou couper la musique">♫</button><span id="musicStatus" class="sr-only" role="status" aria-live="polite">Silence jusqu’au premier regard.</span></div>
  <section class="panel" aria-label="Choix de la scène" aria-live="polite"><div id="stepLabel" class="eyebrow"></div><h2 id="stepTitle"></h2><div id="progress" class="progress" aria-label="Progression dans le récit"></div><div id="choices" class="actions"></div></section>
@@ -234,7 +234,9 @@ const R2_VIDEO_BASE='https://treize-chemins-videos.meguiniahmed16.workers.dev/re
 // Carte Higgsfield originale conservée pour un recours si un clip R2 échoue.
 const R2_MEDIA=Object.fromEntries(Object.entries(MEDIA).map(([id,url])=>[id,R2_VIDEO_BASE+url.slice(HIGGS_CDN.length)]));
 const R2_FAILED=new Set();
-const preferredVideoUrl=id=>R2_FAILED.has(id)?MEDIA[id]:(R2_MEDIA[id]||MEDIA[id]);
+// Les visiteurs utilisent les films originaux. R2 reste disponible pour diagnostic explicite.
+const TRY_R2=new URLSearchParams(location.search).get('videoSource')==='r2';
+const preferredVideoUrl=id=>TRY_R2&&!R2_FAILED.has(id)?(R2_MEDIA[id]||MEDIA[id]):MEDIA[id];
 const FILMS={cuisine:null,chambre:null};
 const MUSIC={
  cuisine:{title:'Felicity',name:'Felicity — Scott Buckley',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C01',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
@@ -296,8 +298,21 @@ const shotInfo=id=>SHOTS.concat(ALTERNATES).find(s=>s[0]===id);
 const FADE_MS=300;
 /* Les plans autrefois doublés sont silencieux : ni voix artificielle, ni paroles étrangères. */
 const SILENT_DIALOGUE_SHOTS=new Set(['C01','C03','C07','C08']);
-let advanceTimer=null;
+let advanceTimer=null,stallTimer=null,finishedShot=null,explicitSkip=false,startedShot=false,furthestSecond=0;
 function stopAdvanceTimer(){if(advanceTimer!==null){clearTimeout(advanceTimer);advanceTimer=null;}}
+function stopStallTimer(){if(stallTimer!==null){clearTimeout(stallTimer);stallTimer=null;}}
+function watchStall(id){
+ stopStallTimer();
+ stallTimer=setTimeout(()=>{
+  stallTimer=null;
+  if(!pending||!$('cinema').open||pending[movieIndex]!==id)return;
+  const p=$('player');
+  if(p.ended||document.visibilityState==='hidden')return;
+  if(p.src===R2_MEDIA[id]&&!R2_FAILED.has(id)&&typeof p.onerror==='function'){p.onerror();return;}
+  $('resumeWithSound').hidden=false;$('nextMovie').disabled=true;
+  $('musicStatus').textContent='Vidéo figée : reprends ce même plan.';
+ },12000);
+}
 function notifyBoard(){if(window.parent===window)return;try{window.parent.postMessage({type:'rencontre:state',step:state.step,complete:state.step>=STEPS.length&&!state.ended,ended:state.ended},location.origin);}catch(e){}}
 function button(label,css,cb){const b=document.createElement('button');b.type='button';b.className=css;b.textContent=label;b.onclick=cb;return b;}
 function draw(){
@@ -341,7 +356,8 @@ function beginScene(ids,kind){
 }
 function playCurrent(){
  if(!pending||!$('cinema').open)return;
- stopAdvanceTimer();
+ stopAdvanceTimer();stopStallTimer();
+ finishedShot=null;explicitSkip=false;startedShot=false;furthestSecond=0;
  const shot=shotInfo(pending[movieIndex]);if(!shot)return;
  soundtrackForCurrentShot(shot[0]);
  $('cinemaStep').textContent='Plan '+(movieIndex+1)+' / '+pending.length+' · '+shot[0];
@@ -349,6 +365,7 @@ function playCurrent(){
  $('cinemaDescription').textContent=shot[3]||'Un moment de leur rencontre, à voir jusqu’au bout avant de poursuivre.';
  const player=$('player'),resume=$('resumeWithSound'),replay=$('replayScene');replay.hidden=true;
  player.pause();player.onended=null;player.onerror=null;player.onplaying=null;
+ player.onwaiting=null;player.onstalled=null;player.ontimeupdate=null;
  player.removeAttribute('src');player.load();player.hidden=true;
  // Pas de contrôles de lecteur : la cinématique se joue avec son original.
  player.controls=false;player.muted=SILENT_DIALOGUE_SHOTS.has(shot[0]);player.defaultMuted=player.muted;player.volume=1;
@@ -363,13 +380,30 @@ function playCurrent(){
   player.src=primarySrc;player.load();
   $('nextMovie').disabled=true;
   player.onplaying=()=>{
-   if(!pending||!$('cinema').open)return;
-   resume.hidden=true;
+   if(!pending||!$('cinema').open||pending[movieIndex]!==shot[0])return;
+   startedShot=true;stopStallTimer();resume.hidden=true;
    requestAnimationFrame(()=>player.classList.remove('video-fading'));
   };
+  player.ontimeupdate=()=>{
+   if(pending&&pending[movieIndex]===shot[0]&&Number.isFinite(player.currentTime))
+    furthestSecond=Math.max(furthestSecond,player.currentTime);
+  };
+  player.onwaiting=()=>watchStall(shot[0]);
+  player.onstalled=()=>watchStall(shot[0]);
   player.onended=()=>{
-   if(!pending||!$('cinema').open)return;
-   resume.hidden=true;
+   if(!pending||!$('cinema').open||pending[movieIndex]!==shot[0]||finishedShot===shot[0])return;
+   stopStallTimer();
+   const duration=player.duration;
+   const seen=Math.max(furthestSecond,Number(player.currentTime)||0);
+   const completed=startedShot&&seen>0.25&&(!Number.isFinite(duration)||duration<=0.5||seen>=duration-Math.max(0.45,duration*0.08));
+   if(!completed){
+    if(player.src===R2_MEDIA[shot[0]]&&typeof player.onerror==='function'){player.onerror();return;}
+    try{player.currentTime=0;}catch(e){}
+    resume.hidden=false;$('nextMovie').disabled=true;
+    $('musicStatus').textContent='Le film a été interrompu. Reprends ce même plan.';
+    return;
+   }
+   finishedShot=shot[0];resume.hidden=true;
    $('nextMovie').disabled=false;
    if(movieIndex+1===pending.length){
     // La récompense a été vue : conserver l'écran de la scène et offrir une relecture immédiate.
@@ -384,10 +418,12 @@ function playCurrent(){
    }
   };
   player.onerror=()=>{
-   if(!pending||!$('cinema').open)return;
+   if(!pending||!$('cinema').open||pending[movieIndex]!==shot[0])return;
+   stopStallTimer();
    // Si R2 échoue, reprendre le même plan depuis la source Higgsfield validée.
    if(player.src===R2_MEDIA[shot[0]]&&!R2_FAILED.has(shot[0])){
     R2_FAILED.add(shot[0]);player.src=MEDIA[shot[0]];player.load();
+    startedShot=false;furthestSecond=0;watchStall(shot[0]);
     const retry=player.play();
     if(retry&&typeof retry.catch==='function')retry.catch(()=>{
       if(!pending||!$('cinema').open||shot[0]!==pending[movieIndex])return;
@@ -398,8 +434,11 @@ function playCurrent(){
    resume.hidden=true;player.hidden=true;still.hidden=false;poster.hidden=true;
    $('movieStillTitle').textContent='Vidéo momentanément inaccessible';
    $('movieStillText').textContent='La vidéo validée n’a pas pu être chargée. Tu peux l’ouvrir directement ou poursuivre le récit.';
-   link.href=MEDIA[shot[0]];link.hidden=false;$('nextMovie').disabled=false;
+   link.href=MEDIA[shot[0]];link.hidden=false;
+   explicitSkip=true;$('nextMovie').disabled=false;
+   $('nextMovie').textContent='Ignorer ce plan indisponible →';
   };
+  watchStall(shot[0]);
   const attempt=player.play();
   if(attempt&&typeof attempt.catch==='function')attempt.catch(()=>{
    if(!pending||!$('cinema').open||shot[0]!==pending[movieIndex]||player.src!==primarySrc)return;
@@ -432,12 +471,15 @@ $('resumeWithSound').onclick=()=>{
   $('movieStillTitle').textContent='Lecture avec son indisponible dans ce navigateur';
   $('movieStillText').textContent='La vidéo originale reste accessible dans un nouvel onglet.';
   const link=$('movieExternal');link.href=MEDIA[shot[0]];link.hidden=false;
-  $('nextMovie').disabled=false;
+  explicitSkip=true;$('nextMovie').disabled=false;
+  $('nextMovie').textContent='Ignorer ce plan indisponible →';
  });
 };
 function nextMovie(){
  if(!pending||!$('cinema').open||$('nextMovie').disabled)return;
- stopAdvanceTimer();
+ if(finishedShot!==pending[movieIndex]&&!explicitSkip)return;
+ $('nextMovie').disabled=true;
+ stopAdvanceTimer();stopStallTimer();
  movieIndex++;
  if(movieIndex<pending.length){playCurrent();return;}
  $('player').pause();$('cinema').close();
@@ -454,9 +496,9 @@ function nextMovie(){
  }
 }
 function reset(){if(!confirm('Recommencer cette histoire ? Les autres jeux et leurs points ne seront pas touchés.'))return;stopSoundtrack();$('musicStatus').textContent='Silence jusqu’au premier regard (plan C01).';state={step:0,watched:[],ended:false};save();draw();notifyBoard();}
-$('closeMovie').onclick=()=>{stopAdvanceTimer();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
+$('closeMovie').onclick=()=>{stopAdvanceTimer();stopStallTimer();$('player').pause();$('cinema').close();pending=null;stopSoundtrack();draw();};
 $('nextMovie').onclick=nextMovie;
-$('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();$('player').pause();pending=null;stopSoundtrack();});
+$('cinema').addEventListener('cancel',()=>{stopAdvanceTimer();stopStallTimer();$('player').pause();pending=null;stopSoundtrack();});
 
 function initStandaloneReading(){
  if(!standaloneReading)return;
