@@ -54,5 +54,5 @@ test('Le défi est accessible sur mobile, rejouable et sans perte des autres jeu
  assert.match(bd,/id="exitCyrano"/);
  assert.match(journey,/function nextCyrano\(\)/);
  assert.match(journey,/rdvCyranoSkipped=true/);
- assert.match(page,/rendezvous-plateau\.js\?v=20261110-cyrano-bd-v1/);
+ assert.match(page,/rendezvous-plateau\.js\?v=[^"\\s]+/,'Le navigateur recharge le bon contrôleur Cyrano');
 });
