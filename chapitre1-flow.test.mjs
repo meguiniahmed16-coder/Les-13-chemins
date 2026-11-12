@@ -69,6 +69,21 @@ test('Past players on later scenes keep their progress; incomplete players resum
  assert.equal(w.completed.length,2,'No old quiz answer is lost');
  assert.equal(w.unlocked,3,'No historical stage id is changed');
 });
+test('Touching a finished Marmousets or lycée tile replays that exact scene while Barcelone remains next',()=>{
+ const f=api(),s=sample({completed:[1,2],arcadeBonuses:{1:true,2:true},unlocked:3,selected:3,points:220});
+ assert.equal(f.nextPart(s),3,'Barcelone is the next unfinished scene');
+ assert.equal(f.chapter1SceneForSelection(s),3,'The chapter title resumes at Barcelone');
+ assert.equal(f.chapter1SceneForSelection(s,1),1,'Marmousets badge opens Marmousets');
+ assert.equal(f.chapter1SceneForSelection(s,2),2,'Lycée badge opens lycée');
+ assert.equal(f.chapter1SceneForSelection(s,3),3,'Barcelone badge opens Barcelone');
+ assert.equal(f.chapter1SceneForSelection(s,4),null,'Unknown tiles are rejected');
+ assert.equal(s.selected,3,'Merely choosing a destination never corrupts the saved progress');
+ assert.equal(s.points,220,'No points are awarded a second time');
+ const ui=read('./chapitre1-plateau.js');
+ assert.ok(ui.includes("const tile=document.createElement('button');tile.type='button'"),'Each tile is its own button');
+ assert.ok(ui.includes('tile.onclick=()=>openChapterOnePart(part)'),'Each tap has its own game target');
+ assert.ok(ui.includes('const n=flow.chapter1SceneForSelection(state,part)'),'Badge navigation does not depend on the next unfinished game');
+});
 test('Atlas keeps 13 historical scenes and the board adds the third path without changing their IDs',()=>{
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js'),build=read('./build-public.mjs');
  assert.match(html,/const LEVELS=\[(.*?)\];\s*const AVATARS=/s);
