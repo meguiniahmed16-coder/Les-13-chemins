@@ -18,8 +18,8 @@
  const parts=app.parts;
  let activePart=1,autoTimer=0,autoLaunched=false,loading=false;
  const dialog=document.createElement('dialog');dialog.id='manifestationDialog';
- dialog.setAttribute('aria-label','Chemin III — Chapitre 4 — Camarades !');
- dialog.innerHTML='<div class="arcade-dialog-bar"><strong>CHEMIN III · CHAPITRE 4 · CAMARADES !</strong><button type="button" id="manifestationClose">Retour au plateau ×</button></div><iframe id="manifestationFrame" title="Camarades ! — Manifestation République Bastille" allow="autoplay; fullscreen" allowfullscreen></iframe><div class="arcade-under-actions" role="group" aria-label="Navigation de Camarades !"><button class="arcade-return" id="manifestationBack">← Retour au plateau</button><button class="arcade-following" id="manifestationNext">Suivant →</button></div>';
+ dialog.setAttribute('aria-label','Chemin II — Chapitre 4 — Camarades !');
+ dialog.innerHTML='<div class="arcade-dialog-bar"><strong>CHEMIN II · CHAPITRE 4 · CAMARADES !</strong><button type="button" id="manifestationClose">Retour au plateau ×</button></div><iframe id="manifestationFrame" title="Camarades ! — Manifestation République Bastille" allow="autoplay; fullscreen" allowfullscreen></iframe><div class="arcade-under-actions" role="group" aria-label="Navigation de Camarades !"><button class="arcade-return" id="manifestationBack">← Retour au plateau</button><button class="arcade-following" id="manifestationNext">Suivant →</button></div>';
  document.body.append(dialog);
  const frame=$('manifestationFrame');
  // Chemin III, chapitre 5 : publication de la planche photographique validée,
@@ -117,7 +117,7 @@
   for(const b of partNav.children){
    const n=Number(b.dataset.part);b.disabled=(n===2&&!prisonTraversed())||(n===3&&!cyranoTraversed());
   }
-  $('manifestationNext').textContent=state.rdvManifestationFinished?'Suivant · Chapitre 5 →':'Suivant · Passer sans points →';
+  $('manifestationNext').textContent=state.rdvManifestationFinished?'Suivant · La prison →':'Suivant · Passer sans points →';
   $('cyranoNext').textContent=state.rdvCyranoFinished?'Suivant · Chapitre 6 →':'Suivant · Passer sans points →';
   if(activePart===1)launch.textContent=state.rdvManifestationFinished?'↻ Rejouer Camarades !':'🎮 Jouer à Camarades ! — 30 points';
   if(activePart===2)launch.textContent=state.rdvCyranoFinished?'↻ Rejouer Cyrano — La planche vivante':'🎮 Jouer à Cyrano — 30 points';
@@ -135,7 +135,7 @@
    readerArea.textContent='Paris · avril 2002';readerArea.hidden=false;
    readerReference.textContent='Extrait du chapitre 4 — « Drapeau rouge », p. 59–60.';readerReference.hidden=false;
    putExcerpt(firstExcerpt);excerpt.hidden=false;
-   infoHeading.textContent='Jeu 1 / 3 · Camarades !';
+   infoHeading.textContent='Jeu 3 / 3 · Camarades !';
    infoBody.textContent='Le drapeau dans une rue adjacente, puis la statue. Trois objets à récupérer (cœur, fleur, bisou) avant les attaques. Sélectionne chaque CRS, lance, puis réunis les deux cortèges. 10 points par étape.';
    launch.hidden=false;
   }else if(n===2){
