@@ -7,27 +7,31 @@
  const css=document.createElement('style');
  css.id='chapitre1-board-styles';
  css.textContent="#board{aspect-ratio:auto!important;min-height:0!important;overflow:visible!important;background:linear-gradient(145deg,#f1e2c5,#e6d2ae);padding:13px!important;touch-action:pan-y}\n#board picture{display:none!important}\n#boardTargets{position:relative!important;inset:auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}\n#boardTargets .board-target{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:100%!important;height:auto!important;min-height:130px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px 12px 39px;border-radius:10px;text-align:left;background:linear-gradient(155deg,#fff6df,#edddbc);border:2px solid #c5a679;box-shadow:0 3px 0 #ad8a5c33;color:#4f3c2a;overflow:hidden}\n#boardTargets .board-target:before{content:'';position:absolute;right:-26px;top:-32px;width:95px;height:95px;border:1px solid #ddc29b;border-radius:50%;pointer-events:none}\n#boardTargets .board-target[aria-disabled=true]{opacity:.6;filter:saturate(.6);cursor:not-allowed}\n#boardTargets .board-target[aria-pressed=true]{border-color:#31594c;background:linear-gradient(145deg,#fff4dc,#e6edd8);box-shadow:inset 0 0 0 2px #fff9eb}\n#boardTargets .board-target.done{background:linear-gradient(145deg,#e9efdb,#d1ddc5);border-color:#7e9d76}\n#boardTargets .chapter-featured{grid-column:1/-1;min-height:178px!important;background:linear-gradient(110deg,#32564b 0%,#527768 48%,#739377 100%)!important;border:3px solid #bd995e!important;color:#fff5dc!important;padding:20px 22px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 1.35fr;align-content:center;column-gap:22px;row-gap:9px}\n#boardTargets .chapter-featured[aria-disabled=true]{opacity:1;filter:none}\n#boardTargets .chapter-featured[aria-pressed=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}\n#boardTargets .chapter-featured.done{background:linear-gradient(110deg,#2d584a,#466d54,#70855c)!important}\n#boardTargets .chapter-featured:before{right:-22px;top:-42px;width:230px;height:230px;border:2px solid #f7eaca30}\n#boardTargets .chapter-featured .chapter-card-kicker{color:#f0d6a2}\n#boardTargets .chapter-featured .chapter-card-title{color:#fff9e5;font-size:clamp(24px,3vw,37px)}\n#boardTargets .chapter-featured .chapter-card-place{color:#e3e9d3}\n#boardTargets .chapter-card-kicker{font:700 10px/1.2 'DM Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8b6740;position:relative}\n#boardTargets .chapter-card-title{font:700 clamp(19px,2.2vw,25px)/1.06 'Cormorant Garamond',Georgia,serif;position:relative;max-width:100%}\n#boardTargets .chapter-card-place{font:11px/1.4 'DM Sans',sans-serif;color:#836a49;position:relative}\n#boardTargets .chapter-card-route{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;grid-column:2;grid-row:1 / span 3;align-self:center;position:relative}\n#boardTargets .chapter-card-route > .chapter-part-label{flex:1 1 90px;min-width:0;text-align:center;border:1px solid #eed9ae70;padding:12px 6px;border-radius:7px;background:#1d403749;font:700 11px/1.45 'DM Sans',sans-serif;color:#fff8dc}\n#boardTargets .chapter-card-route > .chapter-part-label.passed{background:#e4eed3;color:#28503d}\n#boardTargets .chapter-card-status{font:600 11px/1.3 'DM Sans',sans-serif;margin-top:auto;color:#dceacf;grid-column:1;position:relative}\n#boardTargets .board-badge{position:absolute;right:8px;bottom:8px;top:auto;z-index:1;width:24px;height:24px;font-size:12px}\n#boardTargets .chapter-featured .board-badge{right:12px;bottom:12px;width:31px;height:31px;font-size:17px}\n#chapter1Sequence{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0;padding:11px;border:1px solid #bbad84;border-radius:8px;background:#f5ecd7}\n#chapter1Sequence .chapter1-part{border:1px solid #bba778;border-radius:5px;background:#fff9ea;color:#52613e;padding:8px 10px;min-height:43px;font:600 12px 'DM Sans',sans-serif;flex:1 1 120px;cursor:pointer}\n#chapter1Sequence .chapter1-part.active{background:#315b49;color:#fff9e2;border-color:#315b49}\n#chapter1Sequence .chapter1-part.passed{border-color:#638869}\n#chapter1Sequence .chapter1-part:disabled{opacity:.46;cursor:not-allowed}\n#chapter1Header{font:700 17px/1.25 'Cormorant Garamond',Georgia,serif;color:#6b5637;margin:0 0 7px}\n#chapter1Header[hidden],#chapter1Sequence[hidden]{display:none!important}\n@media(max-width:760px){#boardTargets{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#boardTargets .board-target{min-height:135px;padding:11px 10px 35px}#boardTargets .chapter-featured{grid-column:1/-1;grid-template-columns:1fr;min-height:195px!important;padding:17px!important}#boardTargets .chapter-card-route{grid-column:1;grid-row:auto;gap:5px}#boardTargets .chapter-card-route > .chapter-part-label{flex:1 1 85px;padding:9px 4px;font-size:10px}}\n@media(max-width:390px){#boardTargets .chapter-card-title{font-size:19px}#boardTargets .chapter-card-route{flex-wrap:wrap}}\n/* Passage illustré entre les deux premières vignettes. */\n#boardTargets .chapter-journey-route{grid-column:1/-1;position:relative;padding:14px 15px 11px;border:1px solid #ac8e5f;border-radius:10px;background:linear-gradient(110deg,#fff7e2,#f1e0bc);color:#59462e;overflow:hidden}\n#boardTargets .chapter-journey-title{font:700 12px/1.35 'DM Sans',sans-serif;letter-spacing:.035em;text-align:center;margin:0 0 12px}\n#boardTargets .chapter-route-stops{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;position:relative;padding:0 3px 3px}\n#boardTargets .chapter-route-stops:before{content:'';position:absolute;left:10%;right:10%;top:8px;border-top:3px dotted #a37540;pointer-events:none}\n#boardTargets .chapter-route-stops:after{content:'';position:absolute;top:1px;left:10%;height:17px;width:17px;border-radius:50%;background:#315c48;border:3px solid #faf0d6;box-shadow:0 0 0 2px #b5884e,0 2px 7px #152c2060;z-index:2;pointer-events:none;animation:chapterTravelDot 7s linear infinite}\n#boardTargets .chapter-route-stop{font:600 10px/1.3 'DM Sans',sans-serif;text-align:center;position:relative;z-index:1;overflow-wrap:break-word}\n#boardTargets .chapter-route-stop:before{content:'';display:block;margin:0 auto 8px;width:14px;height:14px;border:2px solid #a37540;border-radius:50%;background:#fff9e8;box-shadow:0 0 0 2px #fff7e5}\n@keyframes chapterTravelDot{0%{left:10%}100%{left:90%}}\n@media(max-width:760px){#boardTargets .chapter-journey-route{padding:11px 7px}#boardTargets .chapter-journey-title{font-size:11px}#boardTargets .chapter-route-stop{font-size:9px}#boardTargets .chapter-route-stops{gap:2px}}\n@media(prefers-reduced-motion:reduce){#boardTargets .chapter-route-stops:after{animation:none;left:10%}}";
- css.textContent+=`\n#boardTargets .chapter-one-main{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-start;gap:9px;width:100%;min-height:85px;padding:0;margin:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;position:relative;touch-action:manipulation}\n#boardTargets .chapter-one-main:focus-visible,#boardTargets .chapter-card-route button.chapter-part-label:focus-visible{outline:3px solid #fff1b4;outline-offset:3px}\n#boardTargets .chapter-one-main:hover .chapter-card-title{text-decoration:underline}\n#boardTargets .chapter-featured[data-active=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}\n#boardTargets .chapter-card-route button.chapter-part-label{cursor:pointer;min-height:44px;touch-action:manipulation}\n#boardTargets .chapter-card-route button.chapter-part-label:disabled{opacity:.55;cursor:not-allowed}\n@media(max-width:760px){#boardTargets .chapter-one-main{grid-row:auto}}\n`;
  css.textContent+=`
-#boardTargets .step-chapters{grid-template-columns:1fr;gap:10px}
-#boardTargets .step-chapters .chapter-card-route{grid-column:1;grid-row:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-#boardTargets .step-chapters .chapter-literary-part{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:15px;text-align:left;min-height:145px}
-#boardTargets .chapter-part-number{font:700 10px/1.25 'DM Sans',sans-serif;letter-spacing:.1em;color:#f0d6a2}
-#boardTargets .chapter-part-title{font:700 clamp(21px,2.5vw,28px)/1.1 'Cormorant Garamond',Georgia,serif;color:#fff9e5}
-#boardTargets .chapter-part-game{font:500 11px/1.4 'DM Sans',sans-serif;color:#e2e8d6}
-#boardTargets .chapter-part-state{font:600 10px/1.4 'DM Sans',sans-serif;margin-top:auto;padding-top:7px}
-#boardTargets .chapter-literary-part.passed .chapter-part-number,#boardTargets .chapter-literary-part.passed .chapter-part-title,#boardTargets .chapter-literary-part.passed .chapter-part-game{color:#28503d}
-#chapter1Sequence .chapter1-part .chapter-sequence-title{display:block;line-height:1.4}
-#chapter1Sequence .chapter1-part .chapter-sequence-game{display:block;font-size:10px;font-weight:400;line-height:1.4;margin-top:4px}
-@media(max-width:640px){
- #boardTargets .step-chapters .chapter-card-route{grid-template-columns:1fr;gap:8px}
- #boardTargets .step-chapters .chapter-literary-part{min-height:0;padding:12px;gap:4px}
- #boardTargets .step-chapters .chapter-part-title{font-size:25px}
- #boardTargets .step-chapters .chapter-part-state{padding-top:3px}
-}
+#boardTargets .chapter-card-main{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-start;gap:9px;width:100%;min-height:85px;padding:0;margin:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;position:relative;touch-action:manipulation}
+#boardTargets .chapter-card-main:focus-visible,#boardTargets .chapter-card-route button.chapter-part-label:focus-visible{outline:3px solid #fff1b4;outline-offset:3px}
+#boardTargets .chapter-card-main:hover .chapter-card-title{text-decoration:underline}
+#boardTargets .chapter-featured[data-active=true]{box-shadow:inset 0 0 0 2px #f9e6c2,0 3px 12px #102b2355}
+#boardTargets .chapter-card-route button.chapter-part-label{cursor:pointer;min-height:44px;touch-action:manipulation}
+#boardTargets .chapter-card-route button.chapter-part-label:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:760px){#boardTargets .chapter-card-main{grid-row:auto}}
 `;
  css.textContent+=`
-#boardTargets .rendezvous-card .chapter-part-state{color:#e1dcc9}
+#boardTargets .step-chapters{grid-template-columns:minmax(0,1fr) 1.35fr;gap:9px 22px}
+#boardTargets .step-chapters .chapter-card-route{grid-column:2;grid-row:1 / span 3;display:flex;align-items:stretch;flex-wrap:wrap;gap:8px}
+#boardTargets .step-chapters .chapter-literary-part{flex:1 1 90px;min-width:0;min-height:113px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;text-align:center}
+#boardTargets .chapter-part-number{font:700 9px/1.25 'DM Sans',sans-serif;letter-spacing:.07em;color:#f0d6a2}
+#boardTargets .chapter-part-title{font:700 clamp(14px,1.4vw,19px)/1.12 'Cormorant Garamond',Georgia,serif;color:#fff9e5;overflow-wrap:anywhere}
+#boardTargets .chapter-part-game{font:600 11px/1.3 'DM Sans',sans-serif;color:#e2e8d6}
+#boardTargets .chapter-part-state{font:600 9px/1.3 'DM Sans',sans-serif;margin-top:auto;padding-top:5px}
+#boardTargets .chapter-literary-part.passed .chapter-part-number,#boardTargets .chapter-literary-part.passed .chapter-part-title,#boardTargets .chapter-literary-part.passed .chapter-part-game,#boardTargets .chapter-literary-part.passed .chapter-part-state{color:#28503d}
+#chapter1Sequence .chapter1-part .chapter-sequence-title{display:block;line-height:1.4}
+#chapter1Sequence .chapter1-part .chapter-sequence-game{display:block;font-size:10px;font-weight:400;line-height:1.4;margin-top:4px}
+@media(max-width:760px){#boardTargets .step-chapters{grid-template-columns:1fr}#boardTargets .step-chapters .chapter-card-route{grid-column:1;grid-row:auto;gap:5px}}
+@media(max-width:390px){#boardTargets .step-chapters .chapter-literary-part{padding:9px 3px;min-height:123px}#boardTargets .step-chapters .chapter-part-title{font-size:14px}}
+`;
+ css.textContent+=`
+#boardTargets .rendezvous-card .chapter-literary-part:not(.passed) .chapter-part-state{color:#e1dcc9}
 #boardTargets .rendezvous-card[aria-disabled=true] .chapter-card-title{color:#fff9e5}
 #rendezvousDialog{position:fixed;inset:0;box-sizing:border-box;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;border:0;border-radius:0;background:#fff9ed;color:#283b36;overflow:auto;overscroll-behavior:contain;text-align:left}
 #rendezvousDialog::backdrop{background:#19332cd9}
@@ -83,11 +87,11 @@
  future.append(futureTitle,futureBody);
  readerBody.append(readerKicker,readerTitle,readerArea,readerReference,excerpt,future);reader.append(readerBar,readerBody);document.body.append(reader);
  readerClose.onclick=()=>reader.close();
- reader.addEventListener('close',()=>{const b=$('boardTargets').querySelector('[data-chemin="3"]');if(b)b.setAttribute('aria-pressed','false');b?.focus({preventScroll:true});});
+ reader.addEventListener('close',()=>{const b=$('boardTargets').querySelector('[data-chemin="3"]');if(b)b.dataset.active='false';b?.querySelector('.chapter-card-main')?.focus({preventScroll:true});});
  function openThirdPath(){
   if(!flow.chapter2Done(state)||boardRolling)return;
   const card=$('boardTargets').querySelector('[data-chemin="3"]');
-  if(card)card.setAttribute('aria-pressed','true');
+  if(card)card.dataset.active='true';
   if(!reader.open)reader.showModal();
   reader.scrollTop=0;readerClose.focus({preventScroll:true});
  }
@@ -105,20 +109,25 @@
   window.TreizeSceneNavigation?.cancelAutomatic?.();
   arriveAtStage(n);
  }
+ function openChapterTwoPart(part){
+  if(boardRolling||!Number.isInteger(part)||part<1||part>3)return;
+  const n=part===1?4:5;
+  if(!flow.canEnter(state,n)||(part===3&&!flow.chapter2PartDone(state,2)))return;
+  window.TreizeSceneNavigation?.cancelAutomatic?.();
+  if(part===1){arriveAtStage(4);return;}
+  window.TreizePlateauxNavigation?.openPart?.(part===2?'dance':'prison');
+ }
  function paintTargets(){
   const host=$('boardTargets'),current=state.selected<=3?1:state.selected<=5?4:state.selected;
   if(host.dataset.mode!=='chapters-grouped-v2'){
    host.dataset.mode='chapters-grouped-v2';
    host.replaceChildren(...flow.CARDS.map((scene,i)=>{
-    // Le chemin I est un groupe : chaque jeu est un vrai bouton indépendant.
-    // Un bouton autour des trois étiquettes renvoyait toujours vers Barcelone.
-    const button=document.createElement(scene===1?'div':'button');
-    if(scene!==1)button.type='button';
+    // Chaque chemin est un groupe de trois boutons, jamais un bouton contenant d'autres boutons.
+    const button=document.createElement('div');
     button.className='board-target'+(scene===1||scene===4?' chapter-featured':'')+(scene===4?' step-chapters':'');
     button.dataset.level=String(scene);button.dataset.chapter=String(i+1);
-    if(scene===1)button.setAttribute('role','group');
-    const main=scene===1?document.createElement('button'):button;
-    if(scene===1){main.type='button';main.className='chapter-one-main';button.append(main);}
+    button.setAttribute('role','group');
+    const main=document.createElement('button');main.type='button';main.className='chapter-card-main';button.append(main);
     main.append(
      makeSpan('chapter-card-kicker','CHEMIN '+pathNumeral(i+1)+(scene===1?' · CHAPITRE 1':'')),
      makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Le météore':LEVELS[scene-1].title),
@@ -137,8 +146,10 @@
       button.append(route,makeSpan('chapter-card-status','0 / 3 jeux terminés'));
      }else{
       for(const p of flow.CHAPTER2_PARTS){
-       const tile=makeSpan('chapter-part-label chapter-literary-part','');
+       const tile=document.createElement('button');tile.type='button';
+       tile.className='chapter-part-label chapter-literary-part';
        tile.dataset.chapterTwoPart=String(p.part);
+       tile.onclick=()=>openChapterTwoPart(p.part);
        tile.append(makeSpan('chapter-part-number','CHAPITRE '+p.chapter),
         makeSpan('chapter-part-title','« '+p.chapterTitle+' »'),
         makeSpan('chapter-part-game',chapterTwoCaptions[p.part-1]),
@@ -158,8 +169,7 @@
      // Le titre du chemin reprend le parcours ; chaque étiquette ouvre son jeu exact.
      arriveAtStage(n);
     };
-    if(scene===1)main.onclick=openMain;
-    else button.onclick=openMain;
+    main.onclick=openMain;
     return button;
    }));
    // Visually link chapter 1 to chapter 2 with the exact stop sequence.
@@ -174,24 +184,26 @@
    }
    connector.append(heading,stops);
    host.querySelector('[data-chapter="1"]').after(connector);
-   const third=document.createElement('button');third.type='button';
+   const third=document.createElement('div');third.setAttribute('role','group');third.tabIndex=-1;
    third.className='board-target chapter-featured step-chapters rendezvous-card';
    third.dataset.chemin='3';third.id='chemin-iii';
+   const thirdMain=document.createElement('button');thirdMain.type='button';thirdMain.className='chapter-card-main';
+   thirdMain.append(makeSpan('chapter-card-kicker','CHEMIN III'),
+    makeSpan('chapter-card-title','Les rendez-vous'),
+    makeSpan('chapter-card-place','Trois chapitres · Trois jeux narratifs'));
+   thirdMain.onclick=()=>window.TreizeRendezVous?.open?.();
    const thirdRoute=document.createElement('div');thirdRoute.className='chapter-card-route';
    for(let i=0;i<thirdParts.length;i++){
-    const p=thirdParts[i];const tile=makeSpan('chapter-part-label chapter-literary-part','');
+    const p=thirdParts[i];const tile=document.createElement('button');tile.type='button';
+    tile.className='chapter-part-label chapter-literary-part';tile.dataset.rendezvousPart=String(i+1);
     tile.append(makeSpan('chapter-part-number','CHAPITRE '+p.chapter),
      makeSpan('chapter-part-title','« '+p.title+' »'),
-     makeSpan('chapter-part-game','Jeu '+(i+1)+' / 3'),
-     makeSpan('chapter-part-state',i===0?'Bonne feuille validée · Jeu jouable':'Scène et jeu à préparer'));
+     makeSpan('chapter-part-game',i===0?'📣 Camarades !':i===1?'💌 Cyrano':'❤️ Rencontre'),
+     makeSpan('chapter-part-state',i===0?'Jeu 1 / 3':'Jeu '+(i+1)+' / 3'));
+    tile.onclick=()=>window.TreizeRendezVous?.open?.(i+1);
     thirdRoute.append(tile);
    }
-   third.append(makeSpan('chapter-card-kicker','CHEMIN III'),
-    makeSpan('chapter-card-title','Les rendez-vous'),
-    makeSpan('chapter-card-place','Trois chapitres · Deux jeux disponibles'),
-    thirdRoute,makeSpan('chapter-card-status','À découvrir après le chemin II'),
-    makeSpan('board-badge','✦'));
-   third.onclick=()=>window.TreizeRendezVous?.open?.();
+   third.append(thirdMain,thirdRoute,makeSpan('chapter-card-status','À découvrir après le chemin II'),makeSpan('board-badge','✦'));
    host.append(third);
   }
   for(const button of host.querySelectorAll('[data-chapter]')){
@@ -200,12 +212,13 @@
    const allowed=n===1||flow.canEnter(state,n),active=n===current;
    button.classList.toggle('done',finished);
    button.setAttribute('aria-disabled',String(!allowed));
-   if(n===1){
+   if(n===1||n===4){
     button.dataset.active=String(active);
     button.tabIndex=-1;
-    const main=button.querySelector('.chapter-one-main');
-    main.disabled=!!boardRolling;
-    main.setAttribute('aria-label','Reprendre le chemin I · '+flow.PARTS[flow.nextPart(state)-1].title);
+    const main=button.querySelector('.chapter-card-main');
+    main.disabled=!allowed||!!boardRolling;
+    main.setAttribute('aria-label',n===1?'Reprendre le chemin I · '+flow.PARTS[flow.nextPart(state)-1].title:
+     'Reprendre le chemin II · '+flow.CHAPTER2_PARTS[flow.chapter2NextPart(state)-1].title);
    }else{
     button.setAttribute('aria-pressed',String(active));
     button.tabIndex=allowed?0:-1;
@@ -233,6 +246,10 @@
      for(const badge of button.querySelectorAll('[data-chapter-two-part]')){
       const part=Number(badge.dataset.chapterTwoPart);
       badge.classList.toggle('passed',flow.chapter2PartDone(state,part));
+      badge.disabled=!!boardRolling||!flow.canEnter(state,part===1?4:5)||
+       (part===3&&!flow.chapter2PartDone(state,2));
+      badge.setAttribute('aria-label',(flow.chapter2PartDone(state,part)?'Rejouer ':'Jouer ')+
+       'au chapitre '+flow.CHAPTER2_PARTS[part-1].chapter+' · '+flow.CHAPTER2_PARTS[part-1].title);
       const skipped=flow.wasSkipped(state,part===1?'4':part===2?'5:dance':'5:prison');
       badge.querySelector('.chapter-part-state').textContent='Jeu '+part+' / 3'+(skipped?' · ↷ parcouru':flow.chapter2PartDone(state,part)?' · ✓ réussi':'');
      }
@@ -244,9 +261,10 @@
   if(third){
    const allowed=flow.chapter2Done(state);
    third.setAttribute('aria-disabled',String(!allowed));
-   third.setAttribute('aria-pressed',String(reader.open));
+   third.dataset.active=String(reader.open);
    third.setAttribute('aria-label',thirdBlockName+' · Chapitres 4, 5 et 6 · '+(allowed?'Lire la première bonne feuille':'À découvrir après le chemin II'));
-   third.tabIndex=allowed?0:-1;
+   third.tabIndex=-1;
+   third.querySelector('.chapter-card-main').disabled=!allowed||!!boardRolling;
    third.querySelector('.chapter-card-status').textContent=allowed?
     'Première bonne feuille disponible · Camarades ! puis Cyrano':'À découvrir après le chemin II';
   }
