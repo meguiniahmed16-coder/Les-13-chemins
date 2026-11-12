@@ -46,7 +46,7 @@
   if(!rencontreDialog.open)rencontreDialog.showModal();
   if(!rencontreLoading){rencontreLoading=true;rencontreFrame.src='jeu-rencontre.html?embedded=1';}
  }
- function closeRencontreDialog(){if(rencontreDialog.open)rencontreDialog.close();rencontreFrame.removeAttribute('src');rencontreLoading=false;render();$('chemin-iii')?.focus({preventScroll:true});}
+ function closeRencontreDialog(){if(rencontreDialog.open)rencontreDialog.close();rencontreFrame.removeAttribute('src');rencontreLoading=false;render();$('chemin-iii')?.querySelector('.chapter-card-main')?.focus({preventScroll:true});}
  addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==rencontreFrame.contentWindow||!rencontreDialog.open||!e.data||e.data.type!=='rencontre:state')return;
   const step=Number(e.data.step);
@@ -103,7 +103,16 @@
    (done>=3?'3 / 3 jeux parcourus':done>=2?'2 / 3 jeux parcourus · dernier chapitre accessible':done===1?'1 / 3 jeux parcourus · Cyrano disponible':'0 / 3 jeux parcourus · première bonne feuille disponible'):
    'À découvrir après le chemin II';
   card.querySelector('.chapter-card-place').textContent='Chapitres 4, 5 et 6 · Jeux et parcours narratif';
-  card.setAttribute('aria-label','Chemin III Les rendez-vous · '+(count+cyranoCount)*10+' points acquis sur 60 dans les deux jeux disponibles');
+  card.setAttribute('aria-label','Chemin III Les rendez-vous · '+done+'/3 jeux parcourus · '+(count+cyranoCount)*10+' points acquis sur 60');
+  const playable=card.querySelectorAll('[data-rendezvous-part]');
+  for(const tile of playable){
+   const part=Number(tile.dataset.rendezvousPart);
+   const permitted=allowed&&!boardRolling&&
+    (part===1||part===2&&hasTraversed()||part===3&&cyranoTraversed());
+   tile.disabled=!permitted;
+   tile.setAttribute('aria-label',permitted?'Lire et '+(tile.classList.contains('passed')?'rejouer ':'jouer ')+'le chapitre '+parts[part-1].chapter+' · '+parts[part-1].title:'Chapitre '+parts[part-1].chapter+' non débloqué');
+  }
+  card.querySelector('.chapter-card-main').disabled=!allowed||!!boardRolling;
   for(const b of partNav.children){
    const n=Number(b.dataset.part);b.disabled=(n===2&&!hasTraversed())||(n===3&&!cyranoTraversed());
   }
@@ -152,7 +161,13 @@
   reader.scrollTop=0;updateThird();
  }
  const oldOpen=app.open;
- app.open=function(){if(!flow.chapter2Done(state))return;oldOpen();showPart(!hasTraversed()?1:!cyranoTraversed()?2:3);};
+ app.open=function(requested){
+  if(!flow.chapter2Done(state))return;
+  const part=requested===undefined?(!hasTraversed()?1:!cyranoTraversed()?2:3):requested;
+  if(!Number.isInteger(part)||part<1||part>3)return;
+  if(part===2&&!hasTraversed()||part===3&&!cyranoTraversed())return;
+  oldOpen();showPart(part);
+ };
  // Le code du plateau appelle désormais window.TreizeRendezVous.open() à chaque ouverture.
  function openDialog(){
   if(!flow.chapter2Done(state))return;
@@ -172,7 +187,7 @@
   frame.contentWindow.postMessage({type:'manifestation:init',id,passed:awarded(),points:state.points},location.origin);
  }
  frame.addEventListener('load',initIframe);
- function closeGame(){if(dialog.open)dialog.close();frame.removeAttribute('src');loading=false;state.rdvManifestationPending=null;save();render();$('chemin-iii')?.focus({preventScroll:true});}
+ function closeGame(){if(dialog.open)dialog.close();frame.removeAttribute('src');loading=false;state.rdvManifestationPending=null;save();render();$('chemin-iii')?.querySelector('.chapter-card-main')?.focus({preventScroll:true});}
  function nextGame(){
   if(!state.rdvManifestationFinished&&!state.rdvManifestationSkipped){state.rdvManifestationSkipped=true;save();}
   closeGame();
@@ -231,7 +246,7 @@
   if(cyranoDialog.open)cyranoDialog.close();
   cyranoFrame.removeAttribute('src');cyranoLoading=false;
   state.rdvCyranoPending=null;save();render();
-  $('chemin-iii')?.focus({preventScroll:true});
+  $('chemin-iii')?.querySelector('.chapter-card-main')?.focus({preventScroll:true});
  }
  function nextCyrano(){
   if(!state.rdvCyranoFinished&&!state.rdvCyranoSkipped){
