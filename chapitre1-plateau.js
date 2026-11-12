@@ -66,6 +66,11 @@
 #boardTargets .mini-atlas-map .mini-atlas-walker{width:36px!important;height:49px!important;background:transparent!important;border:0!important;filter:drop-shadow(0 3px 3px #203b2b99)}
 #boardTargets .mini-atlas-map .mini-atlas-walker svg{width:36px!important;height:49px!important;max-height:none!important;margin:0!important;display:block!important}
 #boardTargets .mini-atlas-map .mini-atlas-label{max-width:175px;overflow:hidden;text-overflow:ellipsis}
+#boardTargets .mini-atlas-card .mini-atlas-replay{display:inline-flex;align-items:center;justify-content:center;min-height:36px;margin:8px 0 0;padding:7px 12px;border:1px solid #a88a5d;border-radius:6px;background:#fdf5e5;color:#385545;font:700 11px/1.3 'DM Sans',sans-serif;cursor:pointer}
+#boardTargets .mini-atlas-card .mini-atlas-replay:hover{background:#e4e9d9}
+#boardTargets .mini-atlas-card .mini-atlas-replay:focus-visible{outline:3px solid #2b5d4d;outline-offset:2px}
+#boardTargets .mini-atlas-card .mini-atlas-replay[hidden]{display:none!important}
+
 @media(max-width:600px){#boardTargets .mini-atlas-map{height:165px;min-height:165px}#boardTargets .mini-atlas-card{padding:9px 8px}}
 `;
  document.head.append(css);
