@@ -72,10 +72,9 @@
   // Leaflet affiche par défaut un drapeau ukrainien dans son préfixe d'attribution.
   // Désactiver uniquement ce préfixe ; conserver le crédit © OpenStreetMap.
   map.attributionControl.setPrefix(false);
-  // A neutral French-language cartographic layer: no decorative flags.
-  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',{
-   subdomains:'abc',maxZoom:18,updateWhenIdle:true,keepBuffer:1,
-   attribution:'Données © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · rendu © <a href="https://www.openstreetmap.fr/">OSM France</a>'
+  // Le fond d'origine reste identique à celui de l'atlas principal.
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+   maxZoom:18,attribution:'© OpenStreetMap contributors',crossOrigin:true
   }).addTo(map);
   const bounds=L.latLngBounds(points);
   map.fitBounds(bounds,{padding:[17,22],maxZoom:7,animate:false});
@@ -90,33 +89,72 @@
   const name=L.marker(points[0],{interactive:false,zIndexOffset:550,
    icon:L.divIcon({className:'mini-atlas-label',html:route[0][0],iconSize:null,iconAnchor:[-14,12]})
   }).addTo(map);
-  const durations=route.map((_,i)=>i===0?0:2800);
-  const duration=durations.reduce((a,b)=>a+b,0)+1200;
-  let started=0,previous=-1,lastPan=0,frame=0,visible=false;
-  const viewObserver=new IntersectionObserver(entries=>{
-   visible=entries.some(e=>e.isIntersecting);
-   if(visible&&!reduced){started=0;cancelAnimationFrame(frame);frame=requestAnimationFrame(tick);}
-   else{cancelAnimationFrame(frame);}
-  },{threshold:.12});
-  viewObserver.observe(el);
-  function tick(now){
-   if(!visible||!el.isConnected)return;
-   if(!started)started=now;
-   const elapsed=(now-started)%duration;
-   const section=Math.min(points.length-2,Math.floor(elapsed/2800));
-   const local=Math.max(0,Math.min(1,(elapsed-section*2800)/2800));
+  // Chaque traversée ne joue qu'une fois par affichage de la page.
+  // Une sortie du champ suspend le mouvement ; le retour le reprend sans le relancer.
+  const segmentMs=2800,totalMs=(points.length-1)*segmentMs;
+  let elapsed=0,lastFrame=0,previous=-1,frame=0,visible=false,hasStarted=false,finished=false;
+  const replay=document.createElement('button');
+  replay.type='button';replay.className='mini-atlas-replay';replay.textContent='↻ Rejouer le trajet';
+  replay.setAttribute('aria-label','Rejouer le trajet '+route[0][0]+' – '+route[route.length-1][0]);
+  replay.hidden=true;
+  el.parentElement?.insertBefore(replay,el.nextSibling);
+  function draw(at){
+   const completed=Math.min(points.length-2,Math.floor(at/segmentMs));
+   const local=Math.max(0,Math.min(1,(at-completed*segmentMs)/segmentMs));
    const eased=local*local*(3-2*local);
-   const position=interpolate(points[section],points[section+1],eased);
+   const position=interpolate(points[completed],points[completed+1],eased);
    marker.setLatLng(position);name.setLatLng(position);
-   if(previous!==section){name.setIcon(L.divIcon({className:'mini-atlas-label',html:route[section][0]+' → '+route[section+1][0],iconSize:null,iconAnchor:[-14,12]}));previous=section;}
-   trail.setLatLngs([...points.slice(0,section+1),position]);
-   if(now-lastPan>110){
-    map.panTo(position,{animate:false});
-    lastPan=now;
+   if(previous!==completed){
+    name.setIcon(L.divIcon({className:'mini-atlas-label',
+     html:route[completed][0]+' → '+route[completed+1][0],
+     iconSize:null,iconAnchor:[-14,12]}));
+    previous=completed;
    }
+   trail.setLatLngs([...points.slice(0,completed+1),position]);
+   map.panTo(position,{animate:false});
+  }
+  function finish(){
+   finished=true;cancelAnimationFrame(frame);frame=0;lastFrame=0;
+   elapsed=totalMs;
+   marker.setLatLng(points[points.length-1]);
+   name.setLatLng(points[points.length-1]);
+   name.setIcon(L.divIcon({className:'mini-atlas-label',
+    html:route[route.length-1][0],iconSize:null,iconAnchor:[-14,12]}));
+   trail.setLatLngs(points);
+   replay.hidden=false;
+  }
+  function tick(now){
+   if(!visible||finished||!el.isConnected)return;
+   if(lastFrame)elapsed=Math.min(totalMs,elapsed+Math.max(0,Math.min(120,now-lastFrame)));
+   lastFrame=now;
+   draw(elapsed);
+   if(elapsed>=totalMs){finish();return;}
    frame=requestAnimationFrame(tick);
   }
-  if(reduced){marker.setLatLng(points[points.length-1]);name.setLatLng(points[points.length-1]);trail.setLatLngs(points);name.setIcon(L.divIcon({className:'mini-atlas-label',html:route[route.length-1][0],iconSize:null,iconAnchor:[-14,12]}));}
+  function resume(){
+   if(!visible||finished)return;
+   if(reduced){finish();return;}
+   cancelAnimationFrame(frame);lastFrame=0;
+   frame=requestAnimationFrame(tick);
+  }
+  const viewObserver=new IntersectionObserver(entries=>{
+   visible=entries.some(e=>e.isIntersecting);
+   if(visible){
+    if(!hasStarted){hasStarted=true;resume();}
+    else if(!finished)resume();
+   }else{
+    cancelAnimationFrame(frame);frame=0;lastFrame=0;
+   }
+  },{threshold:.12});
+  viewObserver.observe(el);
+  replay.onclick=()=>{
+   cancelAnimationFrame(frame);frame=0;
+   elapsed=0;lastFrame=0;previous=-1;finished=false;hasStarted=true;
+   replay.hidden=true;
+   marker.setLatLng(points[0]);name.setLatLng(points[0]);trail.setLatLngs([points[0]]);
+   map.panTo(points[0],{animate:false});
+   resume();
+  };
   const resize=new ResizeObserver(()=>map.invalidateSize({animate:false}));resize.observe(el);
   window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);viewObserver.disconnect();resize.disconnect();},{once:true});
  }
