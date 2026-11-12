@@ -59,8 +59,13 @@
 #boardTargets .mini-atlas-map .leaflet-container{background:#e5e4d7}
 #boardTargets .mini-atlas-map .leaflet-control-attribution{font-size:8px;background:#fff9ebc9}
 #boardTargets .mini-atlas-map .mini-atlas-label{background:#fff8e9e8;color:#294a3d;border:1px solid #b79b68;padding:2px 5px;border-radius:5px;white-space:nowrap;font:700 10px/1.2 'DM Sans',sans-serif;box-shadow:0 1px 4px #13281d40}
-#boardTargets .mini-atlas-map .mini-atlas-walker{width:36px;height:49px;filter:drop-shadow(0 3px 3px #203b2b99)}
-#boardTargets .mini-atlas-map .mini-atlas-walker svg{width:36px;height:49px;display:block}
+/* Isoler les mini-cartes : les règles SVG génériques du plateau ne doivent
+   jamais agrandir les tracés Leaflet ni le marcheur sur Android. */
+#boardTargets .mini-atlas-map .leaflet-overlay-pane svg{width:auto!important;height:auto!important;max-height:none!important;margin:0!important;display:block!important;position:absolute!important}
+#boardTargets .mini-atlas-map .leaflet-tile{max-width:none!important;max-height:none!important;object-fit:initial!important}
+#boardTargets .mini-atlas-map .mini-atlas-walker{width:36px!important;height:49px!important;background:transparent!important;border:0!important;filter:drop-shadow(0 3px 3px #203b2b99)}
+#boardTargets .mini-atlas-map .mini-atlas-walker svg{width:36px!important;height:49px!important;max-height:none!important;margin:0!important;display:block!important}
+#boardTargets .mini-atlas-map .mini-atlas-label{max-width:175px;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:600px){#boardTargets .mini-atlas-map{height:165px;min-height:165px}#boardTargets .mini-atlas-card{padding:9px 8px}}
 `;
  document.head.append(css);
