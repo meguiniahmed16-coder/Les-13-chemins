@@ -42,3 +42,22 @@ Documentation :
 - Cloudflare : https://developers.cloudflare.com/r2/get-started/s3/
 - Domaines publics : https://developers.cloudflare.com/r2/buckets/public-buckets/
 - rclone copyurl : https://rclone.org/commands/rclone_copyurl/
+
+
+## Option mobile : tout déclencher depuis GitHub Actions
+Un workflow **manuel uniquement** a été préparé dans .github/workflows/migrate-r2-videos.yml.
+
+1. Terminer la création du bucket R2 et d'une clé S3 limitée à ce seul bucket.
+2. Dans GitHub > le dépôt Les-13-chemins > Settings > Secrets and variables > Actions, créer les quatre **Repository secrets** :
+   - R2_ACCOUNT_ID : identifiant du compte Cloudflare ;
+   - R2_BUCKET : nom exact du bucket ;
+   - R2_ACCESS_KEY_ID : identifiant de la clé S3 R2 ;
+   - R2_SECRET_ACCESS_KEY : secret S3 R2.
+3. **Ne jamais coller ces secrets dans le chat ou dans un fichier du dépôt.**
+4. Faire relire puis fusionner la PR de préparation après validation : pour lancer une action manuellement, GitHub exige que son workflow existe sur la branche principale.
+5. Ouvrir GitHub > Actions > « Transférer les cinématiques vers Cloudflare R2 (manuel) » > Run workflow. Choisir **pilote** (C01) ; vérifier l'objet avec Cloudflare.
+6. Si le pilote est correct, relancer le workflow avec **toutes**. Les vidéos restent servies par l'ancien CDN jusqu'à une migration ultérieure du lecteur.
+
+Cette action ne s'exécute ni sur chaque commit, ni sur publication Netlify. Elle ne modifie jamais le code du lecteur ; son seul effet après démarrage manuel est de copier les objets vers R2.
+
+Référence : https://docs.github.com/actions/managing-workflow-runs/manually-running-a-workflow
