@@ -71,7 +71,7 @@
  const reader=document.createElement('dialog');
  reader.id='rendezvousDialog';reader.setAttribute('aria-label','Chemin III — Les rendez-vous, chapitre 4');
  const readerBar=document.createElement('div');readerBar.className='rendezvous-top';
- const readerHeading=document.createElement('strong');readerHeading.textContent='LES TREIZE CHEMINS · CHEMIN III · CHAPITRE 4 — « DRAPEAU ROUGE »';
+ const readerHeading=document.createElement('strong');readerHeading.textContent='LES TREIZE CHEMINS · CHEMIN II · CHAPITRE 4 — « DRAPEAU ROUGE »';
  const readerClose=document.createElement('button');readerClose.type='button';readerClose.textContent='Retour au plateau ×';
  readerBar.append(readerHeading,readerClose);
  const readerBody=document.createElement('div');readerBody.className='rendezvous-content';
@@ -82,7 +82,7 @@
  const excerpt=document.createElement('div');excerpt.className='rendezvous-excerpt';
  for(const paragraph of thirdExtract){const el=document.createElement('p');el.textContent=paragraph;excerpt.append(el);}
  const future=document.createElement('div');future.className='rendezvous-future';
- const futureTitle=document.createElement('strong');futureTitle.textContent='Jeu 1 / 3 — Camarades !';
+ const futureTitle=document.createElement('strong');futureTitle.textContent='Jeu 3 / 3 — Camarades !';
  const futureBody=document.createElement('p');futureBody.textContent='Trois épreuves de 10 points : trouver le drapeau, mobiliser la République et réunir les cortèges. Le jeu s’ouvre après la lecture, en descendant jusqu’au bas de l’extrait.';
  future.append(futureTitle,futureBody);
  readerBody.append(readerKicker,readerTitle,readerArea,readerReference,excerpt,future);reader.append(readerBar,readerBody);document.body.append(reader);
