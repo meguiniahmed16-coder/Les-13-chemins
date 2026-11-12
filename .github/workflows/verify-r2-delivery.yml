@@ -1,0 +1,28 @@
+name: Vérifier les 22 cinématiques sur Cloudflare R2
+
+on:
+  pull_request:
+    paths:
+      - 'jeu-rencontre.html'
+      - 'r2-delivery.test.mjs'
+      - 'r2-migration.test.mjs'
+      - 'migration/r2-videos-manifest.json'
+      - '.github/workflows/verify-r2-delivery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verification-r2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrôler le manifeste et les références du lecteur
+        run: node --test r2-migration.test.mjs
+      - name: Vérifier HEAD, CORS et HTTP Range sur les 22 MP4
+        run: node --test r2-delivery.test.mjs
