@@ -14,25 +14,61 @@
  };
  const CSS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
  const JS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
- const walkerSVG=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 56" aria-hidden="true">
- <defs><linearGradient id="coat" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#647e6b"/><stop offset="1" stop-color="#274d43"/></linearGradient></defs>
- <ellipse cx="21" cy="53" rx="11" ry="2.2" fill="#20352b" opacity=".25"/>
- <path d="M10 17Q3 19 5 32L8 38 15 37 16 20Z" fill="#946b3c" stroke="#3b3228" stroke-width="1.5"/>
- <path d="M8 19L5 25M8 32L6 36" fill="none" stroke="#d7bb83" stroke-width="1.5"/>
- <path d="M15 16Q21 12 28 17L30 35 14 35Z" fill="url(#coat)" stroke="#263c32" stroke-width="1.5"/>
- <path d="M16 20L26 27M27 19L16 29" stroke="#c2ab78" stroke-width="2" opacity=".9"/>
- <path d="M19 34L17 43 12 50 18 51 23 44 24 36" fill="#334d53" stroke="#26343a" stroke-width="1.4"/>
- <path d="M24 35L29 43 33 49 28 52 23 46 21 37" fill="#344c54" stroke="#26343a" stroke-width="1.4"/>
- <path d="M12 50L9 53 19 54 18 51M28 52L27 54 37 54 33 49" fill="#473c31" stroke="#282720" stroke-width="1"/>
- <path d="M15 21L11 33 9 36M29 20L33 31 34 35" fill="none" stroke="#d1a27b" stroke-width="4" stroke-linecap="round"/>
- <path d="M34 32L37 54" stroke="#765333" stroke-width="1.8" stroke-linecap="round"/>
- <path d="M17 15L17 12 26 12 26 16" fill="#c9946d"/>
- <ellipse cx="21" cy="9.5" rx="7" ry="8" fill="#d3a17b" stroke="#8b694f" stroke-width="1"/>
- <path d="M14 8Q14 -1 22 1Q28 1 28 8L25 6 16 7Z" fill="#4b4438"/>
- <path d="M13 6Q19 1 27 5L29 8 12 9Z" fill="#675b46" stroke="#453b32" stroke-width="1"/>
- <circle cx="24" cy="10" r=".75" fill="#40392e"/>
- <path d="M24 13Q22 14 20 13" stroke="#825c46" stroke-width=".7" fill="none"/>
- </svg>`;
+ const walkerSVG=`<svg class="pilgrim-figure" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 92" aria-hidden="true" focusable="false">
+ <!-- Marcheur de profil : chaussures, membres articulés, veste, sangles et sac de randonnée -->
+ <ellipse cx="31" cy="87" rx="19" ry="3.1" fill="#162e25" opacity=".22"/>
+ <g class="pilgrim-leg pilgrim-leg--far">
+  <path d="M29 50 Q26 59 24 68 L17 79 23 82 31 71 Q35 62 34 52Z" fill="#425463" stroke="#293a44" stroke-width="1.3"/>
+  <path d="M24 66L30 69M18 78L23 80" stroke="#a0a6a0" stroke-width="1" opacity=".75"/>
+  <path d="M17 78 Q14 81 8 84 L9 88 26 88 26 84 23 79Z" fill="#453e37" stroke="#282921" stroke-width="1.4"/>
+  <path d="M10 84L24 84" stroke="#b69f77" stroke-width="1" stroke-dasharray="2 2"/>
+ </g>
+ <g class="pilgrim-arm pilgrim-arm--far">
+  <path d="M29 31Q23 36 20 45L16 51Q16 54 19 54L23 51 32 39Z" fill="#486352" stroke="#293f34" stroke-width="1.4"/>
+  <path d="M17 49L14 54Q16 58 20 56L22 52" fill="#bf8e70" stroke="#805d4d" stroke-width="1"/>
+ </g>
+ <g class="pilgrim-leg pilgrim-leg--near">
+  <path d="M32 51 L39 68 47 80 53 78 45 65 40 50Z" fill="#354c57" stroke="#263842" stroke-width="1.5"/>
+  <path d="M37 65L44 68M46 78L52 79" stroke="#a0a6a0" stroke-width="1" opacity=".72"/>
+  <path d="M46 79L52 78 59 85Q62 87 60 89L45 89Q42 87 46 79Z" fill="#4a4036" stroke="#282921" stroke-width="1.4"/>
+  <path d="M46 85L58 86" stroke="#c4a878" stroke-width="1" stroke-dasharray="2 2"/>
+ </g>
+ <g class="pilgrim-body">
+  <!-- Sac de randonnée structuré, sangles et pochette latérale -->
+  <path d="M13 27Q12 22 18 20L28 20Q33 23 32 30L33 46Q33 52 28 54L14 51Q9 47 11 40Z" fill="#9a7850" stroke="#483c2d" stroke-width="1.6"/>
+  <path d="M14 25Q19 21 28 24L29 31 13 30Z" fill="#c4a379" stroke="#5e4b35" stroke-width="1.2"/>
+  <path d="M11 34L12 46Q17 51 24 50L24 35" fill="#856844" stroke="#5e4b35" stroke-width="1.1"/>
+  <path d="M12 40L21 41M17 32V46" stroke="#e2cba4" stroke-width="1" opacity=".8"/>
+  <path d="M12 44L7 45 8 52 15 53 17 46Z" fill="#6d704e" stroke="#484d35" stroke-width="1"/>
+  <path d="M13 45L15 48M9 48L14 48" stroke="#c3b48f" stroke-width=".8"/>
+  <path d="M17 18Q15 15 17 13L28 13Q31 16 29 20Z" fill="#718176" stroke="#3f5149" stroke-width="1.2"/>
+  <path d="M20 16H27" stroke="#bfc5aa" stroke-width="1.2"/>
+  <!-- Veste de marche, capuche et épaules -->
+  <path d="M29 28Q35 25 42 29L45 39 43 54Q33 59 27 53L27 35Z" fill="#3d6656" stroke="#263e36" stroke-width="1.6"/>
+  <path d="M29 30Q34 27 36 31L32 37 27 36Z" fill="#658673"/>
+  <path d="M36 30L39 54" stroke="#bec8a7" stroke-width="1.4"/>
+  <path d="M35 43L40 43M35 46L40 46" stroke="#284737" stroke-width=".9"/>
+  <path d="M28 37Q23 38 22 46M29 31Q32 36 34 38" fill="none" stroke="#d1bd8c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M23 45L31 47" stroke="#cbb789" stroke-width="2.2"/>
+  <rect x="26" y="46" width="4" height="3" rx=".6" fill="#e2ce9f" stroke="#5a5140" stroke-width=".6"/>
+  <path d="M30 51L43 51 43 55Q36 59 29 55Z" fill="#43534c" stroke="#293f36" stroke-width="1.2"/>
+  <!-- Cou et visage de profil, casquette et cheveux -->
+  <path d="M36 31L36 26 42 25 43 31Z" fill="#bb8b6e"/>
+  <path d="M36 17Q39 13 44 16Q50 19 48 26L46 28 45 31Q39 32 36 27Z" fill="#d5a681" stroke="#8e6854" stroke-width="1.15"/>
+  <path d="M36 17Q39 11 46 14L49 19 45 19Q40 17 37 21Z" fill="#574839"/>
+  <path d="M34 15Q39 9 47 13L49 17 34 18Z" fill="#53645a" stroke="#35473c" stroke-width="1.2"/>
+  <path d="M46 17L53 19 53 21 47 20" fill="#41564b" stroke="#35473c" stroke-width="1"/>
+  <path d="M48 22L51 24 48 25" fill="#c99474" stroke="#8e6854" stroke-width=".7"/>
+  <circle cx="45.2" cy="21.8" r=".8" fill="#3c332d"/>
+  <path d="M44 27Q46 29 48 27" stroke="#7b5848" stroke-width=".9" fill="none"/>
+ </g>
+ <g class="pilgrim-arm pilgrim-arm--near">
+  <path d="M41 32Q45 33 48 40L51 50 48 53 43 48 38 38Z" fill="#4e735f" stroke="#27483b" stroke-width="1.6"/>
+  <path d="M48 51Q46 55 48 58L51 58 53 53Z" fill="#c79570" stroke="#89644b" stroke-width=".9"/>
+  <path d="M48 55L52 87" stroke="#725034" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M46 57L51 56" stroke="#f4e0b3" stroke-width="1.2"/>
+ </g>
+</svg>`;
  let loaded=null;
  function leaflet(){
   if(loaded)return loaded;
@@ -79,12 +115,12 @@
   const bounds=L.latLngBounds(points);
   map.fitBounds(bounds,{padding:[17,22],maxZoom:7,animate:false});
   const line=L.polyline(points,{color:'#765e3f',weight:2.6,opacity:.8,dashArray:'3 8',interactive:false}).addTo(map);
-  const trail=L.polyline([points[0]],{color:'#315b4b',weight:3.5,opacity:.9,interactive:false}).addTo(map);
+  const trail=L.polyline([points[0]],{color:'#24594a',weight:3.6,opacity:.95,dashArray:'2 7',interactive:false}).addTo(map);
   route.forEach((p,i)=>{
    L.circleMarker(points[i],{radius:4.5,weight:1.5,color:'#fff8e9',fillColor:'#8c6840',fillOpacity:1,interactive:false}).addTo(map);
   });
   const marker=L.marker(points[0],{interactive:false,zIndexOffset:600,
-   icon:L.divIcon({className:'mini-atlas-walker',html:walkerSVG,iconSize:[36,49],iconAnchor:[18,47]})
+   icon:L.divIcon({className:'mini-atlas-walker',html:walkerSVG,iconSize:[48,68],iconAnchor:[24,65]})
   }).addTo(map);
   const name=L.marker(points[0],{interactive:false,zIndexOffset:550,
    icon:L.divIcon({className:'mini-atlas-label',html:route[0][0],iconSize:null,iconAnchor:[-14,12]})
@@ -98,6 +134,7 @@
   replay.setAttribute('aria-label','Rejouer le trajet '+route[0][0]+' – '+route[route.length-1][0]);
   replay.hidden=true;
   el.parentElement?.insertBefore(replay,el.nextSibling);
+  function animateLimbs(active){el.dataset.walking=active?'true':'false';}
   function draw(at){
    const completed=Math.min(points.length-2,Math.floor(at/segmentMs));
    const local=Math.max(0,Math.min(1,(at-completed*segmentMs)/segmentMs));
@@ -109,11 +146,15 @@
      html:route[completed][0]+' → '+route[completed+1][0],
      iconSize:null,iconAnchor:[-14,12]}));
     previous=completed;
+    // Le marcheur se tourne vers le sens du déplacement (est / ouest).
+    marker.getElement()?.querySelector('.pilgrim-figure')?.classList.toggle('faces-left',
+     points[completed+1][1]<points[completed][1]);
    }
    trail.setLatLngs([...points.slice(0,completed+1),position]);
    map.panTo(position,{animate:false});
   }
   function finish(){
+   animateLimbs(false);
    finished=true;cancelAnimationFrame(frame);frame=0;lastFrame=0;
    elapsed=totalMs;
    marker.setLatLng(points[points.length-1]);
@@ -134,6 +175,7 @@
   function resume(){
    if(!visible||finished)return;
    if(reduced){finish();return;}
+   animateLimbs(true);
    cancelAnimationFrame(frame);lastFrame=0;
    frame=requestAnimationFrame(tick);
   }
@@ -143,6 +185,7 @@
     if(!hasStarted){hasStarted=true;resume();}
     else if(!finished)resume();
    }else{
+    animateLimbs(false);
     cancelAnimationFrame(frame);frame=0;lastFrame=0;
    }
   },{threshold:.12});
@@ -151,6 +194,7 @@
    cancelAnimationFrame(frame);frame=0;
    elapsed=0;lastFrame=0;previous=-1;finished=false;hasStarted=true;
    replay.hidden=true;
+   marker.getElement()?.querySelector('.pilgrim-figure')?.classList.remove('faces-left');
    marker.setLatLng(points[0]);name.setLatLng(points[0]);trail.setLatLngs([points[0]]);
    map.panTo(points[0],{animate:false});
    resume();
