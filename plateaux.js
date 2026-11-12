@@ -17,19 +17,78 @@
   onChallenge:()=>{const p=progress();if(!p.read.includes(2))p.read.push(2);save();render();launchYoyo();},
   onSkip:()=>window.TreizeLibreParcours?.next('5:prison'),
   onDismiss:()=>focusEntry()});}
- function travel(){requestedPart=3;clearTimeout(travelTimer);if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;dismiss(dance);boardRolling=true;finishBoardRoll=TreizeVoyage.start({from:5,to:5,fromPlateau:1,toPlateau:2,title:'Chapitre 4 — « Le drapeau rouge » · Strasbourg',onFinish:()=>{boardRolling=false;finishBoardRoll=null;if(state.selected!==5)return;render();readStrasbourg();}});}
- function closeDance(){clearTimeout(travelTimer);dismiss(dance);if(progress().finished.includes(1)&&!progress().read.includes(2))travel();else focusEntry();}
+ function travel(){
+  clearTimeout(travelTimer);
+  if(boardRolling||state.selected!==5||!progress().finished.includes(1))return;
+  dismiss(dance);requestedPart=0;render();
+  window.TreizeRendezVous?.openManifestation?.();
+ }
+ function closeDance(){
+  clearTimeout(travelTimer);dismiss(dance);
+  if(progress().finished.includes(1)&&!state.rdvManifestationFinished&&!state.rdvManifestationSkipped)travel();
+  else focusEntry();
+ }
  function closeYoyo(){clearTimeout(prisonExitTimer);prisonExitTimer=0;dismiss(yoyo);focusEntry();if(yoyoWon&&state.completed.includes(5))rollTravel(5);}
  $('danseClose').onclick=closeDance;$('yoyoClose').onclick=closeYoyo;
  for(const [which,close] of [[dance,closeDance],[yoyo,closeYoyo]]){which.dialog.addEventListener('cancel',e=>{e.preventDefault();close();});which.frame.addEventListener('load',()=>context(which));}
  answer=function(index){if(state.selected!==5)return oldAnswer(index);refresh();if(state.dansePending){open(dance);return;}if(progress().finished.includes(1)||state.quizPassed?.[5])return;const correct=index===LEVELS[4].correct;if(correct){state.quizPassed??={};state.quizPassed[5]=true;state.points+=100;}else{state.tries[5]=(state.tries[5]||0)+1;state.points=Math.max(0,state.points-10);}score.begin(state,correct,crypto.randomUUID());save();render();focusGameEntry();};
- render=function(){if(state.selected!==5)requestedPart=0;progress();for(const id of ['danseLaunch','yoyoLaunch','danceReplay','plateauxRoute'])$(id)?.remove();$('options').hidden=false;$('question').hidden=false;$('read-stage-link').onclick=null;oldRender();if(state.selected!==5)return;const p=progress(),second=requestedPart===2?false:requestedPart===3?true:p.finished.includes(1),done=state.completed.includes(5),hasGame=second||!!state.dansePending||!!state.quizPassed?.[5];
-  const route=document.createElement('div');route.id='plateauxRoute';route.className='plateaux-route';route.innerHTML='<span class="'+(!second?'active':'')+'">'+(second?'✓ ':'')+'Chapitre 3 · Le danseur</span><span class="'+(second?'active':'')+'">'+(state.yoyoFinished?'✓ ':'')+'Chapitre 4 · La prison</span>';$('place').after(route);
-  $('levelTag').textContent='Chemin II · Chapitre '+(second?'4':'3')+' · Jeu '+(second?'3':'2')+' / 3';
-  $('status').textContent=second?(done?'✓ Les trois jeux de ce chemin sont réussis. Le voyage peut continuer.':'La danse est réussie. Trois épreuves t’attendent à Strasbourg : 30 points.'):(state.dansePending?(state.quizPassed?.[5]?'Quiz du chemin déjà validé. ':'')+'Gagne le jeu de danse pour poursuivre vers Strasbourg.':'Retrouve Lionel dans le chapitre 3 « Le coup du bus », deuxième jeu de ce chemin.');
-  if(second){$('questTitle').textContent='Un fil entre les barreaux';$('place').textContent='📍 Strasbourg · La cellule des arrivants';$('options').hidden=true;$('question').hidden=true;$('read-stage-link').href='lecture.html?niveau=5&plateau=2';$('read-stage-link').onclick=e=>{e.preventDefault();readStrasbourg();};$('map-stage-link').href='carte.html?niveau=5&plateau=2';$('travelHint').textContent=done?'Les trois jeux de ce chemin sont terminés. Le voyage peut continuer.':'Chapitre 4 « Le drapeau rouge » : termine les trois épreuves de la cellule pour achever ce chemin.';}
-  else if(state.dansePending){document.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);}
-  if(hasGame){const b=document.createElement('button');b.id=second?'yoyoLaunch':'danseLaunch';b.className='action';b.style.cssText='display:block;width:100%;text-align:center';b.textContent=second?(done?'Rejouer dans la cellule ↻':p.read.includes(2)?'Entrer dans la cellule →':'Continuer vers Strasbourg →'):'Jouer à la danse →';b.onclick=second?(p.read.includes(2)?launchYoyo:travel):launchDance;$('gameLaunchSlot').append(b);const name=second?'Un fil entre les barreaux':'Danse pour sauver Lionel !';$('gameEntry').hidden=false;$('gameEntryName').textContent=name;$('gameEntryHint').textContent=second?'Entre dans la cellule en vue subjective : trouve la brosse, puis récupère le tabac et le café.':'Chapitre 3 « Le coup du bus » : conquiers le public pour continuer le récit.';$('mobileGameDock').hidden=false;$('mobileGameButton').hidden=false;$('mobileGameAction').textContent=b.textContent;$('mobileGameName').textContent=name;document.body.classList.add('has-mini-game');if(second){const replay=document.createElement('button');replay.id='danceReplay';replay.className='action ghost';replay.textContent='Rejouer le plateau de danse';replay.onclick=launchDance;$('gameLaunchSlot').append(replay);}}
+ render=function(){
+  if(state.selected!==5)requestedPart=0;
+  progress();
+  for(const id of ['danseLaunch','yoyoLaunch','manifestationLaunch','danceReplay','plateauxRoute'])$(id)?.remove();
+  $('options').hidden=false;$('question').hidden=false;$('read-stage-link').onclick=null;
+  oldRender();if(state.selected!==5)return;
+  const p=progress(),danceDone=p.finished.includes(1),prisonView=requestedPart===3;
+  const manifestView=danceDone&&!prisonView&&requestedPart!==2;
+  const done=window.TreizeChapitre1?.chapter2Done(state)||false;
+  const hasGame=prisonView||manifestView||!!state.dansePending||!!state.quizPassed?.[5];
+  const route=document.createElement('div');route.id='plateauxRoute';route.className='plateaux-route';
+  route.innerHTML='<span class="'+(!danceDone?'active':'')+'">'+(danceDone?'✓ ':'')+'Chapitre 3 · Le danseur</span>'+
+   '<span class="'+(manifestView||prisonView?'active':'')+'">'+(state.rdvManifestationFinished?'✓ ':'')+'Chapitre 4 · Camarades !</span>';
+  $('place').after(route);
+  $('levelTag').textContent=prisonView?'Chemin III · Chapitre 4 · Jeu 1 / 3':
+   manifestView?'Chemin II · Chapitre 4 · Jeu 3 / 3':'Chemin II · Chapitre 3 · Jeu 2 / 3';
+  if(prisonView){
+   $('questTitle').textContent='Un fil entre les barreaux';
+   $('place').textContent='📍 Strasbourg · La cellule des arrivants';
+   $('status').textContent=state.yoyoFinished?'✓ La cellule a déjà été parcourue. Rejouable.':'Le deuxième « Drapeau rouge » : les épreuves de la cellule à Strasbourg.';
+   $('options').hidden=true;$('question').hidden=true;
+   $('read-stage-link').href='lecture.html?niveau=5&plateau=2';
+   $('read-stage-link').onclick=e=>{e.preventDefault();readStrasbourg();};
+   $('map-stage-link').href='carte.html?niveau=5&plateau=2';
+   $('travelHint').textContent='Chemin III · La prison. Le jeu reste accessible pour être rejoué.';
+  }else if(manifestView){
+   $('questTitle').textContent='Camarades !';
+   $('place').textContent='📍 Paris · République–Bastille';
+   $('status').textContent=done?'✓ Camarades ! parcouru. Tu peux poursuivre ou rejouer.':'Le premier « Drapeau rouge » : lis la manifestation puis joue à Camarades !';
+   $('options').hidden=true;$('question').hidden=true;
+   $('read-stage-link').onclick=e=>{e.preventDefault();window.TreizeRendezVous?.openManifestation?.();};
+   $('travelHint').textContent='Chemin II · Camarades ! précède le jeu de la prison dans le chemin suivant.';
+  }else{
+   $('status').textContent=state.dansePending?'Achève le jeu de danse pour poursuivre vers Camarades !':'Retrouve Lionel dans le chapitre 3 « Le coup du bus ».';
+   if(state.dansePending)document.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);
+  }
+  if(hasGame){
+   const button=document.createElement('button');
+   button.id=prisonView?'yoyoLaunch':manifestView?'manifestationLaunch':'danseLaunch';
+   button.className='action';button.style.cssText='display:block;width:100%;text-align:center';
+   button.textContent=prisonView?'Entrer dans la cellule ↻':manifestView?'Lire et jouer à Camarades ! →':'Jouer à la danse →';
+   button.onclick=prisonView?(p.read.includes(2)?launchYoyo:readStrasbourg):
+    manifestView?()=>window.TreizeRendezVous?.openManifestation?.():launchDance;
+   $('gameLaunchSlot').append(button);
+   const name=prisonView?'Un fil entre les barreaux':manifestView?'Camarades !':'Danse pour sauver Lionel !';
+   $('gameEntry').hidden=false;$('gameEntryName').textContent=name;
+   $('gameEntryHint').textContent=prisonView?'Retrouve les trois épreuves de la cellule.':
+    manifestView?'Lis la manifestation, puis rejoins les cortèges.':
+    'Chapitre 3 « Le coup du bus » : conquiers le public pour continuer le récit.';
+   $('mobileGameDock').hidden=false;$('mobileGameButton').hidden=false;
+   $('mobileGameAction').textContent=button.textContent;$('mobileGameName').textContent=name;
+   document.body.classList.add('has-mini-game');
+   if(prisonView){
+    const replay=document.createElement('button');replay.id='danceReplay';replay.className='action ghost';
+    replay.textContent='Rejouer le plateau de danse';replay.onclick=launchDance;$('gameLaunchSlot').append(replay);
+   }
+  }
   $('next').hidden=!done;$('mobileNext').hidden=!done;
  };
  addEventListener('message',e=>{if(e.origin!==location.origin||!e.data)return;const m=e.data;
