@@ -105,10 +105,11 @@
  // "Retour" stops automatic chaining, "Suivant" preserves wins or skips.
  window.TreizePlateauxNavigation={
   resetPart(){requestedPart=0;},
+  currentPart(){return requestedPart===3?'prison':requestedPart===2?'dance':null;},
   openPart(which){
    const ch=window.TreizeChapitre1;
    if(boardRolling||!ch?.canEnter(state,5)||(which!=='dance'&&which!=='prison'))return false;
-   if(which==='prison'&&!ch.chapter2PartDone(state,2))return false;
+   if(which==='prison'&&!ch.chapter2Done(state))return false;
    window.TreizeSceneNavigation?.cancelAutomatic?.();
    requestedPart=which==='dance'?2:3;
    select(5);
