@@ -67,8 +67,10 @@
 #boardTargets .mini-atlas-map .mini-atlas-walker svg{width:48px!important;height:68px!important;max-height:none!important;margin:0!important;display:block!important}
 #boardTargets .mini-atlas-map .pilgrim-figure{transform-origin:center;transition:transform .22s ease}
 #boardTargets .mini-atlas-map .pilgrim-figure.faces-left{transform:scaleX(-1)}
-#boardTargets .mini-atlas-map .pilgrim-leg{transform-origin:32px 51px;transform-box:view-box}
-#boardTargets .mini-atlas-map .pilgrim-arm{transform-origin:39px 33px;transform-box:view-box}
+#boardTargets .mini-atlas-map .pilgrim-leg--near{transform-origin:36px 52px;transform-box:view-box}
+#boardTargets .mini-atlas-map .pilgrim-leg--far{transform-origin:29px 52px;transform-box:view-box}
+#boardTargets .mini-atlas-map .pilgrim-arm--near{transform-origin:40px 33px;transform-box:view-box}
+#boardTargets .mini-atlas-map .pilgrim-arm--far{transform-origin:28px 32px;transform-box:view-box}
 #boardTargets .mini-atlas-map .pilgrim-body{transform-box:view-box}
 #boardTargets .mini-atlas-map[data-walking=true] .pilgrim-leg--near{animation:pilgrim-near-step .55s ease-in-out infinite}
 #boardTargets .mini-atlas-map[data-walking=true] .pilgrim-leg--far{animation:pilgrim-far-step .55s ease-in-out infinite}
