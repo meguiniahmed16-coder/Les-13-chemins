@@ -52,6 +52,7 @@ const publicFiles = [
   'ordre-lecture.js',
   'chapitre1-flow.js',
   'chapitre1-plateau.js',
+  'mini-cartes.js',
   'libre-parcours.js',
   'rendezvous-plateau.js',
   'lecture.html',
