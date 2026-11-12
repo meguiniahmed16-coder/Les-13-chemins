@@ -12,7 +12,7 @@
  const CHAPTER2_PARTS=Object.freeze([
   Object.freeze({part:1,scene:4,plateau:1,chapter:2,chapterTitle:'Même pas mal',title:'Sarajevo',game:'jeu-bosnie.html'}),
   Object.freeze({part:2,scene:5,plateau:1,chapter:3,chapterTitle:'Le coup du bus',title:'Le danseur',game:'jeu-danse.html'}),
-  Object.freeze({part:3,scene:5,plateau:2,chapter:4,chapterTitle:'Le drapeau rouge',title:'La prison',game:'jeu-yoyo.html'})
+  Object.freeze({part:3,scene:5,plateau:2,chapter:4,chapterTitle:'Le drapeau rouge',title:'Camarades !',game:'jeu-manifestation.html'})
  ]);
  // Les noms CHAPTER2_PARTS/chapter2* restent compatibles avec les intégrations.
  // Ils désignent la deuxième étape de jeu, qui regroupe les chapitres 2 à 4.
@@ -66,7 +66,10 @@
    (completed(state,4)&&state?.bosnieFinished)||pastDance||state?.yoyoFinished);
   if(n===2)return Boolean(
    state?.danseFinished||p.finished?.includes(1)||state?.yoyoFinished);
-  return Boolean(state?.yoyoFinished&&(completed(state,5)||p.finished?.includes(2))||p.finished?.includes(2));
+  // Le premier « Drapeau rouge » se termine avec Camarades !.
+  // Les anciennes sauvegardes de la prison restent valides pour ne verrouiller personne.
+  return Boolean(state?.rdvManifestationFinished||state?.rdvManifestationSkipped||
+   state?.yoyoFinished&&(completed(state,5)||p.finished?.includes(2))||p.finished?.includes(2));
  }
  function chapter2Done(state){return CHAPTER2_PARTS.every(p=>chapter2PartDone(state,p.part));}
  function chapter2NextPart(state){return CHAPTER2_PARTS.find(p=>!chapter2PartDone(state,p.part))?.part||1;}
