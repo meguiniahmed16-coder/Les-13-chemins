@@ -16,11 +16,11 @@
  ];
  const currentKey=()=>{
   if(state.selected>=1&&state.selected<=4)return String(state.selected);
-  if(state.selected===5)return flow.chapter2PartDone(state,2)?'5:prison':'5:dance';
+  if(state.selected===5)return window.TreizePlateauxNavigation?.currentPart?.()==='prison'?'5:prison':'5:dance';
   return null;
  };
  const passed=key=>key==='5:dance'?flow.chapter2PartDone(state,2):
-  key==='5:prison'?flow.chapter2PartDone(state,3):
+  key==='5:prison'?Boolean(state.yoyoFinished||state.storySkips?.includes('5:prison')):
   Number(key)===4?flow.chapter2PartDone(state,1):flow.partDone(state,Number(key));
  function back(key){
   const view=VIEWS.find(v=>v.key===key);
