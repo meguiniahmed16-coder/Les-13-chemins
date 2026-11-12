@@ -57,6 +57,9 @@
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const map=L.map(el,{zoomControl:false,dragging:false,scrollWheelZoom:false,
    doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false,attributionControl:true});
+  // Leaflet affiche par défaut un drapeau ukrainien dans son préfixe d'attribution.
+  // Désactiver uniquement ce préfixe ; conserver le crédit © OpenStreetMap.
+  map.attributionControl.setPrefix(false);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
    maxZoom:18,attribution:'© OpenStreetMap contributors',crossOrigin:true
   }).addTo(map);
