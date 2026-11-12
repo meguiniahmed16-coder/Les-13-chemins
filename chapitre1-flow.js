@@ -97,10 +97,10 @@
   const k=String(key),scene=Number(k.split(':')[0]);
   if(!SKIP_KEYS.includes(k)||!state||!Array.isArray(state.completed))return false;
   if(!canEnter(state,scene))return false;
-  if(k==='5:prison'&&!chapter2PartDone(state,2))return false;
+  if(k==='5:prison'&&!chapter2Done(state))return false;
   if(k==='5:dance'&&chapter2PartDone(state,2))return false;
   const passed=k==='5:dance'?chapter2PartDone(state,2):
-   k==='5:prison'?chapter2PartDone(state,3):
+   k==='5:prison'?Boolean(state?.yoyoFinished||wasSkipped(state,k)):
    scene<=3?partDone(state,scene):chapter2PartDone(state,1);
   if(passed)return false; // No skipped mark over an already earned win.
   state.storySkips??=[];
