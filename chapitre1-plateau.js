@@ -51,6 +51,18 @@
 #rendezvousDialog .rendezvous-part-nav{max-width:650px;margin:32px auto 0}
 @media(max-width:600px){#rendezvousDialog .rendezvous-content{padding:25px 20px 78px}#rendezvousDialog .rendezvous-excerpt{font-size:20px;line-height:1.8}#rendezvousDialog .rendezvous-top{font-size:11px;padding:11px 12px}#rendezvousDialog .rendezvous-top strong{font-size:11px}#rendezvousDialog .rendezvous-top button{font-size:12px}}
 `;
+ css.textContent+=`
+#boardTargets .mini-atlas-card{grid-column:1/-1;min-width:0;padding:11px 12px 8px;overflow:hidden}
+#boardTargets .mini-atlas-card .chapter-journey-title{margin:0 0 7px;text-align:left}
+#boardTargets .mini-atlas-map{height:185px;min-height:185px;border:1px solid #b29a72;border-radius:7px;overflow:hidden;background:#e5e4d7;position:relative;isolation:isolate}
+#boardTargets .mini-atlas-caption{font:10px/1.35 'DM Sans',sans-serif;color:#78644c;margin:6px 0 0}
+#boardTargets .mini-atlas-map .leaflet-container{background:#e5e4d7}
+#boardTargets .mini-atlas-map .leaflet-control-attribution{font-size:8px;background:#fff9ebc9}
+#boardTargets .mini-atlas-map .mini-atlas-label{background:#fff8e9e8;color:#294a3d;border:1px solid #b79b68;padding:2px 5px;border-radius:5px;white-space:nowrap;font:700 10px/1.2 'DM Sans',sans-serif;box-shadow:0 1px 4px #13281d40}
+#boardTargets .mini-atlas-map .mini-atlas-walker{width:36px;height:49px;filter:drop-shadow(0 3px 3px #203b2b99)}
+#boardTargets .mini-atlas-map .mini-atlas-walker svg{width:36px;height:49px;display:block}
+@media(max-width:600px){#boardTargets .mini-atlas-map{height:165px;min-height:165px}#boardTargets .mini-atlas-card{padding:9px 8px}}
+`;
  document.head.append(css);
  $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
  const intro=document.querySelector('.board-intro');
@@ -173,18 +185,24 @@
     main.onclick=openMain;
     return button;
    }));
-   // Visually link chapter 1 to chapter 2 with the exact stop sequence.
-   const connector=document.createElement('div');connector.className='chapter-journey-route';
-   connector.setAttribute('role','group');
-   connector.setAttribute('aria-label','Voyage du chapitre 1 au chapitre 2 : Barcelone, Ferney-Voltaire, Vannes en Bretagne, Poitiers, Sarajevo.');
-   const heading=document.createElement('p');heading.className='chapter-journey-title';
-   heading.textContent='De Barcelone à Sarajevo · trajet entre les deux chemins';
-   const stops=document.createElement('div');stops.className='chapter-route-stops';
-   for(const name of ['Barcelone','Ferney-Voltaire','Vannes · Bretagne','Poitiers','Sarajevo']){
-    const stop=makeSpan('chapter-route-stop',name);stops.append(stop);
-   }
-   connector.append(heading,stops);
-   host.querySelector('[data-chapter="1"]').after(connector);
+   // Deux cartes de liaison : lieux du récit hors des trois jeux principaux.
+   const makeInterlude=(kind,title,description)=>{
+    const card=document.createElement('section');
+    card.className='chapter-journey-route mini-atlas-card';
+    card.dataset.miniAtlas=kind;
+    card.setAttribute('role','region');
+    card.setAttribute('aria-label',description);
+    const heading=document.createElement('p');heading.className='chapter-journey-title';heading.textContent=title;
+    const map=document.createElement('div');map.className='mini-atlas-map';map.dataset.route=kind;
+    map.setAttribute('aria-label',description);
+    const note=document.createElement('p');note.className='mini-atlas-caption';
+    note.textContent='Étapes du récit hors des jeux · tracé géographique indicatif, non GPS';
+    card.append(heading,map,note);
+    return card;
+   };
+   host.querySelector('[data-chapter="1"]').after(makeInterlude('one-two',
+    'Entre les chemins I et II · De Barcelone à Sarajevo',
+    'Carte animée : Barcelone, Ferney-Voltaire, Vannes, Poitiers et Sarajevo'));
    const third=document.createElement('div');third.setAttribute('role','group');third.tabIndex=-1;
    third.className='board-target chapter-featured step-chapters rendezvous-card';
    third.dataset.chemin='3';third.id='chemin-iii';
@@ -205,6 +223,9 @@
     thirdRoute.append(tile);
    }
    third.append(thirdMain,thirdRoute,makeSpan('chapter-card-status','À découvrir après le chemin II'),makeSpan('board-badge','✦'));
+   host.append(makeInterlude('two-three',
+    'Entre les chemins II et III · Du retour de Sarajevo à la prison',
+    'Carte animée : Sarajevo, Genève, Lyon, Louvain-la-Neuve, Paris et Strasbourg'));
    host.append(third);
   }
   for(const button of host.querySelectorAll('[data-chapter]')){
