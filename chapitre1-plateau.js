@@ -63,8 +63,27 @@
    jamais agrandir les tracés Leaflet ni le marcheur sur Android. */
 #boardTargets .mini-atlas-map .leaflet-overlay-pane svg{width:auto!important;height:auto!important;max-height:none!important;margin:0!important;display:block!important;position:absolute!important}
 #boardTargets .mini-atlas-map .leaflet-tile{max-width:none!important;max-height:none!important;object-fit:initial!important}
-#boardTargets .mini-atlas-map .mini-atlas-walker{width:36px!important;height:49px!important;background:transparent!important;border:0!important;filter:drop-shadow(0 3px 3px #203b2b99)}
-#boardTargets .mini-atlas-map .mini-atlas-walker svg{width:36px!important;height:49px!important;max-height:none!important;margin:0!important;display:block!important}
+#boardTargets .mini-atlas-map .mini-atlas-walker{width:48px!important;height:68px!important;background:transparent!important;border:0!important;filter:drop-shadow(0 3px 2px #203b2b88)}
+#boardTargets .mini-atlas-map .mini-atlas-walker svg{width:48px!important;height:68px!important;max-height:none!important;margin:0!important;display:block!important}
+#boardTargets .mini-atlas-map .pilgrim-figure{transform-origin:center;transition:transform .22s ease}
+#boardTargets .mini-atlas-map .pilgrim-figure.faces-left{transform:scaleX(-1)}
+#boardTargets .mini-atlas-map .pilgrim-leg{transform-origin:32px 51px;transform-box:view-box}
+#boardTargets .mini-atlas-map .pilgrim-arm{transform-origin:39px 33px;transform-box:view-box}
+#boardTargets .mini-atlas-map .pilgrim-body{transform-box:view-box}
+#boardTargets .mini-atlas-map[data-walking=true] .pilgrim-leg--near{animation:pilgrim-near-step .55s ease-in-out infinite}
+#boardTargets .mini-atlas-map[data-walking=true] .pilgrim-leg--far{animation:pilgrim-far-step .55s ease-in-out infinite}
+#boardTargets .mini-atlas-map[data-walking=true] .pilgrim-arm--near{animation:pilgrim-far-step .55s ease-in-out infinite}
+#boardTargets .mini-atlas-map[data-walking=true] .pilgrim-arm--far{animation:pilgrim-near-step .55s ease-in-out infinite}
+#boardTargets .mini-atlas-map[data-walking=true] .pilgrim-body{animation:pilgrim-pack-bob .275s ease-in-out infinite}
+@keyframes pilgrim-near-step{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
+@keyframes pilgrim-far-step{0%,100%{transform:rotate(16deg)}50%{transform:rotate(-16deg)}}
+@keyframes pilgrim-pack-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.4px)}}
+#boardTargets .mini-atlas-secret-title{font:600 clamp(16px,2.2vw,22px)/1.15 'Cormorant Garamond',Georgia,serif;color:#375646;margin:0 0 7px}
+#boardTargets .mini-atlas-replay{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;margin:8px 0 0;border:1px solid #9b8053;border-radius:6px;background:#fff7e4;color:#355547;font:700 11px/1.2 'DM Sans',sans-serif;min-height:37px;cursor:pointer}
+#boardTargets .mini-atlas-replay:hover{background:#e8dfc6}
+#boardTargets .mini-atlas-replay:focus-visible{outline:3px solid #315b49;outline-offset:2px}
+#boardTargets .mini-atlas-replay[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){#boardTargets .mini-atlas-map .pilgrim-leg,#boardTargets .mini-atlas-map .pilgrim-arm,#boardTargets .mini-atlas-map .pilgrim-body{animation:none!important}#boardTargets .mini-atlas-map .pilgrim-figure{transition:none!important}}
 #boardTargets .mini-atlas-map .mini-atlas-label{max-width:175px;overflow:hidden;text-overflow:ellipsis}
 #boardTargets .mini-atlas-card .mini-atlas-replay{display:inline-flex;align-items:center;justify-content:center;min-height:36px;margin:8px 0 0;padding:7px 12px;border:1px solid #a88a5d;border-radius:6px;background:#fdf5e5;color:#385545;font:700 11px/1.3 'DM Sans',sans-serif;cursor:pointer}
 #boardTargets .mini-atlas-card .mini-atlas-replay:hover{background:#e4e9d9}
@@ -202,11 +221,16 @@
     card.dataset.miniAtlas=kind;
     card.setAttribute('role','region');
     card.setAttribute('aria-label',description);
+    if(kind==='one-two'){
+     const secretTitle=document.createElement('h3');secretTitle.className='mini-atlas-secret-title';
+     secretTitle.textContent='Les chemins secrets — à découvrir uniquement dans le livre';
+     card.append(secretTitle);
+    }
     const heading=document.createElement('p');heading.className='chapter-journey-title';heading.textContent=title;
     const map=document.createElement('div');map.className='mini-atlas-map';map.dataset.route=kind;
     map.setAttribute('aria-label',description);
     const note=document.createElement('p');note.className='mini-atlas-caption';
-    note.textContent='Étapes du récit hors des jeux · tracé géographique indicatif, non GPS';
+    note.textContent='Repères du récit · liaisons indicatives, non GPS';
     card.append(heading,map,note);
     return card;
    };
