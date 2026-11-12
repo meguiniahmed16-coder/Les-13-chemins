@@ -35,16 +35,28 @@
  </svg>`;
  let loaded=null;
  function leaflet(){
-  if(window.L)return Promise.resolve(window.L);
   if(loaded)return loaded;
+  // Leaflet CSS must be ready before any map is created. Otherwise the SVG
+  // overlays and tiles inherit the generic styles of the large game board.
   loaded=new Promise((resolve,reject)=>{
-   if(!document.querySelector('link[data-mini-atlas]')){
-    const link=document.createElement('link');link.rel='stylesheet';link.href=CSS;link.dataset.miniAtlas='1';document.head.append(link);
+   const cssReady=Array.from(document.styleSheets).some(sheet=>
+    (sheet.href||'').includes('/leaflet@1.9.4/dist/leaflet.css'));
+   let stylesheet=Promise.resolve();
+   if(!cssReady){
+    stylesheet=new Promise((yes,no)=>{
+     const link=document.createElement('link');
+     link.rel='stylesheet';link.href=CSS;link.dataset.miniAtlas='1';
+     link.onload=yes;link.onerror=()=>no(new Error('Feuille de style cartographique indisponible'));
+     document.head.append(link);
+    });
    }
-   const script=document.createElement('script');script.src=JS;script.async=true;
-   script.onload=()=>window.L?resolve(window.L):reject(new Error('Leaflet indisponible'));
-   script.onerror=()=>reject(new Error('Impossible de charger la carte'));
-   document.head.append(script);
+   const library=window.L?Promise.resolve(window.L):new Promise((yes,no)=>{
+    const script=document.createElement('script');script.src=JS;script.async=true;
+    script.onload=()=>window.L?yes(window.L):no(new Error('Leaflet indisponible'));
+    script.onerror=()=>no(new Error('Impossible de charger la carte'));
+    document.head.append(script);
+   });
+   Promise.all([stylesheet,library]).then(([,L])=>resolve(L)).catch(reject);
   });
   return loaded;
  }
@@ -60,8 +72,10 @@
   // Leaflet affiche par défaut un drapeau ukrainien dans son préfixe d'attribution.
   // Désactiver uniquement ce préfixe ; conserver le crédit © OpenStreetMap.
   map.attributionControl.setPrefix(false);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-   maxZoom:18,attribution:'© OpenStreetMap contributors',crossOrigin:true
+  // A neutral French-language cartographic layer: no decorative flags.
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',{
+   subdomains:'abc',maxZoom:18,updateWhenIdle:true,keepBuffer:1,
+   attribution:'Données © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · rendu © <a href="https://www.openstreetmap.fr/">OSM France</a>'
   }).addTo(map);
   const bounds=L.latLngBounds(points);
   map.fitBounds(bounds,{padding:[17,22],maxZoom:7,animate:false});
