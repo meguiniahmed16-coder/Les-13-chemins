@@ -115,7 +115,7 @@ test('Both narrative interludes are compact moving maps with a detailed backpack
  assert.ok(maps.includes("replay.onclick=()=>"),'Manual replay exists on each map');
  assert.ok(maps.includes("replay.hidden=true"),'Replay button is hidden while travelling');
  assert.ok(maps.includes("finished=true;cancelAnimationFrame(frame)"),'Travel stops at the destination');
- assert.ok(maps.includes("if(!hasStarted){hasStarted=true;resume()}"),'Viewport starts the animation once');
+ assert.match(maps,/if\(!hasStarted\)\{hasStarted=true;resume\(\);?\}/,'Viewport starts the animation once');
  assert.ok(!maps.includes("(now-started)%duration"),'Previous infinite looping animation is removed');
 });
 
