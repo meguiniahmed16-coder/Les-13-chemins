@@ -229,7 +229,12 @@ const MEDIA={
  A06:HIGGS_CDN+'hf_20261110_194605_9d971eb9-b62d-4342-9b1c-c47a9a9e3046.mp4',
  A07:HIGGS_CDN+'hf_20261110_194610_25bacf25-04f1-49b2-98a6-e7db3a1d2b16.mp4',
  A08:HIGGS_CDN+'hf_20261110_194644_e396ef78-ecec-493f-be2b-da6fdb7027c7.mp4'
-}; 
+};
+const R2_VIDEO_BASE='https://treize-chemins-videos.meguiniahmed16.workers.dev/rencontre/';
+// Carte Higgsfield originale conservée pour un recours si un clip R2 échoue.
+const R2_MEDIA=Object.fromEntries(Object.entries(MEDIA).map(([id,url])=>[id,R2_VIDEO_BASE+url.slice(HIGGS_CDN.length)]));
+const R2_FAILED=new Set();
+const preferredVideoUrl=id=>R2_FAILED.has(id)?MEDIA[id]:(R2_MEDIA[id]||MEDIA[id]);
 const FILMS={cuisine:null,chambre:null};
 const MUSIC={
  cuisine:{title:'Felicity',name:'Felicity — Scott Buckley',artist:'Scott Buckley',license:'CC BY 4.0',source:'https://www.scottbuckley.com.au/library/felicity/',file:null,startShot:'C01',credit:'Felicity — Scott Buckley (scottbuckley.com.au), CC BY 4.0',src:'https://www.scottbuckley.com.au/library/wp-content/uploads/2021/03/sb_felicity.mp3'},
@@ -307,7 +312,14 @@ function draw(){
   const shot=atEnd?'B05bis':step.clips[0];
   if(MEDIA[shot]){
    still.hidden=true;fallback.hidden=true;stage.hidden=false;stage.muted=true;
-   if(stage.dataset.shot!==shot){stage.pause();stage.dataset.shot=shot;stage.src=MEDIA[shot];stage.load();}
+   if(stage.dataset.shot!==shot){
+     stage.pause();stage.dataset.shot=shot;
+     stage.onerror=()=>{
+       if(stage.dataset.shot!==shot||stage.src!==R2_MEDIA[shot])return;
+       R2_FAILED.add(shot);stage.src=MEDIA[shot];stage.load();
+     };
+     stage.src=preferredVideoUrl(shot);stage.load();
+    }
   }else{
    still.hidden=true;stage.hidden=true;fallback.hidden=false;fallback.textContent=atEnd?'Fin de la rencontre':'La chambre mansardée';
   }
@@ -346,7 +358,9 @@ function playCurrent(){
  $('nextMovie').disabled=false;
  $('nextMovie').textContent=movieIndex+1<pending.length?'Plan suivant →':'Terminer la séquence →';
  if(MEDIA[shot[0]]){
-  still.hidden=true;player.hidden=false;player.src=MEDIA[shot[0]];player.load();
+  still.hidden=true;player.hidden=false;
+  const primarySrc=preferredVideoUrl(shot[0]);
+  player.src=primarySrc;player.load();
   $('nextMovie').disabled=true;
   player.onplaying=()=>{
    if(!pending||!$('cinema').open)return;
@@ -371,6 +385,16 @@ function playCurrent(){
   };
   player.onerror=()=>{
    if(!pending||!$('cinema').open)return;
+   // Si R2 échoue, reprendre le même plan depuis la source Higgsfield validée.
+   if(player.src===R2_MEDIA[shot[0]]&&!R2_FAILED.has(shot[0])){
+    R2_FAILED.add(shot[0]);player.src=MEDIA[shot[0]];player.load();
+    const retry=player.play();
+    if(retry&&typeof retry.catch==='function')retry.catch(()=>{
+      if(!pending||!$('cinema').open||shot[0]!==pending[movieIndex])return;
+      resume.hidden=false;$('nextMovie').disabled=true;
+    });
+    return;
+   }
    resume.hidden=true;player.hidden=true;still.hidden=false;poster.hidden=true;
    $('movieStillTitle').textContent='Vidéo momentanément inaccessible';
    $('movieStillText').textContent='La vidéo validée n’a pas pu être chargée. Tu peux l’ouvrir directement ou poursuivre le récit.';
@@ -378,7 +402,7 @@ function playCurrent(){
   };
   const attempt=player.play();
   if(attempt&&typeof attempt.catch==='function')attempt.catch(()=>{
-   if(!pending||!$('cinema').open||shot[0]!==pending[movieIndex])return;
+   if(!pending||!$('cinema').open||shot[0]!==pending[movieIndex]||player.src!==primarySrc)return;
    // Sur certains mobiles, l’autoplay AVEC son exige un second geste : garder la vidéo et proposer ce geste.
    resume.hidden=false;$('nextMovie').disabled=true;
    $('musicStatus').textContent='Touche « Reprendre avec le son » pour autoriser la lecture.';
