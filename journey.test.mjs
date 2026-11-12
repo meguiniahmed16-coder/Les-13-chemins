@@ -111,7 +111,12 @@ test('Both narrative interludes are compact moving maps with a detailed backpack
  assert.ok(maps.includes('requestAnimationFrame(tick)'));
  assert.ok(maps.includes('prefers-reduced-motion: reduce'));
  assert.ok(build.includes("'mini-cartes.js'"));
- assert.ok(page.includes('mini-cartes.js?v=20261112-sans-drapeau-v2'));
+ assert.ok(page.includes('mini-cartes.js?v=20261112-une-fois-v1'));
+ assert.ok(maps.includes("replay.onclick=()=>"),'Manual replay exists on each map');
+ assert.ok(maps.includes("replay.hidden=true"),'Replay button is hidden while travelling');
+ assert.ok(maps.includes("finished=true;cancelAnimationFrame(frame)"),'Travel stops at the destination');
+ assert.ok(maps.includes("if(!hasStarted){hasStarted=true;resume()}"),'Viewport starts the animation once');
+ assert.ok(!maps.includes("(now-started)%duration"),'Previous infinite looping animation is removed');
 });
 
 test('Every arrival shows its chapter title and the documented characters on the map',()=>{
