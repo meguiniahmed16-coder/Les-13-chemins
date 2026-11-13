@@ -30,7 +30,7 @@ for (const args of [
   ['--test', 'cyrano-bd.test.mjs'],
   ['--check', 'rendezvous-plateau.js'],
   ['--test', 'rencontre-game.test.mjs'],
-  ['--test', 'marmousets-art.test.mjs'],
+  ['--test', 'marmousets-art.test.mjs', 'marmousets-3d.test.mjs'],
   ['--test', 'a410-pixel-v2.test.mjs'],
   ['--test', 'catalogne-park-v2.test.mjs'],
   ['--test', 'ordre-lecture.test.mjs'],
@@ -94,6 +94,15 @@ const publicFiles = [
   'catalogne-3d-runtime.js',
   'arcade-marmousets.html',
   'marmousets-art-v2.js',
+  'marmousets-3d-runtime.js',
+  'marmousets-session.js',
+  'assets/marmousets/horse.gltf',
+  'assets/marmousets/horse.bin',
+  'assets/marmousets/adult.glb',
+  'assets/marmousets/child.glb',
+  'assets/marmousets/tree.glb',
+  'assets/marmousets/bush.glb',
+
   'jeu-manifestation.html',
   'manifestation-runtime.js',
   'jeu-cyrano.html',
@@ -145,7 +154,7 @@ for (const name of publicFiles) {
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('Fichier public non régulier : ' + name);
   }
-  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name)) continue;
+  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name) || name.endsWith('.bin')) continue;
   const content = await readFile(source, 'utf8');
   if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(content)) {
     throw new Error('Lien vers un document de travail interdit dans : ' + name);

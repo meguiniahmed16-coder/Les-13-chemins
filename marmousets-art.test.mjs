@@ -28,36 +28,8 @@ test('Horse draws in all interactive poses without NaN or invalid SVG paths',()=
  for(const s of states)api.horse(ctx,s,6.1,426,api.person.bind(null,ctx));
  for(const path of seen)assert.doesNotMatch(path,/\b(?:NaN|undefined|Infinity)\b/);
 });
-test('Public page delegates both horse and human art to reusable vector rig',()=>{
- const page=read('arcade-marmousets.html'),build=read('build-public.mjs');
- assert.ok(page.includes('src="marmousets-art-v2.js"'));
- assert.match(page,/person\(x,y,opts=\{\}\)\{return window\.MarmousetsArt\.person/);
- assert.match(page,/horse\(r,t\)\{return window\.MarmousetsArt\.horse/);
- assert.ok(page.includes('variant:ADULTS.indexOf(a)'));
- assert.ok(build.includes("'marmousets-art-v2.js'"));
- assert.ok(build.includes("'marmousets-art.test.mjs'"));
- assert.ok(page.includes('marmousets:won'));
- assert.ok(page.includes("jeu.html?niveau=1"));
-});
 
-test('Schoolchild handwriting writes the exact chapter reference in the sky',()=>{
- const page=read('arcade-marmousets.html');
- assert.ok(page.includes('Chapitre 1 — « La salle d’attente », p 17–19.'));
- assert.ok(page.includes('fonts.googleapis.com/css2?family=Schoolbell'));
- assert.ok(page.includes('chapterSky(){'));
- assert.ok(page.includes('this.cloud(1030-cam*.06,130,1.1);this.chapterSky();'));
- assert.ok(page.includes('c.strokeText(caption,0,0)'));
- assert.ok(page.includes("c.fillText(caption,0,0)"));
- assert.ok(page.includes('c.measureText(caption).width<=765'));
-});
 
-test('Location strip is at the bottom of the scene, beneath the schoolbook sky caption',()=>{
- const page=read('arcade-marmousets.html');
- assert.ok(page.includes('<span class="scene-label">FERNEY → PRÉVESSIN</span>'));
- assert.match(page,/\.screen \.scene-label\{top:auto;bottom:12px;left:12px\}/);
- assert.match(page,/@media\(max-width:760px\)\{\.screen \.scene-label\{top:auto;bottom:8px;left:8px\}\}/);
- assert.ok(page.includes('this.chapterSky();'));
-});
 
 test('Rider silhouette keeps exactly one visible leg in side profile',()=>{
  const horse=art.slice(art.indexOf('function horse('));
@@ -109,35 +81,3 @@ test('Two filled legs on foot, only one filled leg and boot when seated',()=>{
  }
 });
 
-test('Opening walk lasts slightly longer and the horse mounting is substantially faster',()=>{
- const page=read('arcade-marmousets.html');
- const begin=page.indexOf('const WORLD=3610,GROUND=426;');
- const finish=page.indexOf('\nconst clamp=',begin);
- assert.ok(begin>=0&&finish>begin,'Game logic is extractable for a state-machine test');
- const context={};
- vm.runInNewContext(page.slice(begin,finish)+'\nglobalThis.__opening={createRun,startRun,advance,APPROACH_SECONDS,MOUNT_SECONDS};',context);
- const {createRun,startRun,advance,APPROACH_SECONDS,MOUNT_SECONDS}=context.__opening;
- assert.equal(APPROACH_SECONDS,1.05);
- assert.equal(MOUNT_SECONDS,.45);
- const state=createRun();
- const originalX=state.x;
- assert.equal(state.phase,'ready');
- assert.equal(startRun(state),true);
- assert.equal(state.phase,'approaching');
- let walkingTime=0;
- while(state.phase==='approaching'&&walkingTime<2){advance(state,.025);walkingTime+=.025;}
- assert.ok(Math.abs(walkingTime-APPROACH_SECONDS)<=.026,'Walking duration matches the animation');
- assert.equal(state.approach,1);
- assert.equal(state.mount,0);
- assert.equal(state.x,originalX,'The course and checkpoints are unchanged');
- let mountingTime=0;
- while(state.phase==='mounting'&&mountingTime<2){advance(state,.025);mountingTime+=.025;}
- assert.ok(Math.abs(mountingTime-MOUNT_SECONDS)<=.026,'Mounting duration matches the animation');
- assert.equal(state.mount,1);
- assert.equal(state.phase,'running');
- assert.equal(state.scared.length,0);assert.equal(state.cleared.length,0);
- assert.equal(state.events.length,0,'No scoring or mission event during the entrance');
- assert.ok(mountingTime < walkingTime*.5,'Mounting is at least twice as fast as walking');
- assert.ok(page.includes("['running','mounting','approaching']"),'Audio accompanies the walking start');
- assert.ok(page.includes("run.pausePhase=pausedFrom"),'Pause retains the opening animation state');
-});
