@@ -482,7 +482,7 @@
  };
  if(flow.reconcile(state))save();
  render();
- let pendingAuto=0,autoTransitionTimer=0;
+ let pendingAuto=0,autoTransitionTimer=0,marmousetsOutroId=null;
  const finishes={'marmousets:won':1,'a410:escaped':2,'catalogne:sale':3,'bosnie:won':4};
  const closes={'marmousets:close':1,'a410:close':2,'catalogne:close':3,'bosnie:close':4};
  const dialogIds={1:'marmousetsDialog',2:'arcadeDialog',3:'catalogneDialog',4:'bosnieDialog'};
@@ -490,7 +490,7 @@
  function sceneFinished(n){return n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n);}
  function afterClose(n){
   if(pendingAuto!==n||state.selected!==n||!sceneFinished(n))return;
-  pendingAuto=0;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;
+  pendingAuto=0;marmousetsOutroId=null;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;
   queueMicrotask(()=>{if(state.selected===n&&sceneFinished(n))rollTravel(n);});
  }
  function scheduleAutoTransition(n){
@@ -507,13 +507,26 @@
  window.addEventListener('message',event=>{
   if(event.origin!==location.origin||!event.data)return;
   const type=event.data.type,finished=finishes[type],closed=closes[type];
+  if(type==='marmousets:won'||type==='marmousets:outro-ended'){
+   if(event.source!==$('marmousetsFrame')?.contentWindow||!$('marmousetsDialog')?.open)return;
+   if(type==='marmousets:outro-ended'){
+    if(marmousetsOutroId===null||event.data.id!==marmousetsOutroId)return;
+    marmousetsOutroId=null;
+    if(state.selected===1&&sceneFinished(1))scheduleAutoTransition(1);
+    return;
+   }
+   if(event.data.outro===true&&typeof event.data.id==='string'&&state.selected===1&&sceneFinished(1)){
+    marmousetsOutroId=event.data.id;pendingAuto=1;
+    clearTimeout(autoTransitionTimer);autoTransitionTimer=0;return;
+   }
+  }
   if(finished&&state.selected===finished&&sceneFinished(finished))scheduleAutoTransition(finished);
   if(closed)afterClose(closed);
  });
  for(const [n,id]of [[1,'marmousetsClose'],[2,'arcadeClose'],[3,'catalogneClose'],[4,'bosnieClose']])
   $(id)?.addEventListener('click',()=>afterClose(n));
  window.TreizeSceneNavigation={
-  cancelAutomatic(){pendingAuto=0;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;},
+  cancelAutomatic(){pendingAuto=0;marmousetsOutroId=null;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;},
   continue(){if(!boardRolling)rollTravel(state.selected);}
  };
  window.addEventListener('focus',updateProgressBar);

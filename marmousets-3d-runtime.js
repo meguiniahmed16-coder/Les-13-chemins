@@ -4700,7 +4700,12 @@ function rc(s = 130, e = 0.06, t = 0.025) {
   let n = En.createOscillator(), i = En.createGain();
   n.type = "triangle", n.frequency.setValueAtTime(s, En.currentTime), n.frequency.exponentialRampToValueAtTime(s * 0.5, En.currentTime + e), i.gain.setValueAtTime(t, En.currentTime), i.gain.exponentialRampToValueAtTime(1e-3, En.currentTime + e), n.connect(i).connect(En.destination), n.start(), n.stop(En.currentTime + e);
 }
-var mmSession = window.MarmousetsSession({ window, onInit() {
+var mmOutro = window.MarmousetsOutro({ document, onEnd() {
+  Je("finished").hidden = false;
+  mmSession.outroEnded();
+} });
+var mmSession = window.MarmousetsSession({ window, hasOutro:true, onInit() {
+  mmOutro.reset();
   Xe = null;
   Kt = false;
   un = 0;
@@ -4726,11 +4731,12 @@ function mmStopGallop(){mmGallopHeld=false;if(Xe)Xe.gallop=false;Je("gallop").se
 function $r(s) {
   mmStopGallop();
   if (!tf || !mmSession.canPlay()) return;
+  mmOutro.reset();if(!s)mmOutro.prime();
   mmSession.start();un=0;Je("demoEnd").hidden=true;Je("takeControl").hidden=!s;
   Xe = Xd(s), Kt = false, Je("intro").hidden = true, Je("finished").hidden = true, Je("controls").hidden = s, Je("mode").textContent = s ? "D\xC9MONSTRATION" : "\xC0 VOUS DE JOUER", Je("pause").textContent = "\u2161", is("Idle");
 }
 function oc(s) {
-  Xe && !Kt && Xs(Xe, s, un||(mmGallopHeld?1:0)) && rc(s === "jump" ? 260 : 180, 0.12);
+  Xe && !Kt && !mmOutro.active && Xs(Xe, s, un||(mmGallopHeld?1:0)) && rc(s === "jump" ? 260 : 180, 0.12);
 }
 Je("demo").onclick = () => $r(true);
 Je("play").onclick = () => $r(false);
@@ -4760,6 +4766,7 @@ window.addEventListener('keydown',e=>{if(e.key==='Shift'&&Xe&&!Kt&&['ride','jump
 window.addEventListener('keyup',e=>{if(e.key==='Shift')mmStopGallop();});
 window.addEventListener('blur',mmStopGallop);document.addEventListener('visibilitychange',()=>{if(document.hidden)mmStopGallop();});
 window.addEventListener("keydown", (s) => {
+  if(mmOutro.active)return;
   ["ArrowLeft", "ArrowRight", " ", "a", "A", "d", "D", "e", "E"].includes(s.key) && s.preventDefault(), (s.key === "ArrowRight" || s.key === "d" || s.key === "D") && (un = 1), (s.key === "ArrowLeft" || s.key === "a" || s.key === "A") && (un = -1), !s.repeat && s.key === " " && oc("jump"), !s.repeat && ["e", "E"].includes(s.key) && oc("rear");
 });
 window.addEventListener("keyup", (s) => {
@@ -4792,12 +4799,16 @@ function tx(){
  Je('step').textContent=Xe.obstacles.filter(o=>o.cleared).length+' / 4 obstacles · '+Xe.adults.filter(a=>a.fleeTime!==null).length+' / 15 adultes';
  if(Xe.auto){Je('step').textContent=Xe.demoComplete?'Démonstration terminée':'Démonstration · 1 obstacle';Je('progress').style.width=(Xe.demoComplete?100:Math.max(0,Math.min(100,(Xe.x-7.4)/(15.3-7.4)*100)))+'%';}
  Je('demoEnd').hidden=!Xe.demoComplete;
- if(Xe.complete)Je('finished').hidden=false;
+ if(Xe.complete&&!Xe.auto){
+  if(mmOutro.start()){mmStopGallop();un=0;Kt=true;Je('controls').hidden=true;}
+  Je('finished').hidden=!mmOutro.completed;
+ }
 }
 var $d = new C(), jd = new C();
 function nf(s) {
   requestAnimationFrame(nf);
   let e = dh ? Math.min(2, (s - dh) / 1e3) : 0.016;
+  if(mmOutro.active){dh=s;return;}
   if (dh = s, !tf) {
     rn.render(Pt, li);
     return;
