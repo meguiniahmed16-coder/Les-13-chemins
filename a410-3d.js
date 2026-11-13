@@ -3,6 +3,8 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {surface,glassSurfaces,stainMaterial,shadowMaterial} from './a410-materials.js';
 import {SoftwareRenderer} from './a410-software.js';
+import {poseRunner,poseSeated} from './a410-motion.js';
+import {createCar,rollCar} from './a410-cars.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -82,21 +84,60 @@ function school(p){
  for(const x of[-10.8,-2.3,2.3,10.8]){decal(.6,.5,damp,x,.28,16.33,g);box(.8,.18,.78,stoneTrim,x,.09,16,g);}
  for(const x of[-2.3,2.3])for(const y of[.5,1.6]){box(.18,.06,.08,iron,x+(x<0?.34:-.34),y,16.07,g);ball(.025,.025,.02,stoneTrim,x+(x<0?.34:-.34),y,16.12,g);}
  for(let i=0;i<65;i++){const x=-9.6+(i*1.713)%19.2,z=4.8+(i*2.193)%11.1;if(Math.abs(x)<3)continue;const leaf=mesh(new T.PlaneGeometry(.04+(i%4)*.013,.10),i%3?palette.wood:palette.leaf,x,.027,z,g);leaf.rotation.set(-Math.PI/2,0,i*.7);leaf.castShadow=false;}
- car(13,-3.4,'#62817b',p);
+ car(13,-3.4,'#62817b',p);decal(4.4,1.8,softShadow,13,.012,-3.4,p,true);
 }
 function bench(x,z,p){for(let i=0;i<4;i++){box(2.1,.075,.12,palette.wood,x,.46,z+i*.14,p);box(2.1,.12,.06,palette.wood,x,.72+i*.12,z-.1,p);}for(const a of[-.75,.75]){box(.08,.48,.51,palette.metal,x+a,.24,z+.17,p);box(.065,.8,.065,palette.metal,x+a,.65,z-.12,p);}}
 function bicycle(x,z,p){const dark=palette.dark;for(const dx of[-.44,.44]){const wheel=mesh(new T.TorusGeometry(.29,.027,5,18),dark,x+dx,.32,z,p);for(let k=0;k<4;k++){let a=k*Math.PI/4;bar(V(x+dx-Math.cos(a)*.27,.32-Math.sin(a)*.27,z),V(x+dx+Math.cos(a)*.27,.32+Math.sin(a)*.27,z),.007,palette.stone,p);}}
  for(const[a,b]of[[[-.44,.32],[0,.34]],[[0,.34],[-.16,.78]],[[-.16,.78],[-.44,.32]],[[-.16,.78],[.3,.8]],[[.3,.8],[0,.34]],[[.3,.8],[.44,.32]]])bar(V(x+a[0],a[1],z),V(x+b[0],b[1],z),.025,palette.metal,p);box(.28,.045,.11,dark,x-.16,.8,z,p);bar(V(x+.3,.8,z),V(x+.26,1,z),.025,dark,p);
 }
-function car(x,z,color,p){const g=new T.Group();g.position.set(x,0,z);p.add(g);const paint=material(color);box(2.5,.49,1.05,paint,0,.6,0,g);box(1.25,.46,.95,paint,-.15,1.04,0,g);for(const s of[-1,1]){box(1.06,.32,.03,palette.glass,-.15,1.07,s*.49,g);for(const wx of[-.8,.8]){const wheel=mesh(new T.CylinderGeometry(.27,.27,.16,12),palette.dark,wx,.3,s*.53,g);wheel.rotation.x=Math.PI/2;}box(.08,.18,.26,palette.white,1.27,.62,s*.32,g);}box(2.6,.1,1.08,palette.metal,0,.43,0,g);return g;}
+const car=createCar;
+const picnicSpots=[{x:30,z:-6.5,a:-.10},{x:43,z:-7.2,a:.18},{x:62,z:-6.4,a:-.13}];
+function picnicTable(spot,parent){
+ const g=new T.Group();parent.add(g);g.position.set(spot.x,0,spot.z);g.rotation.y=spot.a;
+ for(let i=0;i<5;i++)box(2.2,.065,.155,palette.wood,0,.79,-.33+i*.165,g);
+ for(const side of[-1,1]){
+  for(let i=0;i<2;i++)box(2.25,.075,.14,palette.wood,0,.46,side*.79+(i-.5)*.15,g);
+  for(const x of[-.76,.76]){bar(V(x,.76,side*.22),V(x,.035,side*.65),.055,palette.wood,g);box(.13,.095,1.93,palette.wood,x,.36,0,g);}
+ }
+ bar(V(-.78,.43,0),V(.78,.43,0),.055,palette.wood,g);
+ for(const x of[-.75,.75])for(const z of[-.65,.65])ball(.022,.022,.016,palette.metal,x,.375,z,g);
+ // Picnic objects make the tables look occupied, without adding moving obstacles.
+ const cream=material('#e6dcc4'),red=material('#a36d4b'),green=material('#506c5b');
+ const cloth=box(.68,.018,.61,cream,.05,.834,.01,g);cloth.rotation.y=.09;
+ for(const x of[-.55,.54]){const plate=mesh(new T.CylinderGeometry(.12,.12,.015,20),cream,x,.84,x>0?-.1:.12,g);const cup=mesh(new T.CylinderGeometry(.043,.035,.1,12),red,x+.18,.89,-.14,g);const handle=mesh(new T.TorusGeometry(.033,.008,5,12),red,x+.22,.9,-.14,g);}
+ mesh(new T.CylinderGeometry(.042,.05,.24,12),green,.08,.955,.1,g);box(.05,.04,.05,palette.metal,.08,1.09,.1,g);
+ box(.27,.04,.18,red,-.17,.86,-.14,g);box(.24,.023,.16,cream,-.17,.865,-.145,g);
+ box(.33,.19,.23,palette.wood,.75,.925,.06,g);const handle=mesh(new T.TorusGeometry(.12,.012,5,16,Math.PI),palette.wood,.75,1.01,.06,g);
+ decal(3.9,2.6,softShadow,0,.035,0,g,true);
+ return g;
+}
+function freezePeople(group,parent){
+ group.updateMatrixWorld(true);const frozen=new T.Group();
+ group.traverse(o=>{if(!o.isMesh)return;const geo=o.geometry.clone(),pos=geo.attributes.position;
+  if(o.isSkinnedMesh){o.skeleton.update();const v=new T.Vector3();for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i);o.applyBoneTransform(i,v);pos.setXYZ(i,v.x,v.y,v.z);}geo.deleteAttribute('skinIndex');geo.deleteAttribute('skinWeight');geo.computeVertexNormals();}
+  geo.applyMatrix4(o.matrixWorld);const m=new T.Mesh(geo,o.material);m.castShadow=true;m.receiveShadow=true;frozen.add(m);
+ });
+ parent.remove(group);parent.add(frozen);mergeStatic(frozen,true);return frozen;
+}
+function addPicnickers(asset,parent){
+ const clothes=[['#627c87','#403e38','#d1a783','#504437'],['#b48c59','#444f51','#b7805f','#32261f'],['#677458','#485b66','#d9b89a','#8b8171'],['#ad7368','#343b40','#be8e69','#46332a'],['#747e91','#505045','#dbb191','#3b3128'],['#a6a08a','#4e5c56','#b58060','#6b6258']];
+ picnicSpots.forEach((spot,i)=>{for(const side of[-1,1]){
+  const index=i*2+(side>0?1:0),colors=clothes[index],localX=side>0?.42:-.43,localZ=side*.84;
+  const p=person(asset,1.70+(index%3)*.065,'casual',parent,{shirt:colors[0],pants:colors[1],skin:colors[2],hair:colors[3]});
+  p.group.rotation.y=spot.a+(side>0?Math.PI:0);p.group.position.x=spot.x+Math.cos(spot.a)*localX+Math.sin(spot.a)*localZ;p.group.position.z=spot.z-Math.sin(spot.a)*localX+Math.cos(spot.a)*localZ;
+  poseSeated(p,.46,index%3-1);freezePeople(p.group,parent);
+ }});
+}
 
 function landscape(root){
  const built=new T.Group();root.add(built);
- for(let x=-30;x<120;x+=5)for(let z=-43;z<23;z+=5)box(5,.3,5,palette.grass,x,-.24,z,built);
- const asphalt=surface('asphalt','#9b9d8e',3,85);for(let x=-17;x<16;x+=3)box(3,.08,5.4,asphalt,x,-.05,0,built);
+ for(let x=-30;x<120;x+=5)for(let z=-43;z<23;z+=5)box(5,.3,5,palette.grass,x,-.15,z,built);
+ const asphalt=surface('asphalt','#9b9d8e',3,85);for(let x=-17;x<16;x+=3)box(3,.08,5.4,asphalt,x,-.025,0,built);
  for(let x=6;x<112;x+=2)box(2,.07,3.9,palette.path,x,-.02,0,built);
  for(const z of[-2.05,2.05])box(115,.13,.17,palette.stone,48,.02,z,built);
  school(built);
+ for(const spot of picnicSpots)picnicTable(spot,built);
+ const parked=car(35,-10.4,'#d5d3bb',built,'fiesta');parked.rotation.y=-.17;decal(4.4,1.85,softShadow,35,.012,-10.4,built,true);
  // Mountain silhouettes are scenery, not an exact geographic reconstruction.
  // Irregular, layered ridgelines replace the earlier cone silhouettes.
  for(let layer=0;layer<3;layer++){
@@ -120,7 +161,7 @@ function landscape(root){
  for(let x=19;x<71;x+=3.3){box(.11,.95,.11,palette.wood,x,.47,-3.5,built);box(3.3,.09,.09,palette.wood,x+1.65,.36,-3.5,built);box(3.3,.09,.09,palette.wood,x+1.65,.77,-3.5,built);}
  let seed=310;const rand=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
  // Layered firs, leafy trees, meadow flowers, stones and tufts.
- for(let i=0;i<46;i++){const x=-17+rand()*140,z=-5-rand()*17;if(x<14&&z>-12)continue;const h=2+rand()*4;
+ for(let i=0;i<46;i++){const x=-17+rand()*140,z=-5-rand()*17;if(x<14&&z>-12)continue;if(picnicSpots.some(p=>Math.abs(x-p.x)<3.6&&Math.abs(z-p.z)<3.6))continue;const h=2+rand()*4;
  bar(V(x,0,z),V(x,h*.8,z),.07+rand()*.09,palette.wood,built);
  if(i%3===0){for(let k=0;k<3;k++)mesh(new T.ConeGeometry(h*(.27-k*.055),h*.48,7),i%2?palette.leaf:palette.metal,x,h*(.4+k*.19),z,built);}
  else{ball(h*.34,h*.35,h*.29,i%2?palette.leaf:palette.grass,x,h*.75,z,built);ball(h*.28,h*.28,h*.28,palette.leaf,x-.4,h*.6,z+.3,built);}
@@ -131,17 +172,8 @@ function landscape(root){
  return built;
 }
 
-function aim(person,from,to,target){const a=person.bones[from]?.bone,b=person.bones[to]?.bone;if(!a||!b)return;person.group.updateMatrixWorld(true);const origin=a.getWorldPosition(new T.Vector3());const current=b.getWorldPosition(new T.Vector3()).sub(origin).normalize();const desired=person.group.localToWorld(target).sub(origin).normalize();const q=new T.Quaternion().setFromUnitVectors(current,desired).multiply(a.getWorldQuaternion(new T.Quaternion()));a.quaternion.copy(a.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));a.updateMatrixWorld(true);}
-function pose(person,time,moving,gesture=false){const h=person.h;for(const b of Object.values(person.bones))b.bone.quaternion.copy(b.rest);person.group.updateMatrixWorld(true);
- for(const side of['L','R']){const s=side==='L'?1:-1,l=side.toLowerCase(),a=time*12+(s===1?0:Math.PI),f=moving?Math.sin(a):0;
-  const knee=V(s*.075*h,.29*h+Math.max(0,f)*.1*h,f*.19*h),foot=V(s*.075*h,.05*h+Math.max(0,-Math.cos(a))*.19*h*(moving?1:0),f*.25*h);
-  const elbow=V(s*.15*h,.58*h,-f*.16*h),hand=V(s*.13*h,.69*h,-f*.18*h+.13*h);
-  if(!moving){elbow.set(s*.14*h,.53*h,.015*h);hand.set(s*.13*h,.38*h,.055*h);}
-  if(gesture&&side==='L'){elbow.set(s*.2*h,.7*h,.08*h);hand.set(s*.11*h,.91*h,.065*h);}
-  aim(person,'Thigh_'+side,'calf_'+l,knee);aim(person,'calf_'+l,'Foot_'+side,foot);aim(person,'UpperArm_'+side,'lowerarm_'+l,elbow);aim(person,'lowerarm_'+l,'Hand_'+side,hand);
- }
-}
-function makeHead(person,role){const h=person.h,head=new T.Group();person.group.add(head);const teen=role==='hero',skin=material(teen?'#c18b68':role==='white'?'#d4af8e':'#c7a084'),hair=material(teen?'#292018':role==='white'?'#766553':'#68645c'),eye=material('#292b25'),ivory=material('#efe7d9'),lip=material('#895c4e');
+const pose=poseRunner;
+function makeHead(person,role){const h=person.h,head=new T.Group();person.group.add(head);const teen=role==='hero',skin=material(person.colors.skin||(teen?'#c18b68':role==='white'?'#d4af8e':'#c7a084')),hair=material(person.colors.hair||(teen?'#292018':role==='white'?'#766553':'#68645c')),eye=material('#292b25'),ivory=material('#efe7d9'),lip=material('#895c4e');
  const e=(x,y,z,rx,ry,rz,m)=>ball(rx*h,ry*h,rz*h,m,x*h,y*h,z*h,head);
  e(0,.865,0,.078,.104,.076,skin);e(0,.795,.021,.052,.038,.052,skin);e(0,.765,0,.033,.048,.032,skin);
  for(const s of[-1,1]){e(s*.077,.852,0,.016,.025,.014,skin);e(s*.031,.876,.069,.017,.009,.009,ivory);e(s*.031,.876,.078,.006,.007,.004,eye);e(s*.03-.002,.879,.081,.002,.002,.002,ivory);bar(V(s*.014*h,.896*h,.07*h),V(s*.05*h,.895*h,.068*h),.0026*h,hair,head);}
@@ -153,12 +185,12 @@ function makeHead(person,role){const h=person.h,head=new T.Group();person.group.
  // Merge before attaching to the animated head bone; each face keeps its proportions.
  head.scale.set(.82,.86,.84);head.position.y=h*.86*(1-.86);mergeStatic(head);person.group.updateMatrixWorld(true);person.bones.head.bone.attach(head);
 }
-function person(asset,h,role,root){const model=clone(asset.scene);model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model),scale=h/bounds.getSize(new T.Vector3()).y;model.scale.multiplyScalar(scale);model.position.y-=bounds.min.y*scale;
+function person(asset,h,role,root,colors={}){const model=clone(asset.scene);model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model),scale=h/bounds.getSize(new T.Vector3()).y;model.scale.multiplyScalar(scale);model.position.y-=bounds.min.y*scale;
  const group=new T.Group();group.add(model);root.add(group);const bones={};model.traverse(b=>{if(b.isBone)bones[b.name]={bone:b,rest:b.quaternion.clone()};});
- const p={group,model,bones,h};
- model.traverse(m=>{if(!m.isSkinnedMesh)return;m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;const g=m.geometry.clone(),j=g.attributes.skinIndex,w=g.attributes.skinWeight,pos=g.attributes.position;const colors=[];const names=m.skeleton.bones.map(x=>x.name);const headIndices=new Set(names.map((n,i)=>['head','eyes','eyebrows'].includes(n)?i:-1));const isHead=i=>{let weight=0;for(let k=0;k<4;k++)if(headIndices.has(j.getComponent(i,k)))weight+=w.getComponent(i,k);return weight>.35;};const keep=[];for(let i=0;i<g.index.count;i+=3){const a=g.index.array.slice(i,i+3);if(!a.some(isHead))keep.push(...a);}g.setIndex(keep);
-  for(let i=0;i<pos.count;i++){let bone='',max=-1;for(let k=0;k<4;k++){if(w.getComponent(i,k)>max){max=w.getComponent(i,k);bone=names[j.getComponent(i,k)];}}const skin=/Hand|finger|Finger|thumb|neck/.test(bone),leg=/Thigh|calf|Pelvis/.test(bone),shoe=/Foot|ball|toes/.test(bone);const color=new T.Color(skin?(role==='hero'?'#c18b68':'#d0aa87'):shoe?'#303732':leg?(role==='hero'?'#3e5966':'#434c49'):(role==='hero'?'#b95f48':role==='white'?'#eee9dc':'#354641'));colors.push(color.r,color.g,color.b);}
-  g.setAttribute('color',new T.Float32BufferAttribute(colors,3));m.geometry=g;m.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.91});
+ const p={group,model,bones,h,colors};
+ model.traverse(m=>{if(!m.isSkinnedMesh)return;m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;const g=m.geometry.clone(),j=g.attributes.skinIndex,w=g.attributes.skinWeight,pos=g.attributes.position;const vertexColors=[];const names=m.skeleton.bones.map(x=>x.name);const headIndices=new Set(names.map((n,i)=>['head','eyes','eyebrows'].includes(n)?i:-1));const isHead=i=>{let weight=0;for(let k=0;k<4;k++)if(headIndices.has(j.getComponent(i,k)))weight+=w.getComponent(i,k);return weight>.35;};const keep=[];for(let i=0;i<g.index.count;i+=3){const a=g.index.array.slice(i,i+3);if(!a.some(isHead))keep.push(...a);}g.setIndex(keep);
+  for(let i=0;i<pos.count;i++){let bone='',max=-1;for(let k=0;k<4;k++){if(w.getComponent(i,k)>max){max=w.getComponent(i,k);bone=names[j.getComponent(i,k)];}}const skin=/Hand|finger|Finger|thumb|neck/.test(bone),leg=/Thigh|calf|Pelvis/.test(bone),shoe=/Foot|ball|toes/.test(bone);const color=new T.Color(skin?(colors.skin||(role==='hero'?'#c18b68':'#d0aa87')):shoe?'#303732':leg?(colors.pants||(role==='hero'?'#3e5966':'#434c49')):(colors.shirt||(role==='hero'?'#b95f48':role==='white'?'#eee9dc':'#354641')));vertexColors.push(color.r,color.g,color.b);}
+  g.setAttribute('color',new T.Float32BufferAttribute(vertexColors,3));m.geometry=g;m.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.91});
  });
  // Slimmer teenage build, never a stretched child body.
  if(role==='hero'){model.scale.x*=.85;model.scale.z*=.86;}else if(role==='suit'){model.scale.x*=1.08;}
@@ -189,12 +221,15 @@ export class Chase3D{
   try{this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch{this.renderer=new SoftwareRenderer({canvas});this.software=true;}this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.17;
   this.world=new T.Scene();this.world.background=new T.Color('#d3ded3');this.world.fog=new T.Fog('#d3ded3',40,90);this.camera=new T.PerspectiveCamera(38,16/9,.1,100);
   this.world.add(new T.HemisphereLight('#fff0d8','#66724e',2.6));this.sun=new T.DirectionalLight('#ffe6bd',3.1);this.sun.position.set(-7,12,8);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:65});this.sun.shadow.normalBias=.035;this.sun.shadow.bias=-.00015;this.world.add(this.sun,this.sun.target);
-  landscape(this.world);this.people=[];this.cars=[car(82,-4.8,'#a86c55',this.world),car(100,-7.8,'#647b83',this.world)];
+  landscape(this.world);this.people=[];this.cars=[car(82,-4.8,'#8f5348',this.world,'r5'),car(100,-7.8,'#698b97',this.world,'fiesta')];this.cars[1].rotation.y=Math.PI;for(const c of this.cars){c.position.y=.025;c.userData.shadow=decal(4.4,1.85,softShadow,c.position.x,.045,c.position.z,this.world,true);}
   const loader=new GLTFLoader();
   Promise.all(['tree','bush'].map(n=>loader.loadAsync('assets/marmousets/'+n+'.glb'))).then(([tree,bush])=>{
-   for(let i=0;i<45;i++){const isBush=i%3===0,source=isBush?bush:tree,obj=source.scene.clone(true),x=-12+i*2.8,z=isBush?-3.1-(i%2)*.6:-7-(i%5)*2.1;if(x<12&&!isBush)continue;obj.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(obj),height=isBush?.5+(i%3)*.14:3.6+(i%4)*.45,scale=height/bounds.getSize(new T.Vector3()).y;obj.scale.multiplyScalar(scale);obj.position.set(x,-bounds.min.y*scale,z);obj.rotation.y=i*1.7;obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});this.world.add(obj);}
+   // Give the imported vegetation its own leafy palette instead of the generic grey atlas swatches.
+   for(const [source,isBush]of [[tree,false],[bush,true]]){source.scene.updateMatrixWorld(true);const b=new T.Box3().setFromObject(source.scene),height=b.max.y-b.min.y;source.scene.traverse(m=>{if(!m.isMesh)return;const geometry=m.geometry.clone(),pos=geometry.attributes.position,colors=[],v=new T.Vector3();for(let j=0;j<pos.count;j++){v.fromBufferAttribute(pos,j).applyMatrix4(m.matrixWorld);const leafy=isBush||(v.y-b.min.y)/height>.32;const c=new T.Color(leafy?(isBush?'#65804d':'#55754c'):'#796652');c.multiplyScalar(.91+.12*Math.sin(v.x*3+v.z*2+v.y));colors.push(c.r,c.g,c.b);}geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));m.geometry=geometry;m.material=new T.MeshStandardMaterial({vertexColors:true,roughness:.95});});}
+
+   for(let i=0;i<45;i++){const isBush=i%3===0,source=isBush?bush:tree,obj=source.scene.clone(true),x=-12+i*2.8,z=isBush?-3.1-(i%2)*.6:-7-(i%5)*2.1;if(x<12&&!isBush)continue;if(picnicSpots.some(p=>Math.abs(x-p.x)<3.6&&Math.abs(z-p.z)<3.6))continue;obj.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(obj),height=isBush?.5+(i%3)*.14:3.6+(i%4)*.45,scale=height/bounds.getSize(new T.Vector3()).y;obj.scale.multiplyScalar(scale);obj.position.set(x,-bounds.min.y*scale,z);obj.rotation.y=i*1.7;obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});this.world.add(obj);}
   }).catch(error=>console.warn('Végétation complémentaire indisponible',error));
-  this.loading=loader.loadAsync('assets/marmousets/adult.glb').then(a=>{this.hero=person(a,1.40,'hero',this.world);this.white=person(a,1.93,'white',this.world);this.suit=person(a,1.66,'suit',this.world);this.people=[this.hero,this.white,this.suit];for(const p of this.people){p.shadow=decal(.95,.48,softShadow,0,.03,0,this.world,true);}this.walkman=new T.Group();this.hero.group.add(this.walkman);pose(this.hero,0,false);box(.16,.2,.065,material('#d4ad68'),-.18,.48,.13,this.walkman);box(.12,.085,.012,palette.dark,-.18,.51,.169,this.walkman);this.hero.group.updateMatrixWorld(true);this.hero.bones.Hand_R.bone.attach(this.walkman);this.walkman.visible=false;this.headphones=new T.Group();this.hero.group.add(this.headphones);const arc=mesh(new T.TorusGeometry(.118,.01,5,24,Math.PI),palette.dark,0,1.22,0,this.headphones);for(const s of[-1,1])box(.035,.1,.07,palette.dark,s*.113,1.20,0,this.headphones);this.headphones.visible=false;this.ready=true;canvas.dataset.renderer='3d';}).catch(error=>{this.error=error;console.error('A410 characters could not load',error);});
+  this.loading=loader.loadAsync('assets/marmousets/adult.glb').then(a=>{this.hero=person(a,1.40,'hero',this.world);this.white=person(a,1.93,'white',this.world);this.suit=person(a,1.66,'suit',this.world);this.people=[this.hero,this.white,this.suit];addPicnickers(a,this.world);for(const p of this.people){p.shadow=decal(.95,.48,softShadow,0,.03,0,this.world,true);}this.walkman=new T.Group();this.hero.group.add(this.walkman);pose(this.hero,0,false);box(.16,.2,.065,material('#d4ad68'),-.18,.48,.13,this.walkman);box(.12,.085,.012,palette.dark,-.18,.51,.169,this.walkman);this.hero.group.updateMatrixWorld(true);this.hero.bones.Hand_R.bone.attach(this.walkman);this.walkman.visible=false;this.headphones=new T.Group();this.hero.group.add(this.headphones);const arc=mesh(new T.TorusGeometry(.118,.01,5,24,Math.PI),palette.dark,0,1.22,0,this.headphones);for(const s of[-1,1])box(.035,.1,.07,palette.dark,s*.113,1.20,0,this.headphones);this.headphones.visible=false;this.ready=true;canvas.dataset.renderer='3d';}).catch(error=>{this.error=error;console.error('A410 characters could not load',error);});
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();this.error=new Error('WebGL context lost');});
  }
  bubbleAnchor(speaker){if(!this.ready)return null;const p=speaker?this.suit:this.white;const v=p.group.position.clone().add(V(0,p.h+.18,0)).project(this.camera);return {x:clamp((v.x+1)/2,.12,.83)*100,y:clamp((1-v.y)/2,.12,.75)*100};}
@@ -204,10 +239,10 @@ export class Chase3D{
   const w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;if(w&&h&&(this.width!==w||this.height!==h)){this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.width=w;this.height=h;}
   const x=(run?.distance||0)*.24,escaped=phase==='escaped',running=phase==='running',moving=['running','paused'].includes(phase)&&!run?.stopRemaining,t=run?.elapsed||0;
   const focus=x-1.1,zoom=escaped?1-clamp(time/1.2)*.13:1,opening=1-clamp((run?.distance||0)/70);this.camera.position.set(focus+1.15,(3.9+opening*1.3)*zoom,(10.5+opening*3.6)*zoom);this.camera.lookAt(focus,2.0+opening*1.8,0);this.sun.position.set(x-7,12,8);this.sun.target.position.set(x,0,0);this.sun.target.updateMatrixWorld();
-  if(this.ready){const gap=clamp((run?.gap??27)*.078,1.05,3.6);this.hero.group.position.set(x,.04+(moving&&!reduced?Math.abs(Math.sin(t*12))*.055:0),.55);this.hero.group.rotation.set(0,escaped?.45:(run?.direction||1)*Math.PI/2,0);pose(this.hero,t,moving,escaped||run?.stopRemaining>0);this.walkman.visible=escaped;this.headphones.visible=escaped&&time>.8;
-   for(const[p,offset,z]of[[this.white,0,.1],[this.suit,1.1,-.55]]){p.group.visible=!escaped;p.group.position.set(x-gap-offset,.04,z);const trip=(run?.tripRemaining||0)>0;const a=trip?Math.min(clamp((2-run.tripRemaining)/.34),clamp(run.tripRemaining/.3))*1.4:0;p.group.rotation.set(a,Math.PI/2,0,'YXZ');if(trip)p.group.position.y=.08;p.group.position.y+=running&&!trip&&!reduced?Math.abs(Math.sin((t+offset)*12))*.045:0;pose(p,t+offset,['running','paused'].includes(phase)&&!trip);}
+  if(this.ready){const gap=clamp((run?.gap??27)*.078,1.05,3.6);this.hero.group.position.set(x,0,.55);this.hero.group.rotation.set(0,escaped?.45:(run?.direction||1)*Math.PI/2,0);pose(this.hero,t,moving,escaped||run?.stopRemaining>0,reduced);this.walkman.visible=escaped;this.headphones.visible=escaped&&time>.8;
+   for(const[p,offset,z]of[[this.white,0,.1],[this.suit,1.1,-.55]]){p.group.visible=!escaped;p.group.position.set(x-gap-offset,.04,z);const trip=(run?.tripRemaining||0)>0;const a=trip?Math.min(clamp((2-run.tripRemaining)/.34),clamp(run.tripRemaining/.3))*1.4:0;p.group.rotation.set(a,Math.PI/2,0,'YXZ');pose(p,t+offset,['running','paused'].includes(phase)&&!trip,false,reduced);if(trip)p.group.position.y=.08;}
   }
   for(const p of this.people){p.shadow.visible=p.group.visible;p.shadow.position.set(p.group.position.x+.16,.035,p.group.position.z+.12);}
-  this.cars[0].position.x=74+(t*3.3)%45;this.cars[1].position.x=116-(t*2.7)%43;this.renderer.render(this.world,this.camera);
+  this.cars[0].position.x=74+(t*3.3)%45;this.cars[1].position.x=116-(t*2.7)%43;rollCar(this.cars[0],t*3.3);rollCar(this.cars[1],t*2.7);for(const c of this.cars)c.userData.shadow.position.x=c.position.x;this.renderer.render(this.world,this.camera);
  }
 }

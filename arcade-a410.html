@@ -227,7 +227,7 @@ const scene={draw(run,phase,time,reduced){
  }
  pixelScene.draw(run,phase,time,reduced);
 }};
-import('./a410-3d-runtime.js?v=20261113-lycee-3').then(({Chase3D})=>{
+import('./a410-3d-runtime.js?v=20261113-lycee-4').then(({Chase3D})=>{
  detailedCanvas=document.createElement('canvas');detailedCanvas.dataset.chase3d='';detailedCanvas.setAttribute('data-chase-3d','');detailedCanvas.setAttribute('aria-label','Le lycée, ses jardins et les montagnes : Ahmed fuit ses deux poursuivants vers l’A410.');detailedCanvas.hidden=true;document.querySelector('.screen').prepend(detailedCanvas);
  try{detailedScene=new Chase3D(detailedCanvas);}catch(error){detailedCanvas.remove();console.warn('Décor de secours actif.',error);}
 }).catch(error=>console.warn('Décor de secours actif.',error));
