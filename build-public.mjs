@@ -10,6 +10,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
+  ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
   ['build-yoyo.mjs'],
@@ -88,6 +89,7 @@ const publicFiles = [
   'editorial.css',
   'arcade-a410.html',
   'a410-pixel-v2.js',
+  'a410-3d-runtime.js',
   'arcade-catalogne.html',
   'catalogne-park-v2.js',
   'arcade-catalogne-3d.html',
