@@ -63,8 +63,18 @@
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
    maxZoom:18,attribution:'© OpenStreetMap contributors',crossOrigin:true
   }).addTo(map);
-  const bounds=L.latLngBounds(points);
-  map.fitBounds(bounds,{padding:[17,22],maxZoom:7,animate:false});
+  const destination=route.destination;
+  const bounds=L.latLngBounds(destination?[...points,[destination[1],destination[2]]]:points);
+  const maxZoom=Math.min(18,Math.max(1,Number(el.dataset.maxZoom)||7));
+  map.fitBounds(bounds,{padding:[17,22],maxZoom,animate:false});
+  if(destination)L.circleMarker([destination[1],destination[2]],{radius:7,weight:2,color:'#9b733b',fill:false,dashArray:'3 3'}).bindTooltip(destination[0]).addTo(map);
+  // A scene taking place in one location is a static landmark, not a journey.
+  if(points.length===1){
+   L.circleMarker(points[0],{radius:7,weight:2,color:'#fff8e9',fillColor:'#315b49',fillOpacity:1}).bindTooltip(route[0][0],{permanent:true,direction:'top'}).addTo(map);
+   const resize=new ResizeObserver(()=>map.invalidateSize({animate:false}));resize.observe(el);
+   window.addEventListener('pagehide',()=>resize.disconnect(),{once:true});
+   return;
+  }
   const line=L.polyline(points,{color:'#765e3f',weight:2.6,opacity:.8,dashArray:'3 8',interactive:false}).addTo(map);
   const trail=L.polyline([points[0]],{color:'#24594a',weight:3.6,opacity:.95,dashArray:'2 7',interactive:false}).addTo(map);
   route.forEach((p,i)=>{

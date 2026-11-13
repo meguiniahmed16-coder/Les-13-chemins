@@ -1,0 +1,64 @@
+/* New paths use the same parchment, dark green, gold frame and square art. */
+#board #boardTargets .upcoming-path .chapter-card-kicker::after{content:none}
+#board #boardTargets .upcoming-tile::after,.upcoming-status{font:600 11px/1.4 'DM Sans',sans-serif;letter-spacing:.035em;background:#203d35f2;color:#fff6e3;border:1px solid #c6a366;border-radius:20px;padding:6px 11px}
+#board #boardTargets .upcoming-tile::after{content:'Travail en cours';position:absolute;right:10px;top:10px;box-shadow:0 2px 6px #0003}
+.upcoming-status{display:inline-block;width:fit-content}
+.upcoming-reader{box-sizing:border-box;width:min(1080px,100%);max-width:100%;height:94dvh;max-height:100dvh;margin:auto;padding:0;border:1px solid #b69258;border-radius:12px;background:#fff9ec;color:#293f36;box-shadow:0 15px 80px #0006;overflow:auto;overscroll-behavior:contain}
+.upcoming-reader::backdrop{background:#102a23db}
+.upcoming-reader [hidden],.upcoming-game-page [hidden]{display:none!important}
+.upcoming-bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 24px;background:#23483c;color:#fff5df;border-bottom:2px solid #b69358}
+.upcoming-bar h2{font:600 clamp(22px,3vw,30px)/1.18 'Cormorant Garamond',Georgia,serif;margin:0;color:inherit}
+.upcoming-eyebrow{font:600 10px/1.4 'DM Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:0 0 5px;color:#d7be8e}
+.upcoming-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:44px;border:1px solid #b69a68;border-radius:6px;padding:10px 15px;background:#faf1dc;color:#284b3e;text-decoration:none;font:600 13px/1.4 'DM Sans',sans-serif;cursor:pointer;white-space:normal}
+.upcoming-button:hover{background:#eee1c2}.upcoming-button:focus-visible,.upcoming-reader summary:focus-visible{outline:3px solid #b17a2d;outline-offset:3px}
+.upcoming-bar .upcoming-button{flex-shrink:0;background:#ffffff12;color:#fff4da;border-color:#b79a64}
+.upcoming-pane{padding:28px clamp(16px,5vw,65px) 35px}
+.upcoming-intro{display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr);gap:30px;align-items:center;margin-bottom:28px}
+.upcoming-art{width:100%;aspect-ratio:1;background-repeat:no-repeat;background-color:#244538;border-radius:7px;box-shadow:0 4px 13px #3c2e172b}
+.upcoming-place,.upcoming-source{font:600 12px/1.6 'DM Sans',sans-serif;letter-spacing:.025em;color:#796039}
+.upcoming-lead{font:500 clamp(22px,3vw,30px)/1.25 'Cormorant Garamond',Georgia,serif;margin:16px 0}
+.upcoming-caption{font:400 13px/1.7 'DM Sans',sans-serif;color:#6a604f}
+.upcoming-tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #c2a775;padding:0 0 12px;margin:0 0 24px}
+.upcoming-tabs button{flex:1 1 110px;background:transparent;border-color:transparent}
+.upcoming-tabs [aria-selected=true]{background:#2c5143;color:#fff7e5;border-color:#2c5143}
+.upcoming-panel h3{font:600 24px/1.3 'Cormorant Garamond',Georgia,serif;margin:20px 0}
+.upcoming-prose{font:400 clamp(19px,2vw,22px)/1.85 Georgia,serif;color:#333c32;max-width:720px;margin:auto}
+.upcoming-prose p{margin:0 0 1.15em}
+.upcoming-prose p:first-child::first-letter{font-size:2.3em;float:left;line-height:1;padding:9px 7px 0 0;color:#6f5832}
+.upcoming-person{border:1px solid #d7c6a3;border-radius:7px;background:#fbf2e0;padding:0 18px;margin:12px 0;font:17px/1.75 Georgia,serif}
+.upcoming-person summary{cursor:pointer;padding:15px 0;min-height:44px;box-sizing:border-box}
+.upcoming-person summary strong{font:600 23px/1.4 'Cormorant Garamond',Georgia,serif}.upcoming-person summary span{display:block;margin:4px 0 0 19px;font:12px/1.5 'DM Sans',sans-serif;color:#796039}
+.upcoming-person p{margin:0 0 18px}
+.upcoming-rules{font:17px/1.8 Georgia,serif;padding-left:25px}.upcoming-rules li{padding-left:6px;margin:12px 0}
+.upcoming-scene-nav{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #c4af88;padding-top:20px;margin-top:35px}
+.upcoming-scene-nav>*{max-width:50%}
+.upcoming-board-map{grid-column:1/-1;padding:16px 20px;border:1px solid #ba9a68;border-radius:9px;background:linear-gradient(110deg,#fff7e6,#efdfbd);color:#3c4a37}
+.upcoming-board-map>h3{font:600 18px/1.3 'Cormorant Garamond',Georgia,serif;text-align:center;margin:0 0 13px}
+.upcoming-board-map .upcoming-map-panel>h3{display:none}
+.upcoming-board-map .upcoming-caption{font-size:11px;margin:5px 0}
+.upcoming-board-map .upcoming-map-panel>.upcoming-button{font-size:11px;padding:7px 12px;margin-top:9px}
+.upcoming-stops{display:flex;flex-wrap:wrap;gap:8px 24px;margin:15px 0;padding-left:22px;font:600 12px/1.6 'DM Sans',sans-serif}
+.upcoming-map-panel .mini-atlas-map{height:300px;width:100%;border:1px solid #b39c75;border-radius:8px;box-sizing:border-box;overflow:hidden;position:relative;isolation:isolate;background:#e8e3cf;color:#3b4937}
+.upcoming-board-map .mini-atlas-map{height:205px}
+.upcoming-map-panel .mini-atlas-map svg{max-width:none!important;width:auto;height:auto}
+.upcoming-map-panel .mini-atlas-map .leaflet-pane svg{overflow:visible}
+.upcoming-map-panel .mini-atlas-arrow{width:24px!important;height:24px!important;background:none!important;border:0!important}
+.upcoming-map-panel .mini-route-arrow{display:block;width:24px!important;height:24px!important;max-width:24px!important;transform-origin:12px 12px;filter:drop-shadow(0 2px 2px #0005)}
+.upcoming-map-panel .mini-atlas-label{background:#fff7e7ed;border:1px solid #a58a61;border-radius:4px;padding:3px 7px;color:#304a3d;font:600 11px/1.3 'DM Sans',sans-serif;white-space:nowrap;width:max-content!important;max-width:240px}
+.upcoming-map-panel .mini-atlas-replay{margin:9px 0 0;min-height:44px;border:1px solid #b39967;border-radius:5px;background:#fff8e7;color:#32503f;padding:7px 12px;cursor:pointer;font:600 11px 'DM Sans',sans-serif}
+.upcoming-game-page{margin:0;background:#f7eedb;color:#2d4237;font-family:'DM Sans',sans-serif}
+.upcoming-game-shell{max-width:1000px;margin:auto;padding:40px 24px 65px}
+.upcoming-game-shell .upcoming-eyebrow{color:#796039}
+.upcoming-game-shell h1{font:600 clamp(36px,6vw,58px)/1.05 'Cormorant Garamond',Georgia,serif;margin:12px 0 24px}
+.upcoming-game-shell .upcoming-intro{grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:40px}
+.upcoming-game-shell .upcoming-rules{font-size:18px}
+.upcoming-game-actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}
+.upcoming-game-stage{position:relative;width:100%;min-height:360px;border:1px solid #b99a67;border-radius:8px;overflow:hidden}
+.upcoming-game-stage canvas{max-width:100%;display:block}
+.upcoming-atlas-controls{margin:18px 0;padding:15px;border:1px solid #b7a074;border-radius:8px;background:#f7ecd5}
+.upcoming-atlas-controls h2{font:600 22px/1.3 'Cormorant Garamond',Georgia,serif;margin:0 0 8px}
+.upcoming-atlas-controls select{width:100%;min-height:44px}
+@media(max-width:600px){.upcoming-reader{height:100dvh;border:0;border-radius:0}.upcoming-bar{padding:12px 14px;gap:10px}.upcoming-bar h2{font-size:21px}.upcoming-bar .upcoming-button{padding:8px 10px}.upcoming-pane{padding:20px 17px 30px}.upcoming-intro,.upcoming-game-shell .upcoming-intro{grid-template-columns:1fr;gap:20px}.upcoming-intro .upcoming-art{max-width:340px;margin:auto}.upcoming-summary{text-align:center}.upcoming-tabs{gap:5px}.upcoming-tabs button{flex-basis:42%;font-size:12px;padding:9px}.upcoming-scene-nav{flex-direction:column}.upcoming-scene-nav>*{max-width:100%}.upcoming-board-map{padding:15px 10px}.upcoming-game-shell{padding:28px 18px 45px}.upcoming-map-panel .mini-atlas-map{height:240px}.upcoming-map-panel .mini-atlas-label{font-size:9px;max-width:190px;white-space:normal}.upcoming-game-shell h1{font-size:40px}}
+
+#board #boardTargets .upcoming-path{scroll-margin-top:100px}
+@media(max-width:600px){#board #boardTargets .upcoming-path{scroll-margin-top:120px}}

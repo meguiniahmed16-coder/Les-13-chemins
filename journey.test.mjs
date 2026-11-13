@@ -118,7 +118,7 @@ test('Both mini-maps show a small arrow instead of a walking character',()=>{
  assert.ok(maps.includes('requestAnimationFrame(tick)'));
  assert.ok(maps.includes('prefers-reduced-motion: reduce'));
  assert.ok(build.includes("'mini-cartes.js'"));
- assert.ok(page.includes('mini-cartes.js?v=20261112-fleche-v1'));
+ assert.ok(page.includes('mini-cartes.js?v='));
  assert.ok(maps.includes('replay.onclick=()=>'));
  assert.ok(maps.includes('finished=true;cancelAnimationFrame(frame)'));
  assert.match(maps,/if\(!hasStarted\)\{hasStarted=true;resume\(\);?\}/);

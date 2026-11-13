@@ -36,6 +36,7 @@ for (const args of [
   ['--test', 'ordre-lecture.test.mjs'],
   ['--test', 'chapitre1-flow.test.mjs'],
   ['--test', 'journey.test.mjs'],
+  ['--test', 'chemins-en-cours.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
@@ -53,6 +54,20 @@ const publicFiles = [
   'chapitre1-flow.js',
   'chapitre1-plateau.js',
   'vignettes.css',
+  'chemins-en-cours-data.js',
+  'chemins-en-cours-core.js',
+  'chemins-en-cours.js',
+  'chemins-en-cours.css',
+  'chemins-atlas.js',
+  'futurs-jeux.js',
+  'assets/board/scene-cards-chemins-iv-v.webp',
+  'assets/board/le-traitre.webp',
+  'jeu-stoppub.html',
+  'jeu-demenagement.html',
+  'jeu-frontiere.html',
+  'jeu-faire-rire.html',
+  'jeu-le-traitre.html',
+  'jeu-chemin-peguy.html',
   'assets/board/scene-cards-v1.png',
   'mini-cartes.js',
   'libre-parcours.js',

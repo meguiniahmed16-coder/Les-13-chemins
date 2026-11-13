@@ -79,9 +79,9 @@
 @media(max-width:600px){#boardTargets .mini-atlas-map{height:165px;min-height:165px}#boardTargets .mini-atlas-card{padding:9px 8px}}
 `;
  document.head.append(css);
- $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
+ $('board').setAttribute('aria-label','Cinq chemins : I La salle d’attente, II Le météore, III Les rendez-vous ; IV et V en préparation.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Trois chemins, neuf scènes à découvrir.';
+ if(intro)intro.textContent='Cinq chemins : trois à jouer, deux en préparation.';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
@@ -264,6 +264,7 @@
     'Carte animée : Sarajevo, Genève, Lyon, Louvain-la-Neuve, Paris et Strasbourg'));
    host.append(third);
   }
+  window.TreizeCheminsEnCours?.mount(host);
   for(const button of host.querySelectorAll('[data-chapter]')){
    const n=Number(button.dataset.level),i=Number(button.dataset.chapter);
    const finished=n===1?flow.done(state):n===4?flow.chapter2Done(state):state.completed.includes(n);
