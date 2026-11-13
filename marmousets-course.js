@@ -1,7 +1,7 @@
 // Deterministic course shared by the scene, session validation and tests.
 (function(root){
  const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
- const FINISH=51,MAX_X=53,JUMP_TIME=1.45,JUMP_DISTANCE=4.4,JUMP_HEIGHT=1.35,REAR_TIME=2.2;
+ const FINISH=51,MAX_X=53,JUMP_TIME=1.45,JUMP_DISTANCE=5.8,JUMP_HEIGHT=1.6,REAR_TIME=2.2;
  const obstacles=[
   {id:'barrier-1',x:13,height:.73,name:'La barrière de la cour',kind:'rails'},
   {id:'barrier-2',x:24,height:.68,name:'Les bottes de paille',kind:'straw'},
@@ -14,10 +14,35 @@
  const mounted=s=>['ride','rear','jump','stumble'].includes(s.phase);
  const height=t=>JUMP_HEIGHT*Math.sin(Math.PI*clamp(t,0,1));
  const groupClear=(s,g)=>s.adults.filter(a=>a.group===g.id).every(a=>a.fleeTime!==null);
- function create(auto=false){const state={phase:'approach',time:0,total:0,x:0,vx:0,childX:-3,auto,adultClear:false,jumped:false,complete:false,gallop:false,queued:null,jumpVx:0,jumpStartX:0,jumpMistake:null,notice:'',noticeTime:0,adults:adults.map(a=>({...a,fleeTime:null})),obstacles:obstacles.map(o=>({...o,intact:true,hitTime:null,cleared:false,bloomed:false})),meadow:{target:0,events:[],finished:false},demoComplete:false};if(auto){state.phase='ride';state.x=7.4;for(const a of state.adults)if(a.group==='parents')a.fleeTime=6;}return state;}
+ function create(auto=false){const state={phase:'approach',time:0,total:0,x:0,vx:0,childX:-3,auto,adultClear:false,jumped:false,complete:false,gallop:false,queued:null,jumpVx:0,jumpStartX:0,jumpMistake:null,moveDirection:1,jumpPath:null,notice:'',noticeTime:0,adults:adults.map(a=>({...a,fleeTime:null})),obstacles:obstacles.map(o=>({...o,intact:true,hitTime:null,cleared:false,bloomed:false})),meadow:{target:0,events:[],finished:false},demoComplete:false};if(auto){state.phase='ride';state.x=7.4;for(const a of state.adults)if(a.group==='parents')a.fleeTime=6;}return state;}
  function bloom(s,kind,x,id){const m=s.meadow,from=m.target;m.target=kind==='arrival'?1:Math.min(.94,from+(kind==='adult'?.5/adults.length:.4/obstacles.length));m.events.push({kind,id,x,at:s.total,from,to:m.target});}
  function scare(s){for(const g of groups){if(Math.abs(s.x-g.x)>2.75)continue;for(const a of s.adults.filter(a=>a.group===g.id&&a.fleeTime===null)){a.fleeTime=0;bloom(s,'adult',a.x,a.id);}}s.adultClear=s.adults.every(a=>a.fleeTime!==null);}
- function action(s,type='rear',input=0){if(s.phase==='mountReady'&&type==='rear'){phase(s,'mount');return true;}if(!mounted(s))return false;if(s.phase!=='ride'){s.queued={type,input};return true;}if(type==='rear'){phase(s,'rear');s.vx=0;}else if(type==='jump'){phase(s,'jump');s.jumpStartX=s.x;s.jumpMistake=null;s.jumpVx=Math.sign(s.auto?1:input||s.vx)*JUMP_DISTANCE/JUMP_TIME;}else return false;return true;}
+ // A nearby obstacle shapes the arc so both ends of the horse clear it.
+ // The motion stays continuous; releasing a touch control cannot cancel a leap.
+ function planJump(s,input){
+  const direction=Math.sign(input||(s.gallop?1:0)||s.vx||s.moveDirection||1);
+  const pace=s.gallop?3.5:1.65;
+  const ahead=s.obstacles.filter(o=>o.intact&&(o.x-s.x)*direction>=.9&&(o.x-s.x)*direction<=6).sort((a,b)=>(a.x-b.x)*direction)[0];
+  const landing=ahead?ahead.x+direction*(s.gallop?3:2.6):s.x+direction*(s.gallop?6.4:JUMP_DISTANCE);
+  const end=clamp(landing,0,MAX_X),travel=(end-s.x)*direction;
+  if(ahead){
+   const distances=[0,Math.max(0,(ahead.x-s.x)*direction-.9),(ahead.x-s.x)*direction+.9,travel];
+   const times=[0,.3,.7,1],secants=times.slice(1).map((t,i)=>(distances[i+1]-distances[i])/(t-times[i]));
+   const slopes=[Math.min(pace*JUMP_TIME,3*secants[0]),2*Math.min(secants[0],secants[1]),2*Math.min(secants[1],secants[2]),Math.min(pace*JUMP_TIME,3*secants[2])];
+   // Limit tangents to keep every section monotone, without overshooting.
+   for(let i=0;i<3;i++){if(secants[i]<=0){slopes[i]=slopes[i+1]=0;continue;}const norm=Math.hypot(slopes[i]/secants[i],slopes[i+1]/secants[i]);if(norm>3){slopes[i]*=3/norm;slopes[i+1]*=3/norm;}}
+   s.jumpPath={direction,end,times,distances,slopes};
+  }else s.jumpPath={direction,end};
+  s.jumpVx=(end-s.x)/JUMP_TIME;s.jumpStartX=s.x;s.jumpMistake=null;
+ }
+ function jumpPosition(s,t){
+  const p=s.jumpPath;if(!p)return s.jumpStartX+s.jumpVx*JUMP_TIME*t;
+  if(!p.times)return s.jumpStartX+(p.end-s.jumpStartX)*t;
+  const i=t<=.3?0:t<=.7?1:2,dt=p.times[i+1]-p.times[i],u=clamp((t-p.times[i])/dt,0,1),u2=u*u,u3=u2*u;
+  const d=(2*u3-3*u2+1)*p.distances[i]+(u3-2*u2+u)*dt*p.slopes[i]+(-2*u3+3*u2)*p.distances[i+1]+(u3-u2)*dt*p.slopes[i+1];
+  return s.jumpStartX+p.direction*d;
+ }
+ function action(s,type='rear',input=0){if(s.phase==='mountReady'&&type==='rear'){phase(s,'mount');return true;}if(!mounted(s))return false;if(s.phase!=='ride'){s.queued={type,input};return true;}if(type==='rear'){phase(s,'rear');s.vx=0;}else if(type==='jump'){planJump(s,input);phase(s,'jump');}else return false;return true;}
  function ride(s){phase(s,'ride');if(s.queued){const q=s.queued;s.queued=null;action(s,q.type,q.input);}}
  function ground(s,next){for(const g of groups)if(!groupClear(s,g)&&s.x<=g.x-1.65&&next>g.x-1.65)next=Math.min(next,g.x-1.65);for(const o of s.obstacles)if(o.intact){if(s.x<=o.x-.95&&next>o.x-.95)next=Math.min(next,o.x-.95);if(s.x>=o.x+.95&&next<o.x+.95)next=Math.max(next,o.x+.95);}return clamp(next,0,MAX_X);}
  function hit(s,o,t){o.intact=false;o.hitTime=0;s.jumpMistake=t<.5?'late':'early';s.notice=t<.5?'Un peu tard : l’obstacle a été touché.':'Un peu tôt : la descente a commencé avant l’obstacle.';s.noticeTime=3;}
@@ -25,7 +50,7 @@
   dt=clamp(dt,0,.05);if(!dt)return s;const oldX=s.x,oldTime=s.time;s.time+=dt;s.total+=dt;s.noticeTime=Math.max(0,s.noticeTime-dt);
   for(const a of s.adults)if(a.fleeTime!==null)a.fleeTime+=dt;
   for(const o of s.obstacles)if(o.hitTime!==null)o.hitTime+=dt;
-  const direction=s.auto?1:input;
+  const direction=s.auto?1:input;if(direction)s.moveDirection=Math.sign(direction);
   if(s.phase==='approach'){s.childX=clamp(s.childX+direction*.72*dt,-3.4,-1.27);if(s.childX>=-1.27)phase(s,'mountReady');}
   else if(s.phase==='mountReady'){if(s.auto&&s.time>.4)action(s,'rear');}
   else if(s.phase==='mount'){if(s.time>=1.85)ride(s);}
@@ -36,8 +61,7 @@
    else if(s.x>=FINISH&&s.adultClear&&s.obstacles.every(o=>o.cleared))phase(s,'finish');
   }else if(s.phase==='rear'){scare(s);if(s.time>=REAR_TIME)ride(s);}
   else if(s.phase==='jump'){
-   if(direction)s.jumpVx=Math.sign(direction)*JUMP_DISTANCE/JUMP_TIME;
-   s.x=clamp(s.x+s.jumpVx*Math.min(dt,Math.max(0,JUMP_TIME-oldTime)),0,MAX_X);scare(s);
+   s.x=clamp(jumpPosition(s,clamp(s.time/JUMP_TIME,0,1)),0,MAX_X);s.vx=(s.x-oldX)/dt;scare(s);
    for(const o of s.obstacles){
     if(o.intact&&s.x!==oldX)for(const edge of[-.9,.9]){const a=oldX+edge,b=s.x+edge;if((a-o.x)*(b-o.x)<=0&&a!==b){const t=(oldTime+dt*clamp((o.x-a)/(b-a),0,1))/JUMP_TIME;if(height(t)<o.height+.06){hit(s,o,t);break;}}}
     if(o.intact&&Math.abs(s.x-o.x)<.9&&height(s.time/JUMP_TIME)<o.height+.06)hit(s,o,s.time/JUMP_TIME);
@@ -45,7 +69,7 @@
    }
    if(s.time>=JUMP_TIME){
     s.jumped=true;
-    if(!s.jumpMistake)for(const o of s.obstacles)if(o.intact&&!o.bloomed&&((s.jumpStartX<o.x-.95&&s.x>o.x+.95)||(s.jumpStartX>o.x+.95&&s.x<o.x-.95))){o.bloomed=true;bloom(s,'obstacle',o.x,o.id);}
+    if(!s.jumpMistake)for(const o of s.obstacles)if(o.intact&&!o.bloomed&&((s.jumpStartX<=o.x-.9&&s.x>o.x+.95)||(s.jumpStartX>=o.x+.9&&s.x<o.x-.95))){o.bloomed=true;bloom(s,'obstacle',o.x,o.id);}
     if(s.jumpMistake)phase(s,'stumble');else ride(s);
    }
   }else if(s.phase==='stumble'){s.x=ground(s,s.x+direction*.65*dt);if(s.time>=.65)ride(s);}

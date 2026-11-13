@@ -28,7 +28,7 @@ test('Adults stop forward travel and rearing only disperses the nearby group onc
  const s=Xd();s.phase='ride';advance(s,5,1);assert.ok(s.x<=course.groups[0].x-1.65);Xs(s,'rear');advance(s,3);assert.equal(s.adults.filter(a=>a.fleeTime!==null).length,3);Xs(s,'rear');advance(s,3);assert.equal(s.meadow.events.length,3);assert.ok(s.meadow.target<.2);
 });
 test('Empty jumps and failed obstacle jumps do not flower; new games reset flowers',()=>{
- for(const [x,input] of [[2,0],[12.03,1]]){const s=Xd();s.phase='ride';clearAdults(s);s.x=x;Xs(s,'jump',input);advance(s,1.6,input);assert.equal(s.meadow.events.length,0);}
+ for(const [x,input] of [[2,0],[6.6,1]]){const s=Xd();s.phase='ride';clearAdults(s);s.x=x;Xs(s,'jump',input);advance(s,1.6,input);assert.equal(s.meadow.events.length,0);}
  assert.equal(Xd().meadow.target,0);
 });
 test('Gallop increases pace, releases to walking and respects adult and obstacle barriers',()=>{
@@ -80,4 +80,21 @@ test('Demonstration ends after one landed obstacle in under eight seconds withou
  assert.equal(s.demoComplete,true);assert.ok(elapsed<8);assert.equal(s.complete,false);assert.equal(s.phase,'demoDone');assert.equal(s.obstacles.filter(o=>o.cleared).length,1);assert.equal(s.meadow.events.filter(e=>e.kind==='obstacle').length,1);assert.ok(s.meadow.target<1);
  const x=s.x;advance(s,45);assert.equal(s.x,x);assert.equal(s.obstacles.filter(o=>o.cleared).length,1);
  const manual=Xd(false);assert.equal(manual.auto,false);assert.equal(manual.demoComplete,false);assert.equal(manual.phase,'approach');assert.equal(manual.x,0);assert.equal(manual.meadow.target,0);assert.ok(manual.adults.every(a=>a.fleeTime===null));
+});
+
+test('Walking and galloping jumps clear every obstacle across a generous timing window',()=>{
+ for(const obstacle of course.obstacles)for(const distance of[.95,1.2,2,3,4.5,5.9])for(const gallop of[false,true])for(const dt of[.01,.05]){
+  const s=Xd();clearAdults(s);s.phase='ride';s.x=obstacle.x-distance;s.gallop=gallop;Xs(s,'jump',1);let previous=s.x;
+  for(let t=0;t<1.5;t+=dt){qd(s,dt,0);assert.ok(s.x>=previous-1e-8,'Jump remains forward after touch release');previous=s.x;}
+  const o=s.obstacles.find(o=>o.id===obstacle.id);assert.equal(o.intact,true,obstacle.id+' offset '+distance);assert.equal(o.cleared,true);assert.ok(s.x>obstacle.x+1.8);assert.equal(s.jumpMistake,null);assert.ok(s.meadow.events.some(e=>e.id===obstacle.id&&e.kind==='obstacle'));
+ }
+});
+test('Switching from forward control to jump retains momentum, including at a blocked barrier',()=>{
+ for(const distance of[.95,2.5]){
+  const s=Xd();clearAdults(s);s.phase='ride';s.x=13-distance-.2;advance(s,.12,1);advance(s,.12,0);assert.equal(s.vx,0);Xs(s,'jump',0);advance(s,1.5,0);assert.equal(s.obstacles[0].cleared,true);assert.equal(s.obstacles[0].intact,true);
+ }
+});
+test('A backward jump keeps its launch direction and held movement resumes at landing',()=>{
+ const s=Xd();clearAdults(s);s.phase='ride';s.x=16;Xs(s,'jump',-1);advance(s,1.46,0);assert.ok(s.x<12);assert.equal(s.obstacles[0].intact,true);
+ const forward=Xd();clearAdults(forward);forward.phase='ride';forward.x=10;forward.gallop=true;Xs(forward,'jump',1);advance(forward,1.46,1);const landing=forward.x;advance(forward,.4,1);assert.ok(forward.x>landing+1.3);
 });

@@ -4730,7 +4730,7 @@ function $r(s) {
   Xe = Xd(s), Kt = false, Je("intro").hidden = true, Je("finished").hidden = true, Je("controls").hidden = s, Je("mode").textContent = s ? "D\xC9MONSTRATION" : "\xC0 VOUS DE JOUER", Je("pause").textContent = "\u2161", is("Idle");
 }
 function oc(s) {
-  Xe && !Kt && Xs(Xe, s, un) && rc(s === "jump" ? 260 : 180, 0.12);
+  Xe && !Kt && Xs(Xe, s, un||(mmGallopHeld?1:0)) && rc(s === "jump" ? 260 : 180, 0.12);
 }
 Je("demo").onclick = () => $r(true);
 Je("play").onclick = () => $r(false);
@@ -4752,10 +4752,11 @@ for (let [s, e] of [["left", -1], ["right", 1]]) {
   for (let n of ["pointerup", "pointercancel", "lostpointercapture"]) t.addEventListener(n, () => un = 0);
 }
 Je("yellow").onclick = () => oc("rear");
-Je("red").onclick = () => oc("jump");
-Je('gallop').onpointerdown=e=>{if(!Xe||Kt||Xe.phase!=='ride')return;e.preventDefault();Je('gallop').setPointerCapture(e.pointerId);mmGallopHeld=true;Je('gallop').setAttribute('aria-pressed','true');};
+Je('red').onpointerdown=e=>{e.preventDefault();oc('jump');};
+Je('red').onclick=e=>{if(e.detail===0)oc('jump');};
+Je('gallop').onpointerdown=e=>{if(!Xe||Kt||!['ride','jump'].includes(Xe.phase))return;e.preventDefault();Je('gallop').setPointerCapture(e.pointerId);mmGallopHeld=true;Je('gallop').setAttribute('aria-pressed','true');};
 for(const event of ['pointerup','pointercancel','lostpointercapture'])Je('gallop').addEventListener(event,mmStopGallop);
-window.addEventListener('keydown',e=>{if(e.key==='Shift'&&Xe&&!Kt&&Xe.phase==='ride'){e.preventDefault();mmGallopHeld=true;Je('gallop').setAttribute('aria-pressed','true');}});
+window.addEventListener('keydown',e=>{if(e.key==='Shift'&&Xe&&!Kt&&['ride','jump'].includes(Xe.phase)){e.preventDefault();mmGallopHeld=true;Je('gallop').setAttribute('aria-pressed','true');}});
 window.addEventListener('keyup',e=>{if(e.key==='Shift')mmStopGallop();});
 window.addEventListener('blur',mmStopGallop);document.addEventListener('visibilitychange',()=>{if(document.hidden)mmStopGallop();});
 window.addEventListener("keydown", (s) => {
@@ -4783,11 +4784,11 @@ function tx(){
  else if(phase==='demoDone'){title='À toi de jouer';hint='Commence ta partie avec le bouton ci-dessus.';}
  else if(phase==='finish'){title='Rester ensemble';hint='Mustapha est là. Les champs sont en fleurs.';}
  else if(group&&Math.abs(group.x-Xe.x)<4){title=group.id==='parents'?'Mes parents veulent me retenir':'Plusieurs adultes barrent le chemin';hint='Cabrer ou sauter pour ouvrir le passage.';}
- else if(obstacle&&obstacle.x-Xe.x<4){title=obstacle.name;hint='Saute avant d’atteindre l’obstacle.';}
+ else if(obstacle&&obstacle.x-Xe.x<4){title=obstacle.name;hint='Avance et appuie sur Sauter pour passer l’obstacle.';}
  else if(!obstacle){title='Mustapha est là';hint='Encore quelques pas.';}
  Je('chapter').textContent=title;Je('hint').textContent=Kt?'En pause':Xe.noticeTime>0?Xe.notice:hint;
  Je('progress').style.width=(phase==='approach'?5:phase==='mount'||phase==='mountReady'?12:15+Xe.x/mmCourse.FINISH*85)+'%';
- Je('yellow').disabled=Kt||!(phase==='mountReady'||ec(Xe));Je('yellow').textContent=['mountReady','mount'].includes(phase)?'Monter':'Cabrer';Je('red').disabled=Kt||!ec(Xe);Je('gallop').disabled=Kt||phase!=='ride';if(phase!=='ride')mmStopGallop();
+ Je('yellow').disabled=Kt||!(phase==='mountReady'||ec(Xe));Je('yellow').textContent=['mountReady','mount'].includes(phase)?'Monter':'Cabrer';Je('red').disabled=Kt||!ec(Xe);Je('gallop').disabled=Kt||!['ride','jump'].includes(phase);if(!['ride','jump'].includes(phase))mmStopGallop();
  Je('step').textContent=Xe.obstacles.filter(o=>o.cleared).length+' / 4 obstacles · '+Xe.adults.filter(a=>a.fleeTime!==null).length+' / 15 adultes';
  if(Xe.auto){Je('step').textContent=Xe.demoComplete?'Démonstration terminée':'Démonstration · 1 obstacle';Je('progress').style.width=(Xe.demoComplete?100:Math.max(0,Math.min(100,(Xe.x-7.4)/(15.3-7.4)*100)))+'%';}
  Je('demoEnd').hidden=!Xe.demoComplete;
