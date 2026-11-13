@@ -1,0 +1,80 @@
+/* Les neuf vignettes de la planche validée, affichées sans retoucher l'image. */
+#board #boardTargets{grid-template-columns:minmax(0,1fr);gap:20px}
+#board #boardTargets .chapter-featured,
+#board #boardTargets .chapter-featured.done{
+ grid-template-columns:minmax(0,1fr)!important;gap:12px;
+ min-height:0!important;padding:8px 0!important;border:0!important;
+ border-radius:0;background:none!important;box-shadow:none!important;
+ overflow:visible;color:#243e37!important;
+}
+#board #boardTargets .chapter-featured::before,
+#board #boardTargets .chapter-featured>.board-badge{display:none}
+#board #boardTargets .chapter-card-main{
+ grid-column:1;grid-row:auto;min-height:44px;display:flex;
+ flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;
+ gap:5px 10px;text-align:center;color:#243e37;
+}
+#board #boardTargets .chapter-card-main::before,
+#board #boardTargets .chapter-card-main::after{
+ content:'';flex:1 1 20px;max-width:90px;height:1px;background:#a78046;
+}
+#board #boardTargets .chapter-card-kicker,
+#board #boardTargets .chapter-card-title{
+ color:#243e37;font:700 clamp(18px,2.1vw,27px)/1.2 'Cormorant Garamond',Georgia,serif;
+ letter-spacing:.045em;text-transform:uppercase;
+}
+#board #boardTargets .chapter-card-kicker::after{content:' ·'}
+#board #boardTargets .chapter-card-place{display:none}
+#board #boardTargets .chapter-card-route{
+ grid-column:1;grid-row:auto;width:100%;display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.8vw,22px);
+}
+#board #boardTargets .chapter-card-route>button.chapter-part-label{
+ position:relative;display:block;box-sizing:border-box;width:100%;height:auto;
+ min-width:0;min-height:0;aspect-ratio:1;padding:0;margin:0;border:0;
+ border-radius:8px;overflow:hidden;
+ background-color:#243e37;
+ background-image:url('assets/board/scene-cards-v1.png');
+ background-repeat:no-repeat;
+ box-shadow:0 3px 8px #49382020;
+ opacity:1;filter:none;transition:box-shadow .16s,transform .16s;
+}
+/* Les titres visibles appartiennent à l'illustration approuvée. Les libellés
+   et états HTML restent disponibles pour les lecteurs d'écran et les jeux. */
+#board #boardTargets [data-scene-art]>span{
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);
+ white-space:nowrap;border:0;
+}
+#board #boardTargets [data-scene-art]:not(:disabled):hover{
+ transform:translateY(-3px);box-shadow:0 7px 15px #49382038;
+}
+#board #boardTargets [data-scene-art]:focus-visible,
+#board #boardTargets .chapter-card-main:focus-visible{
+ outline:3px solid #31594c;outline-offset:4px;
+}
+#board #boardTargets [data-scene-art]:disabled{cursor:not-allowed}
+#board #boardTargets [data-scene-art]:disabled::after,
+#board #boardTargets [data-scene-art].passed::after{
+ position:absolute;right:9px;top:9px;display:grid;place-items:center;
+ min-width:25px;min-height:25px;padding:3px 7px;border:1px solid #c9ad7d;
+ border-radius:20px;background:#203d35ed;color:#fff4df;
+ font:600 11px/1.2 'DM Sans',sans-serif;content:'À débloquer';
+}
+#board #boardTargets [data-scene-art].passed::after{content:'✓';font-size:16px}
+#board #boardTargets .chapter-card-status{
+ grid-column:1;color:#665335;font-size:11px;line-height:1.5;
+ margin:0;text-align:center;width:100%;
+}
+@media(max-width:600px){
+ #board #boardTargets{gap:15px}
+ #board #boardTargets .chapter-card-route{grid-template-columns:minmax(0,1fr);max-width:360px;margin:auto;gap:16px}
+ #board #boardTargets .chapter-card-main{gap:4px 7px}
+ #board #boardTargets .chapter-card-main::before,
+ #board #boardTargets .chapter-card-main::after{display:none}
+ #board #boardTargets .chapter-card-kicker,
+ #board #boardTargets .chapter-card-title{font-size:20px}
+}
+@media(prefers-reduced-motion:reduce){
+ #board #boardTargets .chapter-card-route>button.chapter-part-label{transition:none;transform:none}
+}

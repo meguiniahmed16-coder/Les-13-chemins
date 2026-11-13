@@ -81,7 +81,7 @@
  document.head.append(css);
  $('board').setAttribute('aria-label','Trois chemins : I La salle d’attente, II Le météore, III Les rendez-vous.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Chemin I · La salle d’attente ; chemin II · Le météore ; chemin III · Les rendez-vous (Camarades !, Cyrano et un troisième chapitre en préparation).';
+ if(intro)intro.textContent='Trois chemins, neuf scènes à découvrir.';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);
@@ -128,6 +128,18 @@
  const icons=['🌳','🪖'];
  const captions=['🌿 Les Marmousets','🎧 Le lycée','🌳 Barcelone'];
  const chapterTwoCaptions=['🪖 Sarajevo','🕺 Le danseur','📣 Camarades !'];
+ // Fenêtres sur la planche approuvée : le fichier original reste intact.
+ const sceneArtwork=[
+  [68,148,343,340],[435,148,334,340],[789,148,343,340],
+  [68,540,343,337],[431,540,337,337],[789,540,343,337],
+  [68,929,341,355],[430,929,337,355],[789,929,343,355]
+ ];
+ function illustrateTile(tile,index){
+  const [x,y,width,height]=sceneArtwork[index];
+  tile.dataset.sceneArt=String(index+1);
+  tile.style.backgroundSize=(1199/width*100)+'% '+(1312/height*100)+'%';
+  tile.style.backgroundPosition=(x/(1199-width)*100)+'% '+(y/(1312-height)*100)+'%';
+ }
  const makeSpan=(name,label)=>{const el=document.createElement('span');el.className=name;el.textContent=label;return el;};
  function openChapterOnePart(part){
   if(boardRolling)return;
@@ -157,7 +169,7 @@
     button.setAttribute('role','group');
     const main=document.createElement('button');main.type='button';main.className='chapter-card-main';button.append(main);
     main.append(
-     makeSpan('chapter-card-kicker','CHEMIN '+pathNumeral(i+1)+(scene===1?' · CHAPITRE 1':'')),
+     makeSpan('chapter-card-kicker','CHEMIN '+pathNumeral(i+1)),
      makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Le météore':LEVELS[scene-1].title),
      makeSpan('chapter-card-place',scene===1?'Ferney-Voltaire · La Roche-sur-Foron · Barcelone':scene===4?'Trois extraits, une même étape de jeu.':LEVELS[scene-1].place)
     );
@@ -167,7 +179,9 @@
       for(let part=1;part<=3;part++){
        const tile=document.createElement('button');tile.type='button';
        tile.className='chapter-part-label';tile.dataset.part=String(part);
-       tile.textContent=captions[part-1];
+       tile.append(makeSpan('chapter-part-title',flow.PARTS[part-1].title),
+        makeSpan('chapter-part-state','Chapitre 1 · Jeu '+part+' / 3'));
+       illustrateTile(tile,part-1);
        tile.onclick=()=>openChapterOnePart(part);
        route.append(tile);
       }
@@ -182,6 +196,7 @@
         makeSpan('chapter-part-title','« '+p.chapterTitle+' »'),
         makeSpan('chapter-part-game',chapterTwoCaptions[p.part-1]),
         makeSpan('chapter-part-state','Jeu '+p.part+' / 3'));
+       illustrateTile(tile,p.part+2);
        route.append(tile);
       }
       button.append(route,makeSpan('chapter-card-status','0 / 3 jeux terminés'));
@@ -239,6 +254,7 @@
      makeSpan('chapter-part-title','« '+p.title+' »'),
      makeSpan('chapter-part-game',i===0?'🔒 La prison':i===1?'💌 Cyrano':'❤️ Rencontre'),
      makeSpan('chapter-part-state',i===0?'Jeu 1 / 3':'Jeu '+(i+1)+' / 3'));
+    illustrateTile(tile,i+6);
     tile.onclick=()=>window.TreizeRendezVous?.open?.(i+1);
     thirdRoute.append(tile);
    }
@@ -277,7 +293,8 @@
      badge.classList.toggle('passed',flow.partDone(state,p));
      badge.disabled=!!boardRolling||!flow.canEnter(state,p);
      badge.setAttribute('aria-label',(flow.partDone(state,p)?'Rejouer ':'Jouer ')+flow.PARTS[p-1].title);
-     badge.textContent=(flow.wasSkipped(state,p)?'↷ ':flow.partDone(state,p)?'✓ ':'')+captions[p-1];
+     badge.querySelector('.chapter-part-state').textContent='Chapitre 1 · Jeu '+p+' / 3'+
+      (flow.wasSkipped(state,p)?' · ↷ parcouru':flow.partDone(state,p)?' · ✓ réussi':'');
     }
    }else{
     if(n===4){

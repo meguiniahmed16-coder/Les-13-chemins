@@ -52,6 +52,8 @@ const publicFiles = [
   'ordre-lecture.js',
   'chapitre1-flow.js',
   'chapitre1-plateau.js',
+  'vignettes.css',
+  'assets/board/scene-cards-v1.png',
   'mini-cartes.js',
   'libre-parcours.js',
   'rendezvous-plateau.js',
@@ -126,7 +128,7 @@ for (const name of publicFiles) {
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('Fichier public non régulier : ' + name);
   }
-  if (/\.(?:mp3|webp|avif|glb)$/.test(name)) continue;
+  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name)) continue;
   const content = await readFile(source, 'utf8');
   if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(content)) {
     throw new Error('Lien vers un document de travail interdit dans : ' + name);

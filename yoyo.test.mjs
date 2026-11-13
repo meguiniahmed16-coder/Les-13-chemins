@@ -412,7 +412,7 @@ test('Archived v10 starts with its approved dorsal hand instead of its palm',()=
  assert.match(page,/id="handOpen2D" src="main-ouverte-dos-v10\.avif"/);
  assert.match(page,/Main fixe v10/);
  assert.match(build,/'main-ouverte-dos-v10\.avif'/);
- assert.match(build,/\(\?:mp3\|webp\|avif\|glb\)/,'build must not parse AVIF binary as UTF-8');
+ assert.match(build,/\(\?:mp3\|png\|webp\|avif\|glb\)/,'build must not parse image or model binaries as UTF-8');
  const r=fs.readFileSync(new URL('./main-ouverte-dos-v10.avif',import.meta.url));
  assert.equal(r.toString('ascii',4,8),'ftyp');
  assert.match(r.toString('ascii',8,24),/avif|avis/);
