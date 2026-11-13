@@ -3,22 +3,30 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
-const runtime=read('marmousets-3d-runtime.js');
-const engine={};
-const stateCode='var Ka=1.85,ts=1.05,Ws=-1.27;'+runtime.slice(runtime.indexOf('var nn='),runtime.indexOf('function Yd('));
-const bloomCode=runtime.slice(runtime.indexOf('function mmBloom('),runtime.indexOf('// Native instanced'));
-// Isolate the actual published state machine; renderer is deliberately absent.
-const bloomEnd=runtime.indexOf('\nvar mm',runtime.indexOf('function qd('));
-const bloom=runtime.slice(runtime.indexOf('function mmBloom('),bloomEnd);
-vm.runInNewContext(stateCode+'\n'+bloom+'\nglobalThis.api={Xd,Xs,qd};',engine);
-const {Xd,Xs,qd}=engine.api;
+const context={};vm.runInNewContext(read('marmousets-course.js'),context);const course=context.MarmousetsCourse;
+const {create:Xd,action:Xs,step:qd}=course;
 function advance(s,seconds,input=0){for(let t=0;t<seconds;t+=.02)qd(s,.02,input);}
-test('Complete course flowers after adult, obstacle and arrival',()=>{
- const s=Xd(true);advance(s,50);assert.equal(s.complete,true);assert.deepEqual(Array.from(s.meadow.events,e=>e.kind),['adult','obstacle','arrival']);assert.equal(s.meadow.target,1);
+function clearAdults(s){for(const a of s.adults)a.fleeTime=0;s.adultClear=true;}
+test('Four obstacles each have three guards, with the parents and educator at the start',()=>{
+ assert.equal(course.obstacles.length,4);assert.equal(course.adults.length,15);assert.ok(new Set(course.adults.map(a=>a.color)).size>=6);assert.ok(course.adults.some(a=>a.age<30)&&course.adults.some(a=>a.age>65));assert.ok(new Set(course.adults.map(a=>a.hair)).size>=5);
+ assert.deepEqual(Array.from(course.adults.slice(0,3),a=>a.role),['Père','Mère','Adulte des Marmousets']);
+ for(const g of course.groups)assert.equal(course.adults.filter(a=>a.group===g.id).length,3);
+});
+test('Complete course clears every group and obstacle and flowers fully at arrival',()=>{
+ const s=Xd(true);advance(s,100);assert.equal(s.complete,true);assert.equal(s.adults.filter(a=>a.fleeTime!==null).length,15);assert.ok(s.obstacles.every(o=>o.cleared&&o.intact));assert.equal(s.meadow.events.filter(e=>e.kind==='adult').length,15);assert.equal(s.meadow.events.filter(e=>e.kind==='obstacle').length,4);assert.equal(s.meadow.events.at(-1).kind,'arrival');assert.equal(s.meadow.target,1);
+});
+test('Adults stop forward travel and rearing only disperses the nearby group once',()=>{
+ const s=Xd();s.phase='ride';advance(s,5,1);assert.ok(s.x<=course.groups[0].x-1.65);Xs(s,'rear');advance(s,3);assert.equal(s.adults.filter(a=>a.fleeTime!==null).length,3);Xs(s,'rear');advance(s,3);assert.equal(s.meadow.events.length,3);assert.ok(s.meadow.target<.2);
 });
 test('Empty jumps and failed obstacle jumps do not flower; new games reset flowers',()=>{
- for(const [x,input] of [[2,0],[12.03,1]]){const s=Xd();s.phase='ride';s.adultClear=true;s.x=x;Xs(s,'jump',input);advance(s,1.6,input);assert.equal(s.meadow,undefined);}
- assert.equal(Xd().meadow,undefined);
+ for(const [x,input] of [[2,0],[12.03,1]]){const s=Xd();s.phase='ride';clearAdults(s);s.x=x;Xs(s,'jump',input);advance(s,1.6,input);assert.equal(s.meadow.events.length,0);}
+ assert.equal(Xd().meadow.target,0);
+});
+test('Gallop increases pace, releases to walking and respects adult and obstacle barriers',()=>{
+ const walk=Xd(),gallop=Xd();for(const s of[walk,gallop]){s.phase='ride';s.x=15;clearAdults(s);}gallop.gallop=true;advance(walk,1,1);advance(gallop,1,1);assert.ok(gallop.x-walk.x>1.7);
+ const x=gallop.x;gallop.gallop=false;advance(gallop,1,1);assert.ok(Math.abs(gallop.x-x-1.65)<.05);
+ gallop.gallop=true;advance(gallop,5,1);assert.ok(gallop.x<=24-.95);assert.equal(gallop.obstacles[1].cleared,false);
+ const blocked=Xd();blocked.phase='ride';blocked.gallop=true;advance(blocked,6,1);assert.ok(blocked.x<=course.groups[0].x-1.65);
 });
 test('White horse preserves eye contrast and all external buffers exist',()=>{
  const g=JSON.parse(read('assets/marmousets/horse.gltf'));
@@ -28,7 +36,7 @@ test('White horse preserves eye contrast and all external buffers exist',()=>{
 });
 function bridge(){
  let receive;const sent=[],credits=[];const parent={postMessage:m=>sent.push(m)};
- const w={parent,location:{search:'?embedded=1',origin:'https://game.example'},addEventListener:(event,fn)=>receive=fn};
+ const w={MarmousetsCourse:course,parent,location:{search:'?embedded=1',origin:'https://game.example'},addEventListener:(event,fn)=>receive=fn};
  const box={URLSearchParams};vm.runInNewContext(read('marmousets-session.js'),box);
  const api=box.MarmousetsSession({window:w,onCredit:m=>credits.push(m)});
  return{api,sent,credits,message:(data,overrides={})=>receive({data,origin:w.location.origin,source:parent,...overrides})};
@@ -38,20 +46,22 @@ test('Session ignores foreign origins, sources, IDs and demonstrations; awards o
  message({type:'marmousets:init',id:'x'},{origin:'https://foreign.example'});assert.equal(api.canPlay(),false);
  message({type:'marmousets:init',id:'x'},{source:{}});assert.equal(api.canPlay(),false);
  message({type:'marmousets:init',id:'x'});assert.equal(api.canPlay(),true);
- const state={auto:true,adultClear:true,obstacles:[{id:'barrier',cleared:true}],complete:true};api.observe(state);assert.equal(sent.length,0);
- state.auto=false;api.observe(state);api.observe(state);assert.deepEqual(sent.map(m=>m.type),['marmousets:progress','marmousets:progress','marmousets:won']);
+ const state={auto:true,adults:course.adults.map(a=>({...a,fleeTime:0})),obstacles:course.obstacles.map(o=>({...o,cleared:true})),complete:true};api.observe(state);assert.equal(sent.length,0);
+ state.auto=false;api.observe(state);api.observe(state);assert.equal(sent.filter(m=>m.type==='marmousets:progress').length,19);assert.equal(sent.filter(m=>m.type==='marmousets:won').length,1);
  message({type:'marmousets:credited',id:'wrong'});assert.equal(credits.length,0);
  message({type:'marmousets:credited',id:'x',bonus:10});message({type:'marmousets:credited',id:'x',bonus:10});assert.equal(credits.length,1);
- api.start();api.observe(state);assert.equal(sent.length,3);api.close();assert.equal(sent.at(-1).type,'marmousets:close');
+ api.start();api.observe(state);assert.equal(sent.length,20);api.close();assert.equal(sent.at(-1).type,'marmousets:close');
 });
-test('Board requires both new objectives, rejects stale sessions, preserves once-only bonus',()=>{
+test('Board requires all groups and obstacles, rejects stale sessions and duplicate rewards',()=>{
  const page=read('jeu.html'),start=page.indexOf('(function(root){',page.indexOf('<!-- MARMOUSETS START -->')),end=page.indexOf('\n\n(function(){',start),box={};vm.runInNewContext(page.slice(start,end),box);const a=box.MarmousetsScore,s={points:20};
- a.begin(s,true,'x');assert.equal(a.record(s,'stale','scared','a1'),false);assert.equal(a.settle(s,'x'),null);
- a.record(s,'x','scared','a1');assert.equal(a.settle(s,'x'),null);a.record(s,'x','cleared','barrier');assert.equal(a.settle(s,'x').bonus,10);assert.equal(s.points,30);assert.equal(a.settle(s,'x'),null);
- a.begin(s,true,'y');a.record(s,'y','scared','a1');a.record(s,'y','cleared','barrier');assert.equal(a.settle(s,'y').bonus,0);
- a.begin(s,false,'z');a.record(s,'z','scared','a1');a.record(s,'z','cleared','barrier');assert.equal(a.settle(s,'z').retryQuestion,true);assert.equal(s.points,30);
+ const recordAll=id=>{for(const adult of course.adults)a.record(s,id,'scared',adult.id);for(const obstacle of course.obstacles)a.record(s,id,'cleared',obstacle.id);};
+ a.begin(s,true,'x');assert.equal(a.record(s,'stale','scared','parents-0'),false);assert.equal(a.settle(s,'x'),null);
+ for(const adult of course.adults)a.record(s,'x','scared',adult.id);for(const obstacle of course.obstacles.slice(0,3))a.record(s,'x','cleared',obstacle.id);assert.equal(a.settle(s,'x'),null);
+ a.record(s,'x','cleared','barrier-4');assert.equal(a.settle(s,'x').bonus,10);assert.equal(s.points,30);assert.equal(a.settle(s,'x'),null);
+ a.begin(s,true,'y');recordAll('y');assert.equal(a.settle(s,'y').bonus,0);
+ a.begin(s,false,'z');recordAll('z');assert.equal(a.settle(s,'z').retryQuestion,true);assert.equal(s.points,30);
 });
 test('Published page retains book and board navigation and all production assets',()=>{
  const p=read('arcade-marmousets.html'),build=read('build-public.mjs');assert.match(p,/Chapitre 1 · partie 1\/3/);assert.match(p,/lecture.html\?niveau=1/);assert.match(p,/jeu.html\?niveau=1/);assert.doesNotMatch(p,/NON PUBLIÉE|scène d’essai/);
- for(const f of ['marmousets-session.js','marmousets-3d-runtime.js',...['horse.gltf','horse.bin','adult.glb','child.glb','tree.glb','bush.glb'].map(f=>'assets/marmousets/'+f)])assert.ok(build.includes("'"+f+"'"),f);
+ for(const f of ['marmousets-course.js','marmousets-session.js','marmousets-3d-runtime.js',...['horse.gltf','horse.bin','adult.glb','child.glb','tree.glb','bush.glb'].map(f=>'assets/marmousets/'+f)])assert.ok(build.includes("'"+f+"'"),f);
 });

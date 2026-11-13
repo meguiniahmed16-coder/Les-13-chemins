@@ -16,9 +16,10 @@
    observe(s){
     if(!embedded||!id||!s||s.auto||won)return;
     const progress=(kind,item)=>{const key=kind+':'+item;if(!reported.has(key)){reported.add(key);send('marmousets:progress',{kind,item});}};
-    if(s.adultClear)progress('scared','a1');
-    if(s.obstacles?.some(o=>o.id==='barrier'&&o.cleared))progress('cleared','barrier');
-    if(s.complete&&reported.has('scared:a1')&&reported.has('cleared:barrier')){won=true;send('marmousets:won');}
+    for(const a of s.adults||[])if(a.fleeTime!==null)progress('scared',a.id);
+    for(const o of s.obstacles||[])if(o.cleared)progress('cleared',o.id);
+    const course=w.MarmousetsCourse;
+    if(s.complete&&course&&course.adults.every(a=>reported.has('scared:'+a.id))&&course.obstacles.every(o=>reported.has('cleared:'+o.id))){won=true;send('marmousets:won');}
    },close:()=>{if(id)send('marmousets:close');}
   };
  };

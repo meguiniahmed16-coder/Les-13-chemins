@@ -96,6 +96,7 @@ const publicFiles = [
   'marmousets-art-v2.js',
   'marmousets-3d-runtime.js',
   'marmousets-session.js',
+  'marmousets-course.js',
   'assets/marmousets/horse.gltf',
   'assets/marmousets/horse.bin',
   'assets/marmousets/adult.glb',
