@@ -14,7 +14,7 @@
  const mounted=s=>['ride','rear','jump','stumble'].includes(s.phase);
  const height=t=>JUMP_HEIGHT*Math.sin(Math.PI*clamp(t,0,1));
  const groupClear=(s,g)=>s.adults.filter(a=>a.group===g.id).every(a=>a.fleeTime!==null);
- function create(auto=false){return{phase:'approach',time:0,total:0,x:0,vx:0,childX:-3,auto,adultClear:false,jumped:false,complete:false,gallop:false,queued:null,jumpVx:0,jumpStartX:0,jumpMistake:null,notice:'',noticeTime:0,adults:adults.map(a=>({...a,fleeTime:null})),obstacles:obstacles.map(o=>({...o,intact:true,hitTime:null,cleared:false,bloomed:false})),meadow:{target:0,events:[],finished:false}};}
+ function create(auto=false){const state={phase:'approach',time:0,total:0,x:0,vx:0,childX:-3,auto,adultClear:false,jumped:false,complete:false,gallop:false,queued:null,jumpVx:0,jumpStartX:0,jumpMistake:null,notice:'',noticeTime:0,adults:adults.map(a=>({...a,fleeTime:null})),obstacles:obstacles.map(o=>({...o,intact:true,hitTime:null,cleared:false,bloomed:false})),meadow:{target:0,events:[],finished:false},demoComplete:false};if(auto){state.phase='ride';state.x=7.4;for(const a of state.adults)if(a.group==='parents')a.fleeTime=6;}return state;}
  function bloom(s,kind,x,id){const m=s.meadow,from=m.target;m.target=kind==='arrival'?1:Math.min(.94,from+(kind==='adult'?.5/adults.length:.4/obstacles.length));m.events.push({kind,id,x,at:s.total,from,to:m.target});}
  function scare(s){for(const g of groups){if(Math.abs(s.x-g.x)>2.75)continue;for(const a of s.adults.filter(a=>a.group===g.id&&a.fleeTime===null)){a.fleeTime=0;bloom(s,'adult',a.x,a.id);}}s.adultClear=s.adults.every(a=>a.fleeTime!==null);}
  function action(s,type='rear',input=0){if(s.phase==='mountReady'&&type==='rear'){phase(s,'mount');return true;}if(!mounted(s))return false;if(s.phase!=='ride'){s.queued={type,input};return true;}if(type==='rear'){phase(s,'rear');s.vx=0;}else if(type==='jump'){phase(s,'jump');s.jumpStartX=s.x;s.jumpMistake=null;s.jumpVx=Math.sign(s.auto?1:input||s.vx)*JUMP_DISTANCE/JUMP_TIME;}else return false;return true;}
@@ -51,6 +51,7 @@
   }else if(s.phase==='stumble'){s.x=ground(s,s.x+direction*.65*dt);if(s.time>=.65)ride(s);}
   else if(s.phase==='finish'){if(!s.meadow.finished){bloom(s,'arrival',s.x,'arrival');s.meadow.finished=true;}if(s.time>=1.2)s.complete=true;}
   for(const o of s.obstacles)if(!o.intact&&s.x>o.x+.95)o.cleared=true;
+  if(s.auto&&s.obstacles[0].cleared&&s.phase==='ride'){phase(s,'demoDone');s.demoComplete=true;s.vx=0;s.gallop=false;s.queued=null;}
   return s;
  }
  root.MarmousetsCourse={FINISH,MAX_X,obstacles,adults,groups,create,step,action,groupClear,height,mounted};

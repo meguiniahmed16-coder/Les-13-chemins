@@ -4705,7 +4705,7 @@ var mmSession = window.MarmousetsSession({ window, onInit() {
   Kt = false;
   un = 0;
   Je("intro").hidden = false;
-  Je("finished").hidden = true;
+  Je("finished").hidden = true;Je("demoEnd").hidden=true;Je("takeControl").hidden=true;
   Je("controls").hidden = true;
   Je("play").disabled = !tf;
 }, onCredit(m) {
@@ -4726,7 +4726,7 @@ function mmStopGallop(){mmGallopHeld=false;if(Xe)Xe.gallop=false;Je("gallop").se
 function $r(s) {
   mmStopGallop();
   if (!tf || !mmSession.canPlay()) return;
-  mmSession.start();
+  mmSession.start();un=0;Je("demoEnd").hidden=true;Je("takeControl").hidden=!s;
   Xe = Xd(s), Kt = false, Je("intro").hidden = true, Je("finished").hidden = true, Je("controls").hidden = s, Je("mode").textContent = s ? "D\xC9MONSTRATION" : "\xC0 VOUS DE JOUER", Je("pause").textContent = "\u2161", is("Idle");
 }
 function oc(s) {
@@ -4735,6 +4735,7 @@ function oc(s) {
 Je("demo").onclick = () => $r(true);
 Je("play").onclick = () => $r(false);
 Je("again").onclick = () => $r(false);
+Je("startGame").onclick=()=> $r(false);Je("takeControl").onclick=()=> $r(false);
 Je("replay").onclick = () => $r(true);
 Je("restart").onclick = () => $r(Xe?.auto ?? false);
 Je("pause").onclick = () => {
@@ -4779,6 +4780,7 @@ function tx(){
  else if(phase==='rear'){title='Le cheval se cabre';hint='Les adultes s’écartent. Des fleurs apparaissent.';}
  else if(phase==='jump'){title='Un instant dans les airs';hint='Franchir l’obstacle pour continuer.';}
  else if(phase==='stumble'){title='Retrouver son équilibre';hint=Xe.notice;}
+ else if(phase==='demoDone'){title='À toi de jouer';hint='Commence ta partie avec le bouton ci-dessus.';}
  else if(phase==='finish'){title='Rester ensemble';hint='Mustapha est là. Les champs sont en fleurs.';}
  else if(group&&Math.abs(group.x-Xe.x)<4){title=group.id==='parents'?'Mes parents veulent me retenir':'Plusieurs adultes barrent le chemin';hint='Cabrer ou sauter pour ouvrir le passage.';}
  else if(obstacle&&obstacle.x-Xe.x<4){title=obstacle.name;hint='Saute avant d’atteindre l’obstacle.';}
@@ -4787,6 +4789,8 @@ function tx(){
  Je('progress').style.width=(phase==='approach'?5:phase==='mount'||phase==='mountReady'?12:15+Xe.x/mmCourse.FINISH*85)+'%';
  Je('yellow').disabled=Kt||!(phase==='mountReady'||ec(Xe));Je('yellow').textContent=['mountReady','mount'].includes(phase)?'Monter':'Cabrer';Je('red').disabled=Kt||!ec(Xe);Je('gallop').disabled=Kt||phase!=='ride';if(phase!=='ride')mmStopGallop();
  Je('step').textContent=Xe.obstacles.filter(o=>o.cleared).length+' / 4 obstacles · '+Xe.adults.filter(a=>a.fleeTime!==null).length+' / 15 adultes';
+ if(Xe.auto){Je('step').textContent=Xe.demoComplete?'Démonstration terminée':'Démonstration · 1 obstacle';Je('progress').style.width=(Xe.demoComplete?100:Math.max(0,Math.min(100,(Xe.x-7.4)/(15.3-7.4)*100)))+'%';}
+ Je('demoEnd').hidden=!Xe.demoComplete;
  if(Xe.complete)Je('finished').hidden=false;
 }
 var $d = new C(), jd = new C();

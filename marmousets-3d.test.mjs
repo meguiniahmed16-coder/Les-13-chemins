@@ -13,7 +13,16 @@ test('Four obstacles each have three guards, with the parents and educator at th
  for(const g of course.groups)assert.equal(course.adults.filter(a=>a.group===g.id).length,3);
 });
 test('Complete course clears every group and obstacle and flowers fully at arrival',()=>{
- const s=Xd(true);advance(s,100);assert.equal(s.complete,true);assert.equal(s.adults.filter(a=>a.fleeTime!==null).length,15);assert.ok(s.obstacles.every(o=>o.cleared&&o.intact));assert.equal(s.meadow.events.filter(e=>e.kind==='adult').length,15);assert.equal(s.meadow.events.filter(e=>e.kind==='obstacle').length,4);assert.equal(s.meadow.events.at(-1).kind,'arrival');assert.equal(s.meadow.target,1);
+ const s=Xd();
+ for(let t=0;t<100&&!s.complete;t+=.02){
+  if(s.phase==='mountReady')Xs(s,'rear');
+  if(s.phase==='ride'){
+   const g=course.groups.find(g=>!course.groupClear(s,g)&&s.x>=g.x-1.8&&s.x<g.x+2.5),o=s.obstacles.find(o=>!o.cleared);
+   if(g)Xs(s,'rear');else if(o&&s.x>=o.x-2.15)Xs(s,'jump',1);
+  }
+  qd(s,.02,1);
+ }
+assert.equal(s.complete,true);assert.equal(s.adults.filter(a=>a.fleeTime!==null).length,15);assert.ok(s.obstacles.every(o=>o.cleared&&o.intact));assert.equal(s.meadow.events.filter(e=>e.kind==='adult').length,15);assert.equal(s.meadow.events.filter(e=>e.kind==='obstacle').length,4);assert.equal(s.meadow.events.at(-1).kind,'arrival');assert.equal(s.meadow.target,1);
 });
 test('Adults stop forward travel and rearing only disperses the nearby group once',()=>{
  const s=Xd();s.phase='ride';advance(s,5,1);assert.ok(s.x<=course.groups[0].x-1.65);Xs(s,'rear');advance(s,3);assert.equal(s.adults.filter(a=>a.fleeTime!==null).length,3);Xs(s,'rear');advance(s,3);assert.equal(s.meadow.events.length,3);assert.ok(s.meadow.target<.2);
@@ -64,4 +73,11 @@ test('Board requires all groups and obstacles, rejects stale sessions and duplic
 test('Published page retains book and board navigation and all production assets',()=>{
  const p=read('arcade-marmousets.html'),build=read('build-public.mjs');assert.match(p,/Chapitre 1 · partie 1\/3/);assert.match(p,/lecture.html\?niveau=1/);assert.match(p,/jeu.html\?niveau=1/);assert.doesNotMatch(p,/NON PUBLIÉE|scène d’essai/);
  for(const f of ['marmousets-course.js','marmousets-session.js','marmousets-3d-runtime.js',...['horse.gltf','horse.bin','adult.glb','child.glb','tree.glb','bush.glb'].map(f=>'assets/marmousets/'+f)])assert.ok(build.includes("'"+f+"'"),f);
+});
+
+test('Demonstration ends after one landed obstacle in under eight seconds without completing the game',()=>{
+ const s=Xd(true);let elapsed=0;while(!s.demoComplete&&elapsed<10){qd(s,.02);elapsed+=.02;}
+ assert.equal(s.demoComplete,true);assert.ok(elapsed<8);assert.equal(s.complete,false);assert.equal(s.phase,'demoDone');assert.equal(s.obstacles.filter(o=>o.cleared).length,1);assert.equal(s.meadow.events.filter(e=>e.kind==='obstacle').length,1);assert.ok(s.meadow.target<1);
+ const x=s.x;advance(s,45);assert.equal(s.x,x);assert.equal(s.obstacles.filter(o=>o.cleared).length,1);
+ const manual=Xd(false);assert.equal(manual.auto,false);assert.equal(manual.demoComplete,false);assert.equal(manual.phase,'approach');assert.equal(manual.x,0);assert.equal(manual.meadow.target,0);assert.ok(manual.adults.every(a=>a.fleeTime===null));
 });
