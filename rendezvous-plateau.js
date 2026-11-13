@@ -169,12 +169,28 @@
   if(!Number.isInteger(part)||part<1||part>3)return;
   if(part===1){window.TreizePlateauxNavigation?.openPart?.('prison');return;}
   if(part===2&&!prisonTraversed()||part===3&&!cyranoTraversed())return;
+  if(window.TreizeUnifiedReader){
+   clearTimeout(autoTimer);autoTimer=0;autoLaunched=false;activePart=part;
+   return window.TreizeUnifiedReader.openRendezvous({
+    id:part===2?'cyrano':'rencontre',chapter:parts[part-1].chapter,chapterTitle:parts[part-1].title,
+    title:part===2?'Des lettres à travers le mur':'Une rencontre dans la cuisine',
+    place:part===2?'Quartier d’isolement · Deux cellules mitoyennes':'Paris · Soirée d’anniversaire',
+    paragraphs:part===2?cyranoExtract:rencontreExtract,
+    gameText:part===2?'Parcourez la planche, puis écrivez trois lettres d’amour pour Cédric. Vous pouvez passer le défi sans gagner ses points.':'Retrouvez les choix et les cinématiques de la rencontre. Les films déjà débloqués restent accessibles.',
+    onChallenge:part===2?openCyranoDialog:openRencontreDialog
+   });
+  }
   oldOpen();showPart(part);
  };
  // Première occurrence du « Drapeau rouge » : Camarades ! après la danse.
  app.openManifestation=function(){
   if(!flow.chapter2PartDone(state,2)||boardRolling)return;
   clearTimeout(autoTimer);autoLaunched=false;
+  if(window.TreizeUnifiedReader)return window.TreizeUnifiedReader.openRendezvous({
+   id:'manifestation',chapter:4,chapterTitle:'Le drapeau rouge',title:'République–Bastille',
+   place:'Paris · Avril 2002',paragraphs:firstExcerpt,
+   gameText:'Trouvez le drapeau, mobilisez la République et réunissez les cortèges. Trois épreuves de 10 points.',onChallenge:openDialog
+  });
   if(!reader.open)reader.showModal();
   showPart(1);
  };

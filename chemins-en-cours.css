@@ -53,6 +53,9 @@
 .upcoming-game-shell .upcoming-intro{grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:40px}
 .upcoming-game-shell .upcoming-rules{font-size:18px}
 .upcoming-game-actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}
+.upcoming-quiz{margin:20px 0;padding:18px;border:1px solid #c4af88;border-radius:7px;background:#fbf2e0}
+.upcoming-quiz>.upcoming-button{display:flex;width:100%;justify-content:flex-start;text-align:left;margin:9px 0}
+.upcoming-reader .upcoming-button:disabled{opacity:.55;cursor:not-allowed}
 .upcoming-game-stage{position:relative;width:100%;min-height:360px;border:1px solid #b99a67;border-radius:8px;overflow:hidden}
 .upcoming-game-stage canvas{max-width:100%;display:block}
 .upcoming-atlas-controls{margin:18px 0;padding:15px;border:1px solid #b7a074;border-radius:8px;background:#f7ecd5}

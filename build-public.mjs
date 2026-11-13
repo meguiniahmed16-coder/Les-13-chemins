@@ -37,6 +37,7 @@ for (const args of [
   ['--test', 'chapitre1-flow.test.mjs'],
   ['--test', 'journey.test.mjs'],
   ['--test', 'chemins-en-cours.test.mjs'],
+  ['--test', 'lecteur-chemins.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
   const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
@@ -57,6 +58,7 @@ const publicFiles = [
   'chemins-en-cours-data.js',
   'chemins-en-cours-core.js',
   'chemins-en-cours.js',
+  'lecteur-chemins.js',
   'chemins-en-cours.css',
   'chemins-atlas.js',
   'futurs-jeux.js',

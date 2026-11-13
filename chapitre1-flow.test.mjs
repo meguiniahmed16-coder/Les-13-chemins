@@ -313,7 +313,7 @@ test('Chemins I, II et III : mêmes cartouches, trois jeux accessibles indépend
  assert.ok(rdv.includes("if(part===2&&!prisonTraversed()||part===3&&!cyranoTraversed())return"),'Les chapitres non débloqués demeurent fermés');
  assert.ok(game.includes("plateaux.js?v=20261112-drapeaux-v1"),'Le navigateur Android reçoit la nouvelle version');
  assert.ok(game.includes("chapitre1-plateau.js?v="));
- assert.ok(game.includes("rendezvous-plateau.js?v=20261112-drapeaux-v1"));
+ assert.ok(game.includes("rendezvous-plateau.js?v=20261113-onglets-v1"));
 });
 test('Le chemin III conserve le texte validé et le contrôleur de jeu',()=>{
  const ui=read('./chapitre1-plateau.js'),controller=read('./rendezvous-plateau.js');
