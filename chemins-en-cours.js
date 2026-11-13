@@ -53,15 +53,13 @@
    if(key==='text'){
     panel.append(h('p','upcoming-source',scene.reference||'Extrait du manuscrit · Chapitre '+scene.chapter+' — '+scene.chapterTitle));
     const prose=h('div','upcoming-prose');scene.paragraphs.forEach(p=>prose.append(h('p','',p)));panel.append(prose);
-    if(scene.id==='traitre')panel.append(h('p','upcoming-caption','Le salon et ses six invitées sont une adaptation satirique de ce passage. Ils ne constituent pas une scène supplémentaire du manuscrit.'));
    }
    if(key==='people'){
-    panel.append(h('p','upcoming-caption','Ces voix d’atelier mêlent souvenirs et création littéraire. Elles prolongent les personnages au-delà du passage.'));
+    panel.append(h('p','upcoming-caption','Cliquez sur un nom pour découvrir le personnage.'));
     const profiles=scene.profiles||scene.people.map(id=>data.profiles[id]);
     profiles.forEach(profile=>{
-     const details=h(profile.paragraphs?.length?'details':'article','upcoming-person'),summary=h(profile.paragraphs?.length?'summary':'p');
+     const details=h('details','upcoming-person'),summary=h('summary');
      summary.append(h('strong','',profile.name),h('span','',profile.role));details.append(summary);
-     if(profile.workshop)details.append(h('p','upcoming-source','Sélection de l’atelier '+profile.workshop));
      (profile.paragraphs||[]).forEach(p=>details.append(h('p','',p)));panel.append(details);
     });
    }

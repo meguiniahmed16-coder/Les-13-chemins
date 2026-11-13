@@ -1,43 +1,164 @@
 [
   {
-    "id": "michel",
-    "name": "Michel le Belge",
-    "atelier": "01",
-    "levels": [
-      3
-    ],
-    "paragraphs": [
-      "Je suis grand, blond, déjà dégarni. Je garde mes inquiétudes derrière des gestes ordinaires : vérifier mes poches, regarder la rue, proposer à manger. Je compte mon argent, mais j’aime partager un repas. Cela donne une raison simple d’être ensemble.",
-      "Je peux rire franchement et surveiller une porte dans le même instant. Je voudrais être tranquille, retrouver un travail régulier, pouvoir donner mon adresse sans réfléchir. Pour l’instant, je remets cela à plus tard. Je dis souvent que ça va. J’aimerais parfois qu’on attende un peu avant de me croire."
-    ]
-  },
-  {
     "id": "mustapha",
     "name": "Mustapha",
+    "role": "Le frère d’Ahmed",
     "atelier": "05",
     "levels": [
       1
     ],
     "paragraphs": [
+      "Je suis né le 18 août 1980 à Saint-Julien-en-Genevois, en France. J’ai grandi dans une famille où les journées pouvaient changer de visage sans prévenir. Je n’ai pas été battu. J’entendais pourtant les voix monter et j’apprenais à reconnaître les moments où il valait mieux ne rien demander.",
       "À l’école, je travaillais bien. J’avais des facilités, mais je ne comptais pas seulement dessus. Je faisais mes devoirs, je préparais les contrôles, je voulais comprendre ce qui était attendu. Une bonne note avait quelque chose de reposant : elle venait récompenser un effort que je pouvais recommencer. Les règles tenaient mieux sur une feuille que dans une maison.",
       "Très tôt, j’ai décidé que je deviendrais riche. J’ai choisi mes études en regardant les métiers auxquels elles conduisaient, les revenus possibles, les occasions d’avancer. Je n’avais pas envie de remettre mon avenir au hasard. Quand une voie ne menait nulle part, je préférais le savoir avant d’y consacrer plusieurs années.",
       "Je travaille beaucoup. Je gagne de l’argent, puis je cherche où l’investir. Une somme qui dort me donne l’impression de perdre du temps. Je compare, je calcule, je recommence. J’aime voir un projet devenir solide. Je peux passer une soirée sur des chiffres sans trouver cela triste. J’ai parfois du mal à comprendre qu’on choisisse une vie dont on ne peut pas assurer les lendemains.",
+      "J’ai voulu des enfants. La fécondation in vitro a fait entrer dans ma vie une attente que mes habitudes ne savaient pas maîtriser. Nous avons eu plusieurs enfants. Je veille à leur avenir, aux études qu’ils pourront faire, à ce qu’ils auront si je ne suis plus là.",
       "Je suis capable de patience, de fidélité, de beaucoup de travail pour les miens. Je sais moins bien m’arrêter. Il reste toujours une précaution à prendre, une réserve à constituer. Je voudrais leur transmettre de la sécurité. Je me demande parfois si je leur apprends aussi à profiter de ce qu’ils ont déjà."
     ]
   },
   {
+    "id": "fatima",
+    "name": "Fatima",
+    "role": "La mère d’Ahmed",
+    "atelier": "04",
+    "levels": [
+      1,
+      2
+    ],
+    "paragraphs": [
+      "Je suis née le 19 mars 1956 à Tanger, au Maroc, dans le bidonville de Beni Makada. Mes parents avaient quitté le Rif pour fuir la faim. Leur pays vivait dans leurs conversations : les récoltes perdues, la guerre et ses gaz, la terre qu’on ne pouvait plus espérer faire vivre. J’ai grandi avec cette inquiétude dans la maison, même les jours où nous avions de quoi manger.",
+      "Mon père est mort jeune. J’ai quitté l’école pour travailler à l’usine. J’aimais comprendre vite, retenir les mots, trouver la bonne réponse. Ensuite, il a fallu tenir une cadence. Je rapportais mon salaire et je regardais ce qu’il permettait d’acheter. J’étais fière d’aider. J’en voulais aussi à ceux qui pouvaient encore être des enfants.",
+      "Quand on m’a présenté un homme qui vivait en Europe, de vingt-trois ans mon aîné, j’ai accepté le mariage. Je pensais à ma famille, à l’argent que je pourrais envoyer, à une maison solide. Je voulais partir et je voulais les emmener avec moi, au moins dans une vie meilleure. Je ne connaissais presque rien de cet homme ni de ce qu’il avait traversé.",
+      "En France, j’ai découvert le froid, la langue qui manque et la dépendance. Mon mari buvait et me frappait. J’avais cru sortir de la peur ; elle avait changé de maison. J’ai appris à chercher des issues, à revenir sur mes décisions, à vouloir mes enfants près de moi sans toujours savoir leur faire une place.",
+      "Je n’ai pas traité mes deux fils de la même manière. Avec l’aîné, j’ai été violente. Sa ressemblance avec son père me mettait en colère avant même qu’il ouvre la bouche. Le plus jeune, je ne l’ai pas frappé. Les bonnes notes me rassuraient : j’y voyais une protection contre la vie que j’avais connue.",
+      "Je garde du linge pour plus tard, je compte les dépenses, je nourris largement quand je peux. Je veux qu’on reconnaisse mes sacrifices. Demander pardon m’est difficile : j’ai longtemps eu peur que reconnaître un tort fasse disparaître tout ce que j’avais enduré."
+    ]
+  },
+  {
+    "id": "abdelouahab",
+    "name": "Abdelouahab",
+    "role": "Le père d’Ahmed",
+    "atelier": "03",
+    "levels": [
+      1
+    ],
+    "paragraphs": [
+      "Je suis né le 12 février 1933 à Tighmaret, en Algérie. Dans mon enfance, j’ai appris à surveiller le visage des hommes avant de leur parler. Chez nous, une humiliation pouvait devenir une affaire de famille ; les coups faisaient partie de l’éducation. J’ai grandi avec l’idée qu’un homme devait se faire respecter avant de pouvoir être tranquille. La peur, je la connaissais. Je ne savais pas la nommer.",
+      "J’ai été enrôlé d’office dans l’armée française. J’ai déserté, rejoint le maquis de l’Armée de libération nationale, puis je me suis rallié de nouveau aux Français, dans le commando de renseignement Georges. Chaque passage m’a demandé de croire à quelque chose et de me méfier de quelqu’un. Je sais ce qu’on dit des hommes qui changent de camp. Je sais moins bien expliquer ce qui se passe quand aucun camp ne vous laisse entier.",
+      "Rapatrié en France en 1962, j’ai emporté la guerre avec moi. Des hommes du FLN ont encore voulu me tuer. Je regarde les portes, les voitures qui ralentissent, les inconnus qui insistent. Un bruit suffit à me remettre debout. Je bois pour trouver quelques heures de repos ; l’alcool défait ce qui me reste de maîtrise.",
+      "Je peux rire, raconter une histoire jusqu’à faire rire toute une table, offrir ce que j’ai dans ma poche. J’aime les vêtements propres et les outils bien rangés. Puis quelque chose se ferme. Je soupçonne, j’accuse, je frappe. Les femmes subissent aussi cette violence. Mes deux fils, je ne les frappe pas. Cette limite existe en moi, sans que je sache pourquoi elle ne protège pas les autres.",
+      "Je voudrais être regardé comme un homme digne. Je réclame du respect avec des gestes qui font peur. Je supporte mal qu’on me plaigne et plus mal encore qu’on me commande. Quand je raconte la guerre, je retrouve une place dans la pièce. Quand le récit s’arrête, je ne sais plus toujours où me tenir."
+    ]
+  },
+  {
+    "id": "anne-marie",
+    "name": "Anne-Marie",
+    "role": "La famille d’accueil",
+    "atelier": "07A",
+    "levels": [
+      1
+    ],
+    "paragraphs": [
+      "Je suis née le 8 mars 1954 à Gex, en France. Ma mère faisait des retouches pour les voisines ; mon père travaillait à l’entretien des routes. À la maison, chacun devait servir à quelque chose. J’étais l’aînée de trois enfants. Je savais préparer un repas et coucher les petits avant de savoir ce que je voulais faire de ma vie.",
+      "À l’école, j’aimais les cahiers propres, les travaux qu’on pouvait terminer. J’aurais voulu apprendre la couture, avoir un métier à moi. Je suis entrée tôt dans la vie domestique. On me disait que j’étais sérieuse, débrouillarde. J’en étais fière. J’ai longtemps pris ces compliments pour une permission de continuer à m’oublier.",
+      "J’aime les maisons habitées, les provisions rangées, le linge qui sèche dehors. J’aime moins qu’on déplace mes affaires. Une journée réussie, pour moi, c’est une journée dont j’ai tenu le programme. Quand quelque chose déraille, j’ai vite le sentiment que tout va suivre. Alors ma voix devient sèche. Je donne des ordres là où j’aurais parfois besoin de demander de l’aide.",
+      "Accueillir des enfants chez moi me paraît être une tâche concrète : une place, des repas, des vêtements, des horaires. Je veux qu’ils puissent compter sur le lendemain. Mais je supporte mal de devoir redire la même chose. Je crois souvent qu’une règle claire devrait suffire ; je comprends moins bien ce qui continue à trembler chez un enfant quand tout semble en ordre autour de lui.",
+      "Je tiens à mes propres enfants avec une inquiétude que je montre peu. Je veux leur garder une part de notre maison. Je ne mesure pas toujours ce que cette séparation fait ressentir aux autres. J’attends qu’on reconnaisse mon travail, sans savoir le dire autrement qu’en rappelant tout ce que j’ai fait. Le soir, j’aime rester un moment seule à raccommoder. Mes mains savent reprendre un accroc. Pour les paroles que j’ai laissées sortir trop vite, je suis moins habile."
+    ]
+  },
+  {
+    "id": "jean-jacques",
+    "name": "Jean-Jacques",
+    "role": "La famille d’accueil",
+    "atelier": "07B",
+    "levels": [
+      1
+    ],
+    "paragraphs": [
+      "Je suis né le 19 septembre 1956 à Bellegarde-sur-Valserine, en France. Mon père était ouvrier d’atelier. Ma mère tenait la maison et les comptes. Je me souviens surtout du bruit des outils, des vêtements qu’on faisait durer et des dimanches où il fallait finir ce qu’on avait commencé. Chez nous, on parlait peu de ses peines. On réparait, on rangeait, on repartait travailler.",
+      "J’ai quitté l’école avec le désir de gagner ma vie. J’aimais la mécanique, comprendre pourquoi une pièce bloquait et trouver comment la remettre en mouvement. Devant une machine, je peux chercher longtemps. Devant quelqu’un qui pleure sans m’expliquer pourquoi, je perds plus vite patience. Ce que je ne comprends pas me met sur la défensive.",
+      "J’ai voulu une maison à la campagne, un coin pour bricoler, de la place pour une famille. Je me sens chez moi quand je connais les bruits du bâtiment et que je peux faire les réparations sans appeler personne. J’ai du mal à rester sans rien faire. Même le repos, je le remplis d’une étagère à poser ou d’un moteur à démonter.",
+      "Nous accueillons des enfants. Je prends ma part dans les trajets, les travaux, l’organisation matérielle. Je veux être un adulte sur qui l’on peut compter. J’attache beaucoup d’importance à la parole donnée, mais je confonds facilement une promesse qu’on oublie avec un manque de respect. Quand plusieurs enfants parlent à la fois, j’élève la voix pour reprendre la main. Je ne me demande pas assez ce qu’ils ont entendu avant d’arriver chez nous.",
+      "Je suis fier de mes enfants et je veille à leur garder du temps. Je voudrais aussi qu’on voie mes efforts sans avoir à les expliquer. Dire que je suis inquiet, dépassé ou blessé me coûte davantage que soulever quelque chose de lourd. Il m’arrive de rendre un service après une dispute, comme si le geste pouvait tenir lieu d’excuse. Je sais être disponible pour une panne. Pour une peine, je cherche encore ce qu’il faudrait faire."
+    ]
+  },
+  {
+    "id": "kader",
+    "name": "Kader",
+    "role": "Le beau-père d’Ahmed",
+    "atelier": "08",
+    "levels": [
+      2
+    ],
+    "paragraphs": [
+      "Je m’appelle Kader. Je suis né le 20 octobre 1934 près de Saïda, en Algérie. Mon père cultivait une petite terre et travaillait ailleurs quand elle ne suffisait plus. J’ai vu des hommes baisser les yeux devant des gens qu’ils détestaient. Enfant, je croyais que devenir grand permettrait de ne plus jamais avoir à le faire.",
+      "J’ai rejoint la lutte pour l’indépendance. Au maquis, j’ai connu la faim, les déplacements, les camarades qui ne revenaient pas. Mon frère aîné est mort pendant la guerre. J’ai gardé de lui une photographie où il a l’air moins sérieux que dans mon souvenir. À force de parler de son sacrifice, j’oublie parfois le garçon qui riait avec moi.",
+      "Les ralliements aux Français m’ont rendu méfiant. Certains hommes connaissaient nos chemins, nos habitudes, nos noms. Lorsqu’ils rejoignaient un commando adverse, je voyais dans leur départ la menace de nouvelles morts. J’ai fini par confondre le doute avec une faiblesse et la clémence avec un abandon des miens.",
+      "Après l’indépendance, je suis venu travailler en France. Je me suis marié. J’ai appris les horaires de l’usine, le prix des loyers, les gestes d’une existence ordinaire. Mais j’ai aussi voulu retrouver d’anciens maquisards passés du côté français. Je les appelais des traîtres. Je croyais que la paix ne pouvait pas les dispenser de répondre de leurs actes.",
+      "Je donnais à ma rancune le nom de fidélité. Dans les réunions, je savais rappeler les morts jusqu’à faire taire les vivants. À la maison, je pouvais être attentif, économe, heureux de rapporter quelque chose pour les enfants. Ces deux hommes habitaient la même journée.",
+      "Je voudrais que la vie de mon frère ait servi à quelque chose. Cette exigence m’a longtemps empêché de regarder ce que je faisais de la mienne. Si je cesse de réclamer des comptes, j’ai peur de le perdre encore. Je ne sais pas comment garder sa mémoire sans continuer à fabriquer des ennemis."
+    ]
+  },
+  {
+    "id": "michel",
+    "name": "Michel",
+    "role": "Michel le Belge",
+    "atelier": "01",
+    "levels": [
+      3
+    ],
+    "paragraphs": [
+      "Je suis né le 4 février 1963 à Liège, en Belgique. Mon père est parti avant que je puisse garder de lui un souvenir. Ma mère faisait des ménages. Nous habitions un petit appartement où j’entendais les voisins à travers les murs. Enfant, j’étais gai. J’aimais les blagues, le football et les journées où rien ne venait déranger nos habitudes.",
+      "À l’adolescence, ma mère a commencé à faire des séjours répétés à l’hôpital psychiatrique. Je guettais sa voix, ses silences, sa façon de ranger la cuisine. J’essayais de deviner comment serait la soirée. Puis j’ai été placé. J’ai appris à voyager léger, à reconnaître les adultes qu’on pouvait approcher et à ne pas raconter tout de suite ce qui comptait.",
+      "À seize ans, j’ai perdu mon meilleur ami. Il s’est jeté sous un train. Avec lui, je pouvais rire sans surveiller ce que je disais. Après sa mort, les départs ont pris une autre couleur. Je demande rarement à quelqu’un de rester, mais je remarque toujours quand il regarde l’heure.",
+      "J’ai quitté l’école sans diplôme et travaillé quelque temps dans un entrepôt. Les petits trafics sont venus avec les fréquentations et le besoin d’argent. J’ai manqué mon jugement. Quand mon avocat m’a annoncé la prison, je suis parti à Barcelone. Je vends du haschich pour vivre. Je sais aborder un client, reconnaître une hésitation, parler du prix. Demander de l’affection me paraît beaucoup plus compliqué.",
+      "Je suis grand, blond, déjà dégarni. Je garde mes inquiétudes derrière des gestes ordinaires : vérifier mes poches, regarder la rue, proposer à manger. Je compte mon argent, mais j’aime partager un repas. Cela donne une raison simple d’être ensemble.",
+      "Je peux rire franchement et surveiller une porte dans le même instant. Je voudrais être tranquille, retrouver un travail régulier, pouvoir donner mon adresse sans réfléchir. Pour l’instant, je remets cela à plus tard. Je dis souvent que ça va. J’aimerais parfois qu’on attende un peu avant de me croire."
+    ]
+  },
+  {
     "id": "lionel",
-    "name": "Lionel",
+    "name": "Lionel Le Goff",
+    "role": "L’ami d’Ahmed",
     "atelier": "09",
     "levels": [
       5
     ],
     "paragraphs": [
+      "Je suis né le 14 octobre 1975 à Morlaix, en France. Mon père conduisait des poids lourds ; ma mère tenait la caisse d’un magasin de tissus. Les jours où il rentrait, il fallait lui laisser raconter la route avant de raconter notre journée. Moi, je restais éveillé devant les films que la télévision passait trop tard. Je dessinais les pièces de la maison comme des décors, avec des flèches pour les déplacements.",
       "J’ai commencé des études de cinéma. J’aime monter des images : déplacer un plan suffit parfois à faire mentir tout ce qui précède. Sur un tournage, je peux être patient pendant deux heures pour une lumière, puis perdre mon calme parce qu’un câble manque. J’ai des idées plus grandes que mon argent. Je garde les tickets de cinéma, les adresses de salles, des numéros griffonnés sur des paquets.",
       "L’armée interrompt ce mouvement sans me l’enlever. Je fais ce qu’on me demande, je regarde les autres faire, et je compte les jours avant la permission. Chez moi, quelqu’un peut toujours dormir. Je sais où trouver une fête, qui possède une voiture, qui ne voudra pas rentrer à minuit. J’aime entraîner quelqu’un dans un endroit qu’il ne connaît pas et attendre le moment où il oublie sa réserve.",
+      "Je suis attiré par les hommes. Selon l’endroit, je le dis ou je laisse les gens supposer autre chose. Je déteste devoir me surveiller, mais je sais le faire. L’ironie me permet souvent de garder la main. Quand une conversation compte, je peux pourtant parler longtemps et devenir très sérieux.",
       "Je danse, je prends des risques, je néglige le lendemain. Puis je veux travailler avec une précision maniaque. Je n’ai pas choisi entre ces deux façons de vivre. Ce que je supporte le moins, c’est qu’on décide à ma place que ma vie sera petite.",
       "Après l’armée, je travaille à Paris pour une maison de production de Qui est qui ?, l’émission présentée par Marie-Ange Nardi. Je suis chargé de trouver les participants pour les émissions quotidiennes. Je suis très bien payé, mais je m’ennuie ; ce travail ne ressemble pas vraiment à ce que j’espérais faire après l’armée.",
-      "Ahmed m’a perdu de vue après son rapatriement de Bosnie. À Paris, une intuition lui fait chercher mon nom dans le bottin. Il me trouve, m’appelle et me laisse un message. Nous nous donnons rendez-vous en terrasse au Café Charbon, rue Oberkampf. Il me raconte son travail de chauffeur-livreur et le dispositif de la mission locale, « Action de mobilisation par le théâtre », au cours Florent. Les autres élèves paient deux mille francs par mois ; lui reçoit cette somme pour suivre les mêmes cours. Ça me fait rire. Nous sommes heureux de nous retrouver."
+      "Ahmed m’a perdu de vue après son rapatriement de Bosnie. À Paris, une intuition lui fait chercher mon nom dans le bottin. Il me trouve, m’appelle et me laisse un message. Nous nous donnons rendez-vous en terrasse au Café Charbon, rue Oberkampf. Il me raconte son travail de chauffeur-livreur et le dispositif de la mission locale, « Action de mobilisation par le théâtre », au cours Florent. Les autres élèves paient deux mille francs par mois ; lui reçoit cette somme pour suivre les mêmes cours. Ça me fait rire. Nous sommes heureux de nous retrouver.",
+      "J’habite place des Fêtes à Paris. Une nuit passée à boire du vin rouge et à fumer des joints avec Ahmed, je me souviens que l’enregistrement est le lendemain et que je n’ai pas trouvé le boulanger-pâtissier chanteur demandé. J’ai peur d’être viré. Je propose à Ahmed de le faire, lui trouve les paroles et l’aide à répéter entre quatre et sept heures du matin. Il ne sait ni chanter cette chanson ni préparer une pâte. Le producteur s’en aperçoit immédiatement et me regarde avec colère. L’émission a néanmoins lieu : Ahmed, le crâne rasé, en chemise violette électrique, réussit son numéro de jerk avec les danseuses et convainc soixante-dix pour cent du public. Je ne suis pas renvoyé. Nous en rions longtemps."
+    ]
+  },
+  {
+    "id": "eleanore",
+    "name": "Éléanore",
+    "role": "La fille du narrateur",
+    "atelier": null,
+    "levels": [
+      6
+    ],
+    "paragraphs": [
+      "Elle a trois ans dans cette scène. Elle ne comprend pas les événements, mais sent la peur de son père. Il essaie de la faire rire."
+    ]
+  },
+  {
+    "id": "marianne",
+    "name": "Marianne",
+    "role": "La compagne d’Ahmed",
+    "atelier": "67",
+    "levels": [
+      6
+    ],
+    "paragraphs": [
+      "Je m’appelle Marianne. Au moment de notre rencontre, je suis une jeune femme à peu près de l’âge d’Ahmed. Je vis à Paris, dans une chambre de bonne au 30 avenue Rapp. Je suis présente à l’anniversaire d’une autre jeune femme, qui a invité Ahmed après sa sortie de prison.",
+      "Dans la cuisine, Ahmed est très ivre. Deux jeunes hommes l’ont interrogé sur la prison, puis sont partis. Je reste. Il me dit qu’il est fatigué. Je lui réponds : « Je sais. » Quand il me demande « Tu veux bien t’occuper de moi ? », je réponds « Oui. »",
+      "J’appelle un taxi et je décide de le ramener chez moi. Mes amies me regardent partir avec lui avec inquiétude. Le narrateur se souvient de mon regard, de mes grands yeux bleus soulignés d’eye-liner et de son impression de deux papillons. Il raconte que nous vivrons seize ans ensemble et qu’une fille naîtra de notre histoire."
     ]
   }
 ]

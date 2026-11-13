@@ -10,9 +10,23 @@
     ],
     "altitude": 140,
     "characters": [
-      "Le voisin du dessus"
+      "Nicolas Vial"
     ],
-    "workshops": [],
+    "workshops": [
+      {
+        "id": "nicolas",
+        "name": "Nicolas Vial",
+        "paragraphs": [
+          "Je suis né le 5 mars 1972 à Angoulême. Mon grand-père habitait au quatrième. Il savait qui montait rien qu’au bruit dans l’escalier. Moi, je sautais la dernière marche pour essayer de le surprendre. Il ouvrait toujours avant que je sonne. Il me demandait si j’avais faim. À l’époque, je trouvais que les vieux posaient beaucoup de questions dont ils connaissaient la réponse.",
+          "J’ai travaillé dans les cuisines. J’ai commencé à la plonge. On me disait de faire attention aux verres et, au début, j’en cassais surtout quand je faisais attention. Après, j’ai pris le coup. Je préférais le service du soir. Quand tout le monde était parti, on nettoyait les plans de travail, on se faisait quelque chose avec ce qui restait et on pouvait enfin se parler sans crier.",
+          "Ici, j’ai appris à reconnaître les heures au bruit dans le couloir. Je sais aussi qu’on peut attendre longtemps une réponse quand on appelle quelqu’un pour la première fois. Il ne sait pas forcément que c’est à lui qu’on parle. Je recommence. Si on me répond sèchement, je laisse passer un peu de temps. Moi aussi, il y a des jours où la première voix que j’entends m’énerve.",
+          "Je fais du café assez fort. Si quelqu’un en veut, je lui demande s’il veut du sucre. Je peux faire passer deux morceaux de sucre à un type et rester des mois sans savoir comment il s’appelle. Il peut aussi avoir envie de parler. Alors on parle. Le plus embêtant, c’est quand on se met à rire et qu’on se rappelle qu’on est en train de réveiller tout l’étage.",
+          "Quand je sortirai, je voudrais habiter assez près d’une boulangerie pour y aller à pied. Le dimanche matin, je descendrais chercher deux croissants. J’en mangerais sûrement un dans la rue, avant d’être remonté. C’est ce que je faisais déjà avant. Je ne pensais pas que ça me manquerait."
+        ],
+        "workshop": "59",
+        "role": "Le voisin de la cellule du dessus"
+      }
+    ],
     "history": "Ancienne ville libre du Saint-Empire, Strasbourg devient française en 1681. Depuis 1949, elle accueille le Conseil de l’Europe, symbole de la réconciliation européenne.",
     "historySource": {
       "url": "https://www.strasbourg.eu/strasbourg",

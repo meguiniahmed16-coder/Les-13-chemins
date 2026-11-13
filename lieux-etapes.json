@@ -10,8 +10,10 @@
     "altitude": 435,
     "characters": [
       "Mustapha",
-      "Ma mère",
-      "Mon père"
+      "Fatima",
+      "Abdelouahab",
+      "Anne-Marie",
+      "Jean-Jacques"
     ],
     "history": "Voltaire a passé les vingt dernières années de sa vie à Ferney. Son château est devenu un lieu de mémoire du siècle des Lumières.",
     "historySource": {
@@ -30,7 +32,9 @@
     "altitude": 550,
     "characters": [
       "Le responsable de cycle",
-      "Le directeur"
+      "Le directeur",
+      "Fatima",
+      "Kader"
     ],
     "history": "La cité conserve la tour des comtes de Genève et des traces de ses anciennes enceintes : le Moyen Âge reste présent dans ses rues.",
     "historySource": {
@@ -48,7 +52,7 @@
     ],
     "altitude": 20,
     "characters": [
-      "Michel le Belge"
+      "Michel"
     ],
     "history": "Inaugurée en 1927, la place de Catalogne relie la vieille ville à l’Eixample, le quartier né de l’extension de Barcelone.",
     "historySource": {
@@ -82,7 +86,7 @@
     ],
     "altitude": 110,
     "characters": [
-      "Lionel"
+      "Lionel Le Goff"
     ],
     "history": "Créée en 1836 dans la commune de Belleville, la place des Fêtes accueillait les réjouissances populaires, bien avant les tours qui la bordent aujourd’hui.",
     "historySource": {
@@ -100,7 +104,7 @@
     ],
     "altitude": 40,
     "characters": [
-      "Ma fille",
+      "Éléanore",
       "Marianne"
     ],
     "history": "Mentionnée dès 1672, cette voie porte depuis 1885 le nom de Pierre Leroux, penseur du XIXe siècle lié au saint-simonisme.",

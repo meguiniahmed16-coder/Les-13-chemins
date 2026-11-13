@@ -11,11 +11,12 @@ class Element {
 }
 function setup(){
  const stages=JSON.parse(fs.readFileSync(new URL('lieux-etapes.json',import.meta.url)));
+ const workshops=JSON.parse(fs.readFileSync(new URL('ateliers-publics.json',import.meta.url)));
  const passages=JSON.parse(fs.readFileSync(new URL('passages.json',import.meta.url)));
  const extra=JSON.parse(fs.readFileSync(new URL('plateaux-data.json',import.meta.url)));
  let opened,fallthrough=0;
  const ctx=vm.createContext({document:{createElement:tag=>new Element(tag)},
-  TreizeEscale:{getStage(n,p=1){return p===2?extra.find(s=>s.level===n):{...stages.find(s=>s.level===n),passage:passages.find(s=>s.level===n)};},openReader(){fallthrough++;}},
+  TreizeEscale:{getStage(n,p=1){return p===2?extra.find(s=>s.level===n):{...stages.find(s=>s.level===n),workshops:workshops.filter(p=>p.levels.includes(n)),passage:passages.find(s=>s.level===n)};},openReader(){fallthrough++;}},
   TreizeCheminsEnCours:{openScene(scene,options){opened={scene,options};return opened;}}});
  vm.runInContext(fs.readFileSync(new URL('chemins-en-cours-data.js',import.meta.url),'utf8'),ctx);
  vm.runInContext(fs.readFileSync(new URL('lecteur-chemins.js',import.meta.url),'utf8'),ctx);
@@ -62,4 +63,20 @@ test('Cyrano and the encounter retain their own excerpt and native game callback
   const panel=new Element('section');s.opened.scene.renderGame(panel,{leave:fn=>fn()});
   assert.equal(launches,0);panel.querySelectorAll('button')[0].onclick();assert.equal(launches,1);
  }
+});
+
+test('Every known character opens the same complete continuity in each scene',()=>{
+ const s=setup();
+ s.ctx.TreizeEscale.openReader(1);
+ for(const id of ['fatima','abdelouahab','mustapha','anne-marie','jean-jacques']){
+  const canonical=s.ctx.TreizeUpcomingData.profiles[id];
+  assert.equal(s.opened.scene.profiles.find(p=>p.name===canonical.name),canonical);
+ }
+ s.ctx.TreizeEscale.openReader(5,{plateau:2});
+ assert.ok(s.opened.scene.profiles.some(p=>p.name==='Nicolas Vial'&&p.paragraphs.length===5));
+ s.ctx.TreizeUnifiedReader.openRendezvous({id:'cyrano',paragraphs:[]});
+ assert.ok(s.opened.scene.profiles.some(p=>p.name==='Cédric Aubert'&&p.paragraphs.length===5));
+ s.ctx.TreizeUnifiedReader.openRendezvous({id:'rencontre',paragraphs:[]});
+ for(const name of ['Marianne','Pauline','Élodie','Baptiste','Thibault','Lionel Le Goff'])assert.ok(s.opened.scene.profiles.some(p=>p.name===name&&p.paragraphs.length>1));
+ assert.equal(new Set(s.opened.scene.profiles.map(p=>p.name)).size,s.opened.scene.profiles.length);
 });

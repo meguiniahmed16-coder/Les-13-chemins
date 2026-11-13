@@ -6,11 +6,15 @@
  const crops=[[68,148,343,340],[435,148,334,340],[789,148,343,340],[68,540,343,337],[431,540,337,337],[789,540,343,337],[68,929,341,355],[430,929,337,355],[789,929,343,355]];
  const art=index=>({src:'assets/board/scene-cards-v1.png',width:1199,height:1312,crop:crops[index]});
  const narrator=()=>root.TreizeUpcomingData?.profiles?.ahmed;
+ const character=id=>root.TreizeUpcomingData?.profiles?.[id];
  function profiles(stage,extra=[]){
   const result=narrator()?[narrator()]:[];
-  for(const p of stage?.workshops||[])result.push({name:p.name,role:'Voix d’atelier',workshop:p.atelier,paragraphs:p.paragraphs});
-  for(const name of stage?.characters||[])if(!result.some(p=>p.name===name))result.push({name,role:'Personnage du passage',paragraphs:[]});
-  for(const p of extra)if(!result.some(existing=>existing.name===p.name))result.push(p);
+  for(const p of stage?.workshops||[])result.push(character(p.id)||p);
+  for(const name of stage?.characters||[])if(!result.some(p=>p.name===name)){
+   const p=Object.values(root.TreizeUpcomingData?.profiles||{}).find(p=>p.name===name);
+   result.push(p||{name,role:'Au lycée de La Roche-sur-Foron',paragraphs:['Il poursuit Ahmed après son arrivée dans la cour du lycée au volant de la voiture de sa mère. La course se termine au bord de l’A410.']});
+  }
+  for(const p of extra)if(p&&!result.some(existing=>existing.name===p.name))result.push(p);
   return result;
  }
  function route(stage){
@@ -70,9 +74,9 @@
   const index=info.id==='manifestation'?5:info.id==='cyrano'?7:8;
   const paris=root.TreizeUpcomingData?.routes?.paris;
   const stage=info.id==='rencontre'?root.TreizeEscale?.getStage(5):null;
-  const extra=info.id==='cyrano'?[{name:'Cédric Aubert',role:'Le voisin de cellule qui confie ses lettres',paragraphs:[]}]:
-   info.id==='rencontre'?[{name:'La jeune femme de l’anniversaire',role:'La rencontre dans la cuisine',paragraphs:[]}]:
-   [{name:'Julie',role:'Au début du passage, devant la télévision',paragraphs:[]}];
+  const ids=info.id==='cyrano'?['cedric']:
+   info.id==='rencontre'?['elodie','thibault','pauline','baptiste','marianne']:['julie'];
+  const extra=ids.map(character);
   const scene={id:'jouable-'+info.id,path:index===5?'II':'III',title:titles[index],
    chapter:info.chapter,chapterTitle:info.chapterTitle,place:info.place,lead:info.lead||info.title,
    paragraphs:info.paragraphs,profiles:profiles(stage,extra),route:'jouable-'+info.id,

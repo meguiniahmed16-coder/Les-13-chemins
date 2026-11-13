@@ -24,13 +24,14 @@ test('The two paths contain the six selected chapters, with real placeholder rou
  assert.equal(core.neighbours(data,'peguy').next,null);
  assert.equal(core.neighbours(data,'frontiere').next.id,'rire');
 });
-test('Continuity distinguishes workshop voices from adaptation and unknown identities',()=>{
- assert.equal(data.profiles.marianne.workshop,'67');
- assert.equal(data.profiles.samer.workshop,'84');assert.equal(data.profiles.fadi.workshop,'85');
- assert.equal(data.profiles.fadi.paragraphs.length,3,'Do not include the next workshop’s restaurant biography');
- assert.equal(data.profiles.jerome.workshop,undefined);assert.equal(data.profiles.maryse.workshop,undefined);
- const guests=core.scene(data,'traitre').people.filter(p=>p!=='ahmed');assert.equal(guests.length,6);
- for(const id of guests){assert.match(data.profiles[id].role,/adaptation/);assert.equal(data.profiles[id].workshop,undefined);}
+test('Characters use their names and complete continuities without editorial labels',()=>{
+ for(const [id,name,count] of [['abdelouahab','Abdelouahab',5],['fatima','Fatima',6],['lionel','Lionel Le Goff',8],['samer','Samer',8],['fadi','Fadi',8],['cedric','Cédric Aubert',5]]){
+  assert.equal(data.profiles[id].name,name);assert.equal(data.profiles[id].paragraphs.length,count);
+ }
+ assert.match(data.profiles.fatima.paragraphs[0],/Tanger/);
+ assert.match(data.profiles.abdelouahab.paragraphs[0],/Tighmaret/);
+ assert.doesNotMatch(data.profiles.fadi.paragraphs.join(' '),/restaurant|Mahmoud/);
+ for(const p of Object.values(data.profiles))assert.doesNotMatch([p.name,p.role,...p.paragraphs].join(' '),/pseudonyme|nom provisoire|voix d’atelier|sélection de l’atelier|personnage de l’adaptation|reste à écrire/i);
 });
 test('Maps distinguish one place, actual movement, and an unreached destination',()=>{
  assert.equal(data.routes.republique.points.length,1);assert.equal(data.routes.paris.points.length,1);
