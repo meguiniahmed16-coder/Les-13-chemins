@@ -137,6 +137,7 @@
  function illustrateTile(tile,index){
   const [x,y,width,height]=sceneArtwork[index];
   tile.dataset.sceneArt=String(index+1);
+  if(index===3){tile.style.backgroundImage="url(assets/board/sarajevo-un-v2.webp)";tile.style.backgroundSize="cover";tile.style.backgroundPosition="center";return;}
   tile.style.backgroundSize=(1199/width*100)+'% '+(1312/height*100)+'%';
   tile.style.backgroundPosition=(x/(1199-width)*100)+'% '+(y/(1312-height)*100)+'%';
  }
@@ -482,7 +483,7 @@
  };
  if(flow.reconcile(state))save();
  render();
- let pendingAuto=0,autoTransitionTimer=0,marmousetsOutroId=null;
+ let pendingAuto=0,autoTransitionTimer=0,marmousetsOutroId=null,bosnieOutroId=null;
  const finishes={'marmousets:won':1,'a410:escaped':2,'catalogne:sale':3,'bosnie:won':4};
  const closes={'marmousets:close':1,'a410:close':2,'catalogne:close':3,'bosnie:close':4};
  const dialogIds={1:'marmousetsDialog',2:'arcadeDialog',3:'catalogneDialog',4:'bosnieDialog'};
@@ -490,7 +491,7 @@
  function sceneFinished(n){return n===4?flow.chapter2PartDone(state,1):flow.partDone(state,n);}
  function afterClose(n){
   if(pendingAuto!==n||state.selected!==n||!sceneFinished(n))return;
-  pendingAuto=0;marmousetsOutroId=null;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;
+  pendingAuto=0;marmousetsOutroId=null;bosnieOutroId=null;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;
   queueMicrotask(()=>{if(state.selected===n&&sceneFinished(n))rollTravel(n);});
  }
  function scheduleAutoTransition(n){
@@ -520,13 +521,26 @@
     clearTimeout(autoTransitionTimer);autoTransitionTimer=0;return;
    }
   }
+  if(type==='bosnie:won'||type==='bosnie:outro-ended'){
+   if(event.source!==$('bosnieFrame')?.contentWindow||!$('bosnieDialog')?.open)return;
+   if(type==='bosnie:outro-ended'){
+    if(bosnieOutroId===null||event.data.id!==bosnieOutroId)return;
+    bosnieOutroId=null;
+    if(state.selected===4&&sceneFinished(4))scheduleAutoTransition(4);
+    return;
+   }
+   if(event.data.outro===true&&typeof event.data.id==='string'&&state.selected===4&&sceneFinished(4)){
+    bosnieOutroId=event.data.id;pendingAuto=4;
+    clearTimeout(autoTransitionTimer);autoTransitionTimer=0;return;
+   }
+  }
   if(finished&&state.selected===finished&&sceneFinished(finished))scheduleAutoTransition(finished);
   if(closed)afterClose(closed);
  });
  for(const [n,id]of [[1,'marmousetsClose'],[2,'arcadeClose'],[3,'catalogneClose'],[4,'bosnieClose']])
   $(id)?.addEventListener('click',()=>afterClose(n));
  window.TreizeSceneNavigation={
-  cancelAutomatic(){pendingAuto=0;marmousetsOutroId=null;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;},
+  cancelAutomatic(){pendingAuto=0;marmousetsOutroId=null;bosnieOutroId=null;clearTimeout(autoTransitionTimer);autoTransitionTimer=0;},
   continue(){if(!boardRolling)rollTravel(state.selected);}
  };
  window.addEventListener('focus',updateProgressBar);

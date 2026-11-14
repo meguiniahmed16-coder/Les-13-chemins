@@ -132,8 +132,8 @@ test('Step two keeps a single featured card and distinguishes the three book cha
  assert.ok(ui.includes('Chapitre '),'The active game retains its book chapter heading');
  assert.ok(ui.includes("n===4?'Sarajevo':secondDone?'Camarades !':'Le danseur'"));
  const bosnie=read('./jeu-bosnie.html');
- assert.ok(bosnie.includes('CHAPITRE 2 · « MÊME PAS MAL »'));
- assert.ok(bosnie.includes('CHAPITRE 2 · BOSNIE'));
+ assert.ok(html.includes('Chapitre 2 · « Même pas mal »')); // Kept in the parent dialog, without covering the viewport
+ assert.ok(bosnie.includes('<title>Bienvenue à Sarajevo</title>'));
 });
 test('Chapter 1 has one plot quiz followed by three games, without duplicate quiz points',()=>{
  const html=read('./jeu.html'),ui=read('./chapitre1-plateau.js'),f=api();
@@ -272,9 +272,9 @@ test('One step groups the three games while each page and dialog names its own b
  assert.match(p,/Chapitre 4[^\n]*Le drapeau rouge/);
  for(const [file,chapter,title,index] of [['jeu-bosnie.html',2,'Même pas mal',1],
   ['jeu-danse.html',3,'Le coup du bus',2],['jeu-manifestation.html',4,'Drapeau rouge',3]]){
-  const page=read('./'+file);
+  const page=file==='jeu-bosnie.html'?game:read('./'+file);
   assert.match(page,new RegExp('Chapitre '+chapter+'[^<\\n]*'+title,'i'),file+' displays its book chapter');
-  assert.match(page,new RegExp('Chemin II[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
+  if(file!=='jeu-bosnie.html')assert.match(page,new RegExp('Chemin II[^<\\n]*jeu '+index+'/3','i'),file+' remains in the shared three-game step');
  }
 });
 

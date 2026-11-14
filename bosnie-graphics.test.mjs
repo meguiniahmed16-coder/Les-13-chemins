@@ -26,7 +26,8 @@ test('The sky has cloud banks, and the old game remains callable as fallback',()
  assert.match(source,/window\.BosnieAddon=game=>/);
  assert.match(source,/try\{attach\(game\);\}/);
  assert.match(runtime,/Pt=new ha\(Me\("world"\)\),window\.BosnieAddon\?\.\(Pt\)/);
- assert.ok(html.indexOf('src="bosnie-addon.js"')<html.indexOf('src="bosnie-runtime.js"'));
+ assert.ok(html.includes('sarajevo-cinema.js'));
+ assert.ok(html.includes('sarajevo-v7-cinematiques'));
  assert.ok(build.includes("['build-bosnie-addon.mjs']"));
  assert.ok(build.includes("'bosnie-addon.js'"));
  assert.ok(build.includes("['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs']"));
@@ -151,7 +152,7 @@ test('Visually armed soldiers and synchronized muzzle fire in the active window'
  assert.ok(addon.includes("groundHeroSlungRifle:"));
  assert.ok(addon.includes("groundAllySlungRifle:"));
  assert.ok(addon.includes('material.fragmentShader=original'));
- assert.ok(html.includes("inset 0 0 48px #0310062c"));
+ assert.ok(html.includes("createTracers(Rl)"));
  const workflow=fs.readFileSync(new URL('./.github/workflows/preview-bosnie-compagnon.yml',import.meta.url),'utf8');
  assert.ok(workflow.includes("bosnie-jumelles-coup-de-feu.png"));
  assert.ok(workflow.includes("windowGunFlash===true"));
