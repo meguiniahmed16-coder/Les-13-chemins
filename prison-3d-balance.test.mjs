@@ -24,6 +24,7 @@ function takeBrush(game){
  assert.equal(game.points,10);assert.equal(game.phase,'between');continueGame(game);
 }
 function hook(game){
+ game.partTime=0;
  aimAt(game,ropePosition(game));actionDown(game);assert.equal(game.hooked,true);
 }
 
@@ -98,20 +99,22 @@ test('A bag takes about two seconds of actual pulling, and pause or hiding adds 
  close(game.time-start,2);assert.equal(game.points,30);assert.equal(game.phase,'victory');
 });
 
-test('The gently swaying rope stays in a physical opening in portrait and wide landscape',()=>{
+test('A wider rope swing offers generous capture windows at every screen ratio',()=>{
  for(const aspect of [.85,1,1.6,2.5]){
   const game=fresh();takeBrush(game);setWindowAspect(game,aspect);
   for(const part of [1,2]){
-   assert.equal(game.part,part);let greatestOffset=0;
+   assert.equal(game.part,part);let greatestOffset=0,openFrames=0,closedFrames=0,longestWait=0,wait=0;
    const center=ropeWorldX(game,slitCenters(aspect)[part===2?2:1]);
    for(let frame=0;frame<1200;frame++){
     const position=ropeWorldX(game,ropePosition(game));
     greatestOffset=Math.max(greatestOffset,Math.abs(position-center));
-    assert.ok(ropeReachable(game),'The visible rope must stay reachable at ratio '+aspect);
-    assert.ok(Math.abs(position-center)<=.024000001,'Sway is measured in metres, not screen width');
+    if(ropeReachable(game)){openFrames++;wait=0;}else{closedFrames++;wait+=STEP;longestWait=Math.max(longestWait,wait);}
+    assert.ok(Math.abs(position-center)<=.060000001,'Sway is measured in metres, not screen width');
     advance(game,STEP);
    }
-   assert.ok(greatestOffset>.023,'The rope still moves visibly instead of being frozen');
+   assert.ok(openFrames>300&&closedFrames>300,'Capture requires a small timing choice with a broad window');
+   assert.ok(longestWait<2.1,'Waiting for the next opening stays short');
+   assert.ok(greatestOffset>.059,'The rope still moves visibly instead of being frozen');
    hook(game);until(game,()=>game.part===part+1,2.1,'A swaying rope can still be collected');
    if(part===1)continueGame(game);
   }

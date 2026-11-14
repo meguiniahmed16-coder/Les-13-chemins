@@ -111,6 +111,26 @@ details p{line-height:1.7}
 body[data-embedded=true] nav,body[data-embedded=true] footer,body[data-embedded=true] .below-game{display:none}
 body[data-embedded=true] main{max-width:none}
 body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
+#demo{position:absolute;inset:0;z-index:9;display:grid;place-items:center;padding:16px;background:#10211ce8}
+.demo-card{width:min(440px,100%);max-height:100%;overflow:auto;padding:22px;border:1px solid #a7b49a88;border-radius:16px;background:#1d322b;color:#f0e8d4;box-shadow:0 18px 60px #0007}
+.demo-eyebrow{display:flex;justify-content:space-between;gap:12px;font-size:9px;letter-spacing:.13em;color:#d5c28f;margin:0 0 12px}.demo-card h2{font:500 25px/1.18 Georgia,serif;margin:0 0 15px}.demo-picture svg{display:block;width:100%;max-height:230px}.demo-card p#demo-text{min-height:4.4em;font-size:14px;line-height:1.5;margin:14px 0}.demo-actions{display:flex;justify-content:space-between;gap:10px}.demo-actions button{font-size:12px}
+.demo-one,.demo-two,.demo-three{display:none}#demo[data-step="0"] .demo-one,#demo[data-step="1"] .demo-two,#demo[data-step="2"] .demo-three{display:block}
+#demo[data-step="0"] .demo-broom{animation:demo-lift 4.5s infinite}#demo[data-step="0"] .demo-hand{animation:demo-hand 4.5s infinite}#demo[data-step="0"] .demo-tap{animation:demo-tap 4.5s infinite;transform-origin:302px 196px}
+#demo[data-step="1"] .demo-rope{animation:demo-rope 6s infinite}#demo[data-step="1"] .demo-reach{animation:demo-reach 6s infinite}#demo[data-step="1"] .demo-hold{animation:demo-hold 6s infinite;transform-origin:302px 196px}#demo[data-step="1"] .demo-catch-ring{animation:demo-ring 6s infinite}
+#demo[data-step="2"] .demo-person{animation:demo-crouch 5s infinite;transform-origin:106px 180px}#demo[data-step="2"] .demo-guard{animation:demo-guard 5s infinite}#demo[data-step="2"] .demo-hide{animation:demo-hide 5s infinite;transform-origin:302px 196px}
+@keyframes demo-lift{0%,40%{transform:translateY(0)}65%,90%{transform:translateY(-30px)}100%{transform:translateY(0)}}
+@keyframes demo-hand{0%,12%{transform:translate(70px,35px);opacity:0}30%,40%{transform:translate(0,0);opacity:1}65%,90%{transform:translateY(-30px);opacity:1}100%{transform:translate(70px,35px);opacity:0}}
+@keyframes demo-tap{0%,10%,45%,100%{transform:scale(1)}20%,32%{transform:scale(.88)}}
+@keyframes demo-rope{0%{transform:translateX(-57px)}22%{transform:translateX(57px)}42%{transform:translateX(0)}62%,88%{transform:translate(0,32px)}100%{transform:translateX(-57px)}}
+@keyframes demo-reach{0%,27%{opacity:0}42%,88%{opacity:1}100%{opacity:0}}
+@keyframes demo-hold{0%,30%,100%{transform:scale(1)}42%,88%{transform:scale(.90)}}
+@keyframes demo-ring{0%,29%,100%{stroke:#d5ab62;fill:#d5ab6220}40%,88%{stroke:#8ddb99;fill:#8ddb9940}}
+@keyframes demo-crouch{0%,12%,95%,100%{transform:scaleY(1)}26%,80%{transform:scaleY(.58)}}
+@keyframes demo-guard{0%,12%,85%,100%{opacity:0}25%,70%{opacity:1}}
+@keyframes demo-hide{0%,12%,95%,100%{transform:scale(1)}26%,80%{transform:scale(.9)}}
+body[data-mode=demo] .start-panel,body[data-mode=demo] .controls,body[data-mode=demo] #feedback{visibility:hidden}
+@media(max-height:520px){.demo-card{width:min(680px,100%);display:grid;grid-template-columns:180px 1fr;gap:7px 18px;padding:14px}.demo-eyebrow,.demo-card h2{grid-column:2;margin:0}.demo-picture{grid-column:1;grid-row:1/5;align-self:center}.demo-card p#demo-text{grid-column:2;margin:0;min-height:0;font-size:12px}.demo-actions{grid-column:2}.demo-actions button{min-height:38px;padding:9px}}
+@media(prefers-reduced-motion:reduce){#demo svg *{animation:none!important}.demo-hand{transform:translateY(-15px)}.demo-broom{transform:translateY(-15px)}.demo-person{transform:scaleY(.58);transform-origin:106px 180px}}
 </style>
 </head>
 <body data-mode="ready">
@@ -135,7 +155,7 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
 <button class="tool-button" id="fullscreen" type="button" data-game-control disabled>Plein écran</button>
 </div>
 </div>
-<p id="feedback" aria-live="polite">Une visite de la cellule, puis le jeu à travers les yeux du prisonnier.</p>
+<p id="feedback" aria-live="polite">Une visite de la cellule, une démo, puis à toi de jouer.</p>
 <p id="tour-caption">Neuf mètres carrés. Un fil vers les autres.</p>
 <p id="status" aria-live="polite">Préparation de la cellule…</p>
 </div>
@@ -150,10 +170,45 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
 </div>
 </div>
 <div class="start-panel" id="start-panel">
-<p>Découvre la cellule, puis regarde autour de toi et tends les bras vers les objets.</p>
+<p>Prends le temps de visiter la cellule. Une courte démo te montrera ensuite les trois gestes pour jouer.</p>
 <button class="primary" id="start" type="button" data-game-control disabled>Chargement de la cellule…</button>
 </div>
 <button class="secondary" id="skip-tour" type="button" hidden>Passer la visite</button>
+<div id="demo" role="dialog" aria-modal="true" aria-labelledby="demo-title" hidden data-step="0">
+<div class="demo-card">
+<p class="demo-eyebrow">UNE COURTE DÉMONSTRATION <span id="demo-progress">1 / 3</span></p>
+<h2 id="demo-title">1 · Prendre le balai</h2>
+<div class="demo-picture" aria-hidden="true">
+<svg viewBox="0 0 360 230" role="presentation">
+<defs><linearGradient id="demo-wall" x2="0" y2="1"><stop stop-color="#d7cdb9"/><stop offset="1" stop-color="#a9aa95"/></linearGradient></defs>
+<rect width="360" height="230" rx="14" fill="url(#demo-wall)"/>
+<path d="M0 181H360" stroke="#899184" stroke-width="3"/>
+<g class="demo-one">
+<ellipse cx="188" cy="181" rx="48" ry="7" fill="#657568" opacity=".25"/>
+<g class="demo-broom"><path d="M185 55V168" stroke="#8e6c42" stroke-width="10" stroke-linecap="round"/><rect x="155" y="164" width="60" height="11" rx="4" fill="#876947"/><path d="M158 175V184M167 175V184M176 175V184M185 175V184M194 175V184M203 175V184M212 175V184" stroke="#5f5843" stroke-width="4"/></g>
+<g class="demo-hand"><path d="M320 150L239 138Q222 136 205 125L188 115Q180 109 180 103Q180 96 187 99L202 105L194 92Q190 85 196 83Q201 82 207 91L216 104L208 86Q206 79 212 78Q216 78 221 88L230 108L227 93Q227 87 233 89Q243 105 244 121L322 125Z" fill="#bc9271" stroke="#876952" stroke-width="2"/></g>
+<g class="demo-tap"><circle cx="302" cy="196" r="21" fill="#e8c78b" stroke="#f7e1b3" stroke-width="3"/><text x="302" y="200" text-anchor="middle" font-size="9" fill="#243d31">Saisir</text><circle cx="302" cy="196" r="27" fill="none" stroke="#fff6d9" stroke-width="3"/></g>
+</g>
+<g class="demo-two">
+<path d="M75 10V184M285 10V184" stroke="#445a51" stroke-width="11"/>
+<circle class="demo-catch-ring" cx="180" cy="80" r="25" fill="#6eaa8030" stroke="#93cf9a" stroke-width="4"/>
+<g class="demo-rope"><path d="M180 -8Q193 30 180 86" stroke="#e8e0c6" fill="none" stroke-width="6"/><path d="M180 85V111" stroke="#65756c" stroke-width="3"/><path d="M162 130Q160 108 180 109Q198 107 198 130L204 173Q179 184 156 172Z" fill="#f3f2df99" stroke="#efe9d4" stroke-width="3"/><rect x="167" y="148" width="24" height="23" fill="#8f7552"/></g>
+<path class="demo-reach" d="M286 219L185 90" stroke="#967344" stroke-width="8" stroke-linecap="round"/>
+<g class="demo-hold"><circle cx="302" cy="196" r="24" fill="#e8c78b" stroke="#fff0be" stroke-width="3"/><text x="302" y="200" text-anchor="middle" font-size="9" fill="#243d31">Saisir</text></g>
+</g>
+<g class="demo-three">
+<rect x="223" y="19" width="102" height="163" rx="4" fill="#60746a" stroke="#41594f" stroke-width="5"/>
+<rect x="243" y="53" width="60" height="22" fill="#334c42"/>
+<g class="demo-guard"><ellipse cx="273" cy="64" rx="13" ry="7" fill="#e3d7ae"/><circle cx="273" cy="64" r="4" fill="#425448"/></g>
+<g class="demo-person"><circle cx="106" cy="85" r="16" fill="#ba9374"/><path d="M105 105V147L84 179M105 147L127 179M105 114L80 140M105 114L133 135" fill="none" stroke="#4f6f5d" stroke-width="13" stroke-linecap="round"/></g>
+<g class="demo-hide"><circle cx="302" cy="196" r="26" fill="#486858" stroke="#b5cdb3" stroke-width="3"/><text x="302" y="194" text-anchor="middle" font-size="9" fill="#fff0ce">Se</text><text x="302" y="206" text-anchor="middle" font-size="9" fill="#fff0ce">cacher</text></g>
+</g>
+</svg>
+</div>
+<p id="demo-text">Un appui sur Saisir. Tu t’approches, la main se referme, puis soulève le balai.</p>
+<div class="demo-actions"><button id="demo-again" class="secondary" type="button">Revoir</button><button id="demo-play" class="primary" type="button">Passer la démo</button></div>
+</div></div>
+
 <div id="loading" role="status" aria-live="polite" aria-busy="true"><div class="overlay-card loading-card">
 <h2 id="loading-title">La cellule prend forme</h2>
 <p id="loading-detail">Préparation du jeu 3D…</p>
@@ -168,7 +223,7 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
 </div></div>
 </section>
 <div class="below-game">
-<p>Le joystick te déplace. Fais glisser l’image pour regarder. Pour le sac, maintiens simplement <strong>Saisir</strong>. Si des pas approchent, maintiens <strong>Se cacher</strong>.</p>
+<p>Le joystick te déplace. Fais glisser l’image pour regarder. Un appui sur <strong>Saisir</strong> prend le balai. Pour le sac, attends le cercle vert puis garde <strong>Saisir</strong> appuyé. Si des pas approchent, maintiens <strong>Se cacher</strong>.</p>
 <button class="secondary" id="retry" type="button" data-game-control disabled>Recommencer</button>
 </div>
 <footer>
@@ -231,6 +286,6 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
  },true);
 })();
 </script>
-<script src="prison-3d-prototype-runtime.js?v=20261114-gestes-v1" defer></script>
+<script src="prison-3d-prototype-runtime.js?v=20261114-visite-demo-v2" defer></script>
 </body>
 </html>

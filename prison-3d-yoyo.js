@@ -12,8 +12,8 @@ function tubeGeometry(segments=36,sides=6){
 // Its small free swing fades BEFORE the plastic reaches the plane of the bars.
 export function yoyoMotion(time=0,pull=0,hooked=false){
  const safe=1-smooth(.04,.23,pull),free=hooked?.34:1;
- return {swing:Math.sin(time*1.35-.65)*.075*safe*free,
-  tilt:Math.sin(time*.91+.4)*.038*safe*free,
+ return {swing:Math.sin(time*1.35-.65)*.16*safe*free,
+  tilt:Math.sin(time*.91+.4)*.05*safe*free,
   twist:Math.sin(time*.63)*.12*safe*free,
   crinkle:(.0012+Math.sin(time*1.9)*.00035)*(1-.65*smooth(.08,.4,pull)),
   tension:smooth(0,.65,pull),fold:1-.10*smooth(.12,.45,pull)};

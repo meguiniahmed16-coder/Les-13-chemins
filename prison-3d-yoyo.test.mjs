@@ -5,8 +5,8 @@ import {createPrisonYoYo,yoyoMotion} from './prison-3d-yoyo.js';
 
 test('The actual plastic and its contents clear both bars throughout a worst-case pull',()=>{
  const prop=createPrisonYoYo();
- // A hook may be caught at either end of the full 24 mm free oscillation.
- for(const part of [1,2])for(const offset of [-.024,0,.024]){
+ // A hook may be caught at either end of the full 29 mm free oscillation.
+ for(const part of [1,2])for(const offset of [-.029,0,.029]){
   const center=part===1?-.105:.105;
   for(let step=0;step<=120;step++){
    const pull=step/120;

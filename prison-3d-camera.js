@@ -1,6 +1,6 @@
 import {Vector3,MathUtils} from 'three';
 
-export const PRISON_TOUR_DURATION=9;
+export const PRISON_TOUR_DURATION=24;
 export const PRISON_EYE_HEIGHT=1.62;
 
 // Footprints include the real bed frame and table, not just their centres.
@@ -27,11 +27,13 @@ const blend=(speed,dt)=>1-Math.exp(-speed*dt);
 // The gaze visits the beds, wash area, closed door, then the barred window.
 const TOUR=Object.freeze([
  {at:0,position:[.02,1.58,.94],look:[-1.03,1.04,-.05]},
- {at:2.1,position:[-.04,1.60,.30],look:[-1.04,1.38,-.55]},
- {at:4.2,position:[-.06,1.61,-.12],look:[1.18,.91,-.48]},
- {at:6.3,position:[0,1.58,-.43],look:[.83,1.18,1.47]},
- {at:8.0,position:[0,1.62,.35],look:[0,1.48,-1.55]},
- {at:9.0,position:[0,1.62,.75],look:[0,1.48,-1.55]}
+ {at:4,position:[-.04,1.60,.30],look:[-1.04,1.38,-.55]},
+ {at:8,position:[-.04,1.60,.30],look:[-1.48,2.12,-.48]},
+ {at:12,position:[-.06,1.61,-.12],look:[1.08,.87,-.52]},
+ {at:15,position:[-.06,1.61,-.12],look:[1.47,1.77,-.45]},
+ {at:19,position:[0,1.58,-.43],look:[.83,1.18,1.47]},
+ {at:22,position:[0,1.62,.35],look:[0,1.48,-1.55]},
+ {at:24,position:[0,1.62,.75],look:[0,1.48,-1.55]}
 ]);
 
 /**
@@ -119,6 +121,11 @@ export function createPrisonCamera(camera,{onTourEnd=()=>{},colliders=PRISON_CAM
   if(Math.hypot(point.x-player.x,point.z-player.z)<.012)travel.shift();
   if(!travel.length)travel=null;
  }
+ function approachBrush(){
+  if(mode!=='playing'||travel)return;
+  if(Math.hypot(player.x-START.x,player.z-START.z)>.035)
+   travel=[new Vector3(0,0,player.z),new Vector3(0,0,START.z)];
+ }
  function update(frameTime,input={}){
   const dt=clamp(Number.isFinite(frameTime)?frameTime:0,0,.1);
   if(mode==='tour'){
@@ -156,6 +163,7 @@ export function createPrisonCamera(camera,{onTourEnd=()=>{},colliders=PRISON_CAM
  }
  reset();
  return {player,target,startTour,skipTour,update,reset,
+  approachBrush,
   get mode(){return mode;},get tourProgress(){return elapsed/PRISON_TOUR_DURATION;},
   get isTravelling(){return !!travel;}};
 }

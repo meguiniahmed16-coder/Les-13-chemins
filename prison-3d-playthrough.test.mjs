@@ -10,6 +10,7 @@ import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
 import {createPrisonSession} from './prison-3d-session.js';
+import {createPrisonDemo} from './prison-3d-demo.js';
 import {createPrisonFoley} from './prison-3d-foley.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
 import * as spatial from './prison-3d-spatial.js';
@@ -149,7 +150,7 @@ async function harness(t){
  const bindings={
   T:{...Three,WebGLRenderer:Renderer},GLTFLoader,CELL,FURNITURE_URL,PRISON_BALANCE,
   createPrisonRoom:options=>createPrisonRoom({...options,textures:false}),
-  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,createPrisonFoley,...spatial,...rules,
+  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,createPrisonFoley,createPrisonDemo,...spatial,...rules,
   loadActorBytes:async(url,options)=>{
    const path=new URL(url).pathname.slice(1);
    assert.ok(['danse-quaternius-hero.glb',FURNITURE_URL].includes(path),'Only packaged local assets may load');
@@ -164,7 +165,7 @@ async function harness(t){
  };
  app=new Function(...Object.keys(bindings),appSource+
   '\nreturn {game,room,camera,eyes,controls,session,get arms(){return arms;},get mode(){return mode;},'+
-  'get assetsReady(){return assetsReady;},get firstFrame(){return firstFrame;},get paused(){return paused;}};')
+  'get assetsReady(){return assetsReady;},get firstFrame(){return firstFrame;},get demo(){return demo;},get paused(){return paused;}};')
   (...Object.values(bindings));
  board.init();
  assert.equal(app.session.session.id,'official-prison-first','An early init is retained during model loading');
@@ -225,7 +226,7 @@ function recoverBag(ui,part){
  let hiddenTime=0;
  assert.equal(controls.state.x,0);assert.equal(controls.state.y,0);
  press(ui,'action');
- ui.until(()=>game.hooked,1,'Simply holding Saisir must hook the accessible rope');
+ ui.until(()=>game.hooked,2.8,'Simply holding Saisir must hook the accessible rope');
  assert.equal(game.misses,misses,'Automatic aiming must not require timing retries');
  if(part===1){
   ui.advance(.2);
@@ -240,9 +241,9 @@ function recoverBag(ui,part){
   ui.until(()=>game.pull>hiddenPull,.8,
    'Releasing Se cacher resumes the still-held action after its reach delay');
  }
- ui.until(()=>game.part===part+1,Math.max(0,3.5-(game.time-started-hiddenTime)),
-  'A continuous novice hold must recover the bag within 3.5 seconds outside hiding');
- assert.ok(game.time-started-hiddenTime<=3.5+1/60,'The assisted pull stays short');
+ ui.until(()=>game.part===part+1,Math.max(0,5.2-(game.time-started-hiddenTime)),
+  'A continuous novice hold must recover the bag within 5.2 seconds outside hiding');
+ assert.ok(game.time-started-hiddenTime<=5.2+1/60,'The assisted pull stays short');
  assert.equal(game.misses,0,'The actual run completes without a timing miss');
  assert.equal(eyes.player.x,playerX,'The player did not need to line up with a slit');
  assert.equal(controls.state.x,0);assert.equal(controls.state.y,0);
@@ -255,7 +256,13 @@ test('The official immersive game lets a novice win, credits the board once and 
  node('start').click();
  assert.equal(app.mode,'tour');assert.equal(node('skip-tour').hidden,false);
  assert.equal(node('action').disabled,true);
- ui.until(()=>app.mode==='playing',10,'The complete nine-second visit enters first person');
+ ui.advance(9);assert.equal(app.mode,'tour','The visit now gives more time to see the cell');
+ node('pause').click();const tourProgress=app.eyes.tourProgress;ui.advance(3);assert.equal(app.eyes.tourProgress,tourProgress,'The visit can pause for a longer look');node('pause').click();
+ ui.until(()=>app.mode==='demo',16,'The complete 24-second visit opens the demo');
+ assert.equal(app.game.time,0);assert.equal(app.game.points,0);assert.equal(node('action').disabled,true);
+ ui.advance(16);assert.equal(app.demo.finished,true);assert.equal(app.game.time,0,'The demo starts no patrol clock');
+ node('demo-again').click();assert.equal(app.demo.step,0);
+ node('demo-play').click();assert.equal(app.mode,'playing');ui.tick();
  assert.equal(app.arms.root.visible,true,'The actual skinned arms become visible');
  assert.equal(node('skip-tour').hidden,true);
  ui.window.emit('keydown',{code:'KeyP',target:node('world')});
@@ -292,9 +299,9 @@ test('The official immersive game lets a novice win, credits the board once and 
 
  // Exercise the same public restart and skip buttons before the full run.
  node('retry').click();assert.equal(app.mode,'tour');
- node('skip-tour').click();assert.equal(app.mode,'playing');
+ node('skip-tour').click();assert.equal(app.mode,'demo');node('demo-play').click();assert.equal(app.mode,'playing');
  assert.equal(app.game.time,0);assert.equal(app.game.points,0);
- press(ui,'action');
+ press(ui,'action');release(ui,'action');
  let closingSeen=false;
  for(let i=0;i<120&&app.mode==='playing';i++){
   ui.tick();
@@ -344,4 +351,15 @@ test('The official immersive game lets a novice win, credits the board once and 
  assert.equal(ui.board.closed,1,'Continue closes the parent game exactly once');
  assert.deepEqual(ui.board.travel,[5],'The parent may continue from the completed prison chapter');
  assert.deepEqual(ui.board.navigations,[],'The game never opens the board inside its own iframe');
+});
+
+
+test('One short tap approaches and picks up the broom even after the player walked away',async t=>{
+ const ui=await harness(t),{app,node}=ui;node('start').click();node('skip-tour').click();node('demo-play').click();
+ ui.window.emit('keydown',{code:'ArrowUp',target:node('world')});ui.advance(1.6);
+ ui.window.emit('keyup',{code:'ArrowUp',target:node('world')});
+ assert.ok(app.eyes.player.distanceTo(app.room.brushGripTarget)>1,'The player really left the broom behind');
+ press(ui,'action');release(ui,'action');
+ ui.until(()=>app.game.part===1,5,'A single released tap walks back and retrieves the broom');
+ assert.equal(app.game.points,10);assert.ok(app.arms.graspReady);
 });

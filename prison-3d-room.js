@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {addPersonalDetails} from './prison-3d-personal.js';
 import {createPrisonYoYo} from './prison-3d-yoyo.js';
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
@@ -177,6 +178,8 @@ export function createPrisonRoom({anisotropy=4,textures=true}={}){
  rod([.05,2.71,.4],[.05,2.53,.4],.016,dark);
  ellipsoid(.135,.09,.135,.05,2.48,.4,new T.MeshStandardMaterial({color:0xf3e4c7,emissive:0xffd696,emissiveIntensity:.7})).name='Ampoule';
 
+ const personalDetails=addPersonalDetails(scene,{textures,anisotropy});
+
  // YoYoAuDrap and SacPlastique share one physical attachment.
  const yoyo=createPrisonYoYo({cloth,steel,plastic});
  const rope=yoyo.root,packet=yoyo.packet;scene.add(rope);
@@ -208,6 +211,6 @@ export function createPrisonRoom({anisotropy=4,textures=true}={}){
   });
   stoolAnchor.add(root);return root;
  }
- return {scene,materials,frontWall,door,sun,yoyo,rope,packet,floorBrush,heldBrush,
+ return {scene,personalDetails,materials,frontWall,door,sun,yoyo,rope,packet,floorBrush,heldBrush,
   floorBrushHalo,windowHalo,brushGripTarget,installFurniture};
 }
