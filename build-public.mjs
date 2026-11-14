@@ -17,7 +17,7 @@ for (const args of [
   ['build-prison-3d-prototype.mjs'],
   ['--test', 'prison-3d-prototype.test.mjs', 'prison-3d-loading.test.mjs', 'prison-3d-visibility.test.mjs',
     'prison-3d-camera.test.mjs', 'prison-3d-arms.test.mjs', 'prison-3d-controls.test.mjs',
-    'prison-3d-spatial.test.mjs', 'prison-3d-balance.test.mjs', 'prison-3d-playthrough.test.mjs',
+    'prison-3d-yoyo.test.mjs', 'prison-3d-spatial.test.mjs', 'prison-3d-balance.test.mjs', 'prison-3d-playthrough.test.mjs',
     'prison-3d-session.test.mjs', 'plateaux.test.mjs'],
   ['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs'],
   ['build-bosnie-addon.mjs'],

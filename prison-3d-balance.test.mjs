@@ -108,10 +108,10 @@ test('The gently swaying rope stays in a physical opening in portrait and wide l
     const position=ropeWorldX(game,ropePosition(game));
     greatestOffset=Math.max(greatestOffset,Math.abs(position-center));
     assert.ok(ropeReachable(game),'The visible rope must stay reachable at ratio '+aspect);
-    assert.ok(Math.abs(position-center)<=.012000001,'Sway is measured in metres, not screen width');
+    assert.ok(Math.abs(position-center)<=.024000001,'Sway is measured in metres, not screen width');
     advance(game,STEP);
    }
-   assert.ok(greatestOffset>.011,'The rope still moves visibly instead of being frozen');
+   assert.ok(greatestOffset>.023,'The rope still moves visibly instead of being frozen');
    hook(game);until(game,()=>game.part===part+1,2.1,'A swaying rope can still be collected');
    if(part===1)continueGame(game);
   }

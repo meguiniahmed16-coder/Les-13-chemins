@@ -10,6 +10,6 @@ export const PRISON_BALANCE=Object.freeze({
  guardExposure:2,
  pullSpeed:.5,
  // Physical metres: the rope sways inside its opening at every screen ratio.
- ropeAmplitudeMeters:.012,
- ropeSpeedScale:.65
+ ropeAmplitudeMeters:.024,
+ ropeSpeedScale:.58
 });

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {createPrisonYoYo} from './prison-3d-yoyo.js';
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 export const CELL=Object.freeze({width:3,depth:3,height:2.72,area:9});
@@ -58,7 +59,7 @@ export function createPrisonRoom({anisotropy=4,textures=true}={}){
   paper:new T.MeshStandardMaterial({color:0xd7c4a3,roughness:.95}),
   chrome:new T.MeshStandardMaterial({color:0xb8c5c5,metalness:.72,roughness:.24}),
   cloth:new T.MeshStandardMaterial({color:0xd6cdb6,roughness:1}),
-  plastic:new T.MeshStandardMaterial({color:0xe9eee7,roughness:.35,transparent:true,opacity:.52,side:T.DoubleSide,depthWrite:false}),
+  plastic:new T.MeshStandardMaterial({color:0xe9eee7,roughness:.35,transparent:true,opacity:.43,side:T.DoubleSide,depthWrite:false}),
  };
  const {plaster,floor:floorMat,steel,dark,wood,linen,blanket,ceramic,paper,chrome,cloth,plastic}=materials;
  function mesh(geo,mat,parent=scene){
@@ -89,9 +90,9 @@ export function createPrisonRoom({anisotropy=4,textures=true}={}){
  const sun=new T.DirectionalLight(0xfff2d5,3.25);sun.position.set(-.75,4.2,-4.8);
  sun.target.position.set(.2,.3,.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
  Object.assign(sun.shadow.camera,{left:-2.4,right:2.4,top:2.7,bottom:-2.4,near:.2,far:12});
- sun.shadow.bias=-.00025;sun.shadow.normalBias=.012;scene.add(sun,sun.target);
+ sun.shadow.radius=2.5;sun.shadow.bias=-.00025;sun.shadow.normalBias=.012;scene.add(sun,sun.target);
  const bulb=new T.PointLight(0xffe0ad,7,5,2);bulb.position.set(.05,2.42,.4);scene.add(bulb);
- const windowLight=new T.PointLight(0xc6e3ef,5,4,2);windowLight.position.set(0,1.9,-1.3);scene.add(windowLight);
+ const windowLight=new T.PointLight(0xe2e3d6,4.6,4,2);windowLight.position.set(0,1.9,-1.3);scene.add(windowLight);
 
  box(3,.16,3,0,-.08,0,floorMat).name='SolCellule9m2';
  box(.16,CELL.height,3,-1.58,CELL.height/2,0).name='MurGauche';
@@ -176,16 +177,9 @@ export function createPrisonRoom({anisotropy=4,textures=true}={}){
  rod([.05,2.71,.4],[.05,2.53,.4],.016,dark);
  ellipsoid(.135,.09,.135,.05,2.48,.4,new T.MeshStandardMaterial({color:0xf3e4c7,emissive:0xffd696,emissiveIntensity:.7})).name='Ampoule';
 
- const rope=new T.Group();rope.name='YoYoAuDrap';scene.add(rope);
- for(let k=0;k<15;k++)rod([Math.sin(k*.65)*.007,k*.105,0],[Math.sin((k+1)*.65)*.007,(k+1)*.105,0],.011,cloth,rope);
- const hanger=new T.Group();hanger.name='CintreDeProfil';hanger.rotation.y=Math.PI/2;rope.add(hanger);
- rod([-.145,-.10,0],[.145,-.10,0],.004,steel,hanger);
- rod([-.145,-.10,0],[0,-.25,0],.005,steel,hanger);rod([.145,-.10,0],[0,-.25,0],.005,steel,hanger);
- const bag=mesh(new T.CylinderGeometry(.047,.058,.23,32,1,true),plastic,rope);
- bag.position.set(0,-.405,0);bag.name='SacPlastique';
- for(const x of [-.039,.039])rod([x,-.30,0],[x,-.20,0],.003,plastic,rope);
- const packet=box(.079,.09,.049,0,-.44,0,paper,rope,.006);packet.name='ContenuTabacOuCafe';
- rope.position.set(-.105,1.86,-1.91);rope.visible=false;
+ // YoYoAuDrap and SacPlastique share one physical attachment.
+ const yoyo=createPrisonYoYo({cloth,steel,plastic});
+ const rope=yoyo.root,packet=yoyo.packet;scene.add(rope);
 
  function brush(){
   const group=new T.Group();group.name='Brosse';
@@ -214,6 +208,6 @@ export function createPrisonRoom({anisotropy=4,textures=true}={}){
   });
   stoolAnchor.add(root);return root;
  }
- return {scene,materials,frontWall,door,sun,rope,packet,floorBrush,heldBrush,
+ return {scene,materials,frontWall,door,sun,yoyo,rope,packet,floorBrush,heldBrush,
   floorBrushHalo,windowHalo,brushGripTarget,installFurniture};
 }

@@ -3,6 +3,7 @@ import {BufferAttribute,Color,Group,Matrix4,MeshStandardMaterial,Quaternion,Vect
 const UP=new Vector3(0,1,0);
 const DOWN=new Vector3(0,-1,0);
 const clamp=MathUtils.clamp;
+const ease=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
 const blend=(speed,dt)=>1-Math.exp(-speed*dt);
 const finiteVector=v=>v&&Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z);
 
@@ -126,7 +127,7 @@ export function createPrisonArms(gltf){
    for(let joint=1;joint<=3;joint++){
     const bone=bones[`${name}_0${joint}_${side}`];
     const axis=new Vector3(0,0,side==='r'?1:-1).applyQuaternion(bone.getWorldQuaternion(new Quaternion()).invert()).normalize();
-    joints.push({bone,axis,angle:flexion[joint-1]});
+    joints.push({bone,axis,angle:flexion[joint-1],delay:{index:0,middle:.025,ring:.065,pinky:.10}[name]});
    }
   }
   const thumb=bones['thumb_01_'+side];
@@ -150,11 +151,12 @@ export function createPrisonArms(gltf){
  }
  const right=describeArm('r'),left=describeArm('l');
  const grip=new Vector3(),lastTarget=new Vector3();
- let closure=0,extension=0,lastYaw=Math.PI,hasLastTarget=false;
+ let closure=0,thumbClosure=0,extension=0,lastYaw=Math.PI,hasLastTarget=false;
 
  function update(camera,{dt=1/60,time=0,target=null,reach=0,gripping=false,visible=true,handleAxis=null}={}){
   const elapsed=Number.isFinite(dt)?clamp(dt,0,.1):0;
-  closure+=(Number(Boolean(gripping))-closure)*blend(18,elapsed);
+  closure+=(Number(Boolean(gripping))-closure)*blend(13,elapsed);
+  thumbClosure=ease((closure-.28)/.72);
   const hasTarget=finiteVector(target);
   if(hasTarget){lastTarget.copy(target);hasLastTarget=true;}
   extension+=((hasTarget?clamp(Number.isFinite(reach)?reach:0,0,1):0)-extension)*blend(hasTarget?14:7,elapsed);
@@ -205,7 +207,7 @@ export function createPrisonArms(gltf){
    solveArm(arm,wrist,pole);
    worldQuaternion(arm.hand,handRotation);
    for(const joint of arm.joints){
-    joint.bone.quaternion.copy(rest.get(joint.bone)).multiply(new Quaternion().setFromAxisAngle(joint.axis,joint.angle*amount));
+    joint.bone.quaternion.copy(rest.get(joint.bone)).multiply(new Quaternion().setFromAxisAngle(joint.axis,joint.angle*(arm===right?(joint.bone.name.startsWith('thumb_')?thumbClosure:clamp((closure-(joint.delay||0))/(1-(joint.delay||0)),0,1)):amount)));
    }
    arm.hand.updateWorldMatrix(false,true);
    // The opposable thumb swings toward the handle after its two distal joints
@@ -214,7 +216,7 @@ export function createPrisonArms(gltf){
    const thumbBase=arm.thumb.getWorldPosition(new Vector3());
    const thumbDirection=arm.thumbTip.getWorldPosition(new Vector3()).sub(thumbBase).normalize();
    const opposed=arm.hand.localToWorld(arm.thumbTarget.clone()).sub(thumbBase).normalize();
-   const opposition=new Quaternion().slerp(new Quaternion().setFromUnitVectors(thumbDirection,opposed),amount);
+   const opposition=new Quaternion().slerp(new Quaternion().setFromUnitVectors(thumbDirection,opposed),arm===right?thumbClosure:amount);
    worldQuaternion(arm.thumb,opposition.multiply(arm.thumb.getWorldQuaternion(new Quaternion())));
   }
   root.updateMatrixWorld(true);
@@ -224,5 +226,5 @@ export function createPrisonArms(gltf){
   for(const geometry of ownedGeometries)geometry.dispose();
   for(const material of ownedMaterials)material.dispose();
  }
- return {root,bones,grip,update,dispose};
+ return {root,bones,grip,update,dispose,get graspReady(){return closure>.985&&thumbClosure>.97;},get closure(){return closure;},get thumbClosure(){return thumbClosure;}};
 }

@@ -10,6 +10,7 @@ import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
 import {createPrisonSession} from './prison-3d-session.js';
+import {createPrisonFoley} from './prison-3d-foley.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
 import * as spatial from './prison-3d-spatial.js';
 import * as rules from './yoyo-core.js';
@@ -148,7 +149,7 @@ async function harness(t){
  const bindings={
   T:{...Three,WebGLRenderer:Renderer},GLTFLoader,CELL,FURNITURE_URL,PRISON_BALANCE,
   createPrisonRoom:options=>createPrisonRoom({...options,textures:false}),
-  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,...spatial,...rules,
+  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,createPrisonFoley,...spatial,...rules,
   loadActorBytes:async(url,options)=>{
    const path=new URL(url).pathname.slice(1);
    assert.ok(['danse-quaternius-hero.glb',FURNITURE_URL].includes(path),'Only packaged local assets may load');
@@ -294,6 +295,16 @@ test('The official immersive game lets a novice win, credits the board once and 
  node('skip-tour').click();assert.equal(app.mode,'playing');
  assert.equal(app.game.time,0);assert.equal(app.game.points,0);
  press(ui,'action');
+ let closingSeen=false;
+ for(let i=0;i<120&&app.mode==='playing';i++){
+  ui.tick();
+  if(app.arms.closure>.1&&app.arms.closure<.97){
+   closingSeen=true;assert.ok(app.room.floorBrush.visible,'The broom stays grounded while the fingers close');
+   assert.equal(app.game.part,0,'Closing fingers alone must not award the pickup');
+  }
+ }
+ assert.ok(closingSeen,'The approach includes a visible finger-closing phase');
+ assert.ok(app.arms.graspReady,'The thumb and fingers lock before lifting');
  ui.until(()=>app.mode==='between',2,'Holding Saisir must actually reach and pick up the brush');
  assert.equal(app.game.part,1);assert.equal(app.game.points,10);
  assert.equal(ui.board.state.points,510,'The brush alone does not credit the board');

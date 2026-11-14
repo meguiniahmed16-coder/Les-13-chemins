@@ -142,7 +142,7 @@ for(const [label,width,height] of [['portrait',390,720],['landscape',1000,625]])
  });
 }
 
-test('The 116 mm bag fits the real 210 mm bar spacing with clearance on both sides',()=>{
+test('The folded plastic bag fits the real 210 mm bar spacing with clearance on both sides',()=>{
  const room=setup(390,720),{scene}=room;
  assert.equal(CELL.width*CELL.depth,CELL.area);
  assert.equal(CELL.area,9,'The room retains its nine square metres');
@@ -158,10 +158,11 @@ test('The 116 mm bag fits the real 210 mm bar spacing with clearance on both sid
    'The actual 36 mm bars leave a 174 mm clear gap');
  }
  const bag=scene.getObjectByName('SacPlastique');
- assert.ok(bag?.isMesh,'The passing bag is a real mesh');
+ assert.ok(bag?.isGroup,'The bag combines two plastic skins, handles and contents');
+ room.yoyo.update({time:0,pull:.4,hooked:true});scene.updateMatrixWorld(true);
  const bagBounds=bounds(bag),size=bagBounds.getSize(new T.Vector3());
- assert.ok(Math.abs(size.x-.116)<1e-6&&Math.abs(size.z-.116)<1e-6,
-  'The widest bag diameter is 116 mm in either horizontal direction');
+ assert.ok(size.x>.09&&size.x<=.116&&size.z<=.116,
+  'The real folded bag stays inside the 116 mm passage envelope');
  const bagCenter=bagBounds.getCenter(new T.Vector3());
  const left=bars.filter(bar=>bounds(bar).max.x<bagCenter.x).at(-1);
  const right=bars.find(bar=>bounds(bar).min.x>bagCenter.x);

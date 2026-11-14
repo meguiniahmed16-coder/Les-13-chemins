@@ -116,7 +116,7 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
 <body data-mode="ready">
 <nav aria-label="Navigation du jeu">
 <a class="brand" href="jeu.html?niveau=5" target="_top" data-return-plateau>Les Treize Chemins</a>
-<span class="tag">Cellule immersive · v0.5</span>
+<span class="tag">Cellule immersive</span>
 </nav>
 <main>
 <section class="scene" id="game-shell" aria-label="Jeu de la cellule en vue subjective">
@@ -130,6 +130,7 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
 <p id="guard">Couloir calme</p>
 </div>
 <div class="toolbar" role="group" aria-label="Affichage et pause">
+<button class="tool-button" id="sound" type="button" aria-pressed="true">Son ON</button>
 <button class="tool-button" id="pause" type="button" data-game-control disabled>Pause</button>
 <button class="tool-button" id="fullscreen" type="button" data-game-control disabled>Plein écran</button>
 </div>
@@ -230,6 +231,6 @@ body[data-embedded=true] .scene{height:100dvh;min-height:0;border:0}
  },true);
 })();
 </script>
-<script src="prison-3d-prototype-runtime.js?v=20261109-5" defer></script>
+<script src="prison-3d-prototype-runtime.js?v=20261114-gestes-v1" defer></script>
 </body>
 </html>
