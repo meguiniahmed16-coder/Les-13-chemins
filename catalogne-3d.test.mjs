@@ -1,10 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import * as T from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {poseCitizen,poseActivity,gaitSample} from './catalogne-motion.js';
 import {drawParkMap} from './catalogne-3d-map.js';
 import {VOICE_PROFILES,voiceProfile,voiceGender,assignGameVoices} from './catalogne-3d-voices.js';
 import {PARK,CLIENTS,PATROLS,newRun,advance,sell,dodge,nearestClient,instruction,distance,SALE_DIALOGUES,POLICE_SHOUTS,saleDialogue} from './catalogne-3d-core.js';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
+test('Le modèle adulte conserve ses longueurs de membres dans la marche et les activités',async()=>{
+ const bytes=readFileSync(new URL('./assets/marmousets/adult.glb',import.meta.url)),loader=new GLTFLoader();
+ loader.register(()=>({name:'untextured-test',loadMaterial:()=>Promise.resolve(new T.MeshBasicMaterial())}));
+ const asset=await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+ const model=asset.scene;model.updateMatrixWorld(true);
+ const box=new T.Box3().setFromObject(model),h=1.79,scale=h/box.getSize(new T.Vector3()).y;
+ model.scale.multiplyScalar(scale);model.position.y-=box.min.y*scale;
+ const group=new T.Group();group.add(model);group.updateMatrixWorld(true);
+ const bones={};model.traverse(b=>{if(b.isBone)bones[b.name]={bone:b,rest:b.quaternion.clone()};});
+ const rig={group,bones,h},lengths=Object.fromEntries(Object.entries(bones).map(([name,{bone}])=>[name,bone.position.length()]));
+ const check=()=>{for(const [name,{bone}]of Object.entries(bones)){assert.ok(bone.matrixWorld.elements.every(Number.isFinite),name);assert.ok(Math.abs(bone.position.length()-lengths[name])<1e-9,'Membre étiré : '+name);}};
+ let previous=null,low=Infinity,high=-Infinity;
+ for(let i=0;i<=120;i++){
+  poseCitizen(rig,i/120/1.12,true);check();
+  const foot=bones.Foot_L.bone.getWorldPosition(new T.Vector3());low=Math.min(low,foot.y);high=Math.max(high,foot.y);
+  if(previous)assert.ok(foot.distanceTo(previous)<.08,'Saut entre deux poses de course');previous=foot;
+ }
+ assert.ok(low>=.035&&high>.13,'Pied au sol puis retour de la jambe');
+ assert.ok(Math.abs(gaitSample(0,h).left.forward-gaitSample(1/1.12,h).left.forward)<1e-10);
+ for(const kind of ['guitar','listen','yoga','taichi','embrace','recline'])for(let variant=0;variant<2;variant++)for(const time of [0,1,3,6]){poseActivity(rig,kind,time,variant);check();}
+});
 test('Cinq clients uniques, trois chemins, et possibilité de vendre sans orientation imposée',()=>{
  assert.equal(CLIENTS.length,5);assert.equal(new Set(CLIENTS.map(c=>c.id)).size,5);
  assert.equal(PATROLS.length,2);assert.equal(PARK.walkWidth,10);
@@ -92,7 +116,7 @@ test('Scène 3D : vente confiée au plateau, confirmation sans double comptage',
  assert.ok(app.includes('result.client.id'));
  assert.ok(app.includes('m.finished'));
  assert.ok(app.includes("m.sold.filter"));
- assert.ok(html.includes('catalogne-3d-runtime.js?v=barcelone3d-v5'));
+ assert.ok(html.includes('catalogne-3d-runtime.js?v=plaza-20261114-1'));
  assert.ok(html.includes('id="saleDialogue"'));
  assert.ok(app.includes("MODEL_PATHS"));
 });
@@ -100,7 +124,7 @@ test('Préserver le jeu 2D original et vérifier le raccord au plateau',()=>{
  const base=read('arcade-catalogne.html'),page=read('jeu.html'),build=read('build-public.mjs');
  assert.ok(base.includes('function nearbyClient(r)'));
  assert.ok(base.includes('const WORLD=1960'));
- assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=barcelone3d-v5'"));
+ assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=plaza-20261114-1'"));
  assert.ok(build.includes("'arcade-catalogne.html'"));
  assert.ok(build.includes("'arcade-catalogne-3d.html'"));
  assert.ok(build.includes("'catalogne-3d-runtime.js'"));
@@ -208,7 +232,7 @@ test('Les passants viennent vers le joueur et repartent : moitié dans chaque se
  assert.ok(app.includes('v.actor.group.rotation.y=v.heading<0?0:Math.PI'));
  assert.ok(app.includes('if(v.baseZ<run.z-33)v.baseZ+=144'));
  assert.ok(app.includes('else if(v.baseZ>run.z+111)v.baseZ-=144'));
- assert.ok(app.includes('animateActor(v.actor,dt,walkingNow)'));
+ assert.ok(app.includes('animateActor(v.actor,walkingNow?dt:0,walkingNow)'));
  // Quatre groupes de 3 = 6 vers soi et 6 qui s'éloignent,
  // seize promeneurs isolés = 8 vers soi et 8 qui s'éloignent.
  const groups=[-1,1,1,-1].flatMap(heading=>Array(3).fill(heading));
@@ -244,7 +268,7 @@ test('Carte mobile : clients servis, police mobile, joueur et commande de fermet
  for(const id of ['mapToggle','mapClose','parkMap','mapCanvas'])
   assert.ok(html.includes('id="'+id+'"'),id);
  assert.ok(js.includes('function toggleParkMap(open=!mapOpen)'));
- assert.ok(js.includes("drawParkMap($('mapCanvas'),run,CLIENTS,rnd)"));
+ assert.ok(js.includes("drawParkMap($('mapCanvas'),run,CLIENTS,rnd,"));
  assert.ok(js.includes('!paused&&!mapOpen'));
  assert.ok(js.includes("if(mapOpen){if(key==='escape')"));
  const labels=[],ctx={

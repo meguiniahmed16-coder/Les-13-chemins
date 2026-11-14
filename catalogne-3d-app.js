@@ -1,5 +1,5 @@
-/* Barcelone 3D — Parc de la Ciutadella réinterprété.
- * Personnages Kenney CC0 réutilisés depuis Camarades ! ; logique dans catalogne-3d-core.js.
+/* Barcelone — Plaza Catalunya, jardins réinterprétés.
+ * Personnages Quaternius réutilisés depuis Les Marmousets ; logique dans catalogne-3d-core.js.
  * Aucun élément du décor ne bloque les allées ou les clients.
  */
 import * as T from 'three';
@@ -8,35 +8,43 @@ import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {drawParkMap} from './catalogne-3d-map.js';
 import {voiceProfile,assignGameVoices} from './catalogne-3d-voices.js';
 import {PARK,CLIENTS,PATROLS,newRun,nearestClient,sell,dodge,advance,instruction,distance,clamp,saleDialogue,POLICE_SHOUTS} from './catalogne-3d-core.js';
+import {makeCitizen,animateCitizen,seatCitizen,freezeCitizen} from './catalogne-characters.js';
+import {materials,block,detailedBench,detailedLamp,addPlaceDetails,decorateTile,PICNICS,contact,canopyGeometry,trunkGeometry} from './catalogne-art.js';
+import {makeParkLife,flowerGardens} from './catalogne-life.js';
+import {PARK_LIFE,GATHERINGS} from './catalogne-life-layout.js';
+import {ParkSoftwareRenderer} from './catalogne-software.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
-const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(n=>'assets/manifestation/'+n);
+const MODEL_PATHS=['assets/marmousets/adult.glb'];
 let run=newRun(),sessionId=null,ready=false,replayMode=false,score=0,pendingSale=null,pendingSince=0;
 let paused=false,soundOn=true,lastFrame=0,toastUntil=0,lastInstruction=null,orbital=0,orbitLeft=0,lastPoliceMessage=0,controlsLocked=false,winPending=false;
 const joy={x:0,z:0},keys=new Set();
+let parkLife=null;
 let joyPointer=null,clientActors=[],policeActors=[],people=[],birds=[],hero=null,saleConversation=null;
 let parkGround=null,parkPaths=[],forestGrid=null,parkGridX=NaN,parkGridZ=NaN,parkPathIndex=NaN;
 let mapOpen=false,lastMapDraw=0;
 const actorTemplates=[],walkMeshes=[],fountainWater=[];
 const rnd=n=>{const v=Math.sin(n*14.29+3.16)*98724.35;return v-Math.floor(v)};
-const world=new T.Scene();world.background=new T.Color(0xa4d0db);world.fog=new T.FogExp2(0xbfd2d2,.006);
-const camera=new T.PerspectiveCamera(63,16/9,.08,180);
+const world=new T.Scene();world.background=new T.Color(0xd4dfd2);world.fog=new T.FogExp2(0xd4dfd2,.009);
+const camera=new T.PerspectiveCamera(49,16/9,.08,140);
 let renderer=null;
 try{
  renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
  renderer.outputColorSpace=T.SRGBColorSpace;
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4));
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.26;
-}catch(err){$('overlayTitle').textContent='Impossible de lancer la 3D';$('overlayText').textContent='Le navigateur ne prend pas en charge WebGL. Essaie dans Chrome.';console.error(err);}
+}catch(err){renderer=new ParkSoftwareRenderer({canvas});canvas.dataset.renderer='software';console.info('Rendu de secours du parc activé.');}
+if(!renderer.isSoftwareRenderer){canvas.dataset.renderer='webgl';renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;}
 world.add(new T.HemisphereLight(0xe5f7ff,0x9c976e,2.8));
-const sunlight=new T.DirectionalLight(0xffecc7,2.25);sunlight.position.set(-18,35,14);world.add(sunlight);
+const sunlight=new T.DirectionalLight(0xffecc7,2.25);sunlight.position.set(-18,35,14);sunlight.castShadow=true;sunlight.shadow.mapSize.set(1536,1536);Object.assign(sunlight.shadow.camera,{left:-32,right:32,top:40,bottom:-30,near:.1,far:100});sunlight.shadow.normalBias=.05;world.add(sunlight,sunlight.target);
 const boxGeo=new T.BoxGeometry(1,1,1),sphereGeo=new T.SphereGeometry(1,11,8),cylGeo=new T.CylinderGeometry(1,1,1,10);
 const createMaterial=color=>new T.MeshStandardMaterial({color,roughness:.83,metalness:.04});
 function obj(geometry,material,x,y,z,sx=1,sy=1,sz=1){
  const m=new T.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m;
 }
 function cube(root,x,y,z,w,h,d,color){
- const mesh=obj(boxGeo,createMaterial(color),x,y,z,w,h,d);root.add(mesh);return mesh;
+ const map={0xd8c4a0:materials.paving,0xd6bd92:materials.sand,0xe1cda7:materials.paving,0x77a36b:materials.grass,0x84ad72:materials.grass,0x90b77c:materials.grass,0x77a56c:materials.grass,0xd9c8ab:materials.stone};
+ return block(root,x,y,z,w,h,d,map[color]||color);
 }
 function sphere(root,x,y,z,w,h,d,color){
  const mesh=obj(sphereGeo,createMaterial(color),x,y,z,w,h,d);root.add(mesh);return mesh;
@@ -58,15 +66,8 @@ function drawTree(root,x,z,seed){
  root.add(crown);
  return {trunk,crown};
 }
-function bench(root,x,z,side){
- cube(root,x,.62,z,1.85,.13,.56,0x855c3c);
- cube(root,x,.99,z-side*.20,1.85,.68,.12,0x805b3d);
- for(const offset of [-.78,.78])cube(root,x+offset,.28,z,.10,.53,.45,0x354e49);
-}
-function lamp(root,x,z){
- cyl(root,x,2.45,z,.065,4.90,0x405449);
- sphere(root,x,4.98,z,.27,.33,.27,0xffe6a8);
-}
+function bench(root,x,z,side){return detailedBench(root,x,z,side);}
+function lamp(root,x,z){return detailedLamp(root,x,z);}
 const PARK_TILE=64;
 const TREE_GRID=10.5;
 function pathways(root){
@@ -96,7 +97,7 @@ function createParkGround(root){
  parkPaths=[];
  for(let i=0;i<9;i++){
   const tile=new T.Group();
-  pathways(tile);decorateParkTile(tile,i);
+  pathways(tile);decorateParkTile(tile,i);decorateTile(tile);
   root.add(tile);parkPaths.push(tile);
  }
 }
@@ -110,7 +111,7 @@ function updateParkPaths(){
 }
 function lakeAndMonuments(root){
  // Lac à gauche, cascade sculptée et fontaine légère sur le côté droit.
- const lake=obj(new T.CylinderGeometry(1,1,.05,44),new T.MeshStandardMaterial({color:0x72b9c6,metalness:.16,roughness:.3}),
+ const lake=obj(new T.CylinderGeometry(1,1,.05,44),materials.water,
   -20,.04,68,10,.6,18);root.add(lake);
  for(let i=0;i<9;i++)sphere(root,-20+Math.cos(i*.72)*9.9,.17,68+Math.sin(i*.72)*17.8,1.8,.26,1.4,0xc6b69c);
  for(let i=0;i<7;i++){
@@ -122,7 +123,7 @@ function lakeAndMonuments(root){
   sheet.material.transparent=true;sheet.material.opacity=.79;fountainWater.push(sheet);
  }
  cyl(root,19,.64,36,4.9,1.1,0xe0d2b2);
- const pool=obj(new T.CylinderGeometry(1,1,.06,36),new T.MeshStandardMaterial({color:0x67c6cc,roughness:.28,metalness:.11}),
+ const pool=obj(new T.CylinderGeometry(1,1,.06,36),materials.water,
   19,1.23,36,4.15,1,4.15);root.add(pool);
  cyl(root,19,1.65,36,.53,1.7,0xb7a88e);
  sphere(root,19,2.58,36,.82,.24,.82,0xd6ccae);
@@ -132,10 +133,10 @@ function woodedPark(root){
  // Arbres, buissons et sous-bois instanciés. Les positions sont recyclées
  // autour du personnage : le décor continue aussi loin qu'il marche.
  const capacity=1300;
- const trunks=new T.InstancedMesh(cylGeo,createMaterial(0x796248),capacity);
- const leaves=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),capacity);
- const bushes=new T.InstancedMesh(sphereGeo,createMaterial(0xffffff),capacity);
- trunks.frustumCulled=false;leaves.frustumCulled=false;bushes.frustumCulled=false;
+ const trunks=new T.InstancedMesh(trunkGeometry(),materials.bark,capacity);
+ const leaves=new T.InstancedMesh(canopyGeometry(),createMaterial(0xffffff),capacity);
+ const bushes=new T.InstancedMesh(canopyGeometry(),createMaterial(0xffffff),capacity);
+ trunks.frustumCulled=false;leaves.frustumCulled=false;bushes.frustumCulled=false;trunks.castShadow=true;leaves.castShadow=true;
  forestGrid={trunks,leaves,bushes};
  root.add(trunks,leaves,bushes);
  updateForestGrid(true);
@@ -156,6 +157,9 @@ function updateForestGrid(force=false){
   const z=gz*TREE_GRID+(rnd(n+41)-.5)*2.8;
   // Laisser les chemins, les clients, le joueur et les monuments sans arbres.
   if(Math.abs(x)<11.5)continue;
+  if(x>29.5&&x<40.5)continue;
+  if(PICNICS.some(p=>Math.hypot(x-p.x,z-p.z)<4.6))continue;
+  if(PARK_LIFE.some(p=>Math.hypot(x-p.x,z-p.z)<p.radius+1.5)||GATHERINGS.some(p=>Math.hypot(x-p.x,z-p.z)<3.5))continue;
   // Ne jamais masquer un client par un tronc : chaque emplacement
   // en sous-bois conserve une clairière de cinq mètres autour de lui.
   if(CLIENTS.some(c=>Math.hypot(x-c.x,z-c.z)<5.8))continue;
@@ -169,7 +173,7 @@ function updateForestGrid(force=false){
   dummy.position.set(x,h/2,z);
   dummy.scale.set(.18+rnd(n+99)*.11,h,.20);
   dummy.updateMatrix();trunks.setMatrixAt(count,dummy.matrix);
-  dummy.position.set(x,h+1.3,z);
+  dummy.rotation.y=rnd(n+83)*Math.PI*2;dummy.position.set(x,h+1.3,z);
   dummy.scale.set(1.15+rnd(n+31)*.8,1.65+rnd(n+33)*.60,1.25+rnd(n+35)*.6);
   dummy.updateMatrix();leaves.setMatrixAt(count,dummy.matrix);
   leaves.setColorAt(count,new T.Color(greens[Math.abs((gx+gz)%greens.length)]));
@@ -177,7 +181,7 @@ function updateForestGrid(force=false){
   if((gx+2*gz)%3===0&&bushCount<bushes.instanceMatrix.count&&
      !CLIENTS.some(c=>Math.hypot(x+1.2-c.x,z+.65-c.z)<5.7)){
    dummy.position.set(x+1.2,.58,z+.65);
-   dummy.scale.set(.85, .72,.9);dummy.updateMatrix();
+   dummy.scale.set(1.05, .54,.95);dummy.updateMatrix();
    bushes.setMatrixAt(bushCount,dummy.matrix);
    bushes.setColorAt(bushCount,new T.Color(greens[Math.abs((gx*2+gz)%greens.length)]));
    bushCount++;
@@ -196,17 +200,20 @@ function updateParkEnvironment(){
  updateForestGrid();
 }
 function makeBirds(root){
- // Petits moineaux qui traversent les allées et battent des ailes.
+ // Perruches et perroquets multicolores : plumages variés, longues queues et becs recourbés.
  const flock=[];
  for(let i=0;i<12;i++){
   const group=new T.Group();
-  const body=obj(sphereGeo,createMaterial(i%2?0x4c5355:0x63584c),0,0,0,.22,.16,.38);
-  const head=obj(sphereGeo,createMaterial(0x655b50),0,.10,.25,.13,.14,.13);
-  const beak=obj(new T.ConeGeometry(.08,.20,5),createMaterial(0xc69a55),0,.06,.40,.75,1,.75);
+  const plumage=[[0x4e9b61,0x317fac,0xd7b951],[0xc9694c,0x427f9b,0xe6b951],[0x73a454,0x5896a6,0xe0c871],[0x5797ac,0x466b9a,0xe0b852]][i%4];
+  const body=obj(sphereGeo,createMaterial(plumage[0]),0,0,0,.22,.16,.38);
+  const head=obj(sphereGeo,createMaterial(plumage[2]),0,.10,.25,.13,.14,.13);
+  const beak=obj(new T.ConeGeometry(.08,.20,5),createMaterial(0x554436),0,.06,.40,.75,1,.75);
   beak.rotation.x=Math.PI/2;
-  const wingL=obj(sphereGeo,createMaterial(0x424a48),-.27,.06,-.04,.35,.055,.15);
-  const wingR=obj(sphereGeo,createMaterial(0x424a48),.27,.06,-.04,.35,.055,.15);
-  group.add(body,head,beak,wingL,wingR);
+  const wingL=obj(sphereGeo,createMaterial(plumage[1]),-.27,.06,-.04,.35,.055,.15);
+  const wingR=obj(sphereGeo,createMaterial(plumage[1]),.27,.06,-.04,.35,.055,.15);
+  group.add(body,head,beak,wingL,wingR);group.scale.setScalar(.65);
+  for(const side of[-1,1])sphere(group,side*.10,.135,.31,.018,.021,.017,0x252d25);
+  for(const side of[-1,0,1]){const tail=obj(sphereGeo,createMaterial(side===0?plumage[1]:plumage[0]),side*.055,-.045,-.51,.045,.035,.39);tail.rotation.x=.14;group.add(tail);}
   root.add(group);
   flock.push({group,wingL,wingR,seed:i});
  }
@@ -220,7 +227,7 @@ function makePark(){
  updateParkEnvironment();
  // Pas de panneau SORTIE ni d'extrémité du décor : les bancs et lampadaires
  // sont désormais rattachés aux tronçons de parc recyclés.
- lakeAndMonuments(root);
+ lakeAndMonuments(root);addPlaceDetails(root);flowerGardens(root);
  // Petites clairières praticables à côté des chemins : accès libre.
  for(const c of CLIENTS.filter(item=>Math.abs(item.x)>11)){
   const patch=new T.Mesh(new T.CircleGeometry(3.45,28),
@@ -289,6 +296,7 @@ function policeOfficer(index){
  return {group,animation:null,policeRig:{legs,arms,elapsed:index*.8}};
 }
 function makeActor(index,role='walker',color=0x87a988){
+ if(actorTemplates[0])return makeCitizen(actorTemplates[0],index,role,color);
  if(role==='police')return policeOfficer(index);
  const group=new T.Group();
  const clipset=actorTemplates[index%Math.max(1,actorTemplates.length)];
@@ -314,6 +322,7 @@ function makeActor(index,role='walker',color=0x87a988){
  return {group,animation,oldPos:new T.Vector3(),moving:false};
 }
 function animateActor(actor,dt,moving=false){
+ if(actor?.rig){animateCitizen(actor,dt,moving,actor===hero&&run.dodgeTime>0);return;}
  if(actor?.policeRig){
   const rig=actor.policeRig;
   rig.elapsed+=Math.max(0,Math.min(.08,dt))*(moving?7.4:1.5);
@@ -333,6 +342,7 @@ function animateActor(actor,dt,moving=false){
 }
 function createCharacters(root){
  hero=makeActor(2,'hero');root.add(hero.group);
+ if(actorTemplates[0])PICNICS.forEach((spot,i)=>{for(const side of[-1,1]){const seated=makeCitizen(actorTemplates[0],70+i*2+(side>0?1:0),'walker');const xx=side>0?.42:-.43,zz=side*.84;seated.group.position.set(spot.x+Math.cos(spot.a)*xx+Math.sin(spot.a)*zz,0,spot.z-Math.sin(spot.a)*xx+Math.cos(spot.a)*zz);seated.group.rotation.y=spot.a+(side>0?0:Math.PI);seatCitizen(seated,.46,i-1);root.add(freezeCitizen(seated));}});
  clientActors=CLIENTS.map((c,i)=>{
   const actor=makeActor(i+3,'client',c.color);actor.group.position.set(c.x,0,c.z);root.add(actor.group);
   const ring=new T.Mesh(new T.RingGeometry(.65,.86,30),new T.MeshBasicMaterial({color:c.color,side:T.DoubleSide,depthTest:false}));
@@ -385,7 +395,8 @@ function resetClientVisuals(){
 function updateActors(dt,time){
  if(!hero)return;
  hero.group.position.set(run.x,0,run.z);hero.group.rotation.y=run.facing;
- animateActor(hero,dt,Math.hypot(joy.x,joy.z)>.12||keys.size>0||run.dodgeTime>0);
+ const active=run.phase==='running'&&!paused&&!mapOpen;
+ animateActor(hero,active?dt:0,active&&(Math.hypot(joy.x,joy.z)>.12||keys.size>0||run.dodgeTime>0));
  clientActors.forEach((v,i)=>{
   // Les clients ne tournent pas tous le dos : orientations variées, puis
   // regard vers le narrateur lorsqu'il s'approche pour une vente.
@@ -393,7 +404,7 @@ function updateActors(dt,time){
   v.actor.group.rotation.y=near?
    Math.atan2(run.x-v.client.x,run.z-v.client.z)+Math.PI:
    i%2===0?0:Math.PI;
-  animateActor(v.actor,dt,false);
+  if(distance(run,v.client)<45)animateActor(v.actor,active?dt:0,false);
   v.diamond.position.y=3.0+Math.sin(time*3+i)*.22;
   v.diamond.rotation.y=time*1.6;
   v.ring.scale.setScalar(1+Math.sin(time*5+i)*.12);
@@ -403,11 +414,11 @@ function updateActors(dt,time){
   const dx=p.x-v.oldX,dz=p.z-v.oldZ;
   v.actor.group.position.set(p.x,0,p.z);
   if(Math.hypot(dx,dz)>.0005){v.actor.group.rotation.y=Math.atan2(dx,dz)+Math.PI;}
-  animateActor(v.actor,dt,Math.hypot(dx,dz)>.001);
+  animateActor(v.actor,active?dt:0,active&&Math.hypot(dx,dz)>.001);
   v.oldX=p.x;v.oldZ=p.z;
  });
  people.forEach(v=>{
-  const walkingNow=run.phase==='running'&&!paused;
+  const walkingNow=run.phase==='running'&&!paused&&!mapOpen;
   if(walkingNow)v.baseZ+=v.heading*v.speed*dt;
   // Repositionner discrètement ceux qui ont quitté le champ.
   // Le cortège piéton continue après le dernier client, sans scène vide.
@@ -418,14 +429,14 @@ function updateActors(dt,time){
   // La moitié des promeneurs sont de face, l'autre marche dans l'autre sens.
   v.actor.group.rotation.y=v.heading<0?0:Math.PI;
   v.actor.group.position.set(v.x,0,v.z);
-  animateActor(v.actor,dt,walkingNow);
+  if(Math.hypot(v.x-run.x,v.z-run.z)<45)animateActor(v.actor,walkingNow?dt:0,walkingNow);
  });
  birds.forEach(v=>{
   const phase=time*.37+v.seed*.78;
   v.group.position.set(
    run.x+Math.sin(phase)*9+Math.sin(v.seed*2.19)*7,
    5.9+v.seed%4+Math.sin(time*1.2+v.seed)*.55,
-   run.z-12+(time*(2.3+v.seed%3)+v.seed*17)%94);
+   run.z+6+(time*(2.3+v.seed%3)+v.seed*17)%94);
   v.group.rotation.y=Math.sin(phase)*.43;
   const flap=Math.sin(time*10+v.seed*1.8)*.60;
   v.wingL.rotation.z=flap;
@@ -514,7 +525,7 @@ function toggleParkMap(open=!mapOpen){
  $('mapToggle').setAttribute('aria-expanded',String(mapOpen));
  if(mapOpen){
   lastMapDraw=0;
-  drawParkMap($('mapCanvas'),run,CLIENTS,rnd);
+  drawParkMap($('mapCanvas'),run,CLIENTS,rnd,parkLife?[...parkLife.mapDots(),...people.map(p=>({x:p.x,z:p.z}))]:[]);
   $('mapClose').focus({preventScroll:true});
  }else $('mapToggle').focus({preventScroll:true});
 }
@@ -711,10 +722,12 @@ function resize(){
 function frame(ms){
  if(!renderer)return;
  requestAnimationFrame(frame);
- const dt=Math.min(.06,Math.max(0,(ms-lastFrame)/1000||0));lastFrame=ms;
+ const elapsed=lastFrame?Math.min(.5,Math.max(0,(ms-lastFrame)/1000)):0;
+ const dt=Math.min(.1,elapsed);lastFrame=ms;
  try{
   if(ready&&run.phase==='running'&&!paused&&!mapOpen){
-   advance(run,dt,input());
+   // Fixed physics steps keep walking speed independent of a slow rendered frame.
+   for(let remaining=elapsed;remaining>0&&run.phase==='running';remaining-=.05)advance(run,Math.min(.05,remaining),input());
    if(run.phase==='caught')caught();
    else{
     policeCry();syncInstruction();
@@ -728,7 +741,7 @@ function frame(ms){
   }
   const t=ms/1000;
   updateParkEnvironment();
-  if(mapOpen&&ms-lastMapDraw>180){lastMapDraw=ms;drawParkMap($('mapCanvas'),run,CLIENTS,rnd);}
+  if(mapOpen&&ms-lastMapDraw>180){lastMapDraw=ms;drawParkMap($('mapCanvas'),run,CLIENTS,rnd,parkLife?[...parkLife.mapDots(),...people.map(p=>({x:p.x,z:p.z}))]:[]);}
   updateSaleConversation(t);
   if(!$('toast').hidden){
    const remain=toastUntil-t;
@@ -736,15 +749,15 @@ function frame(ms){
    else $('toast').style.opacity=String(Math.min(1,remain/.22));
   }
   if(ready){
-   updateActors(dt,t);
+   updateActors(dt,t);parkLife?.update(dt,run,run.phase==='running'&&!paused&&!mapOpen);
    if(orbitLeft>0){
     const step=Math.min(orbitLeft,Math.max(.012,dt)*2.4);
     orbital+=step;orbitLeft-=step;
     if(orbitLeft<.005){orbital=0;orbitLeft=0;}
    }
-   const radius=17;
-   const target=new T.Vector3(run.x,1.8,run.z+3.5);
-   const desired=new T.Vector3(run.x+Math.sin(orbital)*radius,8.6,
+   const radius=13.3;
+   const target=new T.Vector3(run.x,1.65,run.z+4.5);
+   const desired=new T.Vector3(run.x+Math.sin(orbital)*radius,6.4,
     run.z-Math.cos(orbital)*radius);
    camera.position.lerp(desired,Math.min(1,dt*4.2+.01));
    camera.lookAt(target);
@@ -752,7 +765,8 @@ function frame(ms){
     renderHUD();
    }
   }
-  resize();renderer.render(world,camera);
+  sunlight.position.set(run.x-18,35,run.z+14);sunlight.target.position.set(run.x,0,run.z+12);sunlight.target.updateMatrixWorld();
+  resize();if(!renderer.isSoftwareRenderer||ms-(renderer.lastFrame||0)>100){renderer.render(world,camera);renderer.lastFrame=ms;}
  }catch(err){console.error('Barcelone 3D:',err);if(!controlsLocked){controlsLocked=true;showToast('Erreur 3D : '+String(err.message||err).slice(0,75),1.2);}}
 }
 async function initialize(){
@@ -761,9 +775,9 @@ async function initialize(){
  try{
   const loader=new GLTFLoader();
   const models=await Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path)));
-  for(const m of models){if(!m.scene||!m.animations?.some(c=>c.name==='walk'))throw Error('Personnage sans animation');actorTemplates.push(m);}
+  for(const m of models){if(!m.scene?.getObjectByName('Thigh_L'))throw Error('Squelette de personnage incomplet');actorTemplates.push(m);}
  }catch(err){console.warn('Modèles 3D indisponibles, personnages de secours activés',err);}
- createCharacters(world);ready=true;
+ createCharacters(world);if(actorTemplates[0])parkLife=makeParkLife(actorTemplates[0],world);ready=true;
  $('start').disabled=embedded&&!sessionId;
  $('start').textContent='Entrer dans le parc';
  $('overlayText').textContent='Michel t’a confié son matériel. Cherche les cinq clients dans les allées et les zones boisées. Utilise la carte pour les repérer, puis ROUGE pour vendre.';

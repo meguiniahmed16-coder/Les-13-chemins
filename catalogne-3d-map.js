@@ -1,8 +1,9 @@
+import {PARK_LIFE} from './catalogne-life-layout.js';
 /* Barcelone 3D — plan stylisé du secteur des cinq clients.
  * Les coordonnées sont internes au jeu, et non des GPS réels.
  * Le plan s'agrandit si le joueur s'éloigne dans le parc sans fin.
  */
-export function drawParkMap(canvas,run,clients,random){
+export function drawParkMap(canvas,run,clients,random,crowd=[]){
  const ctx=canvas.getContext('2d');
  if(!ctx)return false;
  const width=Math.max(160,canvas.clientWidth),height=Math.max(110,canvas.clientHeight);
@@ -35,7 +36,7 @@ export function drawParkMap(canvas,run,clients,random){
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
  };
  for(const [x,w] of [[-6.2,3.3],[6.2,3.3],[0,5]])road(x,w);
- for(const z of [12,29,51,73,95,116]){
+ for(let z=-18;z<132;z+=32){
   const a=xy(-10.4,z),b=xy(10.4,z);
   ctx.strokeStyle='#e5cfaf';ctx.lineWidth=Math.max(3,2.3*scale);
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
@@ -47,6 +48,9 @@ export function drawParkMap(canvas,run,clients,random){
   ctx.fillStyle='#285c65';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText(label,c.x,c.y+3);
  };
  water(-20,68,9,17,'Lac');water(19,36,4.7,4.7,'Fontaine');
+ // The map also locates the life of the park; small dots remain secondary to clients.
+ for(const visitor of crowd){const p=xy(visitor.x,visitor.z);ctx.fillStyle='#7b8678';ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fill();}
+ for(const place of PARK_LIFE){const p=xy(place.x,place.z);ctx.fillStyle=place.id==='flowers'?'#be7a89':'#687c75';ctx.strokeStyle='#fff4df';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='bold 9px system-ui';ctx.fillStyle='#fff8e8';ctx.textAlign='center';ctx.fillText(place.key,p.x,p.y+3);}
  // Les patrouilles sont en mouvement et sont repérées en rouge.
  for(const officer of run.police){
   const p=xy(officer.x,officer.z);
