@@ -76,6 +76,13 @@ test('Shared crowd poses reproduce the established walk and raised arm on the re
   const time=i/24*motion.period;poseCitizen(rig,time,moving,signal);const expected=Object.fromEntries(Object.entries(bones).map(([name,b])=>[name,b.bone.quaternion.clone().normalize()]));
   motion.apply(rig,time,moving,signal);for(const [name,b]of Object.entries(bones)){assert.ok(b.bone.quaternion.angleTo(expected[name])<1e-6,name);assert.ok(Math.abs(b.bone.quaternion.length()-1)<1e-6);}
  }
+ const joint=bones.indexFinger_02_l.bone,restTranslation=joint.position.clone();
+ motion.apply(rig,0,false,true);const openHand=joint.quaternion.clone();motion.apply(rig,0,false,true,true);
+ assert.ok(joint.quaternion.angleTo(openHand)>.9,'Raised fists actually close their finger joints');
+ assert.ok(joint.position.distanceTo(restTranslation)<1e-10,'No limb or finger is stretched');
+ const firstLook=bones.head.bone.quaternion.clone();motion.apply(rig,2,false,false,true);
+ assert.ok(firstLook.angleTo(bones.head.bone.quaternion)>.01,'Stationary people also turn their heads');
+
 });
 test('The monument keeps its accessible landing and a bounded mobile mesh budget',()=>{
  const monument=createRepublicMonument(),bounds=new T.Box3().setFromObject(monument);let triangles=0;
@@ -85,6 +92,43 @@ test('The monument keeps its accessible landing and a bounded mobile mesh budget
 });
 test('Connected city geometry and map build without external services',()=>{
  const city=createParisCity(),bounds=new T.Box3().setFromObject(city);assert.ok(bounds.max.z>nodes.bastille.z);assert.ok(bounds.min.x<nodes.tcal.x);
- let count=0;city.traverse(m=>{if(m.isMesh){count++;assert.ok(m.geometry.boundingSphere);assert.ok(Number.isFinite(m.geometry.boundingSphere.radius));}});assert.ok(count>0&&count<1800);
- const svg=mapMarkup(newWalk());for(const name of ['République','Bastille','LE MARAIS'])assert.ok(svg.includes(name));assert.equal((svg.match(/<path /g)||[]).length,streets.length);
+ let count=0;city.traverse(m=>{if(m.isMesh){count++;assert.ok(m.geometry.boundingSphere);assert.ok(Number.isFinite(m.geometry.boundingSphere.radius));}});assert.ok(count>0&&count<3000);
+ const svg=mapMarkup(newWalk());for(const name of ['République','Bastille','LE MARAIS'])assert.ok(svg.includes(name));assert.equal((svg.match(/class="map-(?:current|road)"/g)||[]).length,streets.length);
+});
+
+
+test('Extended streets reach Beaubourg and the Seine, loop back and resume beyond the old bounds',()=>{
+ const w=newWalk();for(const id of ['pont','turenne-c','turenne-s','turenne-bas','francs-est','francs-ouest','rambuteau','beaubourg','renard','lobau','quai'])reach(w,id);
+ assert.equal(w.node,'pontmarie');assert.ok(w.z>250);assert.equal(restoreWalk(JSON.parse(JSON.stringify(w))).node,'pontmarie');
+ for(const id of ['nonnains','fourcy','antoine-ouest','turenne-sud','turenne-bas','turenne-s','turenne-c','pont'])reach(w,id);
+ assert.equal(w.node,'meeting');assert.ok(w.visited.includes('pompidou'));assert.ok(w.visited.includes('hotelville'));
+ const old=restoreWalk({...newWalk(),node:'tgilles',from:'tgilles',to:'antoine',edge:'turenne-bas',waiting:false,progress:20,x:-39,z:197});assert.equal(old.node,'tgilles');assert.equal(old.waiting,true);
+});
+
+test('The rehearsal requires selection before each action and remains isolated from scoring',async()=>{
+ const {newDemo,demoAction}=await import('./manifestation-demo.js');const d=newDemo();
+ for(const wrong of ['red','yellow','crs'])assert.equal(demoAction(d,wrong),false);
+ assert.equal(d.step,0);assert.ok(demoAction(d,'flower'));assert.equal(demoAction(d,'red'),false);
+ assert.ok(demoAction(d,'yellow'));assert.equal(d.collected,true);assert.equal(d.selected,null);
+ assert.equal(demoAction(d,'red'),false);assert.ok(demoAction(d,'crs'));assert.ok(demoAction(d,'red'));
+ assert.equal(d.step,4);assert.equal(d.sent,true);assert.equal(demoAction(d,'red'),false);
+ assert.equal(d.points,undefined);assert.equal(d.events,undefined);
+});
+
+test('Carried poles stay exactly in the palm when people turn or parents move',async()=>{
+ const {followPalm,palmPosition,bannerCorners}=await import('./manifestation-props.js');
+ const root=new T.Group();root.position.set(-40,0,120);root.rotation.y=.4;
+ const actor=new T.Group(),hand=new T.Bone();hand.position.set(.26,1.4,.1);hand.scale.setScalar(.01);actor.add(hand);root.add(actor);
+ actor.userData.citizen={rig:{bones:{Hand_L:{bone:hand}}}};
+ const prop=new T.Group();actor.add(prop);
+ for(const heading of [0,Math.PI/2,Math.PI,-1.4]){actor.position.set(heading,0,heading*3);actor.rotation.y=heading;followPalm(prop,actor,1.15);root.updateMatrixWorld(true);const grip=prop.localToWorld(new T.Vector3(0,1.15,0));assert.ok(grip.distanceTo(palmPosition(actor))<1e-9);}
+ const other=actor.clone();other.userData={};other.position.x+=4;root.add(other);const holder=new T.Group();root.add(holder);
+ const {a,b,vertices}=bannerCorners(actor,other,holder);assert.equal(vertices.length,12);assert.ok(vertices.every(Number.isFinite));assert.ok(a.distanceTo(b)>1);
+});
+
+test('French period cars have finite geometry, a compact budget and a clear walking corridor',async()=>{
+ const {createParkedCar,CAR_PROFILES}=await import('./manifestation-cars.js');
+ for(let i=0;i<CAR_PROFILES.length;i++){const car=createParkedCar(i);let triangles=0;car.traverse(m=>{if(m.isMesh){triangles+=(m.geometry.index?.count||m.geometry.attributes.position.count)/3;assert.ok([...m.geometry.attributes.position.array].every(Number.isFinite));}});
+ const b=new T.Box3().setFromObject(car);assert.ok(b.getSize(new T.Vector3()).y<1.6);assert.ok(triangles<900);
+ for(const road of streets){const innerEdge=road.width/2+1.15+b.min.x;assert.ok(innerEdge>road.width/2-1.2+.5,'Cars stay outside the full player movement corridor');}}
 });

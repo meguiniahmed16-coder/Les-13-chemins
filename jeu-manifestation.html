@@ -113,9 +113,28 @@
 .intro-explore{display:flex;justify-content:center;flex-wrap:wrap}.intro-explore .secondary{padding:8px 12px;font-size:11px;margin:4px;min-height:38px}
 @media(max-width:690px){.marquee{display:block;white-space:nowrap}.marquee small{display:block;margin-top:3px;font-size:8px;white-space:normal}}
 @media(max-width:690px){.chapter-sky{width:60%;top:28px}.route-panel{padding:12px}.route-layout{display:block}.route-layout .paris-map{display:none}.route-choices{gap:6px}.route-choices button{min-height:52px;padding:8px 10px}.route-card h2{font-size:24px}.route-notice{margin-top:8px}.location-bar span{font-size:10px}.walk-actions button{font-size:11px;padding:7px 9px}.overlay h1{font-size:27px}.intro-symbols{margin:5px}.intro-symbol svg{width:32px;height:32px}.overlay .primary{padding:9px 15px;margin:4px}.overlay .intro-final{font-size:11px}}
+
+/* Short, playable rehearsal: only one instruction is visible at a time. */
+.demo-panel{position:absolute;inset:0;z-index:12;background:#18392ff5;padding:clamp(10px,2vw,24px);display:flex;flex-direction:column;justify-content:center;gap:8px;overflow:auto;color:#f7e5bf}
+.demo-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font:700 11px system-ui;letter-spacing:.1em}.demo-head button{border:1px solid #bba775;border-radius:6px;padding:8px 14px;background:transparent;color:#f7e5bf;min-height:38px}
+.demo-panel p{margin:0}.demo-panel #demoPrompt{font:600 clamp(14px,2vw,19px)/1.3 Georgia;min-height:2.6em;max-width:650px}
+.demo-scene{position:relative;width:100%;max-width:650px;aspect-ratio:500/170;min-height:100px;max-height:200px;align-self:center;border-radius:9px;overflow:hidden;border:1px solid #bca676}
+.demo-street{position:absolute;width:100%;height:100%}.demo-target{position:absolute;border:2px solid transparent;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;color:#263d36;cursor:pointer;min-width:46px;min-height:48px;padding:1px 5px;touch-action:manipulation}
+.demo-target svg{display:block;width:100%;height:calc(100% - 15px)}.demo-target span{font:700 10px system-ui;background:#f5e8c7e8;border-radius:3px;padding:2px 6px}.demo-flower{left:34%;top:34%;width:13%;height:55%}.demo-crs{left:73%;top:9%;width:16%;height:87%}.demo-target.selected{border-color:#ffdb63;box-shadow:0 0 0 4px #ffdb6366;background:#ffe99f33}
+.demo-panel[data-step="0"] .demo-flower,.demo-panel[data-step="2"] .demo-crs{animation:demoTarget 1.2s ease-in-out infinite}
+@keyframes demoTarget{50%{box-shadow:0 0 0 5px #ffdb63a8}}
+.demo-projectile{position:absolute;left:20%;top:39%;color:#ec4d9d;font:800 36px Georgia;display:none;text-shadow:0 1px #fee8b1}.demo-panel[data-step="2"] .demo-projectile,.demo-panel[data-step="3"] .demo-projectile,.demo-panel[data-step="4"] .demo-projectile{display:block}.demo-panel[data-step="4"] .demo-projectile{animation:demoThrow .85s ease-out forwards}
+@keyframes demoThrow{0%{left:20%;top:39%;opacity:1}50%{top:12%}90%{left:78%;top:40%;opacity:1}100%{left:78%;top:40%;opacity:0}}
+.demo-response{display:none;position:absolute;left:78%;top:9%;font-size:30px;color:#e55476}.demo-panel[data-step="4"] .demo-response{display:block;animation:demoLove 1.1s ease-out both}@keyframes demoLove{0%,65%{opacity:0;transform:translateY(35px)}100%{opacity:1;transform:translateY(-8px)}}
+.demo-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;max-width:650px;width:100%;align-self:center;min-height:35px}.demo-bottom span{font:600 11px system-ui;color:#f5d888}.demo-bottom button{border:1px solid #e9d098;background:#e7c47e;color:#263d34;border-radius:7px;padding:9px;font:700 12px system-ui;min-height:40px}
+.demo-panel .demo-tip{font:11px/1.4 system-ui;color:#ccdbbf;max-width:650px}.round.demo-pulse{outline:4px solid #fff5bd;outline-offset:5px;animation:demoButton .8s ease-in-out infinite}@keyframes demoButton{50%{outline-offset:9px}}
+.chant{position:absolute;z-index:4;bottom:56px;left:50%;transform:translateX(-50%);max-width:65%;text-align:center;background:#f2d993ed;color:#334a3c;border-radius:15px;padding:6px 12px;font:700 12px/1.3 Georgia;pointer-events:none}
+.paris-map .map-river{stroke:#8fb2b8;stroke-width:12}
+@media(max-width:690px){.topnav{gap:3px}.topnav button{padding:6px;font-size:10px}.demo-panel{padding:10px;gap:7px}.demo-panel #demoPrompt{font-size:15px}.demo-bottom{min-height:31px}.demo-panel .demo-tip{font-size:10px}.chant{font-size:11px;max-width:75%}.demo-head{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.demo-panel *,.round.demo-pulse{animation:none!important}.demo-panel[data-step="4"] .demo-projectile{display:none}.demo-panel[data-step="4"] .demo-response{opacity:1}}
 </style></head><body>
 <div class="wrap">
-<header class="top"><a class="brand" href="jeu.html">✦ Les Treize Chemins <small>Chemin II · « Le météore » · Jeu 3/3</small></a><nav class="topnav"><button type="button" id="pause">Pause</button><button type="button" id="sound" aria-pressed="false">Son OFF</button></nav></header>
+<header class="top"><a class="brand" href="jeu.html">✦ Les Treize Chemins <small>Chemin II · « Le météore » · Jeu 3/3</small></a><nav class="topnav"><button type="button" id="showDemo" disabled>Démo</button><button type="button" id="pause">Pause</button><button type="button" id="sound" aria-pressed="false">Son OFF</button></nav></header>
 <main class="machine"><div class="marquee">CAMARADES ! <small>CHAPITRE 4 · « DRAPEAU ROUGE » · P. 59–60</small></div>
 <section class="screen" aria-label="Manifestation de République vers Bastille en 3D">
 <canvas id="world" aria-label="Rue de Paris en 3D avec foule de manifestants"></canvas>
@@ -145,6 +164,7 @@
  <span id="weaponChip" class="weapon-chip" hidden aria-label="Arme équipée">—</span>
  <span id="crsMini" class="crs-mini" hidden>✦ 0/3 · 0/16</span>
  <div class="hint" id="hint" hidden role="status"></div>
+<div id="chant" class="chant" aria-live="polite" hidden></div>
 <div id="speech" class="speech" hidden>Camarades !</div>
 <div id="statueControls" class="statue-controls" role="group" aria-label="Commandes accessibles en haut de la statue" hidden>
  <strong>EN HAUT DE LA STATUE</strong>
@@ -155,7 +175,20 @@
  </div>
  <small>Tu commences sur la statue : crie « Camarades ! », puis descends chercher le drapeau.</small>
 </div>
-<div class="overlay" id="overlay"><div class="overlay-card"><h1 id="overlayTitle">Camarades !</h1><p id="overlayText">Prends le drapeau, monte sur la statue et crie « Camarades ! ». Récupère ensuite les trois symboles et vise les CRS.</p><div class="intro-symbols" aria-label="Les trois projectiles du jeu">
+<section class="demo-panel" id="demoPanel" hidden aria-label="Essayer les commandes du jeu">
+ <div class="demo-head"><strong>DEUX GESTES POUR JOUER</strong><button type="button" id="demoSkip">Passer</button></div>
+ <p id="demoPrompt" role="status" aria-live="polite">1 · Touche la fleur pour la sélectionner.</p>
+ <div class="demo-scene">
+  <svg viewBox="0 0 500 170" class="demo-street" aria-hidden="true"><rect width="500" height="170" fill="#bdd1cf"/><path d="M0 110H500V170H0" fill="#71807b"/><path d="M0 110H500" stroke="#e5d5b5" stroke-width="8"/><path d="M0 142H500" stroke="#dacfae" stroke-width="2" stroke-dasharray="24 30"/><g fill="#d8c4a6"><path d="M0 105V35H65V105M75 105V9H140V105M150 105V29H228V105M240 105V17H327V105M340 105V35H415V105M425 105V5H500V105"/></g><path d="M20 40V85M95 20V85M173 35V85M260 23V85M367 40V85M448 15V85" stroke="#697b7b" stroke-width="14" stroke-dasharray="10 13"/>
+  <g transform="translate(82 44)"><ellipse cx="0" cy="105" rx="24" ry="7" fill="#526b6440"/><path d="M-10 62L-13 100M11 62L16 100" stroke="#3e5966" stroke-width="13"/><path d="M-11 30L12 30L15 66L-15 66Z" fill="#b2654c"/><path d="M-15 33L-22 61M15 33L27 45L33 32" stroke="#b2654c" stroke-width="9" stroke-linecap="round"/><circle cy="17" r="13" fill="#bc8b68"/><path d="M-15 16Q-12 -3 12 9L18 15Z" fill="#303d3b"/></g></svg>
+  <button type="button" id="demoFlower" class="demo-target demo-flower" aria-label="Sélectionner la fleur" aria-pressed="false"><svg viewBox="0 0 64 64" aria-hidden="true"><g fill="#f467ab"><ellipse cx="32" cy="18" rx="10" ry="15"/><ellipse cx="32" cy="18" rx="10" ry="15" transform="rotate(60 32 32)"/><ellipse cx="32" cy="18" rx="10" ry="15" transform="rotate(120 32 32)"/><ellipse cx="32" cy="18" rx="10" ry="15" transform="rotate(180 32 32)"/><ellipse cx="32" cy="18" rx="10" ry="15" transform="rotate(240 32 32)"/><ellipse cx="32" cy="18" rx="10" ry="15" transform="rotate(300 32 32)"/></g><circle cx="32" cy="32" r="10" fill="#f5d35d"/></svg><span>Fleur</span></button>
+  <button type="button" id="demoCrs" class="demo-target demo-crs" aria-label="Sélectionner le CRS" aria-pressed="false"><svg viewBox="0 0 70 112" aria-hidden="true"><path d="M23 73L21 102M46 73L49 102" stroke="#263b51" stroke-width="13"/><path d="M16 38Q35 27 54 38L57 77H14Z" fill="#273f56"/><circle cx="35" cy="22" r="14" fill="#c39877"/><path d="M19 20Q17 1 35 2Q54 1 52 22" fill="#283c50"/><path d="M21 19H49V31H21Z" fill="#b6cecb" opacity=".7"/><path d="M17 49L10 68M54 47L60 70" stroke="#263b51" stroke-width="9"/><path d="M22 48Q35 43 48 48V83Q35 93 22 83Z" fill="#a6bbc1" stroke="#d2ddda" stroke-width="2"/><text x="35" y="66" font-size="10" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#263c50">CRS</text></svg><span>CRS</span></button>
+  <span class="demo-projectile" aria-hidden="true">✿</span><span class="demo-response" aria-hidden="true">♥</span>
+ </div>
+ <div class="demo-bottom"><span id="demoState">À toi d’essayer</span><button type="button" id="demoFinish" class="primary" hidden>C’est compris · continuer →</button></div>
+ <p class="demo-tip">Les boutons JAUNE et ROUGE sont juste en dessous. Même geste pour les cœurs et les bisous.</p>
+</section>
+<div class="overlay" id="overlay"><div class="overlay-card"><h1 id="overlayTitle">Camarades !</h1><p id="overlayText">Un court essai te montre les commandes. Puis prends le drapeau, rassemble les cortèges et poursuis ta marche dans Paris.</p><div class="intro-symbols" aria-label="Les trois projectiles du jeu">
  <div class="intro-symbol"><svg viewBox="0 0 64 64" role="img" aria-label="Cœur rouge"><path transform="translate(32 36) scale(50 -50)" d="M0 -.23 C-.24 -.04 -.46 .21 -.27 .4 C-.1 .56 0 .37 0 .31 C.05 .47 .19 .53 .3 .36 C.47 .16 .24 -.04 0 -.23 Z" fill="#ff3263" stroke="#ff9fba" stroke-width=".025"/></svg><span>Cœur</span></div>
  <div class="intro-symbol"><svg viewBox="0 0 64 64" role="img" aria-label="Fleur à six pétales roses">
   <ellipse cx="32" cy="19" rx="9" ry="14" fill="#ff67bd"/>
@@ -174,7 +207,7 @@
 <div class="deck" role="group" aria-label="Manette de jeu"><div><div class="stick-zone" id="stick" aria-label="Joystick de déplacement" role="group"><div class="stick-knob" id="knob"></div></div><span class="dir-label">DÉPLACEMENT</span></div>
 <div class="face-buttons"><div class="face-unit"><button type="button" id="yellow" class="round yellow" aria-label="Jaune : agir et grimper">▲</button><small id="yellowLabel">AGIR / GRIMPER</small></div><div class="face-unit"><button type="button" id="red" class="round red" aria-label="Rouge : appeler et rassembler">●</button><small id="redLabel">RASSEMBLER</small></div></div></div>
 <div id="controlsStatus" class="controls-status" role="status" hidden></div>
-<p class="instructions">Joystick : avancer, reculer et tourner · JAUNE : agir · ROUGE : crier / lancer · ◎ Cible : sélectionner · ↻ : vue 360°.</p>
+<p class="instructions">Touche un objet, puis JAUNE pour le récupérer. Touche un CRS, puis ROUGE pour lui envoyer un symbole. ◎ Cible permet aussi de sélectionner.</p>
 <div class="under-actions"><button type="button" id="back">← Retour au plateau</button><button type="button" id="next">Suivant · Sans points →</button></div>
 </main><div class="footer">Paris, 2002 · Rues réelles, distances adaptées. Boutiques et rencontres librement interprétées.<br>Personnages Kenney et Quaternius (CC0) · Les Treize Chemins · Chapitre 4, p. 59–60.</div></div>
-<script src="manifestation-runtime.js?v=20261114-paris-v1"></script></body></html>
+<script src="manifestation-runtime.js?v=20261114-vivants-v2"></script></body></html>

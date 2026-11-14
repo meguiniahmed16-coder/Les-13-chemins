@@ -42,7 +42,7 @@ test('Guide silencieux sans inscription permanente',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes('const GUIDE_STOPS=['));
  assert.ok(js.includes('redGuide=person(5)'));
- assert.ok(js.includes("flag(redGuide,'red'"));
+ assert.ok(js.includes("heldFlag(redGuide,'red'"));
  assert.ok(js.includes('function updateRedGuide(dt,time){'));
  assert.ok(!js.includes('guideCaption'));
  assert.ok(!js.includes('SUIS LE DRAPEAU ROUGE'));
@@ -118,9 +118,9 @@ test('CRS distincts et cortège de couleur',()=>{
  assert.ok(js.includes('officer.baseX=(i-1.5)*2.35'));
  assert.ok(js.includes('officer.actor.scale.setScalar(1.30)'));
  assert.ok(js.includes('genouillère'));
- assert.ok(js.includes("banner(rallyProps,'TOUS ENSEMBLE',0,-5.3,5.5,'#d9514e'"));
- assert.ok(js.includes("flag(rallyProps,'red'"));
- assert.ok(js.includes("flag(adverseSymbols,'red'"));
+ assert.ok(js.includes("'TOUS ENSEMBLE'"));
+ assert.ok(js.includes("heldFlag(crowdActors[index].guy,style)"));
+ assert.ok(js.includes("heldFlag(bastilleActors[i].guy,style)"));
 });
 test('La fonction activeWave est importée pour la troisième étape après la statue',()=>{
  const code=read('manifestation-app.js');
@@ -264,7 +264,7 @@ test('La rue adjacente est vide, puis drapeau porté, puis foule',()=>{
  assert.ok(alley.includes('Rue adjacente'));
  assert.ok(!alley.includes('makeCrowd(root,'));
  assert.ok(scene.includes('statue(root)'));
- assert.ok(scene.includes("if(phase>=2)flag(hero,'france'"));
+ assert.ok(scene.includes("if(phase>=2)heldFlag(hero,'france'"));
  assert.ok(js.includes('function populateMarch(root){')&&js.includes('for(const pick of WEAPONS)weaponPickup(root,pick)'));
 });
 test('Sélection tactile des objets/CRS et commande Cible accessible',()=>{
@@ -308,7 +308,8 @@ test('La seconde foule suit après avoir été traversée',()=>{
  assert.ok(js.includes('bastilleCrowd.visible=run.z>=92'));
  assert.ok(js.includes('i<run.joined'));
  assert.ok(js.includes('behindNarrator(run.z,run.leaderZ-3-i*.21,6.2)'));
- assert.ok(js.includes('adverseSymbols.position.z=run.z-107'));
+ assert.ok(js.includes('updateCarriedProps();'));
+ assert.ok(js.includes('const all=[...bastilleActors,...crowdActors]'));
 });
 test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  const html=read('jeu-manifestation.html'),reader=read('rendezvous-plateau.js'),page=read('jeu.html'),book=read('chapitre1-plateau.js');
@@ -316,8 +317,8 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261114-paris-v1'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261114-paris-v1'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261114-vivants-v2'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261114-vivants-v2'));
  assert.match(page,/rendezvous-plateau\.js\?v=[^"]+/);
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
@@ -467,6 +468,6 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
- assert.ok(html.includes('JAUNE : agir'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261114-paris-v1'));
+ assert.ok(html.includes('JAUNE pour le récupérer'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261114-vivants-v2'));
 });

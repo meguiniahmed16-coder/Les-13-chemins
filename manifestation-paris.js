@@ -1,5 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {readableTextGeometry} from './manifestation-props.js';
+import {createParkedCar} from './manifestation-cars.js';
 import {PARIS_NODES as nodes,PARIS_STREETS as streets} from './manifestation-walk.js';
 const mats=new Map(),texts=new Map(),cube=new T.BoxGeometry(1,1,1),orb=new T.IcosahedronGeometry(1,1);
 const material=c=>{if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.88}));return mats.get(c);};
@@ -13,22 +15,23 @@ export function streetSign(text,width=5,bg='#193d48',fg='#fff3cf'){
   const c=document.createElement('canvas');c.width=768;c.height=192;const q=c.getContext('2d');
   q.fillStyle=bg;q.fillRect(0,0,768,192);q.strokeStyle=fg;q.lineWidth=5;q.strokeRect(12,12,744,168);
   q.fillStyle=fg;q.textAlign='center';q.font='20px Georgia';q.fillText('PARIS',384,43);q.font='600 41px Georgia';q.fillText(text,384,114,710);
-  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;m=new T.MeshBasicMaterial({map:tex,side:T.DoubleSide});texts.set(key,m);
+  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;m=new T.MeshBasicMaterial({map:tex,side:T.FrontSide});texts.set(key,m);
  }
- return new T.Mesh(new T.PlaneGeometry(width,width*.25),m);
+ return new T.Mesh(readableTextGeometry(width,width*.25),m);
 }
 function sign(g,text,x,y,z,angle=0,width=5,bg,fg){const s=streetSign(text,width,bg,fg);s.position.set(x,y,z);s.rotation.y=angle;g.add(s);return s;}
 function mergeStatic(g){
  g.updateMatrixWorld(true);const batches=new Map();
- g.traverse(m=>{if(!m.isMesh)return;const p=m.matrixWorld.elements,key=m.material.uuid+'@'+Math.floor(p[12]/24)+','+Math.floor(p[14]/24);let b=batches.get(key);if(!b){b={mat:m.material,geo:[]};batches.set(key,b);}const geo=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();geo.applyMatrix4(m.matrixWorld);b.geo.push(geo);});
+ g.traverse(m=>{if(!m.isMesh)return;const p=m.matrixWorld.elements,key=m.material.uuid+'@'+Math.floor(p[12]/24)+','+Math.floor(p[14]/24);let b=batches.get(key);if(!b){b={mat:m.material,geo:[]};batches.set(key,b);}const geo=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();if(!m.material.map)geo.deleteAttribute('uv');geo.applyMatrix4(m.matrixWorld);b.geo.push(geo);});
  g.clear();g.position.set(0,0,0);g.rotation.set(0,0,0);
- for(const b of batches.values()){const geo=mergeGeometries(b.geo);b.geo.forEach(x=>x.dispose());if(geo){geo.computeBoundingSphere();const m=new T.Mesh(geo,b.mat);m.receiveShadow=true;g.add(m);}}
+ for(const b of batches.values()){const geo=mergeGeometries(b.geo);b.geo.forEach(x=>x.dispose());if(!geo)throw Error('Incompatible Paris geometry');if(geo){geo.computeBoundingSphere();const m=new T.Mesh(geo,b.mat);m.receiveShadow=true;g.add(m);}}
  return g;
 }
 function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);}
 function safeBuilding(x,z,own){
- if(Math.hypot(x-6,z-5)<32||Math.hypot(x-7,z-224)<24)return false;
- return streets.every(e=>e.id===own||segmentDistance(x,z,nodes[e.a],nodes[e.b])>e.width/2+6.2);
+ if(z>288&&x< -65)return false;
+ if(Math.hypot(x-6,z-5)<32||Math.hypot(x-7,z-224)<24||((x< -175)&&(z>145&&z<270)))return false;
+ return streets.every(e=>e.id===own||segmentDistance(x,z,nodes[e.a],nodes[e.b])>e.width/2+9.0);
 }
 const stones=[0xd9c5aa,0xcfc1aa,0xd4cbb7,0xd7bfa4,0xc8bca9,0xddcfb9],awnings=[0x3b6157,0x8e4039,0x354a64,0xb39b65];
 function house(root,x,z,angle,seed){
@@ -69,7 +72,7 @@ function bastille(g){
 }
 export function createParisCity(){
  const root=new T.Group();root.name='Paris — réseau de rues';
- box(root,-20,-.28,110,210,.3,330,0xb0aa98);
+ box(root,-83,-.28,123,330,.3,370,0xb0aa98);
  // Public space around the monument: buildings stay outside the square.
  box(root,6,-.07,0,65,.12,60,0xbbb3a0);box(root,6,-.005,5,38,.05,30,0xd6cbb6);
  for(let i=-2;i<=2;i++)box(root,6+i*7,.026,5,.06,.015,28,0xb6aa96);
@@ -78,30 +81,60 @@ export function createParisCity(){
  for(const [index,e] of streets.entries()){
   const a=nodes[e.a],b=nodes[e.b],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz),u={x:dx/len,z:dz/len},n={x:u.z,z:-u.x},angle=Math.atan2(dx,dz);
   const road=new T.Group();road.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);road.rotation.y=angle;root.add(road);
-  box(road,0,-.035,0,e.width,.12,len+2,0x68716e);
+  box(road,0,-.035,0,e.width+4.4,.12,len+2,0x68716e);
   // Pavements finish short of junctions, leaving an open turning area.
-  for(const side of [-1,1]){box(road,side*(e.width/2+1.25),.015,0,2.5,.20,Math.max(1,len-9),0xc9bea9);box(road,side*(e.width/2+.07),.12,0,.14,.20,Math.max(1,len-9),0xa49e8e);}
+  for(const side of [-1,1]){box(road,side*(e.width/2+3.5),.015,0,2.6,.20,Math.max(1,len-9),0xc9bea9);box(road,side*(e.width/2+2.27),.12,0,.14,.20,Math.max(1,len-9),0xa49e8e);}
   if(e.width>14)for(let p=12;p<len-8;p+=10)box(road,0,.034,p-len/2,.09,.018,2.5,0xd4cab1);
   for(let x=-e.width/2+1;x<e.width/2;x+=1.5)box(road,x,.035,-len/2+5,.8,.02,2.4,0xdcd8c6);
   for(let t=13;t<len-9;t+=13)for(const side of [-1,1]){
-   const ox=n.x*side*(e.width/2+6),oz=n.z*side*(e.width/2+6),x=a.x+u.x*t+ox,z=a.z+u.z*t+oz;
+   const ox=n.x*side*(e.width/2+8.7),oz=n.z*side*(e.width/2+8.7),x=a.x+u.x*t+ox,z=a.z+u.z*t+oz;
    if(safeBuilding(x,z,e.id))house(root,x,z,angle+(side<0?-Math.PI/2:Math.PI/2),index*11+Math.floor(t/13));
   }
   for(let t=14;t<len-8;t+=23){for(const side of [-1,1]){
-   const x=a.x+u.x*t+n.x*side*(e.width/2+1.2),z=a.z+u.z*t+n.z*side*(e.width/2+1.2);
+   const x=a.x+u.x*t+n.x*side*(e.width/2+2.7),z=a.z+u.z*t+n.z*side*(e.width/2+2.7);
    lamp(root,x,z);if(e.width>14&&t>28)tree(root,x+u.x*5,z+u.z*5,index);
   }}
-  sign(root,e.name,a.x+u.x*9+n.x*(e.width/2+1),3.3,a.z+u.z*9+n.z*(e.width/2+1),angle+Math.PI,Math.min(7,e.name.length*.21));
+  for(let t=16;t<len-12;t+=14)for(const side of [-1,1]){
+   if((Math.floor(t/14)+index+(side+1)/2)%4===0)continue;
+   const at=t+(side<0?3:0),x=a.x+u.x*at+n.x*side*(e.width/2+1.15),z=a.z+u.z*at+n.z*side*(e.width/2+1.15);
+   if(streets.some(other=>other.id!==e.id&&segmentDistance(x,z,nodes[other.a],nodes[other.b])<other.width/2+4))continue;
+   const car=createParkedCar(index+Math.floor(t/14),[0x6e7b83,0x923f43,0xd0cbc0,0x395d76,0x46584f,0xb6b8b4][(index+Math.floor(t/14)+(side+1))%6]);
+   car.position.set(x,.05,z);car.rotation.y=angle+(side<0?0:Math.PI);root.add(car);
+  }
+  sign(root,e.name,a.x+u.x*9+n.x*(e.width/2+3),3.3,a.z+u.z*9+n.z*(e.width/2+3),angle+Math.PI,Math.min(7,e.name.length*.21));
  }
  metro(root,'Filles-du-Calvaire',10,65);metro(root,'Saint-Sébastien–Froissart',10,105);metro(root,'Chemin Vert',13,166);
  // Continuous outer blocks close the views beyond each real junction.
- for(let z=-20,i=0;z<248;z+=13,i++)for(const side of [-1,1]){const x=side<0?-79:45;if(safeBuilding(x,z))house(root,x,z,side<0?-Math.PI/2:Math.PI/2,300+i+(side+1)*8);}
- for(let x=-64,i=0;x<50;x+=13,i++)for(const z of [-39,260])if(safeBuilding(x,z))house(root,x,z,z<0?Math.PI:0,350+i);
+ for(let z=-20,i=0;z<248;z+=13,i++)for(const side of [-1,1]){const x=side<0?-209:45;if(safeBuilding(x,z))house(root,x,z,side<0?-Math.PI/2:Math.PI/2,300+i+(side+1)*8);}
+ for(let x=-199,i=0;x<50;x+=13,i++)for(const z of [-39,323])if(safeBuilding(x,z))house(root,x,z,z<0?Math.PI:0,350+i);
  // Broad Bastille junction and the distant July Column.
  box(root,8,-.025,224,48,.10,34,0x6b7470);bastille(root);
  // Benches, a newspaper kiosk and café tables give the squares a human scale.
  for(const [x,z] of [[-17,5],[-17,15],[20,-13],[-29,121]]){box(root,x,.5,z,2.2,.17,.7,0x486157);box(root,x,.86,z+.25,2.2,.65,.13,0x486157);for(const s of [-1,1])box(root,x+s*.75,.25,z,.12,.5,.6,0x263d38);}
  const kiosk=new T.Mesh(new T.CylinderGeometry(1.25,1.25,2.5,8),material(0x315649));kiosk.position.set(-18,1.25,-19);root.add(kiosk);
  const roof=new T.Mesh(new T.ConeGeometry(1.8,1.0,8),material(0x375249));roof.position.set(-18,3,-19);root.add(roof);sign(root,'JOURNAUX',-18,2,-20.3,Math.PI,2.2,'#e2c58d','#354a41');
+ parisLandmarks(root);
  return mergeStatic(root);
+}
+
+function parisLandmarks(g){
+ // Pompidou: exterior services, steel frame and the red escalator tube.
+ box(g,-192,9.4,178,24,18.8,25,0xd4d2bf);
+ for(let z=167;z<=189;z+=5.5)for(const x of [-205,-179]){rod(g,[x,.1,z],[x,21,z],.11,0xe0e0d3);rod(g,[x,4,z],[x,18,z+4],.07,0xb1c0bc);}
+ for(const y of [4,8,12,16,20]){rod(g,[-205,y,165],[-179,y,165],.1,0xd5dfd6);box(g,-192,y+1.3,165,22,2.2,.12,0x6c8e94);}
+ for(let i=0;i<5;i++)rod(g,[-178.6+i*.28,.2,170+i*3.8],[-178.6+i*.28,20,170+i*3.8],.16,[0x477fab,0xb68e42,0x49987f][i%3]);
+ rod(g,[-205,2,164],[-180,17,164],.55,0xab4437);sign(g,'CENTRE POMPIDOU',-192,21.8,164,Math.PI,13);
+ // Hôtel de Ville: pale stone, pitched roofs, clock and paired pavilions.
+ box(g,-184,6.8,252,27,13.6,22,0xd4c7b1);box(g,-184,14,252,28,1.1,23,0x61717c);
+ for(const x of [-195,-173]){box(g,x,10.4,252,5.2,20.8,23,0xcdbea5);const roof=new T.Mesh(new T.ConeGeometry(4,4.8,4),material(0x596a76));roof.position.set(x,23,252);roof.rotation.y=Math.PI/4;g.add(roof);rod(g,[x,24.5,252],[x,27,252],.07,0xa28e63);}
+ for(let z=243;z<262;z+=3.5)for(const y of [4,8,12])box(g,-170.4,y,z,.12,1.8,1.2,0x4a5d65);
+ const clock=new T.Mesh(new T.CircleGeometry(.82,16),material(0xf2e5c9));clock.rotation.y=Math.PI/2;clock.position.set(-170.3,16,252);g.add(clock);
+ rod(g,[-170.2,16,252],[-170.2,16.6,252],.035,0x42515b);rod(g,[-170.2,16,252],[-170.2,15.85,252.5],.035,0x42515b);
+ sign(g,'HÔTEL DE VILLE',-170.2,13.9,252,Math.PI/2,8);
+ // The Seine is beyond the walkable quay; no route crosses open water.
+ box(g,-133,-.18,310,151,.12,28,0x658f96);
+ for(let z=300;z<324;z+=4)for(let x=-200;x< -65;x+=18)box(g,x,-.10,z,8,.02,.11,0x95b7b4);
+ box(g,-133,.09,294,151,.24,5.8,0xc8bea6);box(g,-133,.6,296.8,151,1.0,.65,0xb8b099);
+ for(let x=-200;x< -65;x+=12){box(g,x,.72,296.8,.9,1.4,.9,0xcac0a9);lamp(g,x,292.8);}
+ sign(g,'LA SEINE',-127,2.3,295.7,Math.PI,7,'#315c61','#efe5c7');
 }

@@ -204,7 +204,7 @@
   }
   if(reader.open)reader.close();
   if(!dialog.open)dialog.showModal();
-  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261114-paris-v1';}else initIframe();
+  if(!loading){loading=true;frame.src='jeu-manifestation.html?embedded=1&v=20261114-vivants-v2';}else initIframe();
  }
  function beginGame(){openDialog();}
  function initIframe(){
