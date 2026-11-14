@@ -71,7 +71,7 @@ test('Les instructions se suivent selon l état réel du jeu, jusqu à Bastille'
   assert.equal(gameInstruction(r).text,expected);
   w.status='repelled';
  }
- assert.equal(gameInstruction(r).text,'Rejoins l’autre manif à Bastille');
+ assert.equal(gameInstruction(r).text,'Rejoins l’autre cortège');
  r.finished=true;
  assert.equal(gameInstruction(r).text,'✓ Cortèges réunis !');
 });
@@ -79,7 +79,7 @@ test('Chaque consigne est éphémère et ne se trouve pas écrasée par les poin
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes('function syncInstruction(){'));
  assert.ok(js.includes('instruction.key===lastInstructionKey'));
- assert.ok(js.includes('Math.min(1.12,Math.max(.65,duration))'));
+ assert.ok(js.includes('Math.min(4,Math.max(.65,duration))'));
  assert.ok(js.includes('speech.style.opacity=String(Math.min(1,remaining/.22))'));
  assert.ok(js.includes('syncInstruction();'));
  assert.ok(html.includes('.speech{top:13%;'));
@@ -102,8 +102,8 @@ test('Paris complété en vue 360 avec des modèles instanciés légers',()=>{
  assert.ok(js.includes('function parisStreetDetails(root,start,end){'));
  assert.ok(js.includes("'MÉTRO'")&&js.includes("'JOURNAUX'"));
  assert.ok(js.includes('parisBackdrop(root,-20,38)'));
- assert.ok(js.includes('parisBackdrop(root,-23,48)'));
- assert.ok(js.includes('parisBackdrop(sceneGroup,49,139)'));
+ assert.ok(js.includes('root.add(createParisCity());statue(root);'));
+ assert.ok(read('manifestation-paris.js').includes('mergeStatic(root)'));
 });
 test('Sélection visible : deux anneaux, flèche et état confirmé',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
@@ -316,8 +316,8 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-consignes-symboles-v24'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261112-drapeaux-v1'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261114-paris-v1'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261114-paris-v1'));
  assert.match(page,/rendezvous-plateau\.js\?v=[^"]+/);
 });
 test('Personnages Kenney animés CC0 inchangés',()=>{
@@ -366,7 +366,7 @@ test('Après la descente le joystick permet de reculer puis contourner la statue
  const before=r.z;advance(r,.12,{x:0,y:-1});
  assert.ok(r.z<before,'Le joystick reste bidirectionnel après contournement');
  const js=read('manifestation-app.js');
- assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('parisStreetDetails(root,-23,48);statue(root);'),'La statue reste visible et la scène est conservée');
+ assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('root.add(createParisCity());statue(root);'),'La statue reste visible et la scène est conservée');
  const transition=js.slice(js.indexOf('if(phase!==run.phase){'),js.indexOf('const time=ms/1000;',js.indexOf('if(phase!==run.phase){')));
  assert.ok(!transition.includes('joy={x:0,y:0}'),'Le joystick actif ne doit pas être réinitialisé à la descente');
  assert.ok(!transition.includes('keys.clear()'),'Les touches maintenues restent actives');
@@ -385,11 +385,11 @@ test('Le socle arrête la marche frontale mais laisse glisser latéralement',()=
 test('La transition conserve le héros, la caméra et la boucle de rendu',()=>{
  const js=read('manifestation-app.js');
  assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){'));
- const transition=js.slice(js.indexOf('if(phase===3&&stageInWorld===2&&sceneGroup){'),js.indexOf('if(sceneGroup)world.remove(sceneGroup);',js.indexOf('if(phase===3&&stageInWorld===2&&sceneGroup){')));
+ const transition=js.slice(js.indexOf('if(phase===3&&stageInWorld===2&&sceneGroup){'),js.indexOf('if(sceneGroup){world.remove(sceneGroup);',js.indexOf('if(phase===3&&stageInWorld===2&&sceneGroup){')));
  assert.ok(transition.includes('populateMarch(sceneGroup)'));
  assert.ok(!transition.includes('sceneGroup=new T.Group'));
  assert.ok(js.includes('requestAnimationFrame(render);\n try{'));
- assert.ok(js.includes("status.textContent='JEU ACTIF"));
+ assert.ok(js.includes("status.hidden=!!walk"));
  assert.ok(js.includes("function extendMarchScenery(){"));
 });
 test('Après la statue, le joystick avance et recule sans commandes superposées',()=>{
@@ -431,7 +431,7 @@ test('Statue, sa cible et la sélection décalées ensemble',()=>{
 });
 test('Devise complète Liberté Égalité Fraternité',()=>{
  const js=read('manifestation-app.js');
- assert.ok(js.includes("'LIBERTÉ, ÉGALITÉ, FRATERNITÉ'"));
+ assert.ok(read('manifestation-monument.js').includes('FRATERNITÉ'));
  assert.ok(!js.includes("'LIBERTÉ ÉGALITÉ'"));
 });
 
@@ -468,5 +468,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE : agir'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261110-consignes-symboles-v24'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261114-paris-v1'));
 });

@@ -25,7 +25,7 @@ for (const args of [
   ['build-danse.mjs'],
   ['--test','danse-finale.test.mjs','danse-choreography.test.mjs','danse-embedded-assets.test.mjs','danse-preview-build.test.mjs'],
   ['build-manifestation.mjs'],
-  ['--test', 'manifestation.test.mjs'],
+  ['--test', 'manifestation.test.mjs', 'manifestation-walk.test.mjs'],
   ['build-catalogne-3d.mjs'],
   ['--test', 'catalogne-3d.test.mjs'],
   ['build-cyrano.mjs'],

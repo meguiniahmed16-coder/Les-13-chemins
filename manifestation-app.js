@@ -4,6 +4,12 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
+import {makeCitizen,animateCitizen} from './catalogne-characters.js';
+import {createCrowdMotion} from './manifestation-crowd-motion.js';
+import {ParkSoftwareRenderer} from './catalogne-software.js';
+import {createParisCity} from './manifestation-paris.js';
+import {createRepublicMonument} from './manifestation-monument.js';
+import {PARIS_NODES,PARIS_STREETS,newWalk,streetChoices,chooseStreet,advanceWalk,restoreWalk,mapMarkup} from './manifestation-walk.js';
 import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,activeWave,gameInstruction,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
 const $=id=>document.getElementById(id);
 const canvas=$('world'),score=$('score'),hint=$('hint'),title=$('goal'),label=$('phase');
@@ -13,6 +19,9 @@ const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 let sessionId='standalone',serverSteps=[],run=newRun(),playing=false,paused=false,gameReady=false;
 let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,bastilleActors=[],policeGroups=[],heartBursts=[],heartAscents=[],escortInstances=null,rallyProps=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
 const templates=[];
+let citizenAsset=null,crowdMotion=null,walk=null,trail=[],trailDistance=0,rallyUntil=0,talkIndex=0,lastWalkSave=0;
+const WALK_KEY='treize-camarades-promenade-v1';
+const NEAR_CROWD=44,FAR_CROWD=144;
 const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let crowdLoading=false;
 let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,lastHud=0;
@@ -29,7 +38,7 @@ const colors={
  skin:[0xd9a176,0x966044,0xe4bf95,0x6b4738,0xc78a65,0xa97a58,0xf1c8a4],
  hair:[0x382b27,0x67402c,0x9b6a3d,0x26272b,0x513b34]
 };
-const world=new T.Scene();world.background=new T.Color(0xc3d3d5);world.fog=new T.FogExp2(0xc3d3d5,.010);
+const world=new T.Scene();world.background=new T.Color(0xc3d3d5);world.fog=new T.FogExp2(0xc3d3d5,.0055);
 const camera=new T.PerspectiveCamera(62,16/9,.08,190);
 let renderer;
 try{
@@ -40,10 +49,11 @@ try{
  renderer.toneMappingExposure=1.19;
  gameReady=false;
 }catch(error){
- $('overlayTitle').textContent='La 3D ne démarre pas';
- $('overlayText').textContent='Le navigateur ne parvient pas à activer WebGL. Ouvre le jeu directement dans Chrome ou réessaie après avoir fermé les autres jeux.';
- $('start').hidden=true;
+ try{renderer=new ParkSoftwareRenderer({canvas});canvas.dataset.renderer='compatible';}
+ catch{ $('overlayTitle').textContent='La 3D ne démarre pas';$('overlayText').textContent='Réessaie après avoir fermé les autres jeux.';$('start').hidden=true;}
 }
+canvas.dataset.version='camarades-paris-v1';
+canvas.dataset.renderer??='webgl';
 const ambient=new T.HemisphereLight(0xe8f3ff,0x82735e,2.7);world.add(ambient);
 const sun=new T.DirectionalLight(0xfff0cf,2.3);sun.position.set(-13,34,21);world.add(sun);
 const gBox=new T.BoxGeometry(1,1,1),gSphere=new T.SphereGeometry(1,10,8);
@@ -101,6 +111,14 @@ function modelPerson(id,opts={}){
  return actor;
 }
 function person(id,opts={}){
+ if(citizenAsset){
+  const citizen=makeCitizen(citizenAsset,id,opts.hero?'hero':id%9===0?'client':'walker','#c58e56');
+  crowdMotion??=createCrowdMotion(citizen.rig);
+  citizen.rig.group.rotation.y=0;
+  if(opts.hero)clothCap(citizen.group,id,true);
+  citizen.group.userData={...citizen.group.userData,id,citizen,previousTime:null,hero:!!opts.hero,offset:rnd(id+7)*6.28};
+  return citizen.group;
+ }
  if(templates.length)return modelPerson(id,opts);
  const actor=new T.Group();
  const group=new T.Group();actor.add(group);
@@ -142,6 +160,11 @@ function person(id,opts={}){
 }
 function walking(actor,time,strength,signal=false){
  const a=actor.userData;
+ if(a.citizen){const dt=Math.max(0,Math.min(.06,a.previousTime===null?0:time-a.previousTime));a.previousTime=time;
+  if(a.hero){animateCitizen(a.citizen,dt,strength>.38,false);if(signal){const arm=a.citizen.rig.bones.UpperArm_R?.bone;if(arm)arm.rotation.z-=.6+Math.sin(time*5)*.15;}}
+  else crowdMotion.apply(a.citizen.rig,time+a.offset,strength>.38,signal);
+  return;
+ }
  if(a.mixer){
   const dt=Math.max(0,Math.min(.05,a.previousTime===null?0:time-a.previousTime));
   a.previousTime=time;
@@ -297,37 +320,14 @@ function parisSidewalkPedestrians(root,start,end){
 }
 function statue(sceneRoot){
  const root=new T.Group();root.position.x=STATUE.x;sceneRoot.add(root);
- // Monument interprété : le joueur monte par un escalier visible sur le socle.
- addBox(root,0,.3,5,6,1.0,6,0xa5a39a);
- addBox(root,0,1.05,5,4.5,.55,4.5,0xbdb6a3);
- addBox(root,0,2.05,5,3.1,1.55,3.1,0xe1d4b7);
- addBox(root,0,3.15,5,3.8,.20,3.8,0xb5aa94);
- // Marches claires sur la face avant gauche, de la rue au sommet.
- for(let i=0;i<10;i++){
-  const height=(i+1)*.332;
-  const z=.35+i*(3.13/9);
-  addBox(root,-1.15,height/2,z,1.35,height,.38,i%2?0xc6b49a:0xe4d4b5);
-  addBox(root,-1.15,height+.015,z,1.4,.025,.38,0xf1e3c8);
- }
- const entrance=roundedText('ACCÈS AU SOCLE ↑',3.2,'#f6e9c8','#405744');
- entrance.position.set(-1.15,.27,-.30);root.add(entrance);
- const bronze=mat(0x527e71,.45);
- root.add(mesh(gCyl,bronze,0,4.56,5,.60,1.35,.60));
- root.add(mesh(gCone,bronze,0,6.3,5,.65,1.6,.65));
- root.add(mesh(gSphere,bronze,0,7.16,5,.38,.42,.33));
- root.add(mesh(gCone,bronze,0,7.58,5,.56,.28,.56));
- // Raised forearm and laurel on the Republic figure.
- const arm=mesh(gCyl,bronze,.56,6.66,5,.12,.95,.12);arm.rotation.z=-.45;root.add(arm);
- root.add(mesh(gSphere,mat(0xc9af67,.5),.79,7.65,5,.20,.26,.18));
- const plaque=roundedText('RÉPUBLIQUE',4.2);plaque.position.set(0,1.83,6.64);root.add(plaque);
- for(const x of [-2.4,2.4])for(const z of [2.6,7.4])root.add(mesh(gCyl,mat(0x8b8b82),x,.75,z,.18,.8,.18));
+ const monument=createRepublicMonument();monument.position.z=STATUE.z;root.add(monument);
 }
 function makeCrowd(root,count,baseZ,{reveal=false,spread=7}={}){
  const arr=[];
  for(let i=0;i<count;i++){
   const guy=person(i+17+(reveal?221:0));
-  const x=(rnd(i*17+5)-.5)*spread*2;
-  const z=baseZ+(rnd(i*13+9)-.5)*13;
+  const x=((i%7)-3)*Math.min(1.65,spread/3)+(rnd(i*17+5)-.5)*.35;
+  const z=baseZ-Math.floor(i/7)*1.65+(rnd(i*13+9)-.5)*.45;
   guy.position.set(x,0,z);guy.rotation.y=rnd(i+100)*.3-.15;
   root.add(guy);arr.push({guy,x,z,seed:i});
  }
@@ -357,16 +357,16 @@ function moveEscortInstances(){
  if(!escortInstances)return;
  const {body,head,legs,hat,count,hatCount}=escortInstances;
  const dummy=new T.Object3D();
- const center=run.phase===3?run.leaderZ:run.z-7;
+ const center=run.z-20;
  for(let i=0;i<count;i++){
-  const x=clamp(run.x*.28+(rnd(i*31+5)-.5)*8.5,-7,7);
-  const z=behindNarrator(run.z,center-1.5+(rnd(i*61+1)-.5)*6.0,4.8);
+  const x=clamp(run.x*.28+((i%8)-3.5)*.85+(rnd(i*31+5)-.5)*.3,-7,7);
+  const z=center-Math.floor(i/8)*1.35+(rnd(i*61+1)-.5)*.3;
   dummy.position.set(x,.95,z);dummy.scale.set(.42,.77,.28);dummy.updateMatrix();body.setMatrixAt(i,dummy.matrix);
   dummy.position.set(x,1.66,z);dummy.scale.set(.19,.22,.18);dummy.updateMatrix();head.setMatrixAt(i,dummy.matrix);
   dummy.position.set(x,.4,z);dummy.scale.set(.33,.80,.24);dummy.updateMatrix();legs.setMatrixAt(i,dummy.matrix);
   if(i<hatCount){dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}
  }
- for(const part of [body,head,legs,hat])part.instanceMatrix.needsUpdate=true;
+ for(const part of [body,head,legs,hat]){part.instanceMatrix.needsUpdate=true;part.computeBoundingSphere();}
 }
 function crowdSymbols(root,tricolor=false){
  rallyProps=new T.Group();root.add(rallyProps);
@@ -665,10 +665,14 @@ function populateBastille(root){
 function extendMarchScenery(){
  if(run.phase!==3||!sceneGroup)return;
  if(!avenueExtended&&run.z>=18){
-  avenueExtended=true;buildings(sceneGroup,46,138,true);
-  parisStreetDetails(sceneGroup,49,135);parisBackdrop(sceneGroup,49,139);
+  avenueExtended=true; // Full connected Paris streets are already present.
  }
  if(!bastilleReady&&run.z>=75)populateBastille(sceneGroup);
+}
+function disposeStage(root){
+ const geometries=new Set(),materials=new Set(),textures=new Set();
+ root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});
+ geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
 }
 function sceneFor(phase){
  if(phase===3&&stageInWorld===2&&sceneGroup){
@@ -679,7 +683,7 @@ function sceneFor(phase){
   world.background.setHex(0xc3d4d9);world.fog.color.setHex(0xc3d4d9);
   return;
  }
- if(sceneGroup)world.remove(sceneGroup);
+ if(sceneGroup){world.remove(sceneGroup);disposeStage(sceneGroup);}
  sceneGroup=new T.Group();world.add(sceneGroup);
  stageFlags=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];
  policeGroups=[];heartBursts=[];heartAscents=[];escortInstances=null;rallyProps=null;
@@ -701,14 +705,14 @@ function sceneFor(phase){
   flag(redGuide,'red',.25,1.04,.10,3.15);
   // Le personnage guide par son déplacement, sans inscription permanente.
  }else if(phase===2){
-  buildings(root,-23,48,true);parisBackdrop(root,-23,48);parisStreetDetails(root,-23,48);statue(root);
-  crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
-  distantCrowd(root,-8,24,true);crowdSymbols(root,true);
+  root.add(createParisCity());statue(root);
+  crowdActors=makeCrowd(root,NEAR_CROWD,-7.5,{spread:6.2});
+  distantCrowd(root,-8,FAR_CROWD,true);crowdSymbols(root,true);
   addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8,{type:'statue'});
  }else{
-  buildings(root,-23,48,true);parisBackdrop(root,-23,48);parisStreetDetails(root,-23,48);statue(root);
-  crowdActors=makeCrowd(root,16,-7.5,{spread:4.8});
-  distantCrowd(root,-8,24,true);crowdSymbols(root,true);
+  root.add(createParisCity());statue(root);
+  crowdActors=makeCrowd(root,NEAR_CROWD,-7.5,{spread:6.2});
+  distantCrowd(root,-8,FAR_CROWD,true);crowdSymbols(root,true);
   populateMarch(root);
  }
  hero=person(2,{hero:true});root.add(hero);
@@ -732,10 +736,10 @@ function sceneFor(phase){
 
 function messageFeedback(text,duration=1.05){
  speech.textContent=text;speech.hidden=false;speech.style.opacity='1';
- showSpeechUntil=performance.now()/1000+Math.min(1.12,Math.max(.65,duration));
+ showSpeechUntil=performance.now()/1000+Math.min(4,Math.max(.65,duration));
 }
 function syncInstruction(){
- if(!playing||paused)return;
+ if(!playing||paused||walk)return;
  const instruction=gameInstruction(run);
  if(!instruction||instruction.key===lastInstructionKey)return;
  lastInstructionKey=instruction.key;
@@ -743,7 +747,8 @@ function syncInstruction(){
 }
 function refreshHUD(){
  const p=run.phase,n=run.steps.length;
- title.textContent=p===1?'① Drapeau':p===2?'② République':'③ Bastille';
+ $('chapter-sky').classList.toggle('chapter-side',p>=2);
+ title.textContent=walk?'PAR LÀ…':p===1?'① Drapeau':p===2?'② République':'③ Les cortèges';
  label.textContent='';score.textContent=String(serverSteps.length*10);
  steps.forEach((el,i)=>{el.classList.toggle('done',i<n);el.textContent=i<n?'✓':String(i+1);});
  const pct=p===3?run.cohesion:100;
@@ -776,7 +781,7 @@ function refreshHUD(){
   const status=$('crsMini');
   const repelled=run.crsWaves.filter(w=>w.status==='repelled').length;
   status.textContent='✦ '+repelled+'/3 · '+run.joined+'/16';
-  status.hidden=false;
+  status.hidden=!!walk;
  }else $('crsMini').hidden=true;
 }
 
@@ -788,13 +793,12 @@ function drain(){
    send('manifestation:progress',{step:e.step});
   }
   if(e.type==='corner')cornerTurn=1.55;
-  if(e.type==='shout')voiceCamarades();
+  if(e.type==='shout'){voiceCamarades();rallyUntil=performance.now()/1000+4.5;}
   if(e.type==='projectile:fire'){sendProjectile(e.wave,e.officer,e.kind,e.duration);sound(710,.1);}
   if(e.type==='projectile:hit'){transformOfficer(e.wave,e.officer,e.kind);sound(920,.1);}
   if(e.type==='won'){
-   messageFeedback('✓ Cortèges réunis !',1.05);
    send('manifestation:won');
-   playing=false;paused=false;
+   beginPromenade(null,true);
   }
  }
 }
@@ -804,15 +808,16 @@ function start(){
  if(!gameReady)return;
  $('renderError').hidden=true;renderFailureReported=false;lastControlDisplay=0;lastInstructionKey=null;
  $('controlsStatus').hidden=true;
- $('start').textContent='Commencer le jeu';run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
+ walk=null;trail=[];$('chapter-sky').hidden=false;$('routePanel').hidden=true;$('walkActions').hidden=true;$('districtMap').hidden=true;
+ $('start').textContent='Commencer le récit';$('freeWalk').hidden=false;$('pause').textContent='Pause';$('next').textContent='Suivant · Sans points →';$('targetChip').hidden=false;run=newRun();sceneFor(run.phase);playing=true;paused=false;actionTransition=0;lastHud=0;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
  overlay.hidden=true;refreshHUD();lastSound=0;
  syncInstruction();
 }
 function pause(){
  if(!playing)return;paused=!paused;
  $('pause').textContent=paused?'Reprendre':'Pause';
- if(paused){card('Pause','La foule attend. Reprends quand tu veux.');$('start').textContent='Reprendre';refreshHUD();}
- else {overlay.hidden=true;refreshHUD();}
+ if(paused){$('routePanel').hidden=true;$('districtMap').hidden=true;card('Pause','La foule attend. Reprends quand tu veux.');$('start').textContent='Reprendre';$('freeWalk').hidden=true;$('resumeWalk').hidden=true;refreshHUD();}
+ else {overlay.hidden=true;if(walk?.waiting)showJunction();refreshHUD();refreshParisHUD();}
 }
 let audioCtx=null,lastSound=0;
 function sound(freq,length){
@@ -836,12 +841,14 @@ function voiceCamarades(){
 }
 function callCrowd(){
  if(!playing||paused)return;
+ if(walk){rally();return;}
  const fired=red(run);
  if(fired){drain();syncInstruction();refreshHUD();}
  // Without a selected CRS, holding red while stationary still gathers allies.
 }
 function yellowPress(){
  if(!playing||paused||actionTransition>0)return;
+ if(walk){if(walk.waiting)showJunction();else speakToCompanion();return;}
  const result=yellow(run);
  if(result){drain();syncInstruction();refreshHUD();}
 }
@@ -872,6 +879,7 @@ function bindControls(){
  zone.addEventListener('pointermove',e=>{if(e.pointerId===pointerId)point(e);});
  function release(e){if(e&&pointerId!==e.pointerId)return;pointerId=null;joy={x:0,y:0};knob.style.transform='translate(0,0)';}
  for(const name of ['pointerup','pointercancel'])zone.addEventListener(name,release);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();redHeld=false;release();saveWalk();if(playing&&!paused)pause();}});
  zone.addEventListener('lostpointercapture',()=>release());
  const yellowBtn=$('yellow');
  yellowBtn.addEventListener('pointerdown',e=>{e.preventDefault();yellowBtn.classList.add('held');yellowPress();});
@@ -880,13 +888,13 @@ function bindControls(){
  const redBtn=$('red');
  const down=e=>{e.preventDefault();if(!redHeld){redHeld=true;redBtn.classList.add('held');callCrowd();}};
  const up=()=>{redHeld=false;redBtn.classList.remove('held');};
- redBtn.addEventListener('pointerdown',down);
+ redBtn.addEventListener('pointerdown',e=>{redBtn.setPointerCapture(e.pointerId);down(e);});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])redBtn.addEventListener(event,up);
  redBtn.addEventListener('click',e=>{if(e.detail===0){redHeld=true;callCrowd();setTimeout(up,180);}});
  $('chooseTarget').onclick=chooseTarget;
  // Touch the 3D flag, item or a specific CRS to select BEFORE acting.
  canvas.addEventListener('pointerdown',e=>{
-  if(!playing||paused||!pickableMeshes.length)return;
+  if(!playing||paused||walk||!pickableMeshes.length)return;
   const rect=canvas.getBoundingClientRect();
   const mouse=new T.Vector2((e.clientX-rect.left)/rect.width*2-1,
    1-(e.clientY-rect.top)/rect.height*2);
@@ -898,6 +906,8 @@ function bindControls(){
  });
  window.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
+  if(!playing||paused||!$('routePanel').hidden||!$('districtMap').hidden)return;
+  if(e.target?.tagName==='BUTTON'&&[' ','enter','tab'].includes(key))return;
   if(['arrowup','arrowdown','arrowleft','arrowright',' ','enter','r','v','w','a','s','d','z','q','tab'].includes(key))e.preventDefault();
   const has=keys.has(key);keys.add(key);
   if(!has&&(key===' '||key==='enter'))yellowPress();
@@ -907,11 +917,11 @@ function bindControls(){
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
  window.addEventListener('blur',()=>{keys.clear();redHeld=false;up();release();});
- $('start').onclick=()=>{if(paused){paused=false;overlay.hidden=true;return;}start();};
+ $('start').onclick=()=>{if(paused){pause();return;}start();};
  $('replay').onclick=start;
- $('quit').onclick=()=>send('manifestation:close');
- $('back').onclick=()=>send('manifestation:close');
- $('next').onclick=()=>send('manifestation:next');
+ $('quit').onclick=leaveGame;
+ $('back').onclick=leaveGame;
+ $('next').onclick=()=>{saveWalk();if(embedded)send('manifestation:next');else location.href='jeu.html';};
  $('pause').onclick=pause;
  $('turn360').onclick=()=>{if(!playing)return;cameraOrbit=0;cameraOrbitLeft=Math.PI*2;};
  $('statueCall').onclick=callCrowd;
@@ -924,6 +934,94 @@ function bindControls(){
  });
 }
 
+function saveWalk(){if(!walk)return;try{walk.breadcrumbs=trail.slice(-180);localStorage.setItem(WALK_KEY,JSON.stringify(walk));}catch{}}
+function leaveGame(){saveWalk();if(embedded)send('manifestation:close');else location.href='jeu.html';}
+function beginPromenade(saved=null,earned=false){
+ if(!gameReady)return;
+ if(run.phase!==3){run=newRun();run.phase=3;run.finished=true;run.hasFlag=true;sceneFor(3);}
+ walk=saved||newWalk();run.finished=true;run.x=walk.x;run.z=walk.z;run.height=0;run.facing=walk.heading;
+ keys.clear();joy={x:0,y:0};redHeld=false;cameraOrbit=0;cameraOrbitLeft=0;cornerTurn=0;
+ $('knob').style.transform='translate(0,0)';$('chapter-sky').hidden=true;
+ for(const a of pickupActors)a.group.visible=false;
+ for(const g of policeGroups)g.group.visible=false;
+ selectionMarker.visible=false;
+ populateBastille(sceneGroup);bastilleCrowd.visible=true;
+ trail=[];trailDistance=0;
+ for(let i=0;i<=160;i++){const back=(160-i)*.35;trail.push({x:walk.x-Math.sin(walk.heading)*back,z:walk.z-Math.cos(walk.heading)*back,d:i*.35,heading:walk.heading});}
+ trailDistance=56;if(saved?.breadcrumbs?.length>1){trail=saved.breadcrumbs.map(p=>({...p}));trailDistance=trail.at(-1).d;}
+ playing=true;paused=false;overlay.hidden=true;$('pause').textContent='Pause';
+ $('walkActions').hidden=false;$('freeWalk').hidden=true;$('resumeWalk').hidden=true;
+ $('walkNotice').textContent=earned?'Les trois épreuves sont réussies. Les points sont acquis.':'Promenade libre · sans points';
+ $('next').textContent='Terminer la promenade →';
+ saveWalk();refreshHUD();refreshParisHUD();if(walk.waiting)showJunction(true);
+}
+function showJunction(first=false){
+ if(!walk||!walk.waiting)return;
+ const panel=$('routePanel');panel.hidden=false;keys.clear();joy={x:0,y:0};$('knob').style.transform='translate(0,0)';
+ $('routeTitle').textContent=first?'— On va où maintenant ?':'— Par où on continue ?';
+ $('routePlace').textContent=PARIS_NODES[walk.node].name;
+ const choices=$('routeChoices');choices.replaceChildren();
+ for(const e of streetChoices(walk.node)){
+  const button=document.createElement('button');button.type='button';
+  const label=walk.node==='meeting'?e.to==='tpont'?'Entrer dans le Marais':e.to==='calvaire'?'Revenir vers République':'Continuer vers Bastille':e.name;
+  const strong=document.createElement('strong');strong.textContent=label;
+  const detail=document.createElement('span');detail.textContent=walk.node==='meeting'?e.name:'Vers '+e.destination;
+  button.append(strong,detail);button.onclick=()=>{if(!chooseStreet(walk,e.id))return;panel.hidden=true;run.facing=walk.heading;messageFeedback('— Par là.',3);rallyUntil=performance.now()/1000+2;saveWalk();refreshParisHUD();};
+  choices.append(button);
+ }
+ $('routeMap').innerHTML=mapMarkup(walk);
+}
+function refreshParisHUD(){
+ const place=walk?(walk.waiting?PARIS_NODES[walk.node].name:PARIS_STREETS.find(e=>e.id===walk.edge)?.name):run.phase===1?'À quelques pas de République':run.phase===2?'Place de la République':run.z<70?'Boulevard du Temple':run.z<110?'Boulevard des Filles-du-Calvaire':'Les deux cortèges';
+ $('streetName').textContent=place||'Paris';
+ if(!$('districtMap').hidden)$('liveMap').innerHTML=mapMarkup(walk||{x:run.x,z:run.z});
+ if(!walk||paused)return;
+ $('yellowLabel').textContent=walk.waiting?'CHOISIR':'PARLER';$('redLabel').textContent='RASSEMBLER';
+ $('yellow').setAttribute('aria-label',walk.waiting?'Jaune : choisir la direction':'Jaune : parler à un compagnon');
+ $('red').setAttribute('aria-label','Rouge : lever le drapeau et rassembler');$('red').textContent='●';
+ for(const id of ['weaponChip','chooseTarget','targetChip','crsMini','statueControls'])$(id).hidden=true;
+ $('walkDirection').textContent=walk.waiting?'Choisir une rue':'Prochaine intersection';
+ $('walkCount').textContent=walk.visited.length+(walk.visited.length===1?' lieu':' lieux')+' · la marche continue';
+}
+function recordTrail(){
+ if(!walk)return;const prev=trail.at(-1),d=prev?Math.hypot(walk.x-prev.x,walk.z-prev.z):0;
+ if(!prev||d>.3){trailDistance+=d;trail.push({x:walk.x,z:walk.z,d:trailDistance,heading:walk.heading});if(trail.length>400)trail.shift();}
+}
+function alongTrail(back){
+ const d=trailDistance-back;for(let i=trail.length-1;i>0;i--){if(trail[i-1].d<=d){const a=trail[i-1],b=trail[i],t=clamp((d-a.d)/Math.max(.001,b.d-a.d),0,1);return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,heading:b.heading};}}
+ return trail[0]||{x:run.x,z:run.z,heading:0};
+}
+function rally(){
+ if(!playing||paused)return;
+ rallyUntil=performance.now()/1000+4;if(walk)walk.rally=4;run.cohesion=Math.min(100,run.cohesion+15);
+ messageFeedback(['— Tous ensemble !','— On vous attend !','— Camarades !'][talkIndex++%3],2.4);sound(530,.18);
+}
+function speakToCompanion(){
+ if(!walk||paused)return;
+ const lines=['La femme au foulard : « Toi aussi, tu es venu. »','Le garçon à la pancarte : « On reste ensemble ? »','Une voix derrière : « Attends, ils arrivent. »','Le voisin au drapeau : « On peut continuer à marcher. »','Une camarade : « Je ne connais pas bien Paris non plus. »'];
+ messageFeedback(lines[talkIndex++%lines.length],3.6);walk.conversation++;saveWalk();
+}
+function animatePromenade(dt,time){
+ if(!hero)return;
+ const input=changeDir(),moving=!walk.waiting&&!paused&&Math.hypot(input.x,input.y)>.15;
+ hero.position.set(run.x,0,run.z);hero.rotation.y=walk.heading+cameraOrbit;walking(hero,time,moving?1:.03,time<rallyUntil);
+ const all=[...crowdActors,...bastilleActors];
+ for(let i=0;i<all.length;i++){
+  const a=all[i],row=Math.floor(i/5),p=alongTrail(3.5+row*1.5+(rnd(i*71+13)-.5)*.7),spread=((i%5)-2)*1.15+(rnd(i*17+5)-.5)*.5;
+  const x=p.x+Math.cos(p.heading)*spread,z=p.z-Math.sin(p.heading)*spread;
+  const d=Math.hypot(x-a.guy.position.x,z-a.guy.position.z),f=Math.min(1,dt*(time<rallyUntil?4:2.4));
+  a.guy.position.x+=(x-a.guy.position.x)*f;a.guy.position.z+=(z-a.guy.position.z)*f;
+  a.guy.rotation.y=p.heading;walking(a.guy,time,d>.25?.8:.06,time<rallyUntil-i*.035);
+ }
+ if(escortInstances){const {body,head,legs,hat,count,hatCount}=escortInstances,dummy=new T.Object3D();
+  for(let i=0;i<count;i++){const p=alongTrail(24+Math.floor(i/8)*1.35),side=((i%8)-3.5)*.65,x=p.x+Math.cos(p.heading)*side,z=p.z-Math.sin(p.heading)*side;
+   dummy.rotation.y=p.heading;for(const [obj,y,sx,sy,sz]of [[body,.95,.42,.77,.28],[head,1.66,.19,.22,.18],[legs,.4,.33,.80,.24]]){dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();obj.setMatrixAt(i,dummy.matrix);}if(i<hatCount){dummy.position.y=1.83;dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}}
+  for(const o of [body,head,legs,hat]){o.instanceMatrix.needsUpdate=true;o.computeBoundingSphere();}
+ }
+ if(rallyProps){const p=alongTrail(8);rallyProps.position.set(p.x,0,p.z);rallyProps.rotation.y=p.heading;}
+ if(adverseSymbols)adverseSymbols.visible=false;
+ for(const f of stageFlags)for(const piece of f.fabric){const pos=piece.gm.attributes.position;for(let i=0;i<pos.count;i++)pos.setZ(i,Math.sin(time*2.7+piece.base[i*3]*5+piece.phase)*.12);pos.needsUpdate=true;}
+}
 function updateRedGuide(dt,time){
  if(!redGuide||run.phase!==1)return;
  let moving=false;
@@ -944,6 +1042,7 @@ function updateRedGuide(dt,time){
 
 }
 function animateActors(dt,time){
+ if(walk){animatePromenade(dt,time);return;}
  updateRedGuide(dt,time);
  if(hero){
   hero.position.set(run.x,run.height||0,run.z);
@@ -957,8 +1056,8 @@ function animateActors(dt,time){
   for(const follower of crowdActors){
    const seed=follower.seed;
    follower.guy.position.set(clamp(run.x*.27+follower.x*.66,-7.4,7.4),0,
-    behindNarrator(run.z,lead+(rnd(seed*71+13)-.5)*4.3,4.8));
-   walking(follower.guy,time,moving?.85:.07);
+    behindNarrator(run.z,lead-Math.floor(seed/7)*1.65+(rnd(seed*71+13)-.5)*.35,4.8));
+   walking(follower.guy,time,moving?.85:.07,time<rallyUntil-seed*.045);
    follower.guy.rotation.y=Math.sin(time*.31+seed)*.07;
   }
   moveEscortInstances();
@@ -1009,11 +1108,17 @@ function render(ms){
  // plus définitivement la boucle de rendu et toutes les commandes mobiles.
  requestAnimationFrame(render);
  try{
- const dt=Math.min(.12,(ms-previous)/1000||0);previous=ms;
+ const dt=Math.min(.5,(ms-previous)/1000||0);previous=ms;
  if(playing&&!paused){
   if(stageInWorld!==run.phase)sceneFor(run.phase);
   const phase=run.phase;
-  advance(run,dt,changeDir());
+  // Fixed small steps keep walking speed stable when rendering a large crowd
+  // takes more than a frame on a phone or on the compatible renderer.
+  for(let remaining=dt;remaining>0;remaining-=.06){
+   const step=Math.min(.06,remaining);
+   if(walk){const arrived=advanceWalk(walk,step,changeDir());run.x=walk.x;run.z=walk.z;run.facing=walk.heading;run.height=0;recordTrail();if(arrived){saveWalk();showJunction();}}
+   else advance(run,step,changeDir());
+  }
   extendMarchScenery();
   drain();
   if(phase!==run.phase){
@@ -1029,7 +1134,7 @@ function render(ms){
   if(remaining<=0)speech.hidden=true;
   else speech.style.opacity=String(Math.min(1,remaining/.22));
  }
- animateActors(dt,time);
+ animateActors(paused?0:dt,time);
  if(cameraOrbitLeft>0&&playing){
   const step=Math.min(cameraOrbitLeft,Math.max(.012,dt)*2.6);
   cameraOrbit+=step;cameraOrbitLeft-=step;
@@ -1037,12 +1142,12 @@ function render(ms){
  }
  if(hero){
   if(cornerTurn>0)cornerTurn=Math.max(0,cornerTurn-dt);
-  const theta=cameraOrbit+(run.phase===1?0:cornerTurn/1.55*(-Math.PI/2));
-  const radius=run.phase===1?13:run.phase===2?20:25;
+  const theta=cameraOrbit+(walk?walk.heading:run.phase===1?0:cornerTurn/1.55*(-Math.PI/2));
+  const radius=walk?13.3:run.phase===1?13:run.phase===2?21:17;
   const height=run.height||0;
-  const target=new T.Vector3(run.x,Math.max(1.8,height+1.8),run.z+2);
-  const desired=new T.Vector3(run.x+Math.sin(theta)*radius,
-   7.8+height*.85,run.z-Math.cos(theta)*radius);
+  const target=new T.Vector3(run.x+Math.sin(walk?.heading||0)*2,Math.max(1.8,height+1.8),run.z+Math.cos(walk?.heading||0)*2);
+  const desired=new T.Vector3(run.x-Math.sin(theta)*radius,
+   (walk?6.4:7.8)+height*.85,run.z-Math.cos(theta)*radius);
   camera.position.lerp(desired,Math.min(1,Math.max(.012,dt)*3.4));
   camera.lookAt(target);
  }
@@ -1051,14 +1156,14 @@ function render(ms){
   renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
  }
  renderer.render(world,camera);
- if(playing&&ms-lastHud>180){lastHud=ms;refreshHUD();}
+ if(playing&&ms-lastHud>180){lastHud=ms;refreshHUD();refreshParisHUD();}
+ if(walk&&ms-lastWalkSave>4000){lastWalkSave=ms;saveWalk();}
  if(playing&&run.phase===3&&ms-lastControlDisplay>300){
   lastControlDisplay=ms;
   const input=changeDir(),status=$('controlsStatus');
   status.hidden=false;
   const moving=Math.abs(input.x)+Math.abs(input.y)>.15;
-  status.textContent='JEU ACTIF · '+(moving?'DÉPLACEMENT':'MANETTE AU REPOS')+
-   ' · position '+run.x.toFixed(1)+' / '+run.z.toFixed(1);
+  status.textContent=moving?'Le cortège avance':'Le cortège se rassemble';
  }
  }catch(error){
   console.error('Camarades — erreur dans la boucle de jeu :',error);
@@ -1074,19 +1179,22 @@ async function loadCharacters(){
  if(!renderer||crowdLoading)return;
  crowdLoading=true;
  $('overlayTitle').textContent='Préparation de la manifestation…';
- $('overlayText').textContent='Chargement de six personnages 3D Kenney CC0, avec de vraies animations de marche.';
+ $('overlayText').textContent='La place, les rues et les manifestants prennent leur place…';
  $('start').disabled=true;
  try{
   const loader=new GLTFLoader();
-  const loaded=await Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path)));
+  const [loaded,adult]=await Promise.all([Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path))),loader.loadAsync('assets/marmousets/adult.glb')]);
+  for(const name of ['head','spine_03','Thigh_L'])if(!adult.scene?.getObjectByName(name))throw Error('Squelette incomplet : '+name);
+  citizenAsset=adult;
   for(const model of loaded){
    if(!model.scene||!model.animations?.some(c=>c.name==='walk'))throw Error('Personnage non animé');
    templates.push(model);
   }
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
-  $('overlayText').textContent='Prends le drapeau, monte sur la statue et crie « Camarades ! ». Récupère ensuite les trois symboles et vise les CRS.';
-  $('start').disabled=false;
+  $('overlayText').textContent='Prends le drapeau, monte sur la statue et crie « Camarades ! ». Rassemble les cortèges, puis choisis les rues que vous allez parcourir.';
+  $('start').disabled=false;$('freeWalk').disabled=false;
+  try{$('resumeWalk').hidden=!restoreWalk(JSON.parse(localStorage.getItem(WALK_KEY)||'null'));}catch{}
   send('manifestation:ready');
  }catch(e){
   $('overlayTitle').textContent='Impossible de charger les personnages';
@@ -1097,4 +1205,11 @@ async function loadCharacters(){
  }
 }
 bindControls();
+$('freeWalk').onclick=()=>beginPromenade();
+$('resumeWalk').onclick=()=>{try{const saved=restoreWalk(JSON.parse(localStorage.getItem(WALK_KEY)||'null'));if(saved)beginPromenade(saved);}catch{}};
+$('walkRally').onclick=rally;$('walkTalk').onclick=speakToCompanion;
+$('walkDirection').onclick=()=>{if(walk?.waiting)showJunction();else messageFeedback('Rejoins le prochain carrefour, ou recule pour revenir au précédent.',3.4);};
+$('closeRoute').onclick=()=>{$('routePanel').hidden=true;};
+$('openMap').onclick=()=>{$('districtMap').hidden=!$('districtMap').hidden;refreshParisHUD();};
+$('closeMap').onclick=()=>{$('districtMap').hidden=true;};
 if(renderer){requestAnimationFrame(render);loadCharacters();}

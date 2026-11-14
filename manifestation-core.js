@@ -189,8 +189,8 @@ export function advance(run,dt,input={}){
   const nextX=clamp(run.x+x/mag*speed*t,-8,8);
   const nextZ=clamp(run.z+y/mag*speed*t,run.phase===3?-2:-11,run.phase===3?116:22);
   // Vérifier les axes séparément pour marcher le long du socle, jamais se retrouver coincé.
-  if(!insideStatueBase(nextX,run.z))run.x=nextX;
-  if(!insideStatueBase(run.x,nextZ))run.z=nextZ;
+  if(run.phase===1||!insideStatueBase(nextX,run.z))run.x=nextX;
+  if(run.phase===1||!insideStatueBase(run.x,nextZ))run.z=nextZ;
   run.facing=Math.atan2(x,y);
  }
  if(run.phase!==3)return;
@@ -268,6 +268,6 @@ export function gameInstruction(run){
    waiting.kind==='heart'?'Prends le cœur':waiting.kind==='flower'?'Prends la fleur':'Prends le bisou'};
   return {key:'armed-'+waiting.id,text:weaponText(waiting.kind)};
  }
- return {key:'bastille',text:'Rejoins l’autre manif à Bastille'};
+ return {key:'bastille',text:'Rejoins l’autre cortège'};
 }
 export function canNext(run){return run.finished||run.steps.includes(1);}
