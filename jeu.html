@@ -278,7 +278,7 @@ const requested=Number(new URLSearchParams(location.search).get('niveau'));if(re
  document.body.append(dialog);const iframe=document.getElementById('catalogneFrame');let loaded=false;
  function refresh(){try{const latest=JSON.parse(localStorage.getItem(KEY)||'null');if(latest&&Array.isArray(latest.completed))state={...state,...latest};}catch{}}
  function context(){const p=state.catalognePending;if(p&&dialog.open)iframe.contentWindow?.postMessage({type:'catalogne:init',...p,sold:p.replay?p.replaySold:api.sold(state),score:state.points},location.origin);}
- function open(){if(!state.catalognePending)return;if(!dialog.open)dialog.showModal();if(!loaded){loaded=true;iframe.src='arcade-catalogne-3d.html?embedded=1&v=plaza-20261114-1';}else context();}
+ function open(){if(!state.catalognePending)return;if(!dialog.open)dialog.showModal();if(!loaded){loaded=true;iframe.src='arcade-catalogne-3d.html?embedded=1&v=plaza-secrets-20261114-1';}else context();}
  function close(){dialog.close();iframe.removeAttribute('src');loaded=false;render();(document.getElementById('catalogneLaunch')||document.querySelector('#options button:not(:disabled)')||document.getElementById('next')).focus({preventScroll:true});focusGameEntry();}
  function launch(){refresh();if(!state.catalognePending&&state.completed.includes(3)){api.begin(state,true,crypto.randomUUID());save();}open();}
  answer=function(index){

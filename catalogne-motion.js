@@ -129,3 +129,34 @@ export function poseActivity(p,kind,time=0,variant=0){
  }
  p.group.updateMatrixWorld(true);
 }
+
+// Brief hidden gestures; all joints use the same fixed-length IK as walking.
+export function poseSecret(p,kind,time){
+ poseCitizen(p,time,false);const h=p.h;
+ if(kind==='dance'){
+  const beat=time*Math.PI*3.4,sway=Math.sin(beat),pulse=(1-Math.cos(beat*2))*.5;
+  p.group.position.y=.012-h*(.025+.025*pulse);p.group.updateMatrixWorld(true);
+  rotateInGroup(p,'spine_01',new T.Quaternion().setFromEuler(new T.Euler(.03,Math.sin(beat*.5)*.16,sway*.075)));
+  rotateInGroup(p,'spine_03',new T.Quaternion().setFromEuler(new T.Euler(0,-Math.sin(beat*.5)*.22,0)));
+  rotateInGroup(p,'neck_01',new T.Quaternion().setFromEuler(new T.Euler(-.025,Math.sin(beat*.5)*.14,-sway*.035)));
+  for(const side of ['L','R']){
+   const s=side==='L'?1:-1,l=side.toLowerCase(),lift=Math.max(0,s*sway)*.055*h;
+   limb(p,'Thigh_'+side,'calf_'+l,'Foot_'+side,V(s*(.11+.024*Math.cos(beat))*h,.032*h-p.group.position.y+lift,s*sway*.045*h),V(s*.19*h,.28*h,.36*h));
+   const ankle=localPosition(p,p.bones['Foot_'+side].bone);aim(p,'Foot_'+side,'ball_'+l,ankle.clone().add(V(0,-.031*h,.052*h)));
+   const wave=Math.sin(beat+s*.8);
+   limb(p,'UpperArm_'+side,'lowerarm_'+l,'Hand_'+side,V(s*(.18+.055*Math.cos(beat*.5))*h,(.66+s*wave*.13)*h,(.13+.055*Math.cos(beat))*h),V(s*.32*h,.56*h,.10*h));
+  }
+ }else if(kind==='joint'){
+  const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);},raise=smooth((time-2.5)/1.2),lower=smooth((time-5.5)/.7);
+  rotateInGroup(p,'neck_01',new T.Quaternion().setFromEuler(new T.Euler(.18*(1-raise),0,0)));
+  const roll=Math.sin(time*12)*.008*(1-raise);
+  const rollingL=V(.04*h,(.59+roll)*h,.20*h),rollingR=V(-.04*h,(.59-roll)*h,.20*h);
+  const left=rollingL.lerp(V(.055*h,.74*h,.20*h),raise).lerp(V(.115*h,.38*h,.045*h),lower);
+  const right=rollingR.lerp(V(-.045*h,.765*h,.13*h),raise);
+  limb(p,'UpperArm_L','lowerarm_l','Hand_L',left,V(.25*h,.54*h,.13*h));
+  limb(p,'UpperArm_R','lowerarm_r','Hand_R',right,V(-.25*h,.56*h,.12*h));
+  aim(p,'Hand_L','indexFinger_03_l',V(-.025*h,.59*h,.20*h).lerp(V(.02*h,.82*h,.20*h),raise).lerp(V(.115*h,.30*h,.045*h),lower));
+  aim(p,'Hand_R','indexFinger_03_r',V(.025*h,.59*h,.20*h).lerp(V(0,.825*h,.13*h),raise));
+ }
+ p.group.updateMatrixWorld(true);
+}

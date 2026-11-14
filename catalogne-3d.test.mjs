@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {poseCitizen,poseActivity,gaitSample} from './catalogne-motion.js';
+import {poseCitizen,poseActivity,poseSecret,gaitSample} from './catalogne-motion.js';
+import {createSecretControls,bindSecretButton,DOUBLE_TAP_MS} from './catalogne-secret-controls.js';
 import {drawParkMap} from './catalogne-3d-map.js';
 import {VOICE_PROFILES,voiceProfile,voiceGender,assignGameVoices} from './catalogne-3d-voices.js';
 import {PARK,CLIENTS,PATROLS,newRun,advance,sell,dodge,nearestClient,instruction,distance,SALE_DIALOGUES,POLICE_SHOUTS,saleDialogue} from './catalogne-3d-core.js';
@@ -28,6 +29,36 @@ test('Le modèle adulte conserve ses longueurs de membres dans la marche et les 
  assert.ok(low>=.035&&high>.13,'Pied au sol puis retour de la jambe');
  assert.ok(Math.abs(gaitSample(0,h).left.forward-gaitSample(1/1.12,h).left.forward)<1e-10);
  for(const kind of ['guitar','listen','yoga','taichi','embrace','recline'])for(let variant=0;variant<2;variant++)for(const time of [0,1,3,6]){poseActivity(rig,kind,time,variant);check();}
+ for(const kind of ['dance','joint'])for(let i=0;i<=160;i++){poseSecret(rig,kind,i/20);check();}
+ poseCitizen(rig,0,false);check();assert.equal(group.position.y,.012,'Retour à la posture normale');
+});
+function tapHarness(){
+ let clock=0,id=0;const timers=new Map(),events=[];
+ const control=createSecretControls({single:b=>events.push('single:'+b),double:b=>events.push('double:'+b),now:()=>clock,schedule:(fn,ms)=>{timers.set(++id,{fn,at:clock+ms});return id;},unschedule:n=>timers.delete(n)});
+ return {control,events,press:b=>control.press(b),advance(ms){clock+=ms;for(const [n,t]of [...timers])if(t.at<=clock){timers.delete(n);t.fn();}}};
+}
+test('Un appui simple garde sa fonction et ne se déclenche qu’une fois',()=>{
+ for(const button of ['red','yellow']){const h=tapHarness();h.press(button);assert.deepEqual(h.events,[]);h.advance(DOUBLE_TAP_MS);assert.deepEqual(h.events,['single:'+button]);h.advance(1000);assert.equal(h.events.length,1);}
+});
+test('Deux appuis rapprochés déclenchent seulement le geste secret, jamais une vente ou une esquive',()=>{
+ for(const button of ['red','yellow']){const h=tapHarness();h.press(button);h.advance(160);h.press(button);h.advance(1000);assert.deepEqual(h.events,['double:'+button]);}
+});
+test('Deux appuis espacés et des couleurs alternées restent des commandes ordinaires',()=>{
+ const h=tapHarness();h.press('red');h.advance(500);h.press('red');h.advance(500);assert.deepEqual(h.events,['single:red','single:red']);
+ const mixed=tapHarness();mixed.press('yellow');mixed.advance(90);mixed.press('red');mixed.advance(500);assert.deepEqual(mixed.events,['single:yellow','single:red']);
+});
+test('Un triple appui ne déclenche pas de vente parasite après la danse',()=>{
+ const h=tapHarness();h.press('red');h.advance(90);h.press('red');h.advance(90);h.press('red');h.advance(900);assert.deepEqual(h.events,['double:red']);
+});
+test('Pause, carte ou changement de session annulent toute commande en attente',()=>{
+ const h=tapHarness();h.press('yellow');h.advance(100);h.control.clear();h.advance(900);assert.deepEqual(h.events,[]);h.press('yellow');h.advance(500);assert.deepEqual(h.events,['single:yellow']);
+});
+test('Un appui tactile et son clic de compatibilité ne sont pas confondus avec un double appui',()=>{
+ const handlers={},button={disabled:false,classList:{add(){},remove(){}},addEventListener:(n,fn)=>handlers[n]=fn};let now=20;const taps=[];
+ bindSecretButton(button,t=>taps.push(t),()=>now);
+ handlers.pointerdown({timeStamp:20,preventDefault(){}});handlers.pointerup();handlers.click({detail:1,timeStamp:25});handlers.click({detail:0,timeStamp:25});assert.deepEqual(taps,[20]);
+ now=150;handlers.pointerdown({timeStamp:150,preventDefault(){}});handlers.click({detail:2,timeStamp:151});assert.deepEqual(taps,[20,150]);
+ now=1000;handlers.click({detail:0,timeStamp:1000});assert.deepEqual(taps,[20,150,1000],'Activation clavier ou accessibilité sans événement pointeur');
 });
 test('Cinq clients uniques, trois chemins, et possibilité de vendre sans orientation imposée',()=>{
  assert.equal(CLIENTS.length,5);assert.equal(new Set(CLIENTS.map(c=>c.id)).size,5);
@@ -116,7 +147,7 @@ test('Scène 3D : vente confiée au plateau, confirmation sans double comptage',
  assert.ok(app.includes('result.client.id'));
  assert.ok(app.includes('m.finished'));
  assert.ok(app.includes("m.sold.filter"));
- assert.ok(html.includes('catalogne-3d-runtime.js?v=plaza-20261114-1'));
+ assert.ok(html.includes('catalogne-3d-runtime.js?v=plaza-secrets-20261114-1'));
  assert.ok(html.includes('id="saleDialogue"'));
  assert.ok(app.includes("MODEL_PATHS"));
 });
@@ -124,7 +155,7 @@ test('Préserver le jeu 2D original et vérifier le raccord au plateau',()=>{
  const base=read('arcade-catalogne.html'),page=read('jeu.html'),build=read('build-public.mjs');
  assert.ok(base.includes('function nearbyClient(r)'));
  assert.ok(base.includes('const WORLD=1960'));
- assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=plaza-20261114-1'"));
+ assert.ok(page.includes("iframe.src='arcade-catalogne-3d.html?embedded=1&v=plaza-secrets-20261114-1'"));
  assert.ok(build.includes("'arcade-catalogne.html'"));
  assert.ok(build.includes("'arcade-catalogne-3d.html'"));
  assert.ok(build.includes("'catalogne-3d-runtime.js'"));

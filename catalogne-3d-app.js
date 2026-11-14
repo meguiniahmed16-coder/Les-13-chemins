@@ -13,6 +13,8 @@ import {materials,block,detailedBench,detailedLamp,addPlaceDetails,decorateTile,
 import {makeParkLife,flowerGardens} from './catalogne-life.js';
 import {PARK_LIFE,GATHERINGS} from './catalogne-life-layout.js';
 import {ParkSoftwareRenderer} from './catalogne-software.js';
+import {createSecretControls,bindSecretButton} from './catalogne-secret-controls.js';
+import {createSecretGestures,SECRET_DURATION} from './catalogne-secret-gestures.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
 const MODEL_PATHS=['assets/marmousets/adult.glb'];
@@ -20,6 +22,7 @@ let run=newRun(),sessionId=null,ready=false,replayMode=false,score=0,pendingSale
 let paused=false,soundOn=true,lastFrame=0,toastUntil=0,lastInstruction=null,orbital=0,orbitLeft=0,lastPoliceMessage=0,controlsLocked=false,winPending=false;
 const joy={x:0,z:0},keys=new Set();
 let parkLife=null;
+let secretGesture=null,secretVisual=null;
 let joyPointer=null,clientActors=[],policeActors=[],people=[],birds=[],hero=null,saleConversation=null;
 let parkGround=null,parkPaths=[],forestGrid=null,parkGridX=NaN,parkGridZ=NaN,parkPathIndex=NaN;
 let mapOpen=false,lastMapDraw=0;
@@ -396,7 +399,10 @@ function updateActors(dt,time){
  if(!hero)return;
  hero.group.position.set(run.x,0,run.z);hero.group.rotation.y=run.facing;
  const active=run.phase==='running'&&!paused&&!mapOpen;
- animateActor(hero,active?dt:0,active&&(Math.hypot(joy.x,joy.z)>.12||keys.size>0||run.dodgeTime>0));
+ if(secretGesture){
+  if(secretGesture.kind==='dance')hero.group.rotation.y+=Math.sin(secretGesture.time*Math.PI*.85)*.28;
+  secretVisual?.update(secretGesture.kind,secretGesture.time);
+ }else animateActor(hero,active?dt:0,active&&(Math.hypot(joy.x,joy.z)>.12||keys.size>0||run.dodgeTime>0));
  clientActors.forEach((v,i)=>{
   // Les clients ne tournent pas tous le dos : orientations variées, puis
   // regard vers le narrateur lorsqu'il s'approche pour une vente.
@@ -520,6 +526,7 @@ function renderHUD(){
  $('pause').textContent=paused?'Reprendre':'Pause';
 }
 function toggleParkMap(open=!mapOpen){
+ if(open)resetSecretControls();
  mapOpen=Boolean(open);
  $('parkMap').hidden=!mapOpen;
  $('mapToggle').setAttribute('aria-expanded',String(mapOpen));
@@ -536,12 +543,14 @@ function showOverlay(title,text,label='Commencer',showStart=true){
 function closeOverlay(){$('overlay').hidden=true;}
 function start(){
  if(!ready||embedded&&!sessionId)return;
+ resetSecretControls();
  run=newRun(run.sold);run.phase='running';paused=false;pendingSale=null;saleConversation=null;winPending=false;
  mapOpen=false;$('parkMap').hidden=true;$('mapToggle').setAttribute('aria-expanded','false');
  lastInstruction=null;lastPoliceMessage=0;lastFrame=0;orbital=0;orbitLeft=0;resetClientVisuals();
  closeOverlay();renderHUD();syncInstruction();
 }
 function caught(){
+ resetSecretControls();
  paused=false;pendingSale=null;saleConversation=null;$('saleDialogue').hidden=true;showOverlay('Interpellé.','Les clients déjà servis restent validés. Tu peux recommencer dans le parc.','Réessayer');
  showToast('Évite les policiers !');renderHUD();
 }
@@ -550,6 +559,7 @@ function presentWin(){
  showToast('✓ Cinq clients !');renderHUD();
 }
 function won(){
+ resetSecretControls();
  run.phase='won';pendingSale=null;paused=false;
  // Laisser entendre et lire les deux répliques du cinquième client
  // avant d'afficher l'écran final, qui masquerait sinon la conversation.
@@ -577,6 +587,27 @@ function performDodge(){
  if(dodge(run)){showToast('Esquive !',.75);beep(570,.08);}
  else showToast('Esquive indisponible',.65);
 }
+function stopSecret(){
+ secretGesture=null;secretVisual?.hide();delete canvas.dataset.secretGesture;delete canvas.dataset.secretTime;
+ if(hero){hero.group.rotation.y=run.facing;animateActor(hero,0,false);}
+}
+function resetSecretControls(){secretControls.clear();stopSecret();}
+const canAct=()=>ready&&run.phase==='running'&&!paused&&!mapOpen;
+const secretControls=createSecretControls({
+ single(button){if(!canAct())return;stopSecret();if(button==='red')makeSale();else performDodge();},
+ double(button){
+  if(!canAct()||pendingSale||saleConversation)return;
+  stopSecret();secretGesture={kind:button==='red'?'dance':'joint',time:0};
+  orbital=0;orbitLeft=0;canvas.dataset.secretGesture=secretGesture.kind;
+ }
+});
+function pressAction(button,stamp){if(canAct())secretControls.press(button,stamp);}
+function updateSecret(elapsed){
+ if(!secretGesture||!canAct())return;
+ const movement=input();if(Math.hypot(movement.x,movement.z)>.12){resetSecretControls();return;}
+ secretGesture.time+=elapsed;canvas.dataset.secretTime=secretGesture.time.toFixed(2);
+ if(secretGesture.time>=SECRET_DURATION[secretGesture.kind])stopSecret();
+}
 let audioCtx=null;
 function beep(freq,duration){
  if(!soundOn)return;
@@ -601,6 +632,7 @@ function policeCry(){
 }
 function pause(){
  if(run.phase!=='running'&&!paused)return;
+ resetSecretControls();
  paused=!paused;
  if(paused)showOverlay('Pause','Le parc t’attend. Les cinq clients restent en place.','Reprendre');
  else closeOverlay();
@@ -611,6 +643,7 @@ function endPauseOrStart(){
  start();
 }
 function returnToBoard(){
+ resetSecretControls();
  if(embedded)publish('catalogne:close');
  else window.location.href='jeu.html?niveau=3';
 }
@@ -660,24 +693,19 @@ function bind(){
  stick.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)updatePointer(e)});
  for(const name of ['pointerup','pointercancel'])stick.addEventListener(name,release);
  stick.addEventListener('lostpointercapture',()=>release());
- function action(button,callback){
-  let lastTouch=0;
-  button.addEventListener('pointerdown',e=>{if(button.disabled)return;e.preventDefault();lastTouch=performance.now();button.classList.add('held');callback();});
-  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>button.classList.remove('held'));
-  button.addEventListener('click',e=>{if(e.detail===0||performance.now()-lastTouch>450)callback()});
- }
- action($('sell'),makeSale);action($('dodge'),performDodge);
+ bindSecretButton($('sell'),stamp=>pressAction('red',stamp));
+ bindSecretButton($('dodge'),stamp=>pressAction('yellow',stamp));
  window.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
   if(['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d','z','q',' ','enter','r','escape'].includes(key))e.preventDefault();
   if(mapOpen){if(key==='escape'){e.preventDefault();toggleParkMap(false);}return;}
   const already=keys.has(key);keys.add(key);
-  if(!already&&(key==='r'||key==='enter'))makeSale();
-  if(!already&&key===' ')performDodge();
+  if(!already&&(key==='r'||key==='enter'))pressAction('red');
+  if(!already&&key===' ')pressAction('yellow');
   if(!already&&key==='escape')pause();
  });
  window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();release();window.speechSynthesis?.cancel?.();});
+ window.addEventListener('blur',()=>{resetSecretControls();keys.clear();release();window.speechSynthesis?.cancel?.();});
  document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&run.phase==='running'&&!paused)pause();
  });
@@ -689,6 +717,7 @@ function bind(){
    sessionId=m.id;replayMode=!!m.replay;score=Number.isFinite(m.score)?m.score:score;
    const sold=Array.isArray(m.sold)?m.sold:[];
    if(newSession||run.phase==='ready'||pendingSale){
+    resetSecretControls();
     run=newRun(sold);run.phase='ready';pendingSale=null;paused=false;lastInstruction=null;winPending=false;saleConversation=null;
     resetClientVisuals();showOverlay('Cinq clients. Garde ton calme.','Michel t’a confié son matériel. Explore le parc, retrouve cinq clients et échappe aux policiers. Deux points par vente.','Entrer dans le parc');
    }else if(sold.length>run.sold.length){run.sold=[...sold];resetClientVisuals();}
@@ -726,6 +755,7 @@ function frame(ms){
  const dt=Math.min(.1,elapsed);lastFrame=ms;
  try{
   if(ready&&run.phase==='running'&&!paused&&!mapOpen){
+   updateSecret(elapsed);
    // Fixed physics steps keep walking speed independent of a slow rendered frame.
    for(let remaining=elapsed;remaining>0&&run.phase==='running';remaining-=.05)advance(run,Math.min(.05,remaining),input());
    if(run.phase==='caught')caught();
@@ -759,6 +789,11 @@ function frame(ms){
    const target=new T.Vector3(run.x,1.65,run.z+4.5);
    const desired=new T.Vector3(run.x+Math.sin(orbital)*radius,6.4,
     run.z-Math.cos(orbital)*radius);
+   if(secretGesture){
+    const angle=run.facing+.42,distance=secretGesture.kind==='joint'?3.5:4.6;
+    target.set(run.x,secretGesture.kind==='joint'?1.15:.95,run.z);
+    desired.set(run.x+Math.sin(angle)*distance,secretGesture.kind==='joint'?2.0:2.4,run.z+Math.cos(angle)*distance);
+   }
    camera.position.lerp(desired,Math.min(1,dt*4.2+.01));
    camera.lookAt(target);
    if(run.phase==='running'&&!paused){
@@ -777,7 +812,7 @@ async function initialize(){
   const models=await Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path)));
   for(const m of models){if(!m.scene?.getObjectByName('Thigh_L'))throw Error('Squelette de personnage incomplet');actorTemplates.push(m);}
  }catch(err){console.warn('Modèles 3D indisponibles, personnages de secours activés',err);}
- createCharacters(world);if(actorTemplates[0])parkLife=makeParkLife(actorTemplates[0],world);ready=true;
+ createCharacters(world);secretVisual=createSecretGestures(hero);if(actorTemplates[0])parkLife=makeParkLife(actorTemplates[0],world);ready=true;
  $('start').disabled=embedded&&!sessionId;
  $('start').textContent='Entrer dans le parc';
  $('overlayText').textContent='Michel t’a confié son matériel. Cherche les cinq clients dans les allées et les zones boisées. Utilise la carte pour les repérer, puis ROUGE pour vendre.';
