@@ -29,7 +29,7 @@
  };
  if(!root.document)return;
  const doc=root.document,embedded=root.parent!==root&&new URLSearchParams(location.search).get('embedded')==='1';
- const urls={intro:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/21568a4c-9fc7-47ee-8e76-eae1e01f5d15.mp4',outro:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/f4fd7a27-122d-45fa-9df3-8ca825803eaa.mp4'};
+ const urls={intro:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/8d950927-36cd-436d-8290-ee90d463a7eb.mp4',outro:'https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/f4fd7a27-122d-45fa-9df3-8ca825803eaa.mp4'};
  const style=doc.createElement('style');style.textContent=`
  #cinema{position:absolute;inset:0;z-index:50;background:#000;color:#eee9dd;display:flex;flex-direction:column}
  #cinema[hidden]{display:none}#cinema video{display:block;width:100%;height:calc(100% - 64px);min-height:0;flex:1;object-fit:contain;background:#000}

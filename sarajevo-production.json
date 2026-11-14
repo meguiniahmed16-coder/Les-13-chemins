@@ -1,6 +1,6 @@
 {
-  "version": "sarajevo-cinema-20261114",
-  "intro_seconds": 15,
+  "version": "sarajevo-cinema-20261114-2",
+  "intro_seconds": 12.2,
   "outro_seconds": 9,
   "model": "kling3_0",
   "mode": "pro",
@@ -9,8 +9,8 @@
   "source_keyframes": "assets/sarajevo/cinema",
   "media": [
     {
-      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/21568a4c-9fc7-47ee-8e76-eae1e01f5d15.mp4",
-      "name": "Sarajevo-Ouverture-15s.mp4"
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/8d950927-36cd-436d-8290-ee90d463a7eb.mp4",
+      "name": "Sarajevo-Ouverture.mp4"
     },
     {
       "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3Lv38AaVCD2ic4AgVfvvFo8mRsK/f4fd7a27-122d-45fa-9df3-8ca825803eaa.mp4",
@@ -19,15 +19,17 @@
   ],
   "montage_notes": [
     "Ahmed and Lionel reactions use a single take each; name freezes are deterministic.",
-    "Wrong front-door opening rejected. Child reveal uses the first 0.7 seconds with the bulkhead closed, then a 0.2-second dissolve to the approved child frame.",
+    "Children revelation removed completely, including its soundtrack. Direct cut at 8.4 seconds from Lionel to the adult soldiers leaving the VAB.",
     "One continuous five-second return shot.",
-    "Memorial text and cross are deterministic overlays."
+    "Memorial text and cross are deterministic overlays.",
+    "Opening soundtrack replaced with CC0 diesel, metallic impacts, machine gun bursts and explosions. No generated voices; no new paid generation. Diesel is Foley, not a recording of this particular VAB."
   ],
   "validation": [
-    "450 intro frames and 270 outro frames at 30 fps",
+    "366 intro frames (12.2 seconds) and unchanged 270 outro frames at 30 fps",
     "H264 1280x720 and AAC stereo 48 kHz",
     "Session and board transition regression tests",
     "Visual frame inspection of all seven takes",
     "Local browser intro-to-game, posture and binocular controls; software fallback because browser WebGL disabled"
-  ]
+  ],
+  "audio_sources": "cinematics/sarajevo/audio-sources.json"
 }

@@ -1,0 +1,30 @@
+{
+  "diesel": {
+    "source": "https://freesound.org/people/Sadiquecat/sounds/819017/",
+    "download": "https://cdn.freesound.org/previews/819/819017_5287430-hq.mp3",
+    "license": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ]
+  },
+  "metal": {
+    "source": "https://freesound.org/people/nolan.creative/sounds/789746/",
+    "download": "https://cdn.freesound.org/previews/789/789746_16948469-hq.mp3",
+    "license": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ]
+  },
+  "machinegun": {
+    "source": "https://freesound.org/people/qubodup/sounds/67582/",
+    "download": "https://cdn.freesound.org/previews/67/67582_71257-hq.mp3",
+    "license": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ]
+  },
+  "explosion": {
+    "source": "https://freesound.org/people/VanEngelen/sounds/784660/",
+    "download": "https://cdn.freesound.org/previews/784/784660_9285510-hq.mp3",
+    "license": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ]
+  }
+}
