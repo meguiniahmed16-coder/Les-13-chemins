@@ -1,4 +1,8 @@
 import * as T from 'three';
+import {loadDanceModel} from './danse-embedded-assets.js';
+import {prepareDanceRig,poseDanceRig} from './danse-choreography.js';
+import {loadStudioCast,animateStudioCast} from './danse-studio-cast.js';
+import {addStudioDetails,animateStudioDetails} from './danse-studio-details.js';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {loadQuaterniusDancer,poseQuaterniusDancer,poseQuaterniusSpectator} from './danse-quaternius.js';
@@ -95,7 +99,7 @@ function makePilotSmile(root,head){
  return smile;
 }
 function loadPilotDancer(target){
- new GLTFLoader().load(PILOT_MODEL,gltf=>{
+ loadDanceModel(PILOT_MODEL).then(gltf=>{
   const root=gltf.scene;
   const b=new T.Box3().setFromObject(root),size=b.getSize(new T.Vector3());
   if(size.y<1.3||!Number.isFinite(size.y))throw Error('Invalid Quaternius pilot model');
@@ -118,9 +122,9 @@ function loadPilotDancer(target){
   target.pilot={root,bones,rest,smile,eyes,baseY:root.position.y};
   // Une seule ressource féminine GLB : trois copies articulées dans la même scène.
   if(target.otherDancers)upgradeFemaleDancers(target.otherDancers,target.pilot);
- },undefined,err=>{
+ }).catch(err=>{
   // If the model cannot load, preserve the current character, not an empty gap.
-  console.warn('Quaternius pilot unavailable; original dancer retained.',err);
+  target.loadError=err;console.warn('Quaternius pilot unavailable; original dancer retained.',err);
  });
 }
 
@@ -304,43 +308,9 @@ function upgradeFemaleDancers(dancers,source){
 }
 function animatePilotDancer(h,t,dt,active){
  const p=h.pilot;if(!p)return;
- const energy=active?1:.22,beat=t/BEAT*Math.PI*2;
- const sn=Math.sin(beat),co=Math.cos(beat);
- // Reset all imported bones to their original rest quaternions each frame:
- // absolute dance poses, no accumulated twisting or broken joints.
- for(const [name,bone] of p.bones)bone.quaternion.copy(p.rest.get(name));
- p.root.position.y=p.baseY+Math.abs(sn)*.032*energy;
- p.root.rotation.z=.027*sn*energy;
- p.root.updateMatrixWorld(true);
- // Apply bends about STAGE/WORLD axes rather than the arbitrary local axes
- // of the imported armature. The female avatar begins in a T-pose.
- const X=new T.Vector3(1,0,0),Y=new T.Vector3(0,1,0),Z=new T.Vector3(0,0,1);
- function worldBend(name,axis,angle){
-  const bone=p.bones.get(name);if(!bone?.parent||!Number.isFinite(angle))return;
-  bone.parent.updateMatrixWorld(true);
-  const parentQuat=bone.parent.getWorldQuaternion(new T.Quaternion());
-  const localAxis=axis.clone().applyQuaternion(parentQuat.invert()).normalize();
-  bone.quaternion.premultiply(new T.Quaternion().setFromAxisAngle(localAxis,angle));
-  bone.updateMatrixWorld(true);
- }
- worldBend('pelvis',Y,.028*sn*energy);
- worldBend('spine_02',Y,.08*co*energy);
- worldBend('spine_03',Z,.035*sn*energy);
- worldBend('head',Z,-.05*sn*energy);
- // Lower the outstretched arms before adding rhythmic swing. The sign is
- // deliberately mirrored: both wrists should end below the shoulders.
- worldBend('upperarm_l',Z,-1.18+.18*sn*energy);
- worldBend('upperarm_r',Z, 1.18-.18*Math.sin(beat+.65)*energy);
- worldBend('upperarm_l',X,-.12+.15*co*energy);
- worldBend('upperarm_r',X,-.12-.15*co*energy);
- worldBend('lowerarm_l',X,-.23-.10*Math.max(0,sn)*energy);
- worldBend('lowerarm_r',X,-.23-.10*Math.max(0,-sn)*energy);
- worldBend('thigh_l',X,.17*sn*energy);
- worldBend('thigh_r',X,-.17*sn*energy);
- worldBend('calf_l',X,.19*Math.max(0,-sn)*energy);
- worldBend('calf_r',X,.19*Math.max(0,sn)*energy);
- if(p.smile)p.smile.scale.y=.82+.18*energy+.10*Math.max(0,sn);
- p.root.updateMatrixWorld(true);
+ p.danceRig??=prepareDanceRig(p.root);
+ const phrase=poseDanceRig(p.danceRig,t,{energy:active?.82:.12,action:h.danceAction||'cross',variation:h.baseX||0});
+ if(p.smile)p.smile.scale.set(1,1+.07*phrase.smile,1);
 }
 
 import {SoftwareRenderer} from './danse-software.js';
@@ -466,8 +436,8 @@ function pose(h,t,action='cross',power=1){const beat=t/BEAT*Math.PI*2,s=Math.sin
  if(action==='left'||action==='right'){h.body.rotation.z=(action==='left'?1:-1)*.12;h.legs[0].upper.rotation.z=-.21;h.legs[1].upper.rotation.z=.21;}
 }
 export class DanceScene{
- constructor(canvas){this.canvas=canvas;this.reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;this.low=matchMedia('(max-width:650px)').matches;try{this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch{this.renderer=new SoftwareRenderer(canvas);this.low=true;}this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.low?1.25:1.6));this.renderer.shadowMap.enabled=!this.low;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.25;this.scene=new T.Scene();this.scene.background=new T.Color(0x21102e);this.scene.fog=new T.Fog(0x21102e,25,50);this.camera=new T.PerspectiveCamera(43,1,.1,70);
- this.scene.add(new T.HemisphereLight(0xf5dcff,0x47315e,2.1));const key=new T.DirectionalLight(0xfff0db,3.3);key.position.set(-3,8,6);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;this.scene.add(key);const fill=new T.DirectionalLight(0x9ddfff,1.4);fill.position.set(6,4,1);this.scene.add(fill);const rim=new T.DirectionalLight(0xe78dff,2);rim.position.set(-5,5,-4);this.scene.add(rim);
+ constructor(canvas){this.canvas=canvas;this.reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;this.low=matchMedia('(max-width:650px)').matches;try{this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch{this.renderer=new SoftwareRenderer(canvas);this.low=true;}this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.low?1.25:1.6));this.renderer.shadowMap.enabled=!this.low;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.08;this.scene=new T.Scene();this.scene.background=new T.Color(0x21102e);this.scene.fog=new T.Fog(0x21102e,25,50);this.camera=new T.PerspectiveCamera(43,1,.1,70);
+ this.scene.add(new T.HemisphereLight(0xf5e7db,0x382a47,1.35));const key=new T.DirectionalLight(0xffedcf,2.6);key.position.set(-3,8,6);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;key.shadow.bias=-.00015;key.shadow.normalBias=.025;key.shadow.radius=3;this.scene.add(key);const fill=new T.DirectionalLight(0xb8d9ef,.85);fill.position.set(6,4,1);this.scene.add(fill);const rim=new T.DirectionalLight(0xd9b3ed,1.35);rim.position.set(-5,5,-4);this.scene.add(rim);
  this.build();this.resize();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas.parentElement);canvas.dataset.renderer=this.renderer.isSoftware?'3D compatible':'WebGL 2';
  }
  build(){const s=this.scene;
@@ -490,13 +460,13 @@ export class DanceScene{
    this.featuredDancer=avatar;
    this.hero.group.visible=false;
    this.canvas.dataset.featuredDancer='quaternius-cc0';
-   try{upgradeCandidatePanel(s,this.candidates,avatar);}
+   try{if(!this.studioCast)upgradeCandidatePanel(s,this.candidates,avatar);}
    catch(err){console.warn('Les cinq candidats gardent leurs silhouettes de repli.',err);}
-   try{upgradeForegroundAudience(this.public,avatar);}
+   try{if(!this.studioCast)upgradeForegroundAudience(this.public,avatar);}
    catch(err){console.warn('Les trois spectateurs du premier plan gardent leurs silhouettes de repli.',err);}
   }).catch(err=>{
    console.warn('Danseur masculin indisponible, personnage précédent conservé.',err);
-   this.canvas.dataset.featuredDancer='fallback';
+   this.canvas.dataset.featuredDancer='fallback';this.heroLoadError=err;
   });
  }
  const danceLooks=[
@@ -562,11 +532,13 @@ export class DanceScene{
  // Studio cameras, rails, speaker stacks and lighting rig.
  for(const x of [-6.3,6.3]){box(s,.8,1.5,.7,0x191622,x,.75,3.5);for(const y of [.45,1.05]){const sp=cylinder(s,.24,.24,.05,0x3f354e,x,y,3.88);sp.rotation.x=Math.PI/2;}cylinder(s,.05,.05,1.1,0x4a4057,x,1.95,3.5);box(s,.65,.4,.7,0x252233,x,2.65,3.5);const lens=cylinder(s,.16,.2,.24,0x1a1723,x,2.65,3.02);lens.rotation.x=Math.PI/2;for(const side of [-1,1]){const leg=cylinder(s,.025,.025,1.7,0x625669,x+side*.3,.8,3.5);leg.rotation.z=side*-.35;}}
  box(s,19,.16,.2,0x8c719e,0,6.1,-2.8);for(let i=-3;i<=3;i++){box(s,.5,.35,.65,0x2b2434,i*2.3,5.9,-2.8);const lens=cylinder(s,.18,.18,.04,i%2?palette.pink:palette.mint,i*2.3,5.65,-2.53);lens.rotation.x=Math.PI/4;}
+ this.studioDetails=addStudioDetails(s);
+ this.castReady=loadStudioCast(this).catch(err=>{console.warn('Public du plateau indisponible',err);this.canvas.dataset.studioCast='fallback';this.castLoadError=err;});
  this.confetti=[];for(let i=0;i<40;i++){const o=mesh(new T.PlaneGeometry(.07,.17),new T.MeshBasicMaterial({color:[palette.pink,palette.mint,palette.gold,0xc69aff][i%4],side:T.DoubleSide}),s,(i%10-4.5)*1.1,4+(i%7)*.3,(i%5)*.6);o.visible=false;this.confetti.push(o);}
  }
  resize(){const b=this.canvas.parentElement.getBoundingClientRect();this.renderer.setSize(b.width,b.height,false);this.camera.aspect=b.width/b.height;const narrow=this.camera.aspect<1.3;this.camera.fov=narrow?44:38;this.camera.position.set(narrow?.1:1.3,narrow?3.1:3.5,narrow?6.8:7.2);this.camera.lookAt(0,1.15,-.4);this.camera.updateProjectionMatrix();}
  update(r,dt){const t=r.clock,active=['playing','practice','break','countdown','won'].includes(r.phase),recent=t-r.actionAt<1.1;const action=recent?r.action:'cross';const power=active?1:.25;pose(this.hero,t,action,power);this.hero.group.position.x=recent&&(action==='left'||action==='right')?(action==='left'?-.35:.35)*Math.sin(Math.min(1,(t-r.actionAt)/1.1)*Math.PI):0;
- if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);if(h.pilot)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{
+ if(action==='circle')this.hero.group.rotation.y=T.MathUtils.smoothstep(t-r.actionAt,0,1.1)*Math.PI*2;this.dancers.forEach((h,i)=>{pose(h,t+(i%2)*.12,active?action:'cross',power*.85);h.danceAction=active?action:'cross';if(h.pilot)animatePilotDancer(h,t,dt,active);if(action==='circle')h.group.rotation.y=this.hero.group.rotation.y;});this.candidates.forEach((h,i)=>{
   if(h.quaternius)poseQuaterniusDancer(h.quaternius,t+i*.3,'cross',.12,false,h.group.position,(i-2)*.04);
   else{pose(h,t+i*.3,'cross',.12);h.group.rotation.y=0;}
  });pose(this.lionel,t,'square',r.phase==='won'?1:.1);if(r.phase!=='won'){this.lionel.arms[0].shoulder.rotation.z=-.1;this.lionel.arms[1].shoulder.rotation.z=.15;this.lionel.arms[0].elbow.rotation.x=-1.2;}
@@ -592,6 +564,13 @@ export class DanceScene{
  if(this.featuredDancer){
   poseQuaterniusDancer(this.featuredDancer,t,action,power,r.phase==='won',this.hero.group.position,this.hero.group.rotation.y);
  }
+ animateStudioCast(this.studioCast,t,active,r.phase==='won'?r.time:null);animateStudioDetails(this.studioDetails,t,active);
+ // Hold the finished dance, then show the spectators face-on during the ovation.
+ const crowdShot=r.phase==='won'&&r.time>=.8&&r.time<7.5;
+ if(crowdShot&&!this.crowdShot){this.savedCamera={position:this.camera.position.clone(),quaternion:this.camera.quaternion.clone(),fov:this.camera.fov};}
+ if(crowdShot){const narrow=this.camera.aspect<1.3;this.camera.position.set(narrow?.2:2.6,2.8,narrow?-2.4:-.9);this.camera.fov=narrow?57:47;this.camera.lookAt(0,1.6,4.8);this.camera.updateProjectionMatrix();}
+ else if(this.crowdShot&&this.savedCamera){this.camera.position.copy(this.savedCamera.position);this.camera.quaternion.copy(this.savedCamera.quaternion);this.camera.fov=this.savedCamera.fov;this.camera.updateProjectionMatrix();}
+ this.crowdShot=crowdShot;
  this.renderer.render(this.scene,this.camera);}
  dispose(){this.destroyed=true;this.observer.disconnect();this.renderer.dispose();}
 }

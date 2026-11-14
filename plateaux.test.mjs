@@ -18,6 +18,13 @@ test('Danse → Camarades ! → prison: la chronologie respecte les deux « Drap
  emit('danse',{type:'danse:won',id});
  assert.equal(c.state.points,510);
  assert.equal(c.state.unlocked,5);
+ assert.equal(h.timers.length,0,'La scène suivante attend la fin de l’ovation');
+ emit('danse',{type:'danse:ovation-ended',id:'stale'});
+ assert.equal(h.timers.length,0,'Une ancienne session ne doit pas couper la fête');
+ emit('danse',{type:'danse:ovation-ended',id});
+ assert.equal(h.timers.length,1);
+ emit('danse',{type:'danse:ovation-ended',id});
+ assert.equal(h.timers.length,1,'La transition ne se programme qu’une fois');
  h.timers[0]();
  assert.equal(calls.manifestation,1,'Le jeu Camarades ! suit la danse, pas la cellule');
  assert.equal(calls.readers.length,0,'La lecture de Strasbourg est désormais dans le chemin suivant');

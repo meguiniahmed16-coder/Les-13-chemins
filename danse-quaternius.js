@@ -4,7 +4,9 @@
 import * as T from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import {loadDanceModel} from './danse-embedded-assets.js';
 import { BEAT } from './danse-core.js';
+import {prepareDanceRig,poseDanceRig} from './danse-choreography.js';
 
 export const QUATERNIUS_FILE='danse-quaternius-hero.glb';
 export const QUATERNIUS_BONES=Object.freeze([
@@ -102,7 +104,7 @@ function attachFacialDetails(avatar,head){
 }
 
 export async function loadQuaterniusDancer(scene, originalPosition) {
- const gltf=await new GLTFLoader().loadAsync(QUATERNIUS_FILE);
+ const gltf=await loadDanceModel(QUATERNIUS_FILE);
  const avatar=cloneSkeleton(gltf.scene);
  avatar.name='DanseurCentralQuaternius';
  avatar.userData.provenance='Quaternius Universal Base Characters CC0';
@@ -145,37 +147,11 @@ function worldBend(bone,worldAxis,angle){
 }
 
 export function poseQuaterniusDancer(avatar,t,action='cross',power=1,won=false,heroPosition=null,heroYaw=0){
- const {root,bones,rest,smile,basePosition}=avatar;
- // Chaque trame repart de la pose native : aucun angle ne s'accumule.
- for(const [name,q]of Object.entries(rest))bones[name].quaternion.copy(q);
- const beat=t/BEAT*Math.PI*2,s=Math.sin(beat),half=Math.sin(beat/2);
- const strength=Math.max(.05,Math.min(1,power));
- root.position.copy(heroPosition||basePosition);
- root.position.y+=Math.abs(s)*.055*strength;
- root.rotation.set(0,heroYaw,0);
- root.updateMatrixWorld(true);
- worldBend(bones.pelvis,Y,half*.075*strength);
- worldBend(bones.spine_02,Y,-half*.12*strength);
- worldBend(bones.Head,Z,half*.055*strength);
- // Les bras, naturellement étendus dans la pose source, descendent le long
- // du corps et suivent le rythme ; on conserve la hiérarchie originale.
- const up=won?.62:action==='square'?.42:action==='circle'?.16:0;
- worldBend(bones.upperarm_l,Z,-1.02+up+Math.sin(beat+.25)*.24*strength);
- worldBend(bones.upperarm_r,Z,1.02-up-Math.sin(beat-.25)*.24*strength);
- worldBend(bones.upperarm_l,X,-.11+Math.sin(beat)*.16*strength);
- worldBend(bones.upperarm_r,X,-.11-Math.sin(beat)*.16*strength);
- worldBend(bones.lowerarm_l,X,-.19-.12*Math.max(0,s)*strength);
- worldBend(bones.lowerarm_r,X,-.19-.12*Math.max(0,-s)*strength);
- const step=(action==='left'?-1:action==='right'?1:0)*.09;
- worldBend(bones.thigh_l,X,s*.18*strength+step);
- worldBend(bones.thigh_r,X,-s*.18*strength-step);
- worldBend(bones.calf_l,X,Math.max(0,-s)*.21*strength);
- worldBend(bones.calf_r,X,Math.max(0,s)*.21*strength);
- // L'expression n'est pas un visage remplacé à chaque trame : c'est une
- // bouche solidaire de la tête qui s'ouvre subtilement au rythme.
- smile.scale.x=.92+(won?.17:.06)+.08*Math.max(0,s);
- smile.scale.y=1+(won?.18:0);
- root.updateMatrixWorld(true);
+ const {root,smile,basePosition}=avatar,base=heroPosition||basePosition;
+ root.position.copy(base);root.rotation.set(0,heroYaw,0);root.updateMatrixWorld(true);
+ avatar.danceRig??=prepareDanceRig(root);
+ const phrase=poseDanceRig(avatar.danceRig,t,{action,energy:power,won,baseX:base.x,baseY:base.y});
+ smile.scale.set(.98+phrase.smile*.08,1+phrase.smile*.08,1);
 }
 
 

@@ -28,7 +28,7 @@ test('The Quaternius CC0 female model is real, rigged, small and in the public b
  assert.match(build,/'assets\/danse\/quaternius-superhero-female\.glb'/);
  assert.match(build,/\['build-danse\.mjs'\]/,'stage source must actually be rebuilt for publishing');
 });
-test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a head-attached smile',()=>{
+test('Original Quaternius dancers retain clothing and head-attached expressions',()=>{
  const src=fs.readFileSync(new URL('./danse-scene.js',import.meta.url),'utf8');
  assert.match(src,/import \{GLTFLoader\} from 'three\/examples\/jsm\/loaders\/GLTFLoader\.js'/);
  assert.match(src,/const PILOT_MODEL='assets\/danse\/quaternius-superhero-female\.glb'/);
@@ -42,10 +42,8 @@ test('Only ONE dancer is replaced by a true Quaternius skin with clothing and a 
  assert.ok(src.includes("new T.BufferAttribute(colors,3)"),'the irises must be colored on the real eye mesh');
  assert.ok(!src.includes("new T.TubeGeometry(curve,20,.0029"),'no second large mouth should be drawn');
  assert.ok(src.includes("SourireSculpte"),'tiny corners complement the sculpted lips');
- assert.ok(src.includes("for(const [name,bone] of p.bones)bone.quaternion.copy(p.rest.get(name))"),'original bone rotations must be restored every frame');
- assert.ok(src.includes("bone.quaternion.premultiply("),'rig movement must use parent-space/world-space rotations');
- assert.ok(src.includes("worldBend('upperarm_l',Z,-1.18"),'left arm must lower from T-pose');
- assert.ok(src.includes("worldBend('upperarm_r',Z, 1.18"),'right arm must lower from T-pose');
+ assert.ok(src.includes('p.danceRig??=prepareDanceRig(p.root)'),'original female rig is retained');
+ assert.ok(src.includes('poseDanceRig(p.danceRig,t'),'the same choreography drives each female rig');
  assert.ok(!src.includes("contrast=new T.Color('#e9c996')"),'clothing must not have an exposed-looking beige waist seam');
  assert.match(src,/original dancer retained/,'fallback retains a playable character');
  const build=fs.readFileSync(new URL('./build-public.mjs',import.meta.url),'utf8');
@@ -84,7 +82,7 @@ test('Five background candidates reuse the real 65-bone male model, not cylinder
  assert.ok(src.includes('const CANDIDATE_SKINS='));
  assert.ok(src.includes('const CANDIDATE_HAIR='));
  assert.match(src,/candidates\.map\(\(candidate,i\)=>/);
- assert.ok(src.includes('try{upgradeCandidatePanel('), 'keep fallback if upgrade fails');
+ assert.ok(src.includes('if(!this.studioCast)upgradeCandidatePanel('), 'keep fallback if upgrade fails');
 });
 
 test('All FOUR dance women reuse the skinned female model, without changing the validated afro',()=>{
@@ -131,7 +129,7 @@ test('The 3 foreground audience silhouettes use the existing rigged Quaternius b
  assert.ok(src.includes('const FOREGROUND_AUDIENCE_SLOTS=Object.freeze([3,4,5])'));
  assert.ok(src.includes('function upgradeForegroundAudience(publicRows,source)'));
  assert.ok(src.includes('cloneSkeleton(source.root)'), 'real rigged body is reused');
- assert.ok(src.includes('try{upgradeForegroundAudience(this.public,avatar);}'));
+ assert.ok(src.includes('if(!this.studioCast)upgradeForegroundAudience(this.public,avatar);'));
  assert.ok(src.includes("root.name='PublicPremierPlan3D'+(i+1)"));
  assert.ok(src.includes('spectator.realBody=pilot'));
  assert.ok(src.includes('if(child!==root)child.visible=false'), 'old silhouettes must be hidden');

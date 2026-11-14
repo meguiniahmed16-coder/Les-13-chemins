@@ -1,27 +1,28 @@
 import {SYMBOLS,NAMES,PRACTICE,WINDOW,createRun,start,beginRound,press,advance,togglePause} from './danse-core.js';
 import {DanceScene} from './danse-scene.js';
 import {StudioMusic} from './danse-music.js';
+import {finaleTime,finaleFinished} from './danse-finale.js';
 const $=id=>document.getElementById(id),embedded=parent!==window&&new URLSearchParams(location.search).get('embedded')==='1';
-let run=createRun(),scene=null,session=null,initial=[],replay=false,credited=false,total=0,last=0,feedbackUntil=0,drawAt=0,victoryAt=0,wasPhase='',noteElements=[];
+let run=createRun(),scene=null,session=null,initial=[],replay=false,credited=false,total=0,last=0,feedbackUntil=0,drawAt=0,ovationSent=false,wasPhase='',noteElements=[];
 const music=new StudioMusic();
 function send(type,data={}){if(embedded&&session)parent.postMessage({type:'danse:'+type,id:session,...data},location.origin);}
 function flash(text,duration=1.2){$('feedback').textContent=text;feedbackUntil=performance.now()+duration*1000;}
 function act(action){music.unlock();if(action==='cross'&&run.phase==='retry'){beginRound(run);consume();return;}press(run,action);consume();render();}
 function pause(){togglePause(run);last=0;render();if(run.phase==='paused')$('resume').focus({preventScroll:true});}
-function reset(passed=[]){run=createRun(passed);wasPhase='';noteElements=[];$('notes').replaceChildren();last=0;credited=false;render();}
+function reset(passed=[]){music.tick(0,false);ovationSent=false;run=createRun(passed);wasPhase='';noteElements=[];$('notes').replaceChildren();last=0;credited=false;render();}
 function begin(){if(!scene||embedded&&!session)return;music.unlock();start(run);consume();render();$('hint').scrollIntoView({block:'nearest',behavior:'instant'});}
 function consume(){for(const e of run.events.splice(0)){
  if(e.type==='hit'){flash(e.practice?'Bien !':e.perfect?'Dans le rythme !':'Bien joué !');music.tone(e.action==='circle'?84:79,.08,.05);}
  if(e.type==='offbeat')flash('Attends le cercle…',.7);
  if(e.type==='miss')flash('Garde le rythme',.7);
  if(e.type==='trained')flash('C’est parti !',2);
- if(e.type==='pass'){send('pass',{gap:e.gap});flash('+2 points',2.3);music.cheer();$('announcement').textContent='Palier '+e.gap+' réussi. '+e.gap*2+' points.';}
+ if(e.type==='pass'){send('pass',{gap:e.gap});flash('+2 points',2.3);if(e.gap<5)music.cheer();$('announcement').textContent='Palier '+e.gap+' réussi. '+e.gap*2+' points.';}
  if(e.type==='retry'){$('retryText').textContent=run.wrong>4?'Un seul appui par symbole : prends ton temps.':run.hits+' mouvements sur 8. Il en faut 6 pour convaincre le public.';$('retry').focus({preventScroll:true});}
- if(e.type==='won'){victoryAt=performance.now();send('won');music.cheer();}
+ if(e.type==='won'){send('won');$('announcement').textContent='Tous les paliers sont réussis ! Le public se lève et applaudit.';}
  }
 }
 function render(){const n=run.passed.length,playing=run.phase==='playing',practice=run.phase==='practice';
- $('intro').hidden=run.phase!=='ready';$('pauseOverlay').hidden=run.phase!=='paused';$('retryOverlay').hidden=run.phase!=='retry';$('victory').hidden=run.phase!=='won'||performance.now()-victoryAt<2500;
+ $('intro').hidden=run.phase!=='ready';$('pauseOverlay').hidden=run.phase!=='paused';$('retryOverlay').hidden=run.phase!=='retry';$('victory').hidden=!finaleFinished(run);
  $('rhythm').hidden=!['practice','playing','countdown','break'].includes(run.phase);$('sceneCaption').hidden=run.phase!=='ready';
  $('percent').textContent=n*14+' %';$('meterFill').style.width=n*20+'%';$('meter').setAttribute('aria-valuenow',n*14);$('points').textContent=String(n*2).padStart(2,'0');
  $('checkpoints').innerHTML=Array.from({length:5},(_,i)=>'<span class="checkpoint '+(i<n?'done':i===n?'active':'')+'" aria-label="Palier '+(i+1)+(i<n?' réussi':'')+'">'+(i<n?'✓':i+1)+'</span>').join('');
@@ -43,7 +44,7 @@ $('return').onclick=()=>{if(embedded)send('close');else location.href='jeu.html?
 for(const b of document.querySelectorAll('[data-action]')){b.addEventListener('pointerdown',e=>{if(b.disabled)return;e.preventDefault();b.setPointerCapture(e.pointerId);b.classList.add('held');act(b.dataset.action);});const up=()=>b.classList.remove('held');b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);b.addEventListener('click',e=>{if(e.detail===0)act(b.dataset.action);});}
 const keymap={ArrowLeft:'left',ArrowRight:'right',KeyX:'cross',Space:'cross',KeyS:'square',KeyO:'circle'};
 addEventListener('keydown',e=>{if(e.repeat)return;if(e.code==='KeyP'||e.code==='Escape'){e.preventDefault();pause();return;}const a=keymap[e.code];if(!a)return;if(e.target.tagName==='BUTTON'&&(e.code==='Space'||e.code==='Enter'))return;e.preventDefault();if(run.phase==='ready'&&a==='cross')begin();else act(a);});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&['playing','practice','countdown','break'].includes(run.phase)){togglePause(run);music.tick(0,false);render();}});
+document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden)music.tick(run.clock,false);if(document.hidden&&['playing','practice','countdown','break'].includes(run.phase)){togglePause(run);music.tick(0,false);render();}});
 addEventListener('message',e=>{if(!embedded||e.origin!==location.origin||e.source!==parent||!e.data)return;const m=e.data;if(m.type==='danse:init'&&typeof m.id==='string'&&m.level===5){if(m.id===session)return;session=m.id;initial=Array.isArray(m.passed)?m.passed:[];replay=!!m.replay;total=m.score||0;reset(replay?[]:initial);}else if(m.id===session&&m.type==='danse:credited'){total=m.score;}else if(m.id===session&&m.type==='danse:finished'){credited=true;render();}});
-try{scene=new DanceScene($('world'));render();if(embedded)parent.postMessage({type:'danse:ready'},location.origin);function frame(now){requestAnimationFrame(frame);const dt=last?Math.min(.12,(now-last)/1000):0;last=now;advance(run,dt);consume();music.tick(run.clock,['playing','practice','countdown','break','won'].includes(run.phase));if(now-drawAt>32){scene.update(run,dt);render();drawAt=now;}$('feedback').classList.toggle('show',now<feedbackUntil);}requestAnimationFrame(frame);}catch(err){$('intro').hidden=true;$('error').hidden=false;console.error('Dance renderer:',err);}
+try{scene=new DanceScene($('world'));render();if(embedded)parent.postMessage({type:'danse:ready'},location.origin);function frame(now){requestAnimationFrame(frame);const dt=last?Math.min(.12,(now-last)/1000):0;last=now;if(!document.hidden)advance(run,dt);consume();if(finaleFinished(run)&&!ovationSent){ovationSent=true;send('ovation-ended');}music.tick(run.clock,!document.hidden&&['playing','practice','countdown','break','won'].includes(run.phase),finaleTime(run));if(now-drawAt>32){scene.update(run,dt);render();drawAt=now;}$('feedback').classList.toggle('show',now<feedbackUntil);}requestAnimationFrame(frame);}catch(err){$('intro').hidden=true;$('error').hidden=false;console.error('Dance renderer:',err);}
 $('world').addEventListener('webglcontextlost',e=>{e.preventDefault();if(!['ready','won','paused'].includes(run.phase))togglePause(run);$('errorText').textContent='Le navigateur a interrompu la 3D. Recharge pour reprendre depuis le dernier palier.';$('error').hidden=false;});

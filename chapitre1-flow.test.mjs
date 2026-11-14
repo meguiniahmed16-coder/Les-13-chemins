@@ -311,7 +311,7 @@ test('Chemins I, II et III : mêmes cartouches, trois jeux accessibles indépend
  assert.ok(plateaux.includes("TreizeEscale.openReader(5,{plateau:1"),'La danse rouvre sa bonne feuille');
  assert.ok(rdv.includes("app.open=function(requested){"),'Le chemin III rouvre un chapitre précis');
  assert.ok(rdv.includes("if(part===2&&!prisonTraversed()||part===3&&!cyranoTraversed())return"),'Les chapitres non débloqués demeurent fermés');
- assert.ok(game.includes("plateaux.js?v=20261112-drapeaux-v1"),'Le navigateur Android reçoit la nouvelle version');
+ assert.ok(game.includes("plateaux.js?v=20261114-ovation"),'Le navigateur Android reçoit la nouvelle version');
  assert.ok(game.includes("chapitre1-plateau.js?v="));
  assert.ok(game.includes("rendezvous-plateau.js?v=20261113-onglets-v1"));
 });

@@ -2,7 +2,7 @@ export const SYMBOLS={left:'←',right:'→',cross:'✕',square:'□',circle:'�
 export const NAMES={left:'Pas à gauche',right:'Pas à droite',cross:'Pas de jerk',square:'Les bras',circle:'Tour sur soi'};
 export const PRACTICE=['left','right','cross','square','circle'];
 export const SEQUENCES=[['left','right','cross','cross','left','right','cross','cross'],['square','cross','square','cross','left','right','square','cross'],['left','right','circle','cross','left','right','circle','cross'],['square','left','square','right','circle','cross','square','cross'],['left','square','right','square','circle','cross','circle','cross']];
-export const BEAT=60/110,INTERVAL=BEAT*2,WINDOW=.34;
+export const BEAT=60/115,INTERVAL=BEAT*2,WINDOW=.34;
 export function sanitize(passed=[]){const out=[];for(let i=1;i<=5;i++){if(passed.includes(i))out.push(i);else break;}return out;}
 export function createRun(passed=[]){return {phase:'ready',passed:sanitize(passed),round:sanitize(passed).length,time:0,clock:0,practice:0,notes:[],hits:0,wrong:0,events:[],action:'cross',actionAt:-100,combo:0};}
 export function start(r){if(r.phase!=='ready')return;r.phase='practice';r.practice=0;r.events.push({type:'practice'});}
