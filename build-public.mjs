@@ -21,7 +21,7 @@ for (const args of [
     'prison-3d-session.test.mjs', 'plateaux.test.mjs'],
   ['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs'],
   ['build-bosnie-addon.mjs'],
-  ['--test', 'sarajevo-cinema.test.mjs'],
+  ['--test', 'sarajevo-cinema.test.mjs', 'sarajevo-crossing.test.mjs'],
   ['build-danse.mjs'],
   ['build-manifestation.mjs'],
   ['--test', 'manifestation.test.mjs'],
