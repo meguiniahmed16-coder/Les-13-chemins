@@ -27,7 +27,7 @@ test('Bach begins with the visit and NEVER restarts for the film',async()=>{
  assert.equal(h.api.start(),true);assert.equal(h.api.start(),false);await flush();
  assert.equal(h.music.currentTime,37,'The film cannot rewind the soundtrack');
  assert.equal(h.music.plays,before,'There must be no second play for an uninterrupted soundtrack');
- assert.equal(h.video.currentTime,0);assert.equal(h.video.volume,.28);
+ assert.equal(h.video.currentTime,0);assert.equal(h.video.volume,0);assert.equal(h.video.muted,true);
  assert.equal(h.video.controls,false,'The film is cinematic, not a native player');
  h.video.listeners.ended();h.video.listeners.ended();
  assert.equal(h.ends(),1);assert.equal(h.music.paused,true);
@@ -41,7 +41,7 @@ test('Pause, resume and Son ON/OFF preserve the music time',async()=>{
  assert.equal(h.music.currentTime,42);assert.equal(h.music.paused,false);
  h.api.setMuted(true);assert.equal(h.music.muted,true);
  h.api.start({muted:true});await flush();assert.equal(h.video.muted,true);
- h.api.setMuted(false);assert.equal(h.music.muted,false);assert.equal(h.video.muted,false);
+ h.api.setMuted(false);assert.equal(h.music.muted,false);assert.equal(h.video.muted,true);
  h.api.reset();assert.equal(h.music.paused,true);assert.equal(h.music.currentTime,0);
 });
 test('Buffering may pause music, but seeking and film speed do not change Bach',async()=>{
