@@ -102,14 +102,14 @@ export function createPrisonOutro({document:doc,onEnd=()=>{}}){
   pauseMusic,
   resumeMusic(){musicPaused=false;resumeMusic(true);},
   setMuted(muted){
-   music.muted=muted;video.muted=muted;
+   music.muted=muted;video.muted=true; // Muted visuals permit automatic film playback; Bach remains audible.
    if(!muted&&musicWanted&&!musicPaused)resumeMusic(true);
   },
   start({muted=false}={}){
    if(started)return false;
    started=true;active=true;filmVersion++;
    loadVideo();
-   video.currentTime=0;video.autoplay=true;video.volume=.28;video.muted=muted;
+   video.currentTime=0;video.autoplay=true;video.volume=0;video.muted=true;
    panel.hidden=false;play.hidden=true;musicPlay.hidden=true;status.textContent='';
    // Bach keeps its current position when the final film starts.
    if(!musicWanted)startSoundtrack({muted});
