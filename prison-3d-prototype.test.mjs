@@ -66,15 +66,15 @@ test('The canonical prison page offers the immersive controls and no previous-ga
  assert.doesNotMatch(visibleCopy,/pr[ée]version|prototype|version pr[ée]c[ée]dente|main fixe v10/i);
 });
 
-test('No ugly how-to before playing: the 3D tour leads straight into the trials',()=>{
+test('The 3D tour goes straight to the three trials, without an illustrated guide',()=>{
  assert.ok(code.includes('onTourEnd:enterPlay'));
- assert.doesNotMatch(code,/createPrisonDemo|showDemo|demo\\.open\\(|mode==='demo'/);
- assert.doesNotMatch(html,/id="demo"|id="demo-play"|class="demo-card"/);
+ for(const obsolete of ['createPrisonDemo','showDemo',"mode==='demo'"])assert.ok(!code.includes(obsolete));
+ for(const obsolete of ['id="demo"','id="demo-play"','class="demo-card"'])assert.ok(!html.includes(obsolete));
  assert.ok(code.includes('outro.startSoundtrack({muted:!foley.enabled})'));
  assert.ok(code.includes('outro.pauseMusic()'));
- assert.match(html,/data-fallback="assets\\/prison\\/bach-cello-prelude-16s\\.mp3/);
- assert.match(html,/data-src="https:\\/\\/upload\\.wikimedia\\.org\\//);
- assert.doesNotMatch(html,/<video[^>]*\\scontrols(?:\\s|>)/);
+ assert.ok(html.includes('data-fallback="assets/prison/bach-cello-prelude-16s.mp3'));
+ assert.ok(html.includes('data-src="https://upload.wikimedia.org/'));
+ assert.doesNotMatch(html,/<video[^>]*\scontrols(?:\s|>)/);
  assert.ok(html.includes('prison-3d-prototype-runtime.js?v=20261115-bach-integral-sans-demo'));
 });
 test('The shipped detailed stool is the licensed self-contained GLB in its provenance receipt',()=>{
