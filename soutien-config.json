@@ -1,7 +1,7 @@
 {
-  "supportPaymentLink": null,
-  "bookPaymentLink": null,
-  "bookTermsConfirmed": false,
-  "bookDetails": "",
-  "paymentMethods": []
+  "supportPaymentLink": "https://buy.stripe.com/00w6oJ7Kg16V3UOfmq1sQ02",
+  "bookPaymentLink": "https://buy.stripe.com/fZu14p9So16V3UOcae1sQ01",
+  "bookPreorderEnabled": true,
+  "bookDetails": "Préachat ponctuel de 30 €, sans abonnement.",
+  "paymentMethods": ["Carte bancaire", "Apple Pay", "Google Pay"]
 }

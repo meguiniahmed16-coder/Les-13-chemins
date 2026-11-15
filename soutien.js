@@ -13,7 +13,7 @@ export function paymentLink(value) {
 export function checkoutOptions(config = {}) {
   const support = paymentLink(config?.supportPaymentLink);
   const details = typeof config?.bookDetails === 'string' ? config.bookDetails.trim() : '';
-  const book = config?.bookTermsConfirmed === true && details ? paymentLink(config?.bookPaymentLink) : null;
+  const book = config?.bookPreorderEnabled === true && details ? paymentLink(config?.bookPaymentLink) : null;
   const allowed = ['Carte bancaire', 'Apple Pay', 'Google Pay', 'PayPal'];
   const methods = Array.isArray(config?.paymentMethods) ? [...new Set(config.paymentMethods.filter(m => allowed.includes(m)))] : [];
   return { support, book, details, methods };

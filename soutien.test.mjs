@@ -8,18 +8,18 @@ test('payment links must be live hosted Stripe URLs, without redirects or creden
   for (const value of [null, '', 'javascript:alert(1)', 'http://buy.stripe.com/a1', 'https://buy.stripe.com.evil.example/a1', 'https://buy.stripe.com/', 'https://buy.stripe.com/test_123', 'https://user@buy.stripe.com/a1', 'https://buy.stripe.com/a1?redirect=https://evil.example', 'https://buy.stripe.com:444/a1']) assert.equal(paymentLink(value), null);
   assert.equal(paymentLink('https://buy.stripe.com/a1B2'), 'https://buy.stripe.com/a1B2');
 });
-test('preorders remain unavailable until the author confirms fulfilment details', () => {
-  const config = {bookPaymentLink:'https://buy.stripe.com/a1B2', bookTermsConfirmed:false, bookDetails:'Livre papier, conditions de livraison confirmées.'};
+test('preorders require explicit activation and a description', () => {
+  const config = {bookPaymentLink:'https://buy.stripe.com/a1B2', bookPreorderEnabled:false, bookDetails:'Préachat ponctuel, date de parution à déterminer.'};
   assert.equal(checkoutOptions(config).book, null);
-  assert.equal(checkoutOptions({...config,bookTermsConfirmed:true,bookDetails:''}).book, null);
-  assert.equal(checkoutOptions({...config,bookTermsConfirmed:true}).book, config.bookPaymentLink);
+  assert.equal(checkoutOptions({...config,bookPreorderEnabled:true,bookDetails:''}).book, null);
+  assert.equal(checkoutOptions({...config,bookPreorderEnabled:true}).book, config.bookPaymentLink);
   assert.deepEqual(checkoutOptions(null), {support:null,book:null,details:'',methods:[]});
 });
 test('the public configuration cannot accidentally accept payments before activation', () => {
   const config = JSON.parse(readFileSync(new URL('./soutien-config.json',import.meta.url)));
   const options = checkoutOptions(config);
   if (!options.support && !options.book) assert.deepEqual(options.methods, []);
-  assert.equal(typeof config.bookTermsConfirmed,'boolean');
+  assert.equal(typeof config.bookPreorderEnabled,'boolean');
   const html=readFileSync(new URL('./soutien.html',import.meta.url),'utf8');
   assert.match(html, /id="support-pay"[^>]*hidden/);
   assert.match(html, /id="book-pay"[^>]*hidden/);
