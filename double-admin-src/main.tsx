@@ -2,6 +2,7 @@ import {useEffect,useState, type FormEvent} from 'react';
 import {createRoot} from 'react-dom/client';
 import Blog from './blog';
 import Atelier from './atelier';
+import PasswordSettings from './password-settings';
 import './base.css';
 import './login.css';
 
@@ -21,7 +22,7 @@ function App(){
   }
   if(state==='ready'){
     const view=new URLSearchParams(location.search).get('view');
-    return <>{view==='atelier'||view==='review'?<><form className="am-site-logout" action="/api/atelier/auth/logout" method="post"><button className="am-button am-button-secondary">Se déconnecter</button></form><Atelier/></>:<Blog/>}</>;
+    return <><PasswordSettings/>{view==='atelier'||view==='review'?<><form className="am-site-logout" action="/api/atelier/auth/logout" method="post"><button className="am-button am-button-secondary">Se déconnecter</button></form><Atelier/></>:<Blog/>}</>;
   }
   return <main className="am-login"><p className="am-eyebrow">Ahmed Marie · Espace d’auteur</p><h1>Connexion administrateur</h1>{state==='loading'?<p role="status">Ouverture de ton espace…</p>:state==='error'?<><p role="alert">{error}</p><button className="am-button" onClick={()=>void check()}>Réessayer</button></>:<form onSubmit={login}><label htmlFor="username">Identifiant</label><input id="username" name="username" autoComplete="username" defaultValue="admin" required/><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" required maxLength={200}/>{error&&<p className="am-login-error" role="alert">{error}</p>}<button className="am-button" disabled={busy}>{busy?'Connexion…':'Se connecter'}</button></form>}<a className="am-login-back" href="/ahmed-marie.html">← Revenir au blog public</a></main>;
 }

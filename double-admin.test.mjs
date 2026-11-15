@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {timingSafeEqual} from 'node:crypto';
+import {DatabaseSync} from 'node:sqlite';
 import {checkPassword,createSession,validSession,cookie,COOKIE} from './double-backend/web-auth.js';
 import {createAdminHandler} from './double-backend/web-admin-handler.js';
 import proxy from './double-admin-api.mjs';
@@ -10,15 +11,19 @@ const password='Test-only-Password_83!';const salt='test-salt';
 const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
 const digest=Buffer.from(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:100000,hash:'SHA-256'},key,256)).toString('hex');
 const secret=crypto.randomUUID()+crypto.randomUUID();
-function fixture(){let coreCalls=0,lastRequest,attempts=0;
- const env={WEB_ADMIN_PASSWORD_HASH:salt+':'+digest,WEB_ADMIN_SESSION_SECRET:secret,ADMIN_TOKEN:'server-test-only',DB:{prepare(){return {bind(){return {async first(){attempts++;return attempts<=30?{count:attempts}:null;}};}};}}};
+function fixture(){let coreCalls=0,lastRequest;
+ const database=new DatabaseSync(':memory:');
+ database.exec("CREATE TABLE daily_access(key TEXT PRIMARY KEY,count INTEGER NOT NULL);CREATE TABLE web_admin_credentials(id TEXT PRIMARY KEY,password_hash TEXT NOT NULL,version INTEGER NOT NULL,updated_at TEXT NOT NULL)");
+ database.prepare("INSERT INTO web_admin_credentials VALUES('admin',?,1,?)").run(salt+':'+digest,new Date().toISOString());
+ const DB={prepare(sql){const statement=database.prepare(sql);return {async first(){return statement.get()||null;},bind(...params){return {async first(){return statement.get(...params)||null;}};}};}};
+ const env={WEB_ADMIN_SESSION_SECRET:secret,ADMIN_TOKEN:'server-test-only',DB};
  const app=createAdminHandler({async fetch(request){coreCalls++;lastRequest=request;return Response.json({ok:true,path:new URL(request.url).pathname});}});
  const req=(path,body,token,headers={})=>new Request('https://backend.example/web-admin/'+path,{method:body===undefined?'GET':'POST',headers:{origin,'content-type':'application/json',...(token?{cookie:COOKIE+'='+token}:{}),...headers},body:body===undefined?undefined:JSON.stringify(body)});
- return {app,env,req,get coreCalls(){return coreCalls;},get lastRequest(){return lastRequest;}};
+ return {app,env,req,database,get coreCalls(){return coreCalls;},get lastRequest(){return lastRequest;}};
 }
 test('real password check, signed session tampering and expiry',async()=>{
  assert.equal(await checkPassword(password,salt+':'+digest),true);assert.equal(await checkPassword('incorrect',salt+':'+digest),false);
- const token=await createSession(secret);assert.equal(await validSession(token,secret),true);assert.equal(await validSession(token+'a',secret),false);assert.equal(await validSession(token,secret,Date.now()+8*86400000),false);assert.equal(await validSession(token,'other-secret'),false);
+ const token=await createSession(secret);assert.equal(await validSession(token,secret),true);assert.equal(await validSession(token+'a',secret),false);assert.equal(await validSession(token,secret,1,Date.now()+8*86400000),false);assert.equal(await validSession(token,'other-secret'),false);
  assert.match(cookie(token),/HttpOnly; Secure; SameSite=Lax/);
 });
 test('login grants a secure cookie; bad credentials and cross-site requests are rejected',async()=>{
@@ -49,4 +54,20 @@ test('Netlify endpoint enforces same-origin POST and forwards cookie without exp
   const r=await proxy(new Request(origin+'/api/atelier/auth/session',{headers:{cookie:COOKIE+'=test'}}));assert.equal(r.status,200);assert.match(captured.url,/\/web-admin\/auth\/session$/);assert.equal(captured.init.headers.cookie,COOKIE+'=test');assert.equal(captured.init.headers.authorization,undefined);assert.match(r.headers.get('set-cookie'),/HttpOnly/);
   assert.equal((await proxy(new Request(origin+'/api/atelier/auth/login',{method:'POST',headers:{origin:'https://attacker.example'},body:'{}'}))).status,403);
  }finally{globalThis.fetch=original;}
+});
+
+test('password change requires authentication and current password; old credentials and sessions stop working',async()=>{
+ const f=fixture();const token=await createSession(secret,1);const change={currentPassword:password,newPassword:'nouveau4826'};
+ assert.equal((await f.app.fetch(f.req('auth/password',change),f.env,{})).status,401);
+ assert.equal((await f.app.fetch(f.req('auth/password',{...change,currentPassword:'wrong'},token),f.env,{})).status,403);
+ assert.equal((await f.app.fetch(f.req('auth/password',{...change,newPassword:'court'},token),f.env,{})).status,400);
+ const changed=await f.app.fetch(f.req('auth/password',change,token),f.env,{});assert.equal(changed.status,200);
+ const newToken=changed.headers.get('set-cookie').split(';')[0].slice(COOKIE.length+1);
+ assert.equal((await f.app.fetch(f.req('auth/session',undefined,token),f.env,{})).status,401);
+ assert.equal((await f.app.fetch(f.req('auth/session',undefined,newToken),f.env,{})).status,200);
+ assert.equal((await f.app.fetch(f.req('auth/login',{username:'admin',password}),f.env,{})).status,401);
+ assert.equal((await f.app.fetch(f.req('auth/login',{username:'admin',password:change.newPassword}),f.env,{})).status,200);
+ const stored=f.database.prepare("SELECT * FROM web_admin_credentials").get();assert.notEqual(stored.password_hash,change.newPassword);assert.equal(stored.version,2);
+ assert.equal((await f.app.fetch(new Request('https://backend.example/admin/blog',{headers:{authorization:'Bearer server-test-only'}}),f.env,{})).status,401);
+ f.database.close();
 });

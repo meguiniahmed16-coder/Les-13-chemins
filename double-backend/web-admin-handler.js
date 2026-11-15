@@ -1,4 +1,4 @@
-import {checkPassword, createSession, validSession, cookie, requestToken} from './web-auth.js';
+import {checkPassword, hashPassword, createSession, validSession, cookie, requestToken} from './web-auth.js';
 const ORIGINS = new Set(['https://tectonique-des-ames.netlify.app','https://tectonic-d-am.com','https://www.tectonic-d-am.com','https://tectonique-des-ames.com','https://www.tectonique-des-ames.com']);
 const ACTIONS = new Set(['start','history','erase','chat','admin/bank','admin/review','admin/decision','admin/answer','admin/blog','admin/invite','admin/comment','admin/visits']);
 const headers = {'cache-control':'private, no-store','cdn-cache-control':'no-store','netlify-cdn-cache-control':'no-store','x-content-type-options':'nosniff','vary':'Cookie'};
@@ -13,13 +13,20 @@ async function readBody(request, max) {
 export function createAdminHandler(core) {
   return {async fetch(request,env,ctx){
     const url=new URL(request.url);
-    if(!url.pathname.startsWith('/web-admin/'))return core.fetch(request,env,ctx);
+    if(!url.pathname.startsWith('/web-admin/')){
+      // The migrated administrator UI is the only interactive admin entrypoint.
+      // Retired Sites credentials must not remain an alternate password route.
+      if(request.headers.has('authorization'))return reply({error:'Utilise la connexion administrateur sur le site principal.'},401);
+      return core.fetch(request,env,ctx);
+    }
     try {
       const path=url.pathname.slice('/web-admin/'.length);
       if(!['GET','POST'].includes(request.method))return reply({error:'Méthode non autorisée.'},405);
       const origin=request.headers.get('origin');
       if((origin && !ORIGINS.has(origin)) || (request.method==='POST'&&!ORIGINS.has(origin)))return reply({error:'Origine invalide.'},403);
-      if(!env.WEB_ADMIN_PASSWORD_HASH || !env.WEB_ADMIN_SESSION_SECRET || !env.ADMIN_TOKEN)return reply({error:'La connexion administrateur n’est pas configurée.'},503);
+      if(!env.WEB_ADMIN_SESSION_SECRET || !env.ADMIN_TOKEN)return reply({error:'La connexion administrateur n’est pas configurée.'},503);
+      const credential=await env.DB.prepare("SELECT password_hash,version FROM web_admin_credentials WHERE id='admin'").first();
+      if(!credential)return reply({error:'La connexion administrateur n’est pas configurée.'},503);
       if(path==='auth/login'&&request.method==='POST'){
         const raw=await readBody(request,1500);let body;try{body=JSON.parse(raw);}catch{return reply({error:'Demande invalide.'},400);}
         if(!body || typeof body.username!=='string' || typeof body.password!=='string' || body.password.length>200)return reply({error:'Identifiant ou mot de passe incorrect.'},401);
@@ -27,13 +34,25 @@ export function createAdminHandler(core) {
         const now=new Date();const slot=Math.floor(now.getTime()/900000);
         const limit=await env.DB.prepare('INSERT INTO daily_access(key,count) VALUES(?,1) ON CONFLICT(key) DO UPDATE SET count=count+1 WHERE count<30 RETURNING count').bind(now.toISOString().slice(0,10)+':web-login:'+slot).first();
         if(!limit)return reply({error:'Trop de tentatives. Réessaie dans quinze minutes.'},429);
-        const ok=await checkPassword(body.password,env.WEB_ADMIN_PASSWORD_HASH);
+        const ok=await checkPassword(body.password,credential.password_hash);
         if(body.username!=='admin'||!ok)return reply({error:'Identifiant ou mot de passe incorrect.'},401);
-        return reply({ok:true},200,{'set-cookie':cookie(await createSession(env.WEB_ADMIN_SESSION_SECRET))});
+        return reply({ok:true},200,{'set-cookie':cookie(await createSession(env.WEB_ADMIN_SESSION_SECRET,credential.version))});
       }
       if(path==='auth/logout'&&request.method==='POST')return new Response(null,{status:303,headers:{...headers,'set-cookie':cookie('',true),location:'/admin-blog.html'}});
-      if(!await validSession(requestToken(request),env.WEB_ADMIN_SESSION_SECRET))return reply({error:'Connecte-toi pour ouvrir ton espace administrateur.'},401);
+      if(!await validSession(requestToken(request),env.WEB_ADMIN_SESSION_SECRET,credential.version))return reply({error:'Connecte-toi pour ouvrir ton espace administrateur.'},401);
       if(path==='auth/session'&&request.method==='GET')return reply({ok:true,username:'admin'});
+      if(path==='auth/password'&&request.method==='POST'){
+        const raw=await readBody(request,2000);let body;try{body=JSON.parse(raw);}catch{return reply({error:'Demande invalide.'},400);}
+        if(!body || typeof body.currentPassword!=='string' || typeof body.newPassword!=='string' || body.currentPassword.length>200 || body.newPassword.length<8 || body.newPassword.length>200)return reply({error:'Choisis un mot de passe de 8 à 200 caractères.'},400);
+        const now=new Date();const slot=Math.floor(now.getTime()/900000);
+        const limit=await env.DB.prepare('INSERT INTO daily_access(key,count) VALUES(?,1) ON CONFLICT(key) DO UPDATE SET count=count+1 WHERE count<10 RETURNING count').bind(now.toISOString().slice(0,10)+':web-password:'+slot).first();
+        if(!limit)return reply({error:'Trop de tentatives. Réessaie dans quinze minutes.'},429);
+        if(!await checkPassword(body.currentPassword,credential.password_hash))return reply({error:'Le mot de passe actuel est incorrect.'},403);
+        if(body.currentPassword===body.newPassword)return reply({error:'Choisis un mot de passe différent.'},400);
+        const updated=await env.DB.prepare("UPDATE web_admin_credentials SET password_hash=?,version=version+1,updated_at=? WHERE id='admin' AND version=? RETURNING version").bind(await hashPassword(body.newPassword),now.toISOString(),credential.version).first();
+        if(!updated)return reply({error:'Le mot de passe vient de changer. Reconnecte-toi avant de réessayer.'},409);
+        return reply({ok:true},200,{'set-cookie':cookie(await createSession(env.WEB_ADMIN_SESSION_SECRET,updated.version))});
+      }
       const action=path.startsWith('double/')?path.slice(7):'';
       if(!ACTIONS.has(action))return reply({error:'Route inconnue.'},404);
       const target=new URL('/'+action+url.search,url.origin);
