@@ -12,7 +12,6 @@ import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
 import {createPrisonSession} from './prison-3d-session.js';
 import {createPrisonOutro} from './prison-outro.js';
-import {createPrisonDemo} from './prison-3d-demo.js';
 import {createPrisonFoley} from './prison-3d-foley.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
 import {renderPixelRatio,windowScale,ropeWorldX,ropeWorldZ} from './prison-3d-spatial.js';
@@ -50,7 +49,7 @@ try{
 const room=createPrisonRoom({anisotropy:Math.min(8,renderer.capabilities.getMaxAnisotropy())});
 const {scene,rope,packet,floorBrush,heldBrush,floorBrushHalo,windowHalo,brushGripTarget}=room;
 const camera=new T.PerspectiveCamera(72,16/9,.025,30);
-const eyes=createPrisonCamera(camera,{onTourEnd:showDemo});
+const eyes=createPrisonCamera(camera,{onTourEnd:enterPlay});
 const game=createGame(PRISON_BALANCE);
 const foley=createPrisonFoley();
 let lastRustle=-10;
@@ -62,7 +61,6 @@ document.body.dataset.embedded=String(session.embedded);
 let arms=null,assetsReady=false,firstFrame=false,contextLost=false;
 let mode='ready',paused=false,reach=0,actionElapsed=0,actionAttempted=false;
 let brushContactTime=0,visualTime=0,brushAssist=false;
-const demo=createPrisonDemo({document,onFinish:enterPlay});
 let pickupTime=-1,transitionDelay=0,transitionCard=null,heldBlend=1;
 let width=0,height=0,previous=performance.now(),renderedMode=null;
 const reachTarget=new T.Vector3(),pickupTarget=new T.Vector3(),gazeTarget=new T.Vector3(),forward=new T.Vector3(),right=new T.Vector3();
@@ -85,7 +83,7 @@ function notify(){
   game.guard==='approaching'?'Des pas dans le couloir':game.guard==='leaving'?'Les pas s’éloignent':'Couloir calme';
  guardText.dataset.alert=game.guard;
  scoreText.textContent=game.points+' / 30';
- stageText.textContent=mode==='demo'?'Trois gestes pour jouer':mode==='tour'?'Visite de la cellule · 9 m²':mode==='won'?'3 / 3 · Terminé':
+ stageText.textContent=mode==='tour'?'Visite de la cellule · 9 m²':mode==='won'?'3 / 3 · Terminé':
   (Math.min(game.part+1,3))+' / 3 · '+(OBJECTIVES[game.part]||'Terminé');
 }
 function card(title,paragraph,button,action){
@@ -96,18 +94,15 @@ function card(title,paragraph,button,action){
 function begin(){
  if(!firstFrame||contextLost)return;
  outro.reset();outro.prime();
- foley.unlock();foley.suspend(false);lastRustle=-10;
+ foley.unlock();foley.suspend(false);outro.startSoundtrack({muted:!foley.enabled});lastRustle=-10;
  controls.reset();Object.assign(game,createGame(PRISON_BALANCE));syncAspect();
- demo.close();brushAssist=false;paused=false;reach=0;pickupTime=-1;heldBlend=1;brushContactTime=0;transitionDelay=0;transitionCard=null;
+ brushAssist=false;paused=false;reach=0;pickupTime=-1;heldBlend=1;brushContactTime=0;transitionDelay=0;transitionCard=null;
  heldBrush.quaternion.identity();renderer.shadowMap.needsUpdate=true;
  overlay.hidden=true;pauseButton.textContent='Pause';
  eyes.startTour();setMode('tour');notify();text('Une visite de la cellule, avant de prendre place.');
 }
-function showDemo(){
- paused=false;pauseButton.textContent='Pause';controls.reset();setMode('demo');notify();demo.open();
-}
 function enterPlay(){
- demo.close();brushAssist=false;
+ brushAssist=false;
  startGame(game);syncAspect();controls.reset();setMode('playing');notify();
  text('Un appui sur Saisir suffit : tu t’approches du balai et ta main le prend.');
  screen.focus({preventScroll:true});
@@ -168,7 +163,7 @@ function startAction(){
 function stopAction(){actionUp(game);actionElapsed=0;actionAttempted=false;}
 function togglePause(){
  if(!['playing','tour'].includes(mode))return;
- paused=!paused;foley.suspend(paused);controls.reset();pauseButton.textContent=paused?'Reprendre':'Pause';enableControls();
+ paused=!paused;foley.suspend(paused);if(paused)outro.pauseMusic();else outro.resumeMusic();controls.reset();pauseButton.textContent=paused?'Reprendre':'Pause';enableControls();
  text(paused?'Le temps est suspendu.':'Le jeu reprend.');
 }
 playButton.addEventListener('click',begin);
@@ -180,7 +175,7 @@ for(const link of document.querySelectorAll('[data-return-plateau]')){
  });
 }
 pauseButton.addEventListener('click',togglePause);
-$('sound').addEventListener('click',()=>{const enabled=foley.mute(foley.enabled);outro.setMuted(!enabled);$('sound').textContent=enabled?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(enabled));});
+$('sound').addEventListener('click',()=>{const enabled=foley.mute(foley.enabled);outro.setMuted(!enabled);if(enabled&&!paused)outro.resumeMusic();$('sound').textContent=enabled?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(enabled));});
 window.addEventListener('pagehide',()=>{outro.reset();foley.dispose();},{once:true});
 window.addEventListener('keydown',event=>{
  if(!event.defaultPrevented&&paused&&['playing','tour'].includes(mode)&&event.code==='KeyP'&&!event.repeat){event.preventDefault();togglePause();}
@@ -283,7 +278,6 @@ function updateArms(dt,time,holding){
 function frame(dt,time){
  if(paused){controls.consumeLook();return;}
  visualTime+=dt;
- if(mode==='demo'){demo.update(dt);return;}
  if(((mode==='tour'&&eyes.tourProgress>.79)||(mode==='playing'&&game.part>0&&!game.hidden))&&visualTime-lastRustle>3.2){foley.play('plastic');lastRustle=visualTime;}
  const playing=mode==='playing'&&!paused;
  if(controls.state.hide)brushAssist=false;
@@ -347,8 +341,7 @@ function render(now){
  }
  try{
   frame(dt,now/1000);
-  // The illustrated demo has a still background; keep the phone GPU idle.
-  if(mode!=='demo'||renderedMode!=='demo')renderer.render(scene,camera);
+  renderer.render(scene,camera);
   renderedMode=mode;
   if(assetsReady&&!firstFrame){
    firstFrame=true;loading?.ready();enableControls();status.textContent='Prêt · visite puis vue immersive';
