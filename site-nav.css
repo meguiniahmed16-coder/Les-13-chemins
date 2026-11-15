@@ -52,3 +52,8 @@ nav.site-nav .site-links a[aria-current="page"]{
     font-size:12px;
   }
 }
+
+/* Blog prend exactement la largeur des trois boutons de la première ligne. */
+nav.site-nav .site-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;min-width:min(340px,100%)}
+nav.site-nav .site-links .site-blog-link{grid-column:1 / -1;min-height:42px;border:1px solid #a88d64;background:#314f43}
+nav.site-nav .site-links .site-blog-link[aria-current="page"]{background:#476958}

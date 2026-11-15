@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { injectAnalytics } from './site-analytics-build.mjs';
+import { injectSharedNavigation } from './site-nav-build.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const output = join(root, 'dist');
@@ -11,7 +12,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
-  ['--test', 'site-analytics.test.mjs'],
+  ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs'],
   ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
@@ -54,6 +55,7 @@ const publicFiles = [
   'index.html',
   'ahmed-marie.html',
   'site-nav.css',
+  'site-visits.js',
   'site-analytics.js',
   'presentation.html',
   'carte.html',
@@ -208,7 +210,7 @@ await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSO
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
   if (name.endsWith('.html')) {
-    await writeFile(join(output, name), injectAnalytics(await readFile(join(root, name), 'utf8'), name));
+    await writeFile(join(output, name), injectSharedNavigation(injectAnalytics(await readFile(join(root, name), 'utf8'), name), name));
   } else {
     await copyFile(join(root, name), join(output, name));
   }
