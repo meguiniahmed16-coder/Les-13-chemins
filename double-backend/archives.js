@@ -1,29 +1,52 @@
 // Only a direct request in the current user message can trigger this action.
 // Model replies, quoted instructions and previous messages cannot archive anything.
-export function isArchiveRequest(message) {
-  const text=String(message).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function normalizeArchiveText(message){return String(message).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
+export function parseArchiveRequest(message) {
+  let text=normalizeArchiveText(message);
+  const range=/^(.*?) (?:a partir de|depuis) (.+)$/.exec(text);
+  const startText=range?.[2]?.replace(/ s il (?:te|vous) plait$/, '')||null;
+  if(range)text=range[1];
+  const bare=/^(?:archive|archivez|sauvegarde|sauvegardez)(?: s il (?:te|vous) plait)?$/.test(text);
+  if(bare)return {startText,bare:true,whole:false};
   const lead='(?:(?:ecoute|bon|ok|oui|alors) )?';
   const infinitive='(?:archiver|garder|conserver|sauvegarder|enregistrer|mettre de cote)';
   const request='(?:archive|archivez|garde|gardez|conserve|conservez|sauvegarde|sauvegardez|enregistre|enregistrez|mets de cote|mettez de cote|(?:peux tu|pourrais tu|pouvez vous|pourriez vous|tu peux|vous pouvez) (?:me )?'+infinitive+'|(?:je veux|je voudrais|je souhaite|j aimerais) (?:'+infinitive+'|que (?:tu (?:archives|gardes|conserves|sauvegardes|enregistres|mettes de cote)|vous (?:archiviez|gardiez|conserviez|sauvegardiez|enregistriez|mettiez de cote))))';
-  const object='(?:toute )?(?:cette|notre|la) (?:conversation|discussion)|(?:tout )?(?:cet|notre|l) echange|(?:tous )?(?:ces|nos|les) echanges|ca|cela|tout ca|ce dialogue|ce qu on vient de dire';
+  const object='(?:toute )?(?:cette|notre|la|ce|le) (?:conversation|discussion|dialogue)|(?:tout )?(?:cet|notre|l) echange|(?:tous )?(?:ces|nos|les) echanges|ca|cela|tout ca|ce dialogue|ce qu on vient de dire';
   const place='(?: (?:dans|sur) (?:le|mon|ton|l) (?:back office|backoffice|administration|espace administrateur|espace d administration))?';
   const polite='(?: s il (?:te|vous) plait)?(?: merci)?';
-  return new RegExp('^'+lead+request+' (?:'+object+')(?: pour (?:plus tard|y revenir|la prochaine fois))?'+place+polite+'$').test(text);
+  return new RegExp('^'+lead+request+' (?:'+object+')(?: entre nous)?(?: pour (?:plus tard|y revenir|la prochaine fois))?'+place+polite+'$').test(text)?{startText,bare:false,whole:/\b(?:toute|tout|tous)\b/.test(text)}:null;
 }
+
+export function isArchiveRequest(message){return parseArchiveRequest(message)!==null;}
 
 export async function archiveChat(db,session,p,now,existing) {
   const rows=await db.prepare('SELECT id,prompt,response,state,review,correction,created_at FROM turns WHERE session_id=? ORDER BY created_at ASC,rowid ASC').bind(session.id).all();
   if(rows.results.length>=140)return {status:429,data:{error:'Cette conversation a atteint sa limite. Son archive reste disponible ; ouvre une nouvelle conversation pour continuer.'}};
   if(rows.results.some(t=>t.state==='pending'))return {status:409,data:{error:'Une réponse est encore en préparation. Attends sa fin, puis redemande l’archivage.'}};
+  const instruction=parseArchiveRequest(p.message);
+  let startText=instruction?.startText;
+  if(instruction?.bare&&!startText){for(const t of rows.results.slice(-4).reverse()){const previous=parseArchiveRequest(t.prompt);if(previous?.startText){startText=previous.startText;break;}}}
+  let startIndex=0;
+  if(startText){
+    const matches=rows.results.map((t,index)=>({t,index})).filter(({t})=>!isArchiveRequest(t.prompt)&&normalizeArchiveText(t.prompt+' '+t.response).includes(startText));
+    if(!matches.length)return {status:400,data:{error:'Je ne retrouve pas ce passage. Donne-moi quelques mots exacts du début à garder.'}};
+    if(matches.length>1)return {status:400,data:{error:'Je retrouve ces mots à plusieurs endroits. Précise un peu le début du passage à garder.'}};
+    startIndex=matches[0].index;
+  }else if(!instruction?.whole){
+    const previous=await db.prepare('SELECT transcript_json FROM conversation_archives WHERE session_id=?').bind(session.id).first();
+    if(previous){const first=JSON.parse(previous.transcript_json)[0]?.id;const found=rows.results.findIndex(t=>t.id===first);if(found>=0)startIndex=found;}
+  }
+  const selected=rows.results.slice(startIndex);
   const address=session.address_mode==='vous';
-  const response=address?'C’est archivé. La conversation complète et datée est conservée dans « Archives », dans l’administration d’Ahmed.':'C’est archivé. Tu retrouveras la conversation complète et datée dans « Archives », dans l’administration.';
+  const confirmations=address?['C’est gardé. Vous le retrouverez dans Archives.','Voilà, c’est gardé.','C’est bon, je l’ai gardé.']:['C’est gardé. Tu le retrouveras dans Archives.','Voilà, c’est gardé.','C’est bon, je l’ai gardé.'];
+  const response=confirmations[rows.results.filter(t=>isArchiveRequest(t.prompt)).length%confirmations.length];
   const turn={id:existing?.id||crypto.randomUUID(),prompt:p.message.trim(),response,created_at:existing?.created_at||now,state:'complete',review:'unreviewed',correction:''};
-  const transcript=rows.results.filter(t=>t.id!==turn.id).concat(turn);
-  const title=(rows.results.find(t=>!isArchiveRequest(t.prompt))?.prompt||'Conversation avec Ahmed numérique').replace(/\s+/g,' ').slice(0,120);
+  const transcript=selected.filter(t=>t.id!==turn.id).concat(turn);
+  const title=(selected.find(t=>!isArchiveRequest(t.prompt))?.prompt||'Conversation avec Ahmed numérique').replace(/\s+/g,' ').slice(0,120);
   // All three writes commit together. Success is never announced before commit.
   await db.batch([
     existing?db.prepare("UPDATE turns SET response=?,state='complete',source_ids='[]' WHERE id=? AND state='error'").bind(response,turn.id):db.prepare("INSERT INTO turns(id,session_id,request_id,prompt,response,state,created_at,source_ids) VALUES(?,?,?,?,?,'complete',?,'[]')").bind(turn.id,session.id,p.request_id,turn.prompt,response,now),
-    db.prepare('INSERT INTO conversation_archives(session_id,title,kind,created_at,archived_at,turn_count,transcript_json) VALUES(?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET archived_at=excluded.archived_at,turn_count=excluded.turn_count,transcript_json=excluded.transcript_json').bind(session.id,title,session.kind,session.created_at,now,transcript.length,JSON.stringify(transcript)),
+    db.prepare('INSERT INTO conversation_archives(session_id,title,kind,created_at,archived_at,turn_count,transcript_json) VALUES(?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET title=excluded.title,archived_at=excluded.archived_at,turn_count=excluded.turn_count,transcript_json=excluded.transcript_json').bind(session.id,title,session.kind,session.created_at,now,transcript.length,JSON.stringify(transcript)),
     db.prepare('UPDATE sessions SET last_at=? WHERE id=?').bind(now,session.id)
   ]);
   return {status:200,data:{turn:{...turn,status:turn.review},sources:[],archived:true}};
