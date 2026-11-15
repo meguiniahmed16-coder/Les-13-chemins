@@ -52,6 +52,7 @@ for (const args of [
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
   'index.html',
+  'ahmed-marie.html',
   'site-nav.css',
   'site-analytics.js',
   'presentation.html',
