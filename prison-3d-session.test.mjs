@@ -8,7 +8,7 @@ const ORIGIN='https://example.test';
 const init=(id='first',replay=false)=>({type:'yoyo:init',id,level:5,plateau:2,replay});
 const finished=(id='first',replay=false)=>({type:'yoyo:finished',id,bonus:replay?0:30,score:540,replay});
 
-function harness({embedded=true,parentReceive=()=>{}}={}){
+function harness({embedded=true,parentReceive=()=>{},hasOutro=false}={}){
  const listeners=new Map(),messages=[],navigations=[],replays=[],results=[];
  const parent={postMessage(data,origin){messages.push({data:structuredClone(data),origin});parentReceive(data,origin);}};
  const host={
@@ -19,11 +19,24 @@ function harness({embedded=true,parentReceive=()=>{}}={}){
  };
  host.parent=embedded?parent:host;
  Object.defineProperty(host,'localStorage',{get(){throw new Error('The game must never edit board storage');}});
- const api=createPrisonSession({host,onReplay:session=>replays.push(session),onFinished:result=>results.push(result)});
+ const api=createPrisonSession({host,hasOutro,onReplay:session=>replays.push(session),onFinished:result=>results.push(result)});
  const receive=(data,extra={})=>host.emit('message',{source:parent,origin:ORIGIN,data,...extra});
  return {host,parent,api,messages,navigations,replays,results,receive,listeners,
   sent:type=>messages.filter(message=>message.data.type===type)};
 }
+
+test('The film completion waits for the matching win acknowledgement and is sent only once per session',()=>{
+ const h=harness({hasOutro:true});h.receive(init());h.api.sendReady();
+ assert.equal(h.api.outroEnded(),false);h.api.win();
+ assert.equal(h.sent('yoyo:won')[0].data.outro,true);
+ assert.equal(h.api.outroEnded(),true);assert.equal(h.sent('yoyo:outro-ended').length,0);
+ h.receive(finished('wrong'));assert.equal(h.sent('yoyo:outro-ended').length,0);
+ h.receive(finished());h.receive(finished());h.api.outroEnded();
+ assert.deepEqual(h.sent('yoyo:outro-ended').map(m=>m.data.id),['first']);
+ h.api.replay();h.receive(init('second',true));h.api.win();h.receive(finished('second',true));h.api.outroEnded();
+ assert.deepEqual(h.sent('yoyo:outro-ended').map(m=>m.data.id),['first','second']);
+ h.api.dispose();
+});
 
 test('An early parent init is retained without starting or resetting the game before readiness',()=>{
  const h=harness();

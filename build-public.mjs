@@ -20,7 +20,7 @@ for (const args of [
   ['--test', 'prison-3d-prototype.test.mjs', 'prison-3d-loading.test.mjs', 'prison-3d-visibility.test.mjs',
     'prison-3d-camera.test.mjs', 'prison-3d-arms.test.mjs', 'prison-3d-controls.test.mjs',
     'prison-3d-yoyo.test.mjs', 'prison-3d-spatial.test.mjs', 'prison-3d-balance.test.mjs', 'prison-3d-playthrough.test.mjs',
-    'prison-3d-session.test.mjs', 'plateaux.test.mjs'],
+    'prison-3d-session.test.mjs', 'prison-outro.test.mjs', 'plateaux.test.mjs'],
   ['--test', 'bosnie-compagnon.test.mjs', 'bosnie-graphics.test.mjs'],
   ['build-bosnie-addon.mjs'],
   ['--test', 'sarajevo-cinema.test.mjs', 'sarajevo-crossing.test.mjs'],
@@ -143,6 +143,7 @@ const publicFiles = [
   'prison-3d-prototype.html',
   'prison-3d-prototype-runtime.js',
   'assets/prison/metal-stool-02.glb',
+  'assets/prison/le-cafe-16s.mp4',
   'assets/prison/metal-stool-02-LICENSE.txt',
   'yoyo-runtime.js',
   'main_ouverte_fixee.webp',
@@ -168,7 +169,7 @@ for (const name of publicFiles) {
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('Fichier public non régulier : ' + name);
   }
-  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name) || name.endsWith('.bin')) continue;
+  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name) || name.endsWith('.mp4') || name.endsWith('.bin')) continue;
   const content = await readFile(source, 'utf8');
   if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(content)) {
     throw new Error('Lien vers un document de travail interdit dans : ' + name);

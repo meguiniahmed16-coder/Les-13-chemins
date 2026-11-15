@@ -10,6 +10,7 @@ import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
 import {createPrisonSession} from './prison-3d-session.js';
+import {createPrisonOutro} from './prison-outro.js';
 import {createPrisonDemo} from './prison-3d-demo.js';
 import {createPrisonFoley} from './prison-3d-foley.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
@@ -47,6 +48,9 @@ class Element{
  releasePointerCapture(id){if(this.captured.delete(id))this.emit('lostpointercapture',{pointerId:id});}
  getBoundingClientRect(){return {left:0,top:0,width:this.clientWidth,height:this.clientHeight};}
  closest(selector){return selector==='button,a'&&['BUTTON','A'].includes(this.tagName)?this:null;}
+ play(){return Promise.resolve();}
+ pause(){}
+ load(){}
  focus(){globalThis.document.activeElement=this;}
 }
 
@@ -150,7 +154,7 @@ async function harness(t){
  const bindings={
   T:{...Three,WebGLRenderer:Renderer},GLTFLoader,CELL,FURNITURE_URL,PRISON_BALANCE,
   createPrisonRoom:options=>createPrisonRoom({...options,textures:false}),
-  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,createPrisonFoley,createPrisonDemo,...spatial,...rules,
+  createPrisonCamera,createPrisonArms,createPrisonControls,createPrisonSession,createPrisonFoley,createPrisonDemo,createPrisonOutro,...spatial,...rules,
   loadActorBytes:async(url,options)=>{
    const path=new URL(url).pathname.slice(1);
    assert.ok(['danse-quaternius-hero.glb',FURNITURE_URL].includes(path),'Only packaged local assets may load');
@@ -331,6 +335,11 @@ test('The official immersive game lets a novice win, credits the board once and 
  recoverBag(ui,2);
  assert.equal(app.mode,'won');assert.equal(app.game.phase,'victory');
  assert.equal(app.game.points,30);assert.equal(node('score').textContent,'30 / 30');
+ assert.equal(node('overlay').hidden,true,'The film precedes the victory card');
+ assert.equal(node('prison-outro').hidden,false);
+ assert.equal(ui.board.closed,0,'The board stays open during the film');
+ node('prison-film').emit('ended');
+ assert.equal(node('prison-outro').hidden,true);
  assert.equal(node('overlay').hidden,false);
  assert.equal(node('overlay').querySelector('button').textContent,'Continuer le voyage');
  assert.equal(node('overlay-replay').textContent,'Rejouer');
@@ -340,7 +349,7 @@ test('The official immersive game lets a novice win, credits the board once and 
  assert.equal(ui.board.state.points,540,'The real board credits exactly 30 points');
  assert.equal(ui.board.state.unlocked,6);assert.ok(ui.board.state.completed.includes(5));
  const wonMessages=ui.board.messages.filter(message=>message.type==='yoyo:won');
- assert.deepEqual(wonMessages,[{type:'yoyo:won',id:'official-prison-first',points:30}]);
+ assert.deepEqual(wonMessages,[{type:'yoyo:won',id:'official-prison-first',points:30,outro:true}]);
  assert.equal(app.session.win(),false);ui.advance(.2);
  assert.equal(ui.board.messages.filter(message=>message.type==='yoyo:won').length,1);
  ui.board.receive(wonMessages[0]);

@@ -41,6 +41,23 @@ test('Danse → Camarades ! → prison: la chronologie respecte les deux « Drap
  emit('yoyo',{type:'yoyo:close'});
  assert.deepEqual(calls.next,[5]);
 });
+test('The prison stays open for the full film and accepts its end only from the winning session',()=>{
+ const h=harness(),{c,$,emit,calls}=h;
+ c.state.danseFinished=true;c.state.dansePassed=[1,2,3,4,5];
+ c.TreizePlateaux.done(c.state,5,1);c.state.rdvManifestationFinished=true;c.save();c.render();
+ c.TreizePlateauxNavigation.openPart('prison');calls.readers[0].onChallenge();
+ const id=c.state.yoyoPending.id;
+ emit('yoyo',{type:'yoyo:outro-ended',id});assert.equal($('yoyoDialog').open,true);
+ emit('yoyo',{type:'yoyo:won',id,points:30,outro:true});
+ assert.equal(c.state.points,430);assert.equal(h.timers.length,0,'No two-second close while the film plays');
+ emit('yoyo',{type:'yoyo:outro-ended',id:'stale'});
+ emit('yoyo',{type:'yoyo:outro-ended',id},{});
+ c.message({origin:'https://foreign.test',source:$('yoyoFrame').contentWindow,data:{type:'yoyo:outro-ended',id}});
+ assert.equal($('yoyoDialog').open,true);assert.deepEqual(calls.next,[]);
+ emit('yoyo',{type:'yoyo:outro-ended',id});emit('yoyo',{type:'yoyo:outro-ended',id});
+ assert.equal($('yoyoDialog').open,false);assert.deepEqual(calls.next,[5]);
+});
+
 test('Une partie de prison interrompue est rejouable sans rejouer Camarades !',()=>{
  const h=harness(),{c,$,emit,calls}=h;
  c.state.danseFinished=true;c.state.dansePassed=[1,2,3,4,5];

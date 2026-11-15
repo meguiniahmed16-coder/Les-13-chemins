@@ -11,6 +11,7 @@ import {createPrisonCamera} from './prison-3d-camera.js';
 import {createPrisonArms} from './prison-3d-arms.js';
 import {createPrisonControls} from './prison-3d-controls.js';
 import {createPrisonSession} from './prison-3d-session.js';
+import {createPrisonOutro} from './prison-outro.js';
 import {createPrisonDemo} from './prison-3d-demo.js';
 import {createPrisonFoley} from './prison-3d-foley.js';
 import {PRISON_BALANCE} from './prison-3d-balance.js';
@@ -55,7 +56,8 @@ const foley=createPrisonFoley();
 let lastRustle=-10;
 const controls=createPrisonControls({surface:screen,joystick,knob:$('joystick-knob'),
  actionButton,hideButton,onActionDown:startAction,onActionUp:stopAction,onPause:togglePause});
-const session=createPrisonSession({onReplay:()=>begin()});
+const session=createPrisonSession({hasOutro:true,onReplay:()=>begin()});
+const outro=createPrisonOutro({document,onEnd:()=>{showWonCard();session.outroEnded();}});
 document.body.dataset.embedded=String(session.embedded);
 let arms=null,assetsReady=false,firstFrame=false,contextLost=false;
 let mode='ready',paused=false,reach=0,actionElapsed=0,actionAttempted=false;
@@ -93,6 +95,7 @@ function card(title,paragraph,button,action){
 }
 function begin(){
  if(!firstFrame||contextLost)return;
+ outro.reset();outro.prime();
  foley.unlock();foley.suspend(false);lastRustle=-10;
  controls.reset();Object.assign(game,createGame(PRISON_BALANCE));syncAspect();
  demo.close();brushAssist=false;paused=false;reach=0;pickupTime=-1;heldBlend=1;brushContactTime=0;transitionDelay=0;transitionCard=null;
@@ -125,12 +128,15 @@ function between(){
 }
 function won(){
  foley.play('plastic');controls.reset();setMode('won');
+ overlay.hidden=true;session.win();
+ text('Les trois épreuves sont réussies : 30 / 30.');
+ foley.suspend(true);outro.start({muted:!foley.enabled});
+}
+function showWonCard(){
  card('Une humanité de l’autre côté',
   'La brosse, le tabac, puis le café. Trois gestes réussis dans la cellule.',
   'Continuer le voyage',()=>session.close());
  replayButton.hidden=false;
- session.win();
- text('Les trois épreuves sont réussies : 30 / 30.');
 }
 function caught(){
  controls.reset();actionUp(game);setMode('caught');
@@ -175,7 +181,7 @@ for(const link of document.querySelectorAll('[data-return-plateau]')){
 }
 pauseButton.addEventListener('click',togglePause);
 $('sound').addEventListener('click',()=>{const enabled=foley.mute(foley.enabled);$('sound').textContent=enabled?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(enabled));});
-window.addEventListener('pagehide',()=>foley.dispose(),{once:true});
+window.addEventListener('pagehide',()=>{outro.reset();foley.dispose();},{once:true});
 window.addEventListener('keydown',event=>{
  if(!event.defaultPrevented&&paused&&['playing','tour'].includes(mode)&&event.code==='KeyP'&&!event.repeat){event.preventDefault();togglePause();}
 });

@@ -14,7 +14,7 @@ const noop=()=>{};
  * for initialization/acknowledgement; false means ignored or already handled.
  * `host` is injectable for CPU tests and defaults to the browser window.
  */
-export function createPrisonSession({host=globalThis.window,onReplay=noop,onFinished=noop}={}){
+export function createPrisonSession({host=globalThis.window,onReplay=noop,onFinished=noop,hasOutro=false}={}){
  if(!host?.addEventListener||!host?.removeEventListener)
   throw new TypeError('Une fenêtre est nécessaire pour la session de prison.');
  const parentWindow=host.parent||host;
@@ -23,6 +23,7 @@ export function createPrisonSession({host=globalThis.window,onReplay=noop,onFini
  const usableOrigin=typeof origin==='string'&&origin.length>0&&origin!=='null';
  const retiredIds=new Set();
  let session=null,ready=false,won=false,wonSent=false,result=null;
+ let outroDone=false,outroSent=false;
  let replayRequested=false,replaySent=false,pendingStart=false,closed=false,disposed=false;
  const active=()=>!closed&&!disposed;
 
@@ -37,7 +38,13 @@ export function createPrisonSession({host=globalThis.window,onReplay=noop,onFini
   if(!active()||!ready||!session||!won||wonSent)return false;
   // Set before postMessage so synchronous test hosts are also idempotent.
   wonSent=true;
-  if(!post('yoyo:won',{points:30})){wonSent=false;return false;}
+  if(!post('yoyo:won',{points:30,...(hasOutro?{outro:true}:{})})){wonSent=false;return false;}
+  return true;
+ }
+ function flushOutro(){
+  if(!active()||!hasOutro||!outroDone||outroSent||!wonSent||!result)return false;
+  outroSent=true;
+  if(!post('yoyo:outro-ended')){outroSent=false;return false;}
   return true;
  }
  function flushReplay(){
@@ -64,7 +71,7 @@ export function createPrisonSession({host=globalThis.window,onReplay=noop,onFini
    if(session?.id===message.id){flushWin();return;}
    if(session){
     retiredIds.add(session.id);
-    won=wonSent=false;result=null;replayRequested=replaySent=false;
+    won=wonSent=false;result=null;replayRequested=replaySent=false;outroDone=outroSent=false;
     pendingStart=true;
    }
    session=Object.freeze({id:message.id,level:5,plateau:2,replay:message.replay===true});
@@ -74,7 +81,7 @@ export function createPrisonSession({host=globalThis.window,onReplay=noop,onFini
    if(![0,30].includes(message.bonus)||!Number.isFinite(message.score)||message.score<0||
     typeof message.replay!=='boolean'||message.replay!==session.replay)return;
    result=Object.freeze({id:session.id,bonus:message.bonus,score:message.score,replay:message.replay});
-   onFinished(result);flushReplay();
+   onFinished(result);flushOutro();flushReplay();
   }
  }
  function sendReady(){
@@ -88,12 +95,16 @@ export function createPrisonSession({host=globalThis.window,onReplay=noop,onFini
  function replay(){
   if(!active())return false;
   if(!embedded){
-   won=wonSent=false;result=null;pendingStart=true;startPending();return true;
+   won=wonSent=false;result=null;outroDone=outroSent=false;pendingStart=true;startPending();return true;
   }
   // Never restart locally against an old credited ID. The parent acknowledges
   // victory, allocates a fresh ID, then its init starts the replay.
   if(!session||!wonSent||replayRequested)return false;
   replayRequested=true;flushReplay();return true;
+ }
+ function outroEnded(){
+  if(!active()||!hasOutro||!won||outroDone)return false;
+  outroDone=true;flushOutro();return true;
  }
  function dispose(){
   if(disposed)return false;
@@ -112,7 +123,7 @@ export function createPrisonSession({host=globalThis.window,onReplay=noop,onFini
  }
  host.addEventListener('message',receive);
  host.addEventListener('pagehide',dispose,{once:true});
- return {sendReady,win,close,replay,dispose,
+ return {sendReady,win,close,replay,dispose,outroEnded,
   get embedded(){return embedded;},get session(){return session;},get ready(){return ready;},
   get wonSent(){return wonSent;},get finished(){return result!==null;},get result(){return result;},
   get replayPending(){return replayRequested;}
