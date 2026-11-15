@@ -16,7 +16,7 @@ test('default is per visit; a navigation or concurrent notification cannot cause
  const f=fixture();assert.equal((await notificationSettings(f.DB)).mode,'immediate');
  const v=await recordVisit(f.DB,'browser','/',now);assert.equal(v.fresh,true);
  assert.equal((await recordVisit(f.DB,'browser','/blog',later)).fresh,false);
- await Promise.all([sendVisitMail(f.env,v.id),sendVisitMail(f.env,v.id)]);assert.equal(f.sent.length,1);assert.match(f.sent[0].text,/netlify.app\/admin-blog.html/);
+ await Promise.all([sendVisitMail(f.env,v.id),sendVisitMail(f.env,v.id)]);assert.equal(f.sent.length,1);assert.match(f.sent[0].text,/tectonique-des-ames.com\/admin-blog.html/);
  const next=await recordVisit(f.DB,'browser','/blog','2026-11-15T18:00:00.000Z');await sendVisitMail(f.env,next.id);assert.equal(f.sent.length,2);
 });
 test('mode persists, rejects invalid/stale changes, and off records visits without mail',async()=>{

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { injectAnalytics } from './site-analytics-build.mjs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
+import {canonicalizeSource} from './site-origin-build.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const output = join(root, 'dist');
@@ -14,7 +15,7 @@ const run = promisify(execFile);
 for (const args of [
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs'],
   ['build-double-admin.mjs'],
-  ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs'],
+  ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs'],
   ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
@@ -217,7 +218,9 @@ await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSO
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
   if (name.endsWith('.html')) {
-    await writeFile(join(output, name), injectSharedNavigation(injectAnalytics(await readFile(join(root, name), 'utf8'), name), name));
+    await writeFile(join(output, name), canonicalizeSource(injectSharedNavigation(injectAnalytics(await readFile(join(root, name), 'utf8'), name), name),name));
+  } else if (/\.(?:js|json|css)$/.test(name)) {
+    await writeFile(join(output,name),canonicalizeSource(await readFile(join(root,name),'utf8'),name));
   } else {
     await copyFile(join(root, name), join(output, name));
   }

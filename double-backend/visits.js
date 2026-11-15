@@ -22,7 +22,7 @@ export async function sendVisitMail(env, id) {
   if (!row) return;
   try {
     const time = new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',dateStyle:'full',timeStyle:'medium'}).format(new Date(row.created_at));
-    const result = await env.VISIT_EMAIL.send({ from: env.VISIT_EMAIL_FROM, to: env.VISIT_EMAIL_TO, subject: 'Nouvelle visite — La tectonique des âmes', text: 'Une nouvelle visite a commencé le '+time+'.\nPage : '+row.page+'\n\nRetrouver les visites : https://tectonique-des-ames.netlify.app/admin-blog.html\n\nUne visite regroupe les ouvertures du même navigateur séparées de moins de 30 minutes. Le visiteur n’est pas identifié.' });
+    const result = await env.VISIT_EMAIL.send({ from: env.VISIT_EMAIL_FROM, to: env.VISIT_EMAIL_TO, subject: 'Nouvelle visite — La tectonique des âmes', text: 'Une nouvelle visite a commencé le '+time+'.\nPage : '+row.page+'\n\nRetrouver les visites : https://tectonique-des-ames.com/admin-blog.html\n\nUne visite regroupe les ouvertures du même navigateur séparées de moins de 30 minutes. Le visiteur n’est pas identifié.' });
     await env.DB.prepare("UPDATE visits SET mail_state='accepted',mail_id=? WHERE id=?").bind(result?.messageId || '',id).run();
   } catch {
     // Unknown delivery is never replayed automatically, to avoid duplicate messages.
@@ -79,7 +79,7 @@ export async function sendDailyDigest(env, time=Date.now()) {
     return;
   }
   try {
-    const result=await env.VISIT_EMAIL.send({from:env.VISIT_EMAIL_FROM,to:env.VISIT_EMAIL_TO,subject:'Visites du jour — La tectonique des âmes',text:`${count} nouvelle(s) visite(s) depuis le dernier résumé ou l’activation du mode quotidien.\n\n${rows.results.map(r=>`${r.page} : ${r.n}`).join('\n')}\n\nVoir les visites et modifier la fréquence : https://tectonique-des-ames.netlify.app/admin-blog.html`});
+    const result=await env.VISIT_EMAIL.send({from:env.VISIT_EMAIL_FROM,to:env.VISIT_EMAIL_TO,subject:'Visites du jour — La tectonique des âmes',text:`${count} nouvelle(s) visite(s) depuis le dernier résumé ou l’activation du mode quotidien.\n\n${rows.results.map(r=>`${r.page} : ${r.n}`).join('\n')}\n\nVoir les visites et modifier la fréquence : https://tectonique-des-ames.com/admin-blog.html`});
     await env.DB.batch([
       env.DB.prepare("UPDATE visit_digests SET state='accepted',mail_id=? WHERE id=?").bind(result?.messageId||'',id),
       env.DB.prepare("UPDATE visits SET mail_state='digest_accepted' WHERE mail_id=? AND mail_state='digest_sending'").bind(id)

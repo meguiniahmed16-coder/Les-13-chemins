@@ -1,4 +1,4 @@
-# Configuration du site existant tectonique-des-ames.netlify.app.
+# Adresse publique principale : https://tectonique-des-ames.com.
 # La liaison GitHub et la branche de production main se règlent dans Netlify.
 [build]
   command = "node build-public.mjs"
@@ -49,3 +49,58 @@ X-Frame-Options = "DENY"
 X-Content-Type-Options = "nosniff"
 X-Robots-Tag = "noindex, nofollow"
 Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+
+# Keep old bookmarks and every public page on the canonical origin.
+[[redirects]]
+from = "https://tectonique-des-ames.netlify.app/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://tectonique-des-ames.netlify.app/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://www.tectonique-des-ames.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://www.tectonique-des-ames.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://tectonic-d-am.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://tectonic-d-am.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://www.tectonic-d-am.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://www.tectonic-d-am.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://tectonique-des-ames.com/*"
+to = "https://tectonique-des-ames.com/:splat"
+status = 301
+force = true
