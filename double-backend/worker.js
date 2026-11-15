@@ -1,3 +1,4 @@
+import {quotedPrompt} from './quotes.js';
 import {handleVoicePreference,voicePreferenceContext} from './preferences.js';
 import {isArchiveRequest,archiveChat,readArchives,cleanupConversations,publishArchive,publicDialogues} from './archives.js';
 import {readImage} from './media.js';
@@ -92,16 +93,19 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  if(u.pathname==='/erase'){await db.batch([db.prepare('DELETE FROM voice_preference_proposals WHERE session_id=?').bind(s.id),db.prepare('DELETE FROM conversation_archives WHERE session_id=?').bind(s.id),db.prepare('DELETE FROM mail_items WHERE turn_id IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM memory WHERE source_turn IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM review_events WHERE target_id IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM turns WHERE session_id=?').bind(s.id),db.prepare('DELETE FROM sessions WHERE id=?').bind(s.id)]);return reply({ok:true});}
  if(u.pathname!=='/chat')return reply({error:'Route introuvable.'},404);
  if(!validString(p.message,3000)||!validString(p.request_id,100))return reply({error:'Écris un message de moins de 3 000 caractères.'},400);
+ const ownMessage=p.message;
+ const hasQuote=p.quote_turn_id!==undefined&&p.quote_turn_id!==null;
+ if(hasQuote){const quote=await quotedPrompt(db,s.id,p.quote_turn_id,p.message);if(quote.error)return reply({error:quote.error},quote.status);p.message=quote.prompt;}
  const existing=await db.prepare('SELECT * FROM turns WHERE session_id=? AND request_id=?').bind(s.id,p.request_id).first();
  if(existing){if(existing.prompt!==p.message.trim())return reply({error:'Cet identifiant appartient à un autre message.'},400);if(existing.state==='complete')return reply({turn:publicTurn(existing),sources:JSON.parse(existing.source_ids)});if(existing.state==='pending')return reply({error:'La réponse est encore en préparation.'},409);}
- if(isArchiveRequest(p.message)){const r=await archiveChat(db,s,p,now,existing);return reply(r.data,r.status);}
+ if(!hasQuote&&isArchiveRequest(p.message)){const r=await archiveChat(db,s,p,now,existing);return reply(r.data,r.status);}
  const num=await db.prepare('SELECT count(*) AS n FROM turns WHERE session_id=?').bind(s.id).first();if(Number(num.n)>=120)return reply({error:'Cette conversation est complète. Tu peux en ouvrir une nouvelle.'},429);
- const preference=await handleVoicePreference(db,s,p,now,isAdmin);if(preference)return reply(preference.data,preference.status);
+ if(!hasQuote){const preference=await handleVoicePreference(db,s,p,now,isAdmin);if(preference)return reply(preference.data,preference.status);}else await db.prepare('DELETE FROM voice_preference_proposals WHERE session_id=?').bind(s.id).run();
  const [recent,memories]=await Promise.all([db.prepare("SELECT * FROM turns WHERE session_id=? AND state='complete' ORDER BY created_at DESC LIMIT 20").bind(s.id).all(),db.prepare('SELECT * FROM memory ORDER BY updated_at DESC LIMIT 2000').all()]);
  const pastTurns=recent.results.reverse();const history=pastTurns.slice(-8);const retrieval=match(p.message+' '+history.slice(-1).map(t=>t.prompt).join(' '),memories.results);
  const selected=retrieval.found.map(({q})=>({id:q.id,question:q.question,answers:q.answers.map(a=>{const m=memories.results.find(m=>m.id===a.id);return m?.state==='refused'?null:{id:a.id,text:m?.answer||a.text,status:m?.state||a.status};}).filter(Boolean)}));
  const positives=retrieval.mem.filter(m=>m.state!=='refused'),negatives=retrieval.mem.filter(m=>m.state==='refused');
- const addressMode=addressPreference(p.message,s.address_mode||'tu');
+ const addressMode=addressPreference(ownMessage,s.address_mode||'tu');
  if(addressMode!==(s.address_mode||'tu'))await db.prepare('UPDATE sessions SET address_mode=? WHERE id=?').bind(addressMode,s.id).run();
  const emojiAllowed=p.emojis!==false&&Number(num.n)%6===3;
  const blogContext=s.post_id?await db.prepare("SELECT title,body FROM posts WHERE id=? AND status='published'").bind(s.post_id).first():null;
