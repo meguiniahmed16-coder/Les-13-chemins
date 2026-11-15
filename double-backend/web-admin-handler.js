@@ -1,7 +1,7 @@
 import {uploadImage,readImage} from './media.js';
 import {checkPassword, hashPassword, createSession, validSession, cookie, requestToken} from './web-auth.js';
 const ORIGINS = new Set(['https://tectonique-des-ames.netlify.app','https://tectonic-d-am.com','https://www.tectonic-d-am.com','https://tectonique-des-ames.com','https://www.tectonique-des-ames.com']);
-const ACTIONS = new Set(['start','history','erase','chat','admin/bank','admin/review','admin/decision','admin/answer','admin/blog','admin/invite','admin/comment','admin/visits','admin/notification-settings']);
+const ACTIONS = new Set(['start','history','erase','chat','admin/bank','admin/review','admin/archives','admin/archive-publication','admin/decision','admin/answer','admin/blog','admin/invite','admin/comment','admin/visits','admin/notification-settings']);
 const headers = {'cache-control':'private, no-store','cdn-cache-control':'no-store','netlify-cdn-cache-control':'no-store','x-content-type-options':'nosniff','vary':'Cookie'};
 const reply = (data, status=200, extra={}) => Response.json(data,{status,headers:{...headers,...extra}});
 async function readBody(request, max) {

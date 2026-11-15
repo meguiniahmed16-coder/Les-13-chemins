@@ -1,3 +1,4 @@
+import {isArchiveRequest,archiveChat,readArchives,cleanupConversations,publishArchive,publicDialogues} from './archives.js';
 import {readImage} from './media.js';
 import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
 import BANK from './bank.js';
@@ -21,7 +22,7 @@ function validString(x,max=3000){return typeof x==='string'&&x.trim().length>0&&
 async function session(db,p,isAdmin){if(!validString(p.session_id,80))return null;const s=await db.prepare('SELECT * FROM sessions WHERE id=?').bind(p.session_id).first();if(!s)return null;if(isAdmin)return s;if(s.kind!=='public'||!validString(p.token,150))return null;return (await hash(p.token))===s.token_hash?s:null;}
 function publicTurn(t){return {id:t.id,prompt:t.prompt,response:t.response,created_at:t.created_at,state:t.state,status:t.review,correction:t.correction};}
 function match(query,memories){const tt=terms(query);const scored=INDEX.map(x=>({q:x.q,score:tt.reduce((s,t)=>s+(x.qt.includes(t)?5:x.t.includes(t)?1:0),0)+(norm(query).includes(norm(x.q.question))?30:0)}));scored.sort((a,b)=>b.score-a.score);const found=scored.filter(x=>x.score>0).slice(0,5);const mem=memories.map(m=>({m,score:terms(m.question).filter(t=>tt.includes(t)).length})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>x.m);return{found,mem};}
-async function cleanup(env){const cutoff=new Date(Date.now()-90*864e5).toISOString();await env.DB.batch([env.DB.prepare('DELETE FROM review_events WHERE target_id IN (SELECT id FROM turns WHERE created_at<?)').bind(cutoff),env.DB.prepare('DELETE FROM mail_items WHERE turn_id IN (SELECT id FROM turns WHERE created_at<?)').bind(cutoff),env.DB.prepare('DELETE FROM turns WHERE created_at<?').bind(cutoff),env.DB.prepare('DELETE FROM sessions WHERE last_at<?').bind(cutoff),env.DB.prepare('DELETE FROM daily_access WHERE key<?').bind(new Date(Date.now()-2*864e5).toISOString().slice(0,10))]);}
+
 
 export default {async fetch(request,env,ctx){const origin=request.headers.get('origin')||'';const u=new URL(request.url);const reply=(d,s=200)=>json(d,s,origin);try{
  if(u.pathname.startsWith('/media/')&&request.method==='GET')return readImage(u.pathname.slice(7),env);
@@ -35,6 +36,8 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  if(u.pathname==='/admin/visits'&&request.method==='GET')return reply(await visitStats(env,now));
  if(u.pathname==='/admin/blog'&&request.method==='GET')return reply(await blogGet(db));
  if(u.pathname==='/admin/bank'&&request.method==='GET')return reply(BANK);
+ if(u.pathname==='/dialogues'&&request.method==='GET'){const r=await publicDialogues(db,u);return reply(r.data,r.status);}
+ if(u.pathname==='/admin/archives'&&request.method==='GET'){const r=await readArchives(db,u);return reply(r.data,r.status);}
  if(u.pathname==='/admin/review'&&request.method==='GET'){
   const raw=u.searchParams.get('before');let cursor=['9999',''];if(raw){try{cursor=JSON.parse(atob(raw));}catch{cursor=[raw,''];}}const [before,beforeId]=cursor;const kind=u.searchParams.get('kind')||'all';
   const rows=await db.prepare("SELECT t.*,s.kind FROM turns t JOIN sessions s ON s.id=t.session_id WHERE (t.created_at<? OR (t.created_at=? AND t.id<?)) AND (?='all' OR s.kind=?) ORDER BY t.created_at DESC,t.id DESC LIMIT 101").bind(before,before,beforeId,kind,kind).all();
@@ -44,6 +47,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  }
  if(request.method!=='POST')return reply({error:'Route introuvable.'},404);
  const p=await body(request,isAdmin&&u.pathname==='/admin/blog'?250000:30000);
+ if(u.pathname==='/admin/archive-publication'){const r=await publishArchive(db,p,now);return reply(r.data,r.status);}
  if(u.pathname==='/admin/notification-settings'){const result=await updateNotificationSettings(db,p.mode,p.version,now);return reply(result,result.status);}
  if(u.pathname==='/admin/login-rate'){
   const slot=Math.floor(Date.now()/900000);const k=day+':login:'+slot+':'+await hash(String(p.client||'unknown')+'|'+env.ADMIN_TOKEN);
@@ -66,7 +70,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
   if(!isAdmin&&!(await db.prepare("SELECT id FROM posts WHERE id=? AND status='published'").bind(p.post_id||'').first()))return reply({error:'Billet indisponible.'},404);
   if(!isAdmin&&p.consent!==true)return reply({error:'L’accord sur l’enregistrement est nécessaire.'},400);
   if(!isAdmin){const ip=await hash(day+'|'+(request.headers.get('cf-connecting-ip')||'unknown')+'|'+env.ADMIN_TOKEN);const k=day+':'+ip;const a=await db.prepare('INSERT INTO daily_access(key,count) VALUES(?,1) ON CONFLICT(key) DO UPDATE SET count=count+1 WHERE count<12 RETURNING count').bind(k).first();if(!a)return reply({error:'Limite de nouvelles conversations atteinte pour aujourd’hui.'},429);}
-  const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();await db.prepare('INSERT INTO sessions(id,token_hash,kind,created_at,last_at,consent_version,invite_id,post_id) VALUES(?,?,?,?,?,?,?,?)').bind(id,await hash(token),isAdmin?'private':'public',now,now,'2026-11-15-v2',null,p.post_id||null).run();ctx.waitUntil(cleanup(env).catch(()=>{}));return reply({session_id:id,token});
+  const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();await db.prepare('INSERT INTO sessions(id,token_hash,kind,created_at,last_at,consent_version,invite_id,post_id) VALUES(?,?,?,?,?,?,?,?)').bind(id,await hash(token),isAdmin?'private':'public',now,now,'2026-11-15-v3-archives',null,p.post_id||null).run();ctx.waitUntil(cleanupConversations(db).catch(()=>{}));return reply({session_id:id,token});
  }
  if(u.pathname==='/admin/decision'){
   if(!validString(p.id,100)||!['validated','corrected','refused'].includes(p.action))return reply({error:'Décision invalide.'},400);
@@ -84,11 +88,12 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  }
  const s=await session(db,p,isAdmin);if(!s)return reply({error:'Cette conversation n’est pas accessible. Ouvre une nouvelle conversation.'},401);
  if(u.pathname==='/history'){const rows=await db.prepare('SELECT * FROM turns WHERE session_id=? ORDER BY created_at ASC LIMIT 200').bind(s.id).all();return reply({turns:rows.results.map(publicTurn)});}
- if(u.pathname==='/erase'){await db.batch([db.prepare('DELETE FROM memory WHERE source_turn IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM review_events WHERE target_id IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM turns WHERE session_id=?').bind(s.id),db.prepare('DELETE FROM sessions WHERE id=?').bind(s.id)]);return reply({ok:true});}
+ if(u.pathname==='/erase'){await db.batch([db.prepare('DELETE FROM conversation_archives WHERE session_id=?').bind(s.id),db.prepare('DELETE FROM mail_items WHERE turn_id IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM memory WHERE source_turn IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM review_events WHERE target_id IN (SELECT id FROM turns WHERE session_id=?)').bind(s.id),db.prepare('DELETE FROM turns WHERE session_id=?').bind(s.id),db.prepare('DELETE FROM sessions WHERE id=?').bind(s.id)]);return reply({ok:true});}
  if(u.pathname!=='/chat')return reply({error:'Route introuvable.'},404);
  if(!validString(p.message,3000)||!validString(p.request_id,100))return reply({error:'Écris un message de moins de 3 000 caractères.'},400);
  const existing=await db.prepare('SELECT * FROM turns WHERE session_id=? AND request_id=?').bind(s.id,p.request_id).first();
  if(existing){if(existing.prompt!==p.message.trim())return reply({error:'Cet identifiant appartient à un autre message.'},400);if(existing.state==='complete')return reply({turn:publicTurn(existing),sources:JSON.parse(existing.source_ids)});if(existing.state==='pending')return reply({error:'La réponse est encore en préparation.'},409);}
+ if(isArchiveRequest(p.message)){const r=await archiveChat(db,s,p,now,existing);return reply(r.data,r.status);}
  const num=await db.prepare('SELECT count(*) AS n FROM turns WHERE session_id=?').bind(s.id).first();if(Number(num.n)>=120)return reply({error:'Cette conversation est complète. Tu peux en ouvrir une nouvelle.'},429);
  const [recent,memories]=await Promise.all([db.prepare("SELECT * FROM turns WHERE session_id=? AND state='complete' ORDER BY created_at DESC LIMIT 20").bind(s.id).all(),db.prepare('SELECT * FROM memory ORDER BY updated_at DESC LIMIT 2000').all()]);
  const pastTurns=recent.results.reverse();const history=pastTurns.slice(-8);const retrieval=match(p.message+' '+history.slice(-1).map(t=>t.prompt).join(' '),memories.results);

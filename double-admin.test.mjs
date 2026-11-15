@@ -33,7 +33,7 @@ test('login grants a secure cookie; bad credentials and cross-site requests are 
 });
 test('private reads and writes require valid cookie, not a supplied authorization header',async()=>{
  const f=fixture();
- for(const path of ['double/admin/blog','double/admin/bank','double/admin/review','double/admin/visits','double/admin/notification-settings']){
+ for(const path of ['double/admin/blog','double/admin/bank','double/admin/review','double/admin/archives','double/admin/visits','double/admin/notification-settings']){
   assert.equal((await f.app.fetch(f.req(path,undefined,null,{authorization:'Bearer forged'}),f.env,{})).status,401);
  }
  assert.equal((await f.app.fetch(f.req('double/admin/blog',{title:'x'}),f.env,{})).status,401);assert.equal(f.coreCalls,0);

@@ -208,7 +208,7 @@ export default function BlogBackoffice() {
     <main className="amb-app">
       <header className="amb-topbar">
         <a className="amb-brand" href="/admin-blog.html?view=atelier" aria-label="Retour à l’atelier Ahmed Marie"><span className="amb-mark" aria-hidden="true">a</span><span>Ahmed Marie<small>LA TECTONIQUE DES ÂMES</small></span></a>
-        <form action="/api/atelier/auth/logout" method="post"><button type="submit">Se déconnecter</button></form><nav aria-label="Liens de l’atelier"><a href="/admin-blog.html?view=review">Conversations et corrections</a><a href="/admin-blog.html?view=atelier">← L’atelier</a><a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer">L’espace public ↗</a></nav>
+        <form action="/api/atelier/auth/logout" method="post"><button type="submit">Se déconnecter</button></form><nav aria-label="Liens de l’atelier"><a href="/admin-blog.html?view=archives">Archives</a><a href="/admin-blog.html?view=review">Conversations et corrections</a><a href="/admin-blog.html?view=atelier">← L’atelier</a><a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer">L’espace public ↗</a></nav>
       </header>
 
       <div className="amb-content">
