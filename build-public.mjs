@@ -12,7 +12,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
-  ['--test','double-admin.test.mjs','double-voice.test.mjs'],
+  ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs'],
   ['build-double-admin.mjs'],
   ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs'],
   ['build-a410-3d.mjs'],

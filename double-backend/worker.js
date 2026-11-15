@@ -1,7 +1,7 @@
 import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
 import BANK from './bank.js';
 import {blogGet,blogPost} from './blog.js';
-import {recordVisit,sendVisitMail,visitStats} from './visits.js';
+import {recordVisit,sendVisitMail,visitStats,notificationSettings,updateNotificationSettings,mailConfigured} from './visits.js';
 
 const MODEL='@cf/google/gemma-4-26b-a4b-it';
 const ORIGINS=new Set(['https://tectonique-des-ames.netlify.app','https://tectonic-d-am.com','https://www.tectonic-d-am.com','https://tectonique-des-ames.com','https://www.tectonique-des-ames.com']);
@@ -29,6 +29,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  if(u.pathname.startsWith('/admin/')&&!isAdmin)return reply({error:'Accès auteur requis.'},401);
  if(!isAdmin&&origin&&!ORIGINS.has(origin))return reply({error:'Origine non autorisée.'},403);
  const now=new Date().toISOString(),day=now.slice(0,10),db=env.DB;
+ if(u.pathname==='/admin/notification-settings'&&request.method==='GET')return reply({settings:await notificationSettings(db),mailConfigured:mailConfigured(env)});
  if(u.pathname==='/admin/visits'&&request.method==='GET')return reply(await visitStats(env,now));
  if(u.pathname==='/admin/blog'&&request.method==='GET')return reply(await blogGet(db));
  if(u.pathname==='/admin/bank'&&request.method==='GET')return reply(BANK);
@@ -41,6 +42,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  }
  if(request.method!=='POST')return reply({error:'Route introuvable.'},404);
  const p=await body(request);
+ if(u.pathname==='/admin/notification-settings'){const result=await updateNotificationSettings(db,p.mode,p.version,now);return reply(result,result.status);}
  if(u.pathname==='/admin/login-rate'){
   const slot=Math.floor(Date.now()/900000);const k=day+':login:'+slot+':'+await hash(String(p.client||'unknown')+'|'+env.ADMIN_TOKEN);
   const rate=await db.prepare('INSERT INTO daily_access(key,count) VALUES(?,1) ON CONFLICT(key) DO UPDATE SET count=count+1 WHERE count<10 RETURNING count').bind(k).first();
