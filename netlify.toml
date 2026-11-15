@@ -41,7 +41,7 @@ Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'sel
 
 # The administrator UI is served locally; its API verifies the secure session.
 [[headers]]
-for = "/admin-blog.html"
+for = "/admin-blog*"
 [headers.values]
 Cache-Control = "private, no-store"
 Referrer-Policy = "no-referrer"
