@@ -171,6 +171,7 @@
     const main=document.createElement('button');main.type='button';main.className='chapter-card-main';button.append(main);
     main.append(
      makeSpan('chapter-card-kicker','CHEMIN '+pathNumeral(i+1)),
+     makeSpan('chapter-availability','Textes et jeux disponibles'),
      makeSpan('chapter-card-title',scene===1?'La salle d’attente':scene===4?'Le météore':LEVELS[scene-1].title),
      makeSpan('chapter-card-place',scene===1?'Ferney-Voltaire · La Roche-sur-Foron · Barcelone':scene===4?'Trois extraits, une même étape de jeu.':LEVELS[scene-1].place)
     );
@@ -244,6 +245,7 @@
    third.dataset.chemin='3';third.id='chemin-iii';
    const thirdMain=document.createElement('button');thirdMain.type='button';thirdMain.className='chapter-card-main';
    thirdMain.append(makeSpan('chapter-card-kicker','CHEMIN III'),
+    makeSpan('chapter-availability','Textes et jeux disponibles'),
     makeSpan('chapter-card-title','Les rendez-vous'),
     makeSpan('chapter-card-place','Trois chapitres · Trois jeux narratifs'));
    thirdMain.onclick=()=>window.TreizeRendezVous?.open?.();

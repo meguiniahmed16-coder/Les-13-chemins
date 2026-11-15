@@ -104,11 +104,11 @@
  function mount(host=document.getElementById('boardTargets')){
   if(!host||host.querySelector('[data-upcoming-path]'))return;
   for(const path of data.paths){
-   const group=h('div','board-target chapter-featured step-chapters upcoming-path');group.dataset.upcomingPath=path.id;group.dataset.chemin=String(path.number);group.id='chemin-'+path.id.toLowerCase();group.setAttribute('role','group');group.setAttribute('aria-label','Chemin '+path.id+' · Travail en cours');
+   const group=h('div','board-target chapter-featured step-chapters upcoming-path');group.dataset.upcomingPath=path.id;group.dataset.chemin=String(path.number);group.id='chemin-'+path.id.toLowerCase();group.setAttribute('role','group');group.setAttribute('aria-label','Chemin '+path.id+' · Jeux en préparation');
    const main=button('',()=>open(path.scenes[0]));main.className='chapter-card-main';main.append(h('span','chapter-card-kicker','CHEMIN '+path.id));
    const row=h('div','chapter-card-route');
    for(const id of path.scenes){const scene=core.scene(data,id),tile=button('',()=>open(id));tile.className='chapter-part-label chapter-literary-part upcoming-tile';tile.dataset.sceneArt=id;tile.dataset.upcomingOpen=id;tile.setAttribute('aria-label',scene.title+' · Travail en cours · Lire et découvrir');Object.assign(tile.style,core.artStyle(scene));tile.append(h('span','chapter-part-title',scene.title));row.append(tile);}
-   group.append(main,row,h('p','chapter-card-status','Travail en cours · Textes, personnages et cartes à découvrir'));
+   group.append(main,row,h('p','chapter-card-status','Jeux en préparation · Textes, personnages et cartes disponibles'));
    host.append(group);
    const interlude=h('div','upcoming-board-map');interlude.append(h('h3','',path.id==='IV'?'Les lieux du chemin IV · Rue Vaneau':'Les lieux du chemin V · De Plaisance à Vaneau'));
    const scene=core.scene(data,path.id==='IV'?'demenagement':'traitre');interlude.append(mapPanel(scene));host.append(interlude);

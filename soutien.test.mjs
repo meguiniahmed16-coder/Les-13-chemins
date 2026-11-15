@@ -23,7 +23,7 @@ test('the public configuration cannot accidentally accept payments before activa
   const html=readFileSync(new URL('./soutien.html',import.meta.url),'utf8');
   assert.match(html, /id="support-pay"[^>]*hidden/);
   assert.match(html, /id="book-pay"[^>]*hidden/);
-  assert.match(injectSharedNavigation(html,'soutien.html'), /site-support-link" aria-current="page"/);
+  assert.match(injectSharedNavigation(html,'soutien.html'), /site-support-link"[^>]*aria-current="page"/);
 });
 test('network failures leave the opening notices intact', async () => {
   let touched=false;

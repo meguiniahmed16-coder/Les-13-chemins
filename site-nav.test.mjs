@@ -2,19 +2,33 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
-test('one common menu, Blog and Le dialogue after all three main buttons', () => {
+import { activeSection } from './site-nav.js';
+test('one common menu gives four clear destinations and preserves the page', () => {
   const source = '<html><head></head><body><nav class="site-nav"><a>Old menu</a></nav><main>Keep this text</main></body></html>';
   const out = injectSharedNavigation(source,'ahmed-marie.html');
   assert.equal((out.match(/<nav /g)||[]).length,1);
-  assert.match(out, /⌂ Accueil[\s\S]*🧭 Cartes[\s\S]*🎲 Jeux[\s\S]*class="site-blog-link" aria-current="page">✎ Blog[\s\S]*class="site-dialogue-link">↔ Le dialogue/);
+  assert.equal((out.match(/data-nav-section=/g)||[]).length,4);
+  assert.match(out, /La tectonique des âmes/);
+  assert.match(out, /data-nav-section="voyage">Le voyage/);
+  assert.match(out, /data-nav-section="blog" aria-current="page">Blog/);
+  assert.match(out, /ahmed-marie.html#ahmed-numerique/);
   assert.match(out, /<main>Keep this text<\/main>/);
   assert.equal(injectSharedNavigation(out,'ahmed-marie.html'),out);
 });
-test('Blog, Le dialogue and Soutenir share the second row on desktop and mobile',()=>{
+test('the menu adapts to four mobile columns without hiding destinations',()=>{
   const css=readFileSync(new URL('./site-nav.css',import.meta.url),'utf8');
-  assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
-  assert.match(css,/\.site-blog-link\{grid-column:1 \/ 3/);
-  assert.match(css,/\.site-dialogue-link\{grid-column:3 \/ 5/);
+  assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/min-height:46px/);
+});
+test('current section distinguishes the blog from its conversation anchor',()=>{
+  assert.equal(activeSection('/ahmed-marie.html','#blog'),'blog');
+  assert.equal(activeSection('/ahmed-marie','#ahmed-numerique'),'digital');
+  assert.equal(activeSection('/ahmed-marie.html','#conversationSection'),'digital');
+  assert.equal(activeSection('/dialogues.html'),'blog');
+  assert.equal(activeSection('/carte.html'),'voyage');
+  assert.equal(activeSection('/jeu'),'voyage');
+  assert.equal(activeSection('/soutien'),'support');
+  assert.equal(activeSection('/'),'');
 });
 test('redirects and embedded game layouts keep their behavior',()=>{
   const redirect='<html><head><meta http-equiv="refresh" content="0;url=jeu.html"></head></html>';
