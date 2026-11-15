@@ -1,73 +1,126 @@
-/** The approved Café film is shown once after the three successful trials. */
+/** One Bach soundtrack from the 3D visit to the Café: the film must not restart it. */
 export function createPrisonOutro({document:doc,onEnd=()=>{}}){
  const panel=doc.getElementById('prison-outro'),video=doc.getElementById('prison-film');
  const play=doc.getElementById('prison-film-play'),skip=doc.getElementById('prison-film-skip');
- const status=doc.getElementById('prison-film-status');
- const music=doc.getElementById('prison-film-music');
+ const status=doc.getElementById('prison-film-status'),music=doc.getElementById('prison-film-music');
  const musicPlay=doc.getElementById('prison-music-play');
- let started=false,active=false,version=0;
- let musicPending=false,musicBlocked=false;
- function load(){
-  for(const media of [video,music]){
-   if(!media.getAttribute('src'))media.src=media.dataset.src;
-   media.preload='auto';
-  }
+ let started=false,active=false,filmVersion=0,soundVersion=0;
+ let musicWanted=false,musicPaused=true,musicPending=false,musicBlocked=false,triedFallback=false;
+ function loadVideo(){
+  if(!video.getAttribute('src'))video.src=video.dataset.src;
+  video.preload='auto';
+  video.controls=false; // No native film player, even if the HTML changes.
  }
- function syncMusic(force=false){
-  music.muted=video.muted;music.volume=video.volume;
-  music.playbackRate=video.playbackRate;
-  if(force||Math.abs(music.currentTime-video.currentTime)>.3){
-   try{music.currentTime=video.currentTime;}catch{}
+ function loadMusic(){
+  if(!music.getAttribute('src')){
+   music.crossOrigin='anonymous';
+   music.src=music.dataset.src;
   }
+  music.preload='auto';music.loop=true;music.volume=1;
  }
- function startMusic(fromGesture=false){
-  if(!active||musicPending||musicBlocked&&!fromGesture)return;
-  syncMusic(true);
-  const current=version;musicPending=true;
-  music.play().then(()=>{
-   if(current!==version)return;
+ function resumeMusic(fromGesture=false){
+  if(!musicWanted||musicPaused||musicPending||(musicBlocked&&!fromGesture))return;
+  if(!music.paused){musicBlocked=false;musicPlay.hidden=true;return;}
+  musicBlocked=false;musicPending=true;
+  const version=++soundVersion;
+  let attempt;
+  try{attempt=music.play();}
+  catch(error){attempt=Promise.reject(error);}
+  Promise.resolve(attempt).then(()=>{
+   if(version!==soundVersion)return;
    musicPending=false;musicBlocked=false;musicPlay.hidden=true;
-   if(!active||video.paused||video.seeking)music.pause();
+   if(!musicWanted||musicPaused)music.pause();
   }).catch(error=>{
-   if(current!==version)return;
+   if(version!==soundVersion)return;
    musicPending=false;
-   if(!active||error.name==='AbortError')return;
-   musicBlocked=true;musicPlay.hidden=false;
+   if(!musicWanted||error?.name==='AbortError')return;
+   musicBlocked=true;if(active)musicPlay.hidden=false;
   });
+ }
+ function startSoundtrack({muted=false}={}){
+  loadMusic();musicWanted=true;musicPaused=false;music.muted=muted;
+  resumeMusic(true);
+ }
+ function pauseMusic(){musicPaused=true;music.pause();}
+ function stopMusic(){
+  soundVersion++;musicPending=false;musicBlocked=false;
+  musicWanted=false;musicPaused=true;music.pause();
+  try{music.currentTime=0;}catch{}
  }
  function finish(){
   if(!active)return;
-  active=false;version++;video.pause();music.pause();video.autoplay=false;panel.hidden=true;onEnd();
+  active=false;filmVersion++;video.pause();video.autoplay=false;
+  stopMusic();panel.hidden=true;onEnd();
  }
- async function resume(){
-  const current=version;play.hidden=true;status.textContent='';
-  try{const attempt=video.play();startMusic(true);await attempt;}
-  catch(error){
-   if(!active||current!==version)return;
-   music.pause();play.hidden=false;
-   status.textContent=error.name==='NotAllowedError'?'Appuie sur Lecture pour lancer le film avec le son.':'La vidéo n’a pas pu démarrer. Tu peux réessayer ou passer.';
+ async function resumeFilm(){
+  const current=filmVersion;play.hidden=true;status.textContent='';
+  try{
+   await video.play();
+   if(active&&current===filmVersion)resumeMusic(true);
+  }catch(error){
+   if(!active||current!==filmVersion)return;
+   pauseMusic();play.hidden=false;
+   status.textContent=error?.name==='NotAllowedError'?'Appuie sur Lecture pour lancer le film.':'La vidéo ne démarre pas. Réessaie ou passe le film.';
   }
  }
- play.addEventListener('click',()=>{if(video.error)video.load();resume();});
- musicPlay.addEventListener('click',()=>{if(music.error)music.load();resume();});
+ play.addEventListener('click',()=>{if(video.error)video.load();resumeFilm();});
+ musicPlay.addEventListener('click',()=>{
+  if(music.error)music.load();
+  musicPaused=false;musicBlocked=false;resumeMusic(true);
+ });
  skip.addEventListener('click',finish);
  video.addEventListener('ended',finish);
- video.addEventListener('playing',()=>{if(active){play.hidden=true;status.textContent='';startMusic();}});
- for(const event of ['pause','waiting','seeking'])video.addEventListener(event,()=>music.pause());
- video.addEventListener('seeked',()=>{if(active){syncMusic(true);if(!video.paused)startMusic();}});
- for(const event of ['timeupdate','volumechange','ratechange'])video.addEventListener(event,()=>{if(active)syncMusic();});
- video.addEventListener('error',()=>{if(active){music.pause();play.hidden=false;status.textContent='La vidéo ne se charge pas. Tu peux réessayer ou passer.';}});
- music.addEventListener('error',()=>{if(active){musicBlocked=true;musicPlay.hidden=false;}});
- return {
+ video.addEventListener('playing',()=>{
+  if(!active)return;
+  play.hidden=true;status.textContent='';musicPaused=false;resumeMusic();
+ });
+ for(const event of ['pause','waiting','seeking'])video.addEventListener(event,()=>{
+  if(active)pauseMusic();
+ });
+ video.addEventListener('seeked',()=>{if(active&&!video.paused){musicPaused=false;resumeMusic();}});
+ video.addEventListener('error',()=>{
+  if(!active)return;
+  pauseMusic();play.hidden=false;
+  status.textContent='La vidéo ne se charge pas. Tu peux réessayer ou passer.';
+ });
+ music.addEventListener('error',()=>{
+  if(!musicWanted)return;
+  const fallback=music.dataset.fallback;
+  if(!triedFallback&&fallback){
+   triedFallback=true;soundVersion++;musicPending=false;musicBlocked=false;
+   music.src=fallback;music.load();
+   try{music.currentTime=0;}catch{}
+   if(!musicPaused)resumeMusic(true);
+  }else{
+   musicBlocked=true;if(active)musicPlay.hidden=false;
+  }
+ });
+ return{
   get active(){return active;},
-  prime(){load();for(const media of [video,music]){const attempt=media.play();media.pause();attempt?.catch(()=>{});}},
-  setMuted(muted){video.muted=muted;music.muted=muted;},
+  prime(){loadVideo();loadMusic();},
+  startSoundtrack,
+  pauseMusic,
+  resumeMusic(){musicPaused=false;resumeMusic(true);},
+  setMuted(muted){
+   music.muted=muted;video.muted=true; // Muted visuals permit automatic film playback; Bach remains audible.
+   if(!muted&&musicWanted&&!musicPaused)resumeMusic(true);
+  },
   start({muted=false}={}){
    if(started)return false;
-   started=true;active=true;version++;musicPending=false;musicBlocked=false;musicPlay.hidden=true;load();video.currentTime=0;music.currentTime=0;
-   video.muted=muted;video.volume=1;video.autoplay=true;panel.hidden=false;
-   skip.focus({preventScroll:true});resume();return true;
+   started=true;active=true;filmVersion++;
+   loadVideo();
+   video.currentTime=0;video.autoplay=true;video.volume=0;video.muted=true;
+   panel.hidden=false;play.hidden=true;musicPlay.hidden=true;status.textContent='';
+   // Bach keeps its current position when the final film starts.
+   if(!musicWanted)startSoundtrack({muted});
+   else{music.muted=muted;musicPaused=false;resumeMusic();}
+   skip.focus?.({preventScroll:true});
+   resumeFilm();return true;
   },
-  reset(){version++;started=false;active=false;musicPending=false;musicBlocked=false;video.pause();music.pause();video.autoplay=false;panel.hidden=true;play.hidden=true;musicPlay.hidden=true;status.textContent='';}
+  reset(){
+   filmVersion++;started=false;active=false;
+   video.pause();video.autoplay=false;
+   stopMusic();panel.hidden=true;play.hidden=true;musicPlay.hidden=true;status.textContent='';
+  }
  };
 }

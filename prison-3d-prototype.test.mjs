@@ -66,6 +66,17 @@ test('The canonical prison page offers the immersive controls and no previous-ga
  assert.doesNotMatch(visibleCopy,/pr[ée]version|prototype|version pr[ée]c[ée]dente|main fixe v10/i);
 });
 
+test('The 3D tour goes straight to the three trials, without an illustrated guide',()=>{
+ assert.ok(code.includes('onTourEnd:enterPlay'));
+ for(const obsolete of ['createPrisonDemo','showDemo',"mode==='demo'"])assert.ok(!code.includes(obsolete));
+ for(const obsolete of ['id="demo"','id="demo-play"','class="demo-card"'])assert.ok(!html.includes(obsolete));
+ assert.ok(code.includes('outro.startSoundtrack({muted:!foley.enabled})'));
+ assert.ok(code.includes('outro.pauseMusic()'));
+ assert.ok(html.includes('data-fallback="assets/prison/bach-cello-prelude-16s.mp3'));
+ assert.ok(html.includes('data-src="https://upload.wikimedia.org/'));
+ assert.doesNotMatch(html,/<video[^>]*\scontrols(?:\s|>)/);
+ assert.ok(html.includes('prison-3d-prototype-runtime.js?v=20261115-bach-integral-sans-demo'));
+});
 test('The shipped detailed stool is the licensed self-contained GLB in its provenance receipt',()=>{
  const glb=read('./assets/prison/metal-stool-02.glb');
  const receipt=JSON.parse(read('./assets/prison/metal-stool-02.provenance.json'));

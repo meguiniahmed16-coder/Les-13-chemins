@@ -262,11 +262,10 @@ test('The official immersive game lets a novice win, credits the board once and 
  assert.equal(node('action').disabled,true);
  ui.advance(9);assert.equal(app.mode,'tour','The visit now gives more time to see the cell');
  node('pause').click();const tourProgress=app.eyes.tourProgress;ui.advance(3);assert.equal(app.eyes.tourProgress,tourProgress,'The visit can pause for a longer look');node('pause').click();
- ui.until(()=>app.mode==='demo',16,'The complete 24-second visit opens the demo');
- assert.equal(app.game.time,0);assert.equal(app.game.points,0);assert.equal(node('action').disabled,true);
- ui.advance(16);assert.equal(app.demo.finished,true);assert.equal(app.game.time,0,'The demo starts no patrol clock');
- node('demo-again').click();assert.equal(app.demo.step,0);
- node('demo-play').click();assert.equal(app.mode,'playing');ui.tick();
+ ui.until(()=>app.mode==='playing',16,'The complete 24-second visit leads directly to the game');
+ assert.equal(app.game.time,0);assert.equal(app.game.points,0);
+ assert.equal(node('action').disabled,false,'Controls become available at the end of the visit');
+ ui.tick();
  assert.equal(app.arms.root.visible,true,'The actual skinned arms become visible');
  assert.equal(node('skip-tour').hidden,true);
  ui.window.emit('keydown',{code:'KeyP',target:node('world')});
@@ -303,7 +302,7 @@ test('The official immersive game lets a novice win, credits the board once and 
 
  // Exercise the same public restart and skip buttons before the full run.
  node('retry').click();assert.equal(app.mode,'tour');
- node('skip-tour').click();assert.equal(app.mode,'demo');node('demo-play').click();assert.equal(app.mode,'playing');
+ node('skip-tour').click();assert.equal(app.mode,'playing');
  assert.equal(app.game.time,0);assert.equal(app.game.points,0);
  press(ui,'action');release(ui,'action');
  let closingSeen=false;
@@ -364,7 +363,7 @@ test('The official immersive game lets a novice win, credits the board once and 
 
 
 test('One short tap approaches and picks up the broom even after the player walked away',async t=>{
- const ui=await harness(t),{app,node}=ui;node('start').click();node('skip-tour').click();node('demo-play').click();
+ const ui=await harness(t),{app,node}=ui;node('start').click();node('skip-tour').click();
  ui.window.emit('keydown',{code:'ArrowUp',target:node('world')});ui.advance(1.6);
  ui.window.emit('keyup',{code:'ArrowUp',target:node('world')});
  assert.ok(app.eyes.player.distanceTo(app.room.brushGripTarget)>1,'The player really left the broom behind');
