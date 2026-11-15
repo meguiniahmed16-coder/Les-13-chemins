@@ -1,3 +1,4 @@
+import {readImage} from './media.js';
 import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
 import BANK from './bank.js';
 import {blogGet,blogPost} from './blog.js';
@@ -15,7 +16,7 @@ const FACTS=`Ahmed Marie est le nom d’auteur d’Ahmed Meguini. Né le 28 juin
 function json(data,status=200,origin=''){const h={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','vary':'Origin'};if(origin&&ORIGINS.has(origin)){h['access-control-allow-origin']=origin;h['access-control-allow-headers']='content-type';h['access-control-allow-methods']='POST, GET, OPTIONS';}return new Response(status===204?null:JSON.stringify(data),{status,headers:h});}
 async function hash(s){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(s)))).map(b=>b.toString(16).padStart(2,'0')).join('');}
 async function admin(request,env){const v=request.headers.get('authorization')?.replace(/^Bearer /,'')||'';if(!env.ADMIN_TOKEN)return false;const [a,b]=await Promise.all([crypto.subtle.digest('SHA-256',encoder.encode(v)),crypto.subtle.digest('SHA-256',encoder.encode(env.ADMIN_TOKEN))]);return crypto.subtle.timingSafeEqual(a,b);}
-async function body(request){const reader=request.body?.getReader();if(!reader)return {};let n=0,parts=[];for(;;){const {done,value}=await reader.read();if(done)break;n+=value.byteLength;if(n>30000){await reader.cancel();throw new Error('body_limit');}parts.push(value);}const bytes=new Uint8Array(n);let off=0;for(const p of parts){bytes.set(p,off);off+=p.length;}return JSON.parse(new TextDecoder().decode(bytes));}
+async function body(request,max=30000){const reader=request.body?.getReader();if(!reader)return {};let n=0,parts=[];for(;;){const {done,value}=await reader.read();if(done)break;n+=value.byteLength;if(n>max){await reader.cancel();throw new Error('body_limit');}parts.push(value);}const bytes=new Uint8Array(n);let off=0;for(const p of parts){bytes.set(p,off);off+=p.length;}return JSON.parse(new TextDecoder().decode(bytes));}
 function validString(x,max=3000){return typeof x==='string'&&x.trim().length>0&&x.length<=max;}
 async function session(db,p,isAdmin){if(!validString(p.session_id,80))return null;const s=await db.prepare('SELECT * FROM sessions WHERE id=?').bind(p.session_id).first();if(!s)return null;if(isAdmin)return s;if(s.kind!=='public'||!validString(p.token,150))return null;return (await hash(p.token))===s.token_hash?s:null;}
 function publicTurn(t){return {id:t.id,prompt:t.prompt,response:t.response,created_at:t.created_at,state:t.state,status:t.review,correction:t.correction};}
@@ -23,6 +24,7 @@ function match(query,memories){const tt=terms(query);const scored=INDEX.map(x=>(
 async function cleanup(env){const cutoff=new Date(Date.now()-90*864e5).toISOString();await env.DB.batch([env.DB.prepare('DELETE FROM review_events WHERE target_id IN (SELECT id FROM turns WHERE created_at<?)').bind(cutoff),env.DB.prepare('DELETE FROM mail_items WHERE turn_id IN (SELECT id FROM turns WHERE created_at<?)').bind(cutoff),env.DB.prepare('DELETE FROM turns WHERE created_at<?').bind(cutoff),env.DB.prepare('DELETE FROM sessions WHERE last_at<?').bind(cutoff),env.DB.prepare('DELETE FROM daily_access WHERE key<?').bind(new Date(Date.now()-2*864e5).toISOString().slice(0,10))]);}
 
 export default {async fetch(request,env,ctx){const origin=request.headers.get('origin')||'';const u=new URL(request.url);const reply=(d,s=200)=>json(d,s,origin);try{
+ if(u.pathname.startsWith('/media/')&&request.method==='GET')return readImage(u.pathname.slice(7),env);
  if(request.method==='OPTIONS')return reply({},204);
  if(u.pathname==='/health'&&request.method==='GET')return reply({ok:true,version:BANK.version,voice_version:VOICE_VERSION,questions:BANK.questions.length,answers:BANK.questions.reduce((n,q)=>n+q.answers.length,0),model:MODEL});
  const isAdmin=await admin(request,env);
@@ -41,7 +43,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
   return reply({turns:rows.results.slice(0,100),next:rows.results.length>100?btoa(JSON.stringify([rows.results[99].created_at,rows.results[99].id])):null,memory:memory.results,counts:counts.results});
  }
  if(request.method!=='POST')return reply({error:'Route introuvable.'},404);
- const p=await body(request);
+ const p=await body(request,isAdmin&&u.pathname==='/admin/blog'?250000:30000);
  if(u.pathname==='/admin/notification-settings'){const result=await updateNotificationSettings(db,p.mode,p.version,now);return reply(result,result.status);}
  if(u.pathname==='/admin/login-rate'){
   const slot=Math.floor(Date.now()/900000);const k=day+':login:'+slot+':'+await hash(String(p.client||'unknown')+'|'+env.ADMIN_TOKEN);

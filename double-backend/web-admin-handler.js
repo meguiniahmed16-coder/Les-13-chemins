@@ -1,3 +1,4 @@
+import {uploadImage,readImage} from './media.js';
 import {checkPassword, hashPassword, createSession, validSession, cookie, requestToken} from './web-auth.js';
 const ORIGINS = new Set(['https://tectonique-des-ames.netlify.app','https://tectonic-d-am.com','https://www.tectonic-d-am.com','https://tectonique-des-ames.com','https://www.tectonique-des-ames.com']);
 const ACTIONS = new Set(['start','history','erase','chat','admin/bank','admin/review','admin/decision','admin/answer','admin/blog','admin/invite','admin/comment','admin/visits','admin/notification-settings']);
@@ -41,6 +42,8 @@ export function createAdminHandler(core) {
       if(path==='auth/logout'&&request.method==='POST')return new Response(null,{status:303,headers:{...headers,'set-cookie':cookie('',true),location:'/admin-blog.html'}});
       if(!await validSession(requestToken(request),env.WEB_ADMIN_SESSION_SECRET,credential.version))return reply({error:'Connecte-toi pour ouvrir ton espace administrateur.'},401);
       if(path==='auth/session'&&request.method==='GET')return reply({ok:true,username:'admin'});
+      if(path==='media/upload')return uploadImage(request,env);
+      if(path.startsWith('media/')&&request.method==='GET')return readImage(path.slice(6),env,true);
       if(path==='auth/password'&&request.method==='POST'){
         const raw=await readBody(request,2000);let body;try{body=JSON.parse(raw);}catch{return reply({error:'Demande invalide.'},400);}
         if(!body || typeof body.currentPassword!=='string' || typeof body.newPassword!=='string' || body.currentPassword.length>200 || body.newPassword.length<8 || body.newPassword.length>200)return reply({error:'Choisis un mot de passe de 8 à 200 caractères.'},400);
@@ -56,7 +59,7 @@ export function createAdminHandler(core) {
       const action=path.startsWith('double/')?path.slice(7):'';
       if(!ACTIONS.has(action))return reply({error:'Route inconnue.'},404);
       const target=new URL('/'+action+url.search,url.origin);
-      const body=request.method==='POST'?await readBody(request,30000):undefined;
+      const body=request.method==='POST'?await readBody(request,path==='double/admin/blog'?250000:30000):undefined;
       const forwarded=new Request(target,{method:request.method,headers:{'content-type':'application/json',authorization:'Bearer '+env.ADMIN_TOKEN,'cf-connecting-ip':request.headers.get('cf-connecting-ip')||'unknown'},body});
       const response=await core.fetch(forwarded,env,ctx);
       return new Response(response.body,{status:response.status,headers:{...headers,'content-type':'application/json; charset=utf-8'}});

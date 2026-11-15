@@ -10,7 +10,7 @@ export default async function handler(request) {
     let body;
     if(request.method==='POST'){
       const reader=request.body?.getReader();const chunks=[];let size=0;
-      if(reader)for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>30000){await reader.cancel();return Response.json({error:'Demande trop longue.'},{status:413,headers});}chunks.push(value);}
+      if(reader)for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>(url.pathname===PREFIX+'media/upload'?3*1024*1024:url.pathname===PREFIX+'double/admin/blog'?250000:30000)){await reader.cancel();return Response.json({error:'Demande trop longue.'},{status:413,headers});}chunks.push(value);}
       body=new Uint8Array(size);let offset=0;for(const chunk of chunks){body.set(chunk,offset);offset+=chunk.length;}
     }
     const response=await fetch(BACKEND+'/web-admin/'+url.pathname.slice(PREFIX.length)+url.search,{method:request.method,headers:{'content-type':request.headers.get('content-type')||'application/json',origin:url.origin,cookie:request.headers.get('cookie')||''},body,redirect:'manual',signal:AbortSignal.timeout(55000)});

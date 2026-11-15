@@ -43,7 +43,7 @@ test('private reads and writes require valid cookie, not a supplied authorizatio
 });
 test('bounded bodies, rate limit and logout',async()=>{
  const f=fixture();const token=await createSession(secret);
- assert.equal((await f.app.fetch(f.req('double/admin/blog',{body:'x'.repeat(31000)},token),f.env,{})).status,413);
+ assert.equal((await f.app.fetch(f.req('double/admin/blog',{body:'x'.repeat(260000)},token),f.env,{})).status,413);
  for(let i=0;i<31;i++){const r=await f.app.fetch(f.req('auth/login',{username:'admin',password:'wrong'}),f.env,{});assert.equal(r.status,i===30?429:401);}
  const out=await f.app.fetch(f.req('auth/logout',{},token),f.env,{});assert.equal(out.status,303);assert.match(out.headers.get('set-cookie'),/Max-Age=0/);assert.equal(out.headers.get('location'),'/admin-blog.html');
 });

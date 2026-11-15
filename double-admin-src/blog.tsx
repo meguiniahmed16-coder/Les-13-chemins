@@ -3,18 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './blog-backoffice.css';
 import NotificationSettings from './notification-settings';
+import RichEditor from './rich-editor';
+import {BannerPicker,PostPreview} from './banner-preview';
+import {plainDoc,parseStored,docText,normalizeDoc,normalizeCover,mediaIds} from '../blog-content.js';
 
 type PostStatus = 'draft' | 'published';
-type Post = { id: string; title: string; body: string; status: PostStatus; created_at: string; updated_at: string; published_at: string | null };
+type Post = { content:any;cover:any; id: string; title: string; body: string; status: PostStatus; created_at: string; updated_at: string; published_at: string | null };
 type Invite = { id: string; label: string; token: string; active: boolean };
 type Comment = { id: string; post_id: string; name: string; body: string; created_at: string; hidden: boolean };
 type BlogData = { posts: Post[]; invites: Invite[]; comments: Comment[] };
-type Editor = { id?: string; title: string; body: string; status: PostStatus };
+type Editor = { content:any;cover:any; id?: string; title: string; body: string; status: PostStatus };
 type View = 'write' | 'invites' | 'comments' | 'visits';
 type VisitStats = { total24h: number; total1h: number; unusual: boolean; mailConfigured: boolean; pending: number; visits: {id:string;page:string;created_at:string;mail_state:string}[] };
 
 const PUBLIC_URL = new URL('/ahmed-marie.html', window.location.origin).href;
-const BLANK: Editor = { title: '', body: '', status: 'draft' };
+const BLANK: Editor = { content:plainDoc(''),cover:null,title: '', body: '', status: 'draft' };
 const EMPTY: BlogData = { posts: [], invites: [], comments: [] };
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const text = (v: unknown): string => typeof v === 'string' ? v : '';
@@ -25,7 +28,7 @@ function decodeBlog(value: unknown): BlogData {
   if (!isRecord(value) || !Array.isArray(value.posts) || !Array.isArray(value.invites) || !Array.isArray(value.comments)) throw new Error('La réponse du service est incomplète. Réessaie de charger le carnet.');
   const posts = value.posts.map((v: unknown): Post => {
     if (!isRecord(v) || !id(v.id) || typeof v.title !== 'string' || typeof v.body !== 'string' || (v.status !== 'draft' && v.status !== 'published')) throw new Error('Un billet reçu est incomplet. Le carnet n’a pas été mis à jour.');
-    return { id: id(v.id), title: v.title, body: v.body, status: v.status, created_at: text(v.created_at), updated_at: text(v.updated_at), published_at: typeof v.published_at === 'string' ? v.published_at : null };
+    return { content:parseStored(v.content_json,plainDoc(v.body)),cover:parseStored(v.cover_json),id: id(v.id), title: v.title, body: v.body, status: v.status, created_at: text(v.created_at), updated_at: text(v.updated_at), published_at: typeof v.published_at === 'string' ? v.published_at : null };
   });
   const invites = value.invites.map((v: unknown): Invite => {
     if (!isRecord(v) || !id(v.id) || typeof v.token !== 'string') throw new Error('Une invitation reçue est incomplète. Réessaie de charger le carnet.');
@@ -70,7 +73,7 @@ async function api(path: string, body?: unknown, signal?: AbortSignal): Promise<
 
 const readBlog = async (signal?: AbortSignal): Promise<BlogData> => decodeBlog(await api('blog', undefined, signal));
 const message = (error: unknown): string => error instanceof Error ? error.message : 'Une erreur est survenue. Réessaie.';
-const asEditor = (post: Post): Editor => ({ id: post.id, title: post.title, body: post.body, status: post.status });
+const asEditor = (post: Post): Editor => ({ id: post.id, title: post.title, body: post.body, status: post.status,content:post.content,cover:post.cover });
 const inviteLink = (invite: Invite): string => `${PUBLIC_URL}#invitation=${encodeURIComponent(invite.token)}`;
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -81,6 +84,8 @@ function newest<T>(items: T[], getDate: (item: T) => string): T[] {
 }
 
 export default function BlogBackoffice() {
+  const [preview,setPreview]=useState(false);
+  const [mediaBusy,setMediaBusy]=useState(false);
   const [visits, setVisits] = useState<VisitStats | null>(null);
   const [visitsError, setVisitsError] = useState('');
   const [data, setData] = useState<BlogData>(EMPTY);
@@ -98,8 +103,9 @@ export default function BlogBackoffice() {
   const [postFilter, setPostFilter] = useState<'all' | PostStatus>('all');
   const [postSearch, setPostSearch] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
-  const dirty = editor.title !== baseline.title || editor.body !== baseline.body || editor.status !== baseline.status;
-  const disabled = busy || loading;
+  const dirty = editor.title !== baseline.title || editor.body !== baseline.body || editor.status !== baseline.status || JSON.stringify(editor.content)!==JSON.stringify(baseline.content) || JSON.stringify(editor.cover)!==JSON.stringify(baseline.cover);
+  const disabled = busy || loading || mediaBusy;
+  const hasContent=Boolean(editor.body.trim()||mediaIds(editor.content,editor.cover).length);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true); setError('');
@@ -127,8 +133,10 @@ export default function BlogBackoffice() {
 
   async function save(status: PostStatus) {
     if (disabled) return;
-    const candidate: Editor = { ...editor, title: editor.title.trim(), body: editor.body.trim(), status };
-    if (!candidate.title || !candidate.body) { setError('Ajoute un titre et un texte avant d’enregistrer ton billet.'); return; }
+    let candidate: Editor;
+    try { candidate = { ...editor, title: editor.title.trim(), body: docText(editor.content), content:normalizeDoc(editor.content),cover:normalizeCover(editor.cover),status }; }
+    catch (e) { setError(message(e)); return; }
+    if (!candidate.title || !hasContent) { setError('Ajoute un titre et un texte avant d’enregistrer ton billet.'); return; }
     setBusy(true); setError(''); setNotice('');
     let accepted = false;
     try {
@@ -138,7 +146,7 @@ export default function BlogBackoffice() {
       const savedId = id(result.post.id);
       const refreshed = await readBlog();
       const verified = refreshed.posts.find(post => post.id === savedId);
-      if (!verified || verified.title !== candidate.title || verified.body !== candidate.body || verified.status !== status) throw new Error('Le texte relu ne correspond pas entièrement à ta demande. Ton texte reste dans l’éditeur ; recharge le carnet pour vérifier.');
+      if (!verified || verified.title !== candidate.title || verified.body !== candidate.body || verified.status !== status || JSON.stringify(verified.content)!==JSON.stringify(candidate.content) || JSON.stringify(verified.cover)!==JSON.stringify(candidate.cover)) throw new Error('Le texte relu ne correspond pas entièrement à ta demande. Ton texte reste dans l’éditeur ; recharge le carnet pour vérifier.');
       setData(refreshed);
       const next = asEditor(verified); setEditor(next); setBaseline(next);
       setNotice(status === 'published' ? 'Billet publié. Le texte enregistré a été vérifié.' : baseline.status === 'published' ? 'Billet dépublié. Il est conservé dans les brouillons.' : 'Brouillon enregistré. Tu peux le reprendre quand tu veux.');
@@ -200,7 +208,7 @@ export default function BlogBackoffice() {
     <main className="amb-app">
       <header className="amb-topbar">
         <a className="amb-brand" href="/admin-blog.html?view=atelier" aria-label="Retour à l’atelier Ahmed Marie"><span className="amb-mark" aria-hidden="true">a</span><span>Ahmed Marie<small>LA TECTONIQUE DES ÂMES</small></span></a>
-        <form action="/api/atelier/auth/logout" method="post"><button type="submit">Se déconnecter</button></form><nav aria-label="Liens de l’atelier"><a href="/admin-blog.html?view=atelier">← L’atelier</a><a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer">L’espace public ↗</a></nav>
+        <form action="/api/atelier/auth/logout" method="post"><button type="submit">Se déconnecter</button></form><nav aria-label="Liens de l’atelier"><a href="/admin-blog.html?view=review">Conversations et corrections</a><a href="/admin-blog.html?view=atelier">← L’atelier</a><a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer">L’espace public ↗</a></nav>
       </header>
 
       <div className="amb-content">
@@ -223,10 +231,11 @@ export default function BlogBackoffice() {
             <form onSubmit={event => { event.preventDefault(); void save(editor.status); }}>
               <label className="amb-field-label" htmlFor="amb-title">Le titre</label>
               <input ref={titleRef} className="amb-title-input" id="amb-title" value={editor.title} onChange={event => setEditor(current => ({ ...current, title: event.target.value }))} placeholder="Quelques mots pour commencer…" disabled={disabled} required />
-              <label className="amb-field-label" htmlFor="amb-body">Le texte</label>
-              <textarea className="amb-body-input" id="amb-body" value={editor.body} onChange={event => setEditor(current => ({ ...current, body: event.target.value }))} placeholder="Le carnet est ouvert." disabled={disabled} required spellCheck rows={17} aria-describedby="amb-writing-hint" />
-              <div className="amb-editor-meta"><span id="amb-writing-hint">Texte libre · Les retours à la ligne sont conservés.</span><span>{words} {words === 1 ? 'mot' : 'mots'}</span></div>
-              <div className="amb-save-row"><div className="amb-actions"><button className="amb-button amb-button-secondary" type="submit" disabled={disabled || !editor.title.trim() || !editor.body.trim()}>{busy ? 'Vérification…' : editor.status === 'published' ? 'Enregistrer les modifications' : 'Enregistrer le brouillon'}</button>{editor.status === 'draft' ? <button className="amb-button" type="button" onClick={() => void save('published')} disabled={disabled || !editor.title.trim() || !editor.body.trim()}>Publier le billet ↗</button> : <button className="amb-button amb-button-quiet" type="button" onClick={() => void save('draft')} disabled={disabled}>Dépublier</button>}</div><p className={`amb-save-state ${dirty ? 'amb-save-state-dirty' : ''}`} aria-live="polite">{dirty ? 'Modifications non enregistrées' : selected ? `Enregistré le ${formatDate(selected.updated_at)}` : 'Ce texte est encore dans l’éditeur.'}</p></div>
+              <BannerPicker value={editor.cover} onChange={cover=>setEditor(current=>({...current,cover}))} disabled={disabled} onBusy={setMediaBusy}/>
+              <label className="amb-field-label">Le texte</label>
+              <RichEditor value={editor.content} onChange={(content,body)=>setEditor(current=>({...current,content,body}))} disabled={disabled} onBusy={setMediaBusy}/>
+              <div className="amb-editor-meta"><span id="amb-writing-hint">Sélectionne du texte pour le mettre en forme ou une photo pour l’organiser.</span><span>{words} {words === 1 ? 'mot' : 'mots'}</span></div>
+              <div className="amb-save-row"><div className="amb-actions"><button className="amb-button amb-button-secondary" type="button" disabled={disabled} onClick={()=>setPreview(true)}>Prévisualiser</button><button className="amb-button amb-button-secondary" type="submit" disabled={disabled || !editor.title.trim() || !hasContent}>{busy ? 'Vérification…' : editor.status === 'published' ? 'Enregistrer les modifications' : 'Enregistrer le brouillon'}</button>{editor.status === 'draft' ? <button className="amb-button" type="button" onClick={() => void save('published')} disabled={disabled || !editor.title.trim() || !hasContent}>Publier le billet ↗</button> : <button className="amb-button amb-button-quiet" type="button" onClick={() => void save('draft')} disabled={disabled}>Dépublier</button>}</div><p className={`amb-save-state ${dirty ? 'amb-save-state-dirty' : ''}`} aria-live="polite">{dirty ? 'Modifications non enregistrées' : selected ? `Enregistré le ${formatDate(selected.updated_at)}` : 'Ce texte est encore dans l’éditeur.'}</p></div>
               {editor.status === 'published' && <p className="amb-publishing-note">Enregistrer les modifications mettra aussi à jour le billet public. Dépublier le retire du carnet public et le conserve ici.</p>}
             </form>
           </section>
@@ -238,6 +247,7 @@ export default function BlogBackoffice() {
         {view === 'visits' && <section className="amb-card"><h2>Les visites et les mails</h2><NotificationSettings api={api}/>{visitsError && <p role="alert">{visitsError}</p>}{visits && <><p><strong>{visits.total1h}</strong> visites sur une heure · <strong>{visits.total24h}</strong> sur 24 heures.</p>{visits.unusual && <p role="alert" className="amb-feedback amb-error">Fréquentation inhabituelle : plus de 10 visites en une heure ou de 20 en 24 heures.</p>}<p className="amb-feedback">{visits.mailConfigured ? 'Service mail configuré. La fréquence choisie ci-dessus s’applique aux prochaines visites. Consulte les résultats d’envoi ci-dessous.' : 'Mails non actifs : le service d’envoi doit encore être configuré. Les visites sont enregistrées, mais aucun mail de visite n’est envoyé.'}</p><p>Une visite regroupe les ouvertures d’un même navigateur séparées de moins de 30 minutes. Ce compteur n’identifie pas les personnes. Actualisation toutes les 30 secondes.</p><div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left'}}><thead><tr><th>Date</th><th>Page d’arrivée</th><th>Mail</th></tr></thead><tbody>{visits.visits.map(v=><tr key={v.id}><td>{formatDate(v.created_at)}</td><td>{v.page}</td><td>{({blocked:'Service non configuré',pending:'En attente',sending:'Envoi demandé',accepted:'Accepté par le service',failed:'Échec ou résultat inconnu',daily_pending:'Dans le prochain résumé',digest_sending:'Résumé demandé',digest_accepted:'Résumé accepté par le service',disabled:'Mails désactivés',skipped:'Fréquence modifiée'} as Record<string,string>)[v.mail_state] || v.mail_state}</td></tr>)}</tbody></table></div>{!visits.visits.length&&<p>Aucune visite enregistrée pour le moment.</p>}</>}</section>}
 
         {loaded && view === 'comments' && <section aria-labelledby="amb-comments-title"><div className="amb-section-intro"><p className="amb-eyebrow">Les voix en retour</p><h2 id="amb-comments-title">Ce que les lecteurs déposent.</h2><p>Les commentaires masqués restent accessibles ici. Tu peux les remettre en ligne quand tu le souhaites.</p></div><label className="amb-checkbox"><input type="checkbox" checked={showHidden} onChange={event => setShowHidden(event.target.checked)} /> Afficher aussi les commentaires masqués <span>({data.comments.filter(comment => comment.hidden).length})</span></label><div className="amb-comment-list">{comments.map(comment => <article key={comment.id} className={`amb-comment amb-card ${comment.hidden ? 'is-hidden' : ''}`}><div className="amb-comment-top"><div><strong>{comment.name}</strong><time dateTime={comment.created_at}>{formatDate(comment.created_at)}</time></div><span className={`amb-badge ${comment.hidden ? '' : 'amb-badge-published'}`}>{comment.hidden ? 'Masqué' : 'Visible'}</span></div><p className="amb-comment-post">Sur « {data.posts.find(post => post.id === comment.post_id)?.title || 'Billet non disponible'} »</p><p className="amb-comment-body">{comment.body}</p><button className="amb-button amb-button-secondary" type="button" onClick={() => void moderate(comment)} disabled={disabled}>{comment.hidden ? 'Rétablir le commentaire' : 'Masquer le commentaire'}</button></article>)}</div>{!comments.length && <div className="amb-empty"><span className="amb-empty-symbol" aria-hidden="true">“</span><h3>Le silence, pour le moment.</h3><p>{data.comments.length ? 'Aucun commentaire visible. Active le filtre pour retrouver les commentaires masqués.' : 'Les premières réactions des lecteurs apparaîtront ici.'}</p></div>}</section>}
+        {preview&&<PostPreview title={editor.title} content={editor.content} cover={editor.cover} onClose={()=>setPreview(false)}/>}
         <footer className="amb-footer"><span>Ahmed Marie · Le carnet de La tectonique des âmes</span><span>Les brouillons restent dans l’atelier.</span></footer>
       </div>
     </main>
