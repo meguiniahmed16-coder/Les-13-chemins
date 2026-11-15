@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {paymentLink, checkoutOptions, initializeSupport} from './soutien.js';
+import {paymentLink, checkoutOptions, initializeSupport, supportAmountCents, supportPaymentUrl} from './soutien.js';
 import {injectSharedNavigation} from './site-nav-build.mjs';
 
 test('payment links must be live hosted Stripe URLs, without redirects or credentials', () => {
@@ -35,10 +35,17 @@ test('network failures leave the opening notices intact', async () => {
 });
 test('activated support never implicitly activates the book or unverified payment methods', async () => {
   const nodes=new Map();
-  const doc={getElementById(id){if(!nodes.has(id))nodes.set(id,{hidden:true,children:[],appendChild(x){this.children.push(x)}});return nodes.get(id)},createElement(){return {}}};
+  const doc={getElementById(id){if(id==='support-amount-options')return null;if(!nodes.has(id))nodes.set(id,{hidden:true,children:[],appendChild(x){this.children.push(x)}});return nodes.get(id)},createElement(){return {}}};
   await initializeSupport(doc,async()=>({ok:true,json:async()=>({supportPaymentLink:'https://buy.stripe.com/a1B2',paymentMethods:['Carte bancaire','Carte bancaire','Unknown']})}));
   assert.equal(nodes.get('support-pay').hidden,false);
   assert.equal(nodes.get('support-pay').href,'https://buy.stripe.com/a1B2');
   assert.equal(nodes.has('book-pay'),false);
   assert.deepEqual(nodes.get('payment-methods').children.map(x=>x.textContent),['Carte bancaire']);
+});
+test('support amounts preserve cents and reject invalid or below-minimum entries', () => {
+  for (const [value,cents] of [['5',500],['10',1000],['12,50',1250],['12.01',1201],[' 100 ',10000],['1000',100000]]) assert.equal(supportAmountCents(value),cents);
+  for (const value of ['',null,'4.99','-5','5.999','1e2','Infinity','5foo','9007199254740993']) assert.equal(supportAmountCents(value),null);
+  assert.equal(supportPaymentUrl('https://buy.stripe.com/a1B2','12,50'),'https://buy.stripe.com/a1B2?prefilled_amount=1250');
+  assert.equal(supportPaymentUrl('https://evil.example/a1B2','20'),null);
+  assert.equal(supportPaymentUrl('https://buy.stripe.com/a1B2','4'),null);
 });

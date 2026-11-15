@@ -10,8 +10,8 @@
   <meta property="og:site_name" content="La Tectonique des âmes">
   <meta property="og:title" content="Soutenir Les Treize Chemins">
   <meta property="og:description" content="Un soutien libre dès 5 €, ou le préachat du futur livre La tectonique des âmes à 30 €.">
-  <link rel="stylesheet" href="soutien.css">
-  <script type="module" src="soutien.js?v=20261115-payments"></script>
+  <link rel="stylesheet" href="soutien.css?v=20261115-montant">
+  <script type="module" src="soutien.js?v=20261115-montant"></script>
 </head>
 <body>
   <main class="support-page">
@@ -26,6 +26,27 @@
         <h2 id="support-title">Un soutien libre</h2>
         <p class="price"><span class="price-prefix">dès</span> 5 <span>€</span></p>
         <p>Un coup de pouce pour les récits, les jeux et les rencontres des Treize Chemins. Vous choisissez le montant.</p>
+        <fieldset id="support-amount-options" class="amount-options" hidden>
+          <legend>Votre contribution</legend>
+          <div class="amount-presets" aria-label="Montants proposés">
+            <button type="button" data-support-amount="5" aria-pressed="true">5 €</button>
+            <button type="button" data-support-amount="10" aria-pressed="false">10 €</button>
+            <button type="button" data-support-amount="20" aria-pressed="false">20 €</button>
+            <button type="button" data-support-amount="50" aria-pressed="false">50 €</button>
+            <button type="button" data-support-amount="100" aria-pressed="false">100 €</button>
+          </div>
+          <label for="support-amount">Ou choisissez votre montant</label>
+          <div class="amount-stepper">
+            <button id="support-decrease" type="button" aria-label="Diminuer de 5 euros" disabled>−</button>
+            <div class="amount-input-wrap">
+              <input id="support-amount" type="text" inputmode="decimal" value="5" autocomplete="off" aria-label="Montant en euros" aria-describedby="support-amount-help support-amount-error">
+              <span aria-hidden="true">€</span>
+            </div>
+            <button id="support-increase" type="button" aria-label="Augmenter de 5 euros">+</button>
+          </div>
+          <p id="support-amount-help" class="small">Minimum 5 €. Vous pouvez saisir un montant plus élevé.</p>
+          <p id="support-amount-error" class="amount-error" role="status" hidden>Indiquez au moins 5 €, avec au plus deux décimales.</p>
+        </fieldset>
         <div class="card-action">
           <a id="support-pay" class="payment-button" hidden>Je soutiens le projet <span aria-hidden="true">↗</span></a>
           <p id="support-pending" class="opening">Ouverture des soutiens prochainement</p>
