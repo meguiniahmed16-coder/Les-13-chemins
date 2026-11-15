@@ -8,9 +8,11 @@ Créer un Payment Link ponctuel en EUR dont le client choisit le montant : minim
 
 ## Préachat
 
-Créer un produit distinct « La tectonique des âmes — Préachat », paiement ponctuel de **20 €**. Avant d’activer le lien, faire préciser par l’auteur : format du livre, frais et zones de livraison, délai de livraison, conditions de remboursement/annulation et informations du vendeur. Mi-décembre 2026 désigne seulement la fin du manuscrit avant travail éditorial, pas la parution ni l’expédition.
+Créer un produit distinct « La tectonique des âmes — Préachat », paiement ponctuel de **30 €**. Avant d’activer le lien, faire préciser par l’auteur : format du livre, frais et zones de livraison, délai de livraison, conditions de remboursement/annulation et informations du vendeur. Mi-décembre 2026 désigne seulement la fin du manuscrit avant travail éditorial, pas la parution ni l’expédition.
 
 Renseigner ces informations sur la page et dans le parcours de paiement, collecter l’adresse e-mail pour le suivi et, pour une livraison postale, l’adresse de livraison. Ne pas inventer de date ni de promesse commerciale. Le lien de préachat reste masqué tant que `bookTermsConfirmed` n’est pas `true` et `bookDetails` n’est pas renseigné.
+
+Le 15 novembre 2026, l’auteur a confirmé ne pas facturer de TVA. Ne pas activer la collecte automatique Stripe Tax sans nouvelle consigne.
 
 ## Compte et versements
 
@@ -19,7 +21,7 @@ Le titulaire active et vérifie son compte Stripe et renseigne son compte bancai
 Renseigner ensuite `soutien-config.json` :
 
 - `supportPaymentLink` : URL de production Stripe créée pour le soutien au projet.
-- `bookPaymentLink` : URL de production Stripe du livre, prix vérifié à 20 €.
+- `bookPaymentLink` : URL de production Stripe du livre, prix vérifié à 30 €.
 - `bookTermsConfirmed` et `bookDetails` : activer uniquement après validation des éléments ci-dessus.
 - `paymentMethods` : uniquement les moyens effectivement activés et vérifiés.
 
