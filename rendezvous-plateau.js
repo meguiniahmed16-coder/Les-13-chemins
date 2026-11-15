@@ -258,7 +258,7 @@
   }
   if(reader.open)reader.close();
   if(!cyranoDialog.open)cyranoDialog.showModal();
-  if(!cyranoLoading){cyranoLoading=true;cyranoFrame.src='jeu-cyrano-bd.html?embedded=1&v=cyrano-bd-v1';}
+  if(!cyranoLoading){cyranoLoading=true;cyranoFrame.src='jeu-cyrano-bd.html?embedded=1&v=cyrano-bd-v6-20261115';}
   else initCyrano();
  }
  function initCyrano(){
