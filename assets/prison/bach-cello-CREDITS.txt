@@ -1,0 +1,14 @@
+Le Café — piste musicale séparée
+
+Œuvre : Johann Sebastian Bach, Suite pour violoncelle n° 1 en sol majeur,
+BWV 1007, I. Prélude (composition dans le domaine public).
+Interprétation : Chris (utilisateur Wikimedia Commons Fopseh), 21 décembre 2024.
+Enregistrement dédié au domaine public : CC0 1.0 Universal.
+Licence : https://creativecommons.org/publicdomain/zero/1.0/
+Source : https://commons.wikimedia.org/wiki/File:Bach_Cello_Suite_1_Prelude_(BWV_1007)_Played_by_Chris.ogg
+Source consultée le 15 novembre 2026.
+
+Adaptation pour le site : extrait de 0,30 à 16,30 secondes, entrée de 0,15 seconde,
+fondu final de 2,5 secondes, transcodage MP3 stéréo 192 kbit/s.
+La vidéo le-cafe-16s.mp4 n'est pas modifiée. La piste est jouée séparément
+et suit les commandes de lecture, de pause, de volume et de déplacement du film.

@@ -180,7 +180,7 @@ for(const link of document.querySelectorAll('[data-return-plateau]')){
  });
 }
 pauseButton.addEventListener('click',togglePause);
-$('sound').addEventListener('click',()=>{const enabled=foley.mute(foley.enabled);$('sound').textContent=enabled?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(enabled));});
+$('sound').addEventListener('click',()=>{const enabled=foley.mute(foley.enabled);outro.setMuted(!enabled);$('sound').textContent=enabled?'Son ON':'Son OFF';$('sound').setAttribute('aria-pressed',String(enabled));});
 window.addEventListener('pagehide',()=>{outro.reset();foley.dispose();},{once:true});
 window.addEventListener('keydown',event=>{
  if(!event.defaultPrevented&&paused&&['playing','tour'].includes(mode)&&event.code==='KeyP'&&!event.repeat){event.preventDefault();togglePause();}

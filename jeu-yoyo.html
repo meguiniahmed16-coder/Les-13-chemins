@@ -222,7 +222,8 @@ body[data-mode=demo] .start-panel,body[data-mode=demo] .controls,body[data-mode=
 </div></div>
 <section id="prison-outro" aria-label="Le Café — Un instant de paix" hidden>
 <video id="prison-film" data-src="assets/prison/le-cafe-16s.mp4" playsinline controls preload="none" aria-label="Le Café, film de fin de la prison, seize secondes"></video>
-<div class="prison-film-actions"><button id="prison-film-play" class="primary" type="button" hidden>Lecture</button><button id="prison-film-skip" class="secondary" type="button">Passer le film</button><p id="prison-film-status" role="status" aria-live="polite"></p></div>
+<audio id="prison-film-music" data-src="assets/prison/bach-cello-prelude-16s.mp3" preload="none" hidden></audio>
+<div class="prison-film-actions"><button id="prison-film-play" class="primary" type="button" hidden>Lecture</button><button id="prison-music-play" class="secondary" type="button" hidden>Activer la musique</button><button id="prison-film-skip" class="secondary" type="button">Passer le film</button><p id="prison-film-status" role="status" aria-live="polite"></p></div>
 </section>
 <div id="overlay" hidden><div class="overlay-card">
 <h2>La cellule</h2><p>Un jeu de yo-yo au travers des barreaux.</p>
@@ -237,6 +238,7 @@ body[data-mode=demo] .start-panel,body[data-mode=demo] .controls,body[data-mode=
 <footer>
 <div class="links"><a href="jeu.html?niveau=5" target="_top" data-return-plateau>Retour au plateau</a></div>
 <details><summary>Commandes clavier et ressources libres</summary>
+<p>Musique du Café : J. S. Bach, Suite pour violoncelle n° 1 en sol majeur, BWV 1007, Prélude. Interprétation : Chris / Fopseh, <a href="assets/prison/bach-cello-CREDITS.txt" target="_blank" rel="noopener">enregistrement CC0 et source</a>. Extrait de seize secondes avec fondu final.</p>
 <p>Clavier : ZQSD ou WASD et les flèches pour marcher, Espace pour saisir, C ou Ctrl pour se cacher, P pour mettre en pause. Fais glisser l’image avec la souris pour regarder.</p>
 <p>Bras articulés : <a href="https://quaternius.com/packs/universalbasecharacters.html" target="_blank" rel="noopener">Quaternius — Universal Base Characters</a>, licence CC0. Tabouret texturé : <a href="https://polyhaven.com/a/metal_stool_02" target="_blank" rel="noopener">Metal Stool 02, Ulan Cabanilla / Poly Haven</a>, licence CC0. Le reste du décor est modélisé en trois dimensions pour cette cellule.</p>
 <p>Trois épreuves : saisir la brosse, récupérer le tabac, puis le café. En jouant depuis le plateau, réussir la cellule termine cette étape et rapporte 30 points à la première réussite.</p>
@@ -294,6 +296,6 @@ body[data-mode=demo] .start-panel,body[data-mode=demo] .controls,body[data-mode=
  },true);
 })();
 </script>
-<script src="prison-3d-prototype-runtime.js?v=20261115-cafe-16s" defer></script>
+<script src="prison-3d-prototype-runtime.js?v=20261115-cafe-bach" defer></script>
 </body>
 </html>

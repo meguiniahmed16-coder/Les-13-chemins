@@ -144,6 +144,8 @@ const publicFiles = [
   'prison-3d-prototype-runtime.js',
   'assets/prison/metal-stool-02.glb',
   'assets/prison/le-cafe-16s.mp4',
+  'assets/prison/bach-cello-prelude-16s.mp3',
+  'assets/prison/bach-cello-CREDITS.txt',
   'assets/prison/metal-stool-02-LICENSE.txt',
   'yoyo-runtime.js',
   'main_ouverte_fixee.webp',
