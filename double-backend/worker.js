@@ -1,4 +1,4 @@
-import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext} from './voice.js';
+import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
 import BANK from './bank.js';
 import {blogGet,blogPost} from './blog.js';
 import {recordVisit,sendVisitMail,visitStats} from './visits.js';
@@ -86,15 +86,15 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  const existing=await db.prepare('SELECT * FROM turns WHERE session_id=? AND request_id=?').bind(s.id,p.request_id).first();
  if(existing){if(existing.prompt!==p.message.trim())return reply({error:'Cet identifiant appartient à un autre message.'},400);if(existing.state==='complete')return reply({turn:publicTurn(existing),sources:JSON.parse(existing.source_ids)});if(existing.state==='pending')return reply({error:'La réponse est encore en préparation.'},409);}
  const num=await db.prepare('SELECT count(*) AS n FROM turns WHERE session_id=?').bind(s.id).first();if(Number(num.n)>=120)return reply({error:'Cette conversation est complète. Tu peux en ouvrir une nouvelle.'},429);
- const [recent,memories]=await Promise.all([db.prepare("SELECT * FROM turns WHERE session_id=? AND state='complete' ORDER BY created_at DESC LIMIT 5").bind(s.id).all(),db.prepare('SELECT * FROM memory ORDER BY updated_at DESC LIMIT 2000').all()]);
- const history=recent.results.reverse();const retrieval=match(p.message+' '+history.slice(-1).map(t=>t.prompt).join(' '),memories.results);
+ const [recent,memories]=await Promise.all([db.prepare("SELECT * FROM turns WHERE session_id=? AND state='complete' ORDER BY created_at DESC LIMIT 20").bind(s.id).all(),db.prepare('SELECT * FROM memory ORDER BY updated_at DESC LIMIT 2000').all()]);
+ const pastTurns=recent.results.reverse();const history=pastTurns.slice(-8);const retrieval=match(p.message+' '+history.slice(-1).map(t=>t.prompt).join(' '),memories.results);
  const selected=retrieval.found.map(({q})=>({id:q.id,question:q.question,answers:q.answers.map(a=>{const m=memories.results.find(m=>m.id===a.id);return m?.state==='refused'?null:{id:a.id,text:m?.answer||a.text,status:m?.state||a.status};}).filter(Boolean)}));
  const positives=retrieval.mem.filter(m=>m.state!=='refused'),negatives=retrieval.mem.filter(m=>m.state==='refused');
  const addressMode=addressPreference(p.message,s.address_mode||'tu');
  if(addressMode!==(s.address_mode||'tu'))await db.prepare('UPDATE sessions SET address_mode=? WHERE id=?').bind(addressMode,s.id).run();
  const emojiAllowed=p.emojis!==false&&Number(num.n)%6===3;
  const blogContext=s.post_id?await db.prepare("SELECT title,body FROM posts WHERE id=? AND status='published'").bind(s.post_id).first():null;
- const system=VOICE+(blogContext?'\nBILLET DISCUTÉ (texte de l’auteur)\n'+JSON.stringify(blogContext).slice(0,7000):'')+'\nBIOGRAPHIE DATÉE\n'+FACTS+'\nRÉPONSES POSSIBLES DU CORPUS\n'+JSON.stringify(selected).slice(0,10000)+'\nCORRECTIONS ET VALIDATIONS D’AUTEUR PRIORITAIRES\n'+JSON.stringify(positives).slice(0,7000)+'\nFORMULATIONS REFUSÉES, À NE PAS REPRENDRE\n'+JSON.stringify(negatives.map(m=>({question:m.question,answer:m.answer}))).slice(0,3000)+'\nÉMOJIS : '+(emojiAllowed?'Tu peux ajouter UN émoji discret si cela vient naturellement (humour ou chaleur), jamais pour une peine, un deuil ou une confidence grave.':'Aucun émoji dans cette réponse.')+turnVoiceContext(addressMode,now);
+ const system=VOICE+(blogContext?'\nBILLET DISCUTÉ (texte de l’auteur)\n'+JSON.stringify(blogContext).slice(0,7000):'')+'\nBIOGRAPHIE DATÉE\n'+FACTS+'\nRÉPONSES POSSIBLES DU CORPUS\n'+JSON.stringify(selected).slice(0,10000)+'\nCORRECTIONS ET VALIDATIONS D’AUTEUR PRIORITAIRES\n'+JSON.stringify(positives).slice(0,7000)+'\nFORMULATIONS REFUSÉES, À NE PAS REPRENDRE\n'+JSON.stringify(negatives.map(m=>({question:m.question,answer:m.answer}))).slice(0,3000)+'\nÉMOJIS : '+(emojiAllowed?'Tu peux ajouter UN émoji discret si cela vient naturellement (humour ou chaleur), jamais pour une peine, un deuil ou une confidence grave.':'Aucun émoji dans cette réponse.')+turnVoiceContext(addressMode,now)+repeatedGreetingContext(p.message,pastTurns,now,addressMode);
  const messages=[{role:'system',content:system},...history.flatMap(t=>[{role:'user',content:t.prompt.slice(0,1000)},{role:'assistant',content:(t.review==='refused'?'[Cette ancienne réponse a été refusée par l’auteur ; ne pas la réutiliser.]':t.correction||t.response).slice(0,1200)}]),{role:'user',content:p.message.trim()}];
  // Conservative byte upper bound for tokens; no automatic paid-plan upgrade.
  const reserve=Math.ceil(encoder.encode(JSON.stringify(messages)).byteLength*.009091+MAX_REPLY_TOKENS*.027273+10);
