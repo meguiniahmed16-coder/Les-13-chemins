@@ -10,11 +10,11 @@ test('one common menu, Blog and Le dialogue after all three main buttons', () =>
   assert.match(out, /<main>Keep this text<\/main>/);
   assert.equal(injectSharedNavigation(out,'ahmed-marie.html'),out);
 });
-test('Blog and Le dialogue share the second row on desktop and mobile',()=>{
+test('Blog, Le dialogue and Soutenir share the second row on desktop and mobile',()=>{
   const css=readFileSync(new URL('./site-nav.css',import.meta.url),'utf8');
   assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
-  assert.match(css,/\.site-blog-link\{grid-column:1 \/ 4/);
-  assert.match(css,/\.site-dialogue-link\{grid-column:4 \/ 7/);
+  assert.match(css,/\.site-blog-link\{grid-column:1 \/ 3/);
+  assert.match(css,/\.site-dialogue-link\{grid-column:3 \/ 5/);
 });
 test('redirects and embedded game layouts keep their behavior',()=>{
   const redirect='<html><head><meta http-equiv="refresh" content="0;url=jeu.html"></head></html>';

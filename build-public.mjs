@@ -15,7 +15,7 @@ const run = promisify(execFile);
 for (const args of [
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
-  ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs'],
+  ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs', 'soutien.test.mjs'],
   ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
@@ -55,6 +55,10 @@ for (const args of [
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
+  'soutien.html',
+  'soutien.css',
+  'soutien.js',
+  'soutien-config.json',
   'index.html',
   'ahmed-marie.html',
   'dialogues.html',

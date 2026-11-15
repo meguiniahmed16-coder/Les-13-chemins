@@ -1,0 +1,42 @@
+:root{color-scheme:light;--ink:#243e37;--gold:#b68e54;--paper:#f6eedc;--line:#c8b189}
+*{box-sizing:border-box}
+body{margin:0;background:#e8dcc3;color:var(--ink);font:16px/1.65 system-ui,sans-serif}
+a{color:inherit}
+[hidden]{display:none!important}
+.support-page{max-width:1040px;margin:auto;padding:52px 24px 44px}
+.support-intro{text-align:center;max-width:720px;margin:0 auto 36px}
+.eyebrow,.card-label{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase}
+.eyebrow{color:#6b593c}
+h1{font:400 clamp(40px,6vw,65px)/1.07 Georgia,serif;letter-spacing:-.025em;margin:24px 0}
+h1 em{font-style:normal;color:#46634f}
+.lead{max-width:580px;margin:0 auto;font-size:17px;line-height:1.7}
+.support-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch}
+.support-card{display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);padding:30px 32px 24px;box-shadow:0 7px 20px #243e3708}
+.support-card h2{font:400 32px/1.12 Georgia,serif;margin:10px 0 0;min-height:72px}
+.card-label{margin:0;color:#75603c}
+.price{font:400 58px/1.15 Georgia,serif;margin:20px 0 12px}
+.price>span{font-size:34px}
+.price .price-prefix,.price .price-suffix{font:14px/1.5 system-ui,sans-serif}
+.price .price-suffix{display:inline-block;margin-left:10px}
+.support-card>p:not(.price):not(.card-label){margin:10px 0 20px}
+.card-action{margin-top:auto;padding-top:16px}
+.payment-button,.opening{display:flex;align-items:center;justify-content:center;gap:18px;width:100%;min-height:50px;border:1px solid var(--ink);padding:12px 14px;text-align:center;font-size:14px;font-weight:600;text-decoration:none;border-radius:4px}
+.payment-button{background:var(--ink);color:#fff4df}
+.payment-button:hover{background:#42604e}
+.opening{margin:0;background:#e9e2ce;color:#4c5b4d;border-color:#c6b793;font-size:13px}
+.small{font-size:12px;line-height:1.6;margin:12px 0 0;color:#655f50}
+.book-card{background:#243e37;color:#fff4df;border-color:#243e37}
+.book-card .card-label{color:#d9bc87}
+.book-card .small{color:#dacfb8}
+.book-card .payment-button{background:#ead9b6;color:#243e37;border-color:#ead9b6}
+.book-card .payment-button:hover{background:#fff4df}
+.book-card .opening{background:#344d40;color:#e9dcc4;border-color:#71816b}
+.payment-info{text-align:center;padding:22px 0 10px;font-size:13px}
+.payment-info ul{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;list-style:none;padding:0;margin:10px 0}
+.payment-info li{border:1px solid #b9a580;border-radius:4px;padding:4px 10px;background:#f6eedc}
+.support-footer{margin-top:34px;text-align:center}
+.support-footer p{font:italic 22px/1.5 Georgia,serif;margin:0 0 6px}
+.signature{display:block;font:18px Georgia,serif}
+.support-footer>a{display:inline-block;margin-top:24px;font-size:13px;text-underline-offset:4px}
+a:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+@media(max-width:650px){.support-page{padding:30px 18px}.support-options{grid-template-columns:1fr;gap:20px}.support-intro{margin-bottom:26px}.support-card{padding:26px}.support-card h2{min-height:0}.lead{font-size:16px}.price{margin-top:18px}.support-footer{margin-top:28px}}
