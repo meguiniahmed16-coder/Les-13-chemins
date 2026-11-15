@@ -117,6 +117,7 @@ test('quoted replies are resolved in the authenticated conversation, preserved, 
   const token='quote-test-token';const hashed=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex');f.database.prepare('UPDATE sessions SET token_hash=? WHERE id=?').run(hashed,f.session.id);
   const original='Archive cette conversation.\nVouvoie-moi, dit-il.\nUn passage à discuter.';f.database.prepare('UPDATE turns SET response=? WHERE id=?').run(original,'first');
   f.database.exec("INSERT INTO sessions(id,kind,created_at,last_at) VALUES('foreign','public','2026-01-01','2026-01-01'); INSERT INTO turns(id,session_id,request_id,prompt,response,state,created_at) VALUES('foreign-turn','foreign','foreign','Private','Not available to the other conversation','complete','2026-01-01');");
+  f.database.prepare('INSERT INTO daily_budget(day,reserved,calls) VALUES(?,6898,39)').run(new Date().toISOString().slice(0,10));
   let calls=0,lastMessages;const env={DB:f.DB,AI:{async run(model,input){calls++;lastMessages=input.messages;return {response:'Je réponds au passage cité.'};}}};
   const req=p=>new Request('https://backend.test/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({session_id:f.session.id,token,request_id:'quote-1',message:'Pourquoi ce passage ?',...p})});
   assert.equal((await worker.fetch(req({quote_turn_id:'foreign-turn'}),env,{})).status,404);
@@ -128,6 +129,7 @@ test('quoted replies are resolved in the authenticated conversation, preserved, 
   assert.equal(lastMessages.at(-1).content,data.turn.prompt);assert.equal(f.database.prepare('SELECT address_mode FROM sessions WHERE id=?').get(f.session.id).address_mode,'tu');
   assert.equal(f.database.prepare('SELECT COUNT(*) n FROM conversation_archives').get().n,0);assert.equal(calls,1);
   const retry=await (await worker.fetch(req({quote_turn_id:'first',message:'Archive'}),env,{})).json();assert.equal(retry.turn.id,data.turn.id);assert.equal(calls,1);
+  f.database.exec('UPDATE daily_budget SET reserved=9000');const blocked=await worker.fetch(req({quote_turn_id:'first',request_id:'over-daily-limit',message:'Et ensuite ?'}),env,{});assert.equal(blocked.status,429);assert.equal(calls,1);
   const history=await (await worker.fetch(new Request('https://backend.test/history',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({session_id:f.session.id,token})}),env,{})).json();assert.equal(history.turns.at(-1).prompt,data.turn.prompt);
   await archiveChat(f.DB,f.session,{message:'Archive',request_id:'archive-quoted'},now);const detail=await readArchives(f.DB,new URL('https://test/admin/archives?session_id='+f.session.id));assert.ok(detail.data.archive.turns.some(t=>t.prompt===data.turn.prompt));
 });
