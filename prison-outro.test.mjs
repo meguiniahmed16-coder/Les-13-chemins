@@ -35,7 +35,7 @@ test('Bach follows pause, buffering, seeking, volume and playback speed without 
  h.video.currentTime=9;h.video.listeners.seeking();h.video.listeners.seeked();
  await new Promise(r=>setImmediate(r));assert.equal(music.currentTime,9);assert.equal(music.paused,false);
  h.video.muted=true;h.video.volume=.5;h.video.listeners.volumechange();
- assert.equal(music.muted,true);assert.equal(music.volume,.4);
+ assert.equal(music.muted,true);assert.equal(music.volume,.5);
  h.video.playbackRate=1.5;h.video.listeners.ratechange();assert.equal(music.playbackRate,1.5);
  assert.equal(h.ends(),0);
  h.video.listeners.ended();assert.equal(music.paused,true);assert.equal(h.ends(),1);

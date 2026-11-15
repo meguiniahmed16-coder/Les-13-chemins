@@ -14,7 +14,7 @@ export function createPrisonOutro({document:doc,onEnd=()=>{}}){
   }
  }
  function syncMusic(force=false){
-  music.muted=video.muted;music.volume=video.volume*.8;
+  music.muted=video.muted;music.volume=video.volume;
   music.playbackRate=video.playbackRate;
   if(force||Math.abs(music.currentTime-video.currentTime)>.3){
    try{music.currentTime=video.currentTime;}catch{}
