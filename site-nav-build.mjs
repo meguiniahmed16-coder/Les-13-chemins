@@ -11,7 +11,7 @@ export function injectSharedNavigation(html, filename) {
     const oldNav = /<nav\b[^>]*class=["'][^"']*\bsite-nav\b[^"']*["'][^>]*>[\s\S]*?<\/nav>/i;
     html = oldNav.test(html) ? html.replace(oldNav,nav) : html.replace(/<body\b[^>]*>/i, m=>m+nav);
     html = html.replace(/<link\b[^>]*href=["'](?:\.\/)?site-nav\.css[^"']*["'][^>]*>/gi,'');
-    html = html.replace(/<\/head>/i,'<link rel="stylesheet" href="site-nav.css?v=20261115-soutien-1"></head>');
+    html = html.replace(/<\/head>/i,'<link rel="stylesheet" href="site-nav.css?v=20261115-soutien-2"></head>');
   }
   if (!/^(admin(?:-blog)?|editeurs)\.html$/.test(filename) && !/src=["']site-visits\.js/.test(html)) {
     const tag = '<script defer src="site-visits.js?v=20261115-1"></script>';
