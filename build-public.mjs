@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
+import { injectAnalytics } from './site-analytics-build.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const output = join(root, 'dist');
@@ -10,6 +11,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
+  ['--test', 'site-analytics.test.mjs'],
   ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
   ['--test', 'yoyo.test.mjs'],
@@ -51,6 +53,7 @@ for (const args of [
 const publicFiles = [
   'index.html',
   'site-nav.css',
+  'site-analytics.js',
   'presentation.html',
   'carte.html',
   'jeu.html',
@@ -200,7 +203,11 @@ await mkdir(output);
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
-  await copyFile(join(root, name), join(output, name));
+  if (name.endsWith('.html')) {
+    await writeFile(join(output, name), injectAnalytics(await readFile(join(root, name), 'utf8'), name));
+  } else {
+    await copyFile(join(root, name), join(output, name));
+  }
 }
 console.log('Build public : ' + (publicFiles.length + 1) + ' fichiers vérifiés dans dist/.');
 const danseChecks=await run(process.execPath,['--test','danse.test.mjs'],{cwd:root,maxBuffer:4*1024*1024});
