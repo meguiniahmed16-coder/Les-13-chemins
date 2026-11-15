@@ -1,6 +1,6 @@
 import {quotedPrompt} from './quotes.js';
 import {handleVoicePreference,voicePreferenceContext} from './preferences.js';
-import {isArchiveRequest,archiveChat,readArchives,cleanupConversations,publishArchive,publicDialogues} from './archives.js';
+import {isArchiveStatusRequest,archiveStatus,isArchiveRequest,archiveChat,readArchives,cleanupConversations,publishArchive,publicDialogues} from './archives.js';
 import {readImage} from './media.js';
 import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
 import BANK from './bank.js';
@@ -98,6 +98,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  if(hasQuote){const quote=await quotedPrompt(db,s.id,p.quote_turn_id,p.message);if(quote.error)return reply({error:quote.error},quote.status);p.message=quote.prompt;}
  const existing=await db.prepare('SELECT * FROM turns WHERE session_id=? AND request_id=?').bind(s.id,p.request_id).first();
  if(existing){if(existing.prompt!==p.message.trim())return reply({error:'Cet identifiant appartient à un autre message.'},400);if(existing.state==='complete')return reply({turn:publicTurn(existing),sources:JSON.parse(existing.source_ids)});if(existing.state==='pending')return reply({error:'La réponse est encore en préparation.'},409);}
+ if(!hasQuote&&isArchiveStatusRequest(p.message)){const r=await archiveStatus(db,s,p,now,existing);return reply(r.data,r.status);}
  if(!hasQuote&&isArchiveRequest(p.message)){const r=await archiveChat(db,s,p,now,existing);return reply(r.data,r.status);}
  const num=await db.prepare('SELECT count(*) AS n FROM turns WHERE session_id=?').bind(s.id).first();if(Number(num.n)>=120)return reply({error:'Cette conversation est complète. Tu peux en ouvrir une nouvelle.'},429);
  if(!hasQuote){const preference=await handleVoicePreference(db,s,p,now,isAdmin);if(preference)return reply(preference.data,preference.status);}else await db.prepare('DELETE FROM voice_preference_proposals WHERE session_id=?').bind(s.id).run();
@@ -122,3 +123,4 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
   return reply({turn:{id,prompt:p.message.trim(),response:answer,created_at:now,state:'complete',status:'unreviewed',correction:''},sources:selected.map(x=>x.id)});
  }catch(e){console.error(JSON.stringify({event:'inference_error',turn_id:id,type:e?.name||'Error'}));await db.prepare("UPDATE turns SET state='error' WHERE id=?").bind(id).run();return reply({error:'Le moteur n’a pas pu répondre à cet essai. Ton message est conservé ; tu peux le renvoyer.'},503);}
  }catch(e){console.error(JSON.stringify({event:'request_error',path:u.pathname,type:e?.name||'Error'}));return reply({error:e?.message==='body_limit'?'Message trop long.':'Une erreur est survenue. Réessaie dans un instant.'},e?.message==='body_limit'?413:500);}}};
+

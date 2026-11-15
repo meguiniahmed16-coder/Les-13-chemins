@@ -4,7 +4,7 @@ import './archives.css';
 type Archive={session_id:string;title:string;kind:string;created_at:string;archived_at:string;turn_count:number;published_at?:string|null;published_archive_at?:string|null};
 type Turn={id:string;prompt:string;response:string;created_at:string;correction?:string;state:string};
 type Detail=Archive&{turns:Turn[]};
-const date=(value:string)=>new Date(value).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:'short'});
+const date=(value:string)=>new Date(value).toLocaleString('fr-FR',{timeZone:'Europe/Paris',dateStyle:'medium',timeStyle:'short'});
 async function get<T>(query:string,signal:AbortSignal):Promise<T>{
   const r=await fetch('/api/atelier/double/admin/archives'+query,{credentials:'same-origin',cache:'no-store',signal});
   const data=await r.json();
@@ -37,7 +37,7 @@ export default function Archives(){
   }
   useEffect(()=>{void load();return()=>{listRequest.current?.abort();detailRequest.current?.abort();};},[]);
   return <main className="am-archives">
-    <header className="am-archives-header"><div><p className="am-eyebrow">Ahmed numérique · Administration</p><h1>Conversations archivées</h1><p>Dis « archive cette conversation », « garde ça pour plus tard » ou « conserve notre échange ». Relis ici le dialogue, puis choisis de le publier.</p><a href="/dialogues.html" target="_blank" rel="noreferrer">Voir le dialogue public Ahmed Marie ↔ Ahmed numérique →</a></div><nav aria-label="Administration"><a href="/admin-blog.html">Écrire</a><a href="/admin-blog.html?view=atelier">Conversation</a><a href="/admin-blog.html?view=review">Relecture</a><form action="/api/atelier/auth/logout" method="post"><button type="submit">Se déconnecter</button></form></nav></header>
+    <header className="am-archives-header"><div><p className="am-eyebrow">Ahmed numérique · Administration</p><h1>Conversations archivées</h1><p>Dis « archive cette conversation », « garde ça pour plus tard » ou « conserve notre échange ». Tu peux préciser « entre 19h et 19h30 » ou « à partir de 15/11/2026 19h ». Horaires de Paris. Relis ici le dialogue, puis choisis de le publier.</p><a href="/dialogues.html" target="_blank" rel="noreferrer">Voir le dialogue public Ahmed Marie ↔ Ahmed numérique →</a></div><nav aria-label="Administration"><a href="/admin-blog.html">Écrire</a><a href="/admin-blog.html?view=atelier">Conversation</a><a href="/admin-blog.html?view=review">Relecture</a><form action="/api/atelier/auth/logout" method="post"><button type="submit">Se déconnecter</button></form></nav></header>
     <div className="am-archives-layout"><section className="am-archive-list" aria-label="Liste des conversations archivées"><div className="am-archive-list-head"><h2>Les conversations</h2><button type="button" disabled={busy} onClick={()=>void load()}>Actualiser</button></div>
       {error&&<p role="alert">{error}</p>}{busy&&<p role="status">Chargement des archives…</p>}
       {!busy&&!error&&!items.length&&<p>Aucune conversation archivée pour le moment.</p>}
@@ -53,3 +53,4 @@ export default function Archives(){
     </section></div>
   </main>;
 }
+

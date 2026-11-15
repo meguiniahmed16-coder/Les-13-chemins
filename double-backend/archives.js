@@ -1,20 +1,40 @@
 // Only a direct request in the current user message can trigger this action.
 // Model replies, quoted instructions and previous messages cannot archive anything.
 function normalizeArchiveText(message){return String(message).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
-export function parseArchiveRequest(message) {
-  let text=normalizeArchiveText(message);
+function clockValue(raw){
+  const s=String(raw).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const m=/^(?:(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+a)?\s+)?(\d{1,2})(?:h|:)(\d{2})?$/.exec(s);
+  if(!m||+m[4]>23||+(m[5]||0)>59)return null;
+  let date=null;if(m[1]){const test=new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));if(test.getUTCFullYear()!==+m[3]||test.getUTCMonth()!==+m[2]-1||test.getUTCDate()!==+m[1])return null;date=m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+  return {date,hour:m[4].padStart(2,'0'),minute:(m[5]||'00').padStart(2,'0')};
+}
+function parisKey(value){const parts=Object.fromEntries(new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(value)).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;}
+export function parseArchiveRequest(message,allowContinuation=true) {
+  let raw=String(message).trim();
+  if(/^[«“"'>]/.test(raw))return null;
+  if(allowContinuation){
+    const boundary=raw.search(/[,;.!?]\s+/);
+    if(boundary>=0){const head=parseArchiveRequest(raw.slice(0,boundary),false),tail=normalizeArchiveText(raw.slice(boundary+1));
+      if(head&&!head.startText&&!/\b(?:non|attends|annule|n archive|ne le fais pas|ne fais pas|pas maintenant|pas (?:la|le|les) (?:partie|passage|message|conversation|echange|dialogue)|pas tout ca|ne.{0,40}archiv|publie|publier|partage|partager|envoie|envoyer|efface|effacer|supprime|supprimer)\b/.test(tail))return head;
+    }
+  }
+  let time=null;
+  const between=/^(.*?)\s+entre\s+(.+?)\s+et\s+(.+?)\s*$/i.exec(raw);
+  if(between){const start=clockValue(between[2]),end=clockValue(between[3]);if(start&&end){time={start,end};raw=between[1];}}
+  if(!time){const since=/^(.*?)\s+(?:à partir de|a partir de|depuis)\s+(.+?)\s*$/i.exec(raw);if(since){const start=clockValue(since[2]);if(start){time={start,end:null};raw=since[1];}}}
+  let text=normalizeArchiveText(raw);
   const range=/^(.*?) (?:a partir de|depuis) (.+)$/.exec(text);
   const startText=range?.[2]?.replace(/ s il (?:te|vous) plait$/, '')||null;
   if(range)text=range[1];
   const bare=/^(?:archive|archivez|sauvegarde|sauvegardez)(?: s il (?:te|vous) plait)?$/.test(text);
-  if(bare)return {startText,bare:true,whole:false};
+  if(bare)return {startText,bare:true,whole:false,...(time?{time}: {})};
   const lead='(?:(?:ecoute|bon|ok|oui|alors) )?';
   const infinitive='(?:archiver|garder|conserver|sauvegarder|enregistrer|mettre de cote)';
   const request='(?:archive|archivez|garde|gardez|conserve|conservez|sauvegarde|sauvegardez|enregistre|enregistrez|mets de cote|mettez de cote|(?:peux tu|pourrais tu|pouvez vous|pourriez vous|tu peux|vous pouvez) (?:me )?'+infinitive+'|(?:je veux|je voudrais|je souhaite|j aimerais) (?:'+infinitive+'|que (?:tu (?:archives|gardes|conserves|sauvegardes|enregistres|mettes de cote)|vous (?:archiviez|gardiez|conserviez|sauvegardiez|enregistriez|mettiez de cote))))';
   const object='(?:toute )?(?:cette|notre|la|ce|le) (?:conversation|discussion|dialogue)|(?:tout )?(?:cet|notre|l) echange|(?:tous )?(?:ces|nos|les) echanges|ca|cela|tout ca|ce dialogue|ce qu on vient de dire';
   const place='(?: (?:dans|sur) (?:le|mon|ton|l) (?:back office|backoffice|administration|espace administrateur|espace d administration))?';
   const polite='(?: s il (?:te|vous) plait)?(?: merci)?';
-  return new RegExp('^'+lead+request+' (?:'+object+')(?: entre nous)?(?: pour (?:plus tard|y revenir|la prochaine fois))?'+place+polite+'$').test(text)?{startText,bare:false,whole:/\b(?:toute|tout|tous)\b/.test(text)}:null;
+  return new RegExp('^'+lead+request+' (?:'+object+')(?: entre nous)?(?: pour (?:plus tard|y revenir|la prochaine fois))?'+place+polite+'$').test(text)?{startText,bare:false,whole:/\b(?:toute|tout|tous)\b/.test(text),...(time?{time}: {})}:null;
 }
 
 export function isArchiveRequest(message){return parseArchiveRequest(message)!==null;}
@@ -27,16 +47,23 @@ export async function archiveChat(db,session,p,now,existing) {
   let startText=instruction?.startText;
   if(instruction?.bare&&!startText){for(const t of rows.results.slice(-4).reverse()){const previous=parseArchiveRequest(t.prompt);if(previous?.startText){startText=previous.startText;break;}}}
   let startIndex=0;
-  if(startText){
+  if(startText&&!instruction?.time){
     const matches=rows.results.map((t,index)=>({t,index})).filter(({t})=>!isArchiveRequest(t.prompt)&&normalizeArchiveText(t.prompt+' '+t.response).includes(startText));
     if(!matches.length)return {status:400,data:{error:'Je ne retrouve pas ce passage. Donne-moi quelques mots exacts du début à garder.'}};
     if(matches.length>1)return {status:400,data:{error:'Je retrouve ces mots à plusieurs endroits. Précise un peu le début du passage à garder.'}};
     startIndex=matches[0].index;
-  }else if(!instruction?.whole){
+  }else if(!instruction?.whole&&!instruction?.time){
     const previous=await db.prepare('SELECT transcript_json FROM conversation_archives WHERE session_id=?').bind(session.id).first();
     if(previous){const first=JSON.parse(previous.transcript_json)[0]?.id;const found=rows.results.findIndex(t=>t.id===first);if(found>=0)startIndex=found;}
   }
-  const selected=rows.results.slice(startIndex);
+  let selected=rows.results.slice(startIndex);
+  if(instruction?.time){
+    const {start,end}=instruction.time;const day=start.date||end?.date||parisKey(now).slice(0,10);
+    const from=day+'T'+start.hour+':'+start.minute,to=end?(end.date||day)+'T'+end.hour+':'+end.minute:null;
+    if(to&&to<from)return {status:400,data:{error:'L’heure de fin doit être après l’heure de début. Tu peux préciser la date au format 15/11/2026 19h30.'}};
+    selected=rows.results.filter(t=>{const key=parisKey(t.created_at);return key>=from&&(!to||key<=to);});
+    if(!selected.length)return {status:400,data:{error:'Je ne trouve pas de messages dans cette plage horaire. Les heures sont celles de Paris ; précise la date pour une autre journée.'}};
+  }
   const address=session.address_mode==='vous';
   const confirmations=address?['C’est gardé. Vous le retrouverez dans Archives.','Voilà, c’est gardé.','C’est bon, je l’ai gardé.']:['C’est gardé. Tu le retrouveras dans Archives.','Voilà, c’est gardé.','C’est bon, je l’ai gardé.'];
   const response=confirmations[rows.results.filter(t=>isArchiveRequest(t.prompt)).length%confirmations.length];
@@ -50,6 +77,16 @@ export async function archiveChat(db,session,p,now,existing) {
     db.prepare('UPDATE sessions SET last_at=? WHERE id=?').bind(now,session.id)
   ]);
   return {status:200,data:{turn:{...turn,status:turn.review},sources:[],archived:true}};
+}
+
+export function isArchiveStatusRequest(message){return /^(?:c est(?: bien| deja)? archive|est ce que c est(?: bien| deja)? archive|(?:est ce que )?tu as(?: bien| deja)? archive(?: (?:tout ca|notre conversation|cette conversation|notre echange))?|as tu(?: bien| deja)? archive(?: (?:tout ca|notre conversation|cette conversation|notre echange))?)$/.test(normalizeArchiveText(message));}
+export async function archiveStatus(db,session,p,now,existing){
+  const archive=await db.prepare('SELECT archived_at FROM conversation_archives WHERE session_id=?').bind(session.id).first();
+  let response='Pas encore. Dis-moi « archive cette conversation » et je la garde dans Archives.';
+  if(archive){const later=await db.prepare('SELECT prompt FROM turns WHERE session_id=? AND created_at>?').bind(session.id,archive.archived_at).all();const changed=later.results.some(t=>!isArchiveStatusRequest(t.prompt)&&!isArchiveRequest(t.prompt));response=changed?'Une version est gardée, mais il y a de nouveaux messages depuis. Dis-moi « archive tout ça » pour les ajouter.':'Oui, la sélection est bien gardée dans Archives.';}
+  const turn={id:existing?.id||crypto.randomUUID(),prompt:p.message.trim(),response,created_at:existing?.created_at||now,state:'complete',status:'unreviewed',correction:''};
+  await db.batch([existing?db.prepare("UPDATE turns SET response=?,state='complete',source_ids='[]' WHERE id=? AND state='error'").bind(response,turn.id):db.prepare("INSERT INTO turns(id,session_id,request_id,prompt,response,state,created_at,source_ids) VALUES(?,?,?,?,?,'complete',?,'[]')").bind(turn.id,session.id,p.request_id,turn.prompt,response,now),db.prepare('UPDATE sessions SET last_at=? WHERE id=?').bind(now,session.id)]);
+  return {status:200,data:{turn,sources:[]}};
 }
 
 export async function readArchives(db,url) {
@@ -102,3 +139,4 @@ export async function cleanupConversations(db,now=Date.now()) {
     db.prepare('DELETE FROM daily_access WHERE key<?').bind(new Date(now-2*864e5).toISOString().slice(0,10))
   ]);
 }
+

@@ -133,3 +133,34 @@ test('quoted replies are resolved in the authenticated conversation, preserved, 
   const history=await (await worker.fetch(new Request('https://backend.test/history',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({session_id:f.session.id,token})}),env,{})).json();assert.equal(history.turns.at(-1).prompt,data.turn.prompt);
   await archiveChat(f.DB,f.session,{message:'Archive',request_id:'archive-quoted'},now);const detail=await readArchives(f.DB,new URL('https://test/admin/archives?session_id='+f.session.id));assert.ok(detail.data.archive.turns.some(t=>t.prompt===data.turn.prompt));
 });
+
+
+test('archive requests accept a conversational continuation without accepting cancellation or quoted commands',async()=>{
+  for(const message of ["Archive tout ça, on continue demain. J'ai du travail ailleurs.","Archive cette conversation. À demain !","Archive tout ça, j’ai pas le temps de continuer.","Peux-tu archiver notre conversation ? On continue demain."])assert.ok(isArchiveRequest(message),message);
+  for(const message of ["Archive tout ça, non attends.","Archive tout ça, ne le fais pas finalement.","Archive cette conversation, publie-la aussi.","« Archive cette conversation »",'"Archive"'])assert.equal(isArchiveRequest(message),false,message);
+  const f=fixture();const r=await archiveChat(f.DB,f.session,{request_id:'natural-command',message:"Archive tout ça, on continue demain. J'ai du travail ailleurs."},now);assert.equal(r.data.archived,true);
+});
+
+test('archives can select an inclusive Paris-time window or a dated starting time',async()=>{
+  const f=fixture();f.database.exec("INSERT INTO turns(id,session_id,request_id,prompt,response,state,created_at) VALUES('at-18','session-a','at-18','Début','Réponse A','complete','2026-11-15T17:00:00Z'),('at-1815','session-a','at-1815','Milieu','Réponse B','complete','2026-11-15T17:15:00Z'),('at-19','session-a','at-19','Après','Réponse C','complete','2026-11-15T18:00:00Z')");
+  const p={message:'Archive notre conversation entre 18h et 18h30',request_id:'window'};assert.ok(isArchiveRequest(p.message));
+  let r=await archiveChat(f.DB,f.session,p,'2026-11-15T18:30:00Z');assert.equal(r.status,200);
+  let a=(await readArchives(f.DB,new URL('https://test/admin/archives?session_id=session-a'))).data.archive;assert.deepEqual(a.turns.slice(0,-1).map(t=>t.id),['at-18','at-1815']);
+  r=await archiveChat(f.DB,f.session,{message:'Archive notre conversation à partir de 15/11/2026 18h15',request_id:'dated'},'2026-11-16T18:00:00Z');assert.equal(r.status,200);
+  a=(await readArchives(f.DB,new URL('https://test/admin/archives?session_id=session-a'))).data.archive;assert.equal(a.turns[0].id,'at-1815');assert.equal(a.turns.some(t=>t.id==='at-18'),false);
+  r=await archiveChat(f.DB,f.session,{message:'Archive notre conversation entre 21h et 20h',request_id:'reversed'},now);assert.equal(r.status,400);
+  r=await archiveChat(f.DB,f.session,{message:'Archive notre conversation entre 10h et 10h30',request_id:'empty'},now);assert.equal(r.status,400);
+});
+
+test('archive status reads storage, distinguishes newer messages, and does not create or update an archive',async()=>{
+  const {archiveStatus,isArchiveStatusRequest}=await import('./double-backend/archives.js');const f=fixture();
+  for(const text of ["C'est archivé ?","C’est bien archivé ?","Tu as archivé tout ça ?","As-tu archivé notre conversation ?"])assert.ok(isArchiveStatusRequest(text));
+  assert.equal(isArchiveStatusRequest('Il dit : c’est archivé ?'),false);
+  let r=await archiveStatus(f.DB,f.session,{message:"C'est archivé ?",request_id:'check-empty'},now);assert.match(r.data.turn.response,/Pas encore/);assert.equal(f.database.prepare('SELECT COUNT(*) n FROM conversation_archives').get().n,0);
+  await archiveChat(f.DB,f.session,{message:'Archive tout ça',request_id:'really-archive'},'2026-11-15T18:01:00Z');
+  r=await archiveStatus(f.DB,f.session,{message:"C'est archivé ?",request_id:'check-saved'},'2026-11-15T18:02:00Z');assert.match(r.data.turn.response,/Oui/);
+  r=await archiveStatus(f.DB,f.session,{message:"C'est archivé ?",request_id:'check-again'},'2026-11-15T18:03:00Z');assert.match(r.data.turn.response,/Oui/);
+  f.database.exec("INSERT INTO turns(id,session_id,request_id,prompt,response,state,created_at) VALUES('new-content','session-a','new-content','Une autre question','Une autre réponse','complete','2026-11-15T18:04:00Z')");
+  r=await archiveStatus(f.DB,f.session,{message:"C'est archivé ?",request_id:'check-stale'},'2026-11-15T18:05:00Z');assert.match(r.data.turn.response,/nouveaux messages/);
+  assert.equal(f.database.prepare('SELECT archived_at FROM conversation_archives').get().archived_at,'2026-11-15T18:01:00Z');
+});
