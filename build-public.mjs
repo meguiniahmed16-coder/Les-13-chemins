@@ -12,6 +12,8 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
+  ['--test','double-admin.test.mjs'],
+  ['build-double-admin.mjs'],
   ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs'],
   ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
@@ -54,6 +56,9 @@ for (const args of [
 const publicFiles = [
   'index.html',
   'ahmed-marie.html',
+  'admin-blog.html',
+  'double-admin.js',
+  'double-admin.css',
   'site-nav.css',
   'site-visits.js',
   'site-analytics.js',
@@ -223,3 +228,5 @@ if(danseChecks.stderr.trim())console.error(danseChecks.stderr.trim());
 // Server code is packaged separately; private documents are never build inputs.
 await mkdir(join(root, '.netlify/functions'), { recursive: true });
 await copyFile(join(root, 'editor-api.mjs'), join(root, '.netlify/functions/editor.mjs'));
+
+await copyFile(join(root, 'double-admin-api.mjs'), join(root, '.netlify/functions/double-admin.mjs'));
