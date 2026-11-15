@@ -21,21 +21,22 @@ test('Les 20 paragraphes de Cyrano, issus de la V17, sont lisibles avant le jeu'
  assert.match(journey,/reachedReadingEnd\(\)/);
  assert.match(journey,/activePart===2\?openCyranoDialog:openDialog/);
 });
-test('Le jeu présente une vraie BD photoréaliste en 8 vignettes et 14 répliques',()=>{
- assert.match(bd,/background-image:url\(data:image\/webp;base64,/);
- assert.match(bd,/camera\('wall',650\)/);
- assert.match(bd,/Math\.min\(1\.95/);
- assert.match(bd,/function typewriter\(scene\)/);
- assert.match(bd,/const P=\[/);
- assert.match(bd,/const SCENES=\[/);
- assert.match(bd,/— Est-ce que toi, tu te sens de faire le boulot \?/);
- assert.match(bd,/— Un trou\. Dans le mur\./);
+test('La V6 présente deux planches, onze vignettes entières et quatorze plans sans bulles superposées',()=>{
+ assert.match(bd,/const PAGES = \[/);
+ assert.match(bd,/const PANELS = /);
+ assert.match(bd,/const TIMELINE=\[/);
+ assert.match(bd,/Deux planches illustrées · 11 vignettes/);
+ assert.match(bd,/object-fit:contain/);
+ assert.match(bd,/aspect-ratio:16\/9/);
+ assert.match(bd,/function transitionScene/);
+ assert.doesNotMatch(bd,/id="(?:bubble|words|speaker)"/);
+ assert.doesNotMatch(bd,/Maquette locale|Maquette privée/);
 });
 test('Trois lettres et 30 points, une seule attribution par étape et session',()=>{
  assert.match(bd,/const MISSIONS=\[/);
  assert.match(bd,/Cinq mots imposés/);
  assert.match(bd,/Mots imposés manquants/);
- assert.match(bd,/if\(list\.length<65\)/);
+ assert.match(bd,/if\(ww\.length<65\)/);
  assert.match(bd,/parentEvent\('cyrano:progress',\{step:letterIndex\+1\}\)/);
  assert.match(bd,/parentEvent\('cyrano:won'\)/);
  assert.match(journey,/e\.origin!==location\.origin\|\|e\.source!==cyranoFrame\.contentWindow/);
@@ -50,7 +51,7 @@ test('Le défi est accessible sur mobile, rejouable et sans perte des autres jeu
  assert.match(builder,/'jeu-manifestation\.html'/);
  assert.match(builder,/'arcade-catalogne-3d\.html'/);
  assert.match(bd,/viewport-fit=cover/);
- assert.match(bd,/@media\(max-width:580px\)/);
+ assert.match(bd,/@media\(max-width:710px\)/);
  assert.match(bd,/id="exitCyrano"/);
  assert.match(journey,/function nextCyrano\(\)/);
  assert.match(journey,/rdvCyranoSkipped=true/);

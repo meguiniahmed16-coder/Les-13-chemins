@@ -26,7 +26,7 @@
  // avec une session distincte du jeu de manifestation.
  const cyranoDialog=document.createElement('dialog');cyranoDialog.id='cyranoDialog';
  cyranoDialog.setAttribute('aria-label','Chemin III — Chapitre 5 — Cyrano, la planche vivante');
- cyranoDialog.innerHTML='<div class="arcade-dialog-bar"><strong>CHEMIN III · CHAPITRE 5 · CYRANO — LA PLANCHE VIVANTE</strong><button type="button" id="cyranoClose">Retour au plateau ×</button></div><iframe id="cyranoFrame" title="Cyrano : bande dessinée interactive et trois lettres d’amour" allow="microphone; autoplay" loading="lazy"></iframe><div class="arcade-under-actions" role="group" aria-label="Navigation de Cyrano"><button class="arcade-return" id="cyranoBack">← Retour au plateau</button><button class="arcade-following" id="cyranoNext">Suivant →</button></div>';
+ cyranoDialog.innerHTML='<div class="arcade-dialog-bar"><strong>CHEMIN III · CHAPITRE 5 · CYRANO — LA PLANCHE VIVANTE</strong><button type="button" id="cyranoClose">Retour au plateau ×</button></div><iframe id="cyranoFrame" title="Cyrano : bande dessinée interactive et trois lettres d’amour" allow="microphone; autoplay; fullscreen" allowfullscreen loading="lazy"></iframe><div class="arcade-under-actions" role="group" aria-label="Navigation de Cyrano"><button class="arcade-return" id="cyranoBack">← Retour au plateau</button><button class="arcade-following" id="cyranoNext">Suivant →</button></div>';
  document.body.append(cyranoDialog);
  const cyranoFrame=$('cyranoFrame');
  let cyranoLoading=false;
@@ -258,7 +258,7 @@
   }
   if(reader.open)reader.close();
   if(!cyranoDialog.open)cyranoDialog.showModal();
-  if(!cyranoLoading){cyranoLoading=true;cyranoFrame.src='jeu-cyrano-bd.html?embedded=1&v=cyrano-bd-v1';}
+  if(!cyranoLoading){cyranoLoading=true;cyranoFrame.src='jeu-cyrano-bd.html?embedded=1&v=cyrano-bd-v6';}
   else initCyrano();
  }
  function initCyrano(){
