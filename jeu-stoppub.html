@@ -34,6 +34,13 @@ header{position:absolute;z-index:5;top:12px;left:16px;right:16px;display:flex;ju
 @keyframes intro-loading{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
 @media(prefers-reduced-motion:reduce){.intro-loading-track span{animation:none;transform:translateX(75%)}}
 #intro-cover{overflow:auto}#intro-cover h2{margin:16px 0}
+
+#game-loading{position:absolute;z-index:50;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(340px,calc(100% - 32px));padding:14px 18px;background:#102219f5;border:1px solid #dec48c55;border-radius:12px;color:#f4eddb;text-align:center;font:12px/1.5 system-ui;box-shadow:0 8px 30px #0005}
+#game-load-message{margin:0 0 10px}.game-load-progress{display:block;width:100%;height:8px;border:0;border-radius:8px;overflow:hidden;appearance:none;-webkit-appearance:none;background:#dec48c33;color:#dec48c;accent-color:#dec48c}
+.game-load-progress::-webkit-progress-bar{background:#dec48c33;border-radius:8px}.game-load-progress::-webkit-progress-value{background:#dec48c;border-radius:8px;transition:width .12s linear}.game-load-progress::-moz-progress-bar{background:#dec48c;border-radius:8px}
+.game-load-value{margin-top:7px;color:#dec48c;font:12px/1.5 system-ui;font-variant-numeric:tabular-nums}#loading>div{text-align:center}#loading .game-load-progress{width:240px;max-width:100%;margin:16px auto 0}#loading .game-load-value{margin-bottom:12px}
+#game-load-retry{margin-top:10px}#intro-loading{bottom:max(136px,env(safe-area-inset-bottom))}
+@media(prefers-reduced-motion:reduce){.game-load-progress::-webkit-progress-value{transition:none}}
 </style><meta name="description" content="À vos marqueurs ! Explorez le métro République avec vos amis, dessinez sur les affiches et rencontrez les voyageurs."><meta name="game-version" content="16"></head><body data-scene="stoppub">
 <div id="game-root"><div id="game-frame">
 <div id="stage" aria-label="Station de métro et affiche interactive"><canvas id="fallback"></canvas><div id="scene"></div><canvas id="arms" aria-hidden="true"></canvas><canvas id="overlay"></canvas></div><div id="shade"></div>
@@ -51,7 +58,108 @@ header{position:absolute;z-index:5;top:12px;left:16px;right:16px;display:flex;ju
 <div id="progress" hidden aria-live="polite">Aucun geste pour l’instant</div>
 <div class="hud" id="paint-controls" hidden><div id="toolbox" role="group" aria-label="Choisir un outil"><button class="tool selected" id="marker" data-tool="marker" aria-pressed="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m7 22 3-7L20 5l4 4-10 10z"/><path d="m10 15 4 4m4-12 4 4M7 22l-2 2"/></svg><span><b>Marqueur</b><em>Encre noire</em></span></button><button class="tool" id="spray" data-tool="spray" aria-pressed="false"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 10h10v14H10zM10 10l2-3h6l2 3M13 7V4h4v3m-7 12h10M5 6H3m3-3L4 2m2 7-2 1"/></svg><span><b>Bombe</b><em>Peinture rouge</em></span></button></div><button id="undo" class="icon-button" aria-label="Annuler le dernier geste" title="Annuler" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m9 5-5 5 5 5M4 10h10a5 5 0 0 1 0 10h-3"/></svg></button><button id="finish" class="primary" aria-label="Terminer et reculer" disabled><span>Reculer</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 5 5L20 6"/></svg></button></div>
 <section id="complete" class="card" hidden><div class="small">Première intervention</div><h2>L’affiche<br>a changé.</h2><p>Un dernier regard sur votre geste.<br>Les autres vous attendent.</p><div class="row"><button id="return" class="primary">Revenir à l’affiche</button><button id="save-art" class="secondary">Garder une image</button></div><div class="row" style="margin-top:9px"><button id="reset" class="secondary">Recommencer</button></div><span id="save-note">Votre intervention reste conservée sur cet appareil.</span></section>
-<section id="encounter" hidden aria-label="Rencontre" aria-live="polite"><p id="encounter-text"></p><button id="encounter-action" class="primary"></button><button id="encounter-cancel" class="secondary" hidden>Reposer la valise</button></section><div id="toast" role="status"></div><div id="loading"><div>À vos marqueurs !<div class="line"></div><div style="font:12px/1.5 system-ui;text-align:center;max-width:280px;padding:0 16px">Un instant… la station République vous ouvre ses portes.</div></div></div><p id="accessible-state" class="sr-only" aria-live="polite"></p>
-</div><section id="cinema" aria-busy="true" aria-label="Bande-annonce et découverte des commandes"><video id="intro-video" playsinline preload="auto" src="assets/stoppub/intro-v16.mp4" poster="assets/stoppub/intro-poster-v16.jpg" aria-label="À vos marqueurs : la mission et les commandes"></video><div id="intro-cover"><div class="kicker">LES TREIZE CHEMINS · RÉPUBLIQUE</div><h2>À VOS<br>MARQUEURS !</h2><p id="intro-status" role="status" hidden></p><div class="row"><button id="intro-play" disabled class="primary">Lancer l’intro ♫</button><button id="intro-direct" disabled class="secondary">Jouer directement</button></div><p class="music-credit">Musique : « Funkorama » — <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100474" target="_blank" rel="noopener">Kevin MacLeod</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a><br>Extraits, fondus et volume adaptés.</p></div><div id="intro-loading" role="status" aria-live="polite"><span>Un instant… la station République vous ouvre ses portes.</span><div class="intro-loading-track" aria-hidden="true"><span></span></div></div><div id="intro-tools"><button id="intro-fullscreen" aria-label="Plein écran paysage">⛶</button><button id="intro-skip" disabled>Passer · Jouer</button></div></section><p id="rotation-note" hidden>Tournez votre téléphone pour jouer en paysage.<br>Le bouton ⛶ permet de revenir à la vue normale.</p></div>
-<script src="assets/stoppub/assets-v16.js" defer></script><script src="assets/stoppub/asset-couloir-v16.js" defer></script><script src="assets/stoppub/asset-affiche-v16.js" defer></script><script src="assets/stoppub/asset-recul-v16.js" defer></script><script src="assets/stoppub/asset-affiche-1-v16.js" defer></script><script src="assets/stoppub/asset-station-v16.js" defer></script><script src="assets/stoppub/asset-actorsdeflated-v16.js" defer></script><script src="assets/stoppub/asset-crowddeflated-v16.js" defer></script><script src="assets/stoppub/asset-nativehands-v16.js" defer></script><script src="assets/stoppub/game-v16.js?v=intro-loading-1" defer></script></body></html>
+<section id="encounter" hidden aria-label="Rencontre" aria-live="polite"><p id="encounter-text"></p><button id="encounter-action" class="primary"></button><button id="encounter-cancel" class="secondary" hidden>Reposer la valise</button></section><div id="toast" role="status"></div><div id="loading"><div>À vos marqueurs !<progress class="game-load-progress" max="100" value="0" aria-label="Chargement du jeu"></progress><div class="game-load-value">Chargement du jeu · 0 %</div><div style="font:12px/1.5 system-ui;text-align:center;max-width:280px;padding:0 16px">Un instant… la station République vous ouvre ses portes.</div></div></div><p id="accessible-state" class="sr-only" aria-live="polite"></p>
+</div><section id="cinema" aria-busy="true" aria-label="Bande-annonce et découverte des commandes"><video id="intro-video" playsinline preload="auto" src="assets/stoppub/intro-v16.mp4" poster="assets/stoppub/intro-poster-v16.jpg" aria-label="À vos marqueurs : la mission et les commandes"></video><div id="intro-cover"><div class="kicker">LES TREIZE CHEMINS · RÉPUBLIQUE</div><h2>À VOS<br>MARQUEURS !</h2><p id="intro-status" role="status" hidden></p><div class="row"><button id="intro-play" disabled class="primary">Lancer l’intro ♫</button><button id="intro-direct" disabled class="secondary">Jouer directement</button></div><p class="music-credit">Musique : « Funkorama » — <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100474" target="_blank" rel="noopener">Kevin MacLeod</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a><br>Extraits, fondus et volume adaptés.</p></div><div id="intro-loading" hidden role="status" aria-live="polite"><span>Un instant… la station République vous ouvre ses portes.</span><div class="intro-loading-track" aria-hidden="true"><span></span></div></div><div id="intro-tools"><button id="intro-fullscreen" aria-label="Plein écran paysage">⛶</button><button id="intro-skip" disabled>Passer · Jouer</button></div></section><section id="game-loading" role="status" aria-live="polite" data-progress="0"><p id="game-load-message">Un instant… la station République vous ouvre ses portes.</p><progress class="game-load-progress" max="100" value="0" aria-label="Chargement du jeu"></progress><div class="game-load-value">Chargement du jeu · 0 %</div><button id="game-load-retry" class="secondary" hidden>Réessayer</button></section><p id="rotation-note" hidden>Tournez votre téléphone pour jouer en paysage.<br>Le bouton ⛶ permet de revenir à la vue normale.</p></div>
+<script src="assets/stoppub/assets-v16.js" type="application/x-game-asset" data-game-bytes="1168"></script><script src="assets/stoppub/asset-couloir-v16.js" type="application/x-game-asset" data-game-bytes="3987239"></script><script src="assets/stoppub/asset-affiche-v16.js" type="application/x-game-asset" data-game-bytes="3758235"></script><script src="assets/stoppub/asset-recul-v16.js" type="application/x-game-asset" data-game-bytes="3904845"></script><script src="assets/stoppub/asset-affiche-1-v16.js" type="application/x-game-asset" data-game-bytes="1417045"></script><script src="assets/stoppub/asset-station-v16.js" type="application/x-game-asset" data-game-bytes="5008153"></script><script src="assets/stoppub/asset-actorsdeflated-v16.js" type="application/x-game-asset" data-game-bytes="5093296"></script><script src="assets/stoppub/asset-crowddeflated-v16.js" type="application/x-game-asset" data-game-bytes="1765103"></script><script src="assets/stoppub/asset-nativehands-v16.js" type="application/x-game-asset" data-game-bytes="6485257"></script><script src="assets/stoppub/game-v16.js?v=game-progress-1" type="application/x-game-asset" data-game-bytes="876281"></script><script>
+/* Track downloaded bytes, then completed scene preparation steps. */
+(() => {
+ 'use strict';
+ const panel = document.getElementById('game-loading');
+ const bars = [...document.querySelectorAll('.game-load-progress')];
+ const values = [...document.querySelectorAll('.game-load-value')];
+ const message = document.getElementById('game-load-message');
+ const retry = document.getElementById('game-load-retry');
+ const scripts = [...document.querySelectorAll('script[data-game-bytes]')];
+ const sizes = scripts.map(script => Number(script.dataset.gameBytes));
+ const received = scripts.map(() => 0);
+ const total = sizes.reduce((sum, size) => sum + size, 0);
+ const phases = new Set(['hands', 'couloir', 'affiche', 'recul', 'affiche-1', 'station', 'actors', 'crowd', 'scene']);
+ const completed = new Set();
+ let percent = 0, done = false, failed = false, cursor = 0;
+ const urls = new Set();
+ const abort = new AbortController();
+ function paint(value, label) {
+  if (failed || done) return;
+  percent = Math.max(percent, Math.min(100, Math.floor(value)));
+  for (const bar of bars) bar.value = percent;
+  for (const text of values) text.textContent = label + ' · ' + percent + ' %';
+  panel.dataset.progress = String(percent);
+ }
+ function fail() {
+  if (failed || done) return;
+  failed = true; abort.abort();
+  for (const url of urls) URL.revokeObjectURL(url);
+  urls.clear();
+  panel.hidden = false;
+  message.textContent = 'Le chargement a été interrompu.';
+  for (const text of values) text.textContent = 'Réessayez pour ouvrir la station.';
+  retry.hidden = false;
+ }
+ window.addEventListener('error', event => { if (urls.has(event.filename)) fail(); });
+ window.RepubliqueLoading = Object.freeze({
+  async step(name) {
+   if (phases.has(name)) completed.add(name);
+   paint(90 + 9 * completed.size / phases.size, 'Préparation de la station');
+   await new Promise(resolve => requestAnimationFrame(resolve));
+  },
+  ready() {
+   if (failed || done) return;
+   paint(100, 'Jeu prêt'); done = true;
+   message.textContent = 'Bienvenue à République !';
+   setTimeout(() => { panel.hidden = true; }, 800);
+  },
+  fail
+ });
+ retry.onclick = () => location.reload();
+ paint(0, 'Chargement du jeu');
+ async function download(index) {
+  const response = await fetch(scripts[index].src, {signal: abort.signal});
+  if (!response.ok) throw new Error('Game asset HTTP ' + response.status);
+  const chunks = [];
+  if (response.body && response.body.getReader) {
+   const reader = response.body.getReader();
+   while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    chunks.push(chunk.value);
+    received[index] += chunk.value.byteLength;
+    paint(90 * received.reduce((sum, bytes, i) => sum + Math.min(bytes, sizes[i]), 0) / total, 'Chargement du jeu');
+   }
+  } else {
+   chunks.push(await response.arrayBuffer());
+  }
+  received[index] = sizes[index];
+  paint(90 * received.reduce((sum, bytes, i) => sum + Math.min(bytes, sizes[i]), 0) / total, 'Chargement du jeu');
+  if (failed) throw new Error('Game loading cancelled');
+  const url = URL.createObjectURL(new Blob(chunks, {type: 'text/javascript'}));
+  urls.add(url);
+  return url;
+ }
+ async function load() {
+  try {
+   const sources = new Array(scripts.length);
+   await Promise.all(Array.from({length: Math.min(4, scripts.length)}, async () => {
+    while (cursor < scripts.length) {
+     const index = cursor++;
+     sources[index] = await download(index);
+    }
+   }));
+   paint(90, 'Préparation de la station');
+   for (const url of sources) {
+    if (failed) throw new Error('Game loading cancelled');
+    await new Promise((resolve, reject) => {
+     const script = document.createElement('script');
+     script.src = url;
+     script.onload = () => { URL.revokeObjectURL(url); urls.delete(url); script.remove(); resolve(); };
+     script.onerror = () => { script.remove(); reject(new Error('Game script could not load')); };
+     document.body.append(script);
+    });
+   }
+  } catch (error) { fail(); console.error('Chargement de République :', error); }
+ }
+ load();
+})();
+
+</script></body></html>
+
 
