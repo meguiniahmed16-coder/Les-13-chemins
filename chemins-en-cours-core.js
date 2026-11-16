@@ -4,6 +4,7 @@
  function scene(data,id){return data.scenes.find(s=>s.id===id)||null;}
  function neighbours(data,id){const i=data.scenes.findIndex(s=>s.id===id);return {previous:i>0?data.scenes[i-1]:null,next:i>=0?data.scenes[i+1]||null:null};}
  function canLaunch(s){return s?.game.status==='ready'&&/^\.\/games\/[a-z0-9-]+\/index\.js$/.test(s.game.module||'');}
+ function isAvailable(s){return canLaunch(s)||(s?.game.status==='ready'&&/^jeu-[a-z0-9-]+\.html$/.test(s.game.url||''));}
  function artStyle(s){
   const a=s.art;if(!a.crop)return {backgroundImage:`url('${a.src}')`,backgroundSize:'100% 100%',backgroundPosition:'center'};
   const [x,y,w,h]=a.crop;
@@ -25,5 +26,5 @@
    dispose(){if(state==='disposed')return;state='disposed';adapter?.destroy?.();adapter=null;}
   };
  }
- root.TreizeUpcomingCore=Object.freeze({scene,neighbours,canLaunch,artStyle,session});
+ root.TreizeUpcomingCore=Object.freeze({scene,neighbours,canLaunch,isAvailable,artStyle,session});
 })(globalThis);

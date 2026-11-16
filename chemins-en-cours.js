@@ -35,7 +35,7 @@
  function makePane(scene){
   const pane=h('article','upcoming-pane');pane.dataset.upcomingScene=scene.id;
   const intro=h('div','upcoming-intro'),art=h('div','upcoming-art');Object.assign(art.style,core.artStyle(scene));art.setAttribute('role','img');art.setAttribute('aria-label','Vignette de '+scene.title);
-  const summary=h('div','upcoming-summary');summary.append(h('span','upcoming-status',scene.playable?'Jeu disponible':'Travail en cours'),h('p','upcoming-place',scene.place),h('p','upcoming-lead',scene.lead),h('p','upcoming-caption',scene.playable?'Explorez le texte, les personnages et les lieux, puis ouvrez l’onglet Le jeu.':'Le texte et les personnages sont à découvrir dès maintenant. Le jeu se prépare.'));
+  const summary=h('div','upcoming-summary');summary.append(h('span','upcoming-status',(scene.playable||core.isAvailable(scene))?'Jeu disponible':'Travail en cours'),h('p','upcoming-place',scene.place),h('p','upcoming-lead',scene.lead),h('p','upcoming-caption',(scene.playable||core.isAvailable(scene))?'Explorez le texte, les personnages et les lieux, puis ouvrez l’onglet Le jeu.':'Le texte et les personnages sont à découvrir dès maintenant. Le jeu se prépare.'));
   intro.append(art,summary);pane.append(intro);
   const tabs=h('div','upcoming-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Découvrir '+scene.title);
   const panels=h('div','upcoming-panels');
@@ -64,6 +64,11 @@
     });
    }
    if(key==='game'&&scene.renderGame)scene.renderGame(panel,{leave:action=>leaveScene(scene.id,action),showTab:key=>select(key)});
+   else if(key==='game'&&core.isAvailable(scene)){
+    panel.append(h('span','upcoming-status','Jeu disponible'),h('h3','',scene.game.goal));
+    const rules=h('ol','upcoming-rules');scene.game.rules.forEach(r=>rules.append(h('li','',r)));
+    panel.append(rules,h('p','upcoming-caption','Exploration libre · Tactile, souris et clavier. Intro avec bouton Passer.'),link('Jouer à À vos marqueurs ! →',scene.game.url));
+   }
    else if(key==='game'){
     panel.append(h('span','upcoming-status','Travail en cours'),h('h3','',scene.game.goal));
     const rules=h('ol','upcoming-rules');scene.game.rules.forEach(r=>rules.append(h('li','',r)));
@@ -104,11 +109,11 @@
  function mount(host=document.getElementById('boardTargets')){
   if(!host||host.querySelector('[data-upcoming-path]'))return;
   for(const path of data.paths){
-   const group=h('div','board-target chapter-featured step-chapters upcoming-path');group.dataset.upcomingPath=path.id;group.dataset.chemin=String(path.number);group.id='chemin-'+path.id.toLowerCase();group.setAttribute('role','group');group.setAttribute('aria-label','Chemin '+path.id+' · Jeux en préparation');
+   const group=h('div','board-target chapter-featured step-chapters upcoming-path');group.dataset.upcomingPath=path.id;group.dataset.chemin=String(path.number);group.id='chemin-'+path.id.toLowerCase();group.setAttribute('role','group');group.setAttribute('aria-label','Chemin '+path.id+(path.scenes.some(id=>core.isAvailable(core.scene(data,id)))?' · Jeu disponible':' · Jeux en préparation'));
    const main=button('',()=>open(path.scenes[0]));main.className='chapter-card-main';main.append(h('span','chapter-card-kicker','CHEMIN '+path.id));
    const row=h('div','chapter-card-route');
-   for(const id of path.scenes){const scene=core.scene(data,id),tile=button('',()=>open(id));tile.className='chapter-part-label chapter-literary-part upcoming-tile';tile.dataset.sceneArt=id;tile.dataset.upcomingOpen=id;tile.setAttribute('aria-label',scene.title+' · Travail en cours · Lire et découvrir');Object.assign(tile.style,core.artStyle(scene));tile.append(h('span','chapter-part-title',scene.title));row.append(tile);}
-   group.append(main,row,h('p','chapter-card-status','Jeux en préparation · Textes, personnages et cartes disponibles'));
+   for(const id of path.scenes){const scene=core.scene(data,id),tile=button('',()=>open(id));tile.className='chapter-part-label chapter-literary-part upcoming-tile';tile.dataset.sceneArt=id;tile.dataset.upcomingOpen=id;tile.setAttribute('aria-label',scene.title+(core.isAvailable(scene)?' · Jeu disponible · Lire et jouer':' · Travail en cours · Lire et découvrir'));Object.assign(tile.style,core.artStyle(scene));tile.append(h('span','chapter-part-title',scene.title));row.append(tile);}
+   group.append(main,row,h('p','chapter-card-status',path.scenes.some(id=>core.isAvailable(core.scene(data,id)))?'À vos marqueurs ! disponible · Autres jeux en préparation':'Jeux en préparation · Textes, personnages et cartes disponibles'));
    host.append(group);
    const interlude=h('div','upcoming-board-map');interlude.append(h('h3','',path.id==='IV'?'Les lieux du chemin IV · Rue Vaneau':'Les lieux du chemin V · De Plaisance à Vaneau'));
    const scene=core.scene(data,path.id==='IV'?'demenagement':'traitre');interlude.append(mapPanel(scene));host.append(interlude);

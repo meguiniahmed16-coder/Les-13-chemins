@@ -1,5 +1,5 @@
 globalThis.TreizeUpcomingData = {
-  "version": 1,
+  "version": 2,
   "paths": [
     {
       "id": "IV",
@@ -29,7 +29,7 @@ globalThis.TreizeUpcomingData = {
       "chapterTitle": "Naissance d’un traître",
       "place": "Paris · Métro République",
       "lead": "Un marqueur, une affiche, une réponse à la publicité.",
-      "status": "work-in-progress",
+      "status": "ready",
       "paragraphs": [
         "Avec Stop Pub, pour la première fois, je participe à une action militante qui ne porte pas sur une revendication sociale immédiate. Nous ne demandons ni un logement, ni un salaire, ni une régularisation.",
         "Cette fois, notre combat est idéologique.",
@@ -88,16 +88,16 @@ globalThis.TreizeUpcomingData = {
         ]
       },
       "game": {
-        "status": "preparation",
+        "status": "ready",
         "url": "jeu-stoppub.html",
         "module": null,
         "goal": "Faire apparaître un autre message sur les affiches du métro.",
         "rules": [
-          "Choisir une affiche, puis suivre un tracé simple avec le doigt ou la souris.",
-          "Surveiller le passage d’une patrouille et relâcher pour attendre. Trois affiches composent la scène.",
-          "Une affiche terminée reste acquise. En cas d’interruption, seule l’affiche en cours est à reprendre."
+          "Explorer le métro et choisir une affiche, puis dessiner au marqueur ou à la bombe avec le doigt ou la souris.",
+          "Changer de vue, rejoindre ses amis ou ouvrir le plan pour trouver les correspondances.",
+          "Rencontrer les voyageurs : offrir une pièce ou aider à porter une valise. Les dessins sont sauvegardés sur cet appareil."
         ],
-        "duration": "2 à 3 minutes"
+        "duration": "libre"
       }
     },
     {

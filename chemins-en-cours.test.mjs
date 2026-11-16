@@ -5,16 +5,18 @@ import vm from 'node:vm';
 const ctx=vm.createContext({});
 for(const name of ['chemins-en-cours-data.js','chemins-en-cours-core.js'])vm.runInContext(fs.readFileSync(new URL(name,import.meta.url),'utf8'),ctx);
 const data=ctx.TreizeUpcomingData,core=ctx.TreizeUpcomingCore;
-test('The two paths contain the six selected chapters, with real placeholder routes',()=>{
+test('The two paths preserve six chapters and launch only the published Stop Pub game',()=>{
  assert.deepEqual(Array.from(data.scenes,s=>s.chapter),[7,8,10,11,12,13]);
  assert.deepEqual(Array.from(data.paths,p=>p.scenes.length),[3,3]);
  const build=fs.readFileSync(new URL('build-public.mjs',import.meta.url),'utf8');
  for(const s of data.scenes){
-  assert.equal(core.canLaunch(s),false);assert.equal(s.game.status,'preparation');
+  assert.equal(core.canLaunch(s),false);assert.equal(s.game.status,s.id==='stoppub'?'ready':'preparation');
+  assert.equal(core.isAvailable(s),s.id==='stoppub');
   assert.ok(s.paragraphs.join(' ').length>1000);
   assert.ok(fs.existsSync(new URL(s.art.src,import.meta.url)));assert.ok(build.includes("'"+s.art.src+"'"));
   const html=fs.readFileSync(new URL(s.game.url,import.meta.url),'utf8');
-  assert.ok(html.includes('data-scene="'+s.id+'"'));assert.ok(html.includes('futurs-jeux.js'));
+  assert.ok(html.includes('data-scene="'+s.id+'"'));
+  assert.ok(html.includes(s.id==='stoppub'?'assets/stoppub/game-v16.js':'futurs-jeux.js'));
   assert.ok(build.includes("'"+s.game.url+"'"));
   for(const person of s.people)assert.ok(data.profiles[person]);
  }

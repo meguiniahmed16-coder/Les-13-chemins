@@ -45,7 +45,7 @@ for (const args of [
   ['--test', 'ordre-lecture.test.mjs'],
   ['--test', 'chapitre1-flow.test.mjs'],
   ['--test', 'journey.test.mjs'],
-  ['--test', 'chemins-en-cours.test.mjs'],
+  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs'],
   ['--test', 'lecteur-chemins.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
@@ -91,6 +91,22 @@ const publicFiles = [
   'assets/board/scene-cards-chemins-iv-v.webp',
   'assets/board/le-traitre.webp',
   'jeu-stoppub.html',
+  'assets/stoppub/assets-v16.js',
+  'assets/stoppub/asset-couloir-v16.js',
+  'assets/stoppub/asset-affiche-v16.js',
+  'assets/stoppub/asset-recul-v16.js',
+  'assets/stoppub/asset-affiche-1-v16.js',
+  'assets/stoppub/asset-station-v16.js',
+  'assets/stoppub/asset-actorsdeflated-v16.js',
+  'assets/stoppub/asset-crowddeflated-v16.js',
+  'assets/stoppub/asset-nativehands-v16.js',
+  'assets/stoppub/game-v16.js',
+  'assets/stoppub/intro-v16.mp4',
+  'assets/stoppub/intro-poster-v16.jpg',
+  'assets/stoppub/funk-v16.mp3',
+  'assets/stoppub/metro-v16.mp3',
+  'assets/stoppub/CREDITS.txt',
+  'assets/stoppub/release-v16.json',
   'jeu-demenagement.html',
   'jeu-frontiere.html',
   'jeu-faire-rire.html',
@@ -191,7 +207,7 @@ for (const name of publicFiles) {
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('Fichier public non régulier : ' + name);
   }
-  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name) || name.endsWith('.mp4') || name.endsWith('.bin')) continue;
+  if (/\.(?:mp3|png|webp|avif|glb)$/.test(name) || name.endsWith('.jpg') || name.endsWith('.mp4') || name.endsWith('.bin')) continue;
   const content = await readFile(source, 'utf8');
   if (/https?:\/\/(?:docs|drive)\.google\.com\//i.test(content)) {
     throw new Error('Lien vers un document de travail interdit dans : ' + name);
