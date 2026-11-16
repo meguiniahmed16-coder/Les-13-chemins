@@ -79,9 +79,9 @@
 @media(max-width:600px){#boardTargets .mini-atlas-map{height:165px;min-height:165px}#boardTargets .mini-atlas-card{padding:9px 8px}}
 `;
  document.head.append(css);
- $('board').setAttribute('aria-label','Cinq chemins : I La salle d’attente, II Le météore, III Les rendez-vous ; IV et V en préparation.');
+ $('board').setAttribute('aria-label','Cinq chemins : I à III disponibles, À vos marqueurs disponible dans le chemin IV ; autres scènes IV et V en préparation.');
  const intro=document.querySelector('.board-intro');
- if(intro)intro.textContent='Cinq chemins : trois à jouer, deux en préparation.';
+ if(intro)intro.textContent='Chemins I à III disponibles. Nouveau : À vos marqueurs ! dans le chemin IV. Les autres scènes des chemins IV et V se préparent.';
  const header=document.createElement('div');header.id='chapter1Header';
  const sequence=document.createElement('nav');sequence.id='chapter1Sequence';sequence.setAttribute('aria-label','Trois parties du chapitre 1');
  $('questTitle').before(header);$('gameEntry').before(sequence);

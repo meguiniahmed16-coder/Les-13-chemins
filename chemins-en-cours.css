@@ -65,3 +65,5 @@
 
 #board #boardTargets .upcoming-path{scroll-margin-top:100px}
 @media(max-width:600px){#board #boardTargets .upcoming-path{scroll-margin-top:120px}}
+
+#board #boardTargets .upcoming-tile[data-game-available="true"]::after{content:'Jeu disponible';background:#344f40;color:#fff3d8}
