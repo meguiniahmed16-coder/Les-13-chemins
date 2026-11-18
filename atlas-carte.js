@@ -162,17 +162,6 @@
      const {w,h}=dimensions();
      if(w&&h)zoom=Math.min(18,(w-76)/Math.max(.15,right-left)/scale(),(h-100)/Math.max(.15,bottom-top)/scale());
    }
-   function sceneCity(){
-     const points=(scene.routeData||window.TreizeUpcomingData?.routes[scene.route])?.points;
-     const origin=scene.coordinates||points?.[0]?.slice(1);
-     const cities=data.cities.filter(c=>c.coords);
-     if(origin){
-       const distance=c=>Math.hypot(c.coords[0]-origin[0],(c.coords[1]-origin[1])*Math.cos(origin[0]*Math.PI/180));
-       const nearest=cities.sort((a,b)=>distance(a)-distance(b))[0];
-       if(nearest&&distance(nearest)<.08)return nearest;
-     }
-     if(scene.id==='jouable-cyrano')return cities.find(c=>c.id==='strasbourg');
-   }
    function reset(){home();closeCloud();}
    async function init(){
      if(started){draw();return;}started=true;
@@ -182,8 +171,7 @@
        home();renderSearch();draw();
        const url=standalone?params().searchParams:new URLSearchParams();
        const city=data.cities.find(c=>c.id===url.get('ville'));
-       const initial=city||(scene&&sceneCity());
-       if(initial)pickCity(initial,false,false);
+       if(city)pickCity(city,false,false);
        const person=data.people.find(p=>p.id&&p.id===Number(url.get('personnage')));
        if(person&&!panel.hidden)A.show(person,data,city?.id);
        if(scene){
@@ -218,11 +206,34 @@
    panel.setAttribute('aria-label','Carte des personnages · '+scene.title);
    host.append(panel);createMap(panel,scene).init();
  }
- window.TreizeCartesPersonnages={mount,chapterDirectory};
+ function bindTabs(tablist,route,people,onChange){
+   const tabs=Array.from(tablist.querySelectorAll('[role="tab"]'));
+   function select(index,save=false){
+     tabs.forEach((tab,i)=>{
+       tab.setAttribute('aria-selected',String(i===index));
+       tab.tabIndex=i===index?0:-1;
+     });
+     route.hidden=index!==0;
+     people.hidden=index!==1;
+     onChange(index===1,save);
+   }
+   tabs.forEach((tab,i)=>{
+     tab.onclick=()=>select(i,true);
+     tab.onkeydown=e=>{
+       if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+       e.preventDefault();
+       const next=e.key==='Home'?0:e.key==='End'?1:1-i;
+       select(next,true);
+       tabs[next].focus();
+     };
+   });
+   return select;
+ }
+ window.TreizeCartesPersonnages={mount,chapterDirectory,bindTabs};
  const panel=document.getElementById('atlas-personnages');
  if(!panel)return;
  const route=document.getElementById('atlas-chemins');
- const tabs=[...document.querySelectorAll('.ap-tabs [role=tab]')];
+ const tablist=document.querySelector('.ap-tabs');
  const query=params().searchParams;
  const id=query.get('scene'),level=Number(query.get('niveau')),plateau=Number(query.get('plateau'))||1;
  const stage=level?window.TreizeEscale?.getStage(level,plateau):null;
@@ -231,20 +242,11 @@
    (stage?{id:'jouable-'+level+'-'+plateau,chapter:stage.passage.chapter,coordinates:stage.coordinates}:
     game?{id,chapter:game[1]}:null);
  const controller=createMap(panel,scene,true);
- function select(i,save=false){
-   const active=i===1;
-   tabs.forEach((t,n)=>{t.setAttribute('aria-selected',String(n===i));t.tabIndex=n===i?0:-1;});
-   route.hidden=active;panel.hidden=!active;
+ const select=bindTabs(tablist,route,panel,(active,save)=>{
    document.body.classList.toggle('ap-on-map',active);
    if(save)controller.address(active,active?controller.city():null,null);
    if(active)controller.init();else window.dispatchEvent(new Event('resize'));
- }
- tabs.forEach((tab,i)=>{
-   tab.onclick=()=>select(i,true);tab.onkeydown=e=>{
-     if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();
-       const n=e.key==='Home'?0:e.key==='End'?1:1-i;select(n,true);tabs[n].focus();}
-   };
  });
- const showPeople=query.get('vue')==='personnages'||query.has('personnage')||query.has('ville')||(scene&&query.get('vue')!=='chemins'&&!query.has('voyage'));
+ const showPeople=query.get('vue')==='personnages'||query.has('personnage')||query.has('ville');
  select(showPeople?1:0);
 })();

@@ -74,13 +74,15 @@
   const index=info.id==='manifestation'?5:info.id==='cyrano'?7:8;
   const paris=root.TreizeUpcomingData?.routes?.paris;
   const stage=info.id==='rencontre'?root.TreizeEscale?.getStage(5):null;
+  const sceneRoute=info.id==='cyrano'?route(root.TreizeEscale?.getStage(5,2)):paris;
+  if(info.id==='cyrano'&&sceneRoute)sceneRoute.caption='Strasbourg · Repère au centre de la ville.';
   const ids=info.id==='cyrano'?['cedric']:
    info.id==='rencontre'?['elodie','thibault','pauline','baptiste','marianne']:['julie'];
   const extra=ids.map(character);
   const scene={id:'jouable-'+info.id,path:index===5?'II':'III',title:titles[index],
    chapter:info.chapter,chapterTitle:info.chapterTitle,place:info.place,lead:info.lead||info.title,
    paragraphs:info.paragraphs,profiles:profiles(stage,extra),route:'jouable-'+info.id,
-   routeData:info.id==='cyrano'?undefined:paris,atlasUrl:'carte.html',art:art(index),playable:true,
+   routeData:sceneRoute,atlasUrl:'carte.html',art:art(index),playable:true,
    renderGame:gamePanel(info)};
   return root.TreizeCheminsEnCours.openScene(scene);
  }

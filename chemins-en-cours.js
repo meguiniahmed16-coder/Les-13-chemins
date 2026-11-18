@@ -11,30 +11,44 @@
  registerRoutes();
  function mapPanel(scene,individual=true){
   const route=scene.routeData||data.routes[scene.route],section=h('section','upcoming-map-panel');
-  const view=h('div','upcoming-character-map');
-  if(individual)window.TreizeCartesPersonnages.mount(view,scene);
-  if(individual)section.append(view);
+  const itinerary=individual?h('div'):section;
+  const people=h('div','upcoming-character-map');
   const scopedUrl=new URL(scene.atlasUrl||'carte.html',location.href);
   scopedUrl.searchParams.set('scene',scene.id);
   scopedUrl.searchParams.set('vue','personnages');
   const full=link('Agrandir la carte des personnages',scopedUrl.href);
+  if(individual){
+    const tabs=h('div','ap-tabs');
+    tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Cartes du récit');
+    for(const [key,label,panel] of [['chemins','Les chemins',itinerary],['personnages','Personnages',people]]){
+      const tab=h('button','',label);tab.type='button';tab.setAttribute('role','tab');
+      panel.id='carte-'+scene.id+'-'+key;tab.id=panel.id+'-onglet';
+      tab.setAttribute('aria-controls',panel.id);panel.setAttribute('aria-labelledby',tab.id);
+      panel.setAttribute('role','tabpanel');tabs.append(tab);
+    }
+    section.append(tabs,itinerary,people);
+    const select=window.TreizeCartesPersonnages.bindTabs(tabs,itinerary,people,active=>{
+      if(active&&!people.firstChild){
+        window.TreizeCartesPersonnages.mount(people,scene);
+        people.append(full);
+      }
+    });
+    section.showRoute=()=>select(0);
+    section.showRoute();
+  }
   if(!route){
-    section.append(full);return section;
+    itinerary.append(link('Ouvrir la carte des chemins',scene.atlasUrl||'carte.html'));
+    return section;
   }
   const routeKey='upcoming-'+scene.route;
   if(window.TreizeMiniAtlas){const points=route.points.map(p=>p.slice());if(route.destination)points.destination=route.destination;window.TreizeMiniAtlas.routes[routeKey]=points;}
-  const itinerary=individual?h('details','upcoming-itinerary'):section;
-  if(individual){
-    itinerary.append(h('summary','',route.title+' · Voir le trajet'));
-    section.append(itinerary);
-    itinerary.addEventListener('toggle',()=>{if(itinerary.open){map.classList.add('mini-atlas-map');window.TreizeMiniAtlas?.mount();}});
-  }else itinerary.append(h('h3','',route.title));
-  const map=h('div',individual?'':'mini-atlas-map');map.dataset.route='upcoming-'+scene.route;map.dataset.maxZoom=route.zoom;
+  itinerary.append(h('h3','',route.title));
+  const map=h('div','mini-atlas-map');map.dataset.route=routeKey;map.dataset.maxZoom=route.zoom;
   map.setAttribute('role','img');map.setAttribute('aria-label',route.title+' : '+route.points.map(p=>p[0]).join(' → '));
   const list=h('ol','upcoming-stops');route.points.forEach(p=>list.append(h('li','',p[0])));
   if(route.destination)list.append(h('li','',route.destination[0]));
   itinerary.append(map,list,h('p','upcoming-caption',route.caption),h('p','upcoming-caption','Repères du récit reliés schématiquement, sans trace GPS.'));
-  section.append(full);
+  if(!individual)section.append(full);
   return section;
  }
  function prepareDialog(){
@@ -62,7 +76,7 @@
     const panel=panels.querySelector('[data-panel="'+key+'"]');
     window.TreizeAtlasPersonnages.mountRoster(panel,scene.id,scene.chapter,key==='game');
    }
-   if(key==='map'){const panel=panels.querySelector('[data-panel="map"]');if(!panel.firstChild)panel.append(mapPanel(scene));window.TreizeMiniAtlas?.mount();}
+   if(key==='map'){const panel=panels.querySelector('[data-panel="map"]');if(!panel.firstChild)panel.append(mapPanel(scene));else panel.firstChild.showRoute();window.TreizeMiniAtlas?.mount();}
   }
   labels.forEach(([key,label],i)=>{
    const tab=button(label,()=>select(key));tab.dataset.tab=key;tab.id='upcoming-'+scene.id+'-tab-'+key;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','upcoming-'+scene.id+'-'+key);

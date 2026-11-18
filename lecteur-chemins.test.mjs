@@ -59,7 +59,10 @@ test('Cyrano and the encounter retain their own excerpt and native game callback
   s.ctx.TreizeUnifiedReader.openRendezvous({id,paragraphs,onChallenge:()=>launches++});
   assert.equal(s.opened.scene.paragraphs,paragraphs);
   assert.equal(s.opened.scene.path,id==='manifestation'?'II':'III');
-  if(id==='cyrano')assert.equal(s.opened.scene.routeData,undefined,'No invented prison location');
+  if(id==='cyrano'){
+   assert.equal(s.opened.scene.routeData.points[0][0],'Strasbourg');
+   assert.match(s.opened.scene.routeData.caption,/centre de la ville/);
+  }
   const panel=new Element('section');s.opened.scene.renderGame(panel,{leave:fn=>fn()});
   assert.equal(launches,0);panel.querySelectorAll('button')[0].onclick();assert.equal(launches,1);
  }
