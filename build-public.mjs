@@ -45,7 +45,7 @@ for (const args of [
   ['--test', 'ordre-lecture.test.mjs'],
   ['--test', 'chapitre1-flow.test.mjs'],
   ['--test', 'journey.test.mjs'],
-  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs', 'atlas-personnages.test.mjs'],
+  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs', 'atlas-personnages.test.mjs', 'atlas-rencontre.test.mjs'],
   ['--test', 'lecteur-chemins.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
@@ -55,7 +55,7 @@ for (const args of [
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
-  'atlas-personnages.js', 'atlas-personnages.css', 'atlas-carte.js',
+  'atlas-personnages.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
   'soutien.html',
   'soutien.css',

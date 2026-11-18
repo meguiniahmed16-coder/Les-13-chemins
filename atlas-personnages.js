@@ -163,6 +163,6 @@
    if(fixed){fixed.classList.add('ap-game-screen');footer.classList.add('ap-after-screen');}
    mountRoster(footer,...game,true);
  }
- window.TreizeAtlasPersonnages={element,button,normal,number,directory,chip,show,roster,mountRoster,games,cast};
+ window.TreizeAtlasPersonnages={element,button,normal,number,directory,portraits,chip,show,roster,mountRoster,games,cast};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',standalone);else standalone();
 })();

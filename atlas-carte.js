@@ -206,23 +206,24 @@
    panel.setAttribute('aria-label','Carte des personnages · '+scene.title);
    host.append(panel);createMap(panel,scene).init();
  }
- function bindTabs(tablist,route,people,onChange){
+ function bindTabs(tablist,route,people,onChange,additionalPanel){
+   const panels=additionalPanel?[route,people,additionalPanel]:[route,people];
    const tabs=Array.from(tablist.querySelectorAll('[role="tab"]'));
    function select(index,save=false){
      tabs.forEach((tab,i)=>{
        tab.setAttribute('aria-selected',String(i===index));
        tab.tabIndex=i===index?0:-1;
      });
-     route.hidden=index!==0;
-     people.hidden=index!==1;
-     onChange(index===1,save);
+     panels.forEach((panel,i)=>{panel.hidden=i!==index;});
+     onChange(index===1,save,index);
    }
    tabs.forEach((tab,i)=>{
      tab.onclick=()=>select(i,true);
      tab.onkeydown=e=>{
        if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
        e.preventDefault();
-       const next=e.key==='Home'?0:e.key==='End'?1:1-i;
+       const last=tabs.length-1;
+       const next=e.key==='Home'?0:e.key==='End'?last:(i+(e.key==='ArrowRight'?1:last))%tabs.length;
        select(next,true);
        tabs[next].focus();
      };
@@ -242,11 +243,22 @@
    (stage?{id:'jouable-'+level+'-'+plateau,chapter:stage.passage.chapter,coordinates:stage.coordinates}:
     game?{id,chapter:game[1]}:null);
  const controller=createMap(panel,scene,true);
- const select=bindTabs(tablist,route,panel,(active,save)=>{
-   document.body.classList.toggle('ap-on-map',active);
-   if(save)controller.address(active,active?controller.city():null,null);
-   if(active)controller.init();else window.dispatchEvent(new Event('resize'));
- });
+ const meetingPanel=document.getElementById('atlas-rencontre');
+ const meeting=meetingPanel&&window.TreizeRencontre.create(meetingPanel);
+ const select=bindTabs(tablist,route,panel,(active,save,index)=>{
+   const inMeeting=index===2;
+   document.body.classList.toggle('ap-on-map',index!==0);
+   if(save){
+     if(inMeeting){
+       const url=params();
+       url.searchParams.set('vue','rencontre');
+       url.searchParams.delete('ville');url.searchParams.delete('personnage');
+       history.replaceState(history.state,'',url);
+     }else controller.address(active,active?controller.city():null,null);
+   }
+   meeting?.setActive(inMeeting);
+   if(active)controller.init();else if(!inMeeting)window.dispatchEvent(new Event('resize'));
+ },meetingPanel);
  const showPeople=query.get('vue')==='personnages'||query.has('personnage')||query.has('ville');
- select(showPeople?1:0);
+ select(meeting&&query.get('vue')==='rencontre'?2:showPeople?1:0);
 })();
