@@ -34,3 +34,9 @@ body>.ap-tabs{flex-wrap:wrap}
   .a-choisi .rencontre-invite{margin:0}
   .rencontre-action{margin:7px auto 0}
 }
+
+/* Dans la carte générale, l’invitation reste repérable depuis les autres vues. */
+.ap-tabs #ap-tab-rencontre{margin:2px 0 4px;padding:7px 15px;border:1px solid #ab8b5b;border-radius:4px;background:#efe1c3;color:#304638;font-weight:700}
+.ap-tabs #ap-tab-rencontre[aria-selected="true"]{background:#304e40;border-color:#304e40;color:#fff5de}
+.ap-tabs #ap-tab-rencontre:focus-visible{outline:2px solid #805b35;outline-offset:2px}
+@media(max-width:700px){.ap-tabs #ap-tab-rencontre{flex:1 0 100%;text-align:center;min-height:44px}}
