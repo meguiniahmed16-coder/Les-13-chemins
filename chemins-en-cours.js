@@ -43,6 +43,10 @@
   function select(key,focus=false){
    for(const t of tabs.children){const selected=t.dataset.tab===key;t.setAttribute('aria-selected',String(selected));t.tabIndex=selected?0:-1;if(selected&&focus)t.focus();}
    for(const p of panels.children)p.hidden=p.dataset.panel!==key;
+   if(key==='people'||key==='game'){
+    const panel=panels.querySelector('[data-panel="'+key+'"]');
+    window.TreizeAtlasPersonnages.mountRoster(panel,scene.id,scene.chapter,key==='game');
+   }
    if(key==='map'){const panel=panels.querySelector('[data-panel="map"]');if(!panel.firstChild)panel.append(mapPanel(scene));window.TreizeMiniAtlas?.mount();}
   }
   labels.forEach(([key,label],i)=>{
@@ -53,15 +57,6 @@
    if(key==='text'){
     panel.append(h('p','upcoming-source',scene.reference||'Extrait du manuscrit · Chapitre '+scene.chapter+' — '+scene.chapterTitle));
     const prose=h('div','upcoming-prose');scene.paragraphs.forEach(p=>prose.append(h('p','',p)));panel.append(prose);
-   }
-   if(key==='people'){
-    panel.append(h('p','upcoming-caption','Cliquez sur un nom pour découvrir le personnage.'));
-    const profiles=scene.profiles||scene.people.map(id=>data.profiles[id]);
-    profiles.forEach(profile=>{
-     const details=h('details','upcoming-person'),summary=h('summary');
-     summary.append(h('strong','',profile.name),h('span','',profile.role));details.append(summary);
-     (profile.paragraphs||[]).forEach(p=>details.append(h('p','',p)));panel.append(details);
-    });
    }
    if(key==='game'&&scene.renderGame)scene.renderGame(panel,{leave:action=>leaveScene(scene.id,action),showTab:key=>select(key)});
    else if(key==='game'&&core.isAvailable(scene)){

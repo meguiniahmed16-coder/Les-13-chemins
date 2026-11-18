@@ -45,7 +45,7 @@ for (const args of [
   ['--test', 'ordre-lecture.test.mjs'],
   ['--test', 'chapitre1-flow.test.mjs'],
   ['--test', 'journey.test.mjs'],
-  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs'],
+  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs', 'atlas-personnages.test.mjs'],
   ['--test', 'lecteur-chemins.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
@@ -55,6 +55,8 @@ for (const args of [
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
+  'atlas-personnages.js', 'atlas-personnages.css', 'atlas-carte.js',
+  'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
   'soutien.html',
   'soutien.css',
   'soutien.js',
@@ -243,7 +245,12 @@ await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSO
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
   if (name.endsWith('.html')) {
-    await writeFile(join(output, name), canonicalizeSource(injectSharedNavigation(injectAnalytics(await readFile(join(root, name), 'utf8'), name), name),name));
+    let html = await readFile(join(root, name), 'utf8');
+    if (/^(arcade-|jeu-).+\.html$/.test(name)) {
+      const extras = name === 'jeu-le-traitre.html' && !html.includes('chemins-en-cours-data.js') ? '<script defer src="chemins-en-cours-data.js"></script>' : '';
+      html = html.replace('</head>', '<link rel="stylesheet" href="atlas-personnages.css">'+extras+'<script defer src="atlas-personnages.js"></script></head>');
+    }
+    await writeFile(join(output, name), canonicalizeSource(injectSharedNavigation(injectAnalytics(html, name), name),name));
   } else if (/\.(?:js|json|css)$/.test(name)) {
     await writeFile(join(output,name),canonicalizeSource(await readFile(join(root,name),'utf8'),name));
   } else {

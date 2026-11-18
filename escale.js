@@ -69,6 +69,10 @@
  function openCharacters(n,trigger,plateau=1){
   const stage=getStage(n,plateau);if(!stage?.workshops?.length)return null;if(characterDialog)return characterDialog;
   install();const modal=document.createElement('dialog');modal.id='characterReader';modal.setAttribute('aria-labelledby','charactersTitle');modal.innerHTML=charactersHTML(stage);document.body.append(modal);characterDialog=modal;
+  if(root.TreizeAtlasPersonnages){
+   const body=modal.querySelector('.arrival-body'),back=body.querySelector('.arrival-challenge');
+   body.querySelectorAll('article').forEach(a=>a.remove());root.TreizeAtlasPersonnages.mountRoster(body,'jouable-'+n+'-'+plateau,stage.passage.chapter);body.append(back);
+  }
   let closed=false;function finish(){if(closed)return;closed=true;characterDialog=null;document.documentElement.classList.remove('characters-reading');modal.remove();trigger?.focus({preventScroll:true});}
   const back=()=>{if(modal.open)modal.close();else finish();};modal.querySelector('.arrival-close').onclick=back;modal.querySelector('.arrival-challenge').onclick=back;modal.addEventListener('close',finish,{once:true});
   try{modal.showModal();document.documentElement.classList.add('characters-reading');modal.scrollTop=0;modal.querySelector('h2').focus({preventScroll:true});}catch{finish();}
@@ -94,6 +98,7 @@
   install();const modal=document.createElement('dialog');modal.id='arrivalReader';modal.setAttribute('aria-labelledby','arrivalTitle');modal.dataset.level=stage.level;
   if(autoAdvanceOnEnd)modal.dataset.autoplay='scroll';
   modal.innerHTML=readerHTML(stage);document.body.append(modal);active=modal;bindCharacters(modal);
+  if(root.TreizeAtlasPersonnages)root.TreizeAtlasPersonnages.mountRoster(modal.querySelector('.arrival-body'),'jouable-'+n+'-'+plateau,stage.passage.chapter,true);
   let finished=false,continueToGame=!autoAdvanceOnEnd,skipInstead=false,scrollTimer=0;
   let quizAnswered=!inlineQuiz,checkEnd=()=>{},quizCard=null;
   if(inlineQuiz&&Array.isArray(inlineQuiz.options)&&inlineQuiz.options.length){
