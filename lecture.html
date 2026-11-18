@@ -42,8 +42,8 @@ function render(){const d=DATA.find(d=>`${d.level}:${d.plateau}`===select.value)
 `<article class="card"><p class="meta">NIVEAU ${d.level}</p>
 <h2>${esc(d.scene)}</h2><p class="reference">Extrait du chapitre ${Number(d.chapter)} — <em>« ${esc(d.title)} »</em>, ${esc(d.pageLabel)}.</p>
 <p class="meta">Le titre de ce passage a été choisi pour le jeu.</p>
-<blockquote>${d.quote.split(/\n\s*\n/).map(p=>`<p>${esc(p)}</p>`).join('')}</blockquote>
+${TreizeEscale.characterButton(d.level,d.plateau)}<blockquote>${d.quote.split(/\n\s*\n/).map(p=>`<p>${esc(p)}</p>`).join('')}</blockquote>
 <p class="meta">${esc(d.source)}</p>
-<div class="nav"><a href="carte.html?niveau=${d.level}&plateau=${d.plateau}">🧭 Voir sur la carte</a><a href="jeu.html?niveau=${d.level}&plateau=${d.plateau}">🎲 Relever l'épreuve</a></div></article>`;TreizeAtlasPersonnages.mountRoster(document.querySelector('#reading article'),'jouable-'+d.level+'-'+d.plateau,d.chapter,true);}
+<div class="nav"><a href="carte.html?niveau=${d.level}&plateau=${d.plateau}">🧭 Voir sur la carte</a><a href="jeu.html?niveau=${d.level}&plateau=${d.plateau}">🎲 Relever l'épreuve</a></div></article>`;const article=document.querySelector('#reading article');TreizeEscale.bindCharacters(article);if(!article.querySelector('[data-character-stage]'))TreizeAtlasPersonnages.mountRoster(article,'jouable-'+d.level+'-'+d.plateau,d.chapter,true);}
 select.onchange=render;let n=Number(new URLSearchParams(location.search).get('niveau'));const p=Number(new URLSearchParams(location.search).get('plateau'))||1;select.value=DATA.some(d=>d.level===n&&d.plateau===p)?`${n}:${p}`:'1:1';render();
 </script></body></html>
