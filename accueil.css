@@ -5,10 +5,35 @@
 .home-spaces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:32px 0}.home-space{background:var(--paper);border:1px solid #c8b189;padding:28px 30px;display:flex;flex-direction:column;align-items:flex-start}.home-space .home-kicker{color:#6e5b3d;margin-bottom:12px}.home-space h2{font:400 31px/1.15 'Cormorant Garamond',Georgia,serif;margin:0 0 12px}.home-space p:not(.home-kicker){margin:0 0 20px;font-size:15px;line-height:1.7}.home-space a{display:inline-flex;align-items:center;min-height:44px;font-size:14px;text-underline-offset:4px}.home-space .space-main{margin-top:auto;font-weight:600}.home-space .space-secondary{font-size:12px;color:#5c624e}.home-support{padding:25px 30px;border:1px solid #bda780;display:flex;align-items:center;justify-content:space-between;gap:20px;background:#e3d5b8}.home-support h2{font:400 27px Georgia,serif;margin:0 0 8px}.home-support p{font-size:14px;margin:0;max-width:630px}.home-support .home-button{flex:none;background:var(--ink);color:#fff4df;border-color:var(--ink)}.home-footer{text-align:center;font-size:12px;color:#665c46;margin-top:30px}
 @media(max-width:700px){.home-wrap{padding:20px 17px 30px}.home-hero{padding:36px 24px;min-height:0;border-width:5px}.home-hero img{width:75%;opacity:.2}.home-hero h1{font-size:clamp(42px,10vw,65px)}.hero-text{font-size:15px}.hero-actions{flex-direction:column;align-items:stretch;gap:10px}.home-spaces{grid-template-columns:1fr;gap:16px;margin:25px 0}.home-space{padding:24px}.home-support{flex-direction:column;align-items:stretch;padding:24px}.contact-feature{justify-content:center;gap:4px 24px;text-align:center}.hero-caption{line-height:1.6}}
 
-.hero-actions .home-rencontre{display:flex;flex:0 0 100%;align-items:center;justify-content:space-between;gap:15px;max-width:510px;padding:12px 18px;color:#283e34;background:#f7edd4;border:1px solid #d9bd83;border-left:4px solid #c39b5d;border-radius:4px;text-decoration:none}
-.home-rencontre-copy{display:grid;gap:3px;text-align:left}
-.home-rencontre-copy strong{font:600 clamp(22px,2.7vw,30px)/1.12 'Cormorant Garamond',Georgia,serif}
-.home-rencontre-copy>span{font:500 13px/1.4 'DM Sans',system-ui,sans-serif;color:#4b5649}
-.home-rencontre-arrow{flex:none;font-size:23px;line-height:1}
-.hero-actions .home-rencontre:hover,.hero-actions .home-rencontre:focus-visible{background:#fff8e9}
-@media(max-width:700px){.hero-actions .home-rencontre{flex:auto;max-width:none;padding:12px 13px}}
+/* La première rencontre, au milieu des noms du livre. */
+.home-meeting{width:min(100%,565px);margin:18px 0 22px;position:relative;isolation:isolate;background:#f7efdb;color:#283f34;border:1px solid #c1a87a;border-radius:7px;box-shadow:0 6px 21px #10291e30}
+.hero-copy{width:100%;min-width:0}
+.meeting-draw,.meeting-result{box-sizing:border-box;width:100%;min-height:181px;padding:45px 20px 43px;position:relative;text-align:center;border:0;border-radius:6px;color:inherit;background:radial-gradient(ellipse at 48% 48%,#fffaf0 8%,#f7efdd 60%,#ebddc0);font:inherit}
+.meeting-draw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-decoration:none;touch-action:manipulation;overflow:hidden}
+.meeting-draw::before,.meeting-result::before{content:'';position:absolute;inset:6px;pointer-events:none;border:1px solid #ac926649;border-radius:3px}
+.meeting-draw strong,.meeting-result h2{position:relative;margin:0;color:#253f34;font:600 clamp(25px,3vw,34px)/1.09 'Cormorant Garamond',Georgia,serif;text-wrap:balance}
+.meeting-draw strong span{white-space:nowrap}
+#meeting-invite{position:relative;color:#534b3b;font:500 13px/1.45 'DM Sans',system-ui,sans-serif;text-wrap:balance}
+.meeting-names{position:absolute;inset:0;pointer-events:none;user-select:none}
+.meeting-names i{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);max-width:28%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#75613e;font:italic 16px/1.35 'Cormorant Garamond',Georgia,serif;opacity:.83;animation:meeting-drift var(--time,8s) ease-in-out var(--phase,0s) infinite alternate}
+.meeting-names i:nth-child(1){--x:18%;--y:14%;--phase:-4s}
+.meeting-names i:nth-child(2){--x:51%;--y:12%;--phase:-1s;--time:7s}
+.meeting-names i:nth-child(3){--x:81%;--y:15%;--phase:-6s;--time:9s}
+.meeting-names i:nth-child(4){--x:21%;--y:85%;--phase:-1s;--time:9s}
+.meeting-names i:nth-child(5){--x:48%;--y:88%;--phase:-4s;--time:7s}
+.meeting-names i:nth-child(6){--x:80%;--y:84%;--phase:-2s}
+@keyframes meeting-drift{from{transform:translate(calc(-50% - 6px),calc(-50% + 3px))}to{transform:translate(calc(-50% + 6px),calc(-50% - 3px))}}
+.meeting-draw:hover:not([aria-busy=true]){background:radial-gradient(ellipse,#fffdf6 8%,#f9f0da 64%,#e8dab8)}
+.meeting-draw:focus-visible,.meeting-result button:focus-visible{outline:3px solid #a97536;outline-offset:3px}
+.home-meeting.is-drawing .meeting-names{opacity:.12;transition:opacity .52s ease-in}
+.meeting-draw[aria-busy=true]{cursor:progress}
+.home-meeting [hidden]{display:none!important}
+.meeting-result{padding:20px clamp(16px,4vw,30px);display:grid;justify-items:center;align-content:center;gap:8px}
+.meeting-result p{margin:0;max-width:46ch;font:400 17px/1.35 'Cormorant Garamond',Georgia,serif;text-wrap:balance}
+.meeting-actions{position:relative;display:flex;flex-wrap:wrap;gap:3px 14px;align-items:center;justify-content:center}
+.meeting-actions button{cursor:pointer;min-height:42px;font:600 13px/1.3 'DM Sans',system-ui,sans-serif}
+.meeting-actions .ap-write{background:#304d3d;color:#fff6df;border:1px solid #304d3d;border-radius:4px;padding:8px 15px;margin:0}
+.meeting-textbutton{background:none;border:0;color:#594b38;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+.meeting-status:empty{display:none}.meeting-status{margin:0;padding:4px 14px 10px;font-size:13px;text-align:center}
+@media(max-width:700px){.meeting-draw{padding:40px 14px;min-height:184px}.home-meeting{margin:14px 0 18px}.meeting-names i{font-size:14px}.meeting-result p{font-size:17px}.meeting-actions{gap:0 10px}#meeting-invite{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.meeting-names i{animation:none}.home-meeting.is-drawing .meeting-names{transition:none}}

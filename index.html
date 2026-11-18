@@ -2,7 +2,11 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>La tectonique des âmes — Ahmed Marie</title>
 <meta name="description" content="Une vie traversée par les rencontres. Explorez Les Treize Chemins, un récit à lire, à parcourir et à jouer, puis découvrez les écrits d’Ahmed Marie.">
-<link rel="stylesheet" href="accueil.css?v=20261118-nuage"><script src="identity-callback.js"></script>
+<link rel="stylesheet" href="accueil.css?v=20261118-rencontre-directe"><script src="identity-callback.js"></script>
+<link rel="stylesheet" href="atlas-personnages.css">
+<script defer src="atlas-personnages.js"></script>
+<script defer src="atlas-rencontre.js?v=accueil-1"></script>
+<script defer src="accueil-rencontre.js"></script>
 <!-- Métadonnées de partage : aucune image ajoutée au contenu visible. -->
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
@@ -27,12 +31,17 @@
 <div class="hero-copy"><p class="home-kicker">Ahmed Marie · récits et rencontres</p>
 <h1 id="home-title">La tectonique<br>des âmes</h1>
 <p class="hero-lead">Une vie traversée par les rencontres.</p>
+<div class="home-meeting" id="home-meeting">
+  <a class="meeting-draw" href="carte.html?vue=rencontre" aria-labelledby="meeting-title" aria-describedby="meeting-invite">
+    <span class="meeting-names" aria-hidden="true"><i>Christophe</i><i>Nora</i><i>Maryse</i><i>Lionel</i><i>Dorothée</i><i>Michel</i></span>
+    <strong id="meeting-title">Viens, j’ai quelqu’un <span>à te présenter</span></strong>
+    <span id="meeting-invite">Touche le nuage pour rencontrer l’un des 400 personnages du livre.</span>
+  </a>
+  <section class="meeting-result" aria-labelledby="meeting-person" hidden></section>
+  <p class="meeting-status" role="status"></p>
+</div>
 <p class="hero-text">Découvrez le récit d’Ahmed Marie à travers ses textes, ses lieux et ses jeux. <strong>Les Treize Chemins</strong> vous invitent à entrer dans cette histoire.</p>
 <div class="hero-actions">
-<a class="home-rencontre" href="carte.html?vue=rencontre">
-  <span class="home-rencontre-copy"><strong>Viens, j’ai quelqu’un à te présenter</strong><span>Rencontrer au hasard l’un des 400 personnages du livre</span></span>
-  <span class="home-rencontre-arrow" aria-hidden="true">→</span>
-</a>
 <a class="home-button" href="jeu.html">Commencer le voyage <span aria-hidden="true">→</span></a><a class="home-button secondary" href="carte.html">Explorer les cartes</a></div>
 <p class="hero-caption">Un parcours à découvrir à votre rythme, qui continue de se construire.</p></div></section>
 <section class="contact-feature" aria-label="Le projet et son auteur"><a href="presentation.html">Comprendre le projet</a><a href="contact.html">Contacter l’auteur <span aria-hidden="true">→</span></a></section>

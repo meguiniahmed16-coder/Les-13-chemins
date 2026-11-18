@@ -63,7 +63,7 @@ const publicFiles = [
   'soutien.js',
   'soutien-config.json',
   'index.html',
-  'accueil.css',
+  'accueil.css', 'accueil-rencontre.js',
   'ahmed-marie.html',
   'dialogues.html',
   'dialogues.css',

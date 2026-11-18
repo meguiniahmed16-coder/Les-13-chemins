@@ -169,5 +169,5 @@
       animate();
     }};
   }
-  window.TreizeRencontre = {create};
+  window.TreizeRencontre = {create, randomIndex};
 })();
