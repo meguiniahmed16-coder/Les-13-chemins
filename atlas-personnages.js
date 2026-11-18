@@ -61,6 +61,24 @@
    const title=element('h2','',p.name);title.id='ap-person-name';title.tabIndex=-1;content.append(title);
    dialog.scrollTop=0;title.focus({preventScroll:true});
  }
+ function discussButton(p,data,city=null){
+   return button('Écrire à '+p.name,async ()=>{
+     prepare();
+     if(!dialog.open){opener=document.activeElement;dialog.showModal();}
+     const ticket=++revision;
+     heading(p,false);
+     content.querySelector('.ap-meta').textContent='Discussion';
+     content.append(button('← Sa continuité',()=>read(p,data,city),'ap-return'));
+     const host=element('section','ap-chat','Ouverture de la discussion…');content.append(host);
+     try{
+       const {mountDiscussion}=await import('./atlas-discussion.js');
+       if(ticket!==revision||!dialog.open)return;
+       host.replaceChildren();mountDiscussion(host,p,String(p.id||p.chatId));
+     }catch{
+       if(ticket===revision&&dialog.open)host.replaceChildren(element('p','','La discussion n’a pas pu s’ouvrir.'),discussButton(p,data,city));
+     }
+   },'ap-primary ap-write');
+ }
  function show(p,data,city=null) {
    prepare();
    if(!dialog.open){opener=document.activeElement;dialog.showModal();}
@@ -73,11 +91,11 @@
      selected.forEach(s=>list.append(element('li','',s.place+(s.mode?' · '+s.mode:'')+(s.pages?' · p. '+s.pages:''))));
      content.append(list);
    }
-   const expand=button('En savoir plus sur '+p.name,()=>read(p,data,city),'ap-primary');content.append(expand);
+   const expand=button('En savoir plus sur '+p.name,()=>read(p,data,city),'ap-primary');content.append(expand,discussButton(p,data,city));
  }
  async function read(p,data,city) {
    const ticket=++revision;heading(p,true);
-   content.append(button('← Son interaction dans le récit',()=>show(p,data,city),'ap-return'));
+   content.append(button('← Son interaction dans le récit',()=>show(p,data,city),'ap-return'),discussButton(p,data,city));
    const area=element('div','ap-prose','Chargement du portrait…');content.append(area);
    try{
      const paragraphs=p.id?(await portraits())[p.id]:p.paragraphs;
@@ -106,7 +124,7 @@
    if(scene==='traitre'){
      const extras=window.TreizeUpcomingData;
      for(const key of extras?.scenes.find(s=>s.id===scene)?.people||[]){
-       if(key!=='ahmed'&&extras.profiles[key])present.push(extras.profiles[key]);
+       if(key!=='ahmed'&&extras.profiles[key])present.push({...extras.profiles[key],chatId:'salon-'+key});
      }
    }
    const remaining=(data.chapters[Number(chapter)]||[]).filter(id=>!ids.includes(id)).map(id=>data.byId.get(id));
@@ -163,6 +181,6 @@
    if(fixed){fixed.classList.add('ap-game-screen');footer.classList.add('ap-after-screen');}
    mountRoster(footer,...game,true);
  }
- window.TreizeAtlasPersonnages={element,button,normal,number,directory,portraits,chip,show,roster,mountRoster,games,cast};
+ window.TreizeAtlasPersonnages={element,button,normal,number,directory,portraits,chip,show,discussButton,roster,mountRoster,games,cast};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',standalone);else standalone();
 })();

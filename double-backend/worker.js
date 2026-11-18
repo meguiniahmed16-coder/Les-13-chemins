@@ -1,3 +1,4 @@
+import {characterChat} from './character-chat.js';
 import {quotedPrompt} from './quotes.js';
 import {handleVoicePreference,voicePreferenceContext} from './preferences.js';
 import {isArchiveStatusRequest,archiveStatus,isArchiveRequest,archiveChat,readArchives,cleanupConversations,publishArchive,publicDialogues} from './archives.js';
@@ -66,6 +67,8 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  }
  p.visitor_key=await hash(day+'|'+(request.headers.get('cf-connecting-ip')||'unknown')+'|'+env.ADMIN_TOKEN);
 
+ const characterRoute = /^\/personnages\/([1-9]\d{0,2}|salon-[a-z]+)\/chat$/.exec(u.pathname);
+ if(characterRoute)return await characterChat(characterRoute[1],p,env,p.visitor_key,day,MODEL,reply);
  const blogResult=await blogPost(u.pathname,p,db,isAdmin,now,reply);if(blogResult)return blogResult;
  if(u.pathname==='/start'){
 

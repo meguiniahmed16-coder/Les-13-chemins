@@ -83,3 +83,17 @@ html.ap-standalone body:has(>.ap-gamefooter){flex-wrap:wrap}
  .upcoming-character-map .ap-canvas{height:clamp(330px,52dvh,475px);order:-1}
  .upcoming-character-map .ap-results{max-height:100px}
 }
+
+.ap-write{margin:6px 0 6px 6px}
+.rencontre-portrait .ap-write{margin:0 0 12px}
+.ap-chat{color:#243e37;font:16px/1.45 'DM Sans',system-ui,sans-serif}
+.ap-chat-note,.ap-chat-status{font:14px/1.45 system-ui,sans-serif;color:#54584b;margin:12px 0}
+.ap-chat-log{display:flex;flex-direction:column;gap:10px;max-height:clamp(120px,39dvh,440px);overflow:auto;overscroll-behavior:contain}
+.ap-chat-bubble{align-self:flex-start;max-width:88%;background:#f2e9d7;border-radius:12px 12px 12px 3px;padding:9px 13px}
+.ap-chat-bubble strong{font:600 12px/1.5 system-ui,sans-serif}
+.ap-chat-bubble p{font:inherit;margin:1px 0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit}
+.ap-chat-own{align-self:flex-end;background:#dce9da;border-radius:12px 12px 3px 12px}
+.ap-chat-form{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ap-chat-form textarea{flex:1 1 160px;min-width:0;font:inherit;color:#243e37;background:#fffdf5;border:1px solid #918772;border-radius:8px;padding:10px;resize:vertical}
+.ap-chat-form button{min-height:44px}
+.ap-chat-form button:disabled{opacity:.58}

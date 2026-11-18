@@ -156,7 +156,7 @@
       references.append(list);
       const prose = element('div','rencontre-prose','Chargement du texte…');
       article.replaceChildren(element('p','rencontre-numero','Atlas · Nº '+atlas.number(person.id)),
-        title, element('p','rencontre-role',person.role),references,element('h3','','Sa continuité'),prose);
+        title, element('p','rencontre-role',person.role),atlas.discussButton(person,data),references,element('h3','','Sa continuité'),prose);
       article.hidden = false; title.focus({preventScroll:true});
       if (matchMedia('(max-width:700px)').matches) title.scrollIntoView({block:'nearest'});
       story(person,prose);

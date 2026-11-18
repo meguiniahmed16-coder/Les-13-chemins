@@ -27,6 +27,7 @@ test('Chaque tirage ouvre le bon portrait et ses références, même pour deux h
     crypto:{getRandomValues(buffer){buffer[0]=samples.shift()??0;return buffer;}},
     window:{TreizeAtlasPersonnages:{
       directory:async()=>data,portraits:async()=>portraits,number:n=>String(n).padStart(3,'0'),
+      discussButton:p=>new Element('button','','Écrire à '+p.name),
       element:(...args)=>new Element(...args)
     }},
     document:{addEventListener(){}},cancelAnimationFrame(){},
@@ -43,10 +44,11 @@ test('Chaque tirage ouvre le bon portrait et ses références, même pour deux h
     assert.equal(samples.length,0);
     assert.equal(bubble.disabled,true);
     assert.equal(name.textContent,person.name);
-    const [number,title,role,references,,prose]=article.children;
+    const [number,title,role,write,references,,prose]=article.children;
     assert.ok(number.textContent.endsWith(String(person.id).padStart(3,'0')));
     assert.equal(title.textContent,person.name);
     assert.equal(role.textContent,person.role);
+    assert.equal(write.textContent,'Écrire à '+person.name);
     assert.deepEqual(prose.children.map(node=>node.textContent),portraits[person.id]);
     const chapters=Object.keys(data.chapters).filter(n=>data.chapters[n].includes(person.id));
     assert.equal(references.children[1].textContent,(chapters.length===1?'Chapitre ':'Chapitres ')+chapters.join(', '));

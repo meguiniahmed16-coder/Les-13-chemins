@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { injectAnalytics } from './site-analytics-build.mjs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
+import {characterDirectory} from './atlas-dialogues-data.mjs';
 import {canonicalizeSource} from './site-origin-build.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
@@ -45,7 +46,7 @@ for (const args of [
   ['--test', 'ordre-lecture.test.mjs'],
   ['--test', 'chapitre1-flow.test.mjs'],
   ['--test', 'journey.test.mjs'],
-  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs', 'atlas-personnages.test.mjs', 'atlas-rencontre.test.mjs'],
+  ['--test', 'chemins-en-cours.test.mjs', 'stoppub-publication.test.mjs', 'atlas-personnages.test.mjs', 'atlas-rencontre.test.mjs','atlas-discussion.test.mjs'],
   ['--test', 'lecteur-chemins.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
@@ -55,7 +56,7 @@ for (const args of [
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
-  'atlas-personnages.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
+  'atlas-personnages.js', 'atlas-discussion.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
   'soutien.html',
   'soutien.css',
@@ -241,6 +242,7 @@ const arrivalData = stops.map((stop, i) => {
   return {...base, plateaux:[{...base,plateau:1},...extra]};
 });
 await mkdir(output);
+await writeFile(join(output,'atlas-dialogues.json'), JSON.stringify(await characterDirectory()));
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
