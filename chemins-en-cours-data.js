@@ -226,7 +226,7 @@ globalThis.TreizeUpcomingData = {
       ],
       "people": [
         "ahmed",
-        "eleanore",
+        "elisabeth",
         "marianne"
       ],
       "route": "paris",
@@ -370,7 +370,7 @@ globalThis.TreizeUpcomingData = {
       "paragraphs": [
         "Je suis né le 28 juin 1977 à Saint-Julien-en-Genevois, en France, d’un père algérien et d’une mère marocaine. J’ai grandi à Ferney-Voltaire. L’histoire algérienne de mon père, les violences familiales, la séparation et les placements traversent mon enfance. J’ai cinq ans à l’orphelinat des Marmousets et six ans dans la famille d’accueil d’Anne-Marie et Jean-Jacques. Ma mère nous enlève à cette famille. Je rencontre mon beau-père peu après cet enlèvement. Entre les dialectes de mes parents et la langue du quartier, j’apprends à changer de registre. On me surnomme le caméléon.",
         "Je supporte mal l’humiliation. Je peux répondre par une plaisanterie, une provocation, une colère qui prend toute la place. À seize ans, je vis à Éteaux et vais au lycée à La Roche-sur-Foron. La voiture de ma mère, les dérapages dans la cour, la poursuite : je ris en courant. À Barcelone, je découvre aussi ma peur, ma pudeur et ce que signifie devoir me relever seul.",
-        "J’ai été soldat en Bosnie, travaillé dans la restauration et le bâtiment, fréquenté le théâtre, le cinéma et les médias. J’ai fait des reportages en Syrie. J’ai connu la prison, les amours, les ruptures et la thérapie. Ma fille Éléanore occupe une place essentielle dans ma vie. Le désir de la protéger m’accompagne jusque dans mes prières.",
+        "J’ai été soldat en Bosnie, travaillé dans la restauration et le bâtiment, fréquenté le théâtre, le cinéma et les médias. J’ai fait des reportages en Syrie. J’ai connu la prison, les amours, les ruptures et la thérapie. Ma fille Elisabeth occupe une place essentielle dans ma vie. Le désir de la protéger m’accompagne jusque dans mes prières.",
         "J’ai reçu une éducation musulmane, puis vécu une longue période d’athéisme. La marche m’a conduit vers la foi catholique. J’ai connu la rue, les chemins de Compostelle, la vie à bord du Marucca. J’ai été baptisé à Pâques 2026, puis confirmé en juin. Ma foi ne me dispense pas de regarder ma colère, mes excès et mes contradictions.",
         "J’aime être seul et j’aime rencontrer. Je peux offrir facilement et avoir du mal à demander. Je veux être libre, mais le désir d’être aimé me rend parfois dépendant. L’humour me redonne de l’air ; le travail du bois et la marche m’occupent les mains et le corps.",
         "Pendant mes premiers mois à Paris, je suis chauffeur-livreur pour une boutique de matériel d’art. Par la mission locale, je trouve le dispositif « Action de mobilisation par le théâtre », au cours Florent. Je suis les mêmes cours que les autres élèves : ils paient deux mille francs par mois ; moi, je reçois deux mille francs par mois pour faire du théâtre. Une intuition me conduit à chercher Lionel dans le bottin parisien, bien que je le sache originaire de Morlaix. Je lui laisse un message et nous nous retrouvons en terrasse au Café Charbon, rue Oberkampf. Ma dernière image de lui est celle d’un camarade avec un casque lourd, un gilet pare-balles et de la boue jusqu’aux oreilles.",
@@ -434,8 +434,8 @@ globalThis.TreizeUpcomingData = {
         "Elle demande par quelle affiche commencer."
       ]
     },
-    "eleanore": {
-      "name": "Éléanore",
+    "elisabeth": {
+      "name": "Elisabeth",
       "role": "La fille du narrateur",
       "paragraphs": [
         "Elle a trois ans dans cette scène. Elle ne comprend pas les événements, mais sent la peur de son père. Il essaie de la faire rire."
