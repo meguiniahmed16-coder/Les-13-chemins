@@ -9,17 +9,32 @@
  const panes=new Map();
  function registerRoutes(){if(!window.TreizeMiniAtlas)return;for(const [id,r] of Object.entries(data.routes)){const points=r.points.map(p=>p.slice());if(r.destination)points.destination=r.destination;window.TreizeMiniAtlas.routes['upcoming-'+id]=points;}}
  registerRoutes();
- function mapPanel(scene){
+ function mapPanel(scene,individual=true){
   const route=scene.routeData||data.routes[scene.route],section=h('section','upcoming-map-panel');
-  if(!route){section.append(h('p','upcoming-caption','Le lieu exact de ce passage n’est pas précisé.'),link('Ouvrir l’atlas','carte.html'));return section;}
+  const view=h('div','upcoming-character-map');
+  if(individual)window.TreizeCartesPersonnages.mount(view,scene);
+  if(individual)section.append(view);
+  const scopedUrl=new URL(scene.atlasUrl||'carte.html',location.href);
+  scopedUrl.searchParams.set('scene',scene.id);
+  scopedUrl.searchParams.set('vue','personnages');
+  const full=link('Agrandir la carte des personnages',scopedUrl.href);
+  if(!route){
+    section.append(full);return section;
+  }
   const routeKey='upcoming-'+scene.route;
   if(window.TreizeMiniAtlas){const points=route.points.map(p=>p.slice());if(route.destination)points.destination=route.destination;window.TreizeMiniAtlas.routes[routeKey]=points;}
-  section.append(h('h3','',route.title));
-  const map=h('div','mini-atlas-map');map.dataset.route='upcoming-'+scene.route;map.dataset.maxZoom=route.zoom;
+  const itinerary=individual?h('details','upcoming-itinerary'):section;
+  if(individual){
+    itinerary.append(h('summary','',route.title+' · Voir le trajet'));
+    section.append(itinerary);
+    itinerary.addEventListener('toggle',()=>{if(itinerary.open){map.classList.add('mini-atlas-map');window.TreizeMiniAtlas?.mount();}});
+  }else itinerary.append(h('h3','',route.title));
+  const map=h('div',individual?'':'mini-atlas-map');map.dataset.route='upcoming-'+scene.route;map.dataset.maxZoom=route.zoom;
   map.setAttribute('role','img');map.setAttribute('aria-label',route.title+' : '+route.points.map(p=>p[0]).join(' → '));
   const list=h('ol','upcoming-stops');route.points.forEach(p=>list.append(h('li','',p[0])));
   if(route.destination)list.append(h('li','',route.destination[0]));
-  section.append(map,list,h('p','upcoming-caption',route.caption),h('p','upcoming-caption','Repères du récit reliés schématiquement, sans trace GPS.'),link('Ouvrir dans l’atlas',scene.atlasUrl||'carte.html?scene='+scene.id));
+  itinerary.append(map,list,h('p','upcoming-caption',route.caption),h('p','upcoming-caption','Repères du récit reliés schématiquement, sans trace GPS.'));
+  section.append(full);
   return section;
  }
  function prepareDialog(){
@@ -111,7 +126,7 @@
    group.append(main,row,h('p','chapter-card-status',path.scenes.some(id=>core.isAvailable(core.scene(data,id)))?'À vos marqueurs ! disponible · Autres jeux en préparation':'Jeux en préparation · Textes, personnages et cartes disponibles'));
    host.append(group);
    const interlude=h('div','upcoming-board-map');interlude.append(h('h3','',path.id==='IV'?'Les lieux du chemin IV · Rue Vaneau':'Les lieux du chemin V · De Plaisance à Vaneau'));
-   const scene=core.scene(data,path.id==='IV'?'demenagement':'traitre');interlude.append(mapPanel(scene));host.append(interlude);
+   const scene=core.scene(data,path.id==='IV'?'demenagement':'traitre');interlude.append(mapPanel(scene,false));host.append(interlude);
   }
   window.TreizeMiniAtlas?.mount();
  }

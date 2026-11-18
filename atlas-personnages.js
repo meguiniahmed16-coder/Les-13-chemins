@@ -100,6 +100,18 @@
    b.setAttribute('aria-label',p.name+' · '+p.role);
    return b;
  }
+ function roster(data,scene,chapter) {
+   const ids=cast[scene]||[7];
+   const present=ids.map(id=>data.byId.get(id)).filter(Boolean);
+   if(scene==='traitre'){
+     const extras=window.TreizeUpcomingData;
+     for(const key of extras?.scenes.find(s=>s.id===scene)?.people||[]){
+       if(key!=='ahmed'&&extras.profiles[key])present.push(extras.profiles[key]);
+     }
+   }
+   const remaining=(data.chapters[Number(chapter)]||[]).filter(id=>!ids.includes(id)).map(id=>data.byId.get(id));
+   return {present,remaining};
+ }
  function mountRoster(host,scene,chapter,collapsed=false) {
    if(!host||host.querySelector(':scope > .ap-roster'))return;
    const wrap=element(collapsed?'details':'div','ap-roster');
@@ -109,14 +121,8 @@
    async function fill(){
      if(started)return;started=true;area.textContent='Chargement des personnages…';
      try{
-       const data=await directory();const ids=cast[scene]||[7];
-       const present=ids.map(id=>data.byId.get(id)).filter(Boolean);
-       if(scene==='traitre'){
-         const extras=window.TreizeUpcomingData;
-         (extras?.scenes?.find(s=>s.id==='traitre')?.people||[]).filter(k=>k!=='ahmed').forEach(k=>{if(extras.profiles[k])present.push(extras.profiles[k]);});
-       }
+       const data=await directory();const {present,remaining}=roster(data,scene,chapter);
        area.replaceChildren();
-       const remaining=(data.chapters[Number(chapter)]||[]).filter(id=>!ids.includes(id)).map(id=>data.byId.get(id));
        for(const [label,group] of [['Dans cette scène',present],['Les personnages que vous ne connaissez pas encore',remaining]]){
          if(!group.length)continue;
          area.append(element('h3','',label));const grid=element('div','ap-rostergrid');
@@ -157,6 +163,6 @@
    if(fixed){fixed.classList.add('ap-game-screen');footer.classList.add('ap-after-screen');}
    mountRoster(footer,...game,true);
  }
- window.TreizeAtlasPersonnages={element,button,normal,number,directory,chip,show,mountRoster,games,cast};
+ window.TreizeAtlasPersonnages={element,button,normal,number,directory,chip,show,roster,mountRoster,games,cast};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',standalone);else standalone();
 })();

@@ -44,3 +44,22 @@ test('Les distributions et les compléments de chapitre référencent les mêmes
  assert.ok(cast.stoppub.includes(203)&&cast.stoppub.includes(267));
  assert.ok(chapters[7].includes(108)&&!cast.stoppub.includes(108));
 });
+
+test('Chaque carte de jeu conserve sa distribution, ses lieux du chapitre et les homonymes',()=>{
+ const ctx={document:{readyState:'loading',addEventListener(){},getElementById(){return null;}}};
+ ctx.window=ctx;
+ for(const file of ['chemins-en-cours-data.js','atlas-personnages.js','atlas-carte.js'])vm.runInNewContext(read(file),ctx);
+ const all={people,cities,chapters,byId};
+ for(const [id,chapter] of Object.values(games)){
+   const local=ctx.TreizeCartesPersonnages.chapterDirectory(all,{id,chapter});
+   assert.deepEqual(new Set(local.people.filter(p=>p.id).map(p=>p.id)),new Set([...chapters[chapter],...cast[id]]));
+   assert.equal(new Set([...local.byCity.values()].flat()).size,local.people.length);
+   assert.ok(local.cities.every(c=>local.byCity.get(c.id).length));
+ }
+ const local=ctx.TreizeCartesPersonnages.chapterDirectory(all,{id:'stoppub',chapter:7});
+ assert.ok(local.byCity.get('paris').some(p=>p.id===203&&local.present.has(p)));
+ assert.ok(local.byCity.get('paris').some(p=>p.id===108&&!local.present.has(p)));
+ assert.ok(!local.byCity.has('fer'));
+ const salon=ctx.TreizeCartesPersonnages.chapterDirectory(all,{id:'traitre',chapter:12});
+ assert.equal(salon.byCity.get('lieu-adaptation').length,6);
+});

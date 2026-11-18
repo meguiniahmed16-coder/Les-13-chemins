@@ -70,3 +70,16 @@ html.ap-standalone body:has(>.ap-gamefooter){flex-wrap:wrap}
 .ap-framebutton{display:block;position:relative;flex:0 0 auto;border:1px solid #aa9873;border-radius:4px;background:#f6edd9;color:#34483a;font:600 12px/1.25 system-ui,sans-serif;min-height:32px;padding:5px 10px;cursor:pointer}
 .ap-game-screen:not(:fullscreen){position:absolute!important;inset:0 0 auto!important;height:100dvh!important}
 .ap-after-screen{margin-top:100dvh}
+
+.ap-scene-map .ap-group-title{flex:1 0 100%;font:600 14px/1.4 system-ui,sans-serif;color:#465748;margin:8px 0 2px}
+.ap-unlocated{position:absolute;left:12px;top:48px;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.ap-unlocated button{border:1px solid #ab9878;background:var(--ap-paper);color:var(--ap-ink);font:600 12px/1.3 system-ui;padding:6px 8px;border-radius:4px}
+.ap-scene-map .ap-canvas>.ap-land{height:auto;min-width:0;max-height:none;max-width:none;display:block;margin:0}
+.upcoming-character-map .ap-panel{border:1px solid #c7b89b;border-radius:7px;overflow:hidden;height:clamp(390px,58dvh,590px);min-height:0;grid-template-columns:minmax(165px,27%) minmax(0,1fr)}
+.upcoming-itinerary{margin:12px 0}
+.upcoming-itinerary summary{cursor:pointer;padding:8px 0;color:#365345}
+@media(max-width:760px){
+ .upcoming-character-map .ap-panel{display:flex;flex-direction:column;height:auto}
+ .upcoming-character-map .ap-canvas{height:clamp(330px,52dvh,475px);order:-1}
+ .upcoming-character-map .ap-results{max-height:100px}
+}
