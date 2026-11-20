@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {destinations,offersForCountry} from './livraison.mjs';
 import {money} from './model.mjs';
 export const imageSrc=(src,admin=false)=>src.startsWith('/media/')?(admin?'/api/atelier':'/api/creations')+src:src;
@@ -27,6 +27,25 @@ export function clearReservation(piece,reservation){
 export function Piece({p,preview=false,onRefresh=()=>{}}){
  const [photo,selectPhoto]=useState(0),[size,selectSize]=useState(''),[delivery,setDelivery]=useState(''),[destination,setDestination]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [reservation,setReservation]=useState(()=>preview?null:getReservation(p.id));
+ useEffect(()=>{
+  if(preview||getReservation(p.id)||!p.variants.some(v=>v.reserved))return;
+  let active=true;
+  async function restore(){
+   const prefix='bois-achat:'+p.id+':';
+   for(const storageKey of Object.keys(sessionStorage).filter(key=>key.startsWith(prefix))){
+    const id=sessionStorage.getItem(storageKey);
+    if(!id)continue;
+    const r=await api('reservation',{id,piece:p.id});
+    if(!active)return;
+    if(!r.url){sessionStorage.removeItem(storageKey);continue;}
+    const current={id,url:r.url,until:r.expiresAt*1000,storageKey};
+    sessionStorage.setItem(reservationKey(p.id),JSON.stringify(current));
+    setReservation(current);return;
+   }
+  }
+  restore().catch(()=>{});
+  return ()=>{active=false;};
+ },[p,preview]);
  function forgetReservation(current){
   clearReservation(p.id,current);
   setReservation(null);
@@ -69,7 +88,7 @@ export function Piece({p,preview=false,onRefresh=()=>{}}){
   <div className="piece-copy"><p className="kind">{p.category||'Création en bois'}</p><h2>{p.title||'Nouvelle création'}</h2><p className="description">{p.description}</p>
   {(p.dimensions||p.material)&&<dl className="details">{p.material&&<div><dt>Matière</dt><dd>{p.material}</dd></div>}{p.dimensions&&<div><dt>Dimensions</dt><dd>{p.dimensions}</dd></div>}</dl>}
   <div className="commande"><h3 className="prix">{money(p.price||0)}</h3>
-  {(p.variants.length>1||v?.label!=='Pièce unique')&&<label className="bois-choice">Taille ou format<select value={v?.id} disabled={!!reservation} onChange={e=>selectSize(e.target.value)}>{p.variants.map(v=><option key={v.id} value={v.id} disabled={!v.stock}>{v.label}{!v.stock?' · épuisé':''}</option>)}</select></label>}
+  {(p.variants.length>1||v?.label!=='Pièce unique')&&<label className="bois-choice">Taille ou format<select value={v?.id} disabled={!!reservation} onChange={e=>selectSize(e.target.value)}>{p.variants.map(v=><option key={v.id} value={v.id} disabled={!v.stock}>{v.label}{!v.stock?(v.reserved?' · réservé':' · épuisé'):''}</option>)}</select></label>}
   {reservation?<div className="bois-paiement"><a className="action" href={reservation.url}>Reprendre mon paiement</a><button className="bois-autres" type="button" disabled={busy} onClick={release}>Annuler la réservation</button></div>:v?.stock>0?<>{(places.length+(pickup?1:0)>1)&&<label className="bois-choice">Destination<select value={chosen} onChange={e=>{setDestination(e.target.value);setDelivery('');setError('');}}>{places.map(c=><option key={c} value={c}>{countryLabel(c)}</option>)}{pickup&&<option value="pickup">Retrait sur place</option>}</select></label>}
   {options.length>1&&<label className="bois-choice">Mode de livraison ou de retrait<select value={z?.id} onChange={e=>setDelivery(e.target.value)}>{options.map(z=><option key={z.id} value={z.id}>{z.label} · {z.fee?money(z.fee):'inclus'}</option>)}</select></label>}
   {z&&<p className="livraison" aria-live="polite">{z.label}{z.pickup?'':z.fee?' · '+money(z.fee):' · port inclus'}</p>}
@@ -79,7 +98,7 @@ export function Piece({p,preview=false,onRefresh=()=>{}}){
     <small>Google Pay ou Apple Pay selon votre appareil</small>
    </button>
    <button type="button" className="bois-autres" disabled={preview||busy||!z} onClick={()=>buy('standard')}>Autres moyens de paiement</button>
-  </div>}</>:<p className="bois-sold">Épuisé</p>}
+  </div>}</>:<p className="bois-sold">{v?.reserved?'Pièce réservée pour un paiement en cours.':'Épuisé'}</p>}
   {error&&<p role="alert">{error}</p>}<br/><a className="contact-piece" href={contact}>Écrire à Ahmed</a></div></div>
  </article>;
 }

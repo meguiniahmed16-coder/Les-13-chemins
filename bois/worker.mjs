@@ -101,6 +101,11 @@ async function checkout(env,body){
  await query(env,"UPDATE bois_orders SET status='open',session=?,url=? WHERE id=? AND status='creating'",session.id,session.url,id).run();
  return reply({url:session.url,expiresAt:o.created+3600});
 }
+async function resumeCheckout(env,{id,piece}){
+ if(!uuid.test(id))fail(400,'Réservation invalide.');
+ const order=await query(env,"SELECT url,created FROM bois_orders WHERE id=? AND piece=? AND status='open' AND created>?",id,piece,now()-3600).first();
+ return reply(order?{url:order.url,expiresAt:order.created+3600}:{});
+}
 async function cancelCheckout(env,{id}){
  if(!uuid.test(id))fail(400,'Réservation invalide.');
  const order=await query(env,'SELECT status,session FROM bois_orders WHERE id=?',id).first();
@@ -161,6 +166,7 @@ export default {
    if(!visible)fail(404,'Photo introuvable.');return readImage(path.slice(6),env,true);
   }
   if(path==='/checkout'&&req.method==='POST')return await checkout(env,await jsonBody(req,2048));
+  if(path==='/reservation'&&req.method==='POST')return await resumeCheckout(env,await jsonBody(req,256));
   if(path==='/cancel'&&req.method==='POST')return await cancelCheckout(env,await jsonBody(req,256));
   if(!path.startsWith('/admin/'))fail(404,'Page inconnue.');await authenticate(req,env);
   if(path==='/admin/catalog'&&req.method==='GET')return reply(await catalog(env,true));

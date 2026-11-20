@@ -35,6 +35,6 @@ export function normalize(input,state){
 }
 export const money=n=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:n%100?2:0,minimumFractionDigits:n%100?2:0}).format(n/100);
 export function project(row,counts,admin=false){
- const p=JSON.parse(row.data);const variants=p.variants.map(v=>{const tally=counts.find(c=>c.piece===row.id&&c.variant===v.id)||{};const stock=Math.max(0,v.stock-(tally.paid||0));const held=tally.held||0;return {...v,stock:admin?stock:Math.max(0,stock-held),...(admin?{held}:{})};});
+ const p=JSON.parse(row.data);const variants=p.variants.map(v=>{const tally=counts.find(c=>c.piece===row.id&&c.variant===v.id)||{};const stock=Math.max(0,v.stock-(tally.paid||0));const held=tally.held||0;return {...v,stock:admin?stock:Math.max(0,stock-held),...(admin?{held}:{reserved:held>0&&stock>0})};});
  return {...p,id:row.id,revision:row.revision,state:row.state,variants};
 }

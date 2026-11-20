@@ -113,6 +113,10 @@ test('Le paiement express privilégie les portefeuilles et une annulation libèr
   return Response.json(session);
  });
  assert.equal((await checkout(order,'express',1)).status,200);
+ assert.equal((await catalog()).variants[0].reserved,true);
+ const resume=await (await call('/reservation',{id:order,piece})).json();
+ assert.equal(resume.url,'https://checkout.stripe.com/c/pay/cs_wallet');
+ assert.deepEqual(await (await call('/reservation',{id:order,piece:crypto.randomUUID()})).json(),{});
  assert.equal(creations[0].get('allowed_payment_method_types[0]'),'card');
  assert.equal(creations[0].get('wallet_options[link][display]'),'never');
  assert.ok(creations[0].get('cancel_url').includes('#annuler='+order+'&piece='+piece));
@@ -121,7 +125,7 @@ test('Le paiement express privilégie les portefeuilles et une annulation libèr
  assert.equal((await call('/cancel',{id:order})).status,200);
  assert.equal((await call('/cancel',{id:order})).status,200);
  assert.equal(expirationCalls,1);
- const available=await catalog();assert.equal(available.variants[0].stock,1);
+ const available=await catalog();assert.equal(available.variants[0].stock,1);assert.equal(available.variants[0].reserved,false);
  session.id='cs_standard';session.status='open';session.metadata.bois_order=crypto.randomUUID();
  assert.equal((await checkout(session.metadata.bois_order,'standard',available.revision)).status,200);
  assert.equal(creations[1].has('allowed_payment_method_types[0]'),false);
