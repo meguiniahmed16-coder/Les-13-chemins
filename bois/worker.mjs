@@ -1,4 +1,5 @@
 import {origin,page,seed,legacyId,legacyLink,legacyStripe,uuid,normalize,project,fail} from './model.mjs';
+import {offersForCountry} from './livraison.mjs';
 import {getKey,saveKey,stripe,verifiedEvent} from './stripe.mjs';
 import {readImage} from '../double-backend/media.js';
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
@@ -30,7 +31,7 @@ async function save(env,input){
  if((prev?.revision||0)!==input.revision)fail(409,'Cette fiche a changé. Recharge la liste avant de la modifier.');
  const p=normalize(input,input.state);const old=prev&&JSON.parse(prev.data);
  if(old?.legacy){
-   const commercial=v=>JSON.stringify([v.price,v.variants.map(x=>[x.id,x.label]),v.zones]);
+   const commercial=v=>JSON.stringify([v.price,v.variants.map(x=>[x.id,x.label]),v.zones.filter(z=>!z.world)]);
    if(commercial(p)!==commercial(seed))fail(400,'Les conditions de cette vente existante sont gérées dans Stripe.');
    p.legacy=true;
  }else if(input.state==='published'&&!(await getKey(env)))fail(409,'Enregistre le brouillon puis relie Stripe pour publier.');
@@ -60,19 +61,30 @@ async function checkout(env,body){
  const {id,piece,variant,zone}=body;if(!uuid.test(id)||!(uuid.test(piece)||piece===legacyId))fail(400,'Commande invalide.');
  const row=await query(env,"SELECT * FROM bois_pieces WHERE id=? AND state='published'",piece).first();
  if(!row)fail(404,'Cette pièce ne se vend plus.');const p=JSON.parse(row.data);
- if(p.legacy)return reply({url:legacyLink});
+ const v=p.variants.find(x=>x.id===variant),z=p.zones.find(x=>x.id===zone);
+ if(!v||!z)fail(400,'Choisis une taille et une livraison disponibles.');
+ const country=body.country;
+ if(country!==undefined&&(typeof country!=='string'||!offersForCountry(p.zones,country).some(offer=>offer.id===zone)))fail(400,'Ce tarif ne correspond pas au pays de livraison.');
+ if(z.world&&!country)fail(400,'Choisis le pays de livraison.');
+ if(p.legacy){
+  if(z.id!=='france')fail(409,'Contacte Ahmed pour commander cette bague à l’international.');
+  const current=await catalog(env,false);
+  if(!current.pieces.find(item=>item.id===piece)?.variants.some(item=>item.id===variant&&item.stock>0))fail(409,'Cette pièce est épuisée.');
+  return reply({url:legacyLink});
+ }
  const token=await getKey(env);if(!token)fail(503,'Le paiement est temporairement indisponible.');
- const v=p.variants.find(x=>x.id===variant),z=p.zones.find(x=>x.id===zone);if(!v||!z)fail(400,'Choisis une taille et une livraison disponibles.');
  let o=await query(env,'SELECT * FROM bois_orders WHERE id=?',id).first();
  if(!o){
   if(body.revision!==row.revision)fail(409,'La fiche a changé. Actualise-la avant de commander.');
   const img=p.photos[0]?.src;
-  const snap={title:p.title,variant:v.label,delivery:z.label,price:p.price,fee:z.fee,pickup:z.pickup,countries:z.countries,photo:img?(img.startsWith('/media/')?origin+'/api/creations'+img:origin+img):''};
+  const snap={title:p.title,variant:v.label,delivery:z.label,price:p.price,fee:z.fee,pickup:z.pickup,countries:z.pickup?[]:country?[country]:z.countries,photo:img?(img.startsWith('/media/')?origin+'/api/creations'+img:origin+img):''};
   const sql="INSERT OR IGNORE INTO bois_orders(id,piece,variant,zone,status,snapshot,created) SELECT ?,?,?,?,'creating',?,? WHERE EXISTS(SELECT 1 FROM bois_pieces WHERE id=? AND revision=? AND state='published') AND (SELECT COUNT(*) FROM bois_orders WHERE piece=? AND variant=? AND status IN ('creating','open','waiting','paid'))<?";
   await query(env,sql,id,piece,variant,zone,JSON.stringify(snap),now(),piece,row.revision,piece,variant,v.stock).run();
   o=await query(env,'SELECT * FROM bois_orders WHERE id=?',id).first();
  }
  if(!o||o.piece!==piece||o.variant!==variant||o.zone!==zone)fail(409,'Cette option n’est plus disponible. Actualise la collection.');
+ const saved=JSON.parse(o.snapshot);
+ if(country&&!saved.pickup&&(saved.countries.length!==1||saved.countries[0]!==country))fail(409,'Une autre destination utilise déjà cette tentative.');
  if(o.status==='open'&&o.created+3600>now())return reply({url:o.url});
  if(o.status!=='creating'||o.created+1800<=now())fail(409,'Cette tentative est terminée. Actualise la collection.');
  let session;try{session=await stripe(token,'/checkout/sessions',sessionParams(o),'bois-'+o.id);}catch(e){

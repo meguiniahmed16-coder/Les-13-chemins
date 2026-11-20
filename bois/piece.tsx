@@ -1,21 +1,31 @@
 import React,{useState} from 'react';
+import {destinations,offersForCountry} from './livraison.mjs';
 import {money} from './model.mjs';
 export const imageSrc=(src,admin=false)=>src.startsWith('/media/')?(admin?'/api/atelier':'/api/creations')+src:src;
 const countryName=new Intl.DisplayNames(['fr'],{type:'region'});
 export const countryLabel=c=>countryName.of(c)||c;
+export const sortCountries=list=>[...list].sort((a,b)=>countryLabel(a).localeCompare(countryLabel(b),'fr'));
 export async function api(path,body?){
  const r=await fetch('/api/creations/'+path,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:body?{'content-type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(26000)});
  const data=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(data.error||'Le service est indisponible. Réessaie.'),{status:r.status});return data;
 }
 export function Piece({p,preview=false,onRefresh=()=>{}}){
- const [photo,selectPhoto]=useState(0),[size,selectSize]=useState(''),[delivery,setDelivery]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const picked=p.photos[photo]||p.photos[0];const v=p.variants.find(v=>v.id===size)||p.variants.find(v=>v.stock>0)||p.variants[0];const z=p.zones.find(z=>z.id===delivery)||p.zones[0];
+ const [photo,selectPhoto]=useState(0),[size,selectSize]=useState(''),[delivery,setDelivery]=useState(''),[destination,setDestination]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const picked=p.photos[photo]||p.photos[0];const v=p.variants.find(v=>v.id===size)||p.variants.find(v=>v.stock>0)||p.variants[0];const places=sortCountries(destinations(p.zones));
+ const pickup=p.zones.some(zone=>zone.pickup);
+ const chosen=places.includes(destination)||pickup&&destination==='pickup'?destination:places.includes('FR')?'FR':places[0]||(pickup?'pickup':'');
+ const options=offersForCountry(p.zones,chosen);
+ const z=options.find(zone=>zone.id===delivery)||options[0];
+ const total=money((p.price||0)+(z?.fee||0));
+ const contact='mailto:meguiniahmed16@gmail.com?subject='+encodeURIComponent('L’odeur du bois – '+p.title);
+ const internationalRequest=p.legacy&&z?.world;
+ const requestMessage=internationalRequest?'Bonjour Ahmed,\n\nJe souhaite commander la bague '+p.title+' avec une livraison vers '+countryLabel(chosen)+'. Le total affiché est de '+total+', dont '+money(z.fee)+' de port. Peux-tu me confirmer sa disponibilité et les modalités de paiement ?':'';
  async function buy(){
   if(busy||preview||!v||!z)return;setBusy(true);setError('');
-  const storageKey='bois-achat:'+p.id+':'+v.id+':'+z.id;
+  const storageKey='bois-achat:'+p.id+':'+v.id+':'+z.id+':'+chosen;
   try{
    let id=sessionStorage.getItem(storageKey);if(!id){id=crypto.randomUUID();sessionStorage.setItem(storageKey,id);}
-   const r=await api('checkout',{id,piece:p.id,variant:v.id,zone:z.id,revision:p.revision});
+   const r=await api('checkout',{id,piece:p.id,variant:v.id,zone:z.id,country:chosen,revision:p.revision});
    const u=new URL(r.url);if(u.protocol!=='https:'||!['buy.stripe.com','checkout.stripe.com'].includes(u.hostname))throw Error('Le paiement est indisponible.');
    location.assign(u.href);
   }catch(e){setError(e.message);if(e.status===409){sessionStorage.removeItem(storageKey);onRefresh();}}finally{setBusy(false);}
@@ -26,9 +36,10 @@ export function Piece({p,preview=false,onRefresh=()=>{}}){
   {(p.dimensions||p.material)&&<dl className="details">{p.material&&<div><dt>Matière</dt><dd>{p.material}</dd></div>}{p.dimensions&&<div><dt>Dimensions</dt><dd>{p.dimensions}</dd></div>}</dl>}
   <div className="commande"><h3 className="prix">{money(p.price||0)}</h3>
   {(p.variants.length>1||v?.label!=='Pièce unique')&&<label className="bois-choice">Taille ou format<select value={v?.id} onChange={e=>selectSize(e.target.value)}>{p.variants.map(v=><option key={v.id} value={v.id} disabled={!v.stock}>{v.label}{!v.stock?' · épuisé':''}</option>)}</select></label>}
-  {v?.stock>0?<>{p.zones.length>1&&<label className="bois-choice">Livraison ou retrait<select value={z?.id} onChange={e=>setDelivery(e.target.value)}>{p.zones.map(z=><option key={z.id} value={z.id}>{z.label} · {z.fee?money(z.fee):'inclus'}</option>)}</select></label>}
-  {z&&<p className="livraison">{z.label}{z.pickup?'':z.fee?' · '+money(z.fee):' · port inclus'}{!z.pickup&&<small>{z.countries.map(countryLabel).join(', ')}</small>}</p>}
-  {!preview&&p.legacy?<a className="action" href="/api/creations/buy/santal-rose">Acheter cette bague · {money(p.price)}</a>:<button type="button" className="action" disabled={preview||busy||!z} onClick={buy}>{busy?'Ouverture de Stripe…':'Acheter · '+money((p.price||0)+(z?.fee||0))}</button>}</>:<p className="bois-sold">Épuisé</p>}
-  {error&&<p role="alert">{error}</p>}<br/><a className="contact-piece" href={'mailto:meguiniahmed16@gmail.com?subject='+encodeURIComponent('L’odeur du bois – '+p.title)}>Écrire à Ahmed</a></div></div>
+  {v?.stock>0?<>{(places.length+(pickup?1:0)>1)&&<label className="bois-choice">Destination<select value={chosen} onChange={e=>{setDestination(e.target.value);setDelivery('');setError('');}}>{places.map(c=><option key={c} value={c}>{countryLabel(c)}</option>)}{pickup&&<option value="pickup">Retrait sur place</option>}</select></label>}
+  {options.length>1&&<label className="bois-choice">Mode de livraison ou de retrait<select value={z?.id} onChange={e=>setDelivery(e.target.value)}>{options.map(z=><option key={z.id} value={z.id}>{z.label} · {z.fee?money(z.fee):'inclus'}</option>)}</select></label>}
+  {z&&<p className="livraison" aria-live="polite">{z.label}{z.pickup?'':z.fee?' · '+money(z.fee):' · port inclus'}</p>}
+  {internationalRequest?<>{!preview?<a className="action" href={contact+'&body='+encodeURIComponent(requestMessage)}>Demander la bague · {total}</a>:<button className="action" disabled>Demander la bague · {total}</button>}<p>Commande internationale par e-mail.</p></>:!preview&&p.legacy?<a className="action" href="/api/creations/buy/santal-rose">Acheter cette bague · {total}</a>:<button type="button" className="action" disabled={preview||busy||!z} onClick={buy}>{busy?'Ouverture de Stripe…':'Acheter · '+total}</button>}</>:<p className="bois-sold">Épuisé</p>}
+  {error&&<p role="alert">{error}</p>}<br/><a className="contact-piece" href={contact}>Écrire à Ahmed</a></div></div>
  </article>;
 }

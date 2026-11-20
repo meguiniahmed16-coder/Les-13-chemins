@@ -45,3 +45,52 @@ test('Création, brouillon, taille, port, concurrence, abandon et paiement sign�
  assert.equal((await call('/admin/save',{...after.pieces[0],state:'archived'},admin)).status,200);assert.equal(await cat(),undefined);
  const fake=await call('/webhook',{type:'checkout.session.completed'});assert.equal(fake.status,400);
 });
+
+test('Le pays détermine le tarif, le total et l’adresse acceptée dans Stripe',async t=>{
+ const {worldZone,offersForCountry,destinations}=await import('./livraison.mjs');
+ const {normalize}=await import('./model.mjs');
+ const world=worldZone();
+ const canada={id:crypto.randomUUID(),label:'Colis Canada',countries:['CA'],fee:1400,pickup:false};
+ const pickup={id:crypto.randomUUID(),label:'Remise sur place',countries:[],fee:0,pickup:true};
+ const zones=[...seed.zones,canada,world,pickup];
+ assert.deepEqual(offersForCountry(zones,'FR'),seed.zones);
+ assert.deepEqual(offersForCountry(zones,'CA'),[canada]);
+ for(const country of ['SN','JP','US','ZA']) assert.deepEqual(offersForCountry(zones,country),[world]);
+ assert.deepEqual(offersForCountry(zones,'pickup'),[pickup]);
+ assert.deepEqual(offersForCountry(zones,'ZZ'),[]);
+ assert.ok(destinations(zones).length>200);
+ assert.throws(()=>normalize({...seed,zones:[...zones,{...world,id:crypto.randomUUID()}]},'published'));
+ const env={DB:database(),STRIPE_RESTRICTED_KEY:'test-only'};
+ const piece=crypto.randomUUID(),record={...seed,zones,legacy:false};
+ await env.DB.prepare("INSERT INTO bois_pieces VALUES(?,1,'published',?,0)").bind(piece,JSON.stringify(record)).run();
+ let fields;
+ t.mock.method(globalThis,'fetch',async (url,init)=>{fields=init.body;return Response.json({id:'cs_international',url:'https://checkout.stripe.com/c/pay/cs_international'});});
+ const post=body=>worker.fetch(new Request(origin+'/checkout',{method:'POST',headers:{origin},body:JSON.stringify(body)}),env,{});
+ const body={piece,id:crypto.randomUUID(),variant:'unique',zone:world.id,revision:1};
+ assert.equal((await post(body)).status,400);
+ for(const country of ['CA','FR','ZZ']) assert.equal((await post({...body,country})).status,400);
+ assert.equal((await post({...body,country:'JP',zone:'france'})).status,400);
+ assert.equal((await post({...body,country:'SN'})).status,200);
+ assert.equal(fields.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'),'850');
+ assert.equal(fields.get('shipping_address_collection[allowed_countries][0]'),'SN');
+ assert.equal(fields.has('shipping_address_collection[allowed_countries][1]'),false);
+ const snap=JSON.parse(await env.DB.prepare('SELECT snapshot FROM bois_orders WHERE id=?').bind(body.id).first('snapshot'));
+ assert.equal(snap.price+snap.fee,4750);
+ assert.equal((await post({...body,country:'JP'})).status,409);
+ assert.equal((await post({...body,country:'SN'})).status,200);
+});
+
+test('La fiche de la bague permet de régler le port international tout en protégeant son lien France',async()=>{
+ const {worldZone}=await import('./livraison.mjs');
+ const env={DB:database(),AUTH:{fetch:async()=>new Response(null)}};
+ await env.DB.prepare("INSERT INTO bois_pieces VALUES('santal-rose',1,'published',?,0)").bind(JSON.stringify(seed)).run();
+ const zones=[...seed.zones,worldZone()];
+ const post=(path,body)=>worker.fetch(new Request(origin+path,{method:'POST',headers:{origin,cookie:'__Host-am_site_admin=test'},body:JSON.stringify(body)}),env,{});
+ const row={...seed,id:'santal-rose',revision:1,state:'published',zones};
+ assert.equal((await post('/admin/save',row)).status,200);
+ assert.equal((await post('/admin/save',{...row,revision:2,zones:[{...zones[0],fee:300},zones[1]]})).status,400);
+ const body={id:crypto.randomUUID(),piece:row.id,variant:'unique',zone:'france',country:'FR',revision:2};
+ assert.equal((await post('/checkout',body)).status,200);
+ assert.equal((await post('/checkout',{...body,country:'JP'})).status,400);
+ assert.equal((await post('/checkout',{...body,country:'JP',zone:'reste-du-monde'})).status,409);
+});

@@ -1,10 +1,10 @@
+import {countries} from './livraison.mjs';
 export const origin='https://tectonique-des-ames.com';
 export const page=origin+'/l-odeur-du-bois.html';
 export const legacyId='santal-rose';
 export const legacyLink='https://buy.stripe.com/3cI9AV6Gc2aZ1MG2zE1sQ04?locale=fr';
 export const legacyStripe='plink_1UdiTMPdtc1VYes6qnX4Tkte';
 export const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-export const countries='AD AE AL AM AR AT AU BA BE BG BR CA CH CL CN CO CR CY CZ DE DK DZ EE EG ES FI FR GB GE GF GP GR HK HR HU ID IE IL IN IS IT JP KR LI LT LU LV MA MC ME MQ MT MX MY NC NL NO NZ PE PF PL PT RE RO RS SA SE SG SI SK TH TN TR TW UA US UY VN YT ZA'.split(' ');
 export const seed={title:'Santal rose',category:'Bague',material:'Bois de santal rose',description:'Un anneau en bois de santal rose, large et arrondi. De fines lignes sombres suivent la courbe du bois jusque sur la face intérieure.',dimensions:'',price:3900,photos:[
  ['sur-letabli','Sur l’établi'],['sur-le-bloc','Le fil du bois'],['sur-le-support','L’intérieur de l’anneau'],['profil','Le profil arrondi']
 ].map(([file,caption])=>({src:'/assets/atelier/bague-'+file+'.webp',caption})),variants:[{id:'unique',label:'Pièce unique',stock:1}],zones:[{id:'france',label:'Envoi suivi en France',countries:['FR'],fee:0,pickup:false}],legacy:true};
@@ -26,7 +26,11 @@ export function normalize(input,state){
  check(new Set(p.variants.map(v=>v.id)).size===p.variants.length,'Tailles en double.');
  check(Array.isArray(input.zones)&&input.zones.length<=16&&(!live||input.zones.length),'Ajoute un mode de livraison ou de retrait.');
  p.zones=input.zones.map(z=>{const label=str(z.label,130);check(label&&typeof z.pickup==='boolean'&&amount(z.fee,1000000),'Vérifie les libellés et frais de port.');
- const list=z.pickup?[]:[...new Set(Array.isArray(z.countries)?z.countries:[])];check(z.pickup||list.length&&list.every(c=>countries.includes(c)),'Sélectionne les pays desservis.');return {id:key(z.id),label,countries:list,fee:z.pickup?0:z.fee,pickup:z.pickup};});
+ const world=z.world===true;check(!(world&&z.pickup),'Un retrait ne peut pas couvrir le reste du monde.');
+ const list=z.pickup||world?[]:[...new Set(Array.isArray(z.countries)?z.countries:[])];
+ check(z.pickup||world||list.length&&list.every(c=>countries.includes(c)),'Sélectionne les pays desservis.');
+ return {id:world&&z.id==='reste-du-monde'?z.id:key(z.id),label,countries:list,fee:z.pickup?0:z.fee,pickup:z.pickup,...(world?{world:true}:{})};});
+ check(p.zones.filter(zone=>zone.world).length<=1,'Un seul tarif Reste du monde est possible.');
  check(new Set(p.zones.map(z=>z.id)).size===p.zones.length,'Modes de livraison en double.');return p;
 }
 export const money=n=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:n%100?2:0,minimumFractionDigits:n%100?2:0}).format(n/100);
