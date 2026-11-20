@@ -55,3 +55,9 @@ figcaption { margin-top: 7px; font-size: .875rem; color: var(--muted); }
 .bois-choice select{padding:10px;border:1px solid var(--rule);background:#fffdf7;font:inherit;color:var(--ink);width:100%}
 .commande .action{font:600 1rem/1.35 system-ui;border:0;cursor:pointer}
 .livraison small{display:block}.piece+.piece{border-top:1px solid var(--rule)}.description{white-space:pre-line}
+
+.bois-paiement { display: grid; gap: 5px; }
+.bois-paiement .action { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+.bois-paiement .action small { font: 400 .8rem/1.4 system-ui; }
+.bois-autres { justify-self: center; min-height: 44px; background: transparent; border: 0; color: var(--ink); cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: .2em; }
+.bois-paiement :disabled { opacity: .65; cursor: default; }

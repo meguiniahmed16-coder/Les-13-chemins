@@ -50,6 +50,14 @@ function sessionParams(order){
  const s=JSON.parse(order.snapshot),prefix='line_items[0]';
  const fields={mode:'payment',integration_identifier:'odeur_du_bois_jxomwqer',locale:'fr',success_url:page+'?commande=retour',cancel_url:page+'?piece='+order.piece,expires_at:String(order.created+3600),'metadata[bois_order]':order.id,
  [prefix+'[quantity]']:'1',[prefix+'[price_data][currency]']:'eur',[prefix+'[price_data][unit_amount]']:String(s.price),[prefix+'[price_data][product_data][name]']:s.title+' · '+s.variant};
+ if(s.checkoutMode){
+  fields.cancel_url=page+'#annuler='+order.id+'&piece='+order.piece;
+  fields.success_url=page+'?commande=retour#commande='+order.id+'&piece='+order.piece;
+  if(s.checkoutMode==='express'){
+   fields['allowed_payment_method_types[0]']='card';
+   fields['wallet_options[link][display]']='never';
+  }
+ }
  if(s.photo)fields[prefix+'[price_data][product_data][images][0]']=s.photo;
  if(!s.pickup){
   s.countries.forEach((c,i)=>fields['shipping_address_collection[allowed_countries]['+i+']']=c);
@@ -77,7 +85,7 @@ async function checkout(env,body){
  if(!o){
   if(body.revision!==row.revision)fail(409,'La fiche a changé. Actualise-la avant de commander.');
   const img=p.photos[0]?.src;
-  const snap={title:p.title,variant:v.label,delivery:z.label,price:p.price,fee:z.fee,pickup:z.pickup,countries:z.pickup?[]:country?[country]:z.countries,photo:img?(img.startsWith('/media/')?origin+'/api/creations'+img:origin+img):''};
+  const snap={checkoutMode:body.checkoutMode==='express'?'express':'standard',title:p.title,variant:v.label,delivery:z.label,price:p.price,fee:z.fee,pickup:z.pickup,countries:z.pickup?[]:country?[country]:z.countries,photo:img?(img.startsWith('/media/')?origin+'/api/creations'+img:origin+img):''};
   const sql="INSERT OR IGNORE INTO bois_orders(id,piece,variant,zone,status,snapshot,created) SELECT ?,?,?,?,'creating',?,? WHERE EXISTS(SELECT 1 FROM bois_pieces WHERE id=? AND revision=? AND state='published') AND (SELECT COUNT(*) FROM bois_orders WHERE piece=? AND variant=? AND status IN ('creating','open','waiting','paid'))<?";
   await query(env,sql,id,piece,variant,zone,JSON.stringify(snap),now(),piece,row.revision,piece,variant,v.stock).run();
   o=await query(env,'SELECT * FROM bois_orders WHERE id=?',id).first();
@@ -85,13 +93,30 @@ async function checkout(env,body){
  if(!o||o.piece!==piece||o.variant!==variant||o.zone!==zone)fail(409,'Cette option n’est plus disponible. Actualise la collection.');
  const saved=JSON.parse(o.snapshot);
  if(country&&!saved.pickup&&(saved.countries.length!==1||saved.countries[0]!==country))fail(409,'Une autre destination utilise déjà cette tentative.');
- if(o.status==='open'&&o.created+3600>now())return reply({url:o.url});
+ if(o.status==='open'&&o.created+3600>now())return reply({url:o.url,expiresAt:o.created+3600});
  if(o.status!=='creating'||o.created+1800<=now())fail(409,'Cette tentative est terminée. Actualise la collection.');
  let session;try{session=await stripe(token,'/checkout/sessions',sessionParams(o),'bois-'+o.id);}catch(e){
   if(e.definitive)await query(env,"UPDATE bois_orders SET status='expired' WHERE id=? AND status='creating'",id).run();throw e;
  }
  await query(env,"UPDATE bois_orders SET status='open',session=?,url=? WHERE id=? AND status='creating'",session.id,session.url,id).run();
- return reply({url:session.url});
+ return reply({url:session.url,expiresAt:o.created+3600});
+}
+async function cancelCheckout(env,{id}){
+ if(!uuid.test(id))fail(400,'Réservation invalide.');
+ const order=await query(env,'SELECT status,session FROM bois_orders WHERE id=?',id).first();
+ if(!order||order.status==='expired')return reply({released:true});
+ if(order.status!=='open'||!order.session)fail(409,'Le paiement a déjà été transmis ou est encore en cours.');
+ const token=await getKey(env);
+ const path='/checkout/sessions/'+order.session;
+ let session=await stripe(token,path);
+ if(session.id!==order.session||session.metadata?.bois_order!==id)fail(409,'Réservation introuvable.');
+ if(session.status==='open'){
+  try{session=await stripe(token,path+'/expire',{},'bois-annuler-'+id);}
+  catch(error){session=await stripe(token,path);if(session.status==='open')throw error;}
+ }
+ await settle(env,session,'reconcile');
+ if(session.status!=='expired')fail(409,'Le paiement a déjà été transmis.');
+ return reply({released:true});
 }
 function deliveryInfo(s){
  const shipping=s.collected_information?.shipping_details||s.shipping_details||{};
@@ -136,6 +161,7 @@ export default {
    if(!visible)fail(404,'Photo introuvable.');return readImage(path.slice(6),env,true);
   }
   if(path==='/checkout'&&req.method==='POST')return await checkout(env,await jsonBody(req,2048));
+  if(path==='/cancel'&&req.method==='POST')return await cancelCheckout(env,await jsonBody(req,256));
   if(!path.startsWith('/admin/'))fail(404,'Page inconnue.');await authenticate(req,env);
   if(path==='/admin/catalog'&&req.method==='GET')return reply(await catalog(env,true));
   if(req.method!=='POST')fail(405,'Méthode refusée.');const body=await jsonBody(req);

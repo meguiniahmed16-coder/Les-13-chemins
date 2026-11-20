@@ -94,3 +94,40 @@ test('La fiche de la bague permet de régler le port international tout en prot�
  assert.equal((await post('/checkout',{...body,country:'JP'})).status,400);
  assert.equal((await post('/checkout',{...body,country:'JP',zone:'reste-du-monde'})).status,409);
 });
+
+test('Le paiement express privilégie les portefeuilles et une annulation libère la pièce avant de changer de moyen',async t=>{
+ const env={DB:database(),STRIPE_RESTRICTED_KEY:'test-only'};
+ const piece=crypto.randomUUID(),order=crypto.randomUUID();
+ await env.DB.prepare("INSERT INTO bois_pieces VALUES(?,1,'published',?,0)").bind(piece,JSON.stringify({...seed,legacy:false})).run();
+ const call=(path,body)=>worker.fetch(new Request(origin+path,{method:'POST',headers:{origin},body:JSON.stringify(body)}),env,{});
+ const catalog=async()=>(await (await worker.fetch(new Request(origin+'/catalog'),env,{})).json()).pieces[0];
+ const checkout=(id,checkoutMode,revision)=>call('/checkout',{id,checkoutMode,piece,revision,zone:'france',variant:'unique',country:'FR'});
+ const session={id:'cs_wallet',status:'open',payment_status:'unpaid',metadata:{bois_order:order}};
+ const creations=[];
+ let expirationCalls=0;
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  if(url.endsWith('/checkout/sessions')){
+   creations.push(options.body);return Response.json({...session,url:'https://checkout.stripe.com/c/pay/cs_wallet'});
+  }
+  if(url.endsWith('/expire')){expirationCalls++;session.status='expired';}
+  return Response.json(session);
+ });
+ assert.equal((await checkout(order,'express',1)).status,200);
+ assert.equal(creations[0].get('allowed_payment_method_types[0]'),'card');
+ assert.equal(creations[0].get('wallet_options[link][display]'),'never');
+ assert.ok(creations[0].get('cancel_url').includes('#annuler='+order+'&piece='+piece));
+ assert.equal((await call('/cancel',{id:crypto.randomUUID()})).status,200);
+ assert.equal((await catalog()).variants[0].stock,0);
+ assert.equal((await call('/cancel',{id:order})).status,200);
+ assert.equal((await call('/cancel',{id:order})).status,200);
+ assert.equal(expirationCalls,1);
+ const available=await catalog();assert.equal(available.variants[0].stock,1);
+ session.id='cs_standard';session.status='open';session.metadata.bois_order=crypto.randomUUID();
+ assert.equal((await checkout(session.metadata.bois_order,'standard',available.revision)).status,200);
+ assert.equal(creations[1].has('allowed_payment_method_types[0]'),false);
+ assert.equal(creations[1].has('wallet_options[link][display]'),false);
+ Object.assign(session,{status:'complete',payment_status:'paid',currency:'eur',amount_total:3900});
+ assert.equal((await call('/cancel',{id:session.metadata.bois_order})).status,409);
+ assert.equal(expirationCalls,1);
+ assert.equal((await catalog()).variants[0].stock,0);
+});
