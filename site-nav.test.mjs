@@ -46,3 +46,15 @@ test('private editor pages do not create visitor events',()=>{
   assert.doesNotMatch(injectSharedNavigation('<html><head></head><body></body></html>','admin.html'),/site-visits.js/);
 });
 
+test('La connexion mène au salon et le menu du compte rassemble les accès et la navigation publique',()=>{
+  for(const [page,query] of [['index.html',''],['admin.html','?auteur=edition'],['admin-blog.html','?auteur=atelier']]){
+    const nav=injectSharedNavigation('<html><head></head><body></body></html>',page);
+    assert.ok(nav.includes('class="site-account" href="https://tectonique-des-ames.com/membre.html'+query+'"'));
+  }
+  const source=readFileSync(new URL('./membre.html',import.meta.url),'utf8');
+  const member=injectSharedNavigation(source,'membre.html'),menu=member.match(/<details id="member-menu"[\s\S]*?<\/details>/)[0];
+  assert.equal((member.match(/<summary/g)||[]).length,(source.match(/<summary/g)||[]).length);
+  for(const id of ['tabs','choose-signup','choose-login','logout','admin-return'])assert.ok(menu.includes('id="'+id+'"'));
+  assert.equal((menu.match(/data-nav-section=/g)||[]).length,5);
+  assert.equal(injectSharedNavigation(member,'membre.html'),member);
+});

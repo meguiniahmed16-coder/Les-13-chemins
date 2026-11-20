@@ -70,3 +70,21 @@ test('La caméra peut pivoter, se déplacer et zoomer indépendamment du personn
   const before={...c};moveCamera(c,80,55,390,650);assert.notEqual(c.x,before.x);assert.equal(c.follow,false);
   zoomCamera(c,1.5);assert.ok(c.zoom>before.zoom);assert.deepEqual([m.x,m.z,m.yaw],start);
 });
+test('Sur les trois coussins, les épaules restent de niveau, les mains reposent sur les cuisses et les pieds touchent le sol',()=>{
+  for(const seat of seats.slice(0,3)){
+    const m=newMotion();m.goToSeat(seat);until(m,()=>m.mode==='seated');
+    const b=m.bones(),point=(j,v)=>[0,1,2].map(row=>100*b[j*16+12+row]+v.reduce((n,x,k)=>n+x*b[j*16+k*4+row],0));
+    const shoulders=[-1,1].map(side=>point(14,[side*17.3,133.6,-5.3]));
+    assert.ok(Math.abs(shoulders[0][1]-shoulders[1][1])<3);
+    for(const side of [-1,1]){
+      const foot=side<0?10:13,hand=side<0?4:7;
+      const ankle=point(foot,[side*15.7455,7.8552,-1.8594]),knee=point(foot-1,[side*12.4664,47.2046,-2.4319]);
+      const fingers=point(hand,[side*45.26,77.79,-1.07]);
+      assert.ok(Math.abs(ankle[1]-7.85)<.2);
+      assert.ok(knee[1]>seat.height+4);
+      assert.ok(Math.abs(fingers[0]-knee[0])<8);
+      assert.ok(fingers[1]-knee[1]>5 && fingers[1]-knee[1]<12);
+      assert.ok(Math.abs(fingers[2]-knee[2])<11);
+    }
+  }
+});

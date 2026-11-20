@@ -2,18 +2,17 @@
 export const bounds = {minX:-3.01,maxX:3.01,minZ:-2.34,maxZ:2.60};
 export const roomFocus = {x:-1.17,y:.89,z:-1.69};
 export const seats=[
- ['sofa1','Canapé · côté étagères',450,-863,36,90,48],['sofa2','Canapé · milieu',449,-775,36,90,49],['sofa3','Canapé · côté baie',450,-685,36,90,48],
+ ['sofa1','Canapé · côté étagères',450,-854,36,90,48],['sofa2','Canapé · milieu',449,-775,36,90,49],['sofa3','Canapé · côté baie',450,-694,36,90,48],
  ['chair','Fauteuil',639,-783,44,-90,54],
  ['west1','Chaise côté salon · 1',741,-813,40,90,35],['west2','Chaise côté salon · 2',742,-749,40,90,35],
  ['east1','Chaise côté buffet · 1',930,-814,40,-90,38],['east2','Chaise côté buffet · 2',931,-750,40,-90,38],
  ['end1','Chaise en bout · côté entrée',836,-923,40,0,38],['end2','Chaise en bout · côté baie',845,-632,40,180,38]
 ].map(([id,name,x,z,height,deg,gap])=>{
- const yaw=deg*Math.PI/180,depth=id.indexOf('sofa')===0?16:id==='chair'?6:0;
+ const yaw=deg*Math.PI/180,depth=id==='sofa2'?7:id.startsWith('sofa')?9:id==='chair'?6:0;
  return {id,name,label:name,x:x-depth*Math.sin(yaw),z:z-depth*Math.cos(yaw),height,yaw,gap:gap+depth}
 });
-// Arm contacts sampled on the original upholstery at these four places.
-const supports={"sofa1":{"x":44,"z":-49,"height":70.34164155939013,"side":1,"cushion":false},"sofa2":{"x":24,"z":-60,"height":36.76764301970661,"side":1,"cushion":true},"sofa3":{"x":-40,"z":-49,"height":69.08248423095584,"side":-1,"cushion":false},"chair":{"x":30,"z":-55,"height":56.90353067665522,"side":1,"cushion":false}};
-for(const seat of seats)seat.support=supports[seat.id];
+// Local armrest contact on the upholstered armchair. On the sofa the hands rest on the thighs.
+seats.find(seat=>seat.id==='chair').support={x:30,z:-55,height:56.9,side:1};
 const blocks=[[392,482,-917,-636],[421,465,-956,-910],[516,586,-717,-607],[600,702,-834,-734],[796,874,-871,-696],[954,1015,-843,-721]];
 for(const s of seats.slice(4))blocks.push([s.x-21,s.x+21,s.z-21,s.z+21]);
 export function roomFree(x,z){

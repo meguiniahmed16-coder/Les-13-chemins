@@ -1,5 +1,5 @@
 // The Summer Man salon solve from Salon-V27-Duo. Joint coordinates are in centimetres.
-import {roomClear,roomPath} from './salon-plan.js?v=salon-v27';
+import {roomClear,roomPath} from './salon-plan.js?v=salon29';
 const clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
 
 // All geometry, joints and contact distances are expressed in the same centimetre space.
@@ -219,12 +219,16 @@ function manualFoot(side){
 }
 function roomPose(t){
  const steering=room.mode==='steer',walking=room.mode==='walk'||room.mode==='brake'||steering,u=room.sit,s=ease(u),seat=room.seat;
- const sofa=seat?.id?.indexOf('sofa')===0,lounge=sofa||seat?.id==='chair';
+ const sofa=seat?.id.startsWith('sofa'),middle=seat?.id==='sofa2';
+ const armrest=seat?.support,sofaTurn=seat?.id==='sofa1'?-.065:seat?.id==='sofa3'?.065:0;
  const settle=phase(.62,1,u),adjust=phase(.16,.62,u),legSide=seat?.id==='sofa1'||seat?.id==='east2'?-1:1;
- const support=lounge&&u>0?seat.support:null,lean=support?support.side*(support.cushion?.25:.075)*settle:0;
+ const lean=armrest?armrest.side*.075*settle:0;
  const feet=walking?[-1,1].map(steering?manualFoot:floorStride):[-1,1].map(side=>{
-  const front=side===legSide;
-  return {point:[side*(8.65+(lounge?2.15:.65)*adjust),7.85+(front?.95:.55)*Math.sin(Math.PI*adjust)**2,-1+(front?(lounge?(side===support?.side?-4:-13):4.8):-(lounge?(side===support?.side?7:14):3.0))*adjust],
+  const front=side===legSide,onArm=side===armrest?.side;
+  let width=.65,depth=front?4.8:-3;
+  if(sofa){width=front?5.6:4.2;depth=front?1:-6;}
+  if(armrest){width=2.15;depth=front?(onArm?-4:-13):(onArm?-7:-14);}
+  return {point:[side*(8.65+width*adjust),7.85+(front?.95:.55)*Math.sin(Math.PI*adjust)**2,-1+depth*adjust],
    yaw:side*(.043+(front?.12:.055)*s),roll:0,weight:0}
  });
  const drive=Math.max(feet[0].weight,feet[1].weight),step=2*Math.PI*((steering?stick.phase:room.t/1.10)-.30),beat=Math.cos(step),sub=Math.cos(2*step);
@@ -234,10 +238,12 @@ function roomPose(t){
  hip[1]+=( (seat?.height||40)+8.65-hip[1])*s;
  hip[2]+=-(back-2.1)*phase(.12,.99,u)+2.4*Math.sin(2*Math.PI*s)*bend;
  hip[0]+=.60*bend+.38*legSide*settle;
- const pitch=.018+drive*(.024+.009*sub)+.52*bend-(lounge?.040:.10)*settle;
- const lowerR=oriented(.038*beat*drive+.025*legSide*settle,pitch,-.021*beat*drive+.014*bend+.025*legSide*settle-lean*.78);
+ // The middle cushion leaves room to lean forward. At the ends the pelvis rolls back into the pillows.
+ const seatedPitch=sofa?(middle?.095:-.18):armrest?-.040:-.10;
+ const pitch=.018+drive*(.024+.009*sub)+.52*bend+seatedPitch*settle;
+ const lowerR=oriented(.038*beat*drive+(.025*legSide+sofaTurn)*settle,pitch,-.021*beat*drive+.014*bend+.025*legSide*settle-lean*.78);
  const torso=transformAt(lowerR,hipPivot,hip);
- const rib=[0,109,-3.3],neck=[0,140,-3.3],chest=matrixProduct(lowerR,oriented(-.080*beat*drive-.045*legSide*settle+(support?support.side*.37*settle:0),-.125*bend+.055*settle,.024*beat*drive-.010*legSide*settle-lean*.72));
+ const rib=[0,109,-3.3],neck=[0,140,-3.3],chest=matrixProduct(lowerR,oriented(-.080*beat*drive-.045*legSide*settle+(armrest?armrest.side*.37*settle:0),-.125*bend+(middle?.045:.055)*settle,.024*beat*drive-.010*legSide*settle-lean*.72));
  const upper=transformAt(chest,rib,place(torso,rib)),bones=life.bones;
  bones[0]=torso;bones[14]=upper;
  let anticipation=0;
@@ -251,10 +257,20 @@ function roomPose(t){
   if(arm){
    const armSwing=9.4*Math.tanh((other.point[2]-foot.point[2])*.026);
    const rest=[side*(21.8+.32*Math.sin(clock*1.13)+.42*drive),88.5+.8*drive*Math.abs(beat)+.24*breath+Math.max(0,armSwing)*.09,3.8+armSwing];
-   const knee=life.knees[side<0?0:1],onSupport=support&&support.side===side;
-   const lap=onSupport?[support.x,support.height+(support.cushion?5.4:4.3),support.z-6.4]:
-    [knee[0]-side*1.5,knee[1]+(lounge?9.2:10.5),knee[2]-(lounge?9:side===legSide?8:14)];
-   dest=mix3(rest,lap,s);dest[1]+=3.3*bend;dest[2]+=9.8*bend;if(support&&!onSupport){start[1]-=2.4*settle;start[2]+=2.6*settle}pole=[side*(onSupport?.88:.51),-.20-.78*s,-1];
+   const knee=life.knees[side<0?0:1],onArm=armrest?.side===side;
+   let lap=[knee[0]-side*1.5,knee[1]+10.5,knee[2]-(side===legSide?8:14)];
+   if(sofa){
+    const forward=side===legSide;
+    const handHeight=middle?(forward?11.25:12.5):(forward?12.15:12.8);
+    const thighHeight=Math.max(hip[1],knee[1]);
+    lap=[knee[0]-side*(forward?2.2:3.7),thighHeight+handHeight,knee[2]-(middle?15:22)-(forward?0:3)];
+   }else if(armrest){
+    lap=onArm?[armrest.x,armrest.height+4.3,armrest.z-6.4]:[knee[0]-side*1.5,knee[1]+9.2,knee[2]-9];
+    if(!onArm){start[1]-=2.4*settle;start[2]+=2.6*settle;}
+   }
+   dest=mix3(rest,lap,s);dest[1]+=3.3*bend;dest[2]+=9.8*bend;
+   pole=[side*(onArm?.88:.51),-.20-.78*s,-1];
+
   }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1]}
   const [joint,tip]=reachChain(l,start,dest,pole),first=2+3*i;
   const a=rotation(minus(l.b,l.a),minus(joint,start)),b=rotation(minus(l.c,l.b),minus(tip,joint));

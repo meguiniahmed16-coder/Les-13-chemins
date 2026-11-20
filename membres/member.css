@@ -22,3 +22,8 @@
   #salon-layout.has-panel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
   #salon-layout .room chemins-avatar{--room-height:48dvh;min-height:0}
 }
+
+#salon,.tabpane{scroll-margin-block-start:68px}
+@media(max-width:700px) and (orientation:portrait){
+  #salon-layout.has-panel .tabpane{scroll-margin-block-start:calc(96px + clamp(145px,27dvh,255px))}
+}

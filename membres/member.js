@@ -23,6 +23,18 @@ function action(fn){return async event=>{
   if(button.disabled)return;button.disabled=true;
   try{await fn(event);}catch(e){note(e.message||'La connexion a été interrompue.');}finally{button.disabled=false;}
 };}
+const menu=$('member-menu'),menuToggle=menu.querySelector('summary');
+function closeMenu(returnFocus=false){
+  if(!menu.open)return;
+  menu.open=false;
+  if(returnFocus)menuToggle.focus({preventScroll:true});
+}
+menu.addEventListener('click',event=>{
+  if(event.target.closest('a,button'))closeMenu(true);
+});
+document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))closeMenu();});
+document.addEventListener('focusin',e=>{if(!menu.contains(e.target))closeMenu();});
+document.addEventListener('keydown',e=>{if(menu.open&&e.key==='Escape'){e.preventDefault();closeMenu(true);}});
 function mode(value){
   signup=value;$('choose-login').setAttribute('aria-pressed',String(!value));$('choose-signup').setAttribute('aria-pressed',String(value));
   $('auth-title').textContent=value?'Créer mon compte':'Se connecter';
@@ -46,18 +58,23 @@ function setPage(){
   $('room').querySelector('chemins-avatar')?.openOptions(key==='avatar');
   $('salon-layout').classList.toggle('has-panel',!roomOnly);
   if(key!=='parcours')closeFilm();
+  return key;
 }
 function openPanel(event){
   const link=event.target.closest('a[href^="#"]');
   if(!link||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
   event.preventDefault();
   if(location.hash!==link.hash)history.pushState(null,'',link.hash);
-  setPage();
+  const key=setPage();
+  if(key){
+    const section=$(key==='avatar'?'salon':key),heading=section.querySelector('h2');
+    heading.tabIndex=-1;heading.focus({preventScroll:true});section.scrollIntoView({block:'start'});
+  }
 }
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=studio28b');
+  await import('./avatar.js?v=salon29');
   if(!member)return;
   let view=$('room').querySelector('chemins-avatar');
   if(!view){
@@ -138,6 +155,7 @@ async function refresh(){
   const previous=member, previousDraft=appearance;
   try{member=await api('me');}catch(e){if(e.status!==401)throw e;member=null;}
   $('photo-link').hidden=!member;
+  $('access-options').hidden=Boolean(member||authorEntry);$('tabs').hidden=!member;
   $('auth').hidden=Boolean(member);$('member').hidden=!member;$('logout').hidden=!member;
   $('admin-return').hidden=!member?.author && !authorEntry;
   $('admin-return').href=adminURL(member?.author||authorEntry);
@@ -185,7 +203,8 @@ async function refresh(){
   }
   note(member.pseudo?'':'Choisis ton pseudo et renseigne ta date de naissance pour entrer dans le salon.');
 }
-$('choose-login').onclick=()=>mode(false);$('choose-signup').onclick=()=>mode(true);
+function chooseAccess(value){mode(value);closeMenu();$('email').focus();}
+$('choose-login').onclick=()=>chooseAccess(false);$('choose-signup').onclick=()=>chooseAccess(true);
 $('auth-form').onsubmit=action(async e=>{const form=e.target;await api(signup?'signup':'login',Object.fromEntries(new FormData(form)));form.reset();await refresh();});
 $('logout').onclick=action(async()=>{await api('logout',{});disableJourneyTracking();closeFilm();await refresh();});
 $('profile-form').onsubmit=action(async e=>{await api('profile',Object.fromEntries(new FormData(e.target)));await refresh();note('Ton profil est enregistré.');});

@@ -1,5 +1,5 @@
 // Salon coordinates are in metres. Yaw zero faces the positive Z axis.
-import {bounds, roomFocus, visiblePart, seatForPart} from './salon-plan.js?v=salon-v27';
+import {bounds, roomFocus, visiblePart, seatForPart} from './salon-plan.js?v=salon29';
 
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 
@@ -57,4 +57,4 @@ export function seatAt(bytes,c,w,h,sx,sy) {
   return seat;
 }
 
-export {SalonMotion} from './salon-v27-motion.js?v=studio28b';
+export {SalonMotion} from './salon-v27-motion.js?v=salon29';

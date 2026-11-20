@@ -3,8 +3,8 @@
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js';
 import {createDrawer} from './studio-drawer.js?v=studio28b';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=studio28b';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=studio28b';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon29';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon29';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
@@ -249,7 +249,7 @@ export class CheminsAvatar extends HTMLElement {
       if(!forceSoftware){try{view=createView(this.#gpu,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js?v=studio28b');
+        const {createSoftwareView}=await import('./avatar-software.js?v=salon29');
         if(epoch!==this.#epoch||!this.isConnected)return;
         view=createSoftwareView(this.#cpu,room,lightMap,cameraProjection);
       }

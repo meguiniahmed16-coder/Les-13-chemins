@@ -1,5 +1,5 @@
-import {visiblePart} from './salon-plan.js?v=studio28b';
-import {SalonMotion,newCamera} from './salon-navigation.js?v=studio28b';
+import {visiblePart} from './salon-plan.js?v=salon29';
+import {SalonMotion,newCamera} from './salon-navigation.js?v=salon29';
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 
 const lightDirection = [-.426, .596, .681];
