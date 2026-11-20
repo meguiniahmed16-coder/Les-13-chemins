@@ -23,7 +23,7 @@ confirm.onclick=async()=>{
     const response=await fetch('/api/creations/retractation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...values,id:attempt,confirm:true}),signal:AbortSignal.timeout(22000)});
     if(!response.ok)throw Error();
     const r=await response.json();
-    const receipt='LA TECTONIQUE DES ÂMES — ACCUSÉ DE RÉCEPTION\nRétractation reçue le '+new Date(r.received).toLocaleString('fr-FR',{timeZone:'Europe/Paris',timeZoneName:'short'})+'\nRéférence : '+r.id+'\n\n'+summary()+'\n\nContact : meguiniahmed16@gmail.com\n';
+    const receipt='LA TECTONIQUE DES ÂMES — ACCUSÉ DE RÉCEPTION\nRétractation reçue le '+new Date(r.received).toLocaleString('fr-FR',{timeZone:'Europe/Paris',timeZoneName:'short'})+'\nRéférence : '+r.id+'\n\n'+summary()+'\n\nContact : ahmedmarie@tectonique-des-ames.com\n';
     document.querySelector('#copie').textContent=receipt;
     const link=document.querySelector('#telecharger-accuse');link.href=URL.createObjectURL(new Blob(['\uFEFF',receipt],{type:'text/plain;charset=utf-8'}));
     link.download='accuse-retractation-'+r.id+'.txt';

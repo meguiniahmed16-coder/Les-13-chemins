@@ -70,7 +70,7 @@ export function Piece({p,preview=false,onRefresh=()=>{}}){
  const options=offersForCountry(p.zones,chosen);
  const z=options.find(zone=>zone.id===delivery)||options[0];
  const total=money((p.price||0)+(z?.fee||0));
- const contact='mailto:meguiniahmed16@gmail.com?subject='+encodeURIComponent('L’odeur du bois – '+p.title);
+ const contact='mailto:ahmedmarie@tectonique-des-ames.com?subject='+encodeURIComponent('L’odeur du bois – '+p.title);
  const internationalRequest=p.legacy&&z?.world;
  const requestMessage=internationalRequest?'Bonjour Ahmed,\n\nJe souhaite commander la bague '+p.title+' avec une livraison vers '+countryLabel(chosen)+'. Le total affiché est de '+total+', dont '+money(z.fee)+' de port. Peux-tu me confirmer sa disponibilité et les modalités de paiement ?':'';
  async function buy(checkoutMode){

@@ -250,7 +250,9 @@ const arrivalData = stops.map((stop, i) => {
 await mkdir(output);
 const terms=await readFile(join(root,termsFile.slice(1)),'utf8');
 const termsPage='conditions-de-vente.html';
-await writeFile(join(output,termsPage),canonicalizeSource(injectLegal(injectSharedNavigation(injectAnalytics(terms,termsPage),termsPage)),termsPage));
+const currentOrderContact = '<p>Pour écrire au service des commandes, utilisez <a href="mailto:ahmedmarie@tectonique-des-ames.com">ahmedmarie@tectonique-des-ames.com</a>.</p>';
+const termsWithContact = terms.replace('</h1>', '</h1>' + currentOrderContact);
+await writeFile(join(output,termsPage),canonicalizeSource(injectLegal(injectSharedNavigation(injectAnalytics(termsWithContact,termsPage),termsPage)),termsPage));
 await writeFile(join(output,termsFile.slice(1)),terms.replace('<head>','<head><base href="https://tectonique-des-ames.com/"><style>body{max-width:48rem;margin:2rem auto;padding:1rem;font:16px/1.6 Georgia,serif}.legal-box{padding:1rem;border:1px solid}</style>'));
 await writeFile(join(output,'atlas-dialogues.json'), JSON.stringify(await characterDirectory()));
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
