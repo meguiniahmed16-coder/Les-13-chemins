@@ -252,17 +252,26 @@ function roomPose(t){
    const armSwing=9.4*Math.tanh((other.point[2]-foot.point[2])*.026);
    const rest=[side*(21.8+.32*Math.sin(clock*1.13)+.42*drive),88.5+.8*drive*Math.abs(beat)+.24*breath+Math.max(0,armSwing)*.09,3.8+armSwing];
    const knee=life.knees[side<0?0:1],onSupport=support&&support.side===side;
-   const lap=onSupport?[support.x,support.height+(support.cushion?4.6:2.8),support.z-6.4]:
-    [knee[0]-side*1.5,knee[1]+(side===legSide||lounge?6.9:7.8),knee[2]-(lounge?12:side===legSide?11:20)];
-   dest=mix3(rest,lap,s);dest[1]+=3.3*bend;dest[2]+=9.8*bend;if(support&&!onSupport){start[1]-=2.4*settle;start[2]+=2.6*settle}pole=[side*(onSupport?.88:.59),-.20,-1];
+   const lap=onSupport?[support.x,support.height+(support.cushion?5.4:4.3),support.z-6.4]:
+    [knee[0]-side*1.5,knee[1]+(lounge?9.2:10.5),knee[2]-(lounge?9:side===legSide?8:14)];
+   dest=mix3(rest,lap,s);dest[1]+=3.3*bend;dest[2]+=9.8*bend;if(support&&!onSupport){start[1]-=2.4*settle;start[2]+=2.6*settle}pole=[side*(onSupport?.88:.51),-.20-.78*s,-1];
   }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1]}
   const [joint,tip]=reachChain(l,start,dest,pole),first=2+3*i;
   const a=rotation(minus(l.b,l.a),minus(joint,start)),b=rotation(minus(l.c,l.b),minus(tip,joint));
   bones[first]=transformAt(a,l.a,start);bones[first+1]=transformAt(b,l.b,joint);
   let end=arm?b:oriented(foot.yaw,foot.roll);
-  if(arm&&s>.01){
+  if(arm){
    const finger=normal([side*.27,-.96,-.01]),palm=normal([-side*.86,-.27,-.42]);
-   end=mapHand(finger,palm,mix3(rotateV(b,finger),[support&&support.side===side?.025*side:-side*.11,support&&support.side===side&&support.cushion?-.35:support&&support.side!==side?-.45:-.13,.99],s),mix3(rotateV(b,palm),[0,-1,-.13],s))
+   const axis=normal(minus(tip,joint)),restAxis=normal(minus(l.c,l.b));
+   const palmDown=mix3(rotateV(b,palm),[0,-1,-.13],s);
+   const forearm=s?mapHand(restAxis,palm,axis,palmDown):b;
+   bones[first+1]=transformAt(forearm,l.b,joint);
+   const relaxed=normal(mix3(axis,rotateV(forearm,finger),.30));
+   const desired=normal(mix3(relaxed,[-side*.05,-.18,.98],s));
+   const angle=Math.acos(clamp(dot(axis,desired),-1,1));
+   const aim=normal(mix3(axis,desired,Math.min(1,.35/Math.max(.001,angle))));
+   end=mapHand(finger,palm,aim,palmDown);
+
   }
   bones[first+2]=transformAt(end,l.c,tip);
   if(!arm)life.knees.push(joint);

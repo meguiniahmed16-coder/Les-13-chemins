@@ -42,6 +42,17 @@ test('Le compte privé persiste, les accès sont séparés et la déconnexion r�
   assert.deepEqual((await (await api('me',null,cookie)).json()).journey,{games:['sarajevo'],videos:[],scenes:['sarajevo']});
   assert.equal((await api('logout',{},cookie)).status,200);assert.equal((await api('me',null,cookie)).status,401);
 });
+test('La garde-robe V27 persiste et refuse les réglages privés ou réservés',async()=>{
+  const {api}=setup(),registered=await api('signup',account),c=registered.headers.get('set-cookie').split(';')[0];
+  const {avatar,studio}=await (await api('me',null,c)).json();
+  const choice={...studio,face:{...studio.face,nose:1},outfit:{...studio.outfit,haut:'mh1416'}};
+  assert.equal((await api('avatar',{avatar,studio:choice},c)).status,200);
+  assert.deepEqual((await (await api('me',null,c)).json()).studio,choice);
+  for(const invalid of [{...choice,face:{...choice.face,seat:2}},{...choice,outfit:{...choice.outfit,bas:'mh1194'}}]){
+    assert.equal((await api('avatar',{avatar,studio:invalid},c)).status,403);
+  }
+  assert.deepEqual((await (await api('me',null,c)).json()).studio,choice);
+});
 test('Le renouvellement payé ouvre les options et la fin du contrat ferme les droits même si Stripe réessaie un ancien événement',async()=>{
   const {DB,api}=setup();const signed=await api('signup',account);const c=signed.headers.get('set-cookie').split(';')[0];
   const m=await (await api('me',null,c)).json();const start=await (await api('checkout',{},c)).json();

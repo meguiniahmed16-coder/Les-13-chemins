@@ -1,4 +1,4 @@
-import {avatarCatalog} from './avatar-catalog.js';
+import {normaliseStudio} from './studio-look.js';
 import {games,scenes,videos,mergeJourney,importDeviceJourney,enableJourneyTracking,disableJourneyTracking} from './journey.js';
 
 const $=id=>document.getElementById(id);
@@ -37,12 +37,14 @@ function setPage(){
   const selected=location.hash.slice(1);
   const key=member.pseudo?(pages.includes(selected)?selected:'salon'):'profil';
   for(const name of pages){
-    if(name!=='salon')$(name).hidden=name!==key;
+    if(name!=='salon'&&name!=='avatar')$(name).hidden=name!==key;
     const link=$('tabs').querySelector('[href="#'+name+'"]');
     if(name===key)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
   }
-  $('salon-panels').hidden=key==='salon';
-  $('salon-layout').classList.toggle('has-panel',key!=='salon');
+  const roomOnly=key==='salon'||key==='avatar';
+  $('salon-panels').hidden=roomOnly;
+  $('room').querySelector('chemins-avatar')?.openOptions(key==='avatar');
+  $('salon-layout').classList.toggle('has-panel',!roomOnly);
   if(key!=='parcours')closeFilm();
 }
 function openPanel(event){
@@ -55,7 +57,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=salon-v27');
+  await import('./avatar.js?v=studio28');
   if(!member)return;
   let view=$('room').querySelector('chemins-avatar');
   if(!view){
@@ -63,7 +65,14 @@ async function mountRoom(){
     view.addEventListener('avatar-ready',()=>updatePhoto(view));
     $('room').append(view);
   }
-  view.avatar=appearance;updatePhoto(view);
+  const who=member.id;
+  await view.configure(appearance,{plus:Boolean(member.author||member.companion),privateURL:member.author?'/membre-atelier.html?auteur='+encodeURIComponent(member.author):'',change:draft=>{if(member?.id===who)appearance=draft;},save:async studio=>{
+    if(member?.id!==who)throw Error('Ta session a changé.');
+    const result=await api('avatar',{avatar:member.avatar,studio});
+    if(!result.studio)throw Error('Le serveur n’a pas confirmé cet enregistrement.');
+    if(member?.id===who){member.avatar=result.avatar;member.studio=result.studio;updatePhoto(view);}
+  }});
+  if(location.hash==='#avatar')view.openOptions();
 }
 function updatePhoto(view){
   if(!member||!view)return;
@@ -96,14 +105,6 @@ function renderJourney(){
   displayList('played',games.filter(x=>j.games.includes(x.id)),'game','Ton premier jeu apparaîtra ici dès que tu y auras joué.');
   displayList('watched',videos.filter(x=>j.videos.includes(x.id)),'video','Retrouve ici les vidéos découvertes pendant ton voyage.');
   displayList('films',videos,'video','');
-}
-function wardrobe(previousDraft){
-  appearance={...(previousDraft||member.avatar)};$('choices').replaceChildren();
-  for(const group of avatarCatalog){
-    const label=el('label',group.label),select=el('select');select.name=group.key;
-    for(const item of group.options){const opt=el('option',item.label+(item.companion?' · Compagnon de route':''));opt.value=item.id;opt.disabled=item.companion&&!member.companion&&!member.author;select.append(opt);}
-    select.value=appearance[group.key];select.onchange=()=>{appearance[group.key]=select.value;const model=$('room').querySelector('chemins-avatar');if(model)model.avatar={...appearance};};label.append(select);$('choices').append(label);
-  }
 }
 function providerControls(providers){
   const panel=$('admin-providers');panel.replaceChildren();
@@ -141,7 +142,7 @@ async function refresh(){
   $('admin-return').hidden=!member?.author && !authorEntry;
   $('admin-return').href=adminURL(member?.author||authorEntry);
   if(!member){
-    $('room').replaceChildren();$('choices').replaceChildren();$('admin-providers').replaceChildren();
+    $('room').replaceChildren();$('admin-providers').replaceChildren();
     $('photo').removeAttribute('src');appearance=null;
     disableJourneyTracking();
     if(authorEntry){
@@ -161,8 +162,6 @@ async function refresh(){
   }
   enableJourneyTracking(member.id);
   $('logout').hidden=Boolean(member.author);
-  $('private-atelier').hidden=!member.author;
-  $('private-atelier').href='/membre-atelier.html?auteur='+encodeURIComponent(member.author||'');
   $('provider-settings').hidden=!member.author;
   $('photo').src='/assets/membres/summer-man.webp';
   $('profile-form').elements.birth.required=!member.author;
@@ -173,8 +172,8 @@ async function refresh(){
   $('subscribe').hidden=member.companion||Boolean(member.author);
   if(member.author)$('plan-status').textContent='Ton accès auteur comprend toutes les options de personnalisation.';
   $('offer-price').hidden=$('renewal').hidden=Boolean(member.author);
-  const keepDraft=previous?.id===member.id && JSON.stringify(previous.avatar)===JSON.stringify(member.avatar);
-  wardrobe(keepDraft?previousDraft:null);renderJourney();setPage();
+  const keepDraft=previous?.id===member.id && JSON.stringify(previous.studio||previous.avatar)===JSON.stringify(member.studio||member.avatar);
+  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar);renderJourney();setPage();
   void mountRoom().catch(()=>note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.'));
   if(member.author){
     const expected=member;
@@ -190,7 +189,6 @@ $('choose-login').onclick=()=>mode(false);$('choose-signup').onclick=()=>mode(tr
 $('auth-form').onsubmit=action(async e=>{const form=e.target;await api(signup?'signup':'login',Object.fromEntries(new FormData(form)));form.reset();await refresh();});
 $('logout').onclick=action(async()=>{await api('logout',{});disableJourneyTracking();closeFilm();await refresh();});
 $('profile-form').onsubmit=action(async e=>{await api('profile',Object.fromEntries(new FormData(e.target)));await refresh();note('Ton profil est enregistré.');});
-$('wardrobe').onsubmit=action(async()=>{const result=await api('avatar',{avatar:appearance});member.avatar=result.avatar;updatePhoto($('room').querySelector('chemins-avatar'));note('Ton avatar est enregistré pour le salon.');});
 $('import').onclick=action(async()=>{const found=importDeviceJourney();await api('journey',{memberId:member.id,...found});member.journey=mergeJourney(member.journey,found);renderJourney();note(Object.values(found).some(x=>x.length)?'Le parcours de cet appareil a été ajouté à ton parcours.':'Aucune ancienne étape enregistrée sur cet appareil.');});
 $('subscribe').onclick=action(async()=>{const result=await api('checkout',{});location.assign(result.url);});
 $('close-player').onclick=closeFilm;

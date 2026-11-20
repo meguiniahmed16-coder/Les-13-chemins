@@ -38,16 +38,21 @@ test('Le joystick interrompt le trajet ou relève le personnage avant de marcher
 });
 test('Les poignets suivent les avant-bras au repos et les paumes suivent le support en position assise',()=>{
   const m=newMotion(),bones=m.bones();
-  for(const hand of [4,7]){
-    for(const i of [0,1,2,4,5,6,8,9,10])assert.equal(bones[16*hand+i],bones[16*(hand-1)+i]);
-    assert.ok(Math.abs(bones[16*hand+1])>.1);
+  for(const [hand,side] of [[4,-1],[7,1]]){
+    const direction=(j,v)=>[0,1,2].map(row=>v.reduce((n,x,c)=>n+x*bones[16*j+4*c+row],0));
+    const fingers=direction(hand,[side*.27,-.96,-.01]),arm=direction(hand-1,[side*12.06,-18.2,2.31]);
+    const angle=Math.acos(fingers.reduce((n,x,i)=>n+x*arm[i],0)/(Math.hypot(...fingers)*Math.hypot(...arm)));
+    assert.ok(angle<8*Math.PI/180);
   }
-  m.goToSeat(seats[3]);until(m,()=>m.mode==='seated');
-  const seated=m.bones();
-  for(const [joint,side] of [[4,-1],[7,1]]){
-    const i=16*joint;
-    const palmY=seated[i+1]*(-side*.86)+seated[i+5]*(-.27)+seated[i+9]*(-.42);
-    assert.ok(palmY<-.80);
+  for(const seat of seats){
+    m.goToSeat(seat);until(m,()=>m.mode==='seated');const posed=m.bones();
+    const rotate=(joint,v)=>[0,1,2].map(row=>v.reduce((sum,val,c)=>sum+posed[16*joint+row+4*c]*val,0));
+    for(const [hand,side] of [[4,-1],[7,1]]){
+      const fingers=rotate(hand,[side*.27,-.96,-.01]),arm=rotate(hand-1,[side*12.06,-18.2,2.31]);
+      const cosine=fingers.reduce((sum,val,i)=>sum+val*arm[i],0)/(Math.hypot(...fingers)*Math.hypot(...arm));
+      assert.ok(cosine>Math.cos(22*Math.PI/180),seat.id+' : flexion du poignet');
+      assert.ok(rotate(hand,[-side*.86,-.27,-.42])[1]<-.70,seat.id+' : orientation de la paume');
+    }
   }
 });
 test('Un toucher sur le coussin réel de chaque siège sélectionne la bonne place',()=>{

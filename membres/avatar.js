@@ -1,9 +1,10 @@
 // Summer Man uses the CC0 MakeHuman/MPFB model. Garment authors and original
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
-import {normaliseAvatar} from './avatar-catalog.js';
-import {POSE_BONES,loadPoseWeights,buildPoseWeights} from './salon-pose.js?v=salon-v27';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon-v27';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon-v27';
+import {legacyStudio} from './studio-look.js';
+import {loadStudio} from './studio-model.js';
+import {createDrawer} from './studio-drawer.js';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=studio28';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=studio28';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
@@ -15,58 +16,24 @@ async function unpack(name) {
   return new Response(stream).arrayBuffer();
 }
 
-let actorPromise, roomPromise;
-function actor() {
-  return actorPromise ??= loadActor().catch(error => { actorPromise = null; throw error; });
-}
-async function loadActor() {
-  const file = await unpack('summer-man.bin'), header = new DataView(file);
-  const jsonBytes = header.getUint32(12, true);
-  const manifest = JSON.parse(new TextDecoder().decode(new Uint8Array(file,20,jsonBytes)));
-  const bin = 28 + jsonBytes;
-  const view = index => {
-    const v = manifest.bufferViews[index];
-    return new Uint8Array(file,bin + (v.byteOffset || 0),v.byteLength);
-  };
-  const attribute = index => view(manifest.accessors[index].bufferView);
-  const textures = await Promise.all(manifest.images.map(async item => {
-    const blob = new Blob([view(item.bufferView)],{type:item.mimeType});
-    if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
-    const src = URL.createObjectURL(blob);
-    try { const img = new Image(); img.src = src; await img.decode(); return img; } finally { URL.revokeObjectURL(src); }
-  }));
-  const meshes = manifest.meshes.map(mesh => {
-    const p = mesh.primitives[0], a = p.attributes;
-    const material = manifest.materials[p.material];
-    const index = material.pbrMetallicRoughness.baseColorTexture.index;
-    return {name:mesh.name, position:attribute(a.POSITION), normal:attribute(a.NORMAL), uv:attribute(a.TEXCOORD_0),
-      faces:attribute(p.indices), count:manifest.accessors[p.indices].count,
-      texture:manifest.textures[index].extensions.EXT_texture_webp.source,
-      shapes:p.targets?.map(target => attribute(target.POSITION))};
-  });
-  return {meshes,textures,dark:manifest.extras.skinDark};
-}
+let roomPromise;
 function lounge() {
   return roomPromise ??= Promise.all([unpack('salon-v27.bin'),unpack('salon-v27-light.bin')]).catch(error => { roomPromise=null; throw error; });
 }
 const vertex = `
-attribute vec3 position, normal, change;
+attribute vec3 position, normal;
 attribute vec2 uv;
-attribute vec4 ink, joints, weights;
-uniform mat4 bones[${POSE_BONES}];
+attribute vec4 ink, joints;
+
 uniform vec3 center, side, up, eye;
 uniform vec2 scale, rotation;
 uniform vec3 location;
 uniform mediump float room;
 varying mediump vec2 coord; varying mediump vec3 color, lightNormal, roomPoint; varying mediump float material;
 void main() {
- vec3 p = (position + change)*.0001, n = normal;
+ vec3 p = position*.0001, n = normal;
  if(room > 0.5) { p = position/1800.; }
  else {
-   mat4 skin=weights.x*bones[int(joints.x)] + weights.y*bones[int(joints.y)] +
-             weights.z*bones[int(joints.z)] + weights.w*bones[int(joints.w)];
-   p=(skin*vec4(p,1.)).xyz;
-   n=mat3(skin)*n;
    p.xz = vec2(rotation.x*p.x+rotation.y*p.z, -rotation.y*p.x+rotation.x*p.z);
    p += location;
    n.xz = vec2(rotation.x*n.x+rotation.y*n.z, -rotation.y*n.x+rotation.x*n.z);
@@ -83,10 +50,10 @@ void main() {
 }`;
 const fragment = `
 precision highp float;
-uniform sampler2D base, dark, floorLight;
+uniform sampler2D base, floorLight;
 uniform highp vec3 location;
 uniform vec3 multiplier;
-uniform float tone; uniform mediump float room;
+uniform mediump float room;
 varying mediump vec2 coord; varying mediump vec3 color, lightNormal, roomPoint; varying mediump float material;
  float boxShade(vec2 p,vec2 center,vec2 halfSize){vec2 d=max(abs(p-center)-halfSize,0.);return exp(-dot(d,d)/280.);}
  float hash(vec2 uv){return fract(sin(dot(uv,vec2(41.23,73.78)))*317.41);}
@@ -129,33 +96,18 @@ void main() {
  else {
    albedo=texture2D(base,coord);
    if(albedo.a < .33) discard;
-   if(tone>0.) albedo.rgb=mix(albedo.rgb,texture2D(dark,coord).rgb,tone);
+
  }
  float light=.79+.27*max(0.,dot(normalize(lightNormal),normalize(vec3(-.5,.7,.8))));
  gl_FragColor=vec4(albedo.rgb*multiplier*light,1.);
 }`;
-const hairNames=['court','texture','afro','carre'];
-const topNames=['polo','coton','col-rond'];
-const colors = {white:[1,1,1],night:[.47,.54,.69],shell:[1.10,.76,.52]};
-const skinValue = {clair:0,dore:.24,brun:.72,profond:1};
-
-function materialFor(mesh,look) {
-  const name=mesh.name;
-  if(hairNames.includes(name)&&name!==look.hair || topNames.includes(name)&&name!==look.top)return null;
-  if(name==='jean'&&look.bottom==='laine' || name==='laine'&&look.bottom!=='laine' || name==='lunettes'&&look.accessory==='aucun')return null;
-  const skin=name==='visage-et-mains';
-  const shape=skin?(look.face==='doux'?mesh.shapes[0]:look.face==='sculpte'?mesh.shapes[1]:null):null;
-  const multiplier=name==='jean'&&look.bottom==='jean-nuit'?colors.night:name==='lunettes'&&look.accessory==='ecaille'?colors.shell:colors.white;
-  return {shape,multiplier,tone:skin?skinValue[look.skin]:0};
-}
-
 function makeShader(gl,type,source) {
   const shader=gl.createShader(type);
   gl.shaderSource(shader,source); gl.compileShader(shader);
   if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw new Error('Affichage 3D incompatible.');
   return shader;
 }
-function createView(canvas,data,roomBytes,lightMap) {
+function createView(canvas,roomBytes,lightMap) {
   const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
   if(!gl) throw new Error('Le navigateur ne propose pas WebGL.');
   const program=gl.createProgram();
@@ -164,27 +116,38 @@ function createView(canvas,data,roomBytes,lightMap) {
   }
   gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error('Le modèle ne peut pas être affiché.');
-  const attributes=Object.fromEntries(['position','normal','change','uv','ink','joints','weights'].map(id=>[id,gl.getAttribLocation(program,id)]));
-  const uniforms=Object.fromEntries(['center','side','up','eye','scale','rotation','location','bones[0]','room','base','dark','multiplier','tone','floorLight'].map(id=>[id,gl.getUniformLocation(program,id)]));
+  const attributes=Object.fromEntries(['position','normal','uv','ink','joints'].map(id=>[id,gl.getAttribLocation(program,id)]));
+  const uniforms=Object.fromEntries(['center','side','up','eye','scale','rotation','location','room','base','multiplier','floorLight'].map(id=>[id,gl.getUniformLocation(program,id)]));
   const buffers=[];
   function buffer(value,type=gl.ARRAY_BUFFER){
     const handle=gl.createBuffer(); buffers.push(handle); gl.bindBuffer(type,handle); gl.bufferData(type,value,gl.STATIC_DRAW); return handle;
   }
-  const textures=data.textures.map(image=>{
+  function textureFrom(image){
     const texture=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,texture);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
     return texture;
-  });
+  }
   const shadow=gl.createTexture();
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,shadow);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE,768,768,0,gl.LUMINANCE,gl.UNSIGNED_BYTE,new Uint8Array(lightMap));
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.activeTexture(gl.TEXTURE0);
-  const meshes=data.meshes.map(mesh=>({...mesh,position:buffer(mesh.position),rig:buffer(buildPoseWeights(mesh.name,mesh.position)),normal:buffer(mesh.normal),uv:buffer(mesh.uv),
-    faces:buffer(mesh.faces,gl.ELEMENT_ARRAY_BUFFER),shapes:mesh.shapes?.map(value=>buffer(value))}));
+  let active=null,meshes=[],lastRevision=-1,actorBuffers=[];
+  function release(){
+    for(const m of meshes)gl.deleteTexture(m.tex);
+    for(const b of actorBuffers)gl.deleteBuffer(b);
+    meshes=[];actorBuffers=[];
+  }
+  function select(figure){
+    if(active===figure)return;
+    release();active=figure;lastRevision=-1;
+    const start=buffers.length;
+    meshes=figure.meshes.map(m=>({m,tex:textureFrom(m.image),pos:buffer(m.v),norm:buffer(m.vn),uv:buffer(m.uv),indices:buffer(m.faces,gl.ELEMENT_ARRAY_BUFFER)}));
+    actorBuffers=buffers.splice(start);
+  }
   const roomBuffer=buffer(roomBytes),roomSize=roomBytes.byteLength/14;
   function attr(name,handle,components,type=gl.FLOAT,normalize=false,stride=0,offset=0){
     const loc=attributes[name];
@@ -192,7 +155,7 @@ function createView(canvas,data,roomBytes,lightMap) {
     gl.bindBuffer(gl.ARRAY_BUFFER,handle); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,components,type,normalize,stride,offset);
   }
   return {
-    draw(look,motion,portrait=false) {
+    draw(figure,motion,portrait=false) {
       gl.useProgram(program);gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);
       gl.clearColor(.94,.93,.89,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       const w=canvas.width,h=canvas.height;
@@ -203,46 +166,57 @@ function createView(canvas,data,roomBytes,lightMap) {
       gl.uniform3f(uniforms.center,x,y,z);
       gl.uniform2f(uniforms.rotation,Math.cos(yaw),Math.sin(yaw));
       gl.uniform3f(uniforms.location,portrait?0:motion.x,portrait?.06:0,portrait?0:motion.z);
-      gl.uniformMatrix4fv(uniforms['bones[0]'],false,portrait?portraitBones:motion.bones());
-      gl.uniform1i(uniforms.floorLight,2);gl.uniform1i(uniforms.base,0);gl.uniform1i(uniforms.dark,1);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,textures[data.dark]);gl.activeTexture(gl.TEXTURE0);
+      gl.activeTexture(gl.TEXTURE0);figure.pose(portrait?portraitBones:motion.bones());select(figure);
+      gl.uniform1i(uniforms.floorLight,2);gl.uniform1i(uniforms.base,0);
       if(!portrait){
-        gl.uniform1f(uniforms.room,1);gl.uniform1f(uniforms.tone,0);gl.uniform3fv(uniforms.multiplier,colors.white);
+        gl.uniform1f(uniforms.room,1);
         attr('position',roomBuffer,3,gl.SHORT,false,14,0);attr('normal',roomBuffer,3,gl.BYTE,true,14,6);
-        attr('ink',roomBuffer,4,gl.UNSIGNED_BYTE,true,14,9);attr('joints',roomBuffer,1,gl.UNSIGNED_BYTE,false,14,13);attr('weights',null);attr('uv',null);attr('change',null);
-        gl.bindTexture(gl.TEXTURE_2D,textures[0]);gl.drawArrays(gl.TRIANGLES,0,roomSize);
+        attr('ink',roomBuffer,4,gl.UNSIGNED_BYTE,true,14,9);attr('joints',roomBuffer,1,gl.UNSIGNED_BYTE,false,14,13);attr('uv',null);
+        gl.bindTexture(gl.TEXTURE_2D,meshes[0].tex);gl.drawArrays(gl.TRIANGLES,0,roomSize);
       }
       gl.uniform1f(uniforms.room,0);attr('ink',null);
-      for(const m of meshes){
-        const material=materialFor(m,look);if(!material)continue;
-        attr('position',m.position,3,gl.SHORT,false,8);attr('normal',m.normal,3,gl.BYTE,true,4);attr('uv',m.uv,2,gl.UNSIGNED_SHORT,true);attr('change',material.shape,3,gl.SHORT,false,8);
-        attr('joints',m.rig,4,gl.UNSIGNED_BYTE,false,8,0);attr('weights',m.rig,4,gl.UNSIGNED_BYTE,true,8,4);
-        gl.uniform1f(uniforms.tone,material.tone);
-        gl.uniform3fv(uniforms.multiplier,material.multiplier);
-        gl.bindTexture(gl.TEXTURE_2D,textures[m.texture]);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.faces);gl.drawElements(gl.TRIANGLES,m.count,gl.UNSIGNED_SHORT,0);
+      attr('joints',null);
+      for(const {m,tex,pos,norm,uv,indices} of meshes){
+        attr('position',pos,3,gl.SHORT);
+        if(lastRevision!==figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.v,gl.DYNAMIC_DRAW);
+        attr('normal',norm,3,gl.BYTE,true);
+        if(lastRevision!==figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.vn,gl.DYNAMIC_DRAW);
+        attr('uv',uv,2,gl.UNSIGNED_SHORT,true);
+        gl.uniform3fv(uniforms.multiplier,m.multiplier);gl.bindTexture(gl.TEXTURE_2D,tex);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indices);gl.drawElements(gl.TRIANGLES,m.faces.length,gl.UNSIGNED_SHORT,0);
       }
+      lastRevision=figure.revision;
     },
-    dispose(){for(const b of buffers)gl.deleteBuffer(b);for(const t of textures)gl.deleteTexture(t);gl.deleteTexture(shadow);gl.deleteProgram(program);}
+    dispose(){release();for(const b of buffers)gl.deleteBuffer(b);gl.deleteTexture(shadow);gl.deleteProgram(program);}
   };
 }
 
 export class CheminsAvatar extends HTMLElement {
 
-  #look=normaliseAvatar(); #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
+  #look=legacyStudio(); #figure; #pending; #drawer; #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
   #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #state; #software=false; #frame=0; #last=0; #controls;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=studio28',import.meta.url).href);
+    this.#drawer=createDrawer(root,look=>this.apply(look));
     [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
     root.querySelector('.room-retry').addEventListener('click',()=>this.#open());
     this.#poster=root.querySelector('img');this.#state=root.querySelector('.state');
     this.#gpu.addEventListener('webglcontextlost',e=>{e.preventDefault();if(this.isConnected)this.#open(true);});
     this.#gpu.addEventListener('webglcontextrestored',()=>{if(this.isConnected)this.#open();});
   }
-  set avatar(value){this.#look=normaliseAvatar(value,true);this.#schedule();}
-  get avatar(){return {...this.#look};}
+  configure(look,options){this.#drawer.configure(look,options);return this.apply(look);}
+  openOptions(open=true){this.#drawer.toggle(open);}
+  async apply(look){
+    if(this.#pending&&JSON.stringify(this.#look)===JSON.stringify(look))return this.#pending;
+    this.#look=look;
+    const p=loadStudio(look);this.#pending=p;
+    try{const figure=await p;if(p===this.#pending){this.#figure=figure;this.#schedule();}return figure;}
+    catch(error){if(p===this.#pending)this.#pending=null;throw error;}
+  }
   connectedCallback(){
-    if(typeof ResizeObserver==='function'){this.#observer=new ResizeObserver(()=>this.#schedule());this.#observer.observe(this.shadowRoot.querySelector('.stage'));}
+    if(typeof ResizeObserver==='function'){this.#observer=new ResizeObserver(()=>this.#schedule());this.#observer.observe(this.shadowRoot.querySelector('.scene-viewport'));}
     else window.addEventListener('resize',this.#schedule);
     this.#open();
   }
@@ -257,14 +231,14 @@ export class CheminsAvatar extends HTMLElement {
     const retry=this.shadowRoot.querySelector('.room-retry');retry.hidden=true;
     this.#state.textContent='Ouverture du salon…';
     try{
-      const [data,[room,lightMap]]=await Promise.all([actor(),lounge(),loadPoseWeights()]);if(epoch!==this.#epoch||!this.isConnected)return;
+      const [room,lightMap]=await lounge();await(this.#pending||this.apply(this.#look));while(!this.#figure&&this.#pending)await this.#pending;if(epoch!==this.#epoch||!this.isConnected)return;
       let view;
-      if(!forceSoftware){try{view=createView(this.#gpu,data,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
+      if(!forceSoftware){try{view=createView(this.#gpu,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js?v=salon-v27');
+        const {createSoftwareView}=await import('./avatar-software.js?v=studio28');
         if(epoch!==this.#epoch||!this.isConnected)return;
-        view=createSoftwareView(this.#cpu,data,room,lightMap,cameraProjection,materialFor);
+        view=createSoftwareView(this.#cpu,room,lightMap,cameraProjection);
       }
       this.#view=view;this.#canvas=this.#software?this.#cpu:this.#gpu;
       this.#cpu.hidden=!this.#software;this.#gpu.hidden=this.#software;
@@ -288,17 +262,17 @@ export class CheminsAvatar extends HTMLElement {
     });
   };
   #draw(moving=false){
-    if(!this.#view)return;
+    if(!this.#view||!this.#figure)return;
     const canvas=this.#canvas;
     const ratio=this.#software?Math.min(1,(moving?480:960)/Math.max(1,canvas.clientWidth,canvas.clientHeight)):Math.min(1.75,window.devicePixelRatio||1);
     const w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-    this.#view.draw(this.#look,this.#motion);
+    this.#view.draw(this.#figure,this.#motion);
   }
   snapshot(){
     if(!this.#view)return null;
     const canvas=this.#canvas,old=[canvas.width,canvas.height];
-    try{canvas.width=240;canvas.height=240;this.#view.draw(this.#look,this.#motion,true);return canvas.toDataURL('image/webp',.82);}
+    try{canvas.width=240;canvas.height=240;this.#view.draw(this.#figure,this.#motion,true);return canvas.toDataURL('image/webp',.82);}
     finally{[canvas.width,canvas.height]=old;this.#draw();}
   }
 }

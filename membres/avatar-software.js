@@ -1,7 +1,5 @@
-// Canvas fallback for the same clothed meshes and salon as the WebGL renderer.
-import {buildPoseWeights,poseVertex} from './salon-pose.js?v=salon-v27';
-import {visiblePart} from './salon-plan.js?v=salon-v27';
-import {SalonMotion,newCamera} from './salon-navigation.js?v=salon-v27';
+import {visiblePart} from './salon-plan.js?v=studio28';
+import {SalonMotion,newCamera} from './salon-navigation.js?v=studio28';
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 
 const lightDirection = [-.426, .596, .681];
@@ -9,32 +7,17 @@ function lighting(x,y,z) {
   return .79 + .27 * Math.max(0,(x*lightDirection[0]+y*lightDirection[1]+z*lightDirection[2])/(Math.hypot(x,y,z)||1));
 }
 
-function texturePixels(image) {
-  const surface=document.createElement('canvas');
-  const scale=Math.min(1,768/Math.max(image.width,image.height));
-  surface.width=Math.max(1,Math.round(scale*image.width));
-  surface.height=Math.max(1,Math.round(scale*image.height));
-  const ctx=surface.getContext('2d',{willReadFrequently:true});
-  ctx.drawImage(image,0,0,surface.width,surface.height);
-  return ctx.getImageData(0,0,surface.width,surface.height);
-}
-
-function typed(bytes,Type){return new Type(bytes.buffer,bytes.byteOffset,bytes.byteLength/Type.BYTES_PER_ELEMENT);}
-
-export function createSoftwareView(canvas,data,roomBytes,lightMap,projection,appearance) {
+export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx)throw new Error('Le dessin de la scène est indisponible.');
-  const textures=data.textures.map(texturePixels);
-  const meshes=data.meshes.map(m=>({...m,position:typed(m.position,Int16Array),normal:typed(m.normal,Int8Array),rig:buildPoseWeights(m.name,m.position),
-    uv:typed(m.uv,Uint16Array),faces:typed(m.faces,Uint16Array),shapes:m.shapes?.map(s=>typed(s,Int16Array))}));
   const room=new DataView(roomBytes),shadow=new Uint8Array(lightMap);
   let cachedRoom=null;
-  function draw(look,motion,portrait=false) {
+  function draw(figure,motion,portrait=false) {
     const w=canvas.width,h=canvas.height;
     const camera=projection(w,h,portrait,motion.camera),{sy,cy,sp,cp,factor}=camera;
     const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:0;
     const atX=portrait?0:motion.x,atZ=portrait?0:motion.z;
-    const bones=portrait?portraitBones:motion.bones(),vertex=new Float32Array(6);
+    figure.pose(portrait?portraitBones:motion.bones());
     const zoom=h*factor/2,sin=Math.sin(yaw),cos=Math.cos(yaw),key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z].join(',');
     const pixels=ctx.createImageData(w,h),color=pixels.data,depth=new Float32Array(w*h);
     function project(vertices,i,x,y,z,u,v,bright) {
@@ -102,18 +85,14 @@ export function createSoftwareView(canvas,data,roomBytes,lightMap,projection,app
       }
       cachedRoom={key,color:color.slice(),depth:depth.slice()};
     }
-    for(const m of meshes){
-      const material=appearance(m,look);if(!material)continue;
-      const n=m.position.length/4,p=new Float32Array(n*6),shape=material.shape;
-      for(let j=0;j<n;j++){
-        const i=j*4,uv=j*2;
-        const x=(m.position[i]+(shape?shape[i]:0))*.0001,y=(m.position[i+1]+(shape?shape[i+1]:0))*.0001,z=(m.position[i+2]+(shape?shape[i+2]:0))*.0001;
-        poseVertex(vertex,bones,m.rig,j,x,y,z,m.normal[i],m.normal[i+1],m.normal[i+2]);
-        const px=vertex[0],py=vertex[1],pz=vertex[2],nx=vertex[3],ny=vertex[4],nz=vertex[5];
+    for(const m of figure.meshes){
+      const p=new Float32Array(m.n*6);
+      for(let j=0;j<m.n;j++){
+        const i=j*3,uv=j*2,px=m.v[i]*.0001,py=m.v[i+1]*.0001,pz=m.v[i+2]*.0001,nx=m.vn[i],ny=m.vn[i+1],nz=m.vn[i+2];
         project(p,j*6,atX+cos*px+sin*pz,offsetY+py,atZ-sin*px+cos*pz,m.uv[uv]/65535,m.uv[uv+1]/65535,lighting(cos*nx+sin*nz,ny,-sin*nx+cos*nz));
       }
-      const f=m.faces,tex=textures[m.texture];
-      for(let j=0;j<m.count;j+=3)triangle(p,6*f[j],6*f[j+1],6*f[j+2],tex,textures[data.dark],material.tone,material.multiplier,null);
+      const f=m.faces,tex=m.image;
+      for(let j=0;j<f.length;j+=3)triangle(p,6*f[j],6*f[j+1],6*f[j+2],tex,null,0,m.multiplier,null);
     }
     ctx.putImageData(pixels,0,0);
   }

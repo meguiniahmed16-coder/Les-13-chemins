@@ -1,3 +1,4 @@
+import {normaliseStudio,exactStudio} from './studio-look.js';
 import {avatarCatalog,normaliseAvatar,randomAvatar} from './avatar-catalog.js';
 import {mergeJourney} from './journey.js';
 import {membership,checkout,stripeWebhook} from './billing.mjs';
@@ -15,7 +16,8 @@ async function view(db,m,author){
   const billing=await membership(db,m.id,now());
   const rows=await sql(db,'SELECT kind,item FROM member_activity WHERE member=?',m.id).all();
   const journey={games:[],videos:[],scenes:[]};for(const row of rows.results)journey[row.kind]?.push(row.item);
-  return {id:m.id,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(JSON.parse(m.avatar),Boolean(author)||billing.companion),...billing,author,journey};
+  const saved=JSON.parse(m.avatar),plus=Boolean(author)||billing.companion;
+  return {studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus)),id:m.id,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
 }
 async function owner(r,env,path){
   if(!await authorSession(r,env))fail(401,'Connecte-toi à l’administration.');
@@ -89,10 +91,12 @@ export default {
     }
     if(!author&&(!m.birth||!m.pseudo))fail(409,'Complète ton profil.');
     if(path==='avatar'&&request.method==='POST'){
-      const input=(await read(request)).avatar,plan=await membership(db,m.id,now()),avatar=normaliseAvatar(input,Boolean(author)||plan.companion);
+      const data=await read(request),input=data.avatar,plan=await membership(db,m.id,now()),plus=Boolean(author)||plan.companion,avatar=normaliseAvatar(input,plus);
       if(!input||typeof input!=='object'||Object.keys(input).length!==avatarCatalog.length||Object.keys(avatar).some(k=>avatar[k]!==input[k]))fail(403,'Cette apparence n’est pas disponible avec ton abonnement.');
-      await sql(db,'UPDATE members SET avatar=? WHERE id=?',JSON.stringify(avatar),m.id).run();
-      return json({avatar});
+      const studio=normaliseStudio(data.studio,plus,avatar);
+      if(data.studio!==undefined&&!exactStudio(data.studio,studio))fail(403,'Cette personnalisation est indisponible.');
+      await sql(db,'UPDATE members SET avatar=? WHERE id=?',JSON.stringify({...avatar,studio}),m.id).run();
+      return json({avatar,studio});
     }
     if(path==='journey'&&request.method==='POST'){
       const b=await read(request);if(b.memberId!==m.id)fail(403,'Le compte a changé.');

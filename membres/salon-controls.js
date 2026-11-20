@@ -1,5 +1,4 @@
-import {seats} from './salon-plan.js?v=salon-v27';
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon-v27';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=studio28';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -9,7 +8,7 @@ const icons={
 };
 const button=(id,label,content,extra='')=>'<button class="tool '+id+'" type="button" data-action="'+id+'" aria-label="'+label+'" title="'+label+'" '+extra+'>'+content+'</button>';
 export function salonMarkup(poster,style) {
-  return `<link rel="stylesheet" href="${style}"><div class="stage">
+  return `<link rel="stylesheet" href="${style}"><div class="stage"><div class="scene-viewport">
     <canvas tabindex="0" aria-label="Salon 3D. Les flèches déplacent le personnage."></canvas>
     <canvas hidden tabindex="0" aria-label="Salon 3D. Les flèches déplacent le personnage."></canvas>
     <img class="poster" src="${poster}" alt="Le personnage habillé dans son salon">
@@ -19,13 +18,12 @@ export function salonMarkup(poster,style) {
       ${button('out','Éloigner la caméra','−')}${button('in','Rapprocher la caméra','+')}
       ${button('full','Plein écran',icons.full+'<span class="full-text">Plein écran</span>','aria-pressed="false"')}
     </div><button type="button" class="stick" aria-label="Joystick de marche. Au clavier, utiliser les flèches." title="Déplacer le personnage"><span class="thumb"></span></button>
-    <div class="seating"><button class="stand" type="button" hidden>Se lever</button>
-    <select class="seat-choice" aria-label="Choisir une place assise"><option value="">S’asseoir…</option></select></div></div></div>
-    <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir.</p></div><p class="state" role="status" aria-live="polite"></p><button type="button" class="room-retry" hidden>Relancer le salon</button>`;
+    <button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser ▾</button></div></div><aside id="studio-drawer" class="studio-drawer" hidden></aside></div>
+    <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir. Le joystick te relève.</p></div><p class="state" role="status" aria-live="polite"></p><button type="button" class="room-retry" hidden>Relancer le salon</button>`;
 }
 export function bindSalon(root,motion,roomBytes,wake) {
   const stage=root.querySelector('.stage'),stick=root.querySelector('.stick'),thumb=root.querySelector('.thumb');
-  const select=root.querySelector('select'),stand=root.querySelector('.stand'),status=root.querySelector('.state');
+  const status=root.querySelector('.state');
   const full=root.querySelector('.full'),pan=root.querySelector('.pan'), pointers=new Map();
   const lifetime=new AbortController();
   const listen=(el,event,fn,options={})=>el.addEventListener(event,fn,{...options,signal:lifetime.signal});
@@ -34,13 +32,7 @@ export function bindSalon(root,motion,roomBytes,wake) {
   const viewport=()=>canvas().getBoundingClientRect();
   let panning=false,stickID=null,lastTap=null,pair=null,immersive=false,previousOverflow='',active=true;
   const movementKeys=new Set(['ArrowRight','ArrowLeft','ArrowUp','ArrowDown','KeyW','KeyA','KeyZ','KeyQ','KeyS','KeyD']);
-  select.replaceChildren(select.firstElementChild);
-  for(const seat of seats)select.add(new Option(seat.label,seat.id));
-  listen(select,'change',()=>{const seat=seats.find(s=>s.id===select.value);if(seat){motion.goToSeat(seat);wake();}select.value='';});
-  listen(stand,'click',()=>{motion.stand();wake();});
   function showStatus(mode,seat) {
-    stand.hidden=['idle','steer','rise'].includes(mode);
-    stand.textContent=['walk'].includes(mode)?'Annuler le trajet':'Se lever';
     status.textContent=({walk:'En chemin vers '+seat?.label,unreachable:'Cette place est inaccessible depuis cette position.',seated:'Assis · '+seat?.label,idle:''})[mode]??'';
   }
   function resetStick(){stickID=null;thumb.style.transform='';motion.stick(0,0);}
@@ -79,7 +71,7 @@ export function bindSalon(root,motion,roomBytes,wake) {
       const now=performance.now(),x=e.clientX,y=e.clientY;
       if(lastTap&&now-lastTap.time<430&&Math.hypot(x-lastTap.x,y-lastTap.y)<26){
         const v=viewport(),seat=seatAt(roomBytes,motion.camera,v.width,v.height,x-v.left,y-v.top);
-        if(seat){motion.goToSeat(seat);wake();}lastTap=null;
+        if(seat){if(motion.seat===seat&&motion.sit>0)motion.stand();else motion.goToSeat(seat);wake();}lastTap=null;
       }else lastTap={time:now,x,y};
     }
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(target,ev,end);
@@ -97,7 +89,7 @@ export function bindSalon(root,motion,roomBytes,wake) {
   listen(stick,'pointermove',stickMove);
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(stick,ev,e=>{if(e.pointerId===stickID){resetStick();wake();}});
   for(const event of ['keydown','keyup'])listen(stage,event,e=>{
-    if(e.target.tagName==='SELECT'||!movementKeys.has(e.code))return;
+    if(e.target.closest('input,select,textarea,.studio-drawer')||!movementKeys.has(e.code))return;
     e.preventDefault();motion.key(e.code,event==='keydown');wake();
   });
   listen(stage,'focusout',e=>{if(!stage.contains(e.relatedTarget))motion.releaseInputs();});
