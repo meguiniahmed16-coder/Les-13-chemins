@@ -16,6 +16,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
+  ['--test','membres/member.test.mjs','membres/journey.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
   ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs', 'soutien.test.mjs'],
@@ -68,6 +69,9 @@ const publicFiles = [
   'soutien.css',
   'soutien.js',
   'soutien-config.json',
+  'membre.html','membre-atelier.html','membres/member.css','membres/member.js','membres/owner.js',
+  'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon.bin',
+  'membres/avatar-catalog.js','membres/avatar.js','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
   'accueil.css', 'accueil-rencontre.js',
   'ahmed-marie.html',
@@ -260,6 +264,7 @@ for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
   if (name.endsWith('.html')) {
     let html = await readFile(join(root, name), 'utf8');
+    if (/^(jeu|carte|arcade-.+|jeu-.+)\.html$/.test(name)) html=html.replace('</body>','<script type="module" src="/membres/journey-recorder.js"></script></body>');
     if (/^(arcade-|jeu-).+\.html$/.test(name)) {
       const extras = name === 'jeu-le-traitre.html' && !html.includes('chemins-en-cours-data.js') ? '<script defer src="chemins-en-cours-data.js"></script>' : '';
       html = html.replace('</head>', '<link rel="stylesheet" href="atlas-personnages.css">'+extras+'<script defer src="atlas-personnages.js"></script></head>');
@@ -283,3 +288,5 @@ await copyFile(join(root, 'editor-api.mjs'), join(root, '.netlify/functions/edit
 await copyFile(join(root, 'double-admin-api.mjs'), join(root, '.netlify/functions/double-admin.mjs'));
 
 await copyFile(join(root,'bois/proxy.mjs'),join(root,'.netlify/functions/creations.mjs'));
+
+await copyFile(join(root,'membres/proxy.mjs'),join(root,'.netlify/functions/membres.mjs'));
