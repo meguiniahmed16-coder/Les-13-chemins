@@ -16,7 +16,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
-  ['--test','membres/member.test.mjs','membres/journey.test.mjs'],
+  ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
   ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs', 'soutien.test.mjs'],
@@ -70,8 +70,8 @@ const publicFiles = [
   'soutien.js',
   'soutien-config.json',
   'membre.html','membre-atelier.html','membres/member.css','membres/member.js','membres/owner.js',
-  'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
-  'membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
+  'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon.bin','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
+  'membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
   'accueil.css', 'accueil-rencontre.js',
   'ahmed-marie.html',

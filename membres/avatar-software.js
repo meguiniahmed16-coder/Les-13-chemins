@@ -1,4 +1,7 @@
 // Canvas fallback for the same clothed meshes and salon as the WebGL renderer.
+import {buildPoseWeights,poseMatrices,poseVertex} from './salon-pose.js';
+import {wallHidden} from './salon-navigation.js';
+
 const lightDirection = [-.426, .596, .681];
 function lighting(x,y,z) {
   return .79 + .27 * Math.max(0,(x*lightDirection[0]+y*lightDirection[1]+z*lightDirection[2])/(Math.hypot(x,y,z)||1));
@@ -20,18 +23,22 @@ export function createSoftwareView(canvas,data,roomBytes,projection,appearance) 
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx)throw new Error('Le dessin de la scène est indisponible.');
   const textures=data.textures.map(texturePixels);
-  const meshes=data.meshes.map(m=>({...m,position:typed(m.position,Int16Array),normal:typed(m.normal,Int8Array),
+  const meshes=data.meshes.map(m=>({...m,position:typed(m.position,Int16Array),normal:typed(m.normal,Int8Array),rig:buildPoseWeights(m.name,m.position),
     uv:typed(m.uv,Uint16Array),faces:typed(m.faces,Uint16Array),shapes:m.shapes?.map(s=>typed(s,Int16Array))}));
   const room=new DataView(roomBytes);
   let cachedRoom=null;
-  function draw(look,yaw,portrait=false) {
+  function draw(look,motion,portrait=false) {
     const w=canvas.width,h=canvas.height;
-    const camera=projection(w,h,portrait),{sy,cy,sp,cp,factor,center}=camera;
-    const zoom=h*factor/2,sin=Math.sin(yaw),cos=Math.cos(yaw),key=w+'x'+h+'-'+portrait;
+    const camera=projection(w,h,portrait,motion.camera),{sy,cy,sp,cp,factor}=camera;
+    const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:motion.floorOffset;
+    const atX=portrait?0:motion.x,atZ=portrait?0:motion.z;
+    const bones=poseMatrices(portrait?{}:motion.pose),vertex=new Float32Array(6);
+    const zoom=h*factor/2,sin=Math.sin(yaw),cos=Math.cos(yaw),key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z].join(',');
     const pixels=ctx.createImageData(w,h),color=pixels.data,depth=new Float32Array(w*h);
     function project(vertices,i,x,y,z,u,v,bright) {
+      x-=camera.x;z-=camera.z;
       const lateral=cy*x-sy*z,forward=sy*x+cy*z;
-      const dy=y-center;
+      const dy=y-camera.y;
       vertices[i]=w*.5+zoom*lateral;
       vertices[i+1]=h*.5-zoom*(cp*dy-sp*forward);
       vertices[i+2]=cp*forward+sp*dy;vertices[i+3]=u;vertices[i+4]=v;vertices[i+5]=bright;
@@ -74,6 +81,7 @@ export function createSoftwareView(canvas,data,roomBytes,projection,appearance) 
       for(let i=0;i<color.length;i+=4){color[i]=240;color[i+1]=237;color[i+2]=227;color[i+3]=255;}
       const tri=new Float32Array(18),rgb=[0,0,0];
       for(let j=0;j<room.byteLength;j+=42){
+        if(wallHidden(room.getUint8(j+12),sy,cy))continue;
         for(let v=0;v<3;v++){
           const i=j+v*14;
           project(tri,v*6,room.getInt16(i,true)/1800,room.getInt16(i+2,true)/1800,room.getInt16(i+4,true)/1800,0,0,1);
@@ -89,9 +97,10 @@ export function createSoftwareView(canvas,data,roomBytes,projection,appearance) 
       const n=m.position.length/4,p=new Float32Array(n*6),shape=material.shape;
       for(let j=0;j<n;j++){
         const i=j*4,uv=j*2;
-        const x=(m.position[i]+(shape?shape[i]:0))*.0001,y=(m.position[i+1]+(shape?shape[i+1]:0))*.0001+.06,z=(m.position[i+2]+(shape?shape[i+2]:0))*.0001;
-        const nx=m.normal[i],nz=m.normal[i+2];
-        project(p,j*6,cos*x+sin*z,y,-sin*x+cos*z,m.uv[uv]/65535,m.uv[uv+1]/65535,lighting(cos*nx+sin*nz,m.normal[i+1],-sin*nx+cos*nz));
+        const x=(m.position[i]+(shape?shape[i]:0))*.0001,y=(m.position[i+1]+(shape?shape[i+1]:0))*.0001,z=(m.position[i+2]+(shape?shape[i+2]:0))*.0001;
+        poseVertex(vertex,bones,m.rig,j,x,y,z,m.normal[i],m.normal[i+1],m.normal[i+2]);
+        const px=vertex[0],py=vertex[1],pz=vertex[2],nx=vertex[3],ny=vertex[4],nz=vertex[5];
+        project(p,j*6,atX+cos*px+sin*pz,offsetY+py,atZ-sin*px+cos*pz,m.uv[uv]/65535,m.uv[uv+1]/65535,lighting(cos*nx+sin*nz,ny,-sin*nx+cos*nz));
       }
       const f=m.faces,tex=textures[m.texture];
       for(let j=0;j<m.count;j+=3)triangle(p,6*f[j],6*f[j+1],6*f[j+2],tex,textures[data.dark],material.tone,material.multiplier,null);
