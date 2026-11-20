@@ -1,5 +1,5 @@
-import {seats} from './salon-plan.js';
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js';
+import {seats} from './salon-plan.js?v=salon-v27';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon-v27';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -21,7 +21,7 @@ export function salonMarkup(poster,style) {
     </div><button type="button" class="stick" aria-label="Joystick de marche. Au clavier, utiliser les flèches." title="Déplacer le personnage"><span class="thumb"></span></button>
     <div class="seating"><button class="stand" type="button" hidden>Se lever</button>
     <select class="seat-choice" aria-label="Choisir une place assise"><option value="">S’asseoir…</option></select></div></div></div>
-    <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir.</p></div><p class="state" role="status" aria-live="polite"></p>`;
+    <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir.</p></div><p class="state" role="status" aria-live="polite"></p><button type="button" class="room-retry" hidden>Relancer le salon</button>`;
 }
 export function bindSalon(root,motion,roomBytes,wake) {
   const stage=root.querySelector('.stage'),stick=root.querySelector('.stick'),thumb=root.querySelector('.thumb');
@@ -39,9 +39,9 @@ export function bindSalon(root,motion,roomBytes,wake) {
   listen(select,'change',()=>{const seat=seats.find(s=>s.id===select.value);if(seat){motion.goToSeat(seat);wake();}select.value='';});
   listen(stand,'click',()=>{motion.stand();wake();});
   function showStatus(mode,seat) {
-    stand.hidden=['idle','rising','undocking'].includes(mode);
-    stand.textContent=['approach','align','docking'].includes(mode)?'Annuler le trajet':'Se lever';
-    status.textContent=({approach:'En chemin vers '+seat?.label,unreachable:'Cette place est inaccessible depuis cette position.',seated:'Assis · '+seat?.label,idle:''})[mode]??'';
+    stand.hidden=['idle','steer','rise'].includes(mode);
+    stand.textContent=['walk'].includes(mode)?'Annuler le trajet':'Se lever';
+    status.textContent=({walk:'En chemin vers '+seat?.label,unreachable:'Cette place est inaccessible depuis cette position.',seated:'Assis · '+seat?.label,idle:''})[mode]??'';
   }
   function resetStick(){stickID=null;thumb.style.transform='';motion.stick(0,0);}
   function clearInputs(){pointers.clear();lastTap=pair=null;resetStick();motion.releaseInputs();wake();}

@@ -1,6 +1,8 @@
 // Canvas fallback for the same clothed meshes and salon as the WebGL renderer.
-import {buildPoseWeights,poseMatrices,poseVertex} from './salon-pose.js';
-import {wallHidden} from './salon-navigation.js';
+import {buildPoseWeights,poseVertex} from './salon-pose.js?v=salon-v27';
+import {visiblePart} from './salon-plan.js?v=salon-v27';
+import {SalonMotion,newCamera} from './salon-navigation.js?v=salon-v27';
+const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 
 const lightDirection = [-.426, .596, .681];
 function lighting(x,y,z) {
@@ -19,20 +21,20 @@ function texturePixels(image) {
 
 function typed(bytes,Type){return new Type(bytes.buffer,bytes.byteOffset,bytes.byteLength/Type.BYTES_PER_ELEMENT);}
 
-export function createSoftwareView(canvas,data,roomBytes,projection,appearance) {
+export function createSoftwareView(canvas,data,roomBytes,lightMap,projection,appearance) {
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx)throw new Error('Le dessin de la scène est indisponible.');
   const textures=data.textures.map(texturePixels);
   const meshes=data.meshes.map(m=>({...m,position:typed(m.position,Int16Array),normal:typed(m.normal,Int8Array),rig:buildPoseWeights(m.name,m.position),
     uv:typed(m.uv,Uint16Array),faces:typed(m.faces,Uint16Array),shapes:m.shapes?.map(s=>typed(s,Int16Array))}));
-  const room=new DataView(roomBytes);
+  const room=new DataView(roomBytes),shadow=new Uint8Array(lightMap);
   let cachedRoom=null;
   function draw(look,motion,portrait=false) {
     const w=canvas.width,h=canvas.height;
     const camera=projection(w,h,portrait,motion.camera),{sy,cy,sp,cp,factor}=camera;
-    const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:motion.floorOffset;
+    const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:0;
     const atX=portrait?0:motion.x,atZ=portrait?0:motion.z;
-    const bones=poseMatrices(portrait?{}:motion.pose),vertex=new Float32Array(6);
+    const bones=portrait?portraitBones:motion.bones(),vertex=new Float32Array(6);
     const zoom=h*factor/2,sin=Math.sin(yaw),cos=Math.cos(yaw),key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z].join(',');
     const pixels=ctx.createImageData(w,h),color=pixels.data,depth=new Float32Array(w*h);
     function project(vertices,i,x,y,z,u,v,bright) {
@@ -57,7 +59,13 @@ export function createSoftwareView(canvas,data,roomBytes,projection,appearance) 
           const t3=1-t1-t2;if(t1<-.00001||t2<-.00001||t3<-.00001)continue;
           const j=y*w+x,z=t1*p[a+2]+t2*p[b+2]+t3*p[c+2];if(z<=depth[j])continue;
           const k=j*4;
-          if(solid){color[k]=solid[0];color[k+1]=solid[1];color[k+2]=solid[2];}
+          if(solid){let shade=1;
+            if(solid[3]){
+              const px=t1*p[a+3]+t2*p[b+3]+t3*p[c+3],pz=t1*p[a+4]+t2*p[b+4]+t3*p[c+4];
+              const sx=Math.max(0,Math.min(767,(px+390)*.96|0)),sz=Math.max(0,Math.min(767,(pz+380)*.96|0));
+              shade=shadow[sz*768+sx]/255;
+            }
+            color[k]=shade*solid[0];color[k+1]=shade*solid[1];color[k+2]=shade*solid[2];}
           else{
             const u=Math.max(0,Math.min(.999999,t1*p[a+3]+t2*p[b+3]+t3*p[c+3]));
             const v=Math.max(0,Math.min(.999999,t1*p[a+4]+t2*p[b+4]+t3*p[c+4]));
@@ -80,11 +88,13 @@ export function createSoftwareView(canvas,data,roomBytes,projection,appearance) 
       depth.fill(-Infinity);
       for(let i=0;i<color.length;i+=4){color[i]=240;color[i+1]=237;color[i+2]=227;color[i+3]=255;}
       const tri=new Float32Array(18),rgb=[0,0,0];
-      for(let j=0;j<room.byteLength;j+=42){
-        if(wallHidden(room.getUint8(j+12),sy,cy))continue;
+      for(let j=0;!portrait&&j<room.byteLength;j+=42){
+        const part=room.getUint8(j+13);
+        if(!visiblePart(part,sy*cp,cy*cp))continue;
+        rgb[3]=part===5||part===197||part===198;
         for(let v=0;v<3;v++){
           const i=j+v*14;
-          project(tri,v*6,room.getInt16(i,true)/1800,room.getInt16(i+2,true)/1800,room.getInt16(i+4,true)/1800,0,0,1);
+          project(tri,v*6,room.getInt16(i,true)/1800,room.getInt16(i+2,true)/1800,room.getInt16(i+4,true)/1800,room.getInt16(i,true)/18,room.getInt16(i+4,true)/18,1);
         }
         const bright=lighting(room.getInt8(j+6),room.getInt8(j+7),room.getInt8(j+8));
         for(let ch=0;ch<3;ch++)rgb[ch]=bright*room.getUint8(j+9+ch);

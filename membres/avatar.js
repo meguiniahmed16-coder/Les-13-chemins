@@ -1,12 +1,13 @@
 // Summer Man uses the CC0 MakeHuman/MPFB model. Garment authors and original
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
 import {normaliseAvatar} from './avatar-catalog.js';
-import {POSE_BONES,loadPoseWeights,buildPoseWeights,poseMatrices} from './salon-pose.js';
-import {cameraProjection,SalonMotion} from './salon-navigation.js';
-import {salonMarkup,bindSalon} from './salon-controls.js';
+import {POSE_BONES,loadPoseWeights,buildPoseWeights} from './salon-pose.js?v=salon-v27';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon-v27';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon-v27';
 
+const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
-const posterURL = new URL('salon-apercu.webp', files).href;
+const posterURL = new URL('salon-v27-apercu.webp', files).href;
 async function unpack(name) {
   const response = await fetch(new URL(name, files));
   if (!response.ok) throw new Error('Le modèle ne répond pas.');
@@ -46,7 +47,7 @@ async function loadActor() {
   return {meshes,textures,dark:manifest.extras.skinDark};
 }
 function lounge() {
-  return roomPromise ??= unpack('salon.bin').catch(error => { roomPromise=null; throw error; });
+  return roomPromise ??= Promise.all([unpack('salon-v27.bin'),unpack('salon-v27-light.bin')]).catch(error => { roomPromise=null; throw error; });
 }
 const vertex = `
 attribute vec3 position, normal, change;
@@ -57,7 +58,7 @@ uniform vec3 center, side, up, eye;
 uniform vec2 scale, rotation;
 uniform vec3 location;
 uniform mediump float room;
-varying mediump vec2 coord; varying mediump vec3 color, lightNormal;
+varying mediump vec2 coord; varying mediump vec3 color, lightNormal, roomPoint; varying mediump float material;
 void main() {
  vec3 p = (position + change)*.0001, n = normal;
  if(room > 0.5) { p = position/1800.; }
@@ -72,19 +73,59 @@ void main() {
  }
  vec3 delta = p-center;
  gl_Position = vec4(dot(delta,side)*scale.x, dot(delta,up)*scale.y, -dot(delta,eye)/20., 1.);
- float group=floor(ink.w*255.+.5);
- if(room>.5 && ((group==1. && eye.z<0.)||(group==2. && eye.x<0.)||(group==3. && eye.x>0.)||(group==4. && eye.z>0.)))gl_Position=vec4(2.,2.,2.,1.);
+ float part=joints.x;
+ roomPoint=p*100.; material=floor(ink.w*255.+.5);
+ if(room>.5 && (((part==0.||part==3.||part==4.) && eye.z<=-.20)
+    || ((part==1.||(part>=96.&&part<=98.)) && eye.x>=.22)
+    || ((part==2.||(part>=36.&&part<=68.)) && eye.x<=-.22)
+    || ((part>=7.&&part<=21.) && eye.z>=.16)))gl_Position=vec4(2.,2.,2.,1.);
  coord = uv; color = ink.rgb; lightNormal=n;
 }`;
 const fragment = `
-precision mediump float;
-uniform sampler2D base, dark;
+precision highp float;
+uniform sampler2D base, dark, floorLight;
+uniform highp vec3 location;
 uniform vec3 multiplier;
-uniform float tone, room;
-varying mediump vec2 coord; varying mediump vec3 color, lightNormal;
+uniform float tone; uniform mediump float room;
+varying mediump vec2 coord; varying mediump vec3 color, lightNormal, roomPoint; varying mediump float material;
+ float boxShade(vec2 p,vec2 center,vec2 halfSize){vec2 d=max(abs(p-center)-halfSize,0.);return exp(-dot(d,d)/280.);}
+ float hash(vec2 uv){return fract(sin(dot(uv,vec2(41.23,73.78)))*317.41);}
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
+ vec4 furnishedRoom(){
+ vec3 p=roomPoint,N=normalize(lightNormal);if(!gl_FrontFacing)N=-N;
+ float sky=.81+.105*abs(N.y)+.115*dot(N,normalize(vec3(.33,.72,.51)));vec3 ink=color;
+ if(material>1.5&&material<2.5){
+  float row=floor((p.z+280.)/16.),shift=mod(row*3.,7.)*16.;vec2 f=vec2(fract((p.x+shift)/113.),fract((p.z+280.)/16.));
+  float seam=smoothstep(.002,.014,min(f.x,1.-f.x))*smoothstep(.008,.052,min(f.y,1.-f.y));
+  float grain=.017*sin(p.z*.78+1.5*sin(p.x*.037)+.9*sin(p.z*.21))+.013*sin(p.z*2.7+.14*sin(p.x*.18));
+  float board=.018*sin(row*11.3+floor((p.x+shift)/113.)*4.3);
+  ink*=.86+.13*seam+grain+board;
+  float shadow=max(boxShade(p.xz,vec2(-259.,21.),vec2(39.,126.)),boxShade(p.xz,vec2(136.,17.),vec2(30.,75.)));
+  shadow=max(shadow,boxShade(p.xz,vec2(-49.,18.),vec2(38.,36.)));shadow=max(shadow,boxShade(p.xz,vec2(-150.,138.),vec2(29.,49.)));ink*=1.-.17*shadow;
+ }
+ if(material>2.5&&material<3.5){
+  vec3 view=mix(vec3(.67,.74,.67),vec3(.80,.86,.84),smoothstep(0.,265.,p.y));
+  float foliage=.62*noise(p.xy*.018)+.28*noise(p.xy*.045)+.10*noise(p.xy*.114);
+  float edge=81.+39.*sin(.009*p.x)+20.*sin(.022*p.x+.5)+35.*(foliage-.5);
+  vec3 trees=mix(vec3(.43,.55,.45),vec3(.68,.74,.58),foliage);
+  ink=mix(trees,view,smoothstep(edge-8.,edge+10.,p.y));ink=mix(ink,vec3(.83,.87,.83),.29);sky=1.;
+ }
+ if(material>3.5&&material<4.5)ink*=.97+.03*sin(1.43*p.z+.9*sin(p.x*.14)+p.y*.19);
+ if(material>4.5&&material<5.5)ink*=.99+.009*sin(dot(p,vec3(1.6,1.,1.2)));
+ if(material>.5&&material<1.5){float low=1.-smoothstep(0.,34.,p.y);ink*=1.-.085*low;ink+=.018*noise(p.xz*.021+p.y*.017);}
+ if(material>5.5){float stripe=sin((p.x+p.z*.17)*.18)*sin((p.z-p.x*.17)*.16);ink*=.98+.046*smoothstep(.36,.76,abs(stripe));}
+ if(p.y<2.7){
+  float baked=texture2D(floorLight,clamp((p.xz+vec2(390.,380.))/800.,0.,1.)).r;ink*=baked;
+  vec2 a=p.xz-location.xz*100.;vec2 along=vec2(-.45,-.89),across=vec2(.89,-.45);float t=clamp(dot(a,along)/65.,0.,1.);
+  float castShade=exp(-pow(dot(a,across)/(8.+8.*t),2.)-pow((dot(a,along)-31.)/34.,2.));ink*=1.-.14*castShade;
+  float contact=exp(-dot(a,a)/184.);ink*=1.-.19*contact;
+  float light=smoothstep(-175.,150.,p.z)*(.055+.035*sin(p.x*.043+p.z*.032));ink+=vec3(light,light*.78,light*.44);
+ }
+ return vec4(clamp(ink*sky,0.,1.),1.);
+}
 void main() {
  vec4 albedo;
- if(room > 0.5) albedo=vec4(color,1.);
+ if(room > 0.5){gl_FragColor=furnishedRoom();return;}
  else {
    albedo=texture2D(base,coord);
    if(albedo.a < .33) discard;
@@ -114,7 +155,7 @@ function makeShader(gl,type,source) {
   if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw new Error('Affichage 3D incompatible.');
   return shader;
 }
-function createView(canvas,data,roomBytes) {
+function createView(canvas,data,roomBytes,lightMap) {
   const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
   if(!gl) throw new Error('Le navigateur ne propose pas WebGL.');
   const program=gl.createProgram();
@@ -124,7 +165,7 @@ function createView(canvas,data,roomBytes) {
   gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error('Le modèle ne peut pas être affiché.');
   const attributes=Object.fromEntries(['position','normal','change','uv','ink','joints','weights'].map(id=>[id,gl.getAttribLocation(program,id)]));
-  const uniforms=Object.fromEntries(['center','side','up','eye','scale','rotation','location','bones[0]','room','base','dark','multiplier','tone'].map(id=>[id,gl.getUniformLocation(program,id)]));
+  const uniforms=Object.fromEntries(['center','side','up','eye','scale','rotation','location','bones[0]','room','base','dark','multiplier','tone','floorLight'].map(id=>[id,gl.getUniformLocation(program,id)]));
   const buffers=[];
   function buffer(value,type=gl.ARRAY_BUFFER){
     const handle=gl.createBuffer(); buffers.push(handle); gl.bindBuffer(type,handle); gl.bufferData(type,value,gl.STATIC_DRAW); return handle;
@@ -136,6 +177,12 @@ function createView(canvas,data,roomBytes) {
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
     return texture;
   });
+  const shadow=gl.createTexture();
+  gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,shadow);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE,768,768,0,gl.LUMINANCE,gl.UNSIGNED_BYTE,new Uint8Array(lightMap));
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.activeTexture(gl.TEXTURE0);
   const meshes=data.meshes.map(mesh=>({...mesh,position:buffer(mesh.position),rig:buffer(buildPoseWeights(mesh.name,mesh.position)),normal:buffer(mesh.normal),uv:buffer(mesh.uv),
     faces:buffer(mesh.faces,gl.ELEMENT_ARRAY_BUFFER),shapes:mesh.shapes?.map(value=>buffer(value))}));
   const roomBuffer=buffer(roomBytes),roomSize=roomBytes.byteLength/14;
@@ -155,13 +202,13 @@ function createView(canvas,data,roomBytes) {
       gl.uniform2f(uniforms.scale,factor*h/w,factor);
       gl.uniform3f(uniforms.center,x,y,z);
       gl.uniform2f(uniforms.rotation,Math.cos(yaw),Math.sin(yaw));
-      gl.uniform3f(uniforms.location,portrait?0:motion.x,portrait?.06:motion.floorOffset,portrait?0:motion.z);
-      gl.uniformMatrix4fv(uniforms['bones[0]'],false,poseMatrices(portrait?{}:motion.pose));
-      gl.uniform1i(uniforms.base,0);gl.uniform1i(uniforms.dark,1);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,textures[data.dark]);gl.activeTexture(gl.TEXTURE0);
-      {
+      gl.uniform3f(uniforms.location,portrait?0:motion.x,portrait?.06:0,portrait?0:motion.z);
+      gl.uniformMatrix4fv(uniforms['bones[0]'],false,portrait?portraitBones:motion.bones());
+      gl.uniform1i(uniforms.floorLight,2);gl.uniform1i(uniforms.base,0);gl.uniform1i(uniforms.dark,1);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,textures[data.dark]);gl.activeTexture(gl.TEXTURE0);
+      if(!portrait){
         gl.uniform1f(uniforms.room,1);gl.uniform1f(uniforms.tone,0);gl.uniform3fv(uniforms.multiplier,colors.white);
         attr('position',roomBuffer,3,gl.SHORT,false,14,0);attr('normal',roomBuffer,3,gl.BYTE,true,14,6);
-        attr('ink',roomBuffer,4,gl.UNSIGNED_BYTE,true,14,9);attr('joints',null);attr('weights',null);attr('uv',null);attr('change',null);
+        attr('ink',roomBuffer,4,gl.UNSIGNED_BYTE,true,14,9);attr('joints',roomBuffer,1,gl.UNSIGNED_BYTE,false,14,13);attr('weights',null);attr('uv',null);attr('change',null);
         gl.bindTexture(gl.TEXTURE_2D,textures[0]);gl.drawArrays(gl.TRIANGLES,0,roomSize);
       }
       gl.uniform1f(uniforms.room,0);attr('ink',null);
@@ -174,19 +221,20 @@ function createView(canvas,data,roomBytes) {
         gl.bindTexture(gl.TEXTURE_2D,textures[m.texture]);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.faces);gl.drawElements(gl.TRIANGLES,m.count,gl.UNSIGNED_SHORT,0);
       }
     },
-    dispose(){for(const b of buffers)gl.deleteBuffer(b);for(const t of textures)gl.deleteTexture(t);gl.deleteProgram(program);}
+    dispose(){for(const b of buffers)gl.deleteBuffer(b);for(const t of textures)gl.deleteTexture(t);gl.deleteTexture(shadow);gl.deleteProgram(program);}
   };
 }
 
 export class CheminsAvatar extends HTMLElement {
 
-  #look=normaliseAvatar(); #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat));
+  #look=normaliseAvatar(); #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
   #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #state; #software=false; #frame=0; #last=0; #controls;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
     root.innerHTML=salonMarkup(posterURL,new URL('./salon.css',import.meta.url).href);
     [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
+    root.querySelector('.room-retry').addEventListener('click',()=>this.#open());
     this.#poster=root.querySelector('img');this.#state=root.querySelector('.state');
     this.#gpu.addEventListener('webglcontextlost',e=>{e.preventDefault();if(this.isConnected)this.#open(true);});
     this.#gpu.addEventListener('webglcontextrestored',()=>{if(this.isConnected)this.#open();});
@@ -206,23 +254,24 @@ export class CheminsAvatar extends HTMLElement {
   async #open(forceSoftware=false){
     const epoch=++this.#epoch;this.#controls?.dispose();this.#controls=null;
     this.#view?.dispose();this.#view=null;this.#poster.hidden=false;
+    const retry=this.shadowRoot.querySelector('.room-retry');retry.hidden=true;
     this.#state.textContent='Ouverture du salon…';
     try{
-      const [data,room]=await Promise.all([actor(),lounge(),loadPoseWeights()]);if(epoch!==this.#epoch||!this.isConnected)return;
+      const [data,[room,lightMap]]=await Promise.all([actor(),lounge(),loadPoseWeights()]);if(epoch!==this.#epoch||!this.isConnected)return;
       let view;
-      if(!forceSoftware){try{view=createView(this.#gpu,data,room);}catch{/* Use the same scene on the 2D canvas. */}}
+      if(!forceSoftware){try{view=createView(this.#gpu,data,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js');
+        const {createSoftwareView}=await import('./avatar-software.js?v=salon-v27');
         if(epoch!==this.#epoch||!this.isConnected)return;
-        view=createSoftwareView(this.#cpu,data,room,cameraProjection,materialFor);
+        view=createSoftwareView(this.#cpu,data,room,lightMap,cameraProjection,materialFor);
       }
       this.#view=view;this.#canvas=this.#software?this.#cpu:this.#gpu;
       this.#cpu.hidden=!this.#software;this.#gpu.hidden=this.#software;
       this.#draw();this.#poster.hidden=true;
       this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule);
       this.dispatchEvent(new CustomEvent('avatar-ready'));
-    }catch{if(epoch===this.#epoch){this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#state.textContent='Aperçu du salon. Le modèle interactif est indisponible.';}}
+    }catch{if(epoch===this.#epoch){this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#state.textContent='Le chargement du salon a été interrompu.';retry.hidden=false;}}
   }
   #schedule=()=>{
     if(this.#view&&!this.#frame)this.#frame=requestAnimationFrame(time=>{

@@ -2,49 +2,66 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
-import {seats,walkable} from './salon-plan.js';
-import {SalonMotion,seatAt,cameraProjection,orbitCamera,moveCamera,zoomCamera} from './salon-navigation.js';
+import {seats,roomFree} from './salon-plan.js';
+import {SalonMotion,newCamera,seatAt,cameraProjection,orbitCamera,moveCamera,zoomCamera} from './salon-navigation.js';
 
 function until(motion,done) {
-  for(let frame=0;frame<1500;frame++){motion.update(1/60);if(done())return;}
+  for(let frame=0;frame<2500;frame++){motion.update(1/60);if(done())return;}
   assert.fail('Le personnage reste dans la phase '+motion.mode);
 }
-test('Chaque assise est accessible depuis les neuf autres et permet de reprendre la marche',()=>{
+const newMotion=()=>new SalonMotion(undefined,newCamera());
+
+test('Chaque assise du salon V27 est accessible depuis les neuf autres',()=>{
   for(const destination of seats){
-    const motion=new SalonMotion();
+    const motion=newMotion();
     for(const other of seats){
       for(const s of [other,destination]){
         motion.goToSeat(s);
         until(motion,()=>motion.mode==='seated'&&motion.seat===s);
-        assert.deepEqual([motion.x,motion.z,motion.sit],[s.x,s.z,1]);
+        assert.equal(motion.sit,1);
+        // The V27 skeleton sits back from the standing anchor onto the upholstery.
+        assert.ok(Math.abs(100*motion.x+700-s.gap*Math.sin(s.yaw)-s.x)<.001);
+        assert.ok(Math.abs(100*motion.z-800-s.gap*Math.cos(s.yaw)-s.z)<.001);
         assert.ok(Math.abs(Math.sin(motion.yaw-s.yaw))<.001);
+        assert.ok(motion.bones().every(Number.isFinite));
       }
     }
-    motion.stick(-1,0);
-    until(motion,()=>motion.mode==='idle');
-    assert.ok(walkable(motion.x,motion.z));
-    assert.equal(motion.sit,0);
   }
 });
-test('Interrompre une approche ou une assise rend la main au joystick dans une zone libre',()=>{
-  for(const phase of ['approach','docking','align','lowering','seated']){
-    const m=new SalonMotion();m.goToSeat(seats[8]);until(m,()=>m.mode===phase);
-    m.stick(0,1);until(m,()=>m.mode==='idle');assert.ok(walkable(m.x,m.z));
-    for(let i=0;i<180;i++){m.update(1/30);assert.ok(walkable(m.x,m.z));}
+test('Le joystick interrompt le trajet ou relève le personnage avant de marcher',()=>{
+  for(const phase of ['walk','sitDown','seated']){
+    const m=newMotion();m.goToSeat(seats[8]);until(m,()=>m.mode===phase);
+    m.stick(0,1);until(m,()=>m.mode==='steer');assert.equal(m.sit,0);
+    for(let i=0;i<90;i++){m.update(1/30);assert.ok(roomFree(m.x*100+700,m.z*100-800));}
+    m.stick(0,0);until(m,()=>m.mode==='idle');
+  }
+});
+test('Les poignets suivent les avant-bras au repos et les paumes suivent le support en position assise',()=>{
+  const m=newMotion(),bones=m.bones();
+  for(const hand of [4,7]){
+    for(const i of [0,1,2,4,5,6,8,9,10])assert.equal(bones[16*hand+i],bones[16*(hand-1)+i]);
+    assert.ok(Math.abs(bones[16*hand+1])>.1);
+  }
+  m.goToSeat(seats[3]);until(m,()=>m.mode==='seated');
+  const seated=m.bones();
+  for(const [joint,side] of [[4,-1],[7,1]]){
+    const i=16*joint;
+    const palmY=seated[i+1]*(-side*.86)+seated[i+5]*(-.27)+seated[i+9]*(-.42);
+    assert.ok(palmY<-.80);
   }
 });
 test('Un toucher sur le coussin réel de chaque siège sélectionne la bonne place',()=>{
-  const room=gunzipSync(readFileSync(new URL('../assets/membres/salon.bin',import.meta.url)));
+  const room=gunzipSync(readFileSync(new URL('../assets/membres/salon-v27.bin',import.meta.url)));
   const bytes=room.buffer.slice(room.byteOffset,room.byteOffset+room.byteLength);
-  for(const seat of seats){
-    const c={x:seat.x,y:seat.height,z:seat.z,angle:seat.yaw,pitch:1.2,zoom:1};
-    assert.equal(seatAt(bytes,c,840,440,420,220)?.id,seat.id);
+  for(const s of seats){
+    const c={x:(s.x-700)/100,y:s.height/100,z:(s.z+800)/100,angle:s.yaw,pitch:1.48,zoom:1};
+    assert.equal(seatAt(bytes,c,840,440,420,220)?.id,s.id);
   }
 });
 test('La caméra peut pivoter, se déplacer et zoomer indépendamment du personnage',()=>{
-  const m=new SalonMotion(),c=m.camera;
+  const m=newMotion(),c=m.camera,start=[m.x,m.z,m.yaw];
   orbitCamera(c,210,80);orbitCamera(c,65,-9000);
   assert.ok(c.pitch>0);assert.ok(cameraProjection(390,650,false,c).sp>0);
-  const start={...c};moveCamera(c,80,55,390,650);assert.notEqual(c.x,start.x);assert.equal(c.follow,false);
-  zoomCamera(c,1.5);assert.ok(c.zoom>start.zoom);assert.deepEqual([m.x,m.z,m.yaw],[0,0,.11]);
+  const before={...c};moveCamera(c,80,55,390,650);assert.notEqual(c.x,before.x);assert.equal(c.follow,false);
+  zoomCamera(c,1.5);assert.ok(c.zoom>before.zoom);assert.deepEqual([m.x,m.z,m.yaw],start);
 });
