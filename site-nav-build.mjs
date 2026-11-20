@@ -1,6 +1,6 @@
 import {pageURL} from './site-origin-build.mjs';
 import {activeSection} from './site-nav.js';
-const pages = new Set(['l-odeur-du-bois.html','soutien.html','dialogues.html','admin-blog.html','index.html','carte.html','jeu.html','ahmed-marie.html','contact.html','presentation.html','admin.html','editeurs.html','lecture.html','mode_emploi.html','mode_emploi_treize_chemins.html']);
+const pages = new Set(['mentions-legales.html','confidentialite.html','conditions-de-vente.html','retractation.html','l-odeur-du-bois.html','soutien.html','dialogues.html','admin-blog.html','index.html','carte.html','jeu.html','ahmed-marie.html','contact.html','presentation.html','admin.html','editeurs.html','lecture.html','mode_emploi.html','mode_emploi_treize_chemins.html']);
 export function navigation(filename) {
   const links = [['jeu.html','Le voyage','voyage'],['ahmed-marie.html#blog','Blog','blog'],['ahmed-marie.html#ahmed-numerique','Ahmed numérique','digital'],['soutien.html','Soutenir','support'],['l-odeur-du-bois.html','L’odeur du bois','atelier']];
   const current = activeSection('/'+filename);
@@ -17,7 +17,7 @@ export function injectSharedNavigation(html, filename) {
     html = html.replace(/<\/head>/i,'<link rel="stylesheet" href="site-nav.css?v=20261120-odeur-du-bois"><script type="module" src="site-nav.js?v=20261120-odeur-du-bois"></script></head>');
   }
   if (!/^(admin(?:-blog)?|editeurs)\.html$/.test(filename) && !/src=["']site-visits\.js/.test(html)) {
-    const tag = '<script defer src="site-visits.js?v=20261115-1"></script>';
+    const tag = '<script defer src="site-visits.js?v=20261120-consent"></script>';
     html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i,tag+'</body>') : html+tag;
   }
   return html;

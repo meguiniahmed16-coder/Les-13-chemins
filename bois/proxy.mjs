@@ -2,7 +2,7 @@ const backend='https://odeur-du-bois.meguiniahmed16.workers.dev';
 export default async function handler(request){
  const url=new URL(request.url);
  const path=url.pathname.slice('/api/creations'.length);
- if(!/^\/(?:catalog|checkout|reservation|cancel|buy\/santal-rose|media\/[a-f0-9-]+\.webp|admin\/(?:catalog|save|stripe|shipped|convert))$/.test(path))return new Response(null,{status:404});
+ if(!/^\/(?:catalog|retractation|confirmation|checkout|reservation|cancel|buy\/santal-rose|media\/[a-f0-9-]+\.webp|admin\/(?:catalog|save|stripe|shipped|convert|retractations|accuse))$/.test(path))return new Response(null,{status:404});
  if(!['GET','POST'].includes(request.method))return new Response(null,{status:405});
  if(request.method==='POST'&&(url.origin!=='https://tectonique-des-ames.com'||request.headers.get('origin')!==url.origin))return new Response(null,{status:403});
  const headers=new Headers({origin:url.origin});if(path.startsWith('/admin/'))headers.set('cookie',request.headers.get('cookie')||'');

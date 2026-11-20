@@ -3,6 +3,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
+import {termsFile} from './bois/conditions.mjs';
+import {injectLegal} from './legal-build.mjs';
 import { injectAnalytics } from './site-analytics-build.mjs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
 import {characterDirectory} from './atlas-dialogues-data.mjs';
@@ -58,6 +60,7 @@ for (const args of [
 const publicFiles = [
   'atlas-personnages.js', 'atlas-discussion.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
+  'mentions-legales.html','confidentialite.html','retractation.html','retractation.js','legal.css','site-consent.js',
   'bois-public.js', 'atelier.html', 'l-odeur-du-bois.html', 'atelier.css', 'atelier.js',
   'assets/atelier/bague-sur-letabli.webp', 'assets/atelier/bague-sur-le-bloc.webp',
   'assets/atelier/bague-sur-le-support.webp', 'assets/atelier/bague-profil.webp',
@@ -245,6 +248,10 @@ const arrivalData = stops.map((stop, i) => {
   return {...base, plateaux:[{...base,plateau:1},...extra]};
 });
 await mkdir(output);
+const terms=await readFile(join(root,termsFile.slice(1)),'utf8');
+const termsPage='conditions-de-vente.html';
+await writeFile(join(output,termsPage),canonicalizeSource(injectLegal(injectSharedNavigation(injectAnalytics(terms,termsPage),termsPage)),termsPage));
+await writeFile(join(output,termsFile.slice(1)),terms.replace('<head>','<head><base href="https://tectonique-des-ames.com/"><style>body{max-width:48rem;margin:2rem auto;padding:1rem;font:16px/1.6 Georgia,serif}.legal-box{padding:1rem;border:1px solid}</style>'));
 await writeFile(join(output,'atlas-dialogues.json'), JSON.stringify(await characterDirectory()));
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
@@ -255,7 +262,7 @@ for (const name of publicFiles) {
       const extras = name === 'jeu-le-traitre.html' && !html.includes('chemins-en-cours-data.js') ? '<script defer src="chemins-en-cours-data.js"></script>' : '';
       html = html.replace('</head>', '<link rel="stylesheet" href="atlas-personnages.css">'+extras+'<script defer src="atlas-personnages.js"></script></head>');
     }
-    await writeFile(join(output, name), canonicalizeSource(injectSharedNavigation(injectAnalytics(html, name), name),name));
+    await writeFile(join(output, name), canonicalizeSource(injectLegal(injectSharedNavigation(injectAnalytics(html, name), name)),name));
   } else if (/\.(?:js|json|css)$/.test(name)) {
     await writeFile(join(output,name),canonicalizeSource(await readFile(join(root,name),'utf8'),name));
   } else {

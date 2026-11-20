@@ -61,3 +61,5 @@ figcaption { margin-top: 7px; font-size: .875rem; color: var(--muted); }
 .bois-paiement .action small { font: 400 .8rem/1.4 system-ui; }
 .bois-autres { justify-self: center; min-height: 44px; background: transparent; border: 0; color: var(--ink); cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: .2em; }
 .bois-paiement :disabled { opacity: .65; cursor: default; }
+
+.bois-accord{display:block;margin:.75rem 0 1rem;font-size:.95rem}.bois-accord input{width:1.1rem;height:1.1rem;vertical-align:middle}.bc-delai{font-size:.9rem}

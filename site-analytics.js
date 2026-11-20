@@ -8,7 +8,9 @@
   // Les jeux intégrés au plateau ne créent pas une deuxième visite de page.
   try { if (window.top !== window.self) return; } catch { return; }
   const path = location.pathname.replace(/\/+$/, '').replace(/\.html$/i, '').toLowerCase();
-  if (/^\/(?:admin|editeurs|contact)(?:\/|$)/.test(path)) return;
+  if (/^\/(?:admin(?:-blog)?|editeurs|contact|retractation)(?:\/|$)/.test(path)) return;
+  function start() {
+  if (window.tdaAudienceAllowed?.() !== true) return;
   if (document.querySelector('script[data-cf-beacon]')) return;
   const beacon = document.createElement('script');
   beacon.type = 'module';
@@ -20,4 +22,7 @@
   beacon.addEventListener('load', () => { beacon.dataset.loaded = 'true'; }, { once: true });
   beacon.addEventListener('error', () => { beacon.dataset.loaded = 'false'; }, { once: true });
   document.head.appendChild(beacon);
+  }
+  window.addEventListener('tda-consent',start);
+  start();
 })();

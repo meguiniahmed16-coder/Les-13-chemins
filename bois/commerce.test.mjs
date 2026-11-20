@@ -4,6 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {createHmac} from 'node:crypto';
 import worker from './worker.mjs';
+import {termsVersion} from './conditions.mjs';
 import {origin,seed} from './model.mjs';
 
 function database(){
@@ -28,8 +29,11 @@ test('Création, brouillon, taille, port, concurrence, abandon et paiement sign�
  assert.deepEqual((await (await call('/catalog')).json()).pieces,[]);
  assert.equal((await call('/admin/save',{...draft,state:'published',revision:1},admin)).status,200);
  const cat=async()=>(await (await call('/catalog')).json()).pieces[0];const active=await cat();
- const buy={id:crypto.randomUUID(),piece:draft.id,variant:'unique',zone:'france',revision:active.revision};
+ const buy={termsVersion,id:crypto.randomUUID(),piece:draft.id,variant:'unique',zone:'france',revision:active.revision};
+ assert.equal((await call('/checkout',{...buy,termsVersion:undefined})).status,409);
  assert.equal((await call('/checkout',buy)).status,200);
+ assert.equal(fields.get('metadata[conditions_vente]'),termsVersion);
+ assert.ok(fields.get('custom_text[submit][message]').includes('/conditions-'+termsVersion+'.html'));
  assert.equal(fields.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'),'600');
  assert.equal(fields.get('shipping_address_collection[allowed_countries][0]'),'FR');
  assert.equal((await call('/checkout',buy)).status,200);assert.equal(n,1);
@@ -66,7 +70,7 @@ test('Le pays détermine le tarif, le total et l’adresse acceptée dans Stripe
  let fields;
  t.mock.method(globalThis,'fetch',async (url,init)=>{fields=init.body;return Response.json({id:'cs_international',url:'https://checkout.stripe.com/c/pay/cs_international'});});
  const post=body=>worker.fetch(new Request(origin+'/checkout',{method:'POST',headers:{origin},body:JSON.stringify(body)}),env,{});
- const body={piece,id:crypto.randomUUID(),variant:'unique',zone:world.id,revision:1};
+ const body={termsVersion,piece,id:crypto.randomUUID(),variant:'unique',zone:world.id,revision:1};
  assert.equal((await post(body)).status,400);
  for(const country of ['CA','FR','ZZ']) assert.equal((await post({...body,country})).status,400);
  assert.equal((await post({...body,country:'JP',zone:'france'})).status,400);
@@ -101,7 +105,7 @@ test('Le paiement express privilégie les portefeuilles et une annulation libèr
  await env.DB.prepare("INSERT INTO bois_pieces VALUES(?,1,'published',?,0)").bind(piece,JSON.stringify({...seed,legacy:false})).run();
  const call=(path,body)=>worker.fetch(new Request(origin+path,{method:'POST',headers:{origin},body:JSON.stringify(body)}),env,{});
  const catalog=async()=>(await (await worker.fetch(new Request(origin+'/catalog'),env,{})).json()).pieces[0];
- const checkout=(id,checkoutMode,revision)=>call('/checkout',{id,checkoutMode,piece,revision,zone:'france',variant:'unique',country:'FR'});
+ const checkout=(id,checkoutMode,revision)=>call('/checkout',{termsVersion,id,checkoutMode,piece,revision,zone:'france',variant:'unique',country:'FR'});
  const session={id:'cs_wallet',status:'open',payment_status:'unpaid',metadata:{bois_order:order}};
  const creations=[];
  let expirationCalls=0;
@@ -134,4 +138,24 @@ test('Le paiement express privilégie les portefeuilles et une annulation libèr
  assert.equal((await call('/cancel',{id:session.metadata.bois_order})).status,409);
  assert.equal(expirationCalls,1);
  assert.equal((await catalog()).variants[0].stock,0);
+});
+
+test('La rétractation est enregistrée avec son contenu, sa date et un accusé stable, et reste privée',async()=>{
+ const db=database();
+ for(const command of readFileSync(new URL('legal-schema.sql',import.meta.url),'utf8').split(';').map(s=>s.trim()).filter(Boolean))await db.prepare(command).run();
+ const env={DB:db,AUTH:{fetch:async()=>new Response(null,{status:200})}};
+ const call=(path,body,cookie='')=>worker.fetch(new Request(origin+path,{method:body?'POST':'GET',headers:{origin,cookie},body:body?JSON.stringify(body):undefined}),env,{});
+ const id=crypto.randomUUID();
+ const declaration={id,name:'Essai',email:'essai@example.invalid',contract:'Livre, novembre',confirm:true};
+ assert.equal((await call('/retractation',{...declaration,confirm:false})).status,400);
+ const first=await (await call('/retractation',declaration)).json();
+ assert.ok(Number.isFinite(Date.parse(first.received)));
+ assert.deepEqual(await (await call('/retractation',declaration)).json(),first);
+ assert.equal((await call('/retractation',{...declaration,contract:'autre'})).status,409);
+ assert.equal((await call('/admin/retractations')).status,401);
+ const admin='__Host-am_site_admin=valide';
+ const records=await (await call('/admin/retractations',null,admin)).json();
+ assert.equal(records.items.length,1);assert.equal(records.items[0].email,declaration.email);
+ assert.equal((await call('/admin/accuse',{id},admin)).status,200);
+ assert.ok((await (await call('/admin/retractations',null,admin)).json()).items[0].acknowledged);
 });

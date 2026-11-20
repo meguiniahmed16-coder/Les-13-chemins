@@ -5,8 +5,8 @@ import vm from 'node:vm';
 import { injectAnalytics } from './site-analytics-build.mjs';
 const source = readFileSync(new URL('./site-analytics.js', import.meta.url), 'utf8');
 
-function load({host='tectonique-des-ames.com',path='/presentation',protocol='https:',embedded=false,existing=false}={}) {
-  const scripts=[];const self={};const window={self,top:embedded?{}:self};
+function load({host='tectonique-des-ames.com',path='/presentation',protocol='https:',embedded=false,existing=false,consent=true}={}) {
+  const scripts=[];const self={};const window={tdaAudienceAllowed:()=>consent,addEventListener(){},self,top:embedded?{}:self};
   const context=vm.createContext({window,location:{hostname:host,pathname:path,protocol},document:{
     querySelector:()=>existing||scripts.length?scripts[0]||{}:null,
     createElement:()=>({dataset:{},setAttribute(key,value){this[key]=value;},addEventListener(){}}),
@@ -29,6 +29,7 @@ test('Previews, embedded games and restricted pages send no analytics',()=>{
     assert.equal(load({host}).scripts.length,0);
   for(const path of ['/admin','/admin.html','/admin/','/editeurs','/editeurs.html','/editeurs/passages','/contact','/contact.html'])
     assert.equal(load({path}).scripts.length,0);
+  assert.equal(load({consent:false}).scripts.length,0);
   assert.equal(load({embedded:true}).scripts.length,0);
   assert.equal(load({protocol:'http:'}).scripts.length,0);
   assert.equal(load({existing:true}).scripts.length,0);
