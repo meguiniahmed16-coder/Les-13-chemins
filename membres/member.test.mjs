@@ -70,7 +70,10 @@ test('Le salon auteur réutilise la session active et ne crée pas une connexion
   const studio='__Host-am_site_admin=test-session';
   const editor='__Host-editor-admin='+'6'.repeat(64);
   const signed=await api('signup',account), ordinary=signed.headers.get('set-cookie').split(';')[0];
-  env.ADMIN.fetch=async r=>Response.json({ok:r.headers.get('cookie')===studio});
+  env.ADMIN.fetch=async r=>{
+    assert.equal(r.redirect,'manual');
+    return Response.json({ok:r.headers.get('cookie')===studio});
+  };
   const open=await api('me',null,studio+'; '+ordinary),owner=await open.json();
   assert.equal(owner.author,'atelier');assert.equal(open.headers.get('set-cookie'),null);
   assert.equal((await api('avatar',{avatar:{...owner.avatar,bottom:'laine'}},studio)).status,200);
@@ -81,13 +84,15 @@ test('Le salon auteur réutilise la session active et ne crée pas une connexion
   try {
     globalThis.fetch=async(url,opts)=>{
       assert.equal(url,'https://tectonique-des-ames.com/.netlify/functions/editor?action=owner-session');
-      assert.equal(opts.headers.cookie,editor);return Response.json({ok:true});
+      assert.equal(opts.headers.cookie,editor);assert.equal(opts.redirect,'manual');return Response.json({ok:true});
     };
     const other=await (await api('me',null,editor)).json();
     assert.equal(other.author,'edition');assert.equal(other.id,owner.id);
     assert.equal(other.avatar.bottom,'laine');
     assert.equal(db.prepare("SELECT count(*) n FROM member_sessions WHERE member=?").get(owner.id).n,0);
   } finally {globalThis.fetch=originalFetch;}
+  env.ADMIN.fetch=async()=>Response.redirect('https://example.invalid/');
+  assert.equal((await api('admin/settings',null,studio)).status,503);
   env.ADMIN.fetch=async()=>new Response(null,{status:401});
   assert.equal((await api('admin/settings',null,studio)).status,401);
   assert.equal((await api('me?auteur=1',null,studio+'; '+ordinary)).status,401);

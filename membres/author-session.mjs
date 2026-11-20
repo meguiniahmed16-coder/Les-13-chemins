@@ -17,13 +17,13 @@ export async function authorSession(request,env) {
   const editor=cookieValue(request,editorCookie);
   if(studio && /^[a-zA-Z0-9.\-]{1,200}$/.test(studio)) {
     const reply=await env.ADMIN.fetch(new Request('https://ahmed-marie-double.meguiniahmed16.workers.dev/web-admin/auth/session',{
-      headers:{cookie:workshopCookie+'='+studio,origin:site},redirect:'error'
+      headers:{cookie:workshopCookie+'='+studio,origin:site},redirect:'manual'
     }));
     if(await confirmed(reply))return 'atelier';
   }
   if(!/^[a-f0-9]{64}$/.test(editor))return null;
   const response=await fetch(site+'/.netlify/functions/editor?action=owner-session',{
-    headers:{cookie:editorCookie+'='+editor},redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000)
+    headers:{cookie:editorCookie+'='+editor},redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(10000)
   });
   return await confirmed(response)?'edition':null;
 }

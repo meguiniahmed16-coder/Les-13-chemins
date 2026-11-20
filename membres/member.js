@@ -128,6 +128,11 @@ function providerControls(providers){
     });panel.append(form);
   }
 }
+async function loadProviderOptions(){
+  const response=await fetch(base+'options',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw new Error('Les connexions externes sont momentanément indisponibles.');
+  return (await response.json()).providers;
+}
 async function refresh(){
   const previous=member, previousDraft=appearance;
   try{member=await api('me');}catch(e){if(e.status!==401)throw e;member=null;}
@@ -145,7 +150,7 @@ async function refresh(){
       return;
     }
     mode(false);
-    const {providers}=await api('options');
+    const providers=await loadProviderOptions().catch(()=>({}));
     for(const key of ['google','facebook']){
       $(key).hidden=$(key).disabled=!providers[key];
       $(key).onclick=()=>location.assign(base+'oauth/'+key);
@@ -171,7 +176,14 @@ async function refresh(){
   const keepDraft=previous?.id===member.id && JSON.stringify(previous.avatar)===JSON.stringify(member.avatar);
   wardrobe(keepDraft?previousDraft:null);renderJourney();setPage();
   void mountRoom().catch(()=>note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.'));
-  if(member.author)providerControls((await api('options')).providers);
+  if(member.author){
+    const expected=member;
+    void loadProviderOptions().then(providers=>{
+      if(member===expected)providerControls(providers);
+    }).catch(()=>{
+      if(member===expected)$('admin-providers').textContent='Les réglages de connexion sont momentanément indisponibles.';
+    });
+  }
   note(member.pseudo?'':'Choisis ton pseudo et renseigne ta date de naissance pour entrer dans le salon.');
 }
 $('choose-login').onclick=()=>mode(false);$('choose-signup').onclick=()=>mode(true);
@@ -185,7 +197,7 @@ $('close-player').onclick=closeFilm;
 $('film-player').addEventListener('error',()=>{const f=videos.find(x=>x.id===playing);if(!f)return;const player=$('film-player');if(f.alternate&&player.src===f.alternate){player.src=f.url;player.play().catch(()=>{});}else note('Cette vidéo est momentanément indisponible.');});
 $('film-player').addEventListener('timeupdate',async()=>{const p=$('film-player');if(!member||recorded||!playing||p.paused||p.currentTime<.5||document.hidden)return;recorded=true;const id=playing,uid=member.id;try{await api('journey',{memberId:uid,videos:[id]});if(member?.id===uid){member.journey=mergeJourney(member.journey,{videos:[id]});renderJourney();}}catch{if(playing===id)recorded=false;}});
 window.addEventListener('hashchange',setPage);
-window.addEventListener('pageshow',e=>{if(e.persisted)refresh().catch(()=>note('La session n’a pas pu être vérifiée.'));});
+window.addEventListener('pageshow',e=>{if(e.persisted)void openSpace();});
 async function start(){
   await refresh();
   if(member&&new URLSearchParams(location.search).get('abonnement')==='retour'){
@@ -196,4 +208,25 @@ async function start(){
     note(member?.companion?'Bienvenue, Compagnon de route.':'Confirmation en attente. Retrouve ton statut dans Mon abonnement.');
   }
 }
-start().catch(()=>{note('Compagnon de route est momentanément indisponible. Recharge la page pour réessayer.');});
+let opening=false;
+async function openSpace(){
+  if(opening)return;
+  opening=true;
+  const retry=$('retry-opening');
+  retry.hidden=true;
+  note('Ouverture de ton espace…');
+  try{
+    await start();
+  }catch(error){
+    note(error.status===503?error.message:'La connexion au salon a été interrompue.');
+    if(authorEntry){
+      $('admin-return').href=adminURL(authorEntry);
+      $('admin-return').hidden=false;
+    }
+    retry.hidden=false;
+  }finally{
+    opening=false;
+  }
+}
+$('retry-opening').addEventListener('click',openSpace);
+void openSpace();
