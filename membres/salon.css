@@ -45,3 +45,5 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 @container(max-width:700px){.stage:has(.studio-drawer:not([hidden])) .full-text{display:none}}
 
 .studio-scroll input[type=search]{width:100%;font:inherit;border:1px solid #bbbcae;border-radius:5px;padding:7px;margin:4px 0;background:#fffdf8}.studio-scroll small[role=status]{display:block}
+
+.figure-tools{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.figure-tools button{flex:1}

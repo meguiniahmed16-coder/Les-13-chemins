@@ -1,4 +1,4 @@
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=studio28';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=studio28b';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={

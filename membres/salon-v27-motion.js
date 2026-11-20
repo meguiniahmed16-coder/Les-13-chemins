@@ -283,7 +283,7 @@ function roomPose(t){
  return matrices;
 }
  }
- centerCamera(){Object.assign(this.camera,{x:this.x,z:this.z,y:this.sit>.65?.67:.89,zoom:1.17,follow:true});}
+ centerCamera(){Object.assign(this.camera,{x:this.x,z:this.z,y:this.sit>.65?.67:.89,zoom:1.17,follow:true,presetMax:0});}
  trackWhenWalking(width,height){
    const c=this.camera;if(!c.follow||!width||!height)return;
    const sy=Math.sin(c.angle),cy=Math.cos(c.angle);

@@ -23,7 +23,7 @@ export function orbitCamera(c,dx,dy) {
   c.angle-=dx*.008;
   c.pitch=clamp(c.pitch+dy*.006,.14,1.29);
 }
-export function zoomCamera(c,multiplier) { c.zoom=clamp(c.zoom*multiplier,.48,3.7); }
+export function zoomCamera(c,multiplier) { c.zoom=clamp(c.zoom*multiplier,.48,Math.max(3.7,c.presetMax||0)); }
 
 // Resolve the frontmost visible triangle in the same orthographic projection
 // as both renderers. Furniture IDs live on the actual seat, arms and back.
@@ -57,4 +57,4 @@ export function seatAt(bytes,c,w,h,sx,sy) {
   return seat;
 }
 
-export {SalonMotion} from './salon-v27-motion.js?v=studio28';
+export {SalonMotion} from './salon-v27-motion.js?v=studio28b';

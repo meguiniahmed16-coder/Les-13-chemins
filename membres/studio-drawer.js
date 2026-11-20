@@ -1,9 +1,9 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js';
-import {normaliseStudio,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
+import {legacyStudio,normaliseStudio,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
-export function createDrawer(root,apply){
+export function createDrawer(root,apply,frameModel){
  const drawer=root.querySelector('.studio-drawer'),toggleButton=root.querySelector('.options-toggle');
  drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Apparence</button><button type="button">Garde-robe</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
  const pane=drawer.querySelector('.studio-scroll'),message=drawer.querySelector('[role=status]'),save=drawer.querySelector('.save');
@@ -40,12 +40,21 @@ export function createDrawer(root,apply){
     }
    }
   }
+  const views=make('div');views.className='figure-tools';views.setAttribute('role','group');views.setAttribute('aria-label','Vues du modèle');
+  for(const title of ['Corps','Visage','Profil','Dos']){const b=make('button',title);b.type='button';b.onclick=()=>frameModel(title);views.append(b);}
+  parent.append(views);const reset=make('button','Rétablir l’apparence de départ');reset.type='button';
+  reset.onclick=()=>{const initial=legacyStudio();choose({...look,face:initial.face,skinLevel:initial.skinLevel,iris:''});};parent.append(reset);
+
  }
  function card(parent,label,index,locked,selected,click,author=''){
   const b=make('button'),preview=make('span');b.type='button';b.className='piece';b.dataset.search=(label+' '+author).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();b.disabled=locked;
   preview.className='swatch';preview.style.backgroundPosition=(-48*(index%12))+'px '+(-60*Math.floor(index/12))+'px';
   preview.style.backgroundSize='576px '+(60*thumbRows)+'px';b.append(preview,make('span',label+(locked?' · Compagnon':'')));
-  b.onclick=click;controls.push(()=>b.setAttribute('aria-pressed',String(selected())));parent.append(b);
+  let lastTap=-Infinity;
+  b.onclick=event=>{
+   const now=performance.now();if(event.detail>0&&now-lastTap<430)return;
+   lastTap=event.detail>0?now:-Infinity;click();
+  };controls.push(()=>b.setAttribute('aria-pressed',String(selected())));parent.append(b);
  }
  function wardrobe(parent){
   const search=make('input'),status=make('small');search.type='search';search.placeholder='Rechercher un vêtement…';
@@ -80,6 +89,8 @@ export function createDrawer(root,apply){
    const l=make('label',label),box=make('input');box.type='checkbox';l.append(box);parent.append(l);
    controls.push(()=>{l.hidden=look.outfit[slot]!==id;box.checked=look[field];box.disabled=field==='tortoise'&&!options.plus;});box.onchange=()=>choose({...look,[field]:box.checked});
   }
+  const clear=make('button','Retirer la tenue');clear.type='button';clear.onclick=()=>choose({...look,outfit:{},denim:false,tortoise:false});parent.append(clear);
+
  }
  function render(){
   if(!look)return;controls.length=0;pane.replaceChildren();

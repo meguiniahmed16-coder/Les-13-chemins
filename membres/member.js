@@ -57,7 +57,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=studio28');
+  await import('./avatar.js?v=studio28b');
   if(!member)return;
   let view=$('room').querySelector('chemins-avatar');
   if(!view){

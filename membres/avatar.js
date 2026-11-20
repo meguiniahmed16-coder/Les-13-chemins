@@ -2,9 +2,9 @@
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js';
-import {createDrawer} from './studio-drawer.js';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=studio28';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=studio28';
+import {createDrawer} from './studio-drawer.js?v=studio28b';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=studio28b';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=studio28b';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
@@ -198,8 +198,8 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=studio28',import.meta.url).href);
-    this.#drawer=createDrawer(root,look=>this.apply(look));
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=studio28b',import.meta.url).href);
+    this.#drawer=createDrawer(root,look=>this.apply(look),view=>this.#frameModel(view));
     [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
     root.querySelector('.room-retry').addEventListener('click',()=>this.#open());
     this.#poster=root.querySelector('img');this.#state=root.querySelector('.state');
@@ -208,6 +208,19 @@ export class CheminsAvatar extends HTMLElement {
   }
   configure(look,options){this.#drawer.configure(look,options);return this.apply(look);}
   openOptions(open=true){this.#drawer.toggle(open);}
+  #frameModel(view){
+    if(!this.#view)return;
+    const m=this.#motion,b=m.bones(),c=m.camera,face=view==='Visage';
+    // Use the moving head pivot so the face stays in frame on a chair as well.
+    const at=16,head=[0,1.56,0],point=[0,1,2].map(row=>b[at+12+row]+head.reduce((sum,v,i)=>sum+v*b[at+4*i+row],0));
+    const cos=Math.cos(m.yaw),sin=Math.sin(m.yaw),width=this.#canvas.clientWidth,height=this.#canvas.clientHeight;
+    const scale=Math.min(2/3.8,2*width/(height*4.7));
+    c.angle=m.yaw+(view==='Profil'?Math.PI/2:view==='Dos'?Math.PI:0);c.pitch=face?.07:.14;
+    c.x=m.x+cos*point[0]+sin*point[2];c.z=m.z-sin*point[0]+cos*point[2];
+    c.y=face?point[1]:point[1]*.52;c.presetMax=face?14:0;
+    c.zoom=Math.min(face?14:3.7,(face?3.7:1.54/(point[1]+.1))/Math.max(.1,scale));c.follow=false;
+    this.#schedule();
+  }
   async apply(look){
     if(this.#pending&&JSON.stringify(this.#look)===JSON.stringify(look))return this.#pending;
     this.#look=look;
@@ -236,7 +249,7 @@ export class CheminsAvatar extends HTMLElement {
       if(!forceSoftware){try{view=createView(this.#gpu,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js?v=studio28');
+        const {createSoftwareView}=await import('./avatar-software.js?v=studio28b');
         if(epoch!==this.#epoch||!this.isConnected)return;
         view=createSoftwareView(this.#cpu,room,lightMap,cameraProjection);
       }
