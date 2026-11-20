@@ -8,8 +8,9 @@ function seat(id, label, kind, x, z, height, yaw, width, depth, approach, backHe
 }
 const halfTurn = Math.PI;
 export const seats = [
-  ...[-1.68, -1.12, -.56].map((x, i) => seat(`sofa-${i+1}`, ['Canapé · gauche', 'Canapé · centre', 'Canapé · droite'][i], 'sofa', x, -1.82, .58, 0, .56, .68, {x, z:-1.11}, 1.015)),
-  seat('armchair', 'Fauteuil', 'armchair', 1.50, -1, .43, 0, .83, .76, {x:1.5,z:-.27}, .945),
+  // The hip rests forward of the cushion centre so the shins clear the upholstered front.
+  ...[-1.68, -1.12, -.56].map((x, i) => seat(`sofa-${i+1}`, ['Canapé · gauche', 'Canapé · centre', 'Canapé · droite'][i], 'sofa', x, -1.65, .58, 0, .56, .68, {x, z:-1.11}, 1.015)),
+  seat('armchair', 'Fauteuil', 'armchair', 1.50, -.88, .43, 0, .83, .76, {x:1.5,z:-.27}, .945),
   ...[
     [2.92, -.49, halfTurn/2, 3.02, -1.13], [2.92, .49, halfTurn/2, 3.02, 1.13],
     [4.78, -.49, -halfTurn/2, 4.68, -1.13], [4.78, .49, -halfTurn/2, 4.68, 1.13],
