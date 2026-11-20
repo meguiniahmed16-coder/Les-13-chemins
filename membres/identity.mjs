@@ -5,10 +5,11 @@ export const nonce=()=>hex(crypto.getRandomValues(new Uint8Array(32)));
 export const digest=async value=>hex(await crypto.subtle.digest('SHA-256',encoder.encode(value)));
 export const now=()=>Math.floor(Date.now()/1000);
 export const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
-export function profile(body){
+export function profile(body,optionalBirth=false){
   const pseudo=String(body.pseudo||'').trim(),birth=String(body.birth||''),name=String(body.name||'').trim();
   const d=new Date(birth+'T00:00:00Z'),today=new Date();
   if(pseudo.length<2||pseudo.length>40||name.length>100)fail(400,'Choisis un pseudo de 2 à 40 caractères.');
+  if(optionalBirth&&!birth)return {pseudo,birth,name};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(birth)||!Number.isFinite(+d)||d.toISOString().slice(0,10)!==birth||d>today||today.getUTCFullYear()-d.getUTCFullYear()>125)fail(400,'Vérifie ta date de naissance.');
   return {pseudo,birth,name};
 }

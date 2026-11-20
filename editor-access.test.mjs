@@ -15,7 +15,7 @@ function setup(options={}) {
  };
  const cfg={accessHash:digest('AABBCCDDEEFF001122334455'),adminHash:digest('admin-test-secret')};
  const handler=createHandler({openStore:()=>store,configuration:()=>cfg,now:()=>time,...options});
- const request=(action,options={},context={ip:'192.0.2.1'})=>handler(new Request(origin+'/.netlify/functions/editor?action='+action,options),context);
+ const request=(action,options={},context={ip:'192.0.2.1'},host=origin)=>handler(new Request(host+'/.netlify/functions/editor?action='+action,options),context);
  const login=()=>request('login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({code:'aabb-ccdd-eeff-0011-2233-4455'})});
  return{records,cfg,store,request,login,setTime:v=>time=v};
 }
@@ -321,4 +321,18 @@ test('Recovery stays unavailable until Identity is invite-only with confirmation
  const x=setup({identityFetch:async()=>new Response(JSON.stringify({disable_signup:false,autoconfirm:true}))});
  assert.deepEqual(await(await x.request('recovery-status')).json(),{enabled:false});
  assert.equal((await command(x,'','request-owner-reset',{email:'meguiniahmed16@gmail.com'})).status,503);
+});
+
+test('Le domaine public reconnaît la session auteur et refuse une session éditeur ou expirée',async()=>{
+ const x=setup(),host='https://tectonique-des-ames.com';
+ const session=await x.request('admin-login',{method:'POST',headers:{Origin:host},body:JSON.stringify({code:'admin-test-secret'})},undefined,host);
+ assert.equal(session.status,200);
+ const cookie=session.headers.get('set-cookie').split(';')[0];
+ const check=c=>x.request('owner-session',{headers:{cookie:c}},undefined,host);
+ assert.deepEqual(await (await check(cookie)).json(),{ok:true});
+ const editor=(await x.login()).headers.get('set-cookie').split(';')[0];
+ assert.equal((await check(editor)).status,401);
+ assert.equal((await x.request('logout',{method:'POST',headers:{Origin:origin,Cookie:cookie}},undefined,host)).status,403);
+ await x.request('logout',{method:'POST',headers:{Origin:host,Cookie:cookie}},undefined,host);
+ assert.equal((await check(cookie)).status,401);
 });

@@ -2,3 +2,23 @@
 @media(max-width:700px){.auth-grid,.avatar-grid,.history{grid-template-columns:1fr}.auth-grid .cover{min-height:145px}.cover>div{padding:15px 20px}.cover h2{font-size:1.5rem}.model chemins-avatar{height:380px}.card{padding:17px}.tabs{gap:5px}.tabs a{font-size:.9rem}.member-head{margin-top:0}}
 
 .identity-head{display:flex;align-items:center;gap:14px}#photo-link{flex:0 0 auto}#photo{display:block;object-fit:cover;border:1px solid var(--line);border-radius:50%;background:#e9e7db}.photo-source{position:fixed;width:220px;left:-800px;top:0;pointer-events:none}
+
+#salon-layout{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:20px}
+#salon-layout.has-panel{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+#salon-layout.has-panel #salon{position:sticky;top:10px}
+#salon .section-head{margin:0 0 10px}#salon h2{margin:0}
+#salon-name{color:var(--faded);font-weight:600}.room{min-height:0}
+.room chemins-avatar{height:auto;min-height:min(42vh,330px)}
+#salon-panels>.tabpane>.card:first-child{margin-top:0}
+#provider-settings{margin-top:16px}.provider-form{margin-top:16px;border-top:1px solid var(--line);padding-top:15px}
+.provider-form code{overflow-wrap:anywhere;font-size:.85rem}.provider-form .note{margin:.5em 0}
+@media(max-width:700px){
+  .tabs{margin-bottom:14px}#salon-layout.has-panel{grid-template-columns:1fr;gap:12px}
+  #salon-layout.has-panel #salon{background:var(--paper);top:0;z-index:1;padding-top:4px}
+  #salon-layout.has-panel #salon h2{font-size:1.45rem}
+  #salon-layout.has-panel .room chemins-avatar{--room-height:clamp(145px,27dvh,255px);min-height:0}
+}
+@media(max-height:480px) and (orientation:landscape){
+  #salon-layout.has-panel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+  #salon-layout .room chemins-avatar{--room-height:48dvh;min-height:0}
+}

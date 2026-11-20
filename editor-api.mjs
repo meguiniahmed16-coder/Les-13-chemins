@@ -3,9 +3,10 @@ import { getStore } from '@netlify/blobs';
 
 // This module is deployed as a server function, never copied into dist/.
 // Documents and their catalogue live exclusively in private Netlify Blobs.
-const ORIGIN = 'https://tectonique-des-ames.netlify.app';
+const legacyOrigin = 'https://tectonique-des-ames.netlify.app';
+const canonicalOrigin = 'https://tectonique-des-ames.com';
 const OWNER_EMAIL = 'meguiniahmed16@gmail.com';
-const IDENTITY = ORIGIN + '/.netlify/identity';
+const IDENTITY = legacyOrigin + '/.netlify/identity';
 const COOKIE = '__Host-editor';
 const ADMIN_COOKIE = '__Host-editor-admin';
 const DAY = 86400000;
@@ -65,12 +66,12 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
   return async (request, context = {}) => {
     try {
       const url = new URL(request.url);
-      if (url.origin !== ORIGIN) return json({ error: 'Accès indisponible sur cette adresse.' }, 403);
+      if (url.origin !== canonicalOrigin && url.origin !== legacyOrigin) return json({ error: 'Accès indisponible sur cette adresse.' }, 403);
       const cfg = configuration ? configuration() : JSON.parse(process.env.EDITOR_CONFIG || '{}');
       if (!HEX.test(cfg.accessHash || '') || !HEX.test(cfg.adminHash || '')) return json({ error: 'L’espace éditeur est en cours de préparation.' }, 503);
       const action = url.searchParams.get('action') || 'list';
       const origin = request.headers.get('origin');
-      if (origin && origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+      if (origin && origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
       const store = openStore ? openStore() : getStore({ name: 'editorial-private-v1', consistency: 'strong' });
       const admin = matches(request.headers.get('x-editor-admin') || '', cfg.adminHash);
       const identityRequest = (path, options = {}) => identityFetch(IDENTITY + path, { ...options, redirect: 'error', signal: AbortSignal.timeout(12000) });
@@ -82,7 +83,7 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
         return json({ enabled: await identityReady() });
       }
       if (action === 'request-owner-reset' || action === 'recover-owner-code') {
-        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         let body;
         try { body = await smallJSON(request, 4000); } catch { return json({ error: 'Demande invalide.' }, 400); }
         const window = Math.floor(now() / 900000), ip = digest(context.ip || 'unknown');
@@ -157,11 +158,15 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       const ownerRevision = credential?.revision || cfg.adminHash;
       const ownerSession = HEX.test(ownerToken) ? await store.get('owner-sessions/' + digest(ownerToken), { type: 'json' }) : null;
       const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === ownerRevision;
+      if (action === 'owner-session') {
+        if (request.method !== 'GET') return json({ error: 'Méthode refusée.' }, 405);
+        return json({ ok: owner }, owner ? 200 : 401);
+      }
       // The owner's existing private-document permission also supports large
       // replacements. Immutable new parts remain invisible until one catalogue CAS.
       if (['owner-begin-upload', 'owner-upload-part', 'owner-publish-upload'].includes(action)) {
         if (!owner) return json({ error: 'Connecte-toi à l’espace administrateur.' }, 401);
-        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         const sessionHash = digest(ownerToken);
         if (action === 'owner-begin-upload') {
           let body;
@@ -255,7 +260,7 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       // The catalogue is updated atomically; unrelated documents are preserved.
       if (action === 'owner-save-document') {
         if (!owner) return json({ error: 'Connecte-toi à l’espace administrateur.' }, 401);
-        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         let body;
         try { body = await smallJSON(request, 1500000); } catch { return json({ error: 'Document invalide.' }, 400); }
         if (!body || typeof body.base64 !== 'string' || !/^[A-Za-z0-9+/]+={0,2}$/.test(body.base64)) return json({ error: 'Document invalide.' }, 400);
@@ -287,7 +292,7 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       const legacyDisabled = () => store.get('legacy-disabled/' + cfg.accessHash, { type: 'json' });
 
       if (action === 'login' || action === 'admin-login') {
-        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         // Claim twelve independent slots instead of updating a shared counter.
         // Both logins share the limit, across instances and simultaneous requests.
         const key = `attempt-slots/${digest(cfg.adminHash + (context.ip || 'unknown'))}/${Math.floor(now() / 900000)}`;
@@ -337,7 +342,7 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
           codes.sort((a,b) => b.createdAt - a.createdAt);
           return json({ codes, legacyEnabled: !disabled, documents: catalog?.files?.length || 0, updatedAt: catalog?.updatedAt || null });
         }
-        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         if (action === 'disable-legacy') {
           await store.setJSON('legacy-disabled/' + cfg.accessHash, { at: now() });
           return json({ ok: true });
@@ -381,7 +386,7 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
         authenticated = session.grantId ? session.revision === cfg.adminHash && !!(await grantActive(session.grantId)) : session.revision === cfg.accessHash && !(await legacyDisabled());
       }
       if (action === 'logout') {
-        if (request.method !== 'POST' || origin !== ORIGIN) return json({ error: 'Requête refusée.' }, 403);
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         if (HEX.test(token)) await store.delete('sessions/' + digest(token));
         if (HEX.test(ownerToken)) await store.delete('owner-sessions/' + digest(ownerToken));
         const response = json({ ok: true }, 200, { 'Set-Cookie': cookie('', 0) });

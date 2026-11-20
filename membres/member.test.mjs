@@ -22,7 +22,7 @@ function setup(){
   const env={DB,STRIPE_WEBHOOK_SECRET:'test',ADMIN:{fetch:()=>new Response(null,{status:401})}};
   const origin='https://tectonique-des-ames.com';
   const api=(path,body,session,from=origin)=>worker.fetch(new Request(origin+'/api/membres/'+path,{method:body?'POST':'GET',headers:{origin:from,cookie:session||'','content-type':'application/json'},body:body?JSON.stringify(body):undefined}),env);
-  return {db,DB,api};
+  return {db,DB,api,env};
 }
 const account={email:'account@example.invalid',password:'passphrase-bateau',birth:'1977-06-28',pseudo:'Ahmed',name:''};
 test('Le compte privé persiste, les accès sont séparés et la déconnexion révoque la session',async()=>{
@@ -63,4 +63,49 @@ test('Le renouvellement payé ouvre les options et la fin du contrat ferme les d
 test('La tranche d’âge change le jour anniversaire',()=>{
   assert.equal(ageBand('2008-11-21',new Date('2026-11-20T12:00:00Z')),'Moins de 18 ans');
   assert.equal(ageBand('2008-11-21',new Date('2026-11-21T12:00:00Z')),'18–24 ans');
+});
+
+test('Le salon auteur réutilise la session active et ne crée pas une connexion membre persistante',async()=>{
+  const {api,db,env}=setup();
+  const studio='__Host-am_site_admin=test-session';
+  const editor='__Host-editor-admin='+'6'.repeat(64);
+  const signed=await api('signup',account), ordinary=signed.headers.get('set-cookie').split(';')[0];
+  env.ADMIN.fetch=async r=>Response.json({ok:r.headers.get('cookie')===studio});
+  const open=await api('me',null,studio+'; '+ordinary),owner=await open.json();
+  assert.equal(owner.author,'atelier');assert.equal(open.headers.get('set-cookie'),null);
+  assert.equal((await api('avatar',{avatar:{...owner.avatar,bottom:'laine'}},studio)).status,200);
+  assert.equal((await api('checkout',{},studio)).status,409);
+  assert.equal((await api('admin/settings',null,studio)).status,200);
+  assert.notEqual(owner.id,(await (await api('me',null,ordinary)).json()).id);
+  const originalFetch=globalThis.fetch;
+  try {
+    globalThis.fetch=async(url,opts)=>{
+      assert.equal(url,'https://tectonique-des-ames.com/.netlify/functions/editor?action=owner-session');
+      assert.equal(opts.headers.cookie,editor);return Response.json({ok:true});
+    };
+    const other=await (await api('me',null,editor)).json();
+    assert.equal(other.author,'edition');assert.equal(other.id,owner.id);
+    assert.equal(other.avatar.bottom,'laine');
+    assert.equal(db.prepare("SELECT count(*) n FROM member_sessions WHERE member=?").get(owner.id).n,0);
+  } finally {globalThis.fetch=originalFetch;}
+  env.ADMIN.fetch=async()=>new Response(null,{status:401});
+  assert.equal((await api('admin/settings',null,studio)).status,401);
+  assert.equal((await api('me?auteur=1',null,studio+'; '+ordinary)).status,401);
+});
+test('Les fournisseurs se configurent seulement depuis une session auteur et leurs secrets restent privés',async()=>{
+  const {api,db,env}=setup(),owner='__Host-am_site_admin=author';
+  env.ADMIN.fetch=async()=>Response.json({ok:true});
+  env.OAUTH_SETTINGS_KEY=Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64');
+  const config={provider:'google',id:'123-example.apps.googleusercontent.com',secret:'example-secret-for-test'};
+  const before=await (await api('options')).json();
+  assert.deepEqual(before.providers,{google:false,facebook:false});
+  assert.equal((await api('admin/providers',config)).status,401);
+  assert.equal((await api('admin/providers',config,owner,'https://example.invalid')).status,403);
+  const after=await (await api('admin/providers',config,owner)).json();
+  assert.deepEqual(after.providers,{google:true,facebook:false});
+  assert.ok(!db.prepare("SELECT value FROM member_admin_settings WHERE key='oauth:google'").get().value.includes(config.secret));
+  const start=await api('oauth/google');assert.equal(start.status,303);
+  const target=new URL(start.headers.get('location'));
+  assert.equal(target.searchParams.get('redirect_uri'),'https://tectonique-des-ames.com/api/membres/oauth/google/callback');
+  assert.equal(target.searchParams.get('client_id'),config.id);
 });

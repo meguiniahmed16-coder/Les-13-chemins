@@ -4,12 +4,17 @@ import {games,scenes,videos,mergeJourney,importDeviceJourney,enableJourneyTracki
 const $=id=>document.getElementById(id);
 const el=(tag,text)=>{const node=document.createElement(tag);if(text)node.textContent=text;return node;};
 const note=text=>{$('status').textContent=text;};
-let photoGeneration=0;
+const authorEntry=new URLSearchParams(location.search).get('auteur');
+const adminURL=kind=>kind==='edition'?'/admin.html':'/admin-blog.html';
 let member,signup=false,appearance,playing='',recorded=false;
 const base='/api/membres/';
 async function api(path,data){
-  const response=await fetch(base+path,{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:data?{'content-type':'application/json'}:undefined,body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(20000)});
+  const response=await fetch(base+path+(authorEntry?'?auteur=1':''),{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:data?{'content-type':'application/json'}:undefined,body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(20000)});
   const result=await response.json();
+  if(response.status===401 && member && path!=='me'){
+    await refresh();
+    throw new Error('Ta session a expiré.');
+  }
   if(!response.ok)throw Object.assign(new Error(result.error||'Connexion indisponible.'),{status:response.status});
   return result;
 }
@@ -20,27 +25,50 @@ function action(fn){return async event=>{
 };}
 function mode(value){
   signup=value;$('choose-login').setAttribute('aria-pressed',String(!value));$('choose-signup').setAttribute('aria-pressed',String(value));
-  $('auth-title').textContent=value?'Créer mon carnet':'Ouvrir mon carnet';
+  $('auth-title').textContent=value?'Créer mon compte':'Se connecter';
   $('signup-fields').disabled=!value;$('signup-fields').hidden=!value;
   $('password').autocomplete=value?'new-password':'current-password';$('password').minLength=value?10:1;
   $('auth-submit').textContent=value?'Créer mon compte':'Se connecter';
   note(value?'Choisis un mot de passe de dix caractères ou plus.':'');
 }
+const pages=['salon','avatar','parcours','abonnement','profil'];
 function setPage(){
   if(!member)return;
-  const names=['parcours','avatar','salon','abonnement','profil'];
-  const key=!member.pseudo?'profil':names.includes(location.hash.slice(1))?location.hash.slice(1):'parcours';
-  names.forEach(k=>{$(k).hidden=k!==key;const a=$('tabs').querySelector('[href="#'+k+'"]');if(k===key)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  const selected=location.hash.slice(1);
+  const key=member.pseudo?(pages.includes(selected)?selected:'salon'):'profil';
+  for(const name of pages){
+    if(name!=='salon')$(name).hidden=name!==key;
+    const link=$('tabs').querySelector('[href="#'+name+'"]');
+    if(name===key)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
+  }
+  $('salon-panels').hidden=key==='salon';
+  $('salon-layout').classList.toggle('has-panel',key!=='salon');
   if(key!=='parcours')closeFilm();
-  if(key==='avatar'||key==='salon')void mountModel(key).catch(()=>note('L’affichage 3D a échoué. Rouvre cet onglet pour réessayer.'));
-  else{$('portrait').replaceChildren();$('room').replaceChildren();}
 }
-async function mountModel(key){
-  const target=$(key==='salon'?'room':'portrait'),other=$(key==='salon'?'portrait':'room');other.replaceChildren();
-  await import('./avatar.js');if($(key).hidden||!member)return;
-  let view=target.querySelector('chemins-avatar');
-  if(!view){view=el('chemins-avatar');view.setAttribute('scene',key==='salon'?'salon':'portrait');target.append(view);}
-  view.avatar=key==='salon'?member.avatar:appearance;
+function openPanel(event){
+  const link=event.target.closest('a[href^="#"]');
+  if(!link||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();
+  if(location.hash!==link.hash)history.pushState(null,'',link.hash);
+  setPage();
+}
+$('tabs').addEventListener('click',openPanel);
+$('photo-link').addEventListener('click',openPanel);
+async function mountRoom(){
+  await import('./avatar.js');
+  if(!member)return;
+  let view=$('room').querySelector('chemins-avatar');
+  if(!view){
+    view=el('chemins-avatar');view.setAttribute('scene','salon');
+    view.addEventListener('avatar-ready',()=>updatePhoto(view));
+    $('room').append(view);
+  }
+  view.avatar=appearance;updatePhoto(view);
+}
+function updatePhoto(view){
+  if(!member||!view)return;
+  const image=view.snapshot();
+  if(image)$('photo').src=image;
 }
 function closeFilm(){playing='';const player=$('film-player');if(player.getAttribute('src')){player.pause();player.removeAttribute('src');player.load();}$('player-panel').hidden=true;}
 function openFilm(film){
@@ -69,63 +97,95 @@ function renderJourney(){
   displayList('watched',videos.filter(x=>j.videos.includes(x.id)),'video','Retrouve ici les vidéos découvertes pendant ton voyage.');
   displayList('films',videos,'video','');
 }
-function wardrobe(){
-  appearance={...member.avatar};$('choices').replaceChildren();
+function wardrobe(previousDraft){
+  appearance={...(previousDraft||member.avatar)};$('choices').replaceChildren();
   for(const group of avatarCatalog){
     const label=el('label',group.label),select=el('select');select.name=group.key;
-    for(const item of group.options){const opt=el('option',item.label+(item.companion?' · Compagnon de route':''));opt.value=item.id;opt.disabled=item.companion&&!member.companion;select.append(opt);}
-    select.value=appearance[group.key];select.onchange=()=>{appearance[group.key]=select.value;const model=$('portrait').querySelector('chemins-avatar');if(model)model.avatar={...appearance};};label.append(select);$('choices').append(label);
+    for(const item of group.options){const opt=el('option',item.label+(item.companion?' · Compagnon de route':''));opt.value=item.id;opt.disabled=item.companion&&!member.companion&&!member.author;select.append(opt);}
+    select.value=appearance[group.key];select.onchange=()=>{appearance[group.key]=select.value;const model=$('room').querySelector('chemins-avatar');if(model)model.avatar={...appearance};};label.append(select);$('choices').append(label);
   }
 }
-async function portraitPhoto(){
-  const version=++photoGeneration;
-  $('photo-link').hidden=!member;
-  if(!member){$('photo').removeAttribute('src');return;}
-  const key='membre-portrait:'+member.id, look=JSON.stringify(member.avatar);
-  try{const cache=JSON.parse(sessionStorage.getItem(key)||'null');if(cache?.look===look&&cache.image.startsWith('data:image/')){$('photo').src=cache.image;return;}}catch{}
-  $('photo').src='/assets/membres/summer-man.webp';
-  await import('./avatar.js');
-  if(version!==photoGeneration||!member)return;
-  const view=el('chemins-avatar');view.className='photo-source';view.setAttribute('aria-hidden','true');view.inert=true;view.avatar=member.avatar;
-  const timer=setTimeout(()=>view.remove(),20000);
-  view.addEventListener('avatar-ready',()=>{try{
-    const image=view.snapshot();
-    if(image&&version===photoGeneration){$('photo').src=image;try{sessionStorage.setItem(key,JSON.stringify({look,image}));}catch{}}
-  }finally{clearTimeout(timer);view.remove();}},{once:true});
-  document.body.append(view);
+function providerControls(providers){
+  const panel=$('admin-providers');panel.replaceChildren();
+  for(const [key,title,consoleURL] of [
+    ['google','Google','https://console.cloud.google.com/auth/clients'],
+    ['facebook','Facebook','https://developers.facebook.com/apps/']
+  ]){
+    const form=el('form');form.className='provider-form';
+    form.append(el('h3',title));
+    const state=el('p',providers[key]?'Application configurée.':'Application à connecter.');state.className='note';
+    const link=el('a','Ouvrir la console '+title);link.href=consoleURL;link.target='_blank';link.rel='noopener noreferrer';
+    const callback=el('p','Adresse de retour à autoriser dans la console ');callback.append(el('code',location.origin+base+'oauth/'+key+'/callback'));
+    form.append(state,link,callback);
+    for(const [name,label,type] of [['id','Identifiant de l’application','text'],['secret','Secret de l’application','password']]){
+      const wrapper=el('label',label),input=el('input');input.name=name;input.type=type;input.required=true;
+      input.autocomplete='off';input.spellcheck=false;input.maxLength=512;wrapper.append(input);form.append(wrapper);
+    }
+    const submit=el('button','Enregistrer '+title);submit.className='primary';form.append(submit);
+    form.onsubmit=action(async()=>{
+      const {providers}=await api('admin/providers',{provider:key,...Object.fromEntries(new FormData(form))});
+      form.reset();providerControls(providers);note('Identifiants '+title+' enregistrés.');
+    });panel.append(form);
+  }
 }
 async function refresh(){
+  const previous=member, previousDraft=appearance;
   try{member=await api('me');}catch(e){if(e.status!==401)throw e;member=null;}
-  void portraitPhoto().catch(()=>{});
+  $('photo-link').hidden=!member;
   $('auth').hidden=Boolean(member);$('member').hidden=!member;$('logout').hidden=!member;
+  $('admin-return').hidden=!member?.author && !authorEntry;
+  $('admin-return').href=adminURL(member?.author||authorEntry);
   if(!member){
-    disableJourneyTracking();mode(false);
+    $('room').replaceChildren();$('choices').replaceChildren();$('admin-providers').replaceChildren();
+    $('photo').removeAttribute('src');appearance=null;
+    disableJourneyTracking();
+    if(authorEntry){
+      $('auth').hidden=true;
+      note('Ta session auteur a expiré. Rouvre ton administration pour accéder au salon.');
+      return;
+    }
+    mode(false);
     const {providers}=await api('options');
-    for(const key of ['google','facebook']){$(key).disabled=!providers[key];$(key).onclick=()=>location.assign(base+'oauth/'+key);}
-    const unavailable=['Google','Facebook'].filter(k=>!providers[k.toLowerCase()]);
-    $('provider-note').textContent=unavailable.length?'Connexion avec '+unavailable.join(' et ')+' à venir.':'';
+    for(const key of ['google','facebook']){
+      $(key).hidden=$(key).disabled=!providers[key];
+      $(key).onclick=()=>location.assign(base+'oauth/'+key);
+    }
+    $('google').parentElement.hidden=!Object.values(providers).some(Boolean);
     if(new URLSearchParams(location.search).has('connexion'))note('Connexion interrompue. Tu peux réessayer.');
     return;
   }
   enableJourneyTracking(member.id);
+  $('logout').hidden=Boolean(member.author);
+  $('private-atelier').hidden=!member.author;
+  $('private-atelier').href='/membre-atelier.html?auteur='+encodeURIComponent(member.author||'');
+  $('provider-settings').hidden=!member.author;
+  $('photo').src='/assets/membres/summer-man.webp';
+  $('profile-form').elements.birth.required=!member.author;
   for(const k of ['name','pseudo','birth'])$('profile-form').elements[k].value=member[k]||'';
   $('account-email').textContent=member.email;$('salon-name').textContent=[member.pseudo,member.age].filter(Boolean).join(' · ');
   $('plan-status').textContent=member.companion?'Ton accès est ouvert jusqu’au '+new Date(member.paidUntil*1000).toLocaleDateString('fr-FR')+'.':'Tu disposes des options gratuites.';
   $('portal').hidden=!member.portal;if(member.portal)$('portal').href=member.portal;
-  $('subscribe').hidden=member.companion;wardrobe();renderJourney();setPage();
+  $('subscribe').hidden=member.companion||Boolean(member.author);
+  if(member.author)$('plan-status').textContent='Ton accès auteur comprend toutes les options de personnalisation.';
+  $('offer-price').hidden=$('renewal').hidden=Boolean(member.author);
+  const keepDraft=previous?.id===member.id && JSON.stringify(previous.avatar)===JSON.stringify(member.avatar);
+  wardrobe(keepDraft?previousDraft:null);renderJourney();setPage();
+  void mountRoom().catch(()=>note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.'));
+  if(member.author)providerControls((await api('options')).providers);
   note(member.pseudo?'':'Choisis ton pseudo et renseigne ta date de naissance pour entrer dans le salon.');
 }
 $('choose-login').onclick=()=>mode(false);$('choose-signup').onclick=()=>mode(true);
 $('auth-form').onsubmit=action(async e=>{const form=e.target;await api(signup?'signup':'login',Object.fromEntries(new FormData(form)));form.reset();await refresh();});
-$('logout').onclick=action(async()=>{await api('logout',{});disableJourneyTracking();closeFilm();$('room').replaceChildren();$('portrait').replaceChildren();await refresh();});
+$('logout').onclick=action(async()=>{await api('logout',{});disableJourneyTracking();closeFilm();await refresh();});
 $('profile-form').onsubmit=action(async e=>{await api('profile',Object.fromEntries(new FormData(e.target)));await refresh();note('Ton profil est enregistré.');});
-$('wardrobe').onsubmit=action(async()=>{const result=await api('avatar',{avatar:appearance});member.avatar=result.avatar;void portraitPhoto().catch(()=>{});note('Ton avatar est enregistré pour le salon.');});
-$('import').onclick=action(async()=>{const found=importDeviceJourney();await api('journey',{memberId:member.id,...found});member.journey=mergeJourney(member.journey,found);renderJourney();note(Object.values(found).some(x=>x.length)?'Le parcours de cet appareil a été ajouté à ton carnet.':'Aucune ancienne étape enregistrée sur cet appareil.');});
+$('wardrobe').onsubmit=action(async()=>{const result=await api('avatar',{avatar:appearance});member.avatar=result.avatar;updatePhoto($('room').querySelector('chemins-avatar'));note('Ton avatar est enregistré pour le salon.');});
+$('import').onclick=action(async()=>{const found=importDeviceJourney();await api('journey',{memberId:member.id,...found});member.journey=mergeJourney(member.journey,found);renderJourney();note(Object.values(found).some(x=>x.length)?'Le parcours de cet appareil a été ajouté à ton parcours.':'Aucune ancienne étape enregistrée sur cet appareil.');});
 $('subscribe').onclick=action(async()=>{const result=await api('checkout',{});location.assign(result.url);});
 $('close-player').onclick=closeFilm;
 $('film-player').addEventListener('error',()=>{const f=videos.find(x=>x.id===playing);if(!f)return;const player=$('film-player');if(f.alternate&&player.src===f.alternate){player.src=f.url;player.play().catch(()=>{});}else note('Cette vidéo est momentanément indisponible.');});
 $('film-player').addEventListener('timeupdate',async()=>{const p=$('film-player');if(!member||recorded||!playing||p.paused||p.currentTime<.5||document.hidden)return;recorded=true;const id=playing,uid=member.id;try{await api('journey',{memberId:uid,videos:[id]});if(member?.id===uid){member.journey=mergeJourney(member.journey,{videos:[id]});renderJourney();}}catch{if(playing===id)recorded=false;}});
 window.addEventListener('hashchange',setPage);
+window.addEventListener('pageshow',e=>{if(e.persisted)refresh().catch(()=>note('La session n’a pas pu être vérifiée.'));});
 async function start(){
   await refresh();
   if(member&&new URLSearchParams(location.search).get('abonnement')==='retour'){
@@ -136,4 +196,4 @@ async function start(){
     note(member?.companion?'Bienvenue, Compagnon de route.':'Confirmation en attente. Retrouve ton statut dans Mon abonnement.');
   }
 }
-start().catch(()=>{note('Le carnet est momentanément indisponible. Recharge la page pour réessayer.');});
+start().catch(()=>{note('Compagnon de route est momentanément indisponible. Recharge la page pour réessayer.');});

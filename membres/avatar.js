@@ -3,7 +3,7 @@
 import {normaliseAvatar} from './avatar-catalog.js';
 
 const files = new URL('../assets/membres/', import.meta.url);
-const posterURL = new URL('summer-man.webp', files).href;
+const posterURL = new URL('salon-apercu.webp', files).href;
 async function unpack(name) {
   const response = await fetch(new URL(name, files));
   if (!response.ok) throw new Error('Le modèle ne répond pas.');
@@ -88,13 +88,28 @@ const topNames=['polo','coton','col-rond'];
 const colors = {white:[1,1,1],night:[.47,.54,.69],shell:[1.10,.76,.52]};
 const skinValue = {clair:0,dore:.24,brun:.72,profond:1};
 
+function cameraProjection(width,height,portrait) {
+  const angle=.45,pitch=.11;
+  const factor=Math.min(2/(portrait?.49:2.45),2*width/(height*(portrait?.44:1.58)));
+  return {sy:Math.sin(angle),cy:Math.cos(angle),sp:Math.sin(pitch),cp:Math.cos(pitch),factor,center:portrait?1.55:.92};
+}
+function materialFor(mesh,look) {
+  const name=mesh.name;
+  if(hairNames.includes(name)&&name!==look.hair || topNames.includes(name)&&name!==look.top)return null;
+  if(name==='jean'&&look.bottom==='laine' || name==='laine'&&look.bottom!=='laine' || name==='lunettes'&&look.accessory==='aucun')return null;
+  const skin=name==='visage-et-mains';
+  const shape=skin?(look.face==='doux'?mesh.shapes[0]:look.face==='sculpte'?mesh.shapes[1]:null):null;
+  const multiplier=name==='jean'&&look.bottom==='jean-nuit'?colors.night:name==='lunettes'&&look.accessory==='ecaille'?colors.shell:colors.white;
+  return {shape,multiplier,tone:skin?skinValue[look.skin]:0};
+}
+
 function makeShader(gl,type,source) {
   const shader=gl.createShader(type);
   gl.shaderSource(shader,source); gl.compileShader(shader);
   if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw new Error('Affichage 3D incompatible.');
   return shader;
 }
-function createView(canvas,data) {
+function createView(canvas,data,roomBytes) {
   const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
   if(!gl) throw new Error('Le navigateur ne propose pas WebGL.');
   const program=gl.createProgram();
@@ -118,30 +133,25 @@ function createView(canvas,data) {
   });
   const meshes=data.meshes.map(mesh=>({...mesh,position:buffer(mesh.position),normal:buffer(mesh.normal),uv:buffer(mesh.uv),
     faces:buffer(mesh.faces,gl.ELEMENT_ARRAY_BUFFER),shapes:mesh.shapes?.map(value=>buffer(value))}));
-  let roomBuffer, roomSize;
+  const roomBuffer=buffer(roomBytes),roomSize=roomBytes.byteLength/14;
   function attr(name,handle,components,type=gl.FLOAT,normalize=false,stride=0,offset=0){
     const loc=attributes[name];
     if(!handle){gl.disableVertexAttribArray(loc);gl.vertexAttrib3f(loc,0,0,0);return;}
     gl.bindBuffer(gl.ARRAY_BUFFER,handle); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,components,type,normalize,stride,offset);
   }
   return {
-    addRoom(bytes){if(!roomBuffer){roomBuffer=buffer(bytes);roomSize=bytes.byteLength/14;}},
-    draw(look,isRoom,yaw,portrait=false) {
+    draw(look,yaw,portrait=false) {
       gl.useProgram(program);gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);
       gl.clearColor(.94,.93,.89,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-      const roomOn=isRoom&&!!roomBuffer&&!portrait;
-      const angle=roomOn?.45:0,pitch=roomOn?.11:.035;
-      const sy=Math.sin(angle),cy=Math.cos(angle),sp=Math.sin(pitch),cp=Math.cos(pitch);
-      gl.uniform3f(uniforms.side,cy,0,-sy);gl.uniform3f(uniforms.eye,sy*cp,sp,cy*cp);gl.uniform3f(uniforms.up,-sp*sy,cp,-sp*cy);
       const w=canvas.width,h=canvas.height;
-      const height=portrait?.49:roomOn?2.45:1.88;
-      const factor=Math.min(2/height,2*w/(h*(portrait?.44:roomOn?1.58:.90)));
+      const {sy,cy,sp,cp,factor,center}=cameraProjection(w,h,portrait);
+      gl.uniform3f(uniforms.side,cy,0,-sy);gl.uniform3f(uniforms.eye,sy*cp,sp,cy*cp);gl.uniform3f(uniforms.up,-sp*sy,cp,-sp*cy);
       gl.uniform2f(uniforms.scale,factor*h/w,factor);
-      gl.uniform3f(uniforms.center,0,portrait?1.49:roomOn?.92:.825,0);
+      gl.uniform3f(uniforms.center,0,center,0);
       gl.uniform2f(uniforms.rotation,Math.cos(yaw),Math.sin(yaw));
-      gl.uniform1f(uniforms.floorOffset,roomOn?.06:0);
+      gl.uniform1f(uniforms.floorOffset,.06);
       gl.uniform1i(uniforms.base,0);gl.uniform1i(uniforms.dark,1);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,textures[data.dark]);gl.activeTexture(gl.TEXTURE0);
-      if(roomOn) {
+      {
         gl.uniform1f(uniforms.room,1);gl.uniform1f(uniforms.tone,0);gl.uniform3fv(uniforms.multiplier,colors.white);
         attr('position',roomBuffer,3,gl.SHORT,false,14,0);attr('normal',roomBuffer,3,gl.BYTE,true,14,6);
         attr('ink',roomBuffer,3,gl.UNSIGNED_BYTE,true,14,9);attr('uv',null);attr('change',null);
@@ -149,15 +159,10 @@ function createView(canvas,data) {
       }
       gl.uniform1f(uniforms.room,0);attr('ink',null);
       for(const m of meshes){
-        const skin=m.name==='visage-et-mains';
-        if(hairNames.includes(m.name)&&m.name!==look.hair)continue;
-        if(topNames.includes(m.name)&&m.name!==look.top)continue;
-        if(m.name==='jean'&&look.bottom==='laine'||m.name==='laine'&&look.bottom!=='laine')continue;
-        if(m.name==='lunettes'&&look.accessory==='aucun')continue;
-        const shape=skin?(look.face==='doux'?m.shapes[0]:look.face==='sculpte'?m.shapes[1]:null):null;
-        attr('position',m.position,3,gl.SHORT,false,8);attr('normal',m.normal,3,gl.BYTE,true,4);attr('uv',m.uv,2,gl.UNSIGNED_SHORT,true);attr('change',shape,3,gl.SHORT,false,8);
-        gl.uniform1f(uniforms.tone,skin?skinValue[look.skin]:0);
-        gl.uniform3fv(uniforms.multiplier,m.name==='jean'&&look.bottom==='jean-nuit'?colors.night:m.name==='lunettes'&&look.accessory==='ecaille'?colors.shell:colors.white);
+        const material=materialFor(m,look);if(!material)continue;
+        attr('position',m.position,3,gl.SHORT,false,8);attr('normal',m.normal,3,gl.BYTE,true,4);attr('uv',m.uv,2,gl.UNSIGNED_SHORT,true);attr('change',material.shape,3,gl.SHORT,false,8);
+        gl.uniform1f(uniforms.tone,material.tone);
+        gl.uniform3fv(uniforms.multiplier,material.multiplier);
         gl.bindTexture(gl.TEXTURE_2D,textures[m.texture]);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.faces);gl.drawElements(gl.TRIANGLES,m.count,gl.UNSIGNED_SHORT,0);
       }
     },
@@ -166,60 +171,77 @@ function createView(canvas,data) {
 }
 
 export class CheminsAvatar extends HTMLElement {
-  static observedAttributes=['scene'];
-  #look=normaliseAvatar(); #yaw=.11; #view; #epoch=0; #observer; #canvas; #poster; #buttons; #state; #room=0;
+
+  #look=normaliseAvatar(); #yaw=.11; #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #buttons; #state; #software=false; #frame=0;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
     root.innerHTML=`<style>
       :host{display:block;width:100%;min-width:0}.portrait{position:relative;overflow:hidden;border-radius:12px;background:#f0eee5;isolation:isolate}
-      canvas,img{display:block;width:100%;height:clamp(245px,45vh,435px);object-fit:contain;touch-action:pan-y}img{position:absolute;inset:0}
+      canvas,img{display:block;width:100%;height:var(--room-height,clamp(245px,45vh,435px));touch-action:pan-y}img{position:absolute;inset:0;object-fit:cover}
       .tools{display:flex;justify-content:center;gap:8px;margin:6px 0}.tools button{font:inherit;border:1px solid #abae9f;border-radius:40px;background:#f8f6ef;color:#284535;min-width:44px;min-height:40px;cursor:pointer}
       .state{font:13px/1.35 system-ui;color:#495247;margin:4px 0}[hidden]{display:none!important}
-      </style><div class="portrait"><canvas tabindex="0" role="img" aria-label="Avatar masculin habillé en trois dimensions. Flèches pour tourner."></canvas><img alt="Summer Man, en polo, jean et mocassins."></div>
+      </style><div class="portrait"><canvas tabindex="0" role="img" aria-label="Avatar masculin habillé en trois dimensions. Flèches pour tourner."></canvas><canvas hidden tabindex="0" role="img" aria-label="Avatar habillé dans son salon. Flèches pour tourner."></canvas><img alt="Aperçu de Summer Man habillé dans son salon."></div>
       <div class="tools" hidden><button type="button" aria-label="Tourner vers la gauche">↶</button><button type="button" aria-label="Tourner vers la droite">↷</button></div><p class="state" role="status"></p>`;
-    this.#canvas=root.querySelector('canvas');this.#poster=root.querySelector('img');this.#poster.src=posterURL;this.#buttons=root.querySelector('.tools');this.#state=root.querySelector('.state');
-    const turn=d=>{this.#yaw+=d;this.#draw();};
+    [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
+    this.#poster=root.querySelector('img');this.#poster.src=posterURL;this.#buttons=root.querySelector('.tools');this.#state=root.querySelector('.state');
+    const turn=d=>{this.#yaw+=d;this.#schedule();};
     root.querySelectorAll('button').forEach((btn,i)=>btn.onclick=()=>turn(i?.45:-.45));
-    this.#canvas.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();turn(e.key==='ArrowLeft'?-.18:.18);}});
-    let previous=null;
-    this.#canvas.onpointerdown=e=>{previous=e.clientX;this.#canvas.setPointerCapture(e.pointerId);};
-    this.#canvas.onpointermove=e=>{if(previous!==null){turn((e.clientX-previous)*.012);previous=e.clientX;}};
-    this.#canvas.onlostpointercapture=()=>{previous=null;};
-    this.#canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.#view=null;this.#fallback();});
-    this.#canvas.addEventListener('webglcontextrestored',()=>this.#open());
+    for(const canvas of [this.#gpu,this.#cpu]){
+      canvas.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();turn(e.key==='ArrowLeft'?-.18:.18);}});
+      let previous=null;
+      canvas.onpointerdown=e=>{previous=e.clientX;canvas.setPointerCapture(e.pointerId);};
+      canvas.onpointermove=e=>{if(previous!==null){turn((e.clientX-previous)*.012);previous=e.clientX;}};
+      canvas.onlostpointercapture=()=>{previous=null;};
+    }
+    this.#gpu.addEventListener('webglcontextlost',e=>{e.preventDefault();if(this.isConnected)this.#open(true);});
+    this.#gpu.addEventListener('webglcontextrestored',()=>{if(this.isConnected)this.#open();});
   }
-  set avatar(value){this.#look=normaliseAvatar(value,true);this.#draw();}
+  set avatar(value){this.#look=normaliseAvatar(value,true);this.#schedule();}
   get avatar(){return {...this.#look};}
-  connectedCallback(){this.#observer=new ResizeObserver(()=>this.#draw());this.#observer.observe(this);this.#open();}
-  disconnectedCallback(){this.#epoch++;this.#observer?.disconnect();this.#view?.dispose();this.#view=null;this.#room=0;}
-  attributeChangedCallback(){this.#loadRoom();this.#draw();}
-  async #loadRoom(){
-    if(!this.#view||this.getAttribute('scene')!=='salon'||this.#room)return;
-    const epoch=this.#epoch;this.#room=1;
-    try{const bytes=await lounge();if(this.#epoch!==epoch)return;this.#view?.addRoom(bytes);this.#room=2;this.#draw();}
-    catch{if(this.#epoch===epoch){this.#room=0;this.#state.textContent='Le décor du salon est momentanément indisponible.';}}
+  connectedCallback(){
+    if(typeof ResizeObserver==='function'){this.#observer=new ResizeObserver(()=>this.#schedule());this.#observer.observe(this);}
+    else window.addEventListener('resize',this.#schedule);
+    this.#open();
   }
-  async #open(){
-    const epoch=++this.#epoch;this.#room=0;this.#state.textContent='Ouverture de l’avatar…';
+  disconnectedCallback(){
+    this.#epoch++;cancelAnimationFrame(this.#frame);this.#frame=0;
+    this.#observer?.disconnect();window.removeEventListener('resize',this.#schedule);
+    this.#view?.dispose();this.#view=null;this.#poster.hidden=false;
+  }
+  async #open(forceSoftware=false){
+    const epoch=++this.#epoch;
+    this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#buttons.hidden=true;
+    this.#state.textContent='Ouverture du salon…';
     try{
-      const data=await actor();if(epoch!==this.#epoch||!this.isConnected)return;
-      this.#view=createView(this.#canvas,data);this.#poster.hidden=true;this.#buttons.hidden=false;this.#state.textContent='';
-      this.#draw();this.dispatchEvent(new CustomEvent('avatar-ready'));this.#loadRoom();
-    }catch{if(epoch===this.#epoch)this.#fallback();}
+      const [data,room]=await Promise.all([actor(),lounge()]);if(epoch!==this.#epoch||!this.isConnected)return;
+      let view;
+      if(!forceSoftware){try{view=createView(this.#gpu,data,room);}catch{/* Use the same scene on the 2D canvas. */}}
+      this.#software=!view;
+      if(!view){
+        const {createSoftwareView}=await import('./avatar-software.js');
+        if(epoch!==this.#epoch||!this.isConnected)return;
+        view=createSoftwareView(this.#cpu,data,room,cameraProjection,materialFor);
+      }
+      this.#view=view;this.#canvas=this.#software?this.#cpu:this.#gpu;
+      this.#cpu.hidden=!this.#software;this.#gpu.hidden=this.#software;
+      this.#draw();this.#poster.hidden=true;this.#buttons.hidden=false;this.#state.textContent='';
+      this.dispatchEvent(new CustomEvent('avatar-ready'));
+    }catch{if(epoch===this.#epoch){this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#buttons.hidden=true;this.#state.textContent='Aperçu du salon. Le modèle interactif est indisponible.';}}
   }
-  #fallback(){this.#poster.hidden=false;this.#buttons.hidden=true;this.#state.textContent='Portrait de référence. La vue 3D est indisponible sur cet appareil.';}
+  #schedule=()=>{if(this.#view&&!this.#frame)this.#frame=requestAnimationFrame(()=>{this.#frame=0;this.#draw();});};
   #draw(){
     if(!this.#view)return;
-    const canvas=this.#canvas,ratio=Math.min(1.75,devicePixelRatio||1);
+    const canvas=this.#canvas;
+    const ratio=this.#software?Math.min(1,480/Math.max(1,canvas.clientWidth,canvas.clientHeight)):Math.min(1.75,window.devicePixelRatio||1);
     const w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-    this.#view.draw(this.#look,this.getAttribute('scene')==='salon',this.#yaw);
+    this.#view.draw(this.#look,this.#yaw);
   }
   snapshot(){
     if(!this.#view)return null;
     const canvas=this.#canvas,old=[canvas.width,canvas.height];
-    try{canvas.width=240;canvas.height=240;this.#view.draw(this.#look,false,.09,true);return canvas.toDataURL('image/webp',.82);}
+    try{canvas.width=240;canvas.height=240;this.#view.draw(this.#look,.42,true);return canvas.toDataURL('image/webp',.82);}
     finally{[canvas.width,canvas.height]=old;this.#draw();}
   }
 }

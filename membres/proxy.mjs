@@ -5,7 +5,7 @@ export default async function proxy(request){
   if(url.origin!==origin||!['GET','POST'].includes(request.method))return new Response(null,{status:403});
   if(request.method==='POST'&&request.headers.get('origin')!==origin)return new Response(null,{status:403});
   if(url.pathname.endsWith('/stripe'))return new Response(null,{status:404});
-  const cookies=(request.headers.get('cookie')||'').split(';').map(s=>s.trim()).filter(s=>/^__Host-(?:chemins-(?:oauth|membre)|am_site_admin)=/.test(s));
+  const cookies=(request.headers.get('cookie')||'').split(';').map(s=>s.trim()).filter(s=>/^__Host-(?:chemins-(?:oauth|membre)|am_site_admin|editor-admin)=/.test(s));
   const headers={'content-type':'application/json',cookie:cookies.join('; '),origin};
   try{
     const data=request.method==='POST'?await request.text():undefined;

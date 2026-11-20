@@ -1,16 +1,16 @@
 import {cookie,cookieValue,digest,fail,newSession,nonce,now,rate} from './identity.mjs';
 import {randomAvatar} from './avatar-catalog.js';
+import {providerKeys} from './provider-settings.mjs';
 export const site='https://tectonique-des-ames.com';
 const stateCookie='__Host-chemins-oauth';
 const providers={
   google:{login:'https://accounts.google.com/o/oauth2/v2/auth',token:'https://oauth2.googleapis.com/token',user:'https://openidconnect.googleapis.com/v1/userinfo',scope:'openid email'},
   facebook:{login:'https://www.facebook.com/v24.0/dialog/oauth',token:'https://graph.facebook.com/v24.0/oauth/access_token',user:'https://graph.facebook.com/v24.0/me?fields=id,email',scope:'email'}
 };
-export function available(env){return Object.fromEntries(Object.keys(providers).map(p=>[p,Boolean(env[p.toUpperCase()+'_CLIENT_ID']&&env[p.toUpperCase()+'_CLIENT_SECRET'])]));}
 function redirect(location,session){return new Response(null,{status:303,headers:{location,'set-cookie':session,'cache-control':'no-store','referrer-policy':'no-referrer'}});}
 export async function social(r,env,provider,callback){
-  const p=providers[provider];if(!p||!available(env)[provider])fail(503,'Cette connexion n’est pas encore activée.');
-  const url=new URL(r.url),db=env.DB,id=env[provider.toUpperCase()+'_CLIENT_ID'];
+  const p=providers[provider], keys=await providerKeys(env,provider);if(!p||!keys.id||!keys.secret)fail(503,'Cette connexion n’est pas encore activée.');
+  const url=new URL(r.url),db=env.DB,id=keys.id;
   const callbackURL=site+'/api/membres/oauth/'+provider+'/callback';
   if(!callback){
     await rate(db,'oauth:'+r.headers.get('cf-connecting-ip'),250);
@@ -28,7 +28,7 @@ export async function social(r,env,provider,callback){
   if(!state||state!==cookieValue(r,stateCookie)||!code)return redirect(site+'/membre.html?connexion=interrompue',cookie(stateCookie,'',0));
   const row=await db.prepare('DELETE FROM member_oauth WHERE state=? AND provider=? AND expires>? RETURNING verifier').bind(await digest(state),provider,now()).first();
   if(!row)fail(400,'La demande de connexion a expiré.');
-  const fields={grant_type:'authorization_code',code,client_id:id,client_secret:env[provider.toUpperCase()+'_CLIENT_SECRET'],redirect_uri:callbackURL};
+  const fields={grant_type:'authorization_code',code,client_id:id,client_secret:keys.secret,redirect_uri:callbackURL};
   if(provider==='google')fields.code_verifier=row.verifier;
   const token=await fetch(p.token,{method:'POST',body:new URLSearchParams(fields),signal:AbortSignal.timeout(12000)});
   const data=await token.json();
