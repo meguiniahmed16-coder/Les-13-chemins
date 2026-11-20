@@ -58,6 +58,9 @@ for (const args of [
 const publicFiles = [
   'atlas-personnages.js', 'atlas-discussion.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
+  'atelier.html', 'atelier.css', 'atelier.js',
+  'assets/atelier/bague-sur-letabli.webp', 'assets/atelier/bague-sur-le-bloc.webp',
+  'assets/atelier/bague-sur-le-support.webp', 'assets/atelier/bague-profil.webp',
   'soutien.html',
   'soutien.css',
   'soutien.js',

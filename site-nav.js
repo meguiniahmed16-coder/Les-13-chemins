@@ -3,6 +3,7 @@ export function activeSection(pathname, hash = '') {
   if (['jeu', 'carte', 'presentation'].includes(page)) return 'voyage';
   if (page === 'dialogues') return 'blog';
   if (page === 'ahmed-marie') return ['#ahmed-numerique', '#conversationSection'].includes(hash) ? 'digital' : 'blog';
+  if (page === 'atelier') return 'atelier';
   if (page === 'soutien') return 'support';
   return '';
 }

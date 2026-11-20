@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
 import { activeSection } from './site-nav.js';
-test('one common menu gives four clear destinations and preserves the page', () => {
+test('one common menu gives five clear destinations and preserves the page', () => {
   const source = '<html><head></head><body><nav class="site-nav"><a>Old menu</a></nav><main>Keep this text</main></body></html>';
   const out = injectSharedNavigation(source,'ahmed-marie.html');
   assert.equal((out.match(/<nav /g)||[]).length,1);
-  assert.equal((out.match(/data-nav-section=/g)||[]).length,4);
+  assert.equal((out.match(/data-nav-section=/g)||[]).length,5);
   assert.match(out, /La tectonique des âmes/);
   assert.match(out, /data-nav-section="voyage">Le voyage/);
   assert.match(out, /data-nav-section="blog" aria-current="page">Blog/);
@@ -15,9 +15,9 @@ test('one common menu gives four clear destinations and preserves the page', () 
   assert.match(out, /<main>Keep this text<\/main>/);
   assert.equal(injectSharedNavigation(out,'ahmed-marie.html'),out);
 });
-test('the menu adapts to four mobile columns without hiding destinations',()=>{
+test('the menu adapts to five mobile columns without hiding destinations',()=>{
   const css=readFileSync(new URL('./site-nav.css',import.meta.url),'utf8');
-  assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
   assert.match(css,/min-height:46px/);
 });
 test('current section distinguishes the blog from its conversation anchor',()=>{
@@ -27,6 +27,8 @@ test('current section distinguishes the blog from its conversation anchor',()=>{
   assert.equal(activeSection('/dialogues.html'),'blog');
   assert.equal(activeSection('/carte.html'),'voyage');
   assert.equal(activeSection('/jeu'),'voyage');
+  assert.equal(activeSection('/atelier.html'),'atelier');
+  assert.match(injectSharedNavigation('<html><head></head><body></body></html>', 'atelier.html'), /data-nav-section="atelier" aria-current="page">L’Atelier/);
   assert.equal(activeSection('/soutien'),'support');
   assert.equal(activeSection('/'),'');
 });

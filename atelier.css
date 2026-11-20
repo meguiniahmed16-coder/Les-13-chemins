@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root { color-scheme: light; --ink: #233c34; --paper: #f8f4ea; --muted: #5e6155; --rule: #cfc6ae; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.6 'DM Sans', system-ui, sans-serif; }
+a { color: inherit; text-underline-offset: .23em; }
+a:focus-visible { outline: 3px solid #96723f; outline-offset: 4px; }
+.atelier { max-width: 1140px; margin: auto; padding: 0 clamp(18px, 4vw, 54px) 30px; }
+.atelier-heading { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; padding: clamp(24px, 4vw, 56px) 0 22px; border-bottom: 1px solid var(--rule); }
+.atelier-heading h1, .piece h2, .commande h3 { font-family: 'Cormorant Garamond', Georgia, serif; }
+.atelier-heading h1 { font-size: clamp(3.5rem, 8vw, 6.8rem); font-weight: 500; letter-spacing: -.056em; line-height: .93; margin: 0; }
+.atelier-heading p { line-height: 1.45; text-align: right; margin: 0; }
+.atelier-heading p span { color: var(--muted); font-size: .875rem; }
+.piece { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; gap: clamp(30px, 6vw, 82px); padding: clamp(22px, 4vw, 48px) 0 38px; }
+.gallery { min-width: 0; }
+.gallery figure { margin: 0; }
+.gallery figure > a { display: block; background: #e5d8be; cursor: zoom-in; }
+#vue { display: block; width: 100%; height: auto; aspect-ratio: 1.15; object-fit: cover; object-position: 50% 54%; }
+figcaption { margin-top: 7px; font-size: .875rem; color: var(--muted); }
+.vues { display: flex; gap: 8px; margin-top: 12px; }
+.vues a { display: block; padding: 3px; border: 2px solid transparent; border-radius: 2px; }
+.vues a[aria-current] { border-color: var(--ink); }
+.vues img { display: block; width: clamp(45px, 12vw, 68px); height: auto; aspect-ratio: 1.25; object-fit: cover; object-position: 50% 54%; }
+.piece-copy { padding-top: clamp(2px, 2.4vw, 30px); }
+.kind { margin: 0 0 13px; font-size: .875rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 600; color: #72523b; }
+.piece h2 { margin: 0; font-size: clamp(2.85rem, 5.5vw, 5.4rem); line-height: .94; letter-spacing: -.045em; font-weight: 500; }
+.description { max-width: 34ch; margin: 24px 0; font-size: 1.06rem; }
+.commande { padding-top: 20px; border-top: 1px solid var(--rule); }
+.commande h3 { font-size: 1.65rem; line-height: 1.16; margin: 0 0 8px; font-weight: 600; }
+.commande p { color: var(--muted); margin: 0 0 16px; }
+.commande .action { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background: var(--ink); color: #fffaf0; min-height: 48px; padding: 10px 20px; border-radius: 3px; font-weight: 600; }
+.commande .action:hover { background: #38584b; }
+.contact-piece { display: inline-flex; min-height: 44px; align-items: center; margin-top: 8px; font-size: .9rem; }
+.atelier footer { color: var(--muted); font-size: .875rem; border-top: 1px solid var(--rule); padding-top: 17px; }
+@media (max-width: 680px) {
+  .atelier-heading { align-items: start; flex-direction: column; gap: 8px; padding-bottom: 16px; }
+  .atelier-heading p { text-align: left; }
+  .atelier-heading br { display: none; }
+  .atelier-heading p span::before { content: ' · '; }
+  .piece { display: flex; flex-direction: column; gap: 20px; }
+  .gallery { width: 100%; }
+  .piece-copy { padding-top: 0; }
+  .kind { margin-bottom: 5px; }
+  .description { max-width: none; margin: 14px 0 18px; }
+}
+
+.commande .prix { font-size: 2.4rem; margin-bottom: 2px; }
+.commande .livraison { font-size: .95rem; }
+.details { font-size: .95rem; margin: 18px 0 24px; }
+.details div { display: grid; grid-template-columns: 4rem 1fr; gap: 10px; margin: 8px 0; }
+.details dt { color: var(--muted); }
+.details dd { margin: 0; }
+.details small { display: inline-block; max-width: 30ch; color: var(--muted); font-size: .875rem; line-height: 1.4; }
