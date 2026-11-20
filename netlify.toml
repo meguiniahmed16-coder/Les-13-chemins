@@ -104,3 +104,16 @@ from = "http://tectonique-des-ames.com/*"
 to = "https://tectonique-des-ames.com/:splat"
 status = 301
 force = true
+
+# L’adresse de la première fiche reste valable pour les liens déjà partagés.
+[[redirects]]
+from = "/atelier.html"
+to = "/l-odeur-du-bois.html"
+status = 301
+force = true
+
+[[redirects]]
+from = "/atelier"
+to = "/l-odeur-du-bois.html"
+status = 301
+force = true

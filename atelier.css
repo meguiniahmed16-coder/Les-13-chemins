@@ -49,4 +49,3 @@ figcaption { margin-top: 7px; font-size: .875rem; color: var(--muted); }
 .details div { display: grid; grid-template-columns: 4rem 1fr; gap: 10px; margin: 8px 0; }
 .details dt { color: var(--muted); }
 .details dd { margin: 0; }
-.details small { display: inline-block; max-width: 30ch; color: var(--muted); font-size: .875rem; line-height: 1.4; }

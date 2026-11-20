@@ -15,9 +15,12 @@ test('one common menu gives five clear destinations and preserves the page', () 
   assert.match(out, /<main>Keep this text<\/main>/);
   assert.equal(injectSharedNavigation(out,'ahmed-marie.html'),out);
 });
-test('the menu adapts to five mobile columns without hiding destinations',()=>{
+test('the four main links precede the full-width wood collection link',()=>{
   const css=readFileSync(new URL('./site-nav.css',import.meta.url),'utf8');
-  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+  assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/site-atelier-link\{grid-column:1 \/ -1/);
+  const menu=injectSharedNavigation('<html><head></head><body></body></html>', 'index.html');
+  assert.match(menu,/Soutenir<\/a><a [^>]*data-nav-section="atelier">L’odeur du bois<\/a><\/div>/);
   assert.match(css,/min-height:46px/);
 });
 test('current section distinguishes the blog from its conversation anchor',()=>{
@@ -27,8 +30,8 @@ test('current section distinguishes the blog from its conversation anchor',()=>{
   assert.equal(activeSection('/dialogues.html'),'blog');
   assert.equal(activeSection('/carte.html'),'voyage');
   assert.equal(activeSection('/jeu'),'voyage');
-  assert.equal(activeSection('/atelier.html'),'atelier');
-  assert.match(injectSharedNavigation('<html><head></head><body></body></html>', 'atelier.html'), /data-nav-section="atelier" aria-current="page">L’Atelier/);
+  assert.equal(activeSection('/l-odeur-du-bois.html'),'atelier');
+  assert.match(injectSharedNavigation('<html><head></head><body></body></html>', 'l-odeur-du-bois.html'), /data-nav-section="atelier" aria-current="page">L’odeur du bois/);
   assert.equal(activeSection('/soutien'),'support');
   assert.equal(activeSection('/'),'');
 });
