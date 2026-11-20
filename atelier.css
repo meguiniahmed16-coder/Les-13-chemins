@@ -14,11 +14,11 @@ a:focus-visible { outline: 3px solid #96723f; outline-offset: 4px; }
 .gallery { min-width: 0; }
 .gallery figure { margin: 0; }
 .gallery figure > a { display: block; background: #e5d8be; cursor: zoom-in; }
-#vue { display: block; width: 100%; height: auto; aspect-ratio: 1.15; object-fit: cover; object-position: 50% 54%; }
+#vue, .piece-photo { display: block; width: 100%; height: auto; aspect-ratio: 1.15; object-fit: cover; object-position: 50% 54%; }
 figcaption { margin-top: 7px; font-size: .875rem; color: var(--muted); }
 .vues { display: flex; gap: 8px; margin-top: 12px; }
-.vues a { display: block; padding: 3px; border: 2px solid transparent; border-radius: 2px; }
-.vues a[aria-current] { border-color: var(--ink); }
+.vues a, .vues button { display: block; padding: 3px; border: 2px solid transparent; border-radius: 2px; }
+.vues a[aria-current], .vues button[aria-pressed="true"] { border-color: var(--ink); }
 .vues img { display: block; width: clamp(45px, 12vw, 68px); height: auto; aspect-ratio: 1.25; object-fit: cover; object-position: 50% 54%; }
 .piece-copy { padding-top: clamp(2px, 2.4vw, 30px); }
 .kind { margin: 0 0 13px; font-size: .875rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 600; color: #72523b; }
@@ -49,3 +49,9 @@ figcaption { margin-top: 7px; font-size: .875rem; color: var(--muted); }
 .details div { display: grid; grid-template-columns: 4rem 1fr; gap: 10px; margin: 8px 0; }
 .details dt { color: var(--muted); }
 .details dd { margin: 0; }
+
+.vues button{background:transparent;cursor:pointer}
+.bois-choice{display:grid;gap:4px;margin:13px 0;font-size:.92rem;font-weight:600}
+.bois-choice select{padding:10px;border:1px solid var(--rule);background:#fffdf7;font:inherit;color:var(--ink);width:100%}
+.commande .action{font:600 1rem/1.35 system-ui;border:0;cursor:pointer}
+.livraison small{display:block}.piece+.piece{border-top:1px solid var(--rule)}.description{white-space:pre-line}

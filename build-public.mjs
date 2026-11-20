@@ -58,7 +58,7 @@ for (const args of [
 const publicFiles = [
   'atlas-personnages.js', 'atlas-discussion.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
-  'atelier.html', 'l-odeur-du-bois.html', 'atelier.css', 'atelier.js',
+  'bois-public.js', 'atelier.html', 'l-odeur-du-bois.html', 'atelier.css', 'atelier.js',
   'assets/atelier/bague-sur-letabli.webp', 'assets/atelier/bague-sur-le-bloc.webp',
   'assets/atelier/bague-sur-le-support.webp', 'assets/atelier/bague-profil.webp',
   'soutien.html',
@@ -272,3 +272,5 @@ await mkdir(join(root, '.netlify/functions'), { recursive: true });
 await copyFile(join(root, 'editor-api.mjs'), join(root, '.netlify/functions/editor.mjs'));
 
 await copyFile(join(root, 'double-admin-api.mjs'), join(root, '.netlify/functions/double-admin.mjs'));
+
+await copyFile(join(root,'bois/proxy.mjs'),join(root,'.netlify/functions/creations.mjs'));

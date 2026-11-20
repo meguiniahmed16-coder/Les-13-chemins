@@ -11,6 +11,7 @@
   <meta property="og:image:alt" content="La bague en bois rouge sur l’établi d’Ahmed Marie.">
   <link rel="stylesheet" href="atelier.css?v=20261120-bois">
   <script defer src="atelier.js"></script>
+  <script type="module" src="bois-public.js"></script>
 </head>
 <body>
   <main class="atelier">
@@ -18,7 +19,7 @@
       <h1>L’odeur du bois</h1>
       <p>Bijoux et sculptures en bois<br><span>Ahmed Marie</span></p>
     </header>
-    <article class="piece" aria-labelledby="bague-titre">
+    <div id="bois-collection"><article class="piece" aria-labelledby="bague-titre">
       <div class="gallery">
         <figure>
           <a id="vue-originale" href="assets/atelier/bague-sur-letabli.webp" aria-label="Agrandir la photo sur l’établi">
@@ -41,11 +42,11 @@
           <h3 class="prix">39 €</h3>
           <p class="livraison">Envoi suivi en France inclus.</p>
           <dl class="details"><div><dt>Pièce</dt><dd>L’exemplaire photographié</dd></div></dl>
-          <a class="action" href="https://buy.stripe.com/3cI9AV6Gc2aZ1MG2zE1sQ04?locale=fr">Acheter cette bague · 39 €</a><br>
+          <a class="action" href="/api/creations/buy/santal-rose">Acheter cette bague · 39 €</a><br>
           <a class="contact-piece" href="mailto:meguiniahmed16@gmail.com?subject=L%E2%80%99odeur%20du%20bois%20%E2%80%93%20Bague%20en%20santal%20rose">Écrire à Ahmed</a>
         </div>
       </div>
-    </article>
+    </article></div>
     <footer>La tectonique des âmes · Ahmed Marie</footer>
   </main>
 </body>
