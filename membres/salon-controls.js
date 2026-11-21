@@ -1,4 +1,4 @@
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon33';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon34';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -21,7 +21,7 @@ export function salonMarkup(poster,style) {
     <button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser ▾</button></div></div><aside id="studio-drawer" class="studio-drawer" hidden></aside></div>
     <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir. Le joystick te relève.</p></div><p class="state" role="status" aria-live="polite"></p><button type="button" class="room-retry" hidden>Relancer le salon</button>`;
 }
-export function bindSalon(root,motion,roomBytes,wake,available=()=>true) {
+export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=()=>{}) {
   const stage=root.querySelector('.stage'),stick=root.querySelector('.stick'),thumb=root.querySelector('.thumb');
   const status=root.querySelector('.state');
   const full=root.querySelector('.full'),pan=root.querySelector('.pan'), pointers=new Map();
@@ -55,7 +55,7 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true) {
       p.x=e.clientX;p.y=e.clientY;
       if(Math.hypot(p.x-p.x0,p.y-p.y0)>5)p.moved=true;
       if(!p.moved)return;
-      const v=viewport();
+      manual();const v=viewport();
       if(pointers.size>=2){
         const next=getPair();
         if(pair){moveCamera(motion.camera,next.x-pair.x,next.y-pair.y,v.width,v.height);zoomCamera(motion.camera,next.d/pair.d);}
@@ -76,7 +76,7 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true) {
       }else lastTap={time:now,x,y};
     }
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(target,ev,end);
-    listen(target,'wheel',e=>{e.preventDefault();const delta=e.deltaY*(e.deltaMode===1?16:1);zoomCamera(motion.camera,Math.exp(-Math.max(-300,Math.min(300,delta))*.0016));wake();},{passive:false});
+    listen(target,'wheel',e=>{e.preventDefault();manual();const delta=e.deltaY*(e.deltaMode===1?16:1);zoomCamera(motion.camera,Math.exp(-Math.max(-300,Math.min(300,delta))*.0016));wake();},{passive:false});
   }
   function stickMove(e){
     if(e.pointerId!==stickID)return;
@@ -120,6 +120,7 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true) {
   for(const ev of ['fullscreenchange','webkitfullscreenchange'])listen(document,ev,()=>setFullscreen(Boolean(nativeFull())));
   listen(document,'keydown',e=>{if(e.key==='Escape'&&immersive){e.preventDefault();void exitFull();}});
   for(const b of root.querySelectorAll('[data-action]'))listen(b,'click',()=>{
+    if(['center','in','out'].includes(b.dataset.action))manual();
     switch(b.dataset.action){
       case 'pan':panning=!panning;pan.setAttribute('aria-pressed',String(panning));break;
       case 'center':motion.centerCamera();break;

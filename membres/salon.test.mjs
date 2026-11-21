@@ -108,7 +108,7 @@ test('Les 400 invités du livre gardent leur identité et les traits présents d
   assert.equal(guestAppearance(people.find(p=>p.name==='Élise')).studio.face.iris,0);
 });
 test('Les deux invités rejoignent des assises opposées et le joueur reste libre de repartir',async()=>{
-  const {conversationSeats,framePair,headPoint}=await import('./salon-encounter.js');
+  const {conversationSeats,frameConversation,actorHead,headSide}=await import('./salon-encounter.js');
   for(const r of [[.1,.1],[.1,.8],[.8,.1,.8],[.8,.5,.1],[.8,.99,.1]]){
     const [a,b]=conversationSeats(()=>r.shift());
     assert.ok(Math.cos(a.yaw-b.yaw)<-.99);
@@ -116,13 +116,44 @@ test('Les deux invités rejoignent des assises opposées et le joueur reste libr
     player.goToSeat(a);guest.goToSeat(b);
     until(player,()=>player.mode==='seated');until(guest,()=>guest.mode==='seated');
     for(const [w,h] of [[360,360],[740,340]]){
-      framePair(player.camera,[a,b],w,h);
-      const points=[player,guest].map(m=>headPoint(m,player.camera,w,h));
-      for(const p of points)assert.ok(p.x>0&&p.x<w&&p.y>0&&p.y<h);
-      assert.ok(Math.abs(points[0].x-points[1].x)>w*.28);
+      const heads=[actorHead(player),actorHead(guest)],cam=player.camera;
+      const wideAngle=Math.abs(a.x-b.x)>Math.abs(a.z-b.z)?-.09:1.48;
+      frameConversation(cam,'wide','guest',...heads,w,h,wideAngle);
+      const wideZoom=cam.zoom;
+      for(const head of heads)assert.ok(Math.abs(headSide(head,cam,w,h))*cameraProjection(w,h,false,cam).factor*h<w);
+      const sides=[];
+      for(const who of ['player','guest']){
+        frameConversation(cam,'reverse',who,...heads,w,h,wideAngle);
+        const speaker=who==='guest'?guest:player,listener=who==='guest'?player:guest;
+        assert.ok(cam.zoom>wideZoom&&cam.perspective>0);
+        assert.ok(Math.cos(cam.angle-speaker.yaw)>.65);
+        assert.ok(Math.cos(cam.angle-listener.yaw)<-.65);
+        const projected=heads.map(head=>headSide(head,cam,w,h)*cameraProjection(w,h,false,cam).factor*h/2);
+        assert.ok(Math.abs(projected[0]-projected[1])>.20*w);
+        sides.push(Math.sign(projected[0]-projected[1]));
+      }
+      // Both cuts preserve the player's screen direction.
+      assert.equal(sides[0],sides[1]);
     }
     const different=seats.find(s=>s!==a&&s!==b);
     player.goToSeat(different);until(player,()=>player.mode==='seated'&&player.seat===different);
     assert.equal(guest.seat,b);
   }
+});
+
+test('Un double toucher en contrechamp suit le rayon de la caméra et ignore le mobilier hors champ',()=>{
+  const c={x:0,y:0,z:0,angle:0,pitch:0,zoom:2,perspective:.35,nearDepth:1.65};
+  const triangles=new ArrayBuffer(3*42),data=new DataView(triangles);
+  // Three chair cushions align on the same perspective ray. The nearest is behind the camera's clipping plane.
+  for(const [i,part] of [92,83,94].entries()){
+    const z=i,center=.60*(1-z*c.perspective);
+    for(const [v,[dx,y]] of [[-.07,-.07],[.07,-.07],[0,.07]].entries()){
+      const k=i*42+v*14;
+      data.setInt16(k,Math.round((center+dx)*1800),true);data.setInt16(k+2,Math.round(y*1800),true);
+      data.setInt16(k+4,z*1800,true);data.setUint8(k+13,part);
+    }
+  }
+  const w=380,h=280,x=w/2+.60*cameraProjection(w,h,false,c).factor*h/2;
+  assert.equal(seatAt(triangles,c,w,h,x,h/2)?.id,'east1');
+  assert.equal(seatAt(triangles,{...c,perspective:0},w,h,x,h/2)?.id,'west1');
 });

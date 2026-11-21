@@ -9,7 +9,7 @@ export function newCamera() {
 export function cameraProjection(w,h,portrait,camera) {
   const c=portrait?{x:0,y:1.55,z:0,angle:.45,pitch:.11,zoom:1}:camera;
   const factor=portrait?Math.min(2/.49,2*w/(h*.44)):Math.min(2/3.8,2*w/(h*4.7))*c.zoom;
-  return {x:c.x,y:c.y,z:c.z,sy:Math.sin(c.angle),cy:Math.cos(c.angle),sp:Math.sin(c.pitch),cp:Math.cos(c.pitch),factor};
+  return {perspective:c.perspective||0,nearDepth:c.nearDepth||0,x:c.x,y:c.y,z:c.z,sy:Math.sin(c.angle),cy:Math.cos(c.angle),sp:Math.sin(c.pitch),cp:Math.cos(c.pitch),factor};
 }
 export function moveCamera(camera,dx,dy,w,h) {
   const p=cameraProjection(w,h,false,camera);
@@ -25,7 +25,7 @@ export function orbitCamera(c,dx,dy) {
 }
 export function zoomCamera(c,multiplier) { c.zoom=clamp(c.zoom*multiplier,.48,Math.max(3.7,c.presetMax||0)); }
 
-// Resolve the frontmost visible triangle in the same orthographic projection
+// Resolve the frontmost visible triangle along the picking ray used
 // as both renderers. Furniture IDs live on the actual seat, arms and back.
 export function seatAt(bytes,c,w,h,sx,sy) {
   const p=cameraProjection(w,h,false,c),scale=h*p.factor/2;
@@ -39,8 +39,10 @@ export function seatAt(bytes,c,w,h,sx,sy) {
       const wx=data.getInt16(k,true)/1800,dx=wx-p.x;
       const dy=data.getInt16(k+2,true)/1800-p.y,dz=data.getInt16(k+4,true)/1800-p.z;
       const forward=p.sy*dx+p.cy*dz;
-      worldZ[v]=dz+p.z;x[v]=p.cy*dx-p.sy*dz;y[v]=p.cp*dy-p.sp*forward;
       depth[v]=p.cp*forward+p.sp*dy;
+      // At depth d the perspective ray is at target * (1 - d / focal distance).
+      const shift=depth[v]*p.perspective;
+      worldZ[v]=dz+p.z;x[v]=p.cy*dx-p.sy*dz+targetX*shift;y[v]=p.cp*dy-p.sp*forward+targetY*shift;
     }
     if(targetX<Math.min(...x)||targetX>Math.max(...x)||targetY<Math.min(...y)||targetY>Math.max(...y))continue;
     const area=(y[1]-y[2])*(x[0]-x[2])+(x[2]-x[1])*(y[0]-y[2]);
@@ -49,7 +51,7 @@ export function seatAt(bytes,c,w,h,sx,sy) {
     const b=((y[2]-y[0])*(targetX-x[2])+(x[0]-x[2])*(targetY-y[2]))/area,d=1-a-b;
     if(a<0||b<0||d<0)continue;
     const z=a*depth[0]+b*depth[1]+d*depth[2];
-    if(z<=closest)continue;
+    if(z<=closest||(p.perspective&&z>p.nearDepth))continue;
     closest=z;
     const hitZ=a*worldZ[0]+b*worldZ[1]+d*worldZ[2];
     seat=seatForPart(data.getUint8(j+13),hitZ*100-800);

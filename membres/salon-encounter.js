@@ -1,7 +1,7 @@
 import {generateAppearance} from './starting-appearance.js?v=salon33';
 import {skinSteps} from './studio-look.js';
 import {seats} from './salon-plan.js';
-import {cameraProjection} from './salon-navigation.js?v=salon33';
+import {cameraProjection} from './salon-navigation.js?v=salon34';
 
 export function guestAppearance(person){
   let seed=Math.imul(Number(person.id)+1279,2654435761)>>>0;
@@ -29,21 +29,39 @@ export function conversationSeats(random=Math.random){
   const pair=pairIds[i].map(id=>seats.find(s=>s.id===id));
   return random()<.5?pair:pair.reverse();
 }
-export function framePair(camera,[a,b],w,h){
-  const x=(a.x+b.x)/200-7,z=(a.z+b.z)/200+8;
-  const span=Math.hypot(a.x-b.x,a.z-b.z)/100;
-  const scale=Math.min(2/3.8,2*w/(h*4.7));
-  // Frame the open side of the room in either seating order.
-  const angle=Math.abs(a.x-b.x)>Math.abs(a.z-b.z)?-.09:1.48;
-  Object.assign(camera,{x,z,y:1.25,pitch:.23,angle,
-    zoom:Math.min(2.35,1.55/(scale*1.9),1.32*w/(h*scale*span)),follow:false});
-}
-export function headPoint(m,camera,w,h){
-  // The rig's head pivot moves back and down as the hips settle into a seat.
-  const b=m.bones(),px=b[28]+b[20]*1.73,py=b[29]+b[21]*1.73,pz=b[30]+b[22]*1.73;
+// Use the rig's head joint so the framing follows both sitting and standing poses.
+export function actorHead(m){
+  const b=m.bones(),x=b[28]+b[20]*1.68,y=b[29]+b[21]*1.68,z=b[30]+b[22]*1.68;
   const c=Math.cos(m.yaw),s=Math.sin(m.yaw);
-  const p=cameraProjection(w,h,false,camera),dx=m.x+c*px+s*pz-p.x,dz=m.z-s*px+c*pz-p.z;
-  const scale=h*p.factor/2;
-  return {x:w/2+scale*(p.cy*dx-p.sy*dz),y:h/2-scale*(p.cp*(py-p.y)-p.sp*(p.sy*dx+p.cy*dz))};
+  return {x:m.x+c*x+s*z,y,z:m.z-s*x+c*z};
+}
+export function frameConversation(camera,mode,who,player,guest,w,h,wideAngle){
+  if(!w||!h)return;
+  const baseScale=Math.min(2/3.8,2*w/(h*4.7)),aspect=w/h;
+  const dx=guest.x-player.x,dz=guest.z-player.z,distance=Math.hypot(dx,dz);
+  camera.follow=false;
+  if(mode==='wide'||distance<.65){
+    const lateral=Math.abs(Math.cos(wideAngle)*dx-Math.sin(wideAngle)*dz);
+    Object.assign(camera,{x:(player.x+guest.x)/2,y:Math.max(player.y,guest.y)*.56,z:(player.z+guest.z)/2,
+      angle:wideAngle,pitch:.24,zoom:Math.min(.78,1.55*aspect/(lateral+1.15))/baseScale,perspective:0,nearDepth:0});
+    return;
+  }
+  const speaker=who==='guest'?guest:player,listener=who==='guest'?player:guest;
+  // Both cameras stay on the same side of the line between the actors.
+  const direction=Math.atan2(listener.x-speaker.x,listener.z-speaker.z);
+  const sign=who==='guest'?1:-1;
+  const scale=Math.min(1.93,2.9*aspect),eyeDistance=distance+1.32;
+  const lean=Math.asin(Math.min(.62,Math.max(.11,.60*aspect/(scale*distance))));
+  const angle=direction+sign*lean,pitch=.09;
+  const offset=-sign*.31*aspect/scale;
+  const nearDepth=distance*Math.cos(lean)*Math.cos(pitch)+.42;
+  const belowHead=Math.max(.04,Math.min(.36,(1-2*59/h)/scale));
+  Object.assign(camera,{angle,pitch,x:speaker.x+offset*Math.cos(angle),y:speaker.y-belowHead,
+    z:speaker.z-offset*Math.sin(angle),zoom:scale/baseScale,perspective:1/eyeDistance,nearDepth});
+}
+export function headSide(head,camera,w,h){
+  const p=cameraProjection(w,h,false,camera),dx=head.x-p.x,dz=head.z-p.z;
+  const depth=p.cp*(p.sy*dx+p.cy*dz)+p.sp*(head.y-p.y);
+  return (p.cy*dx-p.sy*dz)/Math.max(.05,1-depth*p.perspective);
 }
 export const searchName=value=>value.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr').trim();
