@@ -47,3 +47,22 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .studio-scroll input[type=search]{width:100%;font:inherit;border:1px solid #bbbcae;border-radius:5px;padding:7px;margin:4px 0;background:#fffdf8}.studio-scroll small[role=status]{display:block}
 
 .figure-tools{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.figure-tools button{flex:1}
+
+.invite-toggle,.guest-picker button,.conversation-footer button{border:1px solid #9faba2;border-radius:7px;background:#fffdf5;color:#244636;font:600 14px/1.2 system-ui;padding:6px 10px;min-height:36px}
+.invite-toggle{position:absolute;right:10px;bottom:60px;background:#294e40;color:white}
+.guest-picker{position:absolute;z-index:5;inset:6px 6px 6px auto;width:min(350px,calc(100% - 12px));padding:12px;display:flex;flex-direction:column;gap:7px;background:#fbf8ef;border:1px solid #b5b7a6;border-radius:10px;box-shadow:0 5px 20px #183c3033}
+.guest-picker header{display:flex;align-items:center;justify-content:space-between}.guest-picker .picker-close{font-size:20px;padding:1px 9px}
+.guest-picker label{display:grid;gap:3px;font-size:13px}.guest-search,.guest-message{min-width:0;width:100%;font:16px system-ui;color:#203b2e;background:white;border:1px solid #a6b1a5;border-radius:7px;padding:7px 9px}
+.guest-picker small,.guest-list small{font-size:12px;line-height:1.25}.guest-list{min-height:0;overflow:auto;overscroll-behavior:contain}.guest-list button{display:grid;gap:2px;width:100%;padding:7px;text-align:left;border:0;border-bottom:1px solid #d7d7c9;border-radius:0;background:transparent}.guest-list button:hover,.guest-list button:focus-visible{background:#e7eee4}.guest-list small{font-weight:400}
+.picker-state,.chat-state{margin:0;font-size:13px}.picker-state:empty,.chat-state:empty{display:none}
+.stage:has(.conversation-footer:not([hidden])){grid-template-rows:minmax(0,1fr) auto}
+.conversation-footer{grid-column:1/-1;background:#f5f2e7;padding:5px 7px;border-top:1px solid #b8bea9;z-index:3}.guest-compose{display:flex;align-items:center;gap:4px}.guest-compose input{flex:1}.guest-compose .guest-send,.guest-picker .guest-random,.guest-mic[aria-pressed=true]{background:#294e40;color:white}.guest-compose button:disabled{opacity:.55}.guest-compose .guest-leave{font-size:12px}.guest-compose .guest-mic{padding:4px 7px}.chat-state{padding:4px}
+.speech{z-index:1;position:absolute;transform:translate(-50%,-100%);width:max-content;max-width:min(42%,270px);font:14px/1.28 system-ui;color:#1e3e31;background:#fffef5;border:1px solid #6e816f;border-radius:11px;padding:5px 9px;box-shadow:0 2px 7px #192f261c;overflow-wrap:anywhere;pointer-events:none}
+.speech::after{content:'';position:absolute;left:var(--tail,50%);bottom:-5px;width:8px;height:8px;background:inherit;border-bottom:inherit;border-right:inherit;transform:translateX(-50%) rotate(45deg)}
+.speech strong,.speech span{display:block}.speech strong{font-size:11px}.speech span{max-height:min(18cqh,90px);overflow:auto;overscroll-behavior:contain;pointer-events:auto}.own-speech{background:#e2efdf}.hud{z-index:2}
+@media(max-width:650px) and (orientation:portrait){.stage:has(.studio-drawer:not([hidden])):has(.conversation-footer:not([hidden])){grid-template-rows:minmax(195px,1fr) minmax(220px,43%) auto}}
+@container(max-width:430px){.guest-compose button{padding:5px 7px}.speech{font-size:13px}.invite-toggle{min-height:36px}.guest-picker{padding:8px}}
+
+.speech button{pointer-events:auto;border:0;background:transparent;color:#285441;padding:2px 0 0;font:600 11px system-ui;text-decoration:underline}
+.speech-reader{position:absolute;inset:auto 8px 8px;max-height:70%;overflow:auto;z-index:6;padding:12px 14px;background:#fffef5;color:#233f33;border:1px solid #718773;border-radius:10px;box-shadow:0 3px 14px #223b3033;font:15px/1.4 system-ui}
+.speech-reader header{display:flex;align-items:center;justify-content:space-between}.speech-reader button{width:32px;height:32px;border:1px solid #a7b5a7;background:#fffef5;border-radius:6px}.speech-reader p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}

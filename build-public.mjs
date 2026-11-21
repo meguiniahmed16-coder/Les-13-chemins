@@ -8,6 +8,7 @@ import {termsFile} from './bois/conditions.mjs';
 import {injectLegal} from './legal-build.mjs';
 import { injectAnalytics } from './site-analytics-build.mjs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
+import {salonDirectory} from './salon-directory.mjs';
 import {characterDirectory} from './atlas-dialogues-data.mjs';
 import {canonicalizeSource} from './site-origin-build.mjs';
 
@@ -60,7 +61,7 @@ for (const args of [
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
-  'atlas-personnages.js', 'atlas-discussion.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
+  'atlas-personnages.js', 'atlas-discussion.js','atlas-chat-client.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
   'mentions-legales.html','confidentialite.html','retractation.html','retractation.js','legal.css','site-consent.js',
   'bois-public.js', 'atelier.html', 'l-odeur-du-bois.html', 'atelier.css', 'atelier.js',
@@ -72,7 +73,7 @@ const publicFiles = [
   'soutien-config.json',
   'membre.html','membre-atelier.html','membres/member.css','membres/member.js','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
   'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon-v27.bin','assets/membres/salon-v27-light.bin','assets/membres/salon-v27-apercu.webp','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
-  'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
+  'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
   'accueil.css', 'accueil-rencontre.js',
   'ahmed-marie.html',
@@ -260,7 +261,9 @@ const currentOrderContact = '<p>Pour écrire au service des commandes, utilisez 
 const termsWithContact = terms.replace('</h1>', '</h1>' + currentOrderContact);
 await writeFile(join(output,termsPage),canonicalizeSource(injectLegal(injectSharedNavigation(injectAnalytics(termsWithContact,termsPage),termsPage)),termsPage));
 await writeFile(join(output,termsFile.slice(1)),terms.replace('<head>','<head><base href="https://tectonique-des-ames.com/"><style>body{max-width:48rem;margin:2rem auto;padding:1rem;font:16px/1.6 Georgia,serif}.legal-box{padding:1rem;border:1px solid}</style>'));
-await writeFile(join(output,'atlas-dialogues.json'), JSON.stringify(await characterDirectory()));
+const directory=await characterDirectory();
+await writeFile(join(output,'atlas-dialogues.json'),JSON.stringify(directory));
+await writeFile(join(output,'salon-personnages.json'),JSON.stringify(salonDirectory(directory)));
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });

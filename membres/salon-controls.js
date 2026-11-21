@@ -1,4 +1,4 @@
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon29';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon33';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -21,7 +21,7 @@ export function salonMarkup(poster,style) {
     <button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser ▾</button></div></div><aside id="studio-drawer" class="studio-drawer" hidden></aside></div>
     <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir. Le joystick te relève.</p></div><p class="state" role="status" aria-live="polite"></p><button type="button" class="room-retry" hidden>Relancer le salon</button>`;
 }
-export function bindSalon(root,motion,roomBytes,wake) {
+export function bindSalon(root,motion,roomBytes,wake,available=()=>true) {
   const stage=root.querySelector('.stage'),stick=root.querySelector('.stick'),thumb=root.querySelector('.thumb');
   const status=root.querySelector('.state');
   const full=root.querySelector('.full'),pan=root.querySelector('.pan'), pointers=new Map();
@@ -71,7 +71,8 @@ export function bindSalon(root,motion,roomBytes,wake) {
       const now=performance.now(),x=e.clientX,y=e.clientY;
       if(lastTap&&now-lastTap.time<430&&Math.hypot(x-lastTap.x,y-lastTap.y)<26){
         const v=viewport(),seat=seatAt(roomBytes,motion.camera,v.width,v.height,x-v.left,y-v.top);
-        if(seat){if(motion.seat===seat&&motion.sit>0)motion.stand();else motion.goToSeat(seat);wake();}lastTap=null;
+        if(seat&&!available(seat)){status.textContent='Cette place est occupée.';}
+        else if(seat){if(motion.seat===seat&&motion.sit>0)motion.stand();else motion.goToSeat(seat);wake();}lastTap=null;
       }else lastTap={time:now,x,y};
     }
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(target,ev,end);

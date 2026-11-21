@@ -86,9 +86,9 @@ function seatEntry(s){return [s.x+s.gap*Math.sin(s.yaw),s.z+s.gap*Math.cos(s.yaw
 
 // The member renderer uses the authenticated wardrobe mesh with the reference bone transforms.
 export class SalonMotion {
- constructor(onStatus=()=>{}, camera){
+ constructor(onStatus=()=>{}, camera, start={x:583,z:-980,yaw:2.65}){
   this.camera=camera;
-  const room={x:583,z:-980,yaw:2.65,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
+  const room={...start,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
   const life={bones:[],knees:[]}, keys=new Set();
   const matrices=new Float32Array(16*15);
   let clock=0,padX=0,padY=0,publishedMode='',publishedSeat=null;

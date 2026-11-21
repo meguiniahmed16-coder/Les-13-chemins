@@ -57,4 +57,4 @@ export function seatAt(bytes,c,w,h,sx,sy) {
   return seat;
 }
 
-export {SalonMotion} from './salon-v27-motion.js?v=salon29';
+export {SalonMotion} from './salon-v27-motion.js?v=salon33';

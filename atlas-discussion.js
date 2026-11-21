@@ -1,6 +1,6 @@
-const endpoint = 'https://ahmed-marie-double.meguiniahmed16.workers.dev/personnages/';
+import {characterReply,limit} from './atlas-chat-client.js';
 const threads = new Map();
-const limit = 1600;
+
 
 function threadFor(id) {
   if (threads.has(id)) return threads.get(id);
@@ -58,16 +58,8 @@ export function mountDiscussion(host, person, id) {
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(),60000);
     try {
-      const history = thread.turns.slice(-8).map(t => ({question:t.question.slice(0,limit),answer:t.answer.slice(0,limit)}));
-      const r = await fetch(endpoint+encodeURIComponent(id)+'/chat',{
-        method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',signal:abort.signal,
-        body:JSON.stringify({message:question,history})
-      });
-      const data = await r.json();
-      if (!r.ok || typeof data.answer !== 'string' || !data.answer.trim()) {
-        throw Error(data.error || 'La réponse n’a pas pu arriver.');
-      }
-      thread.turns.push({question,answer:data.answer});
+      const answer=await characterReply(id,question,thread.turns,abort.signal);
+      thread.turns.push({question,answer});
       thread.turns = thread.turns.slice(-40);
       thread.draft = '';
       try { sessionStorage.setItem('atlas-fil-'+id,JSON.stringify(thread.turns)); } catch {}

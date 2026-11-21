@@ -1,5 +1,5 @@
 import {visiblePart} from './salon-plan.js?v=salon29';
-import {SalonMotion,newCamera} from './salon-navigation.js?v=salon29';
+import {SalonMotion,newCamera} from './salon-navigation.js?v=salon33';
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 
 const lightDirection = [-.426, .596, .681];
@@ -12,13 +12,10 @@ export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
   if(!ctx)throw new Error('Le dessin de la scène est indisponible.');
   const room=new DataView(roomBytes),shadow=new Uint8Array(lightMap);
   let cachedRoom=null;
-  function draw(figure,motion,portrait=false) {
+  function draw(figure,motion,portrait=false,guest=null) {
     const w=canvas.width,h=canvas.height;
     const camera=projection(w,h,portrait,motion.camera),{sy,cy,sp,cp,factor}=camera;
-    const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:0;
-    const atX=portrait?0:motion.x,atZ=portrait?0:motion.z;
-    figure.pose(portrait?portraitBones:motion.bones());
-    const zoom=h*factor/2,sin=Math.sin(yaw),cos=Math.cos(yaw),key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z].join(',');
+    const zoom=h*factor/2,key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z].join(',');
     const pixels=ctx.createImageData(w,h),color=pixels.data,depth=new Float32Array(w*h);
     function project(vertices,i,x,y,z,u,v,bright) {
       x-=camera.x;z-=camera.z;
@@ -85,15 +82,23 @@ export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
       }
       cachedRoom={key,color:color.slice(),depth:depth.slice()};
     }
-    for(const m of figure.meshes){
-      const p=new Float32Array(m.n*6);
-      for(let j=0;j<m.n;j++){
-        const i=j*3,uv=j*2,px=m.v[i]*.0001,py=m.v[i+1]*.0001,pz=m.v[i+2]*.0001,nx=m.vn[i],ny=m.vn[i+1],nz=m.vn[i+2];
-        project(p,j*6,atX+cos*px+sin*pz,offsetY+py,atZ-sin*px+cos*pz,m.uv[uv]/65535,m.uv[uv+1]/65535,lighting(cos*nx+sin*nz,ny,-sin*nx+cos*nz));
+    function drawActor(figure,motion){
+      const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:0;
+      const atX=portrait?0:motion.x,atZ=portrait?0:motion.z;
+      figure.pose(portrait?portraitBones:motion.bones());
+      const sin=Math.sin(yaw),cos=Math.cos(yaw);
+      for(const m of figure.meshes){
+        const p=new Float32Array(m.n*6);
+        for(let j=0;j<m.n;j++){
+          const i=j*3,uv=j*2,px=m.v[i]*.0001,py=m.v[i+1]*.0001,pz=m.v[i+2]*.0001,nx=m.vn[i],ny=m.vn[i+1],nz=m.vn[i+2];
+          project(p,j*6,atX+cos*px+sin*pz,offsetY+py,atZ-sin*px+cos*pz,m.uv[uv]/65535,m.uv[uv+1]/65535,lighting(cos*nx+sin*nz,ny,-sin*nx+cos*nz));
+        }
+        const f=m.faces,tex=m.image;
+        for(let j=0;j<f.length;j+=3)triangle(p,6*f[j],6*f[j+1],6*f[j+2],tex,null,0,m.multiplier,null);
       }
-      const f=m.faces,tex=m.image;
-      for(let j=0;j<f.length;j+=3)triangle(p,6*f[j],6*f[j+1],6*f[j+2],tex,null,0,m.multiplier,null);
     }
+    drawActor(figure,motion);
+    if(!portrait&&guest)drawActor(guest.figure,guest.motion);
     ctx.putImageData(pixels,0,0);
   }
   return {draw,dispose(){cachedRoom=null;}};

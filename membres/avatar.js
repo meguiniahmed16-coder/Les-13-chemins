@@ -3,8 +3,10 @@
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js';
 import {createDrawer} from './studio-drawer.js?v=salon32';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon29';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon29';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon33';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon33';
+import {createSalonChat} from './salon-chat.js';
+import {conversationSeats,framePair,guestAppearance,headPoint} from './salon-encounter.js';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
@@ -135,18 +137,22 @@ function createView(canvas,roomBytes,lightMap) {
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.activeTexture(gl.TEXTURE0);
-  let active=null,meshes=[],lastRevision=-1,actorBuffers=[];
-  function release(){
-    for(const m of meshes)gl.deleteTexture(m.tex);
-    for(const b of actorBuffers)gl.deleteBuffer(b);
-    meshes=[];actorBuffers=[];
+  const actors=new Map();
+  function release(slot){
+    const actor=actors.get(slot);
+    if(!actor)return;
+    for(const mesh of actor.meshes)gl.deleteTexture(mesh.tex);
+    for(const handle of actor.buffers)gl.deleteBuffer(handle);
+    actors.delete(slot);
   }
-  function select(figure){
-    if(active===figure)return;
-    release();active=figure;lastRevision=-1;
+  function select(slot,figure){
+    if(actors.get(slot)?.figure===figure)return actors.get(slot);
+    release(slot);
     const start=buffers.length;
-    meshes=figure.meshes.map(m=>({m,tex:textureFrom(m.image),pos:buffer(m.v),norm:buffer(m.vn),uv:buffer(m.uv),indices:buffer(m.faces,gl.ELEMENT_ARRAY_BUFFER)}));
-    actorBuffers=buffers.splice(start);
+    const meshes=figure.meshes.map(m=>({m,tex:textureFrom(m.image),pos:buffer(m.v),norm:buffer(m.vn),uv:buffer(m.uv),indices:buffer(m.faces,gl.ELEMENT_ARRAY_BUFFER)}));
+    const actor={figure,meshes,buffers:buffers.splice(start),revision:-1};
+    actors.set(slot,actor);
+    return actor;
   }
   const roomBuffer=buffer(roomBytes),roomSize=roomBytes.byteLength/14;
   function attr(name,handle,components,type=gl.FLOAT,normalize=false,stride=0,offset=0){
@@ -155,56 +161,85 @@ function createView(canvas,roomBytes,lightMap) {
     gl.bindBuffer(gl.ARRAY_BUFFER,handle); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,components,type,normalize,stride,offset);
   }
   return {
-    draw(figure,motion,portrait=false) {
+    draw(figure,motion,portrait=false,guest=null) {
       gl.useProgram(program);gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);
       gl.clearColor(.94,.93,.89,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       const w=canvas.width,h=canvas.height;
       const {sy,cy,sp,cp,factor,x,y,z}=cameraProjection(w,h,portrait,motion.camera);
-      const yaw=portrait?.42:motion.yaw;
       gl.uniform3f(uniforms.side,cy,0,-sy);gl.uniform3f(uniforms.eye,sy*cp,sp,cy*cp);gl.uniform3f(uniforms.up,-sp*sy,cp,-sp*cy);
       gl.uniform2f(uniforms.scale,factor*h/w,factor);
       gl.uniform3f(uniforms.center,x,y,z);
-      gl.uniform2f(uniforms.rotation,Math.cos(yaw),Math.sin(yaw));
       gl.uniform3f(uniforms.location,portrait?0:motion.x,portrait?.06:0,portrait?0:motion.z);
-      gl.activeTexture(gl.TEXTURE0);figure.pose(portrait?portraitBones:motion.bones());select(figure);
+      gl.activeTexture(gl.TEXTURE0);
+      const player=select(0,figure);
       gl.uniform1i(uniforms.floorLight,2);gl.uniform1i(uniforms.base,0);
       if(!portrait){
         gl.uniform1f(uniforms.room,1);
         attr('position',roomBuffer,3,gl.SHORT,false,14,0);attr('normal',roomBuffer,3,gl.BYTE,true,14,6);
         attr('ink',roomBuffer,4,gl.UNSIGNED_BYTE,true,14,9);attr('joints',roomBuffer,1,gl.UNSIGNED_BYTE,false,14,13);attr('uv',null);
-        gl.bindTexture(gl.TEXTURE_2D,meshes[0].tex);gl.drawArrays(gl.TRIANGLES,0,roomSize);
+        gl.bindTexture(gl.TEXTURE_2D,player.meshes[0].tex);gl.drawArrays(gl.TRIANGLES,0,roomSize);
       }
       gl.uniform1f(uniforms.room,0);attr('ink',null);
       attr('joints',null);
-      for(const {m,tex,pos,norm,uv,indices} of meshes){
-        attr('position',pos,3,gl.SHORT);
-        if(lastRevision!==figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.v,gl.DYNAMIC_DRAW);
-        attr('normal',norm,3,gl.BYTE,true);
-        if(lastRevision!==figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.vn,gl.DYNAMIC_DRAW);
-        attr('uv',uv,2,gl.UNSIGNED_SHORT,true);
-        gl.uniform3fv(uniforms.multiplier,m.multiplier);gl.bindTexture(gl.TEXTURE_2D,tex);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indices);gl.drawElements(gl.TRIANGLES,m.faces.length,gl.UNSIGNED_SHORT,0);
+      function drawActor(actor,pose){
+        const yaw=portrait?.42:pose.yaw;
+        gl.uniform2f(uniforms.rotation,Math.cos(yaw),Math.sin(yaw));
+        gl.uniform3f(uniforms.location,portrait?0:pose.x,portrait?.06:0,portrait?0:pose.z);
+        actor.figure.pose(portrait?portraitBones:pose.bones());
+        for(const {m,tex,pos,norm,uv,indices} of actor.meshes){
+          attr('position',pos,3,gl.SHORT);
+          if(actor.revision!==actor.figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.v,gl.DYNAMIC_DRAW);
+          attr('normal',norm,3,gl.BYTE,true);
+          if(actor.revision!==actor.figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.vn,gl.DYNAMIC_DRAW);
+          attr('uv',uv,2,gl.UNSIGNED_SHORT,true);
+          gl.uniform3fv(uniforms.multiplier,m.multiplier);gl.bindTexture(gl.TEXTURE_2D,tex);
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indices);gl.drawElements(gl.TRIANGLES,m.faces.length,gl.UNSIGNED_SHORT,0);
+        }
+        actor.revision=actor.figure.revision;
       }
-      lastRevision=figure.revision;
+      drawActor(player,motion);
+      if(!portrait){
+        if(guest)drawActor(select(1,guest.figure),guest.motion);
+        else release(1);
+      }
     },
-    dispose(){release();for(const b of buffers)gl.deleteBuffer(b);gl.deleteTexture(shadow);gl.deleteProgram(program);}
+    dispose(){release(0);release(1);for(const b of buffers)gl.deleteBuffer(b);gl.deleteTexture(shadow);gl.deleteProgram(program);}
   };
 }
 
 export class CheminsAvatar extends HTMLElement {
 
+  #guest=null; #chat; #invitation=0;
   #look=legacyStudio(); #gender; #figure; #pending; #drawer; #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
   #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #state; #software=false; #frame=0; #last=0; #controls;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=studio28b',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon33',import.meta.url).href);
+    this.#chat=createSalonChat(root,{
+      invite:person=>this.#invite(person),
+      leave:()=>{this.#invitation++;this.#guest=null;this.#schedule();}
+    });
     this.#drawer=createDrawer(root,look=>this.apply(look),view=>this.#frameModel(view));
     [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
     root.querySelector('.room-retry').addEventListener('click',()=>this.#open());
     this.#poster=root.querySelector('img');this.#state=root.querySelector('.state');
     this.#gpu.addEventListener('webglcontextlost',e=>{e.preventDefault();if(this.isConnected)this.#open(true);});
     this.#gpu.addEventListener('webglcontextrestored',()=>{if(this.isConnected)this.#open();});
+  }
+  async #invite(person){
+    const invitation=++this.#invitation;
+    const {studio,gender}=guestAppearance(person);
+    const figure=await loadStudio(studio,gender);
+    if(invitation!==this.#invitation||!this.isConnected)return false;
+    const pair=conversationSeats();
+    const motion=new SalonMotion(undefined,newCamera(),{x:722,z:-992,yaw:.3});
+    this.#guest={figure,motion,seat:pair[1]};
+    this.#drawer.toggle(false);
+    motion.goToSeat(pair[1]);this.#motion.goToSeat(pair[0]);
+    framePair(this.#motion.camera,pair,this.#canvas.clientWidth,this.#canvas.clientHeight);
+    this.#schedule();
+    return true;
   }
   configure(look,options){if(this.#gender!==options.gender){this.#pending=null;this.#gender=options.gender;}this.#drawer.configure(look,options);return this.apply(look);}
   openOptions(open=true){this.#drawer.toggle(open);}
@@ -234,6 +269,7 @@ export class CheminsAvatar extends HTMLElement {
     this.#open();
   }
   disconnectedCallback(){
+    this.#chat.reset();
     this.#controls?.dispose();this.#controls=null;this.#epoch++;cancelAnimationFrame(this.#frame);this.#frame=0;
     this.#observer?.disconnect();window.removeEventListener('resize',this.#schedule);
     this.#view?.dispose();this.#view=null;this.#poster.hidden=false;
@@ -249,14 +285,14 @@ export class CheminsAvatar extends HTMLElement {
       if(!forceSoftware){try{view=createView(this.#gpu,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js?v=salon29');
+        const {createSoftwareView}=await import('./avatar-software.js?v=salon33');
         if(epoch!==this.#epoch||!this.isConnected)return;
         view=createSoftwareView(this.#cpu,room,lightMap,cameraProjection);
       }
       this.#view=view;this.#canvas=this.#software?this.#cpu:this.#gpu;
       this.#cpu.hidden=!this.#software;this.#gpu.hidden=this.#software;
       this.#draw();this.#poster.hidden=true;
-      this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule);
+      this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule,seat=>this.#guest?.seat?.id!==seat.id);
       this.dispatchEvent(new CustomEvent('avatar-ready'));
     }catch{if(epoch===this.#epoch){this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#state.textContent='Le chargement du salon a été interrompu.';retry.hidden=false;}}
   }
@@ -268,7 +304,10 @@ export class CheminsAvatar extends HTMLElement {
       this.#last=time;
       const steps=Math.max(1,Math.ceil(dt/.05));
       let moving=false;
-      for(let i=0;i<steps;i++)moving=this.#motion.update(dt/steps);
+      for(let i=0;i<steps;i++){
+        const walking=this.#motion.update(dt/steps);
+        moving=(this.#guest?.motion.update(dt/steps)||walking);
+      }
       if(moving)this.#motion.trackWhenWalking(this.#canvas.clientWidth,this.#canvas.clientHeight);
       this.#draw(moving);
       if(moving&&!document.hidden)this.#schedule();else this.#last=0;
@@ -280,7 +319,11 @@ export class CheminsAvatar extends HTMLElement {
     const ratio=this.#software?Math.min(1,(moving?480:960)/Math.max(1,canvas.clientWidth,canvas.clientHeight)):Math.min(1.75,window.devicePixelRatio||1);
     const w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-    this.#view.draw(this.#figure,this.#motion);
+    this.#view.draw(this.#figure,this.#motion,false,this.#guest);
+    if(this.#guest){
+      const w=canvas.clientWidth,h=canvas.clientHeight,c=this.#motion.camera;
+      this.#chat.position(headPoint(this.#motion,c,w,h),headPoint(this.#guest.motion,c,w,h),w,h);
+    }
   }
   snapshot(){
     if(!this.#view)return null;

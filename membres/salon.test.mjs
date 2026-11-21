@@ -88,3 +88,41 @@ test('Sur les trois coussins, les épaules restent de niveau, les mains reposent
     }
   }
 });
+
+test('Les 400 invités du livre gardent leur identité et les traits présents dans leur fiche',async()=>{
+  const {characterDirectory}=await import('../atlas-dialogues-data.mjs');
+  const {salonDirectory}=await import('../salon-directory.mjs');
+  const {guestAppearance,searchName}=await import('./salon-encounter.js');
+  const people=salonDirectory(await characterDirectory());
+  assert.equal(people.length,400);assert.equal(new Set(people.map(p=>p.id)).size,400);
+  const michels=people.filter(p=>p.name==='Michel');
+  assert.equal(michels.length,3);assert.equal(new Set(michels.map(p=>p.role)).size,3);
+  assert.equal(searchName('  ÉLISE '),'elise');
+  for(const p of people){
+    const look=guestAppearance(p),again=guestAppearance(p);
+    assert.deepEqual(again,look);
+    if(p.gender)assert.equal(look.gender,p.gender);
+    if(p.age!==null)assert.equal(look.studio.face.age,p.age);
+  }
+  assert.equal(people.find(p=>p.id==='229').age,0);
+  assert.equal(guestAppearance(people.find(p=>p.name==='Élise')).studio.face.iris,0);
+});
+test('Les deux invités rejoignent des assises opposées et le joueur reste libre de repartir',async()=>{
+  const {conversationSeats,framePair,headPoint}=await import('./salon-encounter.js');
+  for(const r of [[.1,.1],[.1,.8],[.8,.1,.8],[.8,.5,.1],[.8,.99,.1]]){
+    const [a,b]=conversationSeats(()=>r.shift());
+    assert.ok(Math.cos(a.yaw-b.yaw)<-.99);
+    const player=newMotion(),guest=new SalonMotion(undefined,newCamera(),{x:722,z:-992,yaw:.3});
+    player.goToSeat(a);guest.goToSeat(b);
+    until(player,()=>player.mode==='seated');until(guest,()=>guest.mode==='seated');
+    for(const [w,h] of [[360,360],[740,340]]){
+      framePair(player.camera,[a,b],w,h);
+      const points=[player,guest].map(m=>headPoint(m,player.camera,w,h));
+      for(const p of points)assert.ok(p.x>0&&p.x<w&&p.y>0&&p.y<h);
+      assert.ok(Math.abs(points[0].x-points[1].x)>w*.28);
+    }
+    const different=seats.find(s=>s!==a&&s!==b);
+    player.goToSeat(different);until(player,()=>player.mode==='seated'&&player.seat===different);
+    assert.equal(guest.seat,b);
+  }
+});

@@ -13,9 +13,9 @@ export function normaliseAvatar(input, companion = false) {
     return [key, match?.id ?? options[0].id];
   }));
 }
-export function randomAvatar() {
+export function randomAvatar(random=Math.random) {
   return Object.fromEntries(avatarCatalog.map(({key, options}) => {
     const free = options.filter(item => !item.companion);
-    return [key, free[Math.floor(Math.random() * free.length)].id];
+    return [key, free[Math.floor(random() * free.length)].id];
   }));
 }
