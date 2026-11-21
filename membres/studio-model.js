@@ -174,6 +174,17 @@ function speakingVertices(mesh,face){
  }
  return positions;
 }
+// Keep the weave and shading of the V27 garments when dyeing the priest's outfit.
+function clericalFabric(image,teal,collar){
+ const dyed=new ImageData(new Uint8ClampedArray(image.data),image.width,image.height);
+ const ink=teal?[26,82,78]:[40,43,47];
+ for(let i=0;i<dyed.data.length;i+=4){
+  if(collar&&image.data[i]>200)continue; // Leave the white Roman tab undyed.
+  const shade=.65+.50*(.2126*image.data[i]+.7152*image.data[i+1]+.0722*image.data[i+2])/255;
+  for(let c=0;c<3;c++)dyed.data[i+c]=ink[c]*shade;
+ }
+ return dyed;
+}
 export async function loadStudio(look,gender){
  const female=gender==='femme';
  const baseShape=female?await resource('female-base'):null;
@@ -184,6 +195,10 @@ export async function loadStudio(look,gender){
   Promise.all(names.map(async name=>{const m=await resource('mesh-'+name);return {...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};})),
   Promise.all(Object.entries(outfit).map(async ([slot,id])=>{
    const raw=await resource('wear-'+id),m=displayMesh(raw,raw.binding.length/8);m.image=await pixels(raw.image);
+   if(look.clerical&&['haut','robe','bas','col'].includes(slot)){
+    const teal=look.clerical==='soutane-vert-canard';
+    m.image=clericalFabric(m.image,teal,slot==='col');
+   }
    m.accum=new Float32Array(m.v.length);m.tailored=true;
    if(id==='mh807'&&look.denim)m.multiplier=[.47,.54,.69];if(id==='mh153'&&look.tortoise)m.multiplier=[1.1,.76,.52];
    return [slot,m];

@@ -186,7 +186,7 @@ test('Les deux genres existent dans les deux aperçus avec les droits du plan et
     for(const companion of [false,true]){
       const demo=createMemberPreview(gender,companion),p=demo('me');
       assert.equal(p.gender,gender);assert.equal(p.companion,companion);assert.equal(p.author,null);
-      const studio={...p.studio,outfit:{...p.studio.outfit,bas:'mh1194'}};
+      const studio={...p.studio,denim:false,outfit:{...p.studio.outfit,bas:'mh1194'}};
       delete studio.outfit.robe;
       if(companion)assert.deepEqual(demo('avatar',{studio}).studio,studio);
       else assert.throws(()=>demo('avatar',{studio}));

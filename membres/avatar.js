@@ -3,12 +3,12 @@
 import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
-import {loadStudio} from './studio-model.js?v=salon35';
+import {loadStudio} from './studio-model.js?v=salon36';
 import {createDrawer} from './studio-drawer.js?v=salon32';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon35';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon35';
-import {createSalonChat} from './salon-chat.js?v=salon35';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon35';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon36';
+import {createSalonChat} from './salon-chat.js?v=salon36';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon36';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
@@ -223,11 +223,12 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon35',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon36',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
       rate:who=>(who==='player'?this.#playerStyle:this.#guest.style).rate,
+      gender:who=>(who==='player'?this.#gender:this.#guest?.gender)||'homme',
       leave:()=>{this.#invitation++;this.#motion.expression=null;if(this.#guest)Object.assign(this.#motion.camera,this.#guest.previousCamera);this.#guest=null;this.#motion.camera.headroom=0;this.#schedule();}
     });
     this.#drawer=createDrawer(root,look=>this.apply(look),view=>this.#frameModel(view));
@@ -246,7 +247,7 @@ export class CheminsAvatar extends HTMLElement {
     const pair=conversationSeats();
     const motion=new SalonMotion(undefined,newCamera(),{x:722,z:-992,yaw:.3});
     const wideAngle=Math.abs(pair[0].x-pair[1].x)>Math.abs(pair[0].z-pair[1].z)?-.09:1.48;
-    this.#guest={figure,motion,channels,style:createPerformer(person.id),seat:pair[1],wideAngle,previousCamera:{...this.#motion.camera,perspective:0,nearDepth:0}};
+    this.#guest={figure,motion,channels,gender,style:createPerformer(person.id),seat:pair[1],wideAngle,previousCamera:{...this.#motion.camera,perspective:0,nearDepth:0}};
     this.#drawer.toggle(false);
     motion.goToSeat(pair[1]);this.#motion.goToSeat(pair[0]);
     this.#schedule();

@@ -10,7 +10,7 @@ export function guestAppearance(person){
     return seed/4294967296;
   }
   // Unspecified features belong to the illustration, not the character's biography.
-  const gender=person.gender||(random()<.5?'femme':'homme');
+  const gender=person.clerical?'homme':person.gender||(random()<.5?'femme':'homme');
   const age=person.age??(1+Math.floor(random()*2));
   const {studio}=generateAppearance(gender,age,true,random);
   Object.assign(studio.face,person.face);
@@ -20,6 +20,11 @@ export function guestAppearance(person){
   }
   // The wrap skirt's open mesh separates above the knees in the seated rig.
   if(studio.outfit.bas==='mh417')studio.outfit.bas='mh1728';
+  if(person.clerical){
+    studio.clerical=person.clerical;
+    const garments=person.clerical==='soutane-vert-canard'?{robe:'mh225'}:{haut:'mh1800',bas:'mh1796'};
+    studio.outfit={...garments,souliers:'mh620',col:'roman-collar'};
+  }
   if(person.glasses)studio.outfit.lunettes='mh153';
   return {gender,studio};
 }

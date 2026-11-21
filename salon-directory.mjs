@@ -18,6 +18,11 @@ function genderOf(bio,role,id){
   if(/^(le |un |l’(ami\b|homme|invité|acheteur|oncle|étudiant|appelé|ancien|habitué|officier|épicier|adolescent|évêque|animateur|entraîneur|employé|élu|apprenti|imprimeur))/.test(subject)||[115,195,208,245,272,300,302,341,368].includes(id))return 'homme';
   return null;
 }
+// Only the subject's own role identifies clergy. Several lay characters mention a priest.
+function clericalDress(role){
+  if(!/^(?:Le (?:(?:premier|second) )?(?:prêtre|curé|vicaire)|L’(?:évêque|abbé))(?=\s|,|$)/iu.test(role))return null;
+  return /soutane vert canard/i.test(role)?'soutane-vert-canard':'clergyman';
+}
 export function salonDirectory(profiles) {
   return Object.entries(profiles).filter(([id])=>/^\d+$/.test(id)).map(([id,p])=>{
     const n=Number(id),bio=p.story[0],story=p.story.join(' '),role=p.role;
@@ -39,6 +44,8 @@ export function salonDirectory(profiles) {
     let skinLevel=null;
     if(n===7){Object.assign(face,{hair:7,hairTone:1,iris:3});skinLevel=40;}
     if(n===229){Object.assign(face,{hair:1,hairTone:2,iris:4,beard:0});skinLevel=22;}
-    return {id,name:p.name,role,skinLevel,gender:genderOf(bio,role,n),age,face,glasses:/mes lunettes/i.test(story)||n===368};
+    const clerical=clericalDress(role);
+    if(n===3)face.hair=7;
+    return {id,name:p.name,role,skinLevel,gender:clerical?'homme':genderOf(bio,role,n),age,face,...(clerical?{clerical}:{}),glasses:/mes lunettes/i.test(story)||n===368};
   });
 }

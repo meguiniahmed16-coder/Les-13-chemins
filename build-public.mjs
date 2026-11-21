@@ -1,3 +1,4 @@
+import {buildSalonVoices} from './scripts/build-salon-voices.mjs';
 import {buildSalonAssets} from './scripts/build-salon-assets.mjs';
 import { copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -18,7 +19,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
-  ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs'],
+  ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs','membres/salon-dictee.test.mjs','membres/salon-voice.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
   ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs', 'soutien.test.mjs'],
@@ -73,7 +74,8 @@ const publicFiles = [
   'soutien-config.json',
   'membre.html','membre-atelier.html','membres/member.css','membres/member.js','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
   'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon-v27.bin','assets/membres/salon-v27-light.bin','assets/membres/salon-v27-apercu.webp','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
-  'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
+  'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/salon-voice.js','membres/salon-voice-worker.js','membres/salon-voice-credits.txt','membres/salon-dictee.js','membres/salon-dictee-worker.js',
+  'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
   'accueil.css', 'accueil-rencontre.js',
   'ahmed-marie.html',
@@ -255,6 +257,7 @@ const arrivalData = stops.map((stop, i) => {
 });
 await mkdir(output);
 await buildSalonAssets(root,output);
+await buildSalonVoices(root,output);
 const terms=await readFile(join(root,termsFile.slice(1)),'utf8');
 const termsPage='conditions-de-vente.html';
 const currentOrderContact = '<p>Pour écrire au service des commandes, utilisez <a href="mailto:ahmedmarie@tectonique-des-ames.com">ahmedmarie@tectonique-des-ames.com</a>.</p>';

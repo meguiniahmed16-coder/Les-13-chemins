@@ -213,3 +213,26 @@ test('La voix cale les mots et libère la réponse suivante seulement en fin de 
   d.play('guest','Encore.',1);const stale=utterance.onend;d.clear();stale();
   assert.equal(cancelled,1);assert.equal(d.busy,false);assert.equal(d.frame(),null);
 });
+
+test('Les prêtres du livre ont une tenue et un col romain, y compris en cas de genre absent',async()=>{
+  const {salonDirectory}=await import('../salon-directory.mjs');
+  const {characterDirectory}=await import('../atlas-dialogues-data.mjs');
+  const {guestAppearance}=await import('./salon-encounter.js');
+  const people=salonDirectory(await characterDirectory()),priests=people.filter(p=>p.clerical);
+  assert.deepEqual(priests.map(p=>p.name),['Adelphe','Ambroise','Anselme','Barnabé','Bérenger','Cyprien','Guillaume-Marie','Hippolyte','Louis','Matthieu','Théophile','Timothée','Xavier']);
+  for(const priest of priests){
+    const {gender,studio}=guestAppearance({...priest,gender:null});
+    assert.equal(priest.gender,'homme');assert.equal(gender,'homme');
+    assert.equal(studio.outfit.col,'roman-collar');
+    assert.equal(studio.outfit.souliers,'mh620');
+    if(priest.name==='Ambroise'){
+      assert.equal(studio.clerical,'soutane-vert-canard');assert.equal(studio.outfit.robe,'mh225');
+    }else{
+      assert.equal(studio.outfit.haut,'mh1800');assert.equal(studio.outfit.bas,'mh1796');
+    }
+  }
+  for(const name of ['Benoît Arnaud','Ghislain','José Luis','Arielle','Melchior']){
+    const person=people.find(p=>p.name===name);
+    assert.ok(!person.clerical);assert.ok(!guestAppearance(person).studio.outfit.col);
+  }
+});

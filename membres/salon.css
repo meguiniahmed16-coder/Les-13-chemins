@@ -90,3 +90,11 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 @container(max-width:599px){.camera-slot .full-text{display:none}.camera-slot .bar{justify-content:flex-end}.conversation-footer .conversation-tools{flex-wrap:nowrap}.conversation-tools button{padding:4px 7px}.camera-slot{grid-row:1}.conversation-tools{grid-row:2}}
 @container(max-height:370px){.speech .line{max-height:1.28em}.speech-rail{inset-block-start:3px}.speech-reader p{max-height:3em}}
 .speech-announcement{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+.stage.immersive,.stage:fullscreen,.stage.immersive:has(.studio-drawer:not([hidden])){top:var(--visible-room-top,0px);height:var(--visible-room-height,100dvh)}
+.camera-slot{display:flex;align-items:center;justify-content:space-between;gap:8px}.camera-slot .guest-leave{margin-inline-start:auto}
+.guest-compose .guest-message{min-height:44px}.guest-compose .guest-mic,.guest-compose .guest-send{min-width:44px;min-height:44px}
+.guest-message:focus-visible{outline:2px solid #38664e;outline-offset:1px}
+.chat-feedback,.voice-state,.dictation-state{grid-column:1/-1;margin:0;font-size:13px;line-height:1.3}
+.chat-feedback{display:flex;align-items:center;gap:6px}.chat-feedback:has(.chat-state:empty):has(.retry-message[hidden]),.voice-state:empty,.dictation-state:empty{display:none}
+@media(max-height:430px){.stage.immersive:has(.guest-message:focus) .conversation-tools,.stage.immersive:has(.guest-message:focus) .camera-slot{display:none}}

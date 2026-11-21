@@ -96,9 +96,21 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
   listen(stage,'focusout',e=>{if(!stage.contains(e.relatedTarget))motion.releaseInputs();});
   listen(window,'blur',clearInputs);
   listen(document,'visibilitychange',()=>{if(document.hidden)clearInputs();});
+  const visual=window.visualViewport;
+  function fitKeyboard(){
+    if(visual&&immersive&&root.activeElement?.matches('input,textarea')){
+      stage.style.setProperty('--visible-room-height',Math.round(visual.height)+'px');
+      stage.style.setProperty('--visible-room-top',Math.round(visual.offsetTop)+'px');
+    }else{
+      stage.style.removeProperty('--visible-room-height');
+      stage.style.removeProperty('--visible-room-top');
+    }
+  }
+  if(visual){listen(visual,'resize',fitKeyboard);listen(visual,'scroll',fitKeyboard);}
+  listen(stage,'focusin',fitKeyboard);listen(stage,'focusout',()=>requestAnimationFrame(fitKeyboard));
   function setFullscreen(value){
     if(immersive===value)return;
-    immersive=value;stage.classList.toggle('immersive',value);
+    immersive=value;stage.classList.toggle('immersive',value);fitKeyboard();
     if(value){previousOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';}
     else{document.documentElement.style.overflow=previousOverflow;try{screen.orientation?.unlock?.();}catch{}}
     const label=value?'Quitter le plein écran':'Plein écran';
