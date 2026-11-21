@@ -46,6 +46,6 @@ export function salonDirectory(profiles) {
     if(n===229){Object.assign(face,{hair:1,hairTone:2,iris:4,beard:0});skinLevel=22;}
     const clerical=clericalDress(role);
     if(n===3)face.hair=7;
-    return {id,name:p.name,role,skinLevel,gender:clerical?'homme':genderOf(bio,role,n),age,face,...(clerical?{clerical}:{}),glasses:/mes lunettes/i.test(story)||n===368};
+    return {id,name:p.name,role,skinLevel,...(p.dialogue?.accueilSalon?{welcome:p.dialogue.accueilSalon}:{}),gender:clerical?'homme':genderOf(bio,role,n),age,face,...(clerical?{clerical}:{}),glasses:/mes lunettes/i.test(story)||n===368};
   });
 }

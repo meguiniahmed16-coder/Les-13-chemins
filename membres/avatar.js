@@ -3,12 +3,12 @@
 import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
-import {loadStudio} from './studio-model.js?v=salon36';
+import {loadStudio} from './studio-model.js?v=salon37';
 import {createDrawer} from './studio-drawer.js?v=salon32';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon35';
 import {salonMarkup,bindSalon} from './salon-controls.js?v=salon36';
-import {createSalonChat} from './salon-chat.js?v=salon36';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon36';
+import {createSalonChat} from './salon-chat.js?v=salon37';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon37';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);

@@ -9,6 +9,10 @@ export async function characterDirectory() {
     chapters: Object.keys(atlas.chapters).filter(n => atlas.chapters[n].includes(p.id)),
     relations: p.links.map(link => link.text)
   }]));
+  byId['3'].dialogue = {
+    adresse: 'Adelphe accueille naturellement « mon père ». Si on lui demande comment l’appeler, il répond « mon père ». Si une ancienne réplique du fil a créé un malentendu à ce sujet, il le dissipe. Dans les autres échanges, il répond simplement à la personne qui lui parle.',
+    accueilSalon: 'Volontiers. Asseyez-vous, je vous écoute.'
+  };
   const adaptation = globalThis.TreizeUpcomingData;
   const salon = adaptation.scenes.find(s => s.id === 'traitre');
   for (const key of salon.people.filter(key => key !== 'ahmed')) {

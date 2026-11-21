@@ -1,12 +1,12 @@
 import {createDialogue} from './salon-dialogue.js?v=salon36';
 import {createDictee} from './salon-dictee.js';
 import {characterReply,limit} from '../atlas-chat-client.js';
-import {searchName} from './salon-encounter.js?v=salon36';
+import {searchName} from './salon-encounter.js?v=salon37';
 
 const opening='Asseyons-nous et discutons.';
 let directory;
 function loadDirectory(){
-  return directory??=fetch(new URL('../salon-personnages.json?v=salon36',import.meta.url)).then(async response=>{
+  return directory??=fetch(new URL('../salon-personnages.json?v=salon37',import.meta.url)).then(async response=>{
     if(!response.ok)throw Error();
     const people=await response.json();
     if(!Array.isArray(people)||!people.length)throw Error();
@@ -162,7 +162,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   function buttons(){
     send.disabled=Boolean(request)||!input.value.trim();
   }
-  async function say(question,fromDraft=false){
+  async function say(question,fromDraft=false,welcome){
     if(!person||request||!question)return;
     if(dictee.state!=='idle')dictee.cancel();
     const current=person,thread=threads.get(current.id),abort=new AbortController();
@@ -171,7 +171,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
     if(fromDraft)input.value='';
     playback.play('player',question,rate('player'));bubble(other,'…');status.textContent='';buttons();
     try{
-      const answer=await characterReply(current.id,question,thread,abort.signal);
+      const answer=welcome||await characterReply(current.id,question,thread,abort.signal);
       if(request!==abort)return;
       thread.push({question,answer});if(thread.length>40)thread.shift();
       playback.play('guest',answer,rate('guest'),true);
@@ -192,7 +192,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       input.setAttribute('aria-label','Ton message à '+p.name);
       const thread=threads.get(p.id)||[];threads.set(p.id,thread);
       if(thread.length){turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
-      else void say(opening);
+      else void say(opening,false,p.welcome);
     }catch{if(ticket===version)pickerState.textContent='Le personnage n’a pas pu entrer. Tu peux réessayer.';}
     finally{if(ticket===version){loading=false;random.disabled=false;list.inert=false;}}
   }

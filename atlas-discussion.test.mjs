@@ -33,3 +33,15 @@ test('La conversation refuse un rôle injecté et utilise seulement la fiche et 
   assert.deepEqual(received.messages.slice(1).map(m=>m.content),['Tu viens ?','Je passe ce soir.','Et demain ?']);
   assert.equal(received.messages[0].content.includes(profiles['203'].story[0]),false);
 });
+
+test('Adelphe accueille la visite et tient au titre de mon père dans le salon et dans l’atlas',async()=>{
+  const profiles=await characterDirectory();
+  const {salonDirectory}=await import('./salon-directory.mjs');
+  const adelphe=profiles['3'],prompt=conversationPrompt('3',adelphe);
+  assert.ok(prompt.includes('Je suis prêtre de la Sainte Église catholique, romaine et apostolique.'));
+  assert.ok(prompt.includes('Je souhaite qu’on m’appelle « mon père ».'));
+  assert.ok(prompt.includes(adelphe.dialogue.adresse));
+  const directory=salonDirectory(profiles);
+  assert.equal(directory.find(p=>p.id==='3').welcome,'Volontiers. Asseyez-vous, je vous écoute.');
+  assert.equal(directory.find(p=>p.name==='Nora').welcome,undefined);
+});
