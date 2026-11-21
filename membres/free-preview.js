@@ -16,7 +16,7 @@ export function createMemberPreview(gender='homme',companion=false){
     switch(path){
       case 'me':return structuredClone(profile);
       case 'avatar':{
-        const studio=normaliseStudio(data.studio,companion,avatar);
+        const studio=normaliseStudio(data.studio,companion,avatar,gender);
         if(!exactStudio(data.studio,studio))throw Error('Cette personnalisation est indisponible.');
         profile.studio=studio;
         return {avatar,studio};

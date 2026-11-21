@@ -1,6 +1,6 @@
 import {randomAvatar} from './avatar-catalog.js';
 import {traits} from './studio-catalog.js';
-import {freeTrait,normaliseStudio} from './studio-look.js';
+import {freeTrait,normaliseStudio,traitAvailable} from './studio-look.js';
 
 export const validGender=value=>value==='homme'||value==='femme';
 export function yearsAt(birth,date=new Date()){
@@ -20,12 +20,12 @@ const pick=items=>items[Math.floor(Math.random()*items.length)];
 export function startingAppearance(gender,birth,plus=false){
   const avatar=randomAvatar(),face={};
   for(const trait of traits){
+    if(!traitAvailable(trait.key,gender))continue;
     const choices=trait.options.map((_,index)=>index).filter(i=>plus||freeTrait(trait.key,i));
     face[trait.key]=pick(choices);
   }
   face.age=visualAge(birth);
-  if(gender==='femme'||face.age===5)face.beard=0;
-  if(face.age===5)face.pile=0;
+  if(face.age===5){face.beard=0;face.pile=0;}
   const outfit={haut:pick(plus?['mh1431','mh1416','mh2909','mh1800','mh1661','mh1808']:['mh1431','mh1416','mh2909']),
     bas:pick(plus?['mh807','mh1655','mh1796','mh1626','mh1194']:['mh807','mh1655']),souliers:pick(['mh1732','mh438','mh1743'])};
   if(gender==='femme'){
@@ -35,6 +35,6 @@ export function startingAppearance(gender,birth,plus=false){
     if(Math.random()<.2){delete outfit.haut;delete outfit.bas;outfit.robe=plus?pick(['mh1640','mh1853']):'mh1640';}
   }
   if(Math.random()<.22)outfit.lunettes='mh153';
-  const studio=normaliseStudio({face,skinLevel:Math.floor(Math.random()*101),outfit,denim:Math.random()<.5},plus,avatar);
+  const studio=normaliseStudio({face,skinLevel:Math.floor(Math.random()*101),outfit,denim:Math.random()<.5},plus,avatar,gender);
   return {...avatar,studio};
 }

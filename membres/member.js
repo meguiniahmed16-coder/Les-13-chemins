@@ -93,7 +93,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=salon31');
+  await import('./avatar.js?v=salon32');
   if(!member)return;
   let view=$('room').querySelector('chemins-avatar');
   if(!view){
@@ -233,8 +233,8 @@ async function refresh(){
   $('subscribe').hidden=member.companion||Boolean(member.author);
   if(member.author)$('plan-status').textContent='Ton accès auteur comprend toutes les options de personnalisation.';
   $('offer-price').hidden=$('renewal').hidden=Boolean(member.author);
-  const keepDraft=previous?.id===member.id && JSON.stringify(previous.studio||previous.avatar)===JSON.stringify(member.studio||member.avatar);
-  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar);renderJourney();setPage();
+  const keepDraft=previous?.id===member.id && previous.gender===member.gender && JSON.stringify(previous.studio||previous.avatar)===JSON.stringify(member.studio||member.avatar);
+  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar,member.gender);renderJourney();setPage();
   if(member.pseudo)void mountRoom().catch(()=>note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.'));
   if(member.author){
     const expected=member;

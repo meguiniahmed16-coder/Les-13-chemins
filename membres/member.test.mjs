@@ -193,3 +193,41 @@ test('Les deux genres existent dans les deux aperçus avec les droits du plan et
     }
   }
 });
+
+test('Le genre filtre les tirages, les anciens avatars et les enregistrements dans les deux formules',async()=>{
+  const {createMemberPreview}=await import('./free-preview.js');
+  const {normaliseStudio}=await import('./studio-look.js');
+  const {api,db}=setup();
+  for(const [gender,hidden,available] of [
+    ['homme',['lashes','makeup'],['beard','pile']],
+    ['femme',['beard','pile'],['lashes','makeup']]
+  ]){
+    for(const plus of [false,true]){
+      const preview=createMemberPreview(gender,plus),model=preview('me').studio;
+      for(const key of hidden){
+        assert.equal(model.face[key],0);
+        assert.equal(normaliseStudio(null,plus,{},gender).face[key],0);
+        assert.throws(()=>preview('avatar',{studio:{...model,face:{...model.face,[key]:1}}}));
+      }
+      const face={...model.face,[available[0]]:1,[available[1]]:1};
+      assert.deepEqual(preview('avatar',{studio:{...model,face}}).studio.face,face);
+    }
+    const r=await api('signup',{...account,gender,email:gender+'@example.invalid'}),cookie=r.headers.get('set-cookie').split(';')[0];
+    const initial=await (await api('me',null,cookie)).json();
+    const face={...initial.studio.face,lashes:1,makeup:1,beard:1,pile:1};
+    db.prepare('UPDATE members SET avatar=? WHERE id=?').run(JSON.stringify({...initial.avatar,studio:{...initial.studio,face}}),initial.id);
+    const saved=await (await api('me',null,cookie)).json();
+    for(const key of hidden){
+      assert.equal(saved.studio.face[key],0);
+      const invalid={...saved.studio,face:{...saved.studio.face,[key]:1}};
+      assert.equal((await api('avatar',{avatar:saved.avatar,studio:invalid},cookie)).status,403);
+    }
+    for(const key of available)assert.equal(saved.studio.face[key],1);
+    assert.equal((await api('avatar',{avatar:saved.avatar,studio:saved.studio},cookie)).status,200);
+    const other=gender==='femme'?'homme':'femme';
+    assert.equal((await api('profile',{...account,gender:other},cookie)).status,200);
+    const switched=await (await api('me',null,cookie)).json();
+    for(const key of available)assert.equal(switched.studio.face[key],0);
+    assert.deepEqual(switched.studio.outfit,initial.studio.outfit);
+  }
+});

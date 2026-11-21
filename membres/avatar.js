@@ -2,7 +2,7 @@
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js';
-import {createDrawer} from './studio-drawer.js?v=studio28b';
+import {createDrawer} from './studio-drawer.js?v=salon32';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon29';
 import {salonMarkup,bindSalon} from './salon-controls.js?v=salon29';
 

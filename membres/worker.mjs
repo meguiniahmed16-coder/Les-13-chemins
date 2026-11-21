@@ -18,7 +18,7 @@ async function view(db,m,author){
   const rows=await sql(db,'SELECT kind,item FROM member_activity WHERE member=?',m.id).all();
   const journey={games:[],videos:[],scenes:[]};for(const row of rows.results)journey[row.kind]?.push(row.item);
   const saved=JSON.parse(m.avatar),plus=Boolean(author)||billing.companion;
-  return {studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus)),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
+  return {studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus),m.gender),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
 }
 async function owner(r,env,path){
   if(!await authorSession(r,env))fail(401,'Connecte-toi à l’administration.');
@@ -106,9 +106,10 @@ export default {
     if(path==='avatar'&&request.method==='POST'){
       const data=await read(request),input=data.avatar,plan=await membership(db,m.id,now()),plus=Boolean(author)||plan.companion,avatar=normaliseAvatar(input,plus);
       if(!input||typeof input!=='object'||Object.keys(input).length!==avatarCatalog.length||Object.keys(avatar).some(k=>avatar[k]!==input[k]))fail(403,'Cette apparence n’est pas disponible avec ton abonnement.');
-      const studio=normaliseStudio(data.studio,plus,avatar);
+      const studio=normaliseStudio(data.studio,plus,avatar,m.gender);
       if(data.studio!==undefined&&!exactStudio(data.studio,studio))fail(403,'Cette personnalisation est indisponible.');
-      await sql(db,'UPDATE members SET avatar=? WHERE id=?',JSON.stringify({...avatar,studio}),m.id).run();
+      const update=await sql(db,'UPDATE members SET avatar=? WHERE id=? AND gender=?',JSON.stringify({...avatar,studio}),m.id,m.gender).run();
+      if(!update.meta.changes)fail(409,'Ton profil a changé. Rouvre la personnalisation.');
       return json({avatar,studio});
     }
     if(path==='journey'&&request.method==='POST'){

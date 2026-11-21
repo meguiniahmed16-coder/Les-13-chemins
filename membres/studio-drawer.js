@@ -1,5 +1,5 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js';
-import {normaliseStudio,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
+import {normaliseStudio,traitAvailable,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
@@ -11,7 +11,7 @@ export function createDrawer(root,apply,frameModel){
  function toggle(open){drawer.hidden=!open;toggleButton.setAttribute('aria-expanded',String(open));}
  toggleButton.onclick=()=>toggle(drawer.hidden);drawer.querySelector('.close').onclick=()=>toggle(false);
  function choose(next){
-  look=normaliseStudio(next,options.plus);const version=++revision;
+  look=normaliseStudio(next,options.plus,undefined,options.gender);const version=++revision;
   options.change(look);save.disabled=true;message.textContent='Ajustement…';
   current=Promise.resolve(apply(look)).then(()=>{if(version===revision){save.disabled=false;message.textContent='';}},()=>{if(version===revision){message.textContent='Chargement interrompu. Réessaie cette option.';save.disabled=true;}});
   sync();
@@ -20,8 +20,12 @@ export function createDrawer(root,apply,frameModel){
  function sync(){for(const update of controls)update();}
  function appearance(parent){
   for(const [id,title,keys] of families){
-   const f=folder(parent,title);f.dataset.family=id;
-   for(const key of keys){
+   const visibleKeys=keys.filter(key=>traitAvailable(key,options.gender));
+   let caption=title;
+   if(id==='regard'&&!visibleKeys.includes('lashes'))caption='Sourcils';
+   if(id==='cheveux'&&!visibleKeys.includes('beard'))caption='Cheveux';
+   const f=folder(parent,caption);f.dataset.family=id;
+   for(const key of visibleKeys){
     const trait=traits.find(t=>t.key===key),label=make('label',trait.label),select=make('select');
     for(const [i,name] of trait.options.entries()){
      const locked=!options.plus&&!freeTrait(key,i),option=new Option(name+(locked?' · Compagnon':''),String(i));

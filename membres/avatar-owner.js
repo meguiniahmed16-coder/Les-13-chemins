@@ -30,7 +30,17 @@ export function prepareOwnerAvatar(html, label = defaultLabel, scene) {
     const privateTraits = ${scriptLiteral(privateKeys)};
     const privateFamily = families.find(family => family[0] === 'intime');
     families.splice(families.indexOf(privateFamily), 1);
-    for (const family of families) family[2] = family[2].filter(key => !privateTraits.includes(key));
+    // This standalone author reference always renders Summer Man.
+    const omitted = ['lashes', 'makeup'];
+    for (const key of omitted) {
+      appearance[key] = 0;
+      const index = traits.findIndex(trait => trait.key === key);
+      if (index >= 0) traits.splice(index, 1);
+    }
+    for (const family of families) {
+      family[2] = family[2].filter(key => !privateTraits.includes(key) && !omitted.includes(key));
+      if (family[0] === 'regard') family[1] = 'Sourcils';
+    }
     privateFamily[1] = ${scriptLiteral(groupLabel(label))};
     privateFamily[2] = privateTraits;
     families.push(privateFamily);

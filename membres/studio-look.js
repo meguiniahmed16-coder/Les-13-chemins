@@ -9,6 +9,11 @@ for(const group of Object.keys(slots)){
   const first=pieces.find(p=>p.group===group&&!['mh1194','mh1203'].includes(p.id));
   if(first)common.add(first.id);
 }
+// Profiles created before the gender field use the original male salon model.
+const restrictedTraits={beard:'homme',pile:'homme',lashes:'femme',makeup:'femme'};
+export function traitAvailable(key,gender){
+  return !Object.hasOwn(restrictedTraits,key)||restrictedTraits[key]===(gender||'homme');
+}
 export const freePiece=id=>common.has(id);
 export function freeTrait(key,i){
   if(key==='skin'||key==='iris'||key==='age')return true;
@@ -18,19 +23,20 @@ export function freeTrait(key,i){
   return i===0||i===1;
 }
 const tone={clair:0,dore:34,brun:74,profond:100};
-export function legacyStudio(avatar={}){
+export function legacyStudio(avatar={},gender){
   const face=Object.fromEntries(traits.map(t=>[t.key,0]));
-  Object.assign(face,{hair:({court:1,texture:7,afro:9,carre:2})[avatar.hair]??7,face:({doux:3,sculpte:2})[avatar.face]||0,beard:1,pile:2});
+  Object.assign(face,{hair:({court:1,texture:7,afro:9,carre:2})[avatar.hair]??7,face:({doux:3,sculpte:2})[avatar.face]||0,beard:traitAvailable('beard',gender)?1:0,pile:traitAvailable('pile',gender)?2:0});
   const skinLevel=tone[avatar.skin]??22;
   face.skin=skinSteps.indexOf(skinLevel);
   const outfit={haut:({polo:'mh2909',coton:'mh1416','col-rond':'mh1203'})[avatar.top]||'mh2909',bas:avatar.bottom==='laine'?'mh1194':'mh807',souliers:'mh1732'};
   if(avatar.accessory&&avatar.accessory!=='aucun')outfit.lunettes='mh153';
   return {face,skinLevel,iris:'',outfit,denim:avatar.bottom==='jean-nuit',tortoise:avatar.accessory==='ecaille'};
 }
-export function normaliseStudio(value,plus,legacy){
-  if(!value||typeof value!=='object')return legacyStudio(legacy);
-  const base=legacyStudio(),face={};
+export function normaliseStudio(value,plus,legacy,gender){
+  if(!value||typeof value!=='object')return legacyStudio(legacy,gender);
+  const base=legacyStudio(undefined,gender),face={};
   for(const t of traits){
+    if(!traitAvailable(t.key,gender)){face[t.key]=0;continue;}
     const n=value.face?.[t.key];face[t.key]=Number.isInteger(n)&&n>=0&&n<t.options.length&&(plus||freeTrait(t.key,n))?n:base.face[t.key];
   }
   const outfit={};
