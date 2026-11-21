@@ -4,6 +4,7 @@ export function readableTextGeometry(width,height){const a=new T.PlaneGeometry(w
 // Resolve the palm from the animated skeleton every frame. No world-space flag
 // is allowed to trail behind a carrier independently of that person's hand.
 export function palmPosition(actor,side='L',out=new T.Vector3()){
+ if(side==='L'&&actor.userData.grip)return actor.localToWorld(out.copy(actor.userData.grip));
  const bone=actor.userData.citizen?.rig.bones['Hand_'+side]?.bone;
  actor.updateWorldMatrix(true,true);
  if(bone)return out.set(side==='L'?6:-6,0,0).applyMatrix4(bone.matrixWorld);

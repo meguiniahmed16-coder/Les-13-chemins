@@ -1,15 +1,12 @@
-/* CAMARADES ! — Chemin III, page 59–60, personnages 3D CC0 Kenney.
+/* CAMARADES ! — Chemin III, page 59–60, personnages du salon.
  * Le plateau seul attribue les points et les sauvegarde, sans doublons.
  */
 import * as T from 'three';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
-import {makeCitizen,animateCitizen} from './catalogne-characters.js';
+import {loadCortege,makeMarcher,poseMarcher,backgroundMarchers} from './manifestation-personnages.js';
 import {newDemo,demoAction,DEMO_STEPS} from './manifestation-demo.js';
-import {followPalm,bannerCorners,closeHand,readableTextGeometry} from './manifestation-props.js';
-import {createCrowdMotion} from './manifestation-crowd-motion.js';
+import {followPalm,bannerCorners,readableTextGeometry} from './manifestation-props.js';
 import {ParkSoftwareRenderer} from './catalogne-software.js';
-import {createParisCity} from './manifestation-paris.js';
+import {createParisCity,schoolFrontages} from './manifestation-paris.js';
 import {createRepublicMonument} from './manifestation-monument.js';
 import {PARIS_NODES,PARIS_STREETS,newWalk,streetChoices,chooseStreet,advanceWalk,restoreWalk,mapMarkup} from './manifestation-walk.js';
 import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,activeWave,gameInstruction,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
@@ -19,12 +16,10 @@ const steps=[1,2,3].map(n=>$('step'+n)),overlay=$('overlay'),speech=$('speech');
 const meter=$('meter'),meterValue=$('meterValue');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 let sessionId='standalone',serverSteps=[],run=newRun(),playing=false,paused=false,gameReady=false;
-let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],staticFar=[],bastilleCrowd=null,bastilleActors=[],policeGroups=[],heartBursts=[],heartAscents=[],escortInstances=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
-const templates=[];
-let citizenAsset=null,crowdMotion=null,walk=null,trail=[],trailDistance=0,rallyUntil=0,talkIndex=0,lastWalkSave=0;
+let previous=0,stageInWorld=0,sceneGroup=null,hero=null,crowdActors=[],stageFlags=[],bastilleCrowd=null,bastilleActors=[],policeGroups=[],heartBursts=[],heartAscents=[],escortInstances=null,redHeld=false,soundOn=false,voices=null,cheerUntil=0;
+let walk=null,trail=[],trailDistance=0,rallyUntil=0,talkIndex=0,lastWalkSave=0;
 const WALK_KEY='treize-camarades-promenade-v1';
 const NEAR_CROWD=44,FAR_CROWD=144;
-const MODEL_PATHS=['character-male-a.glb','character-female-a.glb','character-male-c.glb','character-female-c.glb','character-male-e.glb','character-female-e.glb'].map(name=>'assets/manifestation/'+name);
 let demoSession=null,demoReturn=null,demoWasPaused=false;
 let crowdLoading=false,carriedProps=[],carriedBanners=[],pedestrians=[],nextChant=0,chantIndex=0,chantUntil=0,ambientTime=0,previousPedestrianRefresh=0;
 let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,lastHud=0;
@@ -55,7 +50,7 @@ try{
  try{renderer=new ParkSoftwareRenderer({canvas});canvas.dataset.renderer='compatible';}
  catch{ $('overlayTitle').textContent='La 3D ne démarre pas';$('overlayText').textContent='Réessaie après avoir fermé les autres jeux.';$('start').hidden=true;}
 }
-canvas.dataset.version='camarades-vivants-v2';
+canvas.dataset.version='camarades-cortege-v1';
 canvas.dataset.renderer??='webgl';
 const ambient=new T.HemisphereLight(0xe8f3ff,0x82735e,2.7);world.add(ambient);
 const sun=new T.DirectionalLight(0xfff0cf,2.3);sun.position.set(-13,34,21);world.add(sun);
@@ -88,104 +83,11 @@ function flag(parent,style,x,y,z,height=3.1){
  stageFlags.push({fabric,root});return root;
 }
 
-function clothCap(group,id,hero=false){
- const m=mat(hero?0x293a3d:0x455b4c);
- const top=mesh(gSphere,m,0,1.73,-.02,.205,.10,.194);group.add(top);
- const brim=mesh(gBox,m,0,1.72,.18,.19,.025,.17);group.add(brim);
-}
-function modelPerson(id,opts={}){
- const actor=new T.Group(),template=templates[id%templates.length];
- const clone=cloneSkinned(template.scene);
- clone.scale.setScalar((2.45+rnd(id)*.23)*(opts.hero?1.0:1.0));
- actor.add(clone);
- // Most demonstrators have visible hair. Hats appear only on selected people;
- // the narrator alone has the distinctive Poulbot-style cap.
- if(opts.hero||id%12===0)clothCap(actor,id,!!opts.hero);
- const mixer=new T.AnimationMixer(clone);
- const clips=template.animations;
- const actions={
-  idle:mixer.clipAction(clips.find(a=>a.name==='idle')||clips[0]),
-  walk:mixer.clipAction(clips.find(a=>a.name==='walk')||clips[0]),
-  signal:mixer.clipAction(clips.find(a=>a.name==='interact-right')||clips.find(a=>a.name==='walk')||clips[0])
- };
- actions.idle.play();
- actor.userData={id,mixer,actions,current:'idle',previousTime:null,
-  height:1,hero:!!opts.hero,origin:opts.origin||{x:0,z:0},offset:rnd(id+7)*6.28};
- return actor;
-}
 function person(id,opts={}){
- if(citizenAsset){
-  const citizen=makeCitizen(citizenAsset,id,opts.hero?'hero':id%9===0?'client':'walker','#c58e56');
-  crowdMotion??=createCrowdMotion(citizen.rig);
-  citizen.rig.group.rotation.y=0;
-  if(opts.hero)clothCap(citizen.group,id,true);
-  citizen.group.userData={...citizen.group.userData,id,citizen,previousTime:null,hero:!!opts.hero,offset:rnd(id+7)*6.28};
-  return citizen.group;
- }
- if(templates.length)return modelPerson(id,opts);
- const actor=new T.Group();
- const group=new T.Group();actor.add(group);
- const skin=mat(colors.skin[(id*7)%colors.skin.length]),
-       coat=mat(colors.coat[(id*5)%colors.coat.length]),
-       jeans=mat(id%2?0x42484c:0x525b65),hair=mat(colors.hair[(id*3)%colors.hair.length]);
- const height=.93+rnd(id)*.25;
- const chest=mesh(gBox,coat,0,1.09,0,.37,.49,.24);group.add(chest);
- const pelvis=mesh(gBox,jeans,0,.73,0,.30,.16,.22);group.add(pelvis);
- const collar=mesh(gCyl,skin,0,1.41,0,.085,.12,.085);group.add(collar);
- const head=mesh(gSphere,skin,0,1.65,0,.18,.215,.17);group.add(head);
- const hairTop=mesh(gSphere,hair,0,1.79,-.02,.19,.10,.172);group.add(hairTop);
- const eyes=mat(0x3b3029),smile=mat(0x684a38);
- for(const sign of [-1,1])group.add(mesh(gSphere,eyes,sign*.07,1.664,.160,.016,.014,.013));
- // A small smile remains visible on close-ups; deliberately neutral at distance.
- const mouth=mesh(gBox,smile,0,1.59,.169,.065,.012,.008);group.add(mouth);
- const legs=[],arms=[];
- for(const sign of [-1,1]){
-  const leg=new T.Group();leg.position.set(sign*.155,.69,0);
-  leg.add(mesh(gBox,jeans,0,-.33,0,.137,.35,.14));
-  leg.add(mesh(gBox,mat(0x48423a),0,-.655,.065,.145,.078,.20));
-  group.add(leg);legs.push(leg);
-  const arm=new T.Group();arm.position.set(sign*.41,1.32,0);
-  arm.add(mesh(gBox,coat,0,-.24,0,.118,.28,.122));
-  arm.add(mesh(gSphere,skin,0,-.50,0,.07,.09,.07));
-  group.add(arm);arms.push(arm);
- }
- if(id%7===0){const cap=mesh(gCyl,mat(0x4d584d),0,1.81,0,.202,.06,.202);group.add(cap);
-  group.add(mesh(gBox,mat(0x4d584d),0,1.80,.14,.16,.022,.21));}
- if(id%9===0){group.add(mesh(gBox,mat(0xc1a074),0,1.39,.18,.34,.083,.14));}
- if(opts.hero){
-  group.traverse(o=>{if(o.isMesh&&o.material===coat)o.material=mat(0x415d55)});
-  // Casquette de Poulbot, expressive, recognisable without an external portrait.
-  group.add(mesh(gSphere,mat(0x343b3e),0,1.83,-.012,.23,.105,.205));
-  group.add(mesh(gBox,mat(0x343b3e),0,1.81,.20,.23,.025,.19));
- }
- group.scale.setScalar(height);actor.userData={id,legs,arms,height,hero:!!opts.hero,origin:opts.origin||{x:0,z:0},offset:rnd(id+7)*6.28};
- return actor;
+ return makeMarcher(id,opts);
 }
 function walking(actor,time,strength,signal=false){
- const a=actor.userData;
- if(a.citizen){
-  crowdMotion.apply(a.citizen.rig,time+a.offset,strength>.38,signal||!!a.holding,true);
-  if(a.holding)closeHand(a.citizen.rig,'L',.15);
-  return;
- }
- if(a.mixer){
-  const dt=Math.max(0,Math.min(.05,a.previousTime===null?0:time-a.previousTime));
-  a.previousTime=time;
-  const desired=signal?'signal':strength>.38?'walk':'idle';
-  if(a.current!==desired){
-   const previous=a.actions[a.current],next=a.actions[desired];
-   next.reset().play();next.crossFadeFrom(previous,.2,true);
-   a.current=desired;
-  }
-  a.mixer.update(dt);
-  return;
- }
- const phase=time*5.4+a.offset;
- const energy=.4+strength*.6;
- a.legs[0].rotation.x=Math.sin(phase)*.34*energy;
- a.legs[1].rotation.x=-Math.sin(phase)*.34*energy;
- a.arms[0].rotation.x=-Math.sin(phase)*.23*energy;
- a.arms[1].rotation.x=Math.sin(phase)*.23*energy;
+ poseMarcher(actor,time,strength,signal,camera.position);
 }
 function buildings(root,start,end,light=false){
  const len=end-start,mid=(start+end)/2;
@@ -196,32 +98,8 @@ function buildings(root,start,end,light=false){
  for(const side of [-1,1]){
   addBox(root,side*10.35,-.02,mid,4.65,.22,len+8,0xd8cbb5);
   addBox(root,side*8.15,.11,mid,.25,.24,len+8,0xb0a596);
-  // Quelques façades haussmanniennes crème, avec fenêtres et balcons en fer.
-  for(let z=start;z<end;z+=light?20:14){
-   const idx=Math.abs(Math.floor(z/9+side*11));
-   const shade=[0xe1c49d,0xe0c5b9,0xb8cbd0,0xd4c09e,0xc4d4be,0xe5cfad,0xc9bac9][idx%7];
-   const h=12+rnd(idx+3)*5.2;
-   addBox(root,side*13.8,h/2,z+5,5.1,h,12,shade);
-   addBox(root,side*13.8,h+.15,z+5,5.25,.55,12.4,0x69747b);
-   addBox(root,side*13.8,h-1.05,z+5,5.22,.17,12.2,0xf3e9d4);
-   const xf=side*11.18;
-   // Porte cochère et vitrine en rez-de-chaussée.
-   addBox(root,xf,1.38,z+4,.12,2.65,1.55,0x434f50);
-   addBox(root,xf-side*.12,2.88,z+4,.35,.14,2.0,0xb38b57);
-   for(let floor=light?4:3;floor<h-1;floor+=light?4.4:3.15){
-    for(const slot of (light?[-1,1]:[-1,0,1])){
-     const vz=z+5+slot*3.15;
-     addBox(root,xf,floor,vz,.14,1.6,.95,0x425257);
-     addBox(root,xf-side*.14,floor,vz,.07,1.5,.07,0xf1e4cc);
-     addBox(root,xf-side*.13,floor-.81,vz,.35,.17,1.25,0xd6c9b4);
-     if(floor<7.6){
-      addBox(root,xf-side*.42,floor-.82,vz,.66,.09,2.0,0xb8b0a3);
-      addBox(root,xf-side*.7,floor-.37,vz,.07,.8,2.1,0x35403d);
-     }
-    }
-   }
-  }
  }
+ root.add(schoolFrontages(start,end));
  for(let z=start+4;z<end;z+=light?19:11){
   addBox(root,-2.9,-.004,z,.09,.022,2.15,0xe7dfcc);
   addBox(root,2.9,-.004,z,.09,.022,2.15,0xe7dfcc);
@@ -301,25 +179,12 @@ function parisStreetDetails(root,start,end){
 }
 // Passants légers instanciés : 16 silhouettes exclusivement sur les trottoirs.
 function parisSidewalkPedestrians(root,start,end){
- const count=16,body=new T.InstancedMesh(gCyl,mat(0xffffff),count);
- const heads=new T.InstancedMesh(gSphere,mat(0xffffff),count);
- const legs=new T.InstancedMesh(gBox,mat(0x374553),count*2);
- const obj=new T.Object3D(),coats=[0x9c685c,0x59766b,0x5f6882,0xb08a5a,0x986c86,0x436b78];
- for(let i=0;i<count;i++){
+ const passants=backgroundMarchers(root,16);
+ for(let i=0;i<passants.count;i++){
   const side=i%2===0?-1:1,rank=Math.floor(i/2);
-  const x=side*(10.1+(rank%3)*.55),z=start+6+rank*(end-start-9)/8;
-  const height=.9+rnd(i+11)*.14;
-  obj.rotation.set(0,0,0);
-  obj.position.set(x,1.10,z);obj.scale.set(.30,height,.23);obj.updateMatrix();
-  body.setMatrixAt(i,obj.matrix);body.setColorAt(i,new T.Color(coats[i%coats.length]));
-  obj.position.set(x,1.73+height*.17,z);obj.scale.set(.20,.21,.20);obj.updateMatrix();
-  heads.setMatrixAt(i,obj.matrix);heads.setColorAt(i,new T.Color(i%3===0?0xbc8f6f:0xdfb994));
-  for(let leg=0;leg<2;leg++){
-   obj.position.set(x+(leg?.11:-.11),.43,z+(leg?.11:-.11));
-   obj.scale.set(.13,.72,.15);obj.updateMatrix();legs.setMatrixAt(i*2+leg,obj.matrix);
-  }
+  passants.set(i,side*(10.1+(rank%3)*.55),.08,start+6+rank*(end-start-9)/8,side*(.6+rnd(i)*1.5));
  }
- root.add(body,heads,legs);
+ passants.finish();
 }
 function statue(sceneRoot){
  const root=new T.Group();root.position.x=STATUE.x;sceneRoot.add(root);
@@ -328,7 +193,7 @@ function statue(sceneRoot){
 function makeCrowd(root,count,baseZ,{reveal=false,spread=7}={}){
  const arr=[];
  for(let i=0;i<count;i++){
-  const guy=person(i+17+(reveal?221:0));
+  const guy=person(i+17+(reveal?221:0),count===NEAR_CROWD&&i===3?{role:'firmin'}:{});
   const x=((i%7)-3)*Math.min(1.65,spread/3)+(rnd(i*17+5)-.5)*.35;
   const z=baseZ-Math.floor(i/7)*1.65+(rnd(i*13+9)-.5)*.45;
   guy.position.set(x,0,z);guy.rotation.y=rnd(i+100)*.3-.15;
@@ -337,39 +202,22 @@ function makeCrowd(root,count,baseZ,{reveal=false,spread=7}={}){
  return arr;
 }
 function distantCrowd(root,baseZ,count,follow=false){
- // Four draw calls rather than hundreds of detailed models.
- const body=new T.InstancedMesh(gBox,mat(0x5f645a),count);
- const head=new T.InstancedMesh(gSphere,mat(0xcaa17b),count);
- const legs=new T.InstancedMesh(gBox,mat(0x495453),count);
- const hatCount=Math.ceil(count*.11);
- const hat=new T.InstancedMesh(gBox,mat(0x484944),hatCount);
- const dummy=new T.Object3D(),col=new T.Color();
+ const group=backgroundMarchers(root,count);
  for(let i=0;i<count;i++){
   const x=(rnd(i*31+5)-.5)*(follow?9:14),z=follow?run.z-8-rnd(i*61+1)*6:baseZ+(rnd(i*61+1)-.5)*21;
-  dummy.position.set(x,.95,z);dummy.scale.set(.42,.77,.28);dummy.updateMatrix();body.setMatrixAt(i,dummy.matrix);
-  col.setHex(colors.coat[i%colors.coat.length]);body.setColorAt(i,col);
-  dummy.position.set(x,1.66,z);dummy.scale.set(.19,.22,.18);dummy.updateMatrix();head.setMatrixAt(i,dummy.matrix);
-  head.setColorAt(i,new T.Color(colors.skin[(i*7)%colors.skin.length]));
-  dummy.position.set(x,.4,z);dummy.scale.set(.33,.80,.24);dummy.updateMatrix();legs.setMatrixAt(i,dummy.matrix);
-  if(i<hatCount){dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}
+  group.set(i,x,0,z,(rnd(i+3)-.5)*.34);
  }
- root.add(body,head,legs,hat);staticFar.push(body,head,legs,hat);
- if(follow)escortInstances={body,head,legs,hat,count,hatCount};
+ group.finish();if(follow)escortInstances=group;
 }
 function moveEscortInstances(){
  if(!escortInstances)return;
- const {body,head,legs,hat,count,hatCount}=escortInstances;
- const dummy=new T.Object3D();
  const center=run.z-20;
- for(let i=0;i<count;i++){
+ for(let i=0;i<escortInstances.count;i++){
   const x=clamp(run.x*.28+((i%8)-3.5)*.85+(rnd(i*31+5)-.5)*.3,-7,7);
   const z=center-Math.floor(i/8)*1.35+(rnd(i*61+1)-.5)*.3;
-  dummy.position.set(x,.95,z);dummy.scale.set(.42,.77,.28);dummy.updateMatrix();body.setMatrixAt(i,dummy.matrix);
-  dummy.position.set(x,1.66,z);dummy.scale.set(.19,.22,.18);dummy.updateMatrix();head.setMatrixAt(i,dummy.matrix);
-  dummy.position.set(x,.4,z);dummy.scale.set(.33,.80,.24);dummy.updateMatrix();legs.setMatrixAt(i,dummy.matrix);
-  if(i<hatCount){dummy.position.set(x,1.83,z);dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}
+  escortInstances.set(i,x,0,z,(rnd(i+3)-.5)*.34);
  }
- for(const part of [body,head,legs,hat]){part.instanceMatrix.needsUpdate=true;part.computeBoundingSphere();}
+ escortInstances.finish();
 }
 function heldFlag(actor,style,height=3.15){
  const prop=flag(actor,style,0,0,0,height);actor.userData.holding=true;
@@ -405,46 +253,27 @@ function updateCarriedProps(){
 }
 
 function riotOfficer(index){
- // Silhouette lisible, plus organique : tenue de protection bleu marine,
- // épaulières, casque à visière, bouclier arrondi marqué CRS et matraque.
- const actor=new T.Group();
- const navy=mat(0x23374e),dark=mat(0x161f2e),skin=mat(0xc99b7c);
- const chest=mesh(gSphere,navy,0,1.17,0,.33,.47,.23);actor.add(chest);
- const armor=mesh(gBox,mat(0x334f68),0,1.12,-.18,.55,.55,.095);actor.add(armor);
- addBox(actor,0,.77,0,.46,.13,.31,0x172b3d);
- // Plastron segmenté, distinct des membres et visible même sur un petit écran.
- addBox(actor,0,1.35,-.235,.46,.10,.055,0x859bab);
- addBox(actor,0,.96,-.242,.46,.06,.055,0x9db0b8);
+ const actor=new T.Group(),uniform=person(index,{role:'crs'});
+ uniform.rotation.y=Math.PI;actor.add(uniform);
+ const dark=mat(0x172436),padding=mat(0x283a4b);
+ const armor=mesh(gSphere,padding,0,1.22,-.012,.235,.285,.152);actor.add(armor);
+ const band=addBox(actor,0,1.34,-.15,.29,.027,.018,0x91a6b8);band.rotation.x=.15;
  for(const side of [-1,1]){
-  const leg=mesh(gCyl,navy,side*.155,.43,0,.11,.77,.11);actor.add(leg);
-  const boot=mesh(gBox,dark,side*.155,.12,-.07,.24,.20,.38);actor.add(boot);
-  addBox(actor,side*.155,.52,-.16,.235,.27,.10,0x7892a4); // genouillère
-  const arm=mesh(gCyl,navy,side*.36,1.17,-.025,.11,.63,.11);
-  arm.rotation.z=side*.16;actor.add(arm);
-  actor.add(mesh(gSphere,mat(0x324c63),side*.31,1.41,0,.17,.16,.19));
-  addBox(actor,side*.39,1.30,-.16,.18,.14,.075,0xb2c5d2); // épaulière
-  addBox(actor,side*.36,.96,-.14,.20,.25,.10,0x405a73);
+  const knee=mesh(gSphere,padding,side*.105,.47,-.063,.082,.105,.078);
+  knee.name='genouillère';actor.add(knee);
  }
- actor.add(mesh(gSphere,skin,0,1.75,0,.19,.21,.18));
- const helmet=mesh(gSphere,dark,0,1.91,0,.30,.225,.275);actor.add(helmet);
- const brow=mesh(gBox,mat(0x0e1722),0,1.84,-.24,.43,.07,.16);actor.add(brow);
- addBox(actor,0,2.055,-.07,.46,.075,.34,0x73899e);
- addBox(actor,0,1.61,-.238,.38,.075,.08,0x182839); // jugulaire
- const visor=mesh(gBox,new T.MeshStandardMaterial({
-  color:0x86aabe,transparent:true,opacity:.78,roughness:.20,metalness:.10
- }),0,1.78,-.245,.405,.23,.047);actor.add(visor);
- const shield=mesh(gBox,mat(0x627d92,.18),-.47,1.14,-.40,.82,1.12,.13);
- actor.add(shield);
- const frame=mesh(gBox,mat(0x172839),-.47,1.14,-.36,.87,1.16,.075);
- frame.position.z=-.38;frame.scale.set(.88,1.15,.08);
- actor.add(frame);
- addBox(actor,-.47,1.57,-.50,.75,.08,.035,0xdce7f2);
- addBox(actor,-.47,.72,-.50,.75,.075,.035,0xdce7f2);
- const label=roundedText('CRS',.86,'#e4edf6','#10283f');
- label.rotation.y=Math.PI;label.position.set(-.47,1.17,-.49);actor.add(label);
- const baton=mesh(gCyl,dark,.49,1.11,-.28,.044,.79,.044);
- baton.rotation.z=-.22;actor.add(baton);
- return {actor};
+ const dome=new T.SphereGeometry(1,24,14,0,Math.PI*2,0,Math.PI*.57);
+ actor.add(mesh(dome,dark,0,1.68,.013,.145,.145,.157));
+ const visorGeo=new T.CylinderGeometry(.157,.15,.143,20,1,true,Math.PI*.57,Math.PI*.86);
+ const glass=new T.MeshStandardMaterial({color:0xb5d0d8,metalness:.12,roughness:.18,transparent:true,opacity:.31,side:T.DoubleSide,depthWrite:false});
+ actor.add(mesh(visorGeo,glass,0,1.654,-.018));
+ const outline=new T.Shape();
+ outline.moveTo(-.197,.38);outline.quadraticCurveTo(0,.435,.197,.38);outline.quadraticCurveTo(.22,.375,.22,.33);outline.lineTo(.22,-.28);outline.quadraticCurveTo(.215,-.34,0,-.42);outline.quadraticCurveTo(-.215,-.34,-.22,-.28);outline.lineTo(-.22,.33);outline.quadraticCurveTo(-.22,.375,-.197,.38);
+ const shield=new T.ExtrudeGeometry(outline,{depth:.018,bevelEnabled:true,bevelSegments:2,bevelThickness:.009,bevelSize:.009,steps:1});
+ actor.add(mesh(shield,mat(0x577487,.25),-.204,1.02,-.255));
+ const label=roundedText('CRS',.32,'#e4edf6','#10283f');label.rotation.y=Math.PI;label.position.set(-.204,1.12,-.27);actor.add(label);
+ const baton=mesh(gCyl,dark,.283,.86,-.055,.021,.53,.021);baton.rotation.x=.42;actor.add(baton);
+ return {actor,uniform};
 }
 function createPoliceWaves(root){
  policeGroups=[];
@@ -490,6 +319,7 @@ function updatePoliceWaves(time){
    officer.actor.visible=state.status==='standing';
    officer.hit.visible=state.status==='standing';
    if(!officer.actor.visible)continue;
+   walking(officer.uniform,time,.10);
    officer.actor.position.x=officer.baseX+Math.sin(time*.84+i*1.6)*.18;
    officer.actor.position.z=i%2*.25+Math.cos(time*1.2+i)*.12;
    officer.actor.position.y=Math.sin(time*4.7+i*1.8)*.045;
@@ -678,7 +508,7 @@ function extendMarchScenery(){
 }
 function disposeStage(root){
  const geometries=new Set(),materials=new Set(),textures=new Set();
- root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});
+ root.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry&&!o.geometry.userData.cortege)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m.userData.cortege)continue;materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});
  geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
 }
 function sceneFor(phase){
@@ -692,7 +522,7 @@ function sceneFor(phase){
  }
  if(sceneGroup){world.remove(sceneGroup);disposeStage(sceneGroup);}
  sceneGroup=new T.Group();world.add(sceneGroup);
- stageFlags=[];carriedProps=[];carriedBanners=[];pedestrians=[];crowdActors=[];staticFar=[];bastilleCrowd=null;bastilleActors=[];
+ stageFlags=[];carriedProps=[];carriedBanners=[];pedestrians=[];crowdActors=[];bastilleCrowd=null;bastilleActors=[];
  policeGroups=[];heartBursts=[];heartAscents=[];escortInstances=null;
  pickableMeshes=[];pickupActors=[];allyEffects=[];selectionMarker=null;
  redGuide=null;guideStop=0;
@@ -701,14 +531,14 @@ function sceneFor(phase){
  world.background.setHex(sky);world.fog.color.setHex(sky);
  if(phase===1){
   // Rue adjacente : un seul manifestant-guide conduit le joueur vers le drapeau.
-  buildings(root,-20,38,true);parisBackdrop(root,-20,38);parisStreetDetails(root,-20,38);
+  buildings(root,-40,62,true);parisBackdrop(root,-20,38);parisStreetDetails(root,-20,38);
   addBox(root,0,-.07,22,27,.1,7,0x787a77); // carrefour vers l'avenue
   addBox(root,11.63,3.8,11,.1,7,6,0xd5c5a7);
   const school=roundedText('ÉCOLE',2.6);
   school.position.set(11.54,4.7,11);school.rotation.y=-Math.PI/2;root.add(school);
   flag(root,'france',FLAG.x,0,FLAG.z,4.1);
   addSelectable(root,null,FLAG.x,2.1,FLAG.z,3.0,{type:'flag'});
-  redGuide=person(5);redGuide.position.set(-3.1,0,-4.3);root.add(redGuide);
+  redGuide=person(5,{role:'firmin'});redGuide.position.set(-3.1,0,-4.3);root.add(redGuide);
   heldFlag(redGuide,'red');
   // Le personnage guide par son déplacement, sans inscription permanente.
  }else if(phase===2){
@@ -1096,7 +926,7 @@ function animatePedestrians(dt,time){
 function animatePromenade(dt,time){
  if(!hero)return;
  const input=changeDir(),moving=!walk.waiting&&!paused&&Math.hypot(input.x,input.y)>.15;
- hero.position.set(run.x,0,run.z);hero.rotation.y=walk.heading+cameraOrbit;walking(hero,time,moving?1:.03,time<rallyUntil);
+ hero.position.set(run.x,0,run.z);hero.rotation.y=walk.heading;walking(hero,time,moving?1:.03,time<rallyUntil);
  const all=[...bastilleActors,...crowdActors];
  for(let i=0;i<all.length;i++){
   const a=all[i],row=Math.floor(i/5),p=alongTrail(3.5+row*1.5+(rnd(i*71+13)-.5)*.7),spread=((i%5)-2)*1.15+(rnd(i*17+5)-.5)*.5;
@@ -1106,12 +936,13 @@ function animatePromenade(dt,time){
   a.guy.position.x+=(x-a.guy.position.x)*f;a.guy.position.z+=(z-a.guy.position.z)*f;
   a.guy.rotation.y=p.heading;walking(a.guy,time,d>.25?.8:.06,crowdSignal(i,time));
  }
- if(escortInstances){const {body,head,legs,hat,count,hatCount}=escortInstances,dummy=new T.Object3D();
-  for(let i=0;i<count;i++){const p=alongTrail(24+Math.floor(i/8)*1.35),side=((i%8)-3.5)*.65,x=p.x+Math.cos(p.heading)*side,z=p.z-Math.sin(p.heading)*side;
-   dummy.rotation.y=p.heading;for(const [obj,y,sx,sy,sz]of [[body,.95,.42,.77,.28],[head,1.66,.19,.22,.18],[legs,.4,.33,.80,.24]]){dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();obj.setMatrixAt(i,dummy.matrix);}if(i<hatCount){dummy.position.y=1.83;dummy.scale.set(.25,.09,.22);dummy.updateMatrix();hat.setMatrixAt(i,dummy.matrix);}}
-  for(const o of [body,head,legs,hat]){o.instanceMatrix.needsUpdate=true;o.computeBoundingSphere();}
+ if(escortInstances){
+  for(let i=0;i<escortInstances.count;i++){
+   const p=alongTrail(24+Math.floor(i/8)*1.35),side=((i%8)-3.5)*.65;
+   escortInstances.set(i,p.x+Math.cos(p.heading)*side,0,p.z-Math.sin(p.heading)*side,p.heading);
+  }
+  escortInstances.finish();
  }
-
  for(const f of stageFlags)for(const piece of f.fabric){const pos=piece.gm.attributes.position;for(let i=0;i<pos.count;i++)pos.setZ(i,Math.sin(time*2.7+piece.base[i*3]*5+piece.phase)*.12);pos.needsUpdate=true;}
 }
 function updateRedGuide(dt,time){
@@ -1140,7 +971,7 @@ function animateActors(dt,time){
   hero.position.set(run.x,run.height||0,run.z);
   const input=changeDir(),moving=Math.abs(input.x)+Math.abs(input.y)>.2&&!paused;
   walking(hero,time,moving?1:.03,run.phase===2&&run.statueShouted&&!run.climb);
-  hero.rotation.y=run.facing+cameraOrbit;
+  hero.rotation.y=run.facing;
  }
  if(run.phase>=2){
   const input=changeDir(),moving=Math.abs(input.x)+Math.abs(input.y)>.18&&!paused;
@@ -1237,11 +1068,13 @@ function render(ms){
  if(hero){
   if(cornerTurn>0)cornerTurn=Math.max(0,cornerTurn-dt);
   const theta=cameraOrbit+(walk?walk.heading:run.phase===1?0:cornerTurn/1.55*(-Math.PI/2));
-  const radius=walk?13.3:run.phase===1?13:run.phase===2?21:17;
+  const intro=!playing&&!walk&&run.phase===1;
+  const radius=walk?7.8:run.phase===1?4.65:run.phase===2?10.8:8.2;
   const height=run.height||0;
   const target=new T.Vector3(run.x+Math.sin(walk?.heading||0)*2,Math.max(1.8,height+1.8),run.z+Math.cos(walk?.heading||0)*2);
   const desired=new T.Vector3(run.x-Math.sin(theta)*radius,
-   (walk?6.4:7.8)+height*.85,run.z-Math.cos(theta)*radius);
+   (run.phase===2&&!walk?5.4:3.3)+height*.85,run.z-Math.cos(theta)*radius);
+  if(intro){desired.set(run.x+1.28,1.45,run.z+2.72);target.set(run.x,1.02,run.z);}
   camera.position.lerp(desired,Math.min(1,Math.max(.012,dt)*3.4));
   camera.lookAt(target);
  }
@@ -1276,14 +1109,7 @@ async function loadCharacters(){
  $('overlayText').textContent='La place, les rues et les manifestants prennent leur place…';
  $('start').disabled=true;
  try{
-  const loader=new GLTFLoader();
-  const [loaded,adult]=await Promise.all([Promise.all(MODEL_PATHS.map(path=>loader.loadAsync(path))),loader.loadAsync('assets/marmousets/adult.glb')]);
-  for(const name of ['head','spine_03','Thigh_L'])if(!adult.scene?.getObjectByName(name))throw Error('Squelette incomplet : '+name);
-  citizenAsset=adult;
-  for(const model of loaded){
-   if(!model.scene||!model.animations?.some(c=>c.name==='walk'))throw Error('Personnage non animé');
-   templates.push(model);
-  }
+  await loadCortege(renderer.isSoftwareRenderer?camera:null);
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
   $('overlayText').textContent='Un court essai te montre les commandes. Puis prends le drapeau, rassemble les cortèges et poursuis ta marche dans Paris.';
@@ -1295,7 +1121,7 @@ async function loadCharacters(){
   $('overlayText').textContent='Le jeu n’a pas pu charger les modèles animés. Réessaie avec une connexion stable ; les personnages ne sont pas remplacés par des silhouettes rudimentaires.';
   $('start').hidden=true;$('replay').hidden=false;$('replay').textContent='↻ Recharger';
   $('replay').onclick=()=>location.reload();
-  console.error('Chargement des personnages CC0 :',e);
+  console.error('Chargement des personnages du cortège',e);
  }
 }
 bindControls();

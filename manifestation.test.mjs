@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {gunzipSync} from 'node:zlib';
 import {newRun,advance,yellow,red,selectTarget,selectNext,callFromStatue,gameInstruction,FLAG,STATUE,WEAPONS,CRS_WAVES} from './manifestation-core.js';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 const idle={x:0,y:0,red:false},walk={x:0,y:1,red:false};
@@ -41,7 +42,7 @@ function defeat(r,id){
 test('Guide silencieux sans inscription permanente',()=>{
  const js=read('manifestation-app.js'),html=read('jeu-manifestation.html');
  assert.ok(js.includes('const GUIDE_STOPS=['));
- assert.ok(js.includes('redGuide=person(5)'));
+ assert.ok(js.includes("redGuide=person(5,{role:'firmin'})"));
  assert.ok(js.includes("heldFlag(redGuide,'red'"));
  assert.ok(js.includes('function updateRedGuide(dt,time){'));
  assert.ok(!js.includes('guideCaption'));
@@ -317,18 +318,28 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261114-vivants-v2'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261114-vivants-v2'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261121-cortege-v1'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261121-cortege-v1'));
  assert.match(page,/rendezvous-plateau\.js\?v=[^"]+/);
 });
-test('Personnages Kenney animés CC0 inchangés',()=>{
- for(const sex of ['male','female'])for(const v of ['a','c','e']){
-  const b=readFileSync(new URL('./assets/manifestation/character-'+sex+'-'+v+'.glb',import.meta.url));
-  assert.equal(b.toString('ascii',0,4),'glTF');
-  assert.ok(b.length>100000&&b.length<400000);
-  assert.match(b.toString('latin1',20,110000),/"walk"/);
+test('Chaque personnage du cortège possède ses textures et son maillage articulé publié',()=>{
+ for(const name of ['ahmed','firmin','louise','samir','clara','paul','crs']){
+  const file=gunzipSync(readFileSync(new URL('./assets/manifestation/cortege-v1/'+name+'.bin',import.meta.url)));
+  assert.equal(file.toString('ascii',0,4),'MHC1');assert.equal(file.toString('ascii',20,24),'WEBP');
+  let offset=12+file.readUInt32LE(4);
+  for(let level=0;level<file.readUInt32LE(8);level++){
+   const verts=file.readUInt32LE(offset),indices=file.readUInt32LE(offset+4);offset+=8;
+   assert.ok(verts>1000&&verts<65536);assert.ok(indices>3000&&indices%3===0);
+   for(let i=0;i<verts;i++,offset+=21){
+    const joints=file.subarray(offset+13,offset+17),weights=file.subarray(offset+17,offset+21);
+    assert.ok(Math.max(...joints)<15);assert.equal(weights.reduce((a,b)=>a+b,0),255);
+   }
+   for(let i=0;i<indices;i++,offset+=2)assert.ok(file.readUInt16LE(offset)<verts);
+  }
+  assert.equal(offset,file.length);
  }
- assert.match(read('assets/manifestation/KENNEY-CC0-LICENSE.txt'),/Creative Commons Zero/);
+ assert.match(read('jeu-manifestation.html'),/cortege-v1\/ahmed.webp/);
+ assert.match(read('manifestation-app.js'),/hero=person\(2,\{hero:true\}\)/);
 });
 
 test('Statue sur le côté, avenue centrale libre',()=>{
@@ -420,7 +431,8 @@ test('La perspective de l avenue reste ouverte et les détails sont hors chauss�
  }
  assert.ok(js.includes('function parisSidewalkPedestrians(root,start,end){'));
  assert.ok(js.includes('treeX=side*10.45,lightX=side*9.4'));
- assert.ok(js.includes('const shade=[0xe1c49d'));
+ assert.ok(js.includes('root.add(schoolFrontages(start,end))'));
+ assert.ok(read('manifestation-paris.js').includes('house(block,side*15.12'));
 });
 test('Statue, sa cible et la sélection décalées ensemble',()=>{
  const js=read('manifestation-app.js');
@@ -469,5 +481,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE pour le récupérer'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261114-vivants-v2'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261121-cortege-v1'));
 });

@@ -53,6 +53,13 @@ function house(root,x,z,angle,seed){
  for(const xx of [-2.4,2.2])box(g,xx,h+2,-.3,.55,1.4,.65,0xa57658);
  if(seed%3===0){const label=['CAFÉ DES AMIS','LIBRAIRIE','BOULANGERIE','BRASSERIE'][seed%4];sign(g,label,0,3.05,-d/2-.22,Math.PI,5.8,'#29483e','#eee0bb');}
 }
+export function schoolFrontages(start,end){
+ const block=new T.Group();
+ for(const side of [-1,1])for(let z=start-14;z<end+20;z+=12.8){
+  house(block,side*15.12,z+5,side*Math.PI/2,101+Math.round(z-start+26)+(side+1)*4);
+ }
+ return mergeStatic(block);
+}
 function lamp(g,x,z){rod(g,[x,0,z],[x,4.4,z],.065,0x344c48);box(g,x,4.5,z,.40,.65,.40,0xd9bf88);box(g,x,4.87,z,.55,.09,.55,0x344c48);}
 function tree(g,x,z,seed){rod(g,[x,0,z],[x,3.8,z],.16,0x7a6651);for(const s of [-1,1])rod(g,[x,2.8,z],[x+s*.75,4.2,z],.09,0x7a6651);ellipse(g,x,4.9,z,1.65,1.9,1.6,seed%2?0x718764:0x8a966c);ellipse(g,x+.8,4.4,z+.4,1.05,1.25,1.1,0x8c9b72);}
 function metro(g,text,x,z){rod(g,[x,0,z],[x,4.2,z],.09,0x25473c);const m=sign(g,'MÉTRO',x,4.4,z,Math.PI,2.2,'#a34036','#f3dfab');sign(g,text,x,3.7,z,Math.PI,3.3);for(const dx of [-1,1]){rod(g,[x+dx,0,z+1],[x+dx,1.05,z+1],.04,0x294b3f);rod(g,[x+dx,1.05,z+1],[x+dx,1.05,z+3],.04,0x294b3f);}box(g,x,.04,z+2,1.8,.08,2.7,0x263537);return m;}
