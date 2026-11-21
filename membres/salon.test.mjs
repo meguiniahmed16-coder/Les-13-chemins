@@ -227,6 +227,10 @@ test('La voix cale les mots et libère la réponse suivante seulement en fin de 
   utterance.onerror();now+=4;d.frame();assert.equal(d.busy,false);
   d.play('guest','Encore.',1);const stale=utterance.onend;d.clear();stale();
   assert.equal(cancelled,1);assert.equal(d.busy,false);assert.equal(d.frame(),null);
+  d.play('guest','Une première réponse.',1);d.microphone(true);
+  assert.equal(d.busy,false);d.microphone(false);assert.equal(d.busy,false);
+  d.microphone(true);d.play('guest','Une autre réponse.',1,true);assert.equal(d.busy,false);
+  d.microphone(false);assert.equal(utterance.text,'Une autre réponse.');d.dispose();
 });
 
 test('Les prêtres du livre ont une tenue et un col romain, y compris en cas de genre absent',async()=>{

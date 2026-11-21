@@ -63,9 +63,11 @@ function phonemeIds(text,engine){
   }
   ids.push(...table['$']);return ids;
 }
+function ready(){
+  return loading??=initialize().catch(e=>{loading=null;throw e;});
+}
 async function generate({id,chunks,gender,rate}){
-  loading??=initialize().catch(e=>{loading=null;throw e;});
-  const engine=await loading;
+  const engine=await ready();
   for(let index=0;index<chunks.length&&id===latest;index++){
     const ids=phonemeIds(chunks[index].text,engine);
     const integer=data=>new ort.Tensor('int64',BigInt64Array.from(data,BigInt),[data.length]);
@@ -81,6 +83,7 @@ async function generate({id,chunks,gender,rate}){
   }
 }
 self.onmessage=({data})=>{
+  if(data.type==='prepare'){void ready().catch(()=>{});return;}
   latest=data.id;
   if(data.type==='cancel')return;
   queue=queue.then(()=>latest===data.id&&generate(data)).catch(()=>{

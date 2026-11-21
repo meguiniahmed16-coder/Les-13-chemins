@@ -7,7 +7,7 @@ import {loadStudio} from './studio-model.js?v=salon38';
 import {createDrawer} from './studio-drawer.js?v=salon39';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon39';
 import {salonMarkup,bindSalon} from './salon-controls.js?v=salon39';
-import {createSalonChat} from './salon-chat.js?v=salon39';
+import {createSalonChat} from './salon-chat.js?v=salon41';
 import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon38';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();

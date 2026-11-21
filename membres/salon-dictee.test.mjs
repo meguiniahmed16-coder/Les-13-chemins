@@ -19,13 +19,18 @@ function setup(t,win={},mediaDevices={}){
 test('La dictée native conserve seulement sa phrase finale et se relance',t=>{
   let recognizer;
   class Recognition{constructor(){recognizer=this;}start(){this.onstart();}abort(){}}
-  const {d,phrases}=setup(t,{webkitSpeechRecognition:Recognition});
+  const {d,phrases,statuses}=setup(t,{webkitSpeechRecognition:Recognition});
   d.toggle();assert.equal(recognizer.lang,'fr-FR');assert.equal(d.state,'listening');
   recognizer.onresult({results:[Object.assign([{transcript:'Un essai'}],{isFinal:false})]});
   assert.deepEqual(phrases,[]);
-  recognizer.onresult({results:[[{transcript:' La décision. '}]]});assert.equal(d.state,'idle');
+  assert.equal(statuses.at(-1),'Un essai');
+  const first=[{transcript:' La décision. '}];
+  recognizer.onresult({results:[first]});
+  assert.equal(d.state,'listening');
+  recognizer.onresult({results:[first,[{transcript:' Et la suite.'}]]});recognizer.onend();
+  assert.equal(d.state,'idle');
   d.toggle();const late=recognizer.onresult;d.cancel();late({results:[[{transcript:'périmé'}]]});
-  assert.deepEqual(phrases,['La décision.']);
+  assert.deepEqual(phrases,['La décision. Et la suite.']);
 });
 test('Après un échec du service natif, une permission micro refusée propose le clavier',async t=>{
   class Recognition{start(){this.onerror({error:'network'});}abort(){}}

@@ -1,5 +1,5 @@
-import {createDialogue} from './salon-dialogue.js?v=salon36';
-import {createDictee} from './salon-dictee.js';
+import {createDialogue} from './salon-dialogue.js?v=salon41';
+import {createDictee} from './salon-dictee.js?v=salon41';
 import {characterReply,limit} from '../atlas-chat-client.js';
 import {searchName} from './salon-encounter.js?v=salon38';
 
@@ -53,15 +53,16 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   let mode='wide',speaker='player',reading,showSpeech=true;
   const nodeFor=who=>who==='player'?own:other,announcement=$('.speech-announcement');
   const voiceStatus=$('.voice-state'),micStatus=$('.dictation-state'),retry=$('.retry-message');
-  let micState='idle',failedQuestion='';
+  let micState='idle',failedQuestion='',dictatedDraft=false,retryDictated=false;
   const voiceEnabled=()=>voiceSwitch.getAttribute('aria-pressed')==='true';
+  function showLine(who,text){
+    const node=nodeFor(who);turn(who);bubble(node,text);
+    announcement.textContent=node.getAttribute('aria-label');
+  }
   const playback=createDialogue({
     gender,
     voiceStatus:message=>{voiceStatus.textContent=message;},
-    start(who,text){
-      const node=nodeFor(who);turn(who);bubble(node,text);
-      announcement.textContent=node.getAttribute('aria-label');
-    },
+    start:showLine,
     word(who,w){
       if(!w)return;
       const node=nodeFor(who),span=node.querySelector('.line'),text=node.lineText;
@@ -114,7 +115,9 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       const before=input.value.slice(0,start),after=input.value.slice(end);
       const prefix=before&&!/\s$/.test(before)?' ':'',suffix=after&&!/^[\s.,!?]/.test(after)?' ':'';
       const insert=(prefix+text.trim()+suffix).slice(0,Math.max(0,limit-before.length-after.length));
-      input.setRangeText(insert,start,end,'end');buttons();
+      input.setRangeText(insert,start,end,'end');
+      if(insert.trim())dictatedDraft=true;
+      buttons();
     },
     onStatus:message=>{micStatus.textContent=message;},
     onKeyboard:()=>{input.focus();},
@@ -123,7 +126,8 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       mic.setAttribute('aria-pressed',String(state!=='idle'));
       const label=state==='listening'?'Terminer la dictée':state==='idle'?'Dicter un message':'Annuler la dictée';
       mic.title=label;mic.setAttribute('aria-label',label);
-      if(wasIdle!==(state==='idle')&&voiceEnabled())playback.voice(state==='idle',{temporary:true});
+      if(wasIdle!==(state==='idle'))playback.microphone(state!=='idle');
+      buttons();
     }
   });
   function closePicker(){
@@ -153,7 +157,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   function finish(clear=false){
     onChoice=null;
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
-    closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
+    closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';dictatedDraft=false;status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
     own.hidden=other.hidden=footer.hidden=true;toggle.hidden=false;leave();
     if(clear)threads.clear();
   }
@@ -162,16 +166,18 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
     node.querySelector('span').scrollTop=0;change();
   }
   function buttons(){
-    send.disabled=Boolean(request)||!input.value.trim();
+    send.disabled=Boolean(request)||micState!=='idle'||!input.value.trim();
   }
-  async function say(question,fromDraft=false,welcome){
-    if(!person||request||!question)return;
+  async function say(question,fromDraft=false,welcome,spoken=fromDraft&&dictatedDraft){
+    if(!person||request||!question||(fromDraft&&micState!=='idle'))return;
     if(dictee.state!=='idle')dictee.cancel();
     const current=person,thread=threads.get(current.id),abort=new AbortController();
     request=abort;const timer=setTimeout(()=>abort.abort(),60000);
     failedQuestion='';retry.hidden=true;
-    if(fromDraft)input.value='';
-    playback.play('player',question,rate('player'));bubble(other,'…');status.textContent='';buttons();
+    if(fromDraft){input.value='';dictatedDraft=false;}
+    if(spoken){playback.clear();showLine('player',question);}
+    else playback.play('player',question,rate('player'));
+    bubble(other,'…');status.textContent='';buttons();
     try{
       const answer=welcome||await characterReply(current.id,question,thread,abort.signal);
       if(request!==abort)return;
@@ -179,7 +185,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       playback.play('guest',answer,rate('guest'),true);
     }catch(err){
       if(request!==abort)return;
-      bubble(other,'');failedQuestion=question;retry.hidden=false;
+      bubble(other,'');failedQuestion=question;retryDictated=spoken;retry.hidden=false;
       status.textContent=err.name==='AbortError'||err instanceof TypeError?'Connexion interrompue. Tu peux renvoyer ton message.':err.message;
     }finally{clearTimeout(timer);if(request===abort){request=null;buttons();}}
   }
@@ -206,11 +212,11 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   list.onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id)void choose(people.find(p=>p.id===id));};
   random.onclick=()=>void choose(people[Math.floor(Math.random()*people.length)]);
   $('.guest-leave').onclick=()=>{finish();toggle.focus({preventScroll:true});};
-  input.oninput=buttons;
+  input.oninput=e=>{if(!input.value.trim())dictatedDraft=false;else if(e.inputType==='insertFromDictation')dictatedDraft=true;buttons();};
   $('.guest-compose').onsubmit=e=>{e.preventDefault();void say(input.value.trim(),true);};
   send.onpointerdown=e=>{if(root.activeElement===input)e.preventDefault();};
   mic.onclick=()=>{void dictee.toggle();};
-  retry.onclick=()=>{if(failedQuestion)void say(failedQuestion);};
+  retry.onclick=()=>{if(failedQuestion)void say(failedQuestion,false,undefined,retryDictated);};
   function position(playerOnRight){
     rail.classList.toggle('player-on-right',playerOnRight);
     if(rail.hidden||footer.hidden||!reader.hidden)return;

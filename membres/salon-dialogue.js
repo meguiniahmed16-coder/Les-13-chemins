@@ -1,10 +1,12 @@
 import {scoreLine,articulation} from './salon-performance.js';
-import {frenchVoice,createLocalVoices} from './salon-voice.js';
+import {frenchVoice,createLocalVoices} from './salon-voice.js?v=salon41';
 
 // One clock drives articulation, word emphasis, conversational gestures and camera cuts.
 export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus=()=>{},now=()=>performance.now()/1000,synth=globalThis.speechSynthesis}){
   const local=createLocalVoices(voiceStatus,wake);
-  let active=null,next=null,utterance=null,voiced=false,lastWord=-1;
+  let active=null,next=null,utterance=null,voiced=false,micOpen=false,lastWord=-1;
+  // Browsers may populate the installed voice list after the first request.
+  synth?.getVoices?.();
   function stopNative(){
     if(!utterance)return;
     const previous=utterance;utterance=null;
@@ -39,7 +41,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     if(!globalThis.SpeechSynthesisUtterance){nativeFailure(current);return;}
     const voice=new SpeechSynthesisUtterance(line.text.slice(offset));
     voice.lang='fr-FR';voice.rate=current.rate;
-    const selected=frenchVoice(synth,current.gender,false);
+    const selected=frenchVoice(synth,current.gender,true,true)||frenchVoice(synth,current.gender,false);
     if(selected)voice.voice=selected;
     utterance=voice;current.waitUntil=now()+4;
     voice.onstart=()=>{
@@ -61,8 +63,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     if(!voiced||!active)return;
     const current=active;
     current.triedNative=false;current.triedLocal=false;
-    const voice=frenchVoice(synth,current.gender);
-    const installed=voice?.localService&&(/premium|enhanced|amélior|neural|natural/i.test(voice.name)||globalThis.navigator?.connection?.saveData);
+    const installed=frenchVoice(synth,current.gender,true,true);
     if(local?.available&&!installed)readLocal(current);
     else if(synth)readNative(current);
     else silent(current);
@@ -74,17 +75,29 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
   function clear(){next=null;stopVoice();if(active)rest(active.who);active=null;lastWord=-1;}
   return {
     clear,
-    dispose(){clear();local?.disable();},
+    dispose(){clear();micOpen=false;local?.disable();},
     get busy(){return active!==null;},
     get supportsVoice(){return Boolean(local||synth&&globalThis.SpeechSynthesisUtterance);},
     play(who,text,rate,queue=false){
       const record={who,text,rate};
-      if(queue&&active){next=record;return;}
+      if((micOpen&&voiced)||(queue&&active)){next=record;return;}
       clear();begin(record);
     },
-    voice(enabled,{temporary=false}={}){
+    microphone(open){
+      micOpen=open;
+      if(open&&voiced){
+        // Interrupt the current line. A reply already queued can wait for the microphone to close.
+        const waiting=next;clear();next=waiting;
+      }else if(!open&&!active&&next){
+        const waiting=next;next=null;begin(waiting);
+      }
+    },
+    voice(enabled){
       const at=local?.position()?.time;voiced=enabled;stopVoice();voiceStatus('');
-      if(enabled)local?.unlock(!temporary);else if(!temporary)local?.disable();
+      if(enabled){
+        local?.unlock(true);
+        if(!frenchVoice(synth,gender('guest'),true,true))local?.prepare();
+      }else local?.disable();
       if(active){
         if(at!=null)active.origin=now()-at;
         active.waitUntil=0;active.started=false;

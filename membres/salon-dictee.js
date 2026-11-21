@@ -6,11 +6,39 @@ export function createDictee({onText,onStatus,onState,onKeyboard}){
 
   function setState(value){state=value;onState(value);}
   function releaseModel(){clearTimeout(releaseTimer);worker?.terminate();worker=null;}
+  function monitorPauses(run){
+    const Engine=window.AudioContext||window.webkitAudioContext;
+    if(!Engine)return;
+    try{
+      const ctx=run.meterContext=new Engine(),meter=ctx.createAnalyser();
+      meter.fftSize=1024;
+      ctx.createMediaStreamSource(run.stream).connect(meter);
+      const samples=new Float32Array(meter.fftSize);
+      let voicedFrames=0,lastVoice=0,noise=.003;
+      if(ctx.state==='suspended')void ctx.resume().catch(()=>{});
+      run.meterTimer=setInterval(()=>{
+        if(ctx.state!=='running')return;
+        meter.getFloatTimeDomainData(samples);
+        let sum=0;for(const sample of samples)sum+=sample*sample;
+        const rms=Math.sqrt(sum/samples.length),now=performance.now();
+        if(rms>Math.max(.009,noise*2.6)){
+          voicedFrames++;if(voicedFrames>=2)lastVoice=now;
+        }else{
+          voicedFrames=0;noise=.94*noise+.06*Math.min(.02,rms);
+          if(lastVoice&&now-lastVoice>=1250)stopRecording(run);
+        }
+      },80);
+    }catch{/* The mic button can always finish recording manually. */}
+  }
+  function stopMeter(run){
+    clearInterval(run.meterTimer);
+    if(run.meterContext){void run.meterContext.close().catch(()=>{});run.meterContext=null;}
+  }
   function detach(run){
-    clearTimeout(run.timer);
+    clearTimeout(run.timer);clearTimeout(run.pause);stopMeter(run);
     if(run.native){
       const r=run.native;run.native=null;
-      r.onstart=r.onresult=r.onend=r.onerror=null;
+      r.onstart=r.onresult=r.onend=r.onerror=r.onspeechstart=null;
       try{r.abort();}catch{}
     }
     if(run.recorder){
@@ -77,7 +105,7 @@ export function createDictee({onText,onStatus,onState,onKeyboard}){
   }
   function stopRecording(run){
     if(run.recorder?.state==='recording'){
-      clearTimeout(run.timer);setState('processing');
+      clearTimeout(run.timer);stopMeter(run);setState('processing');
       run.recorder.stop();
     }
   }
@@ -97,8 +125,8 @@ export function createDictee({onText,onStatus,onState,onKeyboard}){
       r.ondataavailable=e=>{if(e.data.size)run.parts.push(e.data);};
       r.onerror=()=>finish(run,'Le micro a été interrompu. '+help,true);
       r.onstop=()=>void transcribe(run);
-      r.start();
-      setState('listening');onStatus('Parle, puis retouche le micro pour terminer. Le modèle se télécharge à la première dictée locale.');
+      r.start();monitorPauses(run);
+      setState('listening');onStatus('Parle, puis marque une pause ou retouche le micro pour terminer.');
       run.timer=setTimeout(()=>stopRecording(run),27000);
       localWorker(run).postMessage({type:'prepare',id:run.id});
     }catch(error){
@@ -114,29 +142,42 @@ export function createDictee({onText,onStatus,onState,onKeyboard}){
     }else finish(run,'Aucune parole reconnue. Touche le micro pour réessayer.');
   }
   function native(run){
-    const r=new Native();run.native=r;r.lang='fr-FR';r.continuous=false;r.interimResults=false;
+    const r=new Native();run.native=r;r.lang='fr-FR';r.continuous=true;r.interimResults=true;
+    let confirmed='';
+    r.onspeechstart=()=>clearTimeout(run.pause);
     r.onstart=()=>{
       if(session!==run)return;
       clearTimeout(run.timer);run.listeningAt=Date.now();setState('listening');onStatus('Je t’écoute…');
       run.timer=setTimeout(()=>stopNative(run),30000);
     };
     r.onresult=e=>{
-      const final=Array.from(e.results).filter(item=>item.isFinal!==false);
-      if(final.length){emptyAttempts=0;result(run,final.map(item=>item[0].transcript).join(' '));}
+      if(session!==run||run.native!==r)return;
+      clearTimeout(run.pause);
+      const results=Array.from(e.results);
+      confirmed=results.filter(item=>item.isFinal!==false).map(item=>item[0].transcript.trim()).join(' ').trim();
+      const words=results.map(item=>item[0].transcript.trim()).join(' ').trim();
+      if(words)onStatus(words);
+      if(confirmed){
+        emptyAttempts=0;
+        if(results.at(-1).isFinal!==false&&state==='listening')run.pause=setTimeout(()=>stopNative(run),1100);
+      }
     };
     r.onerror=e=>{
       if(session!==run)return;
+      if(confirmed){result(run,confirmed);return;}
       if(e.error==='no-speech'||e.error==='aborted'){noNativeResult(run);return;}
       nativeFailed=true;void local(run);
     };
-    r.onend=()=>noNativeResult(run);
+    r.onend=()=>{if(confirmed)result(run,confirmed);else noNativeResult(run);};
+    run.nativeResult=()=>confirmed;
     run.timer=setTimeout(()=>{nativeFailed=true;void local(run);},9000);
     r.start();
   }
   function stopNative(run){
-    clearTimeout(run.timer);setState('processing');onStatus('Fin de la dictée…');
-    run.timer=setTimeout(()=>finish(run,'Touche le micro pour réessayer.'),4500);
-    try{run.native.stop();}catch{finish(run);}
+    if(session!==run||state==='processing')return;
+    clearTimeout(run.pause);clearTimeout(run.timer);setState('processing');onStatus('Fin de la dictée…');
+    run.timer=setTimeout(()=>result(run,run.nativeResult()),1800);
+    try{run.native.stop();}catch{result(run,run.nativeResult());}
   }
   function toggle(){
     if(state==='processing'){cancel();return;}
