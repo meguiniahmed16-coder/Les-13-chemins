@@ -28,40 +28,39 @@ function mergeStatic(g){
  return g;
 }
 function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);}
-function safeBuilding(x,z,own){
- if(z>288&&x< -65)return false;
- if(Math.hypot(x-6,z-5)<32||Math.hypot(x-7,z-224)<24||((x< -175)&&(z>145&&z<270)))return false;
- return streets.every(e=>e.id===own||segmentDistance(x,z,nodes[e.a],nodes[e.b])>e.width/2+9.0);
-}
-const stones=[0xd9c5aa,0xcfc1aa,0xd4cbb7,0xd7bfa4,0xc8bca9,0xddcfb9],awnings=[0x3b6157,0x8e4039,0x354a64,0xb39b65];
-function house(root,x,z,angle,seed){
- const g=new T.Group();g.position.set(x,0,z);g.rotation.y=angle;root.add(g);
- const h=11+(seed%4)*1.25,w=12.5,d=7.3,c=stones[seed%stones.length],slate=0x4c5666;
- box(g,0,h/2,0,w,h,d,c);box(g,0,.7,0,w+.1,1.4,d+.1,0xb3a58f);
- box(g,0,h+.45,0,w+.45,.7,d+.4,slate);box(g,0,h+1.2,0,w-.8,1.1,d-1.2,slate);
- box(g,0,h-.5,-d/2-.1,w+.3,.23,.4,0xeaddc4);
- for(const y of [3.15,6.4,9.65])if(y<h)box(g,0,y,-d/2-.08,w+.1,.13,.27,0xe8dbc4);
- for(let y=4.3;y<h-1;y+=2.8)for(let col=-1;col<=1;col++){
-  const xx=col*2.85,glow=(col+seed+Math.floor(y))%3===0;
-  box(g,xx,y,-d/2-.06,1.25,1.85,.11,0xebe0c9);box(g,xx,y,-d/2-.13,.98,1.55,.07,glow?0xd9b97d:0x485866);
-  box(g,xx,y,-d/2-.18,.065,1.6,.04,0xc9c0a9);box(g,xx,y,-d/2-.18,1.05,.06,.04,0xc9c0a9);
-  box(g,xx,y-.92,-d/2-.4,1.6,.16,.65,0xc9bea7);
-  if(y<7.4){box(g,xx,y-.56,-d/2-.69,1.6,.055,.06,0x354447);for(let j=-3;j<=3;j++)box(g,xx+j*.22,y-.73,-d/2-.7,.034,.38,.04,0x354447);}
+export function schoolFrontages(start,end,district){
+ const view=new T.Group();view.position.z=-66;
+ const paris=district.getObjectByName('Quartier');
+ for(const cell of paris.children){
+  const m=/^Ilot_(-?\d+)_(-?\d+)$/.exec(cell.name);if(!m)continue;
+  const x=Number(m[1])*32,z=Number(m[2])*32;
+  if(x>=-64&&x<=32&&z<=end+80&&z+32>=start+52)view.add(cell.clone(true));
  }
- box(g,0,1.4,-d/2-.12,1.65,2.7,.12,0x3e4b45);
- for(const xx of [-2.8,2.8]){box(g,xx,1.3,-d/2-.13,2.2,2.1,.12,0x798988);box(g,xx,2.8,-d/2-.42,2.8,.18,.85,awnings[seed%4]);}
- for(const xx of [-2.4,2.2])box(g,xx,h+2,-.3,.55,1.4,.65,0xa57658);
- if(seed%3===0){const label=['CAFÉ DES AMIS','LIBRAIRIE','BOULANGERIE','BRASSERIE'][seed%4];sign(g,label,0,3.05,-d/2-.22,Math.PI,5.8,'#29483e','#eee0bb');}
-}
-export function schoolFrontages(start,end){
- const block=new T.Group();
- for(const side of [-1,1])for(let z=start-14;z<end+20;z+=12.8){
-  house(block,side*15.12,z+5,side*Math.PI/2,101+Math.round(z-start+26)+(side+1)*4);
- }
- return mergeStatic(block);
+ return view;
 }
 function lamp(g,x,z){rod(g,[x,0,z],[x,4.4,z],.065,0x344c48);box(g,x,4.5,z,.40,.65,.40,0xd9bf88);box(g,x,4.87,z,.55,.09,.55,0x344c48);}
-function tree(g,x,z,seed){rod(g,[x,0,z],[x,3.8,z],.16,0x7a6651);for(const s of [-1,1])rod(g,[x,2.8,z],[x+s*.75,4.2,z],.09,0x7a6651);ellipse(g,x,4.9,z,1.65,1.9,1.6,seed%2?0x718764:0x8a966c);ellipse(g,x+.8,4.4,z+.4,1.05,1.25,1.1,0x8c9b72);}
+const crowns=new Map();
+function canopy(seed){
+ const key=(seed%5+5)%5;if(crowns.has(key))return crowns.get(key);
+ const g=new T.IcosahedronGeometry(1,2),p=g.attributes.position,colors=[];
+ for(let i=0;i<p.count;i++){
+  const x=p.getX(i),y=p.getY(i),z=p.getZ(i),noise=Math.sin(x*9+key*2)*Math.sin(y*11+z*7)+.55*Math.sin(z*14-y*5);
+  const r=.94+.15*noise;p.setXYZ(i,x*r,y*r,z*r);
+  const tone=.82+.13*y+.075*noise;colors.push(.225*tone,.326*tone,.163*tone);
+ }
+ g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.computeVertexNormals();crowns.set(key,g);return g;
+}
+const foliage=new T.MeshStandardMaterial({vertexColors:true,roughness:1});
+function tree(g,x,z,seed){
+ const roll=Math.sin(x*.63+z*.79);
+ rod(g,[x,0,z],[x+.08*roll,3.35,z],.125,0x796e5f);
+ for(let i=0;i<3;i++){
+  const t=i*Math.PI*2/3+roll,dx=Math.cos(t),dz=Math.sin(t);
+  rod(g,[x,2.35,z],[x+dx*.80,3.78+roll*.22,z+dz*.80],.075,0x766a59);
+  const lobe=new T.Mesh(canopy(seed+i),foliage);
+  lobe.position.set(x+dx*.56,4.03+i*.24,z+dz*.55);lobe.scale.set(1.14,1.35,1.16);g.add(lobe);
+ }
+}
 function metro(g,text,x,z){rod(g,[x,0,z],[x,4.2,z],.09,0x25473c);const m=sign(g,'MÉTRO',x,4.4,z,Math.PI,2.2,'#a34036','#f3dfab');sign(g,text,x,3.7,z,Math.PI,3.3);for(const dx of [-1,1]){rod(g,[x+dx,0,z+1],[x+dx,1.05,z+1],.04,0x294b3f);rod(g,[x+dx,1.05,z+1],[x+dx,1.05,z+3],.04,0x294b3f);}box(g,x,.04,z+2,1.8,.08,2.7,0x263537);return m;}
 function bastille(g){
  const root=new T.Group();root.position.set(11,0,230);g.add(root);
@@ -75,9 +74,20 @@ function bastille(g){
  // Recognizable glass/stone volumes of the opera, on the eastern edge of the square.
  box(g,38,7.5,232,22,15,15,0xaeb7b5);box(g,30,6.5,223,12,13,4,0x7b9b9d);
  for(let i=0;i<7;i++)box(g,25+i*1.7,6.5,220.9,.08,13,.09,0xd7d8ce);
- sign(g,'OPÉRA BASTILLE',30,11,220.7,Math.PI,9,'#425858','#f2ead5');
+ // Glazed foyer and horizontal stone courses remain visible from the western approach.
+ for(let i=0;i<13;i++){
+  const a=-.90+i*.084,b=a+.085,x=31.9-7.8*Math.cos(a),z=227.5+8.4*Math.sin(a);
+  const xx=31.9-7.8*Math.cos(b),zz=227.5+8.4*Math.sin(b);
+  const panel=box(g,(x+xx)/2,6.5,(z+zz)/2,Math.hypot(xx-x,zz-z)+.03,10.4,.12,i%3===0?0x79939b:0x92a7ad);
+  panel.rotation.y=-Math.atan2(zz-z,xx-x);
+  rod(g,[x,1.2,z],[x,12,z],.05,0xd7d9d4);
+  for(const y of [2.4,5.3,8.2,11.1])rod(g,[x-.08,y,z],[xx-.08,y,zz],.047,0xd5d7d3);
+ }
+ for(const y of [2.6,5.4,8.2,11.0,13.8])box(g,26.94,y,232,.15,.10,21.8,0x868f8f);
+ box(g,33.9,15.5,233,12,.9,13,0x979f9f);
+ sign(g,'OPÉRA BASTILLE',29.1,10.3,220.06,Math.PI,6,'#40565a','#f1ebd8');
 }
-export function createParisCity(){
+export function createParisCity(district){
  const root=new T.Group();root.name='Paris — réseau de rues';
  box(root,-83,-.28,123,330,.3,370,0xb0aa98);
  // Public space around the monument: buildings stay outside the square.
@@ -93,14 +103,16 @@ export function createParisCity(){
   for(const side of [-1,1]){box(road,side*(e.width/2+3.5),.015,0,2.6,.20,Math.max(1,len-9),0xc9bea9);box(road,side*(e.width/2+2.27),.12,0,.14,.20,Math.max(1,len-9),0xa49e8e);}
   if(e.width>14)for(let p=12;p<len-8;p+=10)box(road,0,.034,p-len/2,.09,.018,2.5,0xd4cab1);
   for(let x=-e.width/2+1;x<e.width/2;x+=1.5)box(road,x,.035,-len/2+5,.8,.02,2.4,0xdcd8c6);
-  for(let t=13;t<len-9;t+=13)for(const side of [-1,1]){
-   const ox=n.x*side*(e.width/2+8.7),oz=n.z*side*(e.width/2+8.7),x=a.x+u.x*t+ox,z=a.z+u.z*t+oz;
-   if(safeBuilding(x,z,e.id))house(root,x,z,angle+(side<0?-Math.PI/2:Math.PI/2),index*11+Math.floor(t/13));
-  }
   for(let t=14;t<len-8;t+=23){for(const side of [-1,1]){
    const x=a.x+u.x*t+n.x*side*(e.width/2+2.7),z=a.z+u.z*t+n.z*side*(e.width/2+2.7);
-   lamp(root,x,z);if(e.width>14&&t>28)tree(root,x+u.x*5,z+u.z*5,index);
+   lamp(root,x,z);
   }}
+  if(e.width>14)for(let t=9;t<len-6;t+=13.5)for(const side of [-1,1]){
+   const at=t+(side<0?2:0),off=side*(e.width/2+3.45);
+   const x=a.x+u.x*at+n.x*off,z=a.z+u.z*at+n.z*off;
+   tree(root,x,z,index+Math.floor(t));
+   box(root,x,.126,z,.90,.035,.90,0x61685f);
+  }
   for(let t=16;t<len-12;t+=14)for(const side of [-1,1]){
    if((Math.floor(t/14)+index+(side+1)/2)%4===0)continue;
    const at=t+(side<0?3:0),x=a.x+u.x*at+n.x*side*(e.width/2+1.15),z=a.z+u.z*at+n.z*side*(e.width/2+1.15);
@@ -108,12 +120,9 @@ export function createParisCity(){
    const car=createParkedCar(index+Math.floor(t/14),[0x6e7b83,0x923f43,0xd0cbc0,0x395d76,0x46584f,0xb6b8b4][(index+Math.floor(t/14)+(side+1))%6]);
    car.position.set(x,.05,z);car.rotation.y=angle+(side<0?0:Math.PI);root.add(car);
   }
-  sign(root,e.name,a.x+u.x*9+n.x*(e.width/2+3),3.3,a.z+u.z*9+n.z*(e.width/2+3),angle+Math.PI,Math.min(7,e.name.length*.21));
+  sign(root,e.name,a.x+u.x*9+n.x*(e.width/2+3),3.3,a.z+u.z*9+n.z*(e.width/2+3),angle+Math.PI,Math.min(2.65,1+e.name.length*.056));
  }
  metro(root,'Filles-du-Calvaire',10,65);metro(root,'Saint-Sébastien–Froissart',10,105);metro(root,'Chemin Vert',13,166);
- // Continuous outer blocks close the views beyond each real junction.
- for(let z=-20,i=0;z<248;z+=13,i++)for(const side of [-1,1]){const x=side<0?-209:45;if(safeBuilding(x,z))house(root,x,z,side<0?-Math.PI/2:Math.PI/2,300+i+(side+1)*8);}
- for(let x=-199,i=0;x<50;x+=13,i++)for(const z of [-39,323])if(safeBuilding(x,z))house(root,x,z,z<0?Math.PI:0,350+i);
  // Broad Bastille junction and the distant July Column.
  box(root,8,-.025,224,48,.10,34,0x6b7470);bastille(root);
  // Benches, a newspaper kiosk and café tables give the squares a human scale.
@@ -121,7 +130,7 @@ export function createParisCity(){
  const kiosk=new T.Mesh(new T.CylinderGeometry(1.25,1.25,2.5,8),material(0x315649));kiosk.position.set(-18,1.25,-19);root.add(kiosk);
  const roof=new T.Mesh(new T.ConeGeometry(1.8,1.0,8),material(0x375249));roof.position.set(-18,3,-19);root.add(roof);sign(root,'JOURNAUX',-18,2,-20.3,Math.PI,2.2,'#e2c58d','#354a41');
  parisLandmarks(root);
- return mergeStatic(root);
+ mergeStatic(root);root.add(district.clone(true));return root;
 }
 
 function parisLandmarks(g){

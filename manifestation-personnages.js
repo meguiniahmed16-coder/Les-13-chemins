@@ -1,7 +1,7 @@
 // Game-ready salon figures share one texture and a fifteen-joint rig per outfit.
 // The distant crowd uses a second mesh of the same figures, posed before instancing.
 import * as T from 'three';
-const names=['ahmed','firmin','louise','samir','clara','paul','crs'];
+const names=['ahmed','firmin','louise','samir','clara','paul'];
 const ensemble=['louise','samir','clara','paul'];
 const outfits=new Map(),poses=new Map();
 const identity=new T.Matrix4();

@@ -84,14 +84,29 @@ test('Shared crowd poses reproduce the established walk and raised arm on the re
  assert.ok(firstLook.angleTo(bones.head.bone.quaternion)>.01,'Stationary people also turn their heads');
 
 });
-test('The monument keeps its accessible landing and a bounded mobile mesh budget',()=>{
- const monument=createRepublicMonument(),bounds=new T.Box3().setFromObject(monument);let triangles=0;
- monument.traverse(m=>{if(!m.isMesh)return;const p=m.geometry.attributes.position;for(const n of p.array)assert.ok(Number.isFinite(n));triangles+=(m.geometry.index?.count||p.count)/3;});
- assert.ok(triangles<20000);assert.ok(bounds.max.y>16);assert.ok(bounds.max.x<=3.01);assert.ok(bounds.min.z<STATUE.footZ-STATUE.z);
- assert.equal(STATUE.topHeight,3.32);assert.ok(STATUE.exitX<STATUE.x-3.05,'Exit stays clear of the pedestal');
+async function staticAsset(file){
+ const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+ const {gunzipSync}=await import('node:zlib');
+ const b=readFileSync(new URL('./assets/manifestation/republique/'+file,import.meta.url));
+ const glb=file.endsWith('.bin')?gunzipSync(b):b;
+ const jsonLen=glb.readUInt32LE(12),def=JSON.parse(glb.subarray(20,20+jsonLen));
+ // Geometry checks use the same buffers without starting an image decoder in Node.
+ def.materials=def.materials.map(()=>({}));delete def.images;delete def.textures;
+ const bytes=glb.subarray(28+jsonLen);def.buffers[0].uri='data:application/octet-stream;base64,'+bytes.toString('base64');
+ const asset=await new GLTFLoader().parseAsync(JSON.stringify(def),'');
+ asset.scene.traverse(o=>o.geometry?.computeBoundingSphere());return asset.scene;
+}
+test('Scanned monument fits the square and retains a usable climbing landing',async()=>{
+ for(const file of ['monument.glb','monument-loin.glb']){
+  const monument=createRepublicMonument(await staticAsset(file)),bounds=new T.Box3().setFromObject(monument);let triangles=0;
+  monument.traverse(m=>{if(!m.isMesh)return;for(const v of m.geometry.attributes.position.array)assert.ok(Number.isFinite(v));triangles+=(m.geometry.index?.count||m.geometry.attributes.position.count)/3;});
+  assert.ok(triangles<20000&&triangles>2000);assert.ok(bounds.max.y>16&&bounds.min.y>-.03);
+  assert.ok(bounds.min.x+STATUE.x>0);assert.ok(bounds.min.z<=STATUE.footZ-STATUE.z);
+  assert.equal(monument.userData.platformHeight,STATUE.topHeight);
+ }
 });
-test('Connected city geometry and map build without external services',()=>{
- const city=createParisCity(),bounds=new T.Box3().setFromObject(city);assert.ok(bounds.max.z>nodes.bastille.z);assert.ok(bounds.min.x<nodes.tcal.x);
+test('Connected city geometry and map build without external services',async()=>{
+ const city=createParisCity(await staticAsset('quartier.bin')),bounds=new T.Box3().setFromObject(city);assert.ok(bounds.max.z>nodes.bastille.z);assert.ok(bounds.min.x<nodes.tcal.x);
  let count=0;city.traverse(m=>{if(m.isMesh){count++;assert.ok(m.geometry.boundingSphere);assert.ok(Number.isFinite(m.geometry.boundingSphere.radius));}});assert.ok(count>0&&count<3000);
  const svg=mapMarkup(newWalk());for(const name of ['République','Bastille','LE MARAIS'])assert.ok(svg.includes(name));assert.equal((svg.match(/class="map-(?:current|road)"/g)||[]).length,streets.length);
 });

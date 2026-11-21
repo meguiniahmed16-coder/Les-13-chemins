@@ -7,6 +7,8 @@ import {newDemo,demoAction,DEMO_STEPS} from './manifestation-demo.js';
 import {followPalm,bannerCorners,readableTextGeometry} from './manifestation-props.js';
 import {ParkSoftwareRenderer} from './catalogne-software.js';
 import {createParisCity,schoolFrontages} from './manifestation-paris.js';
+import {imported,loadParisAssets} from './manifestation-imports.js';
+import {createOfficer} from './manifestation-crs.js';
 import {createRepublicMonument} from './manifestation-monument.js';
 import {PARIS_NODES,PARIS_STREETS,newWalk,streetChoices,chooseStreet,advanceWalk,restoreWalk,mapMarkup} from './manifestation-walk.js';
 import {newRun,advance,yellow,callFromStatue,selectTarget,selectNext,availableTargets,activeWave,gameInstruction,red,clamp,distance,OBJECTIFS,behindNarrator,CRS_WAVES,WEAPONS,FLAG,STATUE} from './manifestation-core.js';
@@ -23,6 +25,7 @@ const NEAR_CROWD=44,FAR_CROWD=144;
 let demoSession=null,demoReturn=null,demoWasPaused=false;
 let crowdLoading=false,carriedProps=[],carriedBanners=[],pedestrians=[],nextChant=0,chantIndex=0,chantUntil=0,ambientTime=0,previousPedestrianRefresh=0;
 let joy={x:0,y:0},keys=new Set(),pointerId=null,actionTransition=0,showSpeechUntil=0,lastHud=0;
+let squareReveal=0;
 let cameraOrbit=0,cameraOrbitLeft=0,cornerTurn=0,avenueExtended=false,bastilleReady=false;
 let lastControlDisplay=0,renderFailureReported=false,lastInstructionKey=null;
 let pickableMeshes=[],pickupActors=[],selectionMarker=null,allyEffects=[],targetRaycaster=new T.Raycaster(),weaponProp=null,extraFollowersActive=false;
@@ -47,13 +50,13 @@ try{
  renderer.toneMappingExposure=1.19;
  gameReady=false;
 }catch(error){
- try{renderer=new ParkSoftwareRenderer({canvas});canvas.dataset.renderer='compatible';}
+ try{renderer=new ParkSoftwareRenderer({canvas});camera.far=76;camera.updateProjectionMatrix();canvas.dataset.renderer='compatible';}
  catch{ $('overlayTitle').textContent='La 3D ne démarre pas';$('overlayText').textContent='Réessaie après avoir fermé les autres jeux.';$('start').hidden=true;}
 }
-canvas.dataset.version='camarades-cortege-v1';
+canvas.dataset.version='camarades-republique-v2';
 canvas.dataset.renderer??='webgl';
-const ambient=new T.HemisphereLight(0xe8f3ff,0x82735e,2.7);world.add(ambient);
-const sun=new T.DirectionalLight(0xfff0cf,2.3);sun.position.set(-13,34,21);world.add(sun);
+const ambient=new T.HemisphereLight(0xe8f3ff,0x90816e,1.85);world.add(ambient);
+const sun=new T.DirectionalLight(0xffebcb,2.55);sun.position.set(-13,34,21);world.add(sun);
 const gBox=new T.BoxGeometry(1,1,1),gSphere=new T.SphereGeometry(1,10,8);
 const gCyl=new T.CylinderGeometry(1,1,1,9),gCone=new T.ConeGeometry(1,1,8);
 function mesh(geo,m,x=0,y=0,z=0,sx=1,sy=1,sz=1){const ob=new T.Mesh(geo,m);ob.position.set(x,y,z);ob.scale.set(sx,sy,sz);return ob;}
@@ -99,7 +102,7 @@ function buildings(root,start,end,light=false){
   addBox(root,side*10.35,-.02,mid,4.65,.22,len+8,0xd8cbb5);
   addBox(root,side*8.15,.11,mid,.25,.24,len+8,0xb0a596);
  }
- root.add(schoolFrontages(start,end));
+ root.add(schoolFrontages(start,end,imported.quartier.scene));
  for(let z=start+4;z<end;z+=light?19:11){
   addBox(root,-2.9,-.004,z,.09,.022,2.15,0xe7dfcc);
   addBox(root,2.9,-.004,z,.09,.022,2.15,0xe7dfcc);
@@ -188,7 +191,7 @@ function parisSidewalkPedestrians(root,start,end){
 }
 function statue(sceneRoot){
  const root=new T.Group();root.position.x=STATUE.x;sceneRoot.add(root);
- const monument=createRepublicMonument();monument.position.z=STATUE.z;root.add(monument);
+ const monument=createRepublicMonument(imported.monument.scene);monument.position.z=STATUE.z;root.add(monument);
 }
 function makeCrowd(root,count,baseZ,{reveal=false,spread=7}={}){
  const arr=[];
@@ -253,27 +256,7 @@ function updateCarriedProps(){
 }
 
 function riotOfficer(index){
- const actor=new T.Group(),uniform=person(index,{role:'crs'});
- uniform.rotation.y=Math.PI;actor.add(uniform);
- const dark=mat(0x172436),padding=mat(0x283a4b);
- const armor=mesh(gSphere,padding,0,1.22,-.012,.235,.285,.152);actor.add(armor);
- const band=addBox(actor,0,1.34,-.15,.29,.027,.018,0x91a6b8);band.rotation.x=.15;
- for(const side of [-1,1]){
-  const knee=mesh(gSphere,padding,side*.105,.47,-.063,.082,.105,.078);
-  knee.name='genouillère';actor.add(knee);
- }
- const dome=new T.SphereGeometry(1,24,14,0,Math.PI*2,0,Math.PI*.57);
- actor.add(mesh(dome,dark,0,1.68,.013,.145,.145,.157));
- const visorGeo=new T.CylinderGeometry(.157,.15,.143,20,1,true,Math.PI*.57,Math.PI*.86);
- const glass=new T.MeshStandardMaterial({color:0xb5d0d8,metalness:.12,roughness:.18,transparent:true,opacity:.31,side:T.DoubleSide,depthWrite:false});
- actor.add(mesh(visorGeo,glass,0,1.654,-.018));
- const outline=new T.Shape();
- outline.moveTo(-.197,.38);outline.quadraticCurveTo(0,.435,.197,.38);outline.quadraticCurveTo(.22,.375,.22,.33);outline.lineTo(.22,-.28);outline.quadraticCurveTo(.215,-.34,0,-.42);outline.quadraticCurveTo(-.215,-.34,-.22,-.28);outline.lineTo(-.22,.33);outline.quadraticCurveTo(-.22,.375,-.197,.38);
- const shield=new T.ExtrudeGeometry(outline,{depth:.018,bevelEnabled:true,bevelSegments:2,bevelThickness:.009,bevelSize:.009,steps:1});
- actor.add(mesh(shield,mat(0x577487,.25),-.204,1.02,-.255));
- const label=roundedText('CRS',.32,'#e4edf6','#10283f');label.rotation.y=Math.PI;label.position.set(-.204,1.12,-.27);actor.add(label);
- const baton=mesh(gCyl,dark,.283,.86,-.055,.021,.53,.021);baton.rotation.x=.42;actor.add(baton);
- return {actor,uniform};
+ return createOfficer(imported.agent,index);
 }
 function createPoliceWaves(root){
  policeGroups=[];
@@ -319,10 +302,10 @@ function updatePoliceWaves(time){
    officer.actor.visible=state.status==='standing';
    officer.hit.visible=state.status==='standing';
    if(!officer.actor.visible)continue;
-   walking(officer.uniform,time,.10);
+   officer.update(time,display.anchor-approaches*4>run.z+6.3);
    officer.actor.position.x=officer.baseX+Math.sin(time*.84+i*1.6)*.18;
    officer.actor.position.z=i%2*.25+Math.cos(time*1.2+i)*.12;
-   officer.actor.position.y=Math.sin(time*4.7+i*1.8)*.045;
+   officer.actor.position.y=0;
    officer.hit.position.x=officer.actor.position.x;
    officer.hit.position.z=officer.actor.position.z;
   }
@@ -542,12 +525,12 @@ function sceneFor(phase){
   heldFlag(redGuide,'red');
   // Le personnage guide par son déplacement, sans inscription permanente.
  }else if(phase===2){
-  root.add(createParisCity());statue(root);
+  root.add(createParisCity(imported.quartier.scene));statue(root);
   crowdActors=makeCrowd(root,NEAR_CROWD,-7.5,{spread:6.2});
   distantCrowd(root,-8,FAR_CROWD,true);crowdSymbols(root,true);
   addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8,{type:'statue'});
  }else{
-  root.add(createParisCity());statue(root);
+  root.add(createParisCity(imported.quartier.scene));statue(root);
   crowdActors=makeCrowd(root,NEAR_CROWD,-7.5,{spread:6.2});
   distantCrowd(root,-8,FAR_CROWD,true);crowdSymbols(root,true);
   populateMarch(root);
@@ -569,7 +552,7 @@ function sceneFor(phase){
  arrow.rotation.z=Math.PI;arrow.renderOrder=36;selectionMarker.add(arrow);
  selectionMarker.userData={rings,arrow};
  selectionMarker.visible=false;root.add(selectionMarker);
- stageInWorld=phase;
+ stageInWorld=phase;squareReveal=phase===2&&!walk?2.4:0;
 }
 
 function messageFeedback(text,duration=1.05){
@@ -1075,12 +1058,19 @@ function render(ms){
   const desired=new T.Vector3(run.x-Math.sin(theta)*radius,
    (run.phase===2&&!walk?5.4:3.3)+height*.85,run.z-Math.cos(theta)*radius);
   if(intro){desired.set(run.x+1.28,1.45,run.z+2.72);target.set(run.x,1.02,run.z);}
+  if(squareReveal>0&&run.phase===2&&!walk){
+   squareReveal=Math.max(0,squareReveal-dt);
+   const t=T.MathUtils.smoothstep(squareReveal,0,1.3);
+   desired.lerp(new T.Vector3(-12.5,5.8,-16),t);
+   target.lerp(new T.Vector3(6.8,7.1,6),t);
+  }
   camera.position.lerp(desired,Math.min(1,Math.max(.012,dt)*3.4));
   camera.lookAt(target);
  }
  const w=canvas.clientWidth,h=canvas.clientHeight;
  if(w>0&&h>0&&(!renderer.domElement.width||Math.abs(camera.aspect-w/h)>.02)){
-  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  const renderWidth=renderer.isSoftwareRenderer?Math.min(w,250):w;
+  renderer.setSize(renderWidth,h*renderWidth/w,false);camera.aspect=w/h;camera.updateProjectionMatrix();
  }
  renderer.render(world,camera);
  if(playing&&!demoSession&&ms-lastHud>180){lastHud=ms;refreshHUD();refreshParisHUD();}
@@ -1109,7 +1099,10 @@ async function loadCharacters(){
  $('overlayText').textContent='La place, les rues et les manifestants prennent leur place…';
  $('start').disabled=true;
  try{
-  await loadCortege(renderer.isSoftwareRenderer?camera:null);
+  await Promise.all([
+   loadCortege(renderer.isSoftwareRenderer?camera:null),
+   loadParisAssets(renderer.isSoftwareRenderer,(done,total)=>{$('overlayText').textContent='Chargement du quartier de Paris · '+done+' / '+total;})
+  ]);
   sceneFor(1);refreshHUD();gameReady=true;
   $('overlayTitle').textContent='Camarades !';
   $('overlayText').textContent='Un court essai te montre les commandes. Puis prends le drapeau, rassemble les cortèges et poursuis ta marche dans Paris.';
@@ -1117,8 +1110,8 @@ async function loadCharacters(){
   try{$('resumeWalk').hidden=!restoreWalk(JSON.parse(localStorage.getItem(WALK_KEY)||'null'));}catch{}
   send('manifestation:ready');
  }catch(e){
-  $('overlayTitle').textContent='Impossible de charger les personnages';
-  $('overlayText').textContent='Le jeu n’a pas pu charger les modèles animés. Réessaie avec une connexion stable ; les personnages ne sont pas remplacés par des silhouettes rudimentaires.';
+  $('overlayTitle').textContent='Impossible de charger la manifestation';
+  $('overlayText').textContent='Le quartier ou les personnages n’ont pas fini de charger. Réessaie avec une connexion stable ; les personnages ne sont pas remplacés par des silhouettes rudimentaires.';
   $('start').hidden=true;$('replay').hidden=false;$('replay').textContent='↻ Recharger';
   $('replay').onclick=()=>location.reload();
   console.error('Chargement des personnages du cortège',e);

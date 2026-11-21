@@ -103,7 +103,7 @@ test('Paris complété en vue 360 avec des modèles instanciés légers',()=>{
  assert.ok(js.includes('function parisStreetDetails(root,start,end){'));
  assert.ok(js.includes("'MÉTRO'")&&js.includes("'JOURNAUX'"));
  assert.ok(js.includes('parisBackdrop(root,-20,38)'));
- assert.ok(js.includes('root.add(createParisCity());statue(root);'));
+ assert.ok(js.includes('root.add(createParisCity(imported.quartier.scene));statue(root);'));
  assert.ok(read('manifestation-paris.js').includes('mergeStatic(root)'));
 });
 test('Sélection visible : deux anneaux, flèche et état confirmé',()=>{
@@ -118,7 +118,7 @@ test('CRS distincts et cortège de couleur',()=>{
  const js=read('manifestation-app.js');
  assert.ok(js.includes('officer.baseX=(i-1.5)*2.35'));
  assert.ok(js.includes('officer.actor.scale.setScalar(1.30)'));
- assert.ok(js.includes('genouillère'));
+ assert.ok(read('manifestation-crs.js').includes('Bouclier de maintien de l’ordre'));
  assert.ok(js.includes("'TOUS ENSEMBLE'"));
  assert.ok(js.includes("heldFlag(crowdActors[index].guy,style)"));
  assert.ok(js.includes("heldFlag(bastilleActors[i].guy,style)"));
@@ -318,8 +318,8 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261121-cortege-v1'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261121-cortege-v1'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261121-republique-v2'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261121-republique-v2'));
  assert.match(page,/rendezvous-plateau\.js\?v=[^"]+/);
 });
 test('Chaque personnage du cortège possède ses textures et son maillage articulé publié',()=>{
@@ -378,7 +378,7 @@ test('Après la descente le joystick permet de reculer puis contourner la statue
  const before=r.z;advance(r,.12,{x:0,y:-1});
  assert.ok(r.z<before,'Le joystick reste bidirectionnel après contournement');
  const js=read('manifestation-app.js');
- assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('root.add(createParisCity());statue(root);'),'La statue reste visible et la scène est conservée');
+ assert.ok(js.includes('if(phase===3&&stageInWorld===2&&sceneGroup){')&&js.includes('root.add(createParisCity(imported.quartier.scene));statue(root);'),'La statue reste visible et la scène est conservée');
  const transition=js.slice(js.indexOf('if(phase!==run.phase){'),js.indexOf('const time=ms/1000;',js.indexOf('if(phase!==run.phase){')));
  assert.ok(!transition.includes('joy={x:0,y:0}'),'Le joystick actif ne doit pas être réinitialisé à la descente');
  assert.ok(!transition.includes('keys.clear()'),'Les touches maintenues restent actives');
@@ -431,8 +431,8 @@ test('La perspective de l avenue reste ouverte et les détails sont hors chauss�
  }
  assert.ok(js.includes('function parisSidewalkPedestrians(root,start,end){'));
  assert.ok(js.includes('treeX=side*10.45,lightX=side*9.4'));
- assert.ok(js.includes('root.add(schoolFrontages(start,end))'));
- assert.ok(read('manifestation-paris.js').includes('house(block,side*15.12'));
+ assert.ok(js.includes('root.add(schoolFrontages(start,end,imported.quartier.scene))'));
+ assert.ok(read('manifestation-paris.js').includes("district.getObjectByName('Quartier')"));
 });
 test('Statue, sa cible et la sélection décalées ensemble',()=>{
  const js=read('manifestation-app.js');
@@ -440,11 +440,11 @@ test('Statue, sa cible et la sélection décalées ensemble',()=>{
  assert.ok(js.includes('root.position.x=STATUE.x;sceneRoot.add(root)'));
  assert.ok(js.includes('addSelectable(root,null,STATUE.x,3.6,STATUE.z,5.8'));
  assert.ok(js.includes("if(sel.type==='statue'){point=new T.Vector3(STATUE.x,0,STATUE.z);arrowY=8.7;}"));
- assert.ok(read('manifestation-core.js').includes('insideStatueBase=(x,z)=>x>STATUE.x-3.05'));
+ assert.ok(read('manifestation-core.js').includes('insideStatueBase=(x,z)=>'));
 });
-test('Devise complète Liberté Égalité Fraternité',()=>{
+test('Le monument importé occupe la place de la République',()=>{
  const js=read('manifestation-app.js');
- assert.ok(read('manifestation-monument.js').includes('FRATERNITÉ'));
+ assert.ok(read('manifestation-monument.js').includes('Republique.stl'));
  assert.ok(!js.includes("'LIBERTÉ ÉGALITÉ'"));
 });
 
@@ -481,5 +481,5 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE pour le récupérer'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261121-cortege-v1'));
+ assert.ok(html.includes('manifestation-runtime.js?v=20261121-republique-v2'));
 });

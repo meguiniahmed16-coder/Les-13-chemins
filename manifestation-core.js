@@ -8,7 +8,7 @@
 export const OBJECTIFS=Object.freeze(['Le drapeau français','Camarades !','Les deux cortèges']);
 export const MAX_POINTS=30;
 export const GAME_ID='rendezvous-2002';
-export const STATUE=Object.freeze({x:6,z:5,footX:4.85,exitX:2.4,footZ:.35,topX:4.85,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
+export const STATUE=Object.freeze({x:6,z:5,footX:4.85,exitX:1.65,footZ:.35,topX:4.85,topZ:3.48,topHeight:3.32,ascendTime:2.3,descendTime:2});
 export const FLAG=Object.freeze({x:4.1,z:12});
 export const WEAPONS=Object.freeze([
  Object.freeze({id:1,kind:'heart',icon:'♥',name:'Cœur',x:2.4,z:11}),
@@ -23,7 +23,8 @@ export const CRS_WAVES=Object.freeze([
 export const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 // Une collision simple autour du socle, sans téléportation : chaque axe glisse librement.
-export const insideStatueBase=(x,z)=>x>STATUE.x-3.05&&x<STATUE.x+3.05&&z>1.85&&z<8.15;
+export const insideStatueBase=(x,z)=>Math.abs(x-STATUE.footX)<.76&&z>STATUE.footZ+1.4&&z<STATUE.topZ+.9||
+ ((x-STATUE.x-1.1)/4.90)**2+((z-STATUE.z-1.90)/4.64)**2<1;
 export const behindNarrator=(z,candidate,gap=4.6)=>Math.min(candidate,z-gap);
 export const activeWave=run=>run.crsWaves.find(w=>w.status==='active')||null;
 export function newRun(){

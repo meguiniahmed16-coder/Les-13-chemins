@@ -1,0 +1,28 @@
+Camarades ! — Les Treize Chemins
+Personnages du salon adaptés pour la manifestation. Modèles simplifiés, vêtements ajustés, textures recolorées et animations de marche adaptées.
+
+Corps, visages et coiffures : MakeHuman et les contributeurs du studio V27 des Treize Chemins.
+Ahmed porte le pantalon et les chaussures adaptés de Jock, POLYGON City Characters, Synty Studios (licence commerciale du projet).
+
+Vêtements MakeHuman Community
+Elvaerwyn — Elvs Canadian Airforce Jacket Vintage~Male, Elvs Male Flat Cap1, Elvs Male shirt untucked bd1 (CC BY). T-shirt en coton (CC0).
+punkduck — Male Classic Jeans (CC BY 4.0) et Sneakers (CC BY 3.0).
+culturalibre — Blue scarf (CC0).
+vitalemarco — Jeans (CC0).
+namuhekam — Polo (CC0).
+Joel Palmius — Crude Female T-shirt (CC0).
+MargaretToigo — Shoes Loafers et Pants Harem (CC0).
+
+Catalogue original et liens vers chaque pièce : https://tectonique-des-ames.com/membres/studio-catalog.js
+https://www.makehumancommunity.org/
+https://creativecommons.org/licenses/by/4.0/
+https://creativecommons.org/licenses/by/3.0/
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Quartier République–Bastille
+Immeubles, textures de façades, toitures et vues aériennes adaptés du fichier Paris.fbx et des images de paris.zip fournis au projet. Extraction du quartier, découpe autour des rues, simplification et adaptation des échelles au jeu.
+Référence de calage des rues : Ville de Paris, « Voie », Paris Data (https://opendata.paris.fr/explore/dataset/voie/), ODbL.
+Monument à la République : modèle fourni, Republique.stl. Sculpture de Léopold et Charles Morice. Maillage simplifié, pierre et patine ajoutées, accès aménagé pour le jeu.
+
+This work is based on "SCP:CB | Legacy Mobile Task Force" (https://sketchfab.com/3d-models/scpcb-legacy-mobile-task-force-0202975df86f4c88a654516e464c245f) by ThatJamGuy (https://sketchfab.com/ThatJamGuy) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).
+Adaptation pour les CRS : tenue bleu nuit, écusson tricolore, casque à visière, marquage POLICE et bouclier. La posture d’attente et la marche proviennent du modèle.

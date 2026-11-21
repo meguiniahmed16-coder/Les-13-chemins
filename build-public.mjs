@@ -173,6 +173,7 @@ const publicFiles = [
   'cyrano-runtime.js',
   'jeu-cyrano-bd.html',
   'jeu-rencontre.html',
+  ...['quartier.bin','monument.glb','monument-loin.glb','agent.glb','crs.webp','credits.txt'].map(name=>'assets/manifestation/republique/'+name),
   ...['ahmed.bin','firmin.bin','louise.bin','samir.bin','clara.bin','paul.bin','crs.bin','ahmed.webp','crs.webp','louise-distance.webp','samir-distance.webp','clara-distance.webp','paul-distance.webp','credits.txt'].map(name=>'assets/manifestation/cortege-v1/'+name),
   'assets/manifestation/KENNEY-CC0-LICENSE.txt',
   'assets/manifestation/character-male-a.glb',
