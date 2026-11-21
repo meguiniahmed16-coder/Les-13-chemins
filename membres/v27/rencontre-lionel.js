@@ -15,32 +15,40 @@ export async function dressFriends(bridge,readSpeech){
   }
   await bridge.enableDialogue(await resource('conversation-face'),readSpeech);
 }
-const lines=[
-  ['Ahmed Marie','Alors, il fait toujours aussi beau là-haut ?'],
-  ['Lionel Le Goff','Et toi, t’es toujours danseur ?'],
-  ['Ahmed et Lionel','Ils rient tous les deux.']
-];
+const firstLine='Alors, il fait toujours aussi beau là-haut ?';
+const reply='Et toi, t’es toujours danseur ?';
+const sent=3.9, answered=7.5, orbitStart=11.1, end=17.9;
 export function reunionDialogue(){
-  const bubble=document.getElementById('reunionWords');
-  const voice=new Audio('/membres/v27/lionel-dialogue.mp3');
-  let time=-1, line=-1, finished=false;
-  function stop(){voice.pause();voice.currentTime=0;time=line=-1;finished=false;bubble.hidden=true;}
-  function start(){stop();time=0;voice.play().catch(()=>{});}
+  const draft=document.getElementById('reunionCompose'),field=document.getElementById('reunionDraft');
+  const bubbles=[document.getElementById('reunionWords'),document.getElementById('lionelWords')];
+  let time=-1,finished=false,phase='',letters=-1;
+  function stop(){
+    time=-1;finished=false;phase='';letters=-1;field.value='';draft.hidden=true;
+    for(const bubble of bubbles)bubble.hidden=true;
+    document.body.classList.remove('reunionChat');
+  }
+  function start(){stop();time=0;document.body.classList.add('reunionChat');tick(0);}
   function tick(dt){
     if(time<0)return;
-    time=voice.paused?time+dt:voice.currentTime;
-    if(time>=8.7){bubble.hidden=true;time=-1;finished=true;return;}
-    const next=time>=5.72?2:time>=3.33?1:0;
-    if(next===line)return;line=next;bubble.querySelector('b').textContent=lines[line][0];
-    bubble.querySelector('span').textContent=lines[line][1];bubble.hidden=false;
+    time+=dt;
+    if(time>=end){stop();finished=true;return;}
+    const next=time<sent?'typing':time<answered?'sent':time<orbitStart?'reply':'laugh';
+    if(next==='typing'){
+      const length=Math.max(0,Math.min(firstLine.length,Math.floor((time-.22)*13)));
+      if(letters!==length){field.value=firstLine.slice(0,length);letters=length;}
+    }
+    if(next===phase)return;
+    phase=next;draft.hidden=phase!=='typing';
+    bubbles[0].hidden=phase!=='sent'&&phase!=='laugh';bubbles[1].hidden=phase!=='reply'&&phase!=='laugh';
+    bubbles[0].querySelector('span').textContent=phase==='laugh'?'Ha ha !':firstLine;
+    bubbles[1].querySelector('span').textContent=phase==='laugh'?'Ha ha !':reply;
   }
   function pose(slot){
-    const speaking=time>=0&&(slot===line||line===2);
-    const beat=time*(line===2?16:24)+slot*1.9;
-    return {jaw:speaking?.19+.37*Math.abs(Math.sin(beat)*Math.cos(beat*.41)):0,
-      round:speaking&&line!==2?.27*Math.max(0,Math.sin(beat*.64)):0,
-      spread:time>=0&&line===2?.75:speaking?.20:0,blink:Math.max(0,Math.cos(time*2.1+slot*2)*14-13)};
+    const laugh=phase==='laugh',beat=time*(slot?14:16)+slot*.8;
+    return {jaw:laugh?.14+.19*Math.abs(Math.sin(beat)):0,round:0,spread:laugh?.78:.06,
+      blink:time>=0?Math.max(0,Math.cos(time*2.1+slot*2)*14-13):0};
   }
-  return {stop,start,tick,get active(){return time>=0;},get finished(){return finished;},
-    get laughter(){return line===2&&time>=0?time:0;},get poses(){return {member:pose(0),guest:pose(1)};}};
+  return {stop,start,tick,bubbles,get phase(){return phase;},get active(){return time>=0;},get finished(){return finished;},
+    get revolution(){return Math.min(1,Math.max(0,(time-orbitStart)/(end-orbitStart-.60)));},
+    get laughter(){return phase==='laugh'?time:0;},get poses(){return {member:pose(0),guest:pose(1)};}};
 }

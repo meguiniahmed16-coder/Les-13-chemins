@@ -261,6 +261,11 @@ for(const [k,data] of Object.entries(info.house)){
  const g=geom(data,1000);if(k==='glass'||k==='door'){const uv=[],p=g.attributes.position;for(let i=0;i<p.count;i++)uv.push((p.getX(i)+5.5)/11,p.getY(i)/4.6);g.setAttribute('uv',attr(new Float32Array(uv),2))}
  const mat=homeMaterials[k];mat.side=T.DoubleSide;const o=mesh(g,mat,maison);o.receiveShadow=true;o.castShadow=k!=='glass';if(k!=='oak'&&k!=='terrace')envelope.push(o);
 }
+// The imported house contains the parapets and pergola posts, but no continuous roof deck.
+const roofDeck=material(0xbda58b),roofEdge=material(0xd2bda0);
+box(maison,.39,6.16,15.30,10.85,.16,9.74,roofDeck).receiveShadow=true;
+const porchRoof=box(maison,-.80,3.62,8.90,7.84,.16,3.80,roofEdge);
+porchRoof.receiveShadow=true;porchRoof.castShadow=true;
 // The furnished room supplies the window, its uprights and sill from either side.
 const openingHalf=3.22*Math.hypot(1,baySlope),leftJamb=gardenThreshold.x-openingHalf,rightJamb=gardenThreshold.x+openingHalf;
 for(const [x1,x2] of [[-4.66,leftJamb],[rightJamb,2.96]]){
@@ -635,9 +640,10 @@ function updateCam(dt){
  if(out&&air.mode!=='off'&&!encounter.active){
   fieldOfView=frameWingedPair(cam,portrait?55:49,w/h);
  }else if(out&&encounter.active&&air.mode!=='off'){
-  if(encounter.chatView){const radius=portrait?5.65:3.95;cam.position.set(orbit.focus.x+Math.sin(orbit.angle)*radius,orbit.focus.y+.32,orbit.focus.z+Math.cos(orbit.angle)*radius);}
+  if(encounter.chatView&&exchange.active){reunionCamera(portrait);}
+  else if(encounter.chatView){cam.lookAt(orbit.focus);}
   else if(air.front){const radius=portrait?6.2:4.8;cam.position.set(orbit.focus.x+Math.sin(orbit.angle)*radius,orbit.focus.y+.45,orbit.focus.z+Math.cos(orbit.angle)*radius);}
-  cam.lookAt(orbit.focus);fieldOfView=portrait?54:47;
+  if(!encounter.chatView||!exchange.active)cam.lookAt(orbit.focus);fieldOfView=portrait?54:47;
  }else if(shelfView){
   const target=new T.Vector3(-3.12,1.58,.22);const portrait=w<h;fieldOfView=portrait?51:44;
   const dist=Math.max(3.02,2.44/Math.max(.38,w/h));cam.position.set(target.x+dist,1.50,.62);cam.lookAt(target);
@@ -649,6 +655,8 @@ function updateCam(dt){
   const p=a.root.position,dx=-Math.sin(orbit.angle),dz=-Math.cos(orbit.angle);
   cam.position.set(clamp(p.x+dz*.25-dx*.12,-3.08,3.08),sitting?1.17:1.57,p.z-dx*.25-dz*.12);
   cam.lookAt(cam.position.x+dx*8,cam.position.y-Math.tan(orbit.pitch)*8,cam.position.z+dz*8);
+ }else if(!out&&encounter.active&&!windowView){
+  cam.position.y=Math.min(cam.position.y,2.83);cam.lookAt(orbit.focus);
  }else if(nearBay>0&&Math.cos(orbit.angle)<-.1){
   const eyeHeight=orbit.focus.y+(1.52-orbit.focus.y)*nearBay;
   cam.position.y=Math.max(cam.position.y,eyeHeight);
@@ -660,7 +668,7 @@ function updateCam(dt){
  for(const o of sprites)o.rotation.y=Math.atan2(gardenEye.x-o.position.x,gardenEye.z-o.position.z);
  const anchor=out?a.root.position:watchLead;distanceGroup.position.set(anchor.x,0,anchor.z);
  if(out)syncChunks(anchor.z);
- ceiling.visible=out||(cam.position.y<2.92&&cam.position.x>-3.20&&cam.position.x<3.20&&cam.position.z> -3.08&&cam.position.z<2.48+baySlope*cam.position.x);
+ if(encounter.active&&exchange.active)placeSkyBubbles(w,h);
  if(!out){
   for(const o of roomParts){const k=o.userData.wall;o.visible=!(k===1&&cam.position.z< -2.57||k===2&&cam.position.x>3.21||k===3&&cam.position.x< -3.20||k===4&&cam.position.z>2.489+baySlope*cam.position.x)}
   const outPins={};for(const [name,b] of Object.entries(pins)){
@@ -1292,6 +1300,37 @@ function memberCamera(){
  }
  cam.updateMatrixWorld();
 }
+const messageEye=new T.Vector3(),messageTarget=new T.Vector3(),messageAnchor=new T.Vector3();
+const reduceReunionMotion=matchMedia('(prefers-reduced-motion: reduce)');
+function reunionCamera(portrait){
+ const p=player().root.position,q=partner().root.position,axis=Math.atan2(q.x-p.x,q.z-p.z);
+ const dx=Math.sin(axis),dz=Math.cos(axis),sx=dz,sz=-dx;
+ const wide=exchange.phase==='laugh';
+ if(wide){
+  const t=reduceReunionMotion.matches?0:eased(exchange.revolution);
+  const angle=axis+Math.PI*.50+t*tau,r=portrait?5.85:5.15;
+  messageTarget.copy(p).lerp(q,.5);messageTarget.y+=1.14;
+  messageEye.set(messageTarget.x+Math.sin(angle)*r,messageTarget.y+.35+.42*Math.sin(t*Math.PI),messageTarget.z+Math.cos(angle)*r);
+  orbit.angle=angle;orbit.pitch=.10;orbit.radius=r;orbit.focus.copy(messageTarget);
+ }else{
+  const reverse=exchange.phase==='reply',subject=reverse?q:p,sign=reverse?-1:1;
+  const along=portrait?1.09:1.06,across=portrait?1.02:.87;
+  messageTarget.copy(subject);messageTarget.y+=portrait?1.35:1.49;
+  messageEye.set(subject.x+sign*dx*along+sx*across,subject.y+1.65,subject.z+sign*dz*along+sz*across);
+ }
+ cam.position.copy(messageEye);cam.lookAt(messageTarget);
+}
+function placeSkyBubbles(w,h){
+ for(const [i,bubble] of exchange.bubbles.entries()){
+  if(bubble.hidden)continue;
+  const actor=i?partner():player();messageAnchor.copy(actor.root.position);messageAnchor.y+=1.25;messageAnchor.project(cam);
+  const width=bubble.offsetWidth,height=bubble.offsetHeight;
+  let x=(messageAnchor.x*.5+.5)*w, y=(.5-messageAnchor.y*.5)*h+18;
+  if(exchange.phase==='laugh'){x=clamp(x,width/2+12,w-width/2-12);y+=i?12:-22;}
+  bubble.style.left=clamp(x,width/2+9,w-width/2-9)+'px';
+  bubble.style.top=clamp(y,49,Math.max(49,h-height-25))+'px';
+ }
+}
 const reunionToggle=$('reunionToggle'),reunionAction=$('reunionAction');
 const rendezVous=new T.Vector3(.50,10.5,3.65);
 async function prepareReunion(){
@@ -1366,7 +1405,7 @@ function tickReunion(dt){
  else if(air.mode==='off')label='Déployer mes ailes';
  else if(air.mode==='ready')label='Décoller';
  else if(exchange.active)label='Ahmed et Lionel';
- else if(canTalk)label=exchange.finished?'Réécouter Lionel':'Parler à Lionel';
+ else if(canTalk)label=exchange.finished?'Relire l’échange':'Parler à Lionel';
  else if(air.mode==='flying')label='Rejoindre Lionel · '+Math.round(distance)+' m';
  else label='Retour au jardin';
  if(reunionAction.textContent!==label)reunionAction.textContent=label;
