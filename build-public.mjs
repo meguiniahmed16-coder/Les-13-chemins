@@ -273,7 +273,10 @@ await writeFile(join(output,'salon-personnages.json'),JSON.stringify(salonDirect
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
-  if (name.endsWith('.html')) {
+  if (name==='membres/v27/salon.html') {
+    // The member page already owns site navigation, cookies and visit tracking.
+    await copyFile(join(root,name),join(output,name));
+  } else if (name.endsWith('.html')) {
     let html = await readFile(join(root, name), 'utf8');
     if (/^(jeu|carte|arcade-.+|jeu-.+)\.html$/.test(name)) html=html.replace('</body>','<script type="module" src="/membres/journey-recorder.js"></script></body>');
     if (/^(arcade-|jeu-).+\.html$/.test(name)) {
