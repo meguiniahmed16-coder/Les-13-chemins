@@ -3,23 +3,24 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { injectSharedNavigation } from './site-nav-build.mjs';
 import { activeSection } from './site-nav.js';
-test('one common menu gives five clear destinations and preserves the page', () => {
+test('one common menu gives four clear destinations and preserves the page', () => {
   const source = '<html><head></head><body><nav class="site-nav"><a>Old menu</a></nav><main>Keep this text</main></body></html>';
   const out = injectSharedNavigation(source,'ahmed-marie.html');
   assert.equal((out.match(/<nav /g)||[]).length,1);
-  assert.equal((out.match(/data-nav-section=/g)||[]).length,5);
+  assert.equal((out.match(/data-nav-section=/g)||[]).length,4);
   assert.match(out, /La tectonique des âmes/);
   assert.match(out, /data-nav-section="voyage">Le voyage/);
   assert.match(out, /data-nav-section="blog" aria-current="page">Blog/);
-  assert.match(out, /ahmed-marie.html#ahmed-numerique/);
+  assert.doesNotMatch(out, /Ahmed numérique|data-nav-section="digital"/);
   assert.match(out, /<main>Keep this text<\/main>/);
   assert.equal(injectSharedNavigation(out,'ahmed-marie.html'),out);
 });
-test('the four main links precede the full-width wood collection link',()=>{
+test('the three equal-width main links precede the full-width wood collection link',()=>{
   const css=readFileSync(new URL('./site-nav.css',import.meta.url),'utf8');
-  assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css,/site-atelier-link\{grid-column:1 \/ -1/);
   const menu=injectSharedNavigation('<html><head></head><body></body></html>', 'index.html');
+  assert.deepEqual([...menu.matchAll(/data-nav-section="([^"]+)"/g)].map(match=>match[1]),['voyage','blog','support','atelier']);
   assert.match(menu,/Soutenir<\/a><a [^>]*data-nav-section="atelier">L’odeur du bois<\/a><\/div>/);
   assert.match(css,/min-height:46px/);
 });
@@ -55,15 +56,15 @@ test('La connexion mène au salon et le menu du compte rassemble les accès et l
   const member=injectSharedNavigation(source,'membre.html'),menu=member.match(/<details id="member-menu"[\s\S]*?<\/details>/)[0];
   assert.equal((member.match(/<summary/g)||[]).length,(source.match(/<summary/g)||[]).length);
   for(const id of ['tabs','choose-signup','choose-login','logout','admin-return'])assert.ok(menu.includes('id="'+id+'"'));
-  assert.equal((menu.match(/data-nav-section=/g)||[]).length,5);
+  assert.equal((menu.match(/data-nav-section=/g)||[]).length,4);
   assert.equal(injectSharedNavigation(member,'membre.html'),member);
 });
 
-test('L’espace auteur conserve un seul menu compact et ses cinq destinations après publication',()=>{
+test('L’espace auteur conserve un seul menu compact et ses quatre destinations après publication',()=>{
   const html=readFileSync(new URL('./admin-blog.html',import.meta.url),'utf8');
   const built=injectSharedNavigation(html,'admin-blog.html');
   assert.equal((built.match(/id="author-menu"/g)||[]).length,1);
   assert.equal((built.match(/id="author-menu-actions"/g)||[]).length,1);
-  assert.equal((built.match(/data-nav-section=/g)||[]).length,5);
+  assert.equal((built.match(/data-nav-section=/g)||[]).length,4);
   assert.equal(injectSharedNavigation(built,'admin-blog.html'),built);
 });

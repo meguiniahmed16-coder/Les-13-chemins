@@ -1,10 +1,11 @@
 /* Navigation commune — La tectonique des âmes. */
-:root{--site-nav-offset:136px}
+:root{--site-nav-offset:180px}
 nav.site-nav{position:sticky;top:0;z-index:999;display:block;width:100%;margin:0;padding:0;background:#243e37;color:#fff4df;border:0;border-bottom:3px solid #b68e54;box-shadow:0 3px 15px #182c2540;font:15px/1.65 'DM Sans',system-ui,sans-serif}
-nav.site-nav .site-nav-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:grid;grid-template-columns:minmax(max-content,1fr) repeat(4,auto) 44px;align-items:center;gap:6px}
+nav.site-nav .site-nav-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:6px}
 nav.site-nav .site-brand,nav.site-nav .site-brand:visited{display:inline-block;flex:none;margin:0;padding:0;border:0;box-shadow:none;background:transparent;font:600 22px/1.3 Georgia,serif;color:#fff4df;text-decoration:none}
-nav.site-nav .site-links{display:contents}
-nav.site-nav .site-links a,nav.site-nav .site-links a:visited{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:9px 13px;border:1px solid transparent;border-radius:5px;background:transparent;color:#fff4df;text-decoration:none;font:600 14px/1.4 'DM Sans',system-ui,sans-serif;text-align:center}
+nav.site-nav:not(.site-member-nav) .site-brand{grid-area:1 / 1;justify-self:start}
+nav.site-nav .site-links{display:grid;grid-row:2;grid-template-columns:repeat(3,minmax(0,1fr));gap:inherit}
+nav.site-nav .site-links a,nav.site-nav .site-links a:visited{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:9px 13px;border:1px solid #657d70;border-radius:5px;background:transparent;color:#fff4df;text-decoration:none;font:600 14px/1.4 'DM Sans',system-ui,sans-serif;text-align:center}
 nav.site-nav .site-links a:hover,nav.site-nav .site-links a:focus-visible{background:#4a6251;outline:2px solid #c9ad7d;outline-offset:1px}
 nav.site-nav .site-brand:focus-visible{outline:2px solid #c9ad7d;outline-offset:5px}
 nav.site-nav .site-links a[aria-current="page"]{background:#476958;color:#fff7e5}
@@ -13,13 +14,13 @@ nav.site-nav .site-links .site-atelier-link{grid-column:1 / -1;justify-self:stre
 nav.site-nav .site-links .site-atelier-link:hover,nav.site-nav .site-links .site-atelier-link:focus-visible,nav.site-nav .site-links .site-atelier-link[aria-current="page"]{background:#476958}
 .site-journey-status{padding:7px 16px;text-align:right;background:#ecddc0;color:#4e644f;font:600 11px/1.4 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}
 #blog,#ahmed-numerique,#conversationSection,#board{scroll-margin-top:var(--site-nav-offset)}
-@media(max-width:850px){:root{--site-nav-offset:178px}nav.site-nav .site-nav-inner{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:10px 14px}nav.site-nav .site-brand{grid-column:1 / -1;display:block;text-align:center;margin:0 0 3px;font-size:clamp(19px,4.5vw,22px)}nav.site-nav .site-links a,nav.site-nav .site-links a:visited{min-width:0;min-height:46px;padding:7px 4px;border-color:#657d70;font-size:12px}}
+@media(max-width:850px){:root{--site-nav-offset:178px}nav.site-nav .site-nav-inner{gap:5px;padding:10px 14px}nav.site-nav .site-brand{grid-column:1 / -1;display:block;text-align:center;margin:0 0 3px;font-size:clamp(19px,4.5vw,22px)}nav.site-nav .site-links a,nav.site-nav .site-links a:visited{min-width:0;min-height:46px;padding:7px 4px;border-color:#657d70;font-size:12px}}
 
 @media(max-width:410px){nav.site-nav .site-nav-inner{padding:8px 6px;column-gap:3px}nav.site-nav .site-links a,nav.site-nav .site-links a:visited{padding-inline:1px;font-size:12px}}
 
 nav.site-nav .site-nav-inner{position:relative}
 nav.site-nav .site-account,nav.site-nav .account-menu>summary{display:grid;place-items:center;width:44px;height:44px;border:1px solid #748a7b;border-radius:50%;color:#fff4df;background:transparent;text-decoration:none;cursor:pointer;list-style:none}
-nav.site-nav .site-account{grid-column:-2/-1;grid-row:1;justify-self:end}
+nav.site-nav .site-account{grid-area:1 / 1;justify-self:end}
 nav.site-nav .site-account svg,nav.site-nav .account-menu svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 nav.site-nav .site-account:hover,nav.site-nav .account-menu>summary:hover,nav.site-nav .account-menu[open]>summary{background:#476958}
 nav.site-nav .site-account:focus-visible,nav.site-nav .account-menu>summary:focus-visible{outline:2px solid #e2bf83;outline-offset:2px}
@@ -34,7 +35,7 @@ nav.site-nav .account-popover :is(a,button):is(:hover,:focus-visible,[aria-curre
 nav.site-nav .account-popover [hidden]{display:none!important}
 nav.site-nav .menu-destinations{border-top:1px solid #d3d4c7;margin-top:3px;padding-top:3px}
 @media(max-width:850px){
- nav.site-nav:not(.site-member-nav) .site-account{position:absolute;right:6px;top:1px;border-color:transparent}
- nav.site-nav:not(.site-member-nav) .site-brand{padding:0 40px;min-height:31px;align-content:center}
+ nav.site-nav:not(.site-member-nav) .site-account{border-color:transparent}
+ nav.site-nav:not(.site-member-nav) .site-brand{justify-self:center;padding:0 44px;align-content:center}
  nav.site-member-nav .site-nav-inner{padding:4px 10px}nav.site-member-nav .site-brand{text-align:left}
 }

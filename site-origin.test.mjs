@@ -11,7 +11,7 @@ test('navigation and canonical metadata always use the principal HTTPS domain',(
  assert.equal(pageURL('index.html'),'https://tectonique-des-ames.com/');
  const menu=navigation('jeu.html');
  const hrefs=[...menu.matchAll(/href="([^"]+)"/g)].map(m=>m[1]);
- assert.equal(hrefs.length,7);
+ assert.equal(hrefs.length,6);
  assert.ok(hrefs.includes(pageURL('membre.html')));
  assert.ok(hrefs.every(h=>new URL(h).origin==='https://tectonique-des-ames.com'));
  assert.match(menu,/aria-current="page">Le voyage/);
