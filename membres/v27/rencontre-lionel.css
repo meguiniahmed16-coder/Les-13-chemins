@@ -1,0 +1,9 @@
+#reunionToggle{white-space:nowrap}
+#reunionAction,#reunionWords,#reunionNext{position:absolute;z-index:4;left:50%;transform:translateX(-50%);text-align:center}
+#reunionAction,#reunionNext{top:12px;max-width:65%;padding:8px 13px;border:1px solid #9cac90;border-radius:7px;background:#fbf7ec;color:#264736;font:600 13px/1.25 system-ui;box-shadow:0 2px 8px #243b252b}
+#reunionAction:disabled{background:#faf7edeb;color:#4e6253;opacity:.94}
+#reunionNext{top:52px;text-decoration:underline}
+#reunionWords{bottom:17%;width:max-content;max-width:78%;border-radius:14px;padding:10px 16px;background:#fffaf1f5;color:#223c30;box-shadow:0 3px 15px #22362440}
+#reunionWords b,#reunionWords span{display:block}#reunionWords b{font:700 12px system-ui;margin-bottom:4px;color:#476249}#reunionWords span{font:500 clamp(15px,2vw,20px)/1.25 Georgia,serif}
+#reunionWords[hidden],#reunionNext[hidden],#reunionAction[hidden],body.reunion #actors,body.reunion .pin,body.reunion #shelves{display:none!important}
+@media(max-width:580px){body.reunion #flightFace{top:55px}body.reunion #reunionAction{max-width:60%;font-size:12px}#reunionToggle{padding-inline:7px}}

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {seats as roomSeats,roomPath} from '../salon-plan.js';
+import {dressFriends,reunionDialogue} from './rencontre-lionel.js';
 import {createMemberBridge} from './scene-members.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
@@ -129,9 +130,11 @@ const seats=roomSeats.map(s=>({
  center:[(s.x-700)/100,(s.z+800)/100],gap:s.gap/100,height:s.height/100
 }));
 const actors={};let role='f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
-function makeActor(id){
+const encounter={active:false,loaded:false,loading:null,friends:null,route:null,clock:0,chatView:false};
+const exchange=reunionDialogue();
+function makeActor(id,withDefaultParts=true){
  const root=new T.Group(),body=new T.Group(),parts=[];root.add(body);scene.add(root);root.scale.setScalar(id==='m'?1.075:1.04);
- for(const h of info[id].parts){
+ for(const h of withDefaultParts?info[id].parts:[]){
   const g=geom(h),t=tex(info[id].tex[h.tex]),alpha=/hair|short02|lash|brow/.test(h.name),base=g.attributes.position.array.slice();
   const mat=new T.MeshStandardMaterial({map:t,roughness:.89,alphaTest:alpha?.36:.12,side:T.DoubleSide});
   const obj=mesh(g,mat,body);obj.castShadow=true;obj.receiveShadow=false;g.attributes.position.setUsage(T.DynamicDrawUsage);g.boundingSphere.radius+=1;
@@ -482,10 +485,11 @@ for(let ring=0;ring<2;ring++){
  for(let i=0;i<=num;i++){const a=i/num*tau,x=Math.sin(a)*r,z=Math.cos(a)*r,h=2+ring*1.6+1.9*Math.sin(3*a+ring)+1.35*Math.sin(7*a+1)+.70*Math.sin(12*a+.7);p.push(x,-4,z,x,h,z);if(i){const k=2*i;ix.push(k-2,k-1,k,k,k-1,k+1)}}
  const g=new T.BufferGeometry();g.setAttribute('position',attr(new Float32Array(p),3));g.setIndex(ix);mesh(g,new T.MeshBasicMaterial({color:ring?0xacb9a6:0x90a48c,side:T.DoubleSide}),distanceGroup);
 }
-const keys=new Set(),stick={x:0,y:0,id:null},orbit={angle:1.07,pitch:.23,radius:3.60,focus:new T.Vector3(-2.19,.78,-1.78),follow:false}, player=()=>actors[role], marker=new T.Vector3(),ray=new T.Raycaster(),pointer=new T.Vector2();
+const keys=new Set(),stick={x:0,y:0,id:null},orbit={angle:1.07,pitch:.23,radius:3.60,focus:new T.Vector3(-2.19,.78,-1.78),follow:false}, player=()=>encounter.active?encounter.friends.ahmed:actors[role], marker=new T.Vector3(),ray=new T.Raycaster(),pointer=new T.Vector2();
 let last=performance.now(),frameHandle=0,reachable=false,panTime=0,jumpLock=0,poseSeat=null,contextLost=false;
 const pins={pin:$('pin'),ocre:$('ocre')},keyButtons=[...document.querySelectorAll('[data-role]')];
-const partner=()=>actors[role==='f'?'m':'f'];
+const partner=()=>encounter.active?encounter.friends.lionel:actors[role==='f'?'m':'f'];
+const currentPair=()=>[player(),partner()];
 const trail=[];let trailTotal=0,homeView=false,windowView=false,approachedWindow=false;
 function windowCaption(){
  const b=$('lookHome');const label=where==='jardin'?'Se retourner vers la maison':windowView?'Reprendre la vue du salon':'Regarder par la baie vitrée';
@@ -551,7 +555,7 @@ function canWalk(x,z){
  return clearOfPlants(x,z)&&!(Math.abs(x+3.5)<1.18&&Math.abs(z+5.25)<.46)
 }
 function setRole(id){
- if(where!=='salon'||id===role||talkOpen)return;
+ if(where!=='salon'||id===role||talkOpen||encounter.active)return;
  if(shelfView)setShelfView(false);if(sitting)getUp();actors[role].body.visible=true;freeCamera();approachedWindow=false;role=id;goal=null;keys.clear();for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0)}
  keyButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===id)));orbit.follow=false;hint();
 }
@@ -569,6 +573,7 @@ function setLocation(out){
  $('lookHome').hidden=false;homeView=windowView=approachedWindow=false;windowCaption();keys.clear();releaseStick();hint();$('notice').textContent=out?'Le sac est sur ton dos. Tu es dans le jardin.':'De retour au salon.';
 }
 function equip(which){
+ if(encounter.active){if(where==='salon')walkToBay();return;}
  releaseSeatRoute();companionSeat=null;conversation=null;rising=false;
  if(where!=='salon'||!bags[which])return;const actor=player();chosen=which;setLocation(true);const o=bags[which];
  actor.root.position.set(pathX(3.0),0,3.0);actor.root.rotation.y=Math.PI;actor.body.position.y=0;actor.sit=actor.speed=actor.phase=0;actor.stamp='';animateBody(actor,0,0);
@@ -576,6 +581,7 @@ function equip(which){
  revealStart=performance.now();orbit.angle=Math.PI+.06;orbit.pitch=.15;orbit.radius=3.66;orbit.follow=true;orbit.focus.copy(actor.root.position).add(new T.Vector3(.22,1.04,-.32));jumpLock=performance.now()+240;updateCam(1);canvas.focus({preventScroll:true});
 }
 function returnHome(){
+ if(encounter.active){leaveReunion();return;}
  if(where!=='jardin')return;cancelReveal();resetAir();for(const a of Object.values(actors))unwear(a);
  chosen=null;setLocation(false);actorHome();resetView();canvas.focus({preventScroll:true})
 }
@@ -620,14 +626,18 @@ function updateCam(dt){
   if(t>=1)revealStart=null;
  }
  if(orbit.follow){const ft=a.root.position.clone();ft.y=sitting?1.02:out?.98:.9;if(skyMode())ft.y+=a.root.position.y+(air.figure?.type==='loop'?.62:0);
-  if(out){const friend=partner().root.position;ft.x+=(friend.x-ft.x)*(skyMode()?.46:.36);ft.z+=(friend.z-ft.z)*(skyMode()?.46:.32);ft.x+=.12*Math.cos(orbit.angle)-.40*Math.sin(orbit.angle);ft.z-=.19*Math.sin(orbit.angle)+.40*Math.cos(orbit.angle)}orbit.focus.lerp(ft,Math.min(1,dt*8));}
+  if(out&&(!encounter.active||encounter.chatView)){const friend=partner().root.position;ft.x+=(friend.x-ft.x)*(skyMode()?.46:.36);ft.z+=(friend.z-ft.z)*(skyMode()?.46:.32);ft.x+=.12*Math.cos(orbit.angle)-.40*Math.sin(orbit.angle);ft.z-=.19*Math.sin(orbit.angle)+.40*Math.cos(orbit.angle)}orbit.focus.lerp(ft,Math.min(1,dt*8));}
  const nearBay=!out&&orbit.follow&&!sitting?clamp((a.root.position.z-1.02)/1.05,0,1):0;
  const portrait=w<h,rad=(skyMode()?Math.max(orbit.radius,portrait?6.60:4.85):orbit.radius)*(portrait?(out?1.13:1.23):1);
  const hp=rad*Math.cos(orbit.pitch);cam.position.set(orbit.focus.x+Math.sin(orbit.angle)*hp,orbit.focus.y+Math.sin(orbit.pitch)*rad,orbit.focus.z+Math.cos(orbit.angle)*hp);
  if(out&&cam.position.z>10.22&&Math.abs(cam.position.x)<5.3)cam.position.z=10.22;
  let fieldOfView=48;
- if(out&&air.mode!=='off'){
+ if(out&&air.mode!=='off'&&!encounter.active){
   fieldOfView=frameWingedPair(cam,portrait?55:49,w/h);
+ }else if(out&&encounter.active&&air.mode!=='off'){
+  if(encounter.chatView){const radius=portrait?5.65:3.95;cam.position.set(orbit.focus.x+Math.sin(orbit.angle)*radius,orbit.focus.y+.32,orbit.focus.z+Math.cos(orbit.angle)*radius);}
+  else if(air.front){const radius=portrait?6.2:4.8;cam.position.set(orbit.focus.x+Math.sin(orbit.angle)*radius,orbit.focus.y+.45,orbit.focus.z+Math.cos(orbit.angle)*radius);}
+  cam.lookAt(orbit.focus);fieldOfView=portrait?54:47;
  }else if(shelfView){
   const target=new T.Vector3(-3.12,1.58,.22);const portrait=w<h;fieldOfView=portrait?51:44;
   const dist=Math.max(3.02,2.44/Math.max(.38,w/h));cam.position.set(target.x+dist,1.50,.62);cam.lookAt(target);
@@ -673,7 +683,8 @@ function move(dt){
  if(keys.has('arrowright')||keys.has('d'))x+=1;
  if(keys.has('arrowleft')||keys.has('a')||keys.has('q'))x-=1;
  let len=Math.hypot(x,z),dx=0,dz=0;
- if(len>.04){releaseSeatRoute();goal=null;}
+ if(len>.04){releaseSeatRoute();goal=null;encounter.route=null;}
+ if(encounter.active&&encounter.route&&!goal){const next=encounter.route.shift();if(next)goal=next;else{encounter.route=null;if(where==='salon')crossBay();}}
  if(seatRoute&&!goal){
    const p=seatRoute.points.shift();
    if(p)goal={x:p[0],z:p[1]};else{const seat=seatRoute.seat;seatRoute=null;sitAt(seat);}
@@ -684,7 +695,7 @@ function move(dt){
  }else if(goal){dx=goal.x-a.root.position.x;dz=goal.z-a.root.position.z;const distance=Math.hypot(dx,dz);if(distance<(seatRoute?.055:.12)){goal=null}else{dx/=distance;dz/=distance;len=1}}
  let moved=false;
  if(len>.04){const speed=where==='jardin'?1.58:1.02,step=speed*dt,p=a.root.position;
-  const xx=p.x+dx*step,zz=p.z+dz*step;if(seatRoute||freeLine(p,xx,zz)){p.x=xx;p.z=zz;moved=true}
+  const xx=p.x+dx*step,zz=p.z+dz*step;if(seatRoute||encounter.route||freeLine(p,xx,zz)){p.x=xx;p.z=zz;moved=true}
   else if(Math.abs(dx)>.03&&freeLine(p,xx,p.z)){p.x=xx;moved=true}
   else if(Math.abs(dz)>.03&&freeLine(p,p.x,zz)){p.z=zz;moved=true}
   else goal=null;
@@ -693,14 +704,15 @@ function move(dt){
  if(where==='salon'){
   const p=a.root.position,dist=2.48944+baySlope*p.x-p.z;
   if(dist>1.05){if(approachedWindow&&windowView&&moved&&dz<0)leaveWindow();approachedWindow=false;}
-  if(!sitting&&!approachedWindow&&dist<.84&&((moved&&dz>.38&&Math.cos(orbit.angle)<-.30)||(!moved&&a.speed>.04))){
+  if(encounter.active&&!sitting&&dist<.40&&Math.abs(p.x)<.63&&!encounter.route){crossBay();return;}
+  if(!encounter.active&&!sitting&&!approachedWindow&&dist<.84&&((moved&&dz>.38&&Math.cos(orbit.angle)<-.30)||(!moved&&a.speed>.04))){
    approachedWindow=true;faceWindow();
   }
  }
  a.speed=mix(a.speed,moved?len:0,Math.min(1,dt*11));if(a.speed<.015)a.speed=0;
  if(sitting){a.sit=clamp(a.sit+(rising?-1:1)*dt/.96,0,1);if(rising&&a.sit===0)getUp();}
  animateBody(a,a.speed,poseSeat,dt*a.speed);
- if(chosen&&revealStart===null&&(air.mode!=='ready'||a.speed>.05))follow(dt);if(air.mode!=='off')advanceAir(dt);
+ if(!encounter.active&&chosen&&revealStart===null&&(air.mode!=='ready'||a.speed>.05))follow(dt);if(air.mode!=='off')advanceAir(dt);
 }
 function releaseStick(){stick.x=stick.y=0;stick.id=null;$('thumb').style.transform='translate(0,0)'}
 const pad=$('pad');
@@ -710,7 +722,7 @@ pad.onpointermove=e=>{if(e.pointerId===stick.id)padMove(e)};pad.onpointerup=pad.
 const held=new Map();let touch=null,lastTap=null,pinch=0;
 const span=()=>{const [a,b]=held.values();return Math.hypot(a.x-b.x,a.y-b.y)};
 canvas.addEventListener('pointerdown',e=>{if(e.button>0)return;if(revealStart!==null)cancelReveal();canvas.focus();canvas.setPointerCapture(e.pointerId);held.set(e.pointerId,{x:e.clientX,y:e.clientY});if(held.size===2){pinch=span();if(touch)touch.moved=true}else touch={x:e.clientX,y:e.clientY,moved:false}});
-canvas.addEventListener('pointermove',e=>{const prev=held.get(e.pointerId);if(!prev)return;const dx=e.clientX-prev.x,dy=e.clientY-prev.y;if(Math.abs(dx)+Math.abs(dy)>2)conversation=null;held.set(e.pointerId,{x:e.clientX,y:e.clientY});if(held.size===2){const n=span();if(n>0&&pinch>0)orbit.radius=clamp(orbit.radius*pinch/n,1.7,5.8);pinch=n;return}if(touch&&!touch.moved&&Math.hypot(e.clientX-touch.x,e.clientY-touch.y)>5)touch.moved=true;if(touch?.moved){if(air.front){orbit.angle=air.heading-.065;air.front=false;refreshFlight()}if(windowView)approachedWindow=true;else if(homeView)freeCamera();orbit.angle-=dx*.007;orbit.pitch=clamp(orbit.pitch+dy*.004,windowView?-.62:-.06,windowView?.68:.93)}});
+canvas.addEventListener('pointermove',e=>{const prev=held.get(e.pointerId);if(!prev)return;const dx=e.clientX-prev.x,dy=e.clientY-prev.y;if(Math.abs(dx)+Math.abs(dy)>2){conversation=null;if(encounter.active)encounter.chatView=false;}held.set(e.pointerId,{x:e.clientX,y:e.clientY});if(held.size===2){const n=span();if(n>0&&pinch>0)orbit.radius=clamp(orbit.radius*pinch/n,1.7,5.8);pinch=n;return}if(touch&&!touch.moved&&Math.hypot(e.clientX-touch.x,e.clientY-touch.y)>5)touch.moved=true;if(touch?.moved){if(air.front){orbit.angle=air.heading-.065;air.front=false;refreshFlight()}if(windowView)approachedWindow=true;else if(homeView)freeCamera();orbit.angle-=dx*.007;orbit.pitch=clamp(orbit.pitch+dy*.004,windowView?-.62:-.06,windowView?.68:.93)}});
 const plane=new T.Plane(new T.Vector3(0,1,0),0),point=new T.Vector3();
 function tap(e){
  if(performance.now()<jumpLock)return;const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);ray.setFromCamera(pointer,cam);
@@ -740,7 +752,7 @@ function adjustResolution(ms){
  const next=frameCost>59?Math.max(.74,old-.18):frameCost<24?Math.min(high,old+.09):old;
  if(Math.abs(old-next)>.035)renderer.setPixelRatio(next);
 }
-let shadowTime=-1;function frame(t){if(contextLost)return;const anchor=where==='jardin'?player().root.position:{x:-1,z:-1};sun.position.set(anchor.x-3.6,7,anchor.z+4.8);sun.target.position.set(anchor.x,0,anchor.z);if(t-shadowTime>145||shadowTime<0){renderer.shadowMap.needsUpdate=true;shadowTime=t;}adjustResolution(t-last);const dt=Math.min(.065,Math.max(0,(t-last)/1000));last=t;if(!help.open&&!catalog.open){move(dt);flutter(dt)}updateCam(dt);member.speechFrame();if(conversation&&where==='salon')memberCamera();
+let shadowTime=-1;function frame(t){if(contextLost)return;const anchor=where==='jardin'?player().root.position:{x:-1,z:-1};sun.position.set(anchor.x-3.6,7,anchor.z+4.8);sun.target.position.set(anchor.x,0,anchor.z);if(t-shadowTime>145||shadowTime<0){renderer.shadowMap.needsUpdate=true;shadowTime=t;}adjustResolution(t-last);const dt=Math.min(.065,Math.max(0,(t-last)/1000));last=t;if(!help.open&&!catalog.open){move(dt);flutter(dt);if(encounter.active)tickReunion(dt)}updateCam(dt);member.speechFrame();if(conversation&&where==='salon')memberCamera();
  renderer.render(scene,cam);frameHandle=requestAnimationFrame(frame)}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;cancelAnimationFrame(frameHandle);window.failure('Le navigateur a interrompu la 3D.');});
 let talkOpen=false;
@@ -999,6 +1011,7 @@ function skyMode(){return air.mode==='flying'||air.mode==='landing'}
 function refreshFlight(){
  const active=air.mode!=='off',on=where==='jardin',flying=air.mode==='flying',landing=air.mode==='landing';
  flightButton.hidden=!on;flightButton.setAttribute('aria-pressed',String(active));$('angelLabel').textContent=landing?'Atterrissage':flying?'Atterrir':active?'Replier':'Mode ange';
+ if(encounter.active&&active)$('angelLabel').textContent=landing?'Atterrissage':'Mode ange ✓';
  flightButton.disabled=landing||air.mode==='folding';flightControls.hidden=!on||!active||landing;
  $('beat').textContent=flying?'Battre des ailes':'Décoller';$('descent').hidden=$('tricks').hidden=!flying;
  $('tricks').disabled=!flying||!!air.figure;$('altitude').hidden=!skyMode();if(!flying||air.figure)$('trickList').hidden=true;
@@ -1006,13 +1019,13 @@ function refreshFlight(){
  face.setAttribute('aria-pressed',String(air.front));face.textContent=air.front?'Vue de dos':'Vue de face';if(!on)$('altitude').hidden=true;
 }
 function resetAir(){
- for(const a of Object.values(actors)){const r=a.angel;if(r){r.pivot.position.set(0,.97,0);r.pivot.rotation.set(0,0,0);poseWings(a,0,0,0)}a.root.position.y=0;a.shadow.position.y=.03;a.shadow.scale.set(1,1,1)}
+ for(const a of currentPair()){const r=a.angel;if(r){r.pivot.position.set(0,.97,0);r.pivot.rotation.set(0,0,0);poseWings(a,0,0,0)}a.root.position.y=0;a.shadow.position.y=.03;a.shadow.scale.set(1,1,1)}
  Object.assign(air,{mode:'off',spread:0,phase:0,power:0,v:0,alt:0,boost:false,down:false,downPulse:0,pulse:0,queued:null,bank:0,time:0,figure:null,landing:null,hover:0,launch:0,front:false,course:0,moving:false});refreshFlight()
 }
 function toggleAngel(){
  if(where!=='jardin')return;cancelReveal();
  if(air.mode==='off'){
-  if(homeView)freeCamera();for(const a of Object.values(actors))flightRig(a);
+  if(homeView)freeCamera();for(const a of currentPair())flightRig(a);
   air.mode='ready';air.front=false;air.heading=player().root.rotation.y;air.course=air.heading-Math.PI;air.phase=0;air.spread=0;air.time=0;goal=null;orbit.follow=true;orbit.angle=air.heading-Math.PI-.14;orbit.pitch=.16;orbit.radius=4.6;
  }else if(air.mode==='ready'){air.mode='folding'}
  else if(air.mode==='flying')startLanding();
@@ -1126,7 +1139,7 @@ function advanceAir(dt){
  const folding=air.mode==='folding';
  air.spread=clamp(air.spread+dt*(folding?-1.25:1.12),0,1);
  if(!skyMode()){
-  if(air.mode==='ready'&&a.speed<.05){const tz=Math.min(6.3,p.z+1.24),tx=pathX(tz)+.78,f=1-Math.exp(-dt*1.55);const x=mix(q.x,tx,f),z=mix(q.z,tz,f);if(freeLine(q,x,z)){q.x=x;q.z=z}
+  if(!encounter.active&&air.mode==='ready'&&a.speed<.05){const tz=Math.min(6.3,p.z+1.24),tx=pathX(tz)+.78,f=1-Math.exp(-dt*1.55);const x=mix(q.x,tx,f),z=mix(q.z,tz,f);if(freeLine(q,x,z)){q.x=x;q.z=z}
    const yaw=a.root.rotation.y,beta=Math.atan2(Math.sin(yaw-b.root.rotation.y),Math.cos(yaw-b.root.rotation.y));b.root.rotation.y+=beta*Math.min(1,dt*4)
   }
   poseWings(a,eased(air.spread),air.time*.9,.09);poseWings(b,eased(air.spread),air.time*.9-.24,.09);if(folding&&air.spread===0)resetAir();return}
@@ -1144,7 +1157,7 @@ function advanceAir(dt){
  let moveAmount=0;let companionAltitude=air.alt;
  if(landing){
   const {target,other}=air.landing;
-  const d1=Math.hypot(p.x-target.x,p.z-target.z),d2=Math.hypot(q.x-other.x,q.z-other.z);
+  const d1=Math.hypot(p.x-target.x,p.z-target.z),d2=encounter.active?0:Math.hypot(q.x-other.x,q.z-other.z);
   if(Math.max(d1,d2)>.055){
    function glideTo(pos,end,dist){
     if(dist<=.045)return true;const f=Math.min(1,dt*3.9/dist);return airStep(pos,mix(pos.x,end.x,f),mix(pos.z,end.z,f),air.alt);
@@ -1179,6 +1192,7 @@ function advanceAir(dt){
   }else air.bank*=Math.exp(-dt*3);
   a.root.rotation.y=air.heading;
   // Fly in a staggered pair so that the long primaries have room to beat.
+  if(!encounter.active){
   const wide=1.8*eased(air.alt/2)+.62,back=1.22+.92*eased(air.alt/2);
   let tx=p.x-Math.cos(air.heading)*wide-Math.sin(air.heading)*back,tz=p.z+Math.sin(air.heading)*wide-Math.cos(air.heading)*back;
   let needed=groundLimit(tx,tz);
@@ -1190,13 +1204,14 @@ function advanceAir(dt){
   companionAltitude=mix(q.y,safeAlt,1-Math.exp(-dt*4.25));
   if(!airStep(q,nx,nz,companionAltitude)){if(!airStep(q,nx,q.z,companionAltitude))airStep(q,q.x,nz,companionAltitude)}
   const turn=Math.atan2(Math.sin(air.heading-b.root.rotation.y),Math.cos(air.heading-b.root.rotation.y));b.root.rotation.y+=turn*Math.min(1,dt*3);
+  }
  }
  if(air.queued&&air.alt>=1.28&&!landing)trick(air.queued);if(air.figure)air.figure.clock+=dt;
- airPose(a,dt,air.alt,0,air.phase,air.power,moveAmount);airPose(b,dt,companionAltitude,.14,air.phase-.62,air.power*.96,moveAmount);
+ airPose(a,dt,air.alt,0,air.phase,air.power,moveAmount);if(!encounter.active)airPose(b,dt,companionAltitude,.14,air.phase-.62,air.power*.96,moveAmount);
  if(air.figure&&air.figure.clock>=air.figure.duration+.14){air.figure=null;refreshFlight()}
  const label=Math.round(air.alt)+' m';if($('altitude').textContent!==label)$('altitude').textContent=label;
 }
-$('flightFace').onclick=()=>{air.front=!air.front;orbit.angle=air.front?air.heading-.065:air.heading-Math.PI;orbit.pitch=air.front?.055:.16;refreshFlight();updateCam(1);canvas.focus({preventScroll:true})};
+$('flightFace').onclick=()=>{encounter.chatView=false;air.front=!air.front;orbit.angle=air.front?air.heading-.065:air.heading-Math.PI;orbit.pitch=air.front?.055:.16;refreshFlight();updateCam(1);canvas.focus({preventScroll:true})};
 flightButton.onclick=()=>{toggleAngel();canvas.focus({preventScroll:true})};
 function heldControl(button,begin,held,release){
  button.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
@@ -1240,18 +1255,18 @@ shelvesButton.onclick=()=>setShelfView(!shelfView);
 
 $('lookHome').onclick=lookAtHome;setLocation(false);resetView();updateSize();
 const member=createMemberBridge({
- T,actors,player,partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,
+ T,actors,player:()=>actors[role],partner:()=>actors[role==='f'?'m':'f'],seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,
  get place(){return where},get role(){return role},setRole,freeCamera,
  focus(view){freeCamera();orbit.follow=false;const a=player(),p=a.root.position;
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);
  orbit.pitch=.065;orbit.radius=view==='Visage'?1.02:2.8;
  orbit.focus.set(p.x,p.y+(view==='Visage'?1.55: .95)*a.root.scale.y,p.z);updateCam(1);},
- meet(){if(where!=='salon')return;releaseSeatRoute();if(sitting)getUp();
+ meet(){if(encounter.active)leaveReunion();if(where!=='salon')return;releaseSeatRoute();if(sitting)getUp();
  const seat=seats.find(s=>s.id==='chair'),friend=partner();
  friend.root.position.set(...feetAt(seat,friend));friend.root.rotation.y=seat.yaw;
  friend.sit=1;friend.speed=0;friend.stamp='';animateBody(friend,0,seat);
  companionSeat=seat;$('actors').hidden=true;walkToSeat(seats.find(s=>s.id==='sofa2'));talkOpen=true;},
- clearMeeting(){$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
+ clearMeeting(){if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
  camera(mode,speaker){conversation=mode==='manual'?null:{mode,speaker};},
  snapshot(){
    const a=player(),scale=a.root.scale.y,y=a.root.position.y+(a.sit>.5?1.13:1.54)*scale;
@@ -1277,5 +1292,102 @@ function memberCamera(){
  }
  cam.updateMatrixWorld();
 }
+const reunionToggle=$('reunionToggle'),reunionAction=$('reunionAction');
+const rendezVous=new T.Vector3(.50,10.5,3.65);
+async function prepareReunion(){
+ if(encounter.loaded)return;
+ if(!encounter.friends){
+  const ahmed=makeActor('m',false),lionel=makeActor('m',false);
+  for(const a of [ahmed,lionel]){a.root.visible=false;a.harness=fitHarness(a);a.harness.h.visible=false;}
+  encounter.friends={ahmed,lionel};
+  encounter.bridge=createMemberBridge({T,actors:encounter.friends,player:()=>ahmed,partner:()=>lionel,roomSeats,animateBody});
+ }
+ await dressFriends(encounter.bridge,()=>exchange.poses);
+ for(const a of Object.values(encounter.friends))flightRig(a);
+ encounter.loaded=true;
+}
+async function enterReunion(){
+ if(encounter.active||encounter.loading)return;
+ reunionToggle.disabled=true;reunionToggle.textContent='Ouverture…';
+ try{
+  encounter.loading=prepareReunion();await encounter.loading;
+  if(where==='jardin')returnHome();
+  if(sitting)getUp();releaseSeatRoute();conversation=null;companionSeat=null;talkOpen=false;
+  if(shelfView)setShelfView(false);
+  encounter.saved=Object.values(actors).map(a=>a.root.visible);
+  for(const a of Object.values(actors))a.root.visible=false;
+  encounter.active=true;encounter.chatView=false;encounter.clock=0;encounter.route=null;exchange.stop();resetAir();freeCamera();goal=null;
+  const a=player();a.root.visible=true;a.body.visible=true;a.root.position.set(-.60,0,-1.82);a.root.rotation.y=.46;a.stamp='';animateBody(a,0,null);partner().root.visible=false;
+  document.body.classList.add('reunion');reunionToggle.textContent='Quitter Lionel';reunionToggle.setAttribute('aria-pressed','true');
+  reunionAction.hidden=false;orbit.angle=.89;orbit.pitch=.13;orbit.radius=3.12;orbit.follow=true;updateCam(1);tickReunion(0);canvas.focus({preventScroll:true});
+ }catch(error){console.error('Rencontre avec Lionel',error);reunionToggle.textContent='Réessayer · Lionel';$('notice').textContent='Le chargement des deux personnages a échoué.';}
+ finally{encounter.loading=null;reunionToggle.disabled=false;}
+}
+function leaveReunion(){
+ if(!encounter.active)return;
+ exchange.stop();releaseSeatRoute();goal=null;encounter.route=null;resetAir();
+ for(const a of currentPair()){unwear(a);a.root.visible=false;}
+ encounter.active=false;chosen=null;document.body.classList.remove('reunion');setLocation(false);resetView();
+ Object.values(actors).forEach((a,i)=>a.root.visible=encounter.saved[i]);
+ reunionAction.hidden=$('reunionNext').hidden=true;reunionToggle.textContent='Retrouver Lionel';reunionToggle.setAttribute('aria-pressed','false');
+ canvas.focus({preventScroll:true});
+}
+function walkToBay(){
+ if(sitting)getUp();releaseSeatRoute();goal=null;
+ const p=player().root.position,route=roomPath([p.x*100+700,p.z*100-800],[694,-588]);
+ if(route)encounter.route=route.slice(1).map(([x,z])=>({x:(x-700)/100,z:(z+800)/100}));
+ else $('notice').textContent='Approche-toi de la baie avec le joystick.';
+}
+function crossBay(){
+ const a=player(),p=a.root.position.clone().applyMatrix4(roomToGarden);
+ const angle=orbit.angle+Math.PI+Math.atan(baySlope);
+ chosen='pin';setLocation(true);a.root.position.set(p.x,0,10.24);a.root.rotation.y=Math.PI;
+ orbit.angle=angle;orbit.follow=true;orbit.focus.copy(a.root.position);orbit.focus.y=.96;
+ wear(a,bags.pin);partner().root.visible=true;placeLionel();updateCam(1);
+ encounter.route=[{x:pathX(8.5),z:8.5},{x:pathX(5.45),z:5.45}];
+}
+function placeLionel(){
+ const b=partner(),p=player().root.position,phase=encounter.clock*3.6+.8;
+ b.root.position.copy(rendezVous);b.root.position.y+=.075*Math.sin(phase);
+ b.root.rotation.y=Math.atan2(p.x-b.root.position.x,p.z-b.root.position.z)+(encounter.chatView?.38:0);
+ b.angel.pivot.position.y=.97+.025*Math.sin(phase);b.angel.pivot.rotation.set(-.035,0,.025*Math.cos(phase));
+ glidingLimbs(b,10,.035);poseWings(b,1,phase,.54);b.shadow.visible=false;
+}
+function tickReunion(dt){
+ encounter.clock+=dt;const p=player().root.position,out=where==='jardin';
+ if(out)placeLionel();
+ if(encounter.chatView&&(stick.x||stick.y||keys.size||p.distanceTo(rendezVous)>5.2))encounter.chatView=false;
+ exchange.tick(dt);if(exchange.active||exchange.finished)encounter.bridge.speechFrame();
+ if(exchange.laughter){const t=exchange.laughter;for(const [i,a] of currentPair().entries())a.angel.pivot.rotation.x+=.047*Math.sin(17*t+2*i);}
+ const distance=p.distanceTo(rendezVous),canTalk=out&&air.mode==='flying'&&distance<4.4;
+ let label;
+ if(!out)label=encounter.route?'Vers la baie vitrée…':'Sortir par la baie vitrée';
+ else if(underRoof(p.x,p.z))label='Avancer dans le jardin';
+ else if(air.mode==='off')label='Déployer mes ailes';
+ else if(air.mode==='ready')label='Décoller';
+ else if(exchange.active)label='Ahmed et Lionel';
+ else if(canTalk)label=exchange.finished?'Réécouter Lionel':'Parler à Lionel';
+ else if(air.mode==='flying')label='Rejoindre Lionel · '+Math.round(distance)+' m';
+ else label='Retour au jardin';
+ if(reunionAction.textContent!==label)reunionAction.textContent=label;
+ const direction=!out?'Sors par la baie pour retrouver Lionel.':air.mode==='flying'?'Maintiens le battement pour monter.':air.mode==='ready'?'Bats des ailes pour décoller.':'Rejoins l’allée pour déployer tes ailes.';
+ if(zoneLabel.textContent!==direction)zoneLabel.textContent=direction;
+ reunionAction.disabled=exchange.active||(!out&&!!encounter.route)||(air.mode==='flying'&&!canTalk)||air.mode==='landing'||air.mode==='folding';
+ $('reunionNext').hidden=!exchange.finished;
+}
+reunionToggle.onclick=()=>encounter.active?leaveReunion():enterReunion();
+reunionAction.onclick=()=>{
+ if(where==='salon')walkToBay();
+ else if(underRoof(player().root.position.x,player().root.position.z))encounter.route=[{x:pathX(5.45),z:5.45}];
+ else if(air.mode==='off')toggleAngel();
+ else if(air.mode==='ready')beat();
+ else if(air.mode==='flying'&&player().root.position.distanceTo(rendezVous)<4.4){
+  const p=player().root.position,q=partner().root.position;
+  encounter.chatView=true;air.front=false;orbit.angle=Math.atan2(q.x-p.x,q.z-p.z)+Math.PI*.48;orbit.pitch=.09;orbit.follow=true;
+  air.heading=Math.atan2(q.x-p.x,q.z-p.z)-.38;refreshFlight();exchange.start();
+ }
+ canvas.focus({preventScroll:true});
+};
+
 window.salonV27=member;
 Promise.all(ready).then(()=>{document.body.classList.add('ready');window.dispatchEvent(new Event('salon-ready'));$('loading').hidden=true;frameHandle=requestAnimationFrame(frame)}).catch(e=>window.failure(e.message));
