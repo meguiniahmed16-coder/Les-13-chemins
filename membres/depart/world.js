@@ -940,6 +940,59 @@ function advanceAir(dt){
    interiorCamera.projectionMatrixInverse.copy(interiorCamera.projectionMatrix).invert();
    return interiorCamera;
  }
+ // Render the garden from the room side of the bay. One continuous view spans the
+ // six original glazed panels, so the native mullions, furniture and people occlude it.
+ const windowWidth=context?900:576,windowHeight=Math.round(windowWidth*2.86/(2*openingHalf));
+ const target=context?new T.WebGLRenderTarget(windowWidth,windowHeight):null;
+ const paneCanvas=context?null:document.createElement('canvas');
+ if(paneCanvas){paneCanvas.width=windowWidth;paneCanvas.height=windowHeight}
+ const windowRenderer=context?renderer:softwareWorld(paneCanvas,()=>null);
+ const gardenImage=target?target.texture:new T.CanvasTexture(paneCanvas);
+ gardenImage.colorSpace=T.SRGBColorSpace;
+ const paneMaterial=new T.MeshBasicMaterial({map:gardenImage,side:T.DoubleSide});
+ const windows=new T.Group();indoor.add(windows);
+ for(const original of bayPanes){
+   const g=original.geometry,positions=g.attributes.position,uv=[];
+   for(let i=0;i<positions.count;i++)uv.push((3.22-positions.getX(i))/6.44,(positions.getY(i)-.07)/2.86);
+   g.setAttribute('uv',attr(new Float32Array(uv),2));
+   // This surface sits just inside the old glass, behind the existing wooden frame.
+   mesh(g,paneMaterial,windows,0,0,-.012);
+ }
+ const bayCamera=new T.PerspectiveCamera(),bayFrustum=new T.Frustum(),bayMatrix=new T.Matrix4();
+ const gardenSky=new T.Color(0xdce7df),gardenMist=new T.FogExp2(0xe2e8db,.014);
+ let priorEye=null;
+ function updateWindow(p,roomCamera){
+   bayFrustum.setFromProjectionMatrix(bayMatrix.multiplyMatrices(roomCamera.projectionMatrix,roomCamera.matrixWorldInverse));
+   windows.visible=p.cy*p.cp<.16 && windows.children.some(pane=>bayFrustum.intersectsObject(pane));
+   if(!windows.visible)return;
+   // In cutaway mode the room has parallel sight lines. Choose a corresponding
+   // eye inside the room rather than placing the viewer beyond the back wall.
+   const distance=p.perspective?1/p.perspective:3.2;
+   const eye=bayCamera.position;
+   eye.set(clamp(p.x+p.sy*p.cp*distance,-3.18,3.18),clamp(p.y+p.sp*distance,.25,2.85),0);
+   eye.z=clamp(p.z+p.cy*p.cp*distance,-2.52,bayCenter.z+baySlope*eye.x-.20);
+   eye.applyMatrix4(roomToGarden);
+   if(priorEye && priorEye.distanceToSquared(eye)<.0004)return;
+   (priorEye??=new T.Vector3()).copy(eye);
+   const d=eye.z-gardenThreshold.z,near=d+.14,factor=near/d;
+   bayCamera.projectionMatrix.makePerspective((leftJamb-eye.x)*factor,(rightJamb-eye.x)*factor,
+     (gardenThreshold.y+2.93-eye.y)*factor,(gardenThreshold.y+.07-eye.y)*factor,near,190);
+   bayCamera.projectionMatrixInverse.copy(bayCamera.projectionMatrix).invert();
+   bayCamera.updateMatrixWorld();
+   // Only geometry beyond the sill is visible to the off-axis camera.
+   indoor.visible=false;outdoor.visible=true;scene.background=gardenSky;scene.fog=gardenMist;
+   distanceGroup.position.copy(gardenThreshold);distanceGroup.position.y=0;
+   for(const plant of sprites)plant.rotation.y=Math.atan2(eye.x-plant.position.x,eye.z-plant.position.z);
+   try{
+     if(target)renderer.setRenderTarget(target);
+     windowRenderer.autoClear=true;windowRenderer.render(scene,bayCamera);
+     if(paneCanvas)gardenImage.needsUpdate=true;
+   }finally{
+     if(target)renderer.setRenderTarget(null);
+     indoor.visible=true;outdoor.visible=false;scene.background=scene.fog=null;
+     renderer.autoClear=false;
+   }
+ }
  function gardenCamera(dt,w,h){
    const lead=player().root.position,friend=partner().root.position;
    if(revealStart!==null){
@@ -988,6 +1041,8 @@ function advanceAir(dt){
  }
  function setPlace(out){
    where=out?'jardin':'salon';view.dataset.place=where;
+   windows.visible=false;priorEye=null;
+   if(!out)syncChunks(gardenThreshold.z);
    const instructions=root.querySelector('.info p');
    instructions.dataset.indoor??=instructions.textContent;
    instructions.textContent=out?'Le joystick dirige le duo. Glisse pour tourner la caméra. « Mode ange » déploie les ailes.':instructions.dataset.indoor;
@@ -995,7 +1050,7 @@ function advanceAir(dt){
    for(const o of roomParts)o.visible=out;
    ceiling.visible=out;for(const item of ornaments.children)item.visible=true;
    for(const a of Object.values(actors))a.root.visible=out;
-   scene.background=out?new T.Color(0xdce7df):null;scene.fog=out?new T.FogExp2(0xe2e8db,.014):null;
+   scene.background=out?gardenSky:null;scene.fog=out?gardenMist:null;
    keys.clear();releaseStick();homeView=false;goal=null;refreshFlight();
    $('return').hidden=!out;$('lookHome').hidden=!out;root.querySelector('.stage').classList.toggle('in-garden',out);
  }
@@ -1047,7 +1102,8 @@ function advanceAir(dt){
      for(const item of ornaments.children){
        item.visible=item.position.z<-2.5?projection.cy*projection.cp>-.20:item.position.x<-3?projection.sy*projection.cp>-.22:true;
      }
-     renderer.autoClear=false;renderer.render(scene,salonCamera(projection,w,h));
+     const camera=salonCamera(projection,w,h);updateWindow(projection,camera);
+     renderer.autoClear=false;renderer.render(scene,camera);
    }
    renderer.resetState();
  }
@@ -1105,7 +1161,7 @@ function advanceAir(dt){
      if(code==='KeyC')air.down=down;
      if(down&&!repeat&&/^Digit[123]$/.test(code))trick(['left','right','loop'][Number(code.at(-1))-1]);
    }, clear,
-   dispose(){disposeObjects(scene);renderer.dispose();for(const u of urls)URL.revokeObjectURL(u)}
+   dispose(){target?.dispose();if(paneCanvas)windowRenderer.dispose();disposeObjects(scene);renderer.dispose();for(const u of urls)URL.revokeObjectURL(u)}
  };
  try{await Promise.all(ready);signal.throwIfAborted();return api}catch(err){api.dispose();throw err}
 }

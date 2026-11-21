@@ -9,15 +9,18 @@ export function softwareWorld(canvas,roomFrame){
   const position=new Vector3(),sphere=new Sphere(),frustum=new Frustum(),tone=new Color();
   function texture(map){
     if(!map)return white;
-    if(textures.has(map))return textures.get(map);
+    const cached=textures.get(map);
+    if(cached?.version===map.version)return cached;
     const source=map.image;
     if(!source?.width)return white;
     let img=source;
-    if(!source.data){
+    if(source instanceof HTMLCanvasElement){
+      img=source.getContext('2d').getImageData(0,0,source.width,source.height);
+    }else if(!source.data){
       const c=document.createElement('canvas');c.width=source.width;c.height=source.height;
       const paint=c.getContext('2d');paint.drawImage(source,0,0);img=paint.getImageData(0,0,c.width,c.height);
     }
-    const tex={data:img.data,width:img.width,height:img.height,repeat:map.wrapS===RepeatWrapping};
+    const tex={version:map.version,data:img.data,width:img.width,height:img.height,repeat:map.wrapS===RepeatWrapping};
     textures.set(map,tex);return tex;
   }
   function render(scene,camera){
@@ -49,7 +52,8 @@ export function softwareWorld(canvas,roomFrame){
       const lx=(-.42*wm[0]+.68*wm[1]+.59*wm[2])*inverseScale;
       const ly=(-.42*wm[4]+.68*wm[5]+.59*wm[6])*inverseScale;
       const lz=(-.42*wm[8]+.68*wm[9]+.59*wm[10])*inverseScale;
-      const flipY=(Array.isArray(o.material)?o.material[0]:o.material).map?.flipY;
+      const firstMaterial=Array.isArray(o.material)?o.material[0]:o.material;
+      const flipY=firstMaterial.map?.flipY;
       for(let i=0,j=0;i<pos.count;i++,j+=7){
         let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
         if(o.isSkinnedMesh){position.set(x,y,z);o.applyBoneTransform(i,position);({x,y,z}=position)}
@@ -59,7 +63,7 @@ export function softwareWorld(canvas,roomFrame){
         v[j+1]=(.5-.5*(m[1]*x+m[5]*y+m[9]*z+m[13])*inv)*h;
         v[j+2]=-(m[2]*x+m[6]*y+m[10]*z+m[14])*inv;
         v[j+3]=(uv?.getX(i)||0)*inv;v[j+4]=(flipY?1-(uv?.getY(i)||0):uv?.getY(i)||0)*inv;
-        v[j+5]=(normal?Math.min(1.13,.80+.27*Math.max(0,lx*normal.getX(i)+ly*normal.getY(i)+lz*normal.getZ(i))):1)*inv;
+        v[j+5]=(normal&&!firstMaterial.isMeshBasicMaterial?Math.min(1.13,.80+.27*Math.max(0,lx*normal.getX(i)+ly*normal.getY(i)+lz*normal.getZ(i))):1)*inv;
         v[j+6]=inv;
       }
       const index=g.index?.array,total=index?.length||pos.count;

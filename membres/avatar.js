@@ -264,7 +264,7 @@ export class CheminsAvatar extends HTMLElement {
         await this.#open(true);if(showBags)return this.#loadWorld(true);return;
       }
       if(showBags)this.#state.textContent='Ouverture du jardin…';
-      this.#worldLoad=import('./depart.js?v=salon39').then(({createDeparture})=>createDeparture({
+      this.#worldLoad=import('./depart.js?v=salon40').then(({createDeparture})=>createDeparture({
         canvas:this.#canvas,context,roomFrame:()=>this.#view.frame,root:this.shadowRoot,signal:life.signal,makeGait:()=>new SalonMotion(undefined,newCamera()),
         onBag:which=>this.#selectBag(which),onReturn:()=>this.#cancelDeparture(),wake:this.#schedule
       })).then(world=>{if(life.signal.aborted){world.dispose();return;}this.#world=world;});
