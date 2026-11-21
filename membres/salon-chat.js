@@ -1,7 +1,7 @@
 import {createDialogue} from './salon-dialogue.js?v=salon36';
 import {createDictee} from './salon-dictee.js';
 import {characterReply,limit} from '../atlas-chat-client.js';
-import {searchName} from './salon-encounter.js?v=salon37';
+import {searchName} from './salon-encounter.js?v=salon38';
 
 const opening='Asseyons-nous et discutons.';
 let directory;

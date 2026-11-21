@@ -223,12 +223,11 @@ test('Les prêtres du livre ont une tenue et un col romain, y compris en cas de 
   for(const priest of priests){
     const {gender,studio}=guestAppearance({...priest,gender:null});
     assert.equal(priest.gender,'homme');assert.equal(gender,'homme');
-    assert.equal(studio.outfit.col,'roman-collar');
     assert.equal(studio.outfit.souliers,'mh620');
     if(priest.name==='Ambroise'){
-      assert.equal(studio.clerical,'soutane-vert-canard');assert.equal(studio.outfit.robe,'mh225');
+      assert.equal(studio.outfit.col,'roman-collar');assert.equal(studio.clerical,'soutane-vert-canard');assert.equal(studio.outfit.robe,'mh225');
     }else{
-      assert.equal(studio.outfit.haut,'mh1800');assert.equal(studio.outfit.bas,'mh1796');
+      assert.equal(studio.outfit.haut,'clergy-shirt');assert.equal(studio.outfit.col,undefined);assert.equal(studio.outfit.bas,'mh1796');
     }
   }
   for(const name of ['Benoît Arnaud','Ghislain','José Luis','Arielle','Melchior']){

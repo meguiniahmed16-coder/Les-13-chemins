@@ -22,8 +22,8 @@ export function guestAppearance(person){
   if(studio.outfit.bas==='mh417')studio.outfit.bas='mh1728';
   if(person.clerical){
     studio.clerical=person.clerical;
-    const garments=person.clerical==='soutane-vert-canard'?{robe:'mh225'}:{haut:'mh1800',bas:'mh1796'};
-    studio.outfit={...garments,souliers:'mh620',col:'roman-collar'};
+    const garments=person.clerical==='soutane-vert-canard'?{robe:'mh225',col:'roman-collar'}:{haut:'clergy-shirt',bas:'mh1796'};
+    studio.outfit={...garments,souliers:'mh620'};
   }
   if(person.glasses)studio.outfit.lunettes='mh153';
   return {gender,studio};

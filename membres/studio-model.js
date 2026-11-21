@@ -195,7 +195,7 @@ export async function loadStudio(look,gender){
   Promise.all(names.map(async name=>{const m=await resource('mesh-'+name);return {...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};})),
   Promise.all(Object.entries(outfit).map(async ([slot,id])=>{
    const raw=await resource('wear-'+id),m=displayMesh(raw,raw.binding.length/8);m.image=await pixels(raw.image);
-   if(look.clerical&&['haut','robe','bas','col'].includes(slot)){
+   if(look.clerical&&['robe','bas','col'].includes(slot)){
     const teal=look.clerical==='soutane-vert-canard';
     m.image=clericalFabric(m.image,teal,slot==='col');
    }

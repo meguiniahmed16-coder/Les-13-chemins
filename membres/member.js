@@ -93,7 +93,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=salon37');
+  await import('./avatar.js?v=salon38');
   if(!member)return;
   let view=$('room').querySelector('chemins-avatar');
   if(!view){
