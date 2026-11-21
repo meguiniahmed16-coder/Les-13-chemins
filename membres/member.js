@@ -73,7 +73,7 @@ function setPage(){
   }
   const roomOnly=key==='salon'||key==='avatar';
   $('salon-panels').hidden=roomOnly;
-  $('room').querySelector('chemins-avatar')?.openOptions(key==='avatar');
+  $('room').querySelector('chemins-salon')?.openOptions(key==='avatar');
   $('salon').hidden=!member.pseudo;
   $('salon-layout').classList.toggle('has-panel',!roomOnly&&Boolean(member.pseudo));
   if(key!=='parcours')closeFilm();
@@ -93,11 +93,11 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=salon41');
+  await import('./salon-v27.js?v=duo1');
   if(!member)return;
-  let view=$('room').querySelector('chemins-avatar');
+  let view=$('room').querySelector('chemins-salon');
   if(!view){
-    view=el('chemins-avatar');view.setAttribute('scene','salon');
+    view=el('chemins-salon');view.setAttribute('scene','salon');
     view.addEventListener('avatar-ready',()=>updatePhoto(view));
     $('room').append(view);
   }

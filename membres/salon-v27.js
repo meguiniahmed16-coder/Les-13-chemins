@@ -1,0 +1,139 @@
+import {createDrawer} from './studio-drawer.js?v=salon39';
+import {createSalonChat} from './salon-chat.js?v=salon41';
+import {guestAppearance} from './salon-encounter.js?v=salon38';
+import {loadStudio} from './studio-model.js?v=salon38';
+import {resource} from './studio-assets.js';
+import {createPerformer} from './salon-performance.js';
+
+class SalonV27 extends HTMLElement{
+  #frame;#ready;#scene;#drawer;#chat;#options;#look;#guest;#serial={member:0,guest:0};#fallback;#listen;#cameraKey='';#ownStyle=createPerformer('joueur');#lastTalk=0;
+  constructor(){
+    super();
+    const root=this.attachShadow({mode:'open'});
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon39"><style>
+    .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
+    .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
+    .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
+    .hud{position:static;pointer-events:none}.hud .options-toggle,.hud .invite-toggle,.hud .bar{pointer-events:auto}
+    .hud .bar:empty{display:none}.v27-actions .invite-toggle{font-size:13px}
+    .v27-actions .options-toggle{font-size:13px}.guest-picker{z-index:7}
+    .stage.immersive{position:fixed;inset:0;height:100dvh!important;z-index:2147483646}
+    .stage:fullscreen{height:100dvh}.stage{min-height:420px}
+    @media(max-width:600px){.stage{height:min(76dvh,750px)}.v27-actions{gap:2px;left:3px}.v27-actions>button{font-size:12px!important;min-height:34px}}
+    </style><div class="stage"><div class="scene-viewport">
+      <div class="hud"><div class="v27-actions"><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser</button></div><div class="bar"></div></div>
+    </div><aside class="studio-drawer" id="studio-drawer" hidden></aside></div>`;
+    this.#chat=createSalonChat(root,{
+      invite:async person=>{
+        const {studio,gender}=guestAppearance(person);
+        if(!await this.#dress('guest',studio,gender))return false;
+        this.#guest={person,gender,performer:createPerformer(person.id)};
+        const channels=await resource('conversation-face');
+        await this.#scene.enableDialogue(channels,()=>this.#speechFrame());
+        this.#drawer.toggle(false);this.#scene.meet();return true;
+      },
+      leave:()=>{this.#serial.guest++;this.#guest=null;this.#scene?.endDialogue();this.#scene?.reset('guest');this.#scene?.clearMeeting();},
+      change:()=>{const chat=this.#chat;if(!chat||!this.#scene)return;
+        const key=chat.mode+'/'+chat.speaker;if(key!==this.#cameraKey){this.#scene.camera(chat.mode,chat.speaker);this.#cameraKey=key;}},
+      rate:who=>who==='guest'?this.#guest?.performer?.rate||1:1,
+      gender:who=>(who==='guest'?this.#guest?.gender:this.#options?.gender)||'homme'
+    });
+    root.querySelector('.v27-actions').append(root.querySelector('.invite-toggle'));
+    this.#drawer=createDrawer(root,look=>this.#dress('member',look,this.#options.gender),mode=>this.#scene?.focus(mode),()=>this.#scene?.departure());
+  }
+  #speechFrame(){
+    if(!this.#guest)return null;
+    const now=performance.now()/1000,dt=Math.min(.1,now-this.#lastTalk);this.#lastTalk=now;
+    const line=this.#chat.playback.frame(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const face=(style,who)=>{
+      const active=line?.who===who;
+      const pose=style.sample(now,dt,active?'speak':line?'listen':'idle',line?.line,reduced);
+      return {blink:pose.blink,jaw:active?line.jaw:0,spread:active?line.spread:0,round:active?line.round:0};
+    };
+    return {member:face(this.#ownStyle,'player'),guest:face(this.#guest.performer,'guest')};
+  }
+  async #dress(slot,look,gender){
+    const id=++this.#serial[slot],scene=await this.#ready;
+    if(!scene||id!==this.#serial[slot])return false;
+    const figure=await loadStudio(look,gender);
+    return scene.dress(slot,figure,gender,()=>this.isConnected&&this.#serial[slot]===id);
+  }
+  connectedCallback(){
+    if(this.#frame||this.#fallback)return;
+    const frame=this.#frame=document.createElement('iframe');
+    frame.title='Mon salon, la maison et le jardin';frame.className='v27-frame';frame.allowFullscreen=true;
+    this.#listen=new AbortController();
+    const signal=this.#listen.signal;
+    this.#ready=new Promise(resolve=>{
+      const settle=()=>{
+        const doc=frame.contentDocument,win=frame.contentWindow;
+        if(!doc||!win||!doc.getElementById('scene'))return;
+        const ready=()=>{
+          if(signal.aborted||this.#scene)return;
+          this.#scene=win.salonV27;this.#scene.setGender(this.#options?.gender);
+          const full=doc.getElementById('fullscreen');
+          full.onclick=async()=>{const stage=this.shadowRoot.querySelector('.stage');
+            try{if(document.fullscreenElement)await document.exitFullscreen();else if(stage.requestFullscreen)await stage.requestFullscreen();else stage.classList.toggle('immersive');}
+            catch{stage.classList.toggle('immersive');}
+          };
+          resolve(this.#scene);this.dispatchEvent(new CustomEvent('avatar-ready'));
+        };
+        win.addEventListener('salon-ready',ready,{signal});
+        if(doc.body.classList.contains('ready'))ready();
+        const failed=()=>{if(doc.getElementById('retry')?.hidden===false&&!this.#scene){resolve(null);
+          if(!doc.getElementById('compatible-room')){
+            const button=doc.createElement('button');button.id='compatible-room';button.textContent='Ouvrir la vue compatible';
+            button.onclick=()=>this.#software();doc.getElementById('loading').append(button);
+          }}};
+        new win.MutationObserver(failed).observe(doc.getElementById('loading'),{subtree:true,attributes:true,childList:true});failed();
+      };
+      frame.addEventListener('load',settle,{signal});
+    });
+    frame.src='/membres/v27/salon.html?v=27duo1';
+    this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
+  }
+  async #software(){
+    if(this.#fallback)return;
+    await import('./avatar.js?v=salon41');
+    if(!this.isConnected||this.#fallback)return;
+    this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
+    this.shadowRoot.querySelector('.stage').hidden=true;
+    this.shadowRoot.append(this.#fallback);
+    this.#fallback.addEventListener('avatar-ready',()=>this.dispatchEvent(new CustomEvent('avatar-ready')));
+    if(this.#options)await this.#fallback.configure(this.#look,this.#options);
+  }
+  disconnectedCallback(){this.#listen?.abort();this.#serial.member++;this.#serial.guest++;this.#chat.reset();this.#scene=null;this.#frame?.remove();this.#frame=null;}
+  configure(look,options){
+    const changed=this.#options?.memberKey!==options.memberKey||this.#options.gender!==options.gender;
+    this.#look=look;this.#options=options;
+    if(this.#fallback)return this.#fallback.configure(look,options);
+    const prefs='salon-v27-look:'+options.memberKey;
+    const choices=this.shadowRoot.querySelector('.studio-drawer');
+    let switcher=choices.querySelector('.v27-look-choice');
+    if(!switcher){
+      switcher=document.createElement('button');switcher.className='v27-look-choice';switcher.type='button';
+      choices.querySelector('header').after(switcher);
+    }
+    const label=custom=>{switcher.dataset.custom=String(custom);switcher.textContent=custom?'Reprendre le personnage V27':'Porter mon apparence enregistrée';};
+    let personal=false;try{personal=localStorage.getItem(prefs)==='1';}catch{}label(personal);
+    switcher.onclick=async()=>{
+      const custom=switcher.dataset.custom!=='true';switcher.disabled=true;
+      try{if(custom)await this.#dress('member',options.savedStudio,options.gender);
+        else{this.#serial.member++;this.#scene?.reset('member');}
+        try{localStorage.setItem(prefs,custom?'1':'0');}catch{}label(custom);
+      }finally{switcher.disabled=false;}
+    };
+    this.#drawer.configure(look,{...options,save:async value=>{await options.save(value);label(true);try{localStorage.setItem(prefs,'1');}catch{}}});
+    if(!changed)return;
+    return this.#ready.then(async scene=>{
+      if(!scene||this.#options!==options)return;
+      scene.setGender(options.gender);scene.reset('member');
+      // Accounts originally received a random outfit. Enter with the local duo until the member selects their own look.
+      let chosen=false;try{chosen=localStorage.getItem(prefs)==='1';}catch{}
+      if(chosen)await this.#dress('member',look,options.gender);
+    });
+  }
+  openOptions(open=true){if(this.#fallback)this.#fallback.openOptions(open);else this.#drawer.toggle(open);}
+  snapshot(){return this.#fallback?.snapshot()||this.#scene?.snapshot()||null;}
+}
+if(!customElements.get('chemins-salon'))customElements.define('chemins-salon',SalonV27);
