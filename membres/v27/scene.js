@@ -10,7 +10,7 @@ const response=await fetch('/assets/depart-duo/scene.bin');
 if(!response.ok)throw Error('Le salon ne répond pas.');
 const packed=new Uint8Array(await response.arrayBuffer());
 const files=unzipSync(packed), info=JSON.parse(strFromU8(files['index.json']));
-const diningRes=await fetch('/membres/v27/assises.bin');
+const diningRes=await fetch('/membres/v27/assises.bin?pose=canape2');
 if(!diningRes.ok)throw Error('Les poses du salon sont indisponibles.');
 const dining=unzipSync(new Uint8Array(await diningRes.arrayBuffer()));
 const poseIndex=JSON.parse(strFromU8(dining['index.json']));

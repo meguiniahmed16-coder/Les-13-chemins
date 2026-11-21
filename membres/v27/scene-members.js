@@ -6,7 +6,7 @@ export function createMemberBridge(scene){
   const originals=new Map(Object.values(actors).map(actor=>[actor,actor.parts]));
   let poses;
   function getPoses(){
-    return poses??=fetch('/membres/v27/poses.json').then(async response=>{
+    return poses??=fetch('/membres/v27/poses.json?pose=canape2').then(async response=>{
       if(!response.ok)throw Error('Les mouvements du salon sont indisponibles.');
       return response.json();
     }).catch(error=>{poses=null;throw error;});
