@@ -18,7 +18,7 @@ export function navigation(filename, memberMenu = '') {
 export function injectSharedNavigation(html, filename) {
   if (!filename.endsWith('.html') || /<meta\b[^>]*http-equiv\s*=\s*['"]refresh['"]/i.test(html)) return html;
   if (pages.has(filename) || /<nav\b[^>]*class=["'][^"']*\bsite-nav\b/i.test(html)) {
-    const memberMenu=filename==='membre.html'?html.match(/<details id="member-menu"[^>]*>[\s\S]*?<\/details>/)?.[0]:'';
+    const memberMenu=['membre.html','admin-blog.html'].includes(filename)?html.match(/<details id="(?:member|author)-menu"[^>]*>[\s\S]*?<\/details>/)?.[0]:'';
     const nav = navigation(filename,memberMenu);
     const oldNav = /<nav\b[^>]*class=["'][^"']*\bsite-nav\b[^"']*["'][^>]*>[\s\S]*?<\/nav>/i;
     html = oldNav.test(html) ? html.replace(oldNav,nav) : html.replace(/<body\b[^>]*>/i, m=>m+nav);

@@ -27,3 +27,6 @@
 @media(max-width:700px) and (orientation:portrait){
   #salon-layout.has-panel .tabpane{scroll-margin-block-start:calc(96px + clamp(145px,27dvh,255px))}
 }
+
+#preview-notice:not([hidden]){display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 14px;border:1px solid #c2cbba;border-radius:8px;background:#edf0e5;color:var(--green)}
+#preview-notice small{display:block;font-size:.85rem}

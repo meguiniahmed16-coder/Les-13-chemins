@@ -58,3 +58,12 @@ test('La connexion mène au salon et le menu du compte rassemble les accès et l
   assert.equal((menu.match(/data-nav-section=/g)||[]).length,5);
   assert.equal(injectSharedNavigation(member,'membre.html'),member);
 });
+
+test('L’espace auteur conserve un seul menu compact et ses cinq destinations après publication',()=>{
+  const html=readFileSync(new URL('./admin-blog.html',import.meta.url),'utf8');
+  const built=injectSharedNavigation(html,'admin-blog.html');
+  assert.equal((built.match(/id="author-menu"/g)||[]).length,1);
+  assert.equal((built.match(/id="author-menu-actions"/g)||[]).length,1);
+  assert.equal((built.match(/data-nav-section=/g)||[]).length,5);
+  assert.equal(injectSharedNavigation(built,'admin-blog.html'),built);
+});

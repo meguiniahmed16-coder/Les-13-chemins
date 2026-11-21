@@ -125,3 +125,19 @@ test('Les fournisseurs se configurent seulement depuis une session auteur et leu
   assert.equal(target.searchParams.get('redirect_uri'),'https://tectonique-des-ames.com/api/membres/oauth/google/callback');
   assert.equal(target.searchParams.get('client_id'),config.id);
 });
+
+test('L’aperçu gratuit isole le parcours et applique les limites du compte non abonné',async()=>{
+  const {createFreePreview}=await import('./free-preview.js');
+  const preview=createFreePreview(),original=preview('me');
+  assert.equal(original.companion,false);assert.equal(original.author,null);
+  const paid={...original.studio,outfit:{...original.studio.outfit,bas:'mh1194'}};
+  assert.throws(()=>preview('avatar',{studio:paid}));
+  const free={...original.studio,outfit:{...original.studio.outfit,haut:'mh1416'}};
+  assert.deepEqual(preview('avatar',{studio:free}).studio,free);
+  preview('journey',{games:['sarajevo']});
+  assert.deepEqual(preview('me').journey.games,['sarajevo']);
+  assert.deepEqual(createFreePreview()('me').journey.games,[]);
+  for(const path of ['checkout','admin/providers'])assert.throws(()=>preview(path,{}));
+  preview('logout',{});
+  assert.throws(()=>preview('me'),{status:401});
+});

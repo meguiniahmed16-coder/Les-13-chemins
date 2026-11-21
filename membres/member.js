@@ -1,14 +1,30 @@
+import {hasAuthorSession,logoutAuthor} from './author-access.js';
+import {createFreePreview} from './free-preview.js';
 import {normaliseStudio} from './studio-look.js';
 import {games,scenes,videos,mergeJourney,importDeviceJourney,enableJourneyTracking,disableJourneyTracking} from './journey.js';
 
 const $=id=>document.getElementById(id);
 const el=(tag,text)=>{const node=document.createElement(tag);if(text)node.textContent=text;return node;};
 const note=text=>{$('status').textContent=text;};
-const authorEntry=new URLSearchParams(location.search).get('auteur');
+const params=new URLSearchParams(location.search);
+const wantsPreview=params.get('apercu')==='non-abonne';
+const authorEntry=params.get('auteur')||(wantsPreview?'atelier':'');
+let preview;
 const adminURL=kind=>kind==='edition'?'/admin.html':'/admin-blog.html';
 let member,signup=false,appearance,playing='',recorded=false;
 const base='/api/membres/';
 async function api(path,data){
+  if(wantsPreview){
+    if(path==='me'){
+      if(!await hasAuthorSession(authorEntry)){
+        preview=null;
+        throw Object.assign(Error('Ta session auteur a expiré.'),{status:401});
+      }
+      preview??=createFreePreview();
+    }
+    if(!preview)throw Error('Rouvre l’aperçu depuis ton espace auteur.');
+    return preview(path,data);
+  }
   const response=await fetch(base+path+(authorEntry?'?auteur=1':''),{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:data?{'content-type':'application/json'}:undefined,body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(20000)});
   const result=await response.json();
   if(response.status===401 && member && path!=='me'){
@@ -154,16 +170,21 @@ async function loadProviderOptions(){
 async function refresh(){
   const previous=member, previousDraft=appearance;
   try{member=await api('me');}catch(e){if(e.status!==401)throw e;member=null;}
+  const authorOnly=Boolean(authorEntry&&!preview);
+  $('preview-notice').hidden=!preview;
+  $('leave-preview').href=adminURL(authorEntry);
+  $('preview-entry').hidden=!member?.author;
+  if(member?.author)$('preview-entry').href='/membre.html?auteur='+encodeURIComponent(member.author)+'&apercu=non-abonne';
   $('photo-link').hidden=!member;
-  $('access-options').hidden=Boolean(member||authorEntry);$('tabs').hidden=!member;
+  $('access-options').hidden=Boolean(member||authorOnly);$('tabs').hidden=!member;
   $('auth').hidden=Boolean(member);$('member').hidden=!member;$('logout').hidden=!member;
-  $('admin-return').hidden=!member?.author && !authorEntry;
+  $('admin-return').hidden=Boolean(preview)||(!member?.author&&!authorOnly);
   $('admin-return').href=adminURL(member?.author||authorEntry);
   if(!member){
     $('room').replaceChildren();$('admin-providers').replaceChildren();
     $('photo').removeAttribute('src');appearance=null;
-    disableJourneyTracking();
-    if(authorEntry){
+    if(!wantsPreview)disableJourneyTracking();
+    if(authorOnly){
       $('auth').hidden=true;
       note('Ta session auteur a expiré. Rouvre ton administration pour accéder au salon.');
       return;
@@ -172,14 +193,13 @@ async function refresh(){
     const providers=await loadProviderOptions().catch(()=>({}));
     for(const key of ['google','facebook']){
       $(key).hidden=$(key).disabled=!providers[key];
-      $(key).onclick=()=>location.assign(base+'oauth/'+key);
+      $(key).onclick=()=>preview?note('Quitte l’aperçu pour te connecter à un autre compte.'):location.assign(base+'oauth/'+key);
     }
     $('google').parentElement.hidden=!Object.values(providers).some(Boolean);
     if(new URLSearchParams(location.search).has('connexion'))note('Connexion interrompue. Tu peux réessayer.');
     return;
   }
-  enableJourneyTracking(member.id);
-  $('logout').hidden=Boolean(member.author);
+  if(!wantsPreview)enableJourneyTracking(member.id);
   $('provider-settings').hidden=!member.author;
   $('photo').src='/assets/membres/summer-man.webp';
   $('profile-form').elements.birth.required=!member.author;
@@ -205,10 +225,17 @@ async function refresh(){
 }
 function chooseAccess(value){mode(value);closeMenu();$('email').focus();}
 $('choose-login').onclick=()=>chooseAccess(false);$('choose-signup').onclick=()=>chooseAccess(true);
-$('auth-form').onsubmit=action(async e=>{const form=e.target;await api(signup?'signup':'login',Object.fromEntries(new FormData(form)));form.reset();await refresh();});
-$('logout').onclick=action(async()=>{await api('logout',{});disableJourneyTracking();closeFilm();await refresh();});
+$('auth-form').onsubmit=action(async e=>{if(preview){note('Quitte l’aperçu pour te connecter à un autre compte.');return;}const form=e.target;await api(signup?'signup':'login',Object.fromEntries(new FormData(form)));form.reset();await refresh();});
+$('logout').onclick=action(async()=>{
+  if(wantsPreview){await api('logout',{});closeFilm();await refresh();note('Le membre de démonstration est déconnecté.');return;}
+  if(member?.author){
+    const kind=member.author;
+    await logoutAuthor(kind);disableJourneyTracking();location.replace(adminURL(kind));return;
+  }
+  await api('logout',{});disableJourneyTracking();closeFilm();await refresh();
+});
 $('profile-form').onsubmit=action(async e=>{await api('profile',Object.fromEntries(new FormData(e.target)));await refresh();note('Ton profil est enregistré.');});
-$('import').onclick=action(async()=>{const found=importDeviceJourney();await api('journey',{memberId:member.id,...found});member.journey=mergeJourney(member.journey,found);renderJourney();note(Object.values(found).some(x=>x.length)?'Le parcours de cet appareil a été ajouté à ton parcours.':'Aucune ancienne étape enregistrée sur cet appareil.');});
+$('import').onclick=action(async()=>{if(wantsPreview){note('Dans cet aperçu, le parcours de démonstration démarre à zéro.');return;}const found=importDeviceJourney();await api('journey',{memberId:member.id,...found});member.journey=mergeJourney(member.journey,found);renderJourney();note(Object.values(found).some(x=>x.length)?'Le parcours de cet appareil a été ajouté à ton parcours.':'Aucune ancienne étape enregistrée sur cet appareil.');});
 $('subscribe').onclick=action(async()=>{const result=await api('checkout',{});location.assign(result.url);});
 $('close-player').onclick=closeFilm;
 $('film-player').addEventListener('error',()=>{const f=videos.find(x=>x.id===playing);if(!f)return;const player=$('film-player');if(f.alternate&&player.src===f.alternate){player.src=f.url;player.play().catch(()=>{});}else note('Cette vidéo est momentanément indisponible.');});
@@ -217,7 +244,7 @@ window.addEventListener('hashchange',setPage);
 window.addEventListener('pageshow',e=>{if(e.persisted)void openSpace();});
 async function start(){
   await refresh();
-  if(member&&new URLSearchParams(location.search).get('abonnement')==='retour'){
+  if(member&&!wantsPreview&&new URLSearchParams(location.search).get('abonnement')==='retour'){
     history.replaceState(null,'','/membre.html#abonnement');setPage();
     for(let attempt=0;attempt<5&&!member?.companion;attempt++){
       note('Stripe confirme ton abonnement…');await new Promise(r=>setTimeout(r,2200));if(!member)return;await refresh();
