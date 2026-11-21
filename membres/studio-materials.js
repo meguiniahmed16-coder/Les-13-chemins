@@ -19,14 +19,14 @@ const makeupColors=[
 
 const decoded=async name=>pixels(await resource('map-'+name));
 const buffers=new Map();
-export function material(key,look){
+export function material(key,look,female=false){
  const a=look.face;
  let style=key;
- if(key==='skin')style+=[a.age,look.skinLevel,a.makeup,a.beard,a.pile,a.hairTone].join('/');
+ if(key==='skin')style+=[female,a.age,look.skinLevel,a.makeup,a.beard,a.pile,a.hairTone].join('/');
  else if(key==='eye')style+=a.iris+look.iris;
  else if(key.startsWith('hair')||['brow','lash'].includes(key))style+=[a.hairTone,a.brows,a.lashes,a.makeup].join('/');
  if(buffers.has(style))return buffers.get(style);
- const promise=(key==='skin'?skin(look):detail(key,look)).catch(e=>{buffers.delete(style);throw e});
+ const promise=(key==='skin'?skin(look,female):detail(key,look)).catch(e=>{buffers.delete(style);throw e});
  buffers.set(style,promise);if(buffers.size>18)buffers.delete(buffers.keys().next().value);return promise;
 }
 async function detail(key,look){
@@ -66,10 +66,12 @@ async function detail(key,look){
  }
  return new ImageData(out,base.width,base.height);
 }
-async function skin(look){
- const a=look.face,hair=hairPalettes[a.hairTone][0],ages=['young','middleage','old'],[ageIndex,age]=[[0,0],[0,.45],[0,.96],[1,.52],[1,1]][a.age];
+async function skin(look,female){
+ const a=look.face,hair=hairPalettes[a.hairTone][0],ages=['young','middleage','old'],[ageIndex,age]=[[0,0],[0,.45],[0,.96],[1,.52],[1,1],[0,0]][a.age];
+ const maps=female?await resource('female-skin'):null;
+ const skinMap=key=>maps?pixels(maps[key]):decoded('skin-'+key);
  const [la,lb,da,db,oral,makeup,pile,beard]=await Promise.all([
-  ...['caucasian','african'].flatMap(tone=>[ageIndex,ageIndex+1].map(i=>decoded('skin-'+ages[i]+'_'+tone))),
+  ...['caucasian','african'].flatMap(tone=>[ageIndex,ageIndex+1].map(i=>skinMap(ages[i]+'_'+tone))),
   resource('map-oral'),a.makeup?resource('map-cosmetics'):null,a.pile?resource('map-pile'):null,a.beard?resource('map-beard-'+a.beard):null]);
  const lev=look.skinLevel/100,frac=clamp((lev-.16)/.77,0,1),light=Math.max(0,(.16-lev)/.16)*.2,dark=1-.19*Math.max(0,(lev-.93)/.07);
  const n=la.width,out=new ImageData(n,n),rgb=out.data,palette=makeupColors[a.makeup];

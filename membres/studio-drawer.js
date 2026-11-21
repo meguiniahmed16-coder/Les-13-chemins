@@ -1,5 +1,5 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js';
-import {legacyStudio,normaliseStudio,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
+import {normaliseStudio,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
@@ -42,14 +42,15 @@ export function createDrawer(root,apply,frameModel){
   }
   const views=make('div');views.className='figure-tools';views.setAttribute('role','group');views.setAttribute('aria-label','Vues du modèle');
   for(const title of ['Corps','Visage','Profil','Dos']){const b=make('button',title);b.type='button';b.onclick=()=>frameModel(title);views.append(b);}
-  parent.append(views);const reset=make('button','Rétablir l’apparence de départ');reset.type='button';
-  reset.onclick=()=>{const initial=legacyStudio();choose({...look,face:initial.face,skinLevel:initial.skinLevel,iris:''});};parent.append(reset);
+  parent.append(views);const reset=make('button','Rétablir l’apparence enregistrée');reset.type='button';
+  reset.onclick=()=>{const {face,skinLevel,iris}=options.savedStudio;choose({...look,face,skinLevel,iris});};parent.append(reset);
 
  }
- function card(parent,label,index,locked,selected,click,author=''){
+ function card(parent,label,index,locked,selected,click,author='',sheet=''){
   const b=make('button'),preview=make('span');b.type='button';b.className='piece';b.dataset.search=(label+' '+author).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();b.disabled=locked;
   preview.className='swatch';preview.style.backgroundPosition=(-48*(index%12))+'px '+(-60*Math.floor(index/12))+'px';
-  preview.style.backgroundSize='576px '+(60*thumbRows)+'px';b.append(preview,make('span',label+(locked?' · Compagnon':'')));
+  if(sheet==='femme')preview.style.backgroundImage="url('/assets/salon-v27/pieces-femme.webp')";
+  preview.style.backgroundSize='576px '+(sheet==='femme'?60:60*thumbRows)+'px';b.append(preview,make('span',label+(locked?' · Compagnon':'')));
   let lastTap=-Infinity;
   b.onclick=event=>{
    const now=performance.now();if(event.detail>0&&now-lastTap<430)return;
@@ -78,7 +79,7 @@ export function createDrawer(root,apply,frameModel){
       const outfit={...look.outfit};if(outfit[slot]===p.id)delete outfit[slot];
       else{if(slot==='robe'){delete outfit.haut;delete outfit.bas;}if(slot==='bas'||slot==='haut')delete outfit.robe;outfit[slot]=p.id;}
       choose({...look,outfit});
-     },p.author);
+     },p.author,p.sheet);
     }
     if(group==='tenues'||group==='sport')for(const [id,name,outfit,thumb] of looks.filter(([id])=>['course','training'].includes(id)===(group==='sport'))){
      card(grid,name,thumb,!options.plus&&Object.values(outfit).some(id=>!freePiece(id)),()=>Object.keys(outfit).length===Object.keys(look.outfit).length&&Object.entries(outfit).every(([s,id])=>look.outfit[s]===id),()=>choose({...look,outfit,denim:false,tortoise:false}));
@@ -101,8 +102,8 @@ export function createDrawer(root,apply,frameModel){
  }
  tabs.forEach((b,i)=>b.onclick=()=>{mode=i;render();});
  save.onclick=async()=>{
-  if(writing||save.disabled)return;const version=revision;writing=true;save.disabled=true;message.textContent='Enregistrement…';
-  try{await current;await options.save(look);if(version===revision)message.textContent='Enregistré.';}
+  if(writing||save.disabled)return;const version=revision,draft=look,settings=options,ready=current;writing=true;save.disabled=true;message.textContent='Enregistrement…';
+  try{await ready;await settings.save(draft);settings.savedStudio=draft;if(version===revision)message.textContent='Enregistré.';}
   catch(e){if(version===revision)message.textContent=e.message||'Enregistrement interrompu.';}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };

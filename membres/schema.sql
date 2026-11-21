@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS members (
   id TEXT PRIMARY KEY, provider TEXT NOT NULL, subject TEXT NOT NULL,
   email TEXT NOT NULL, secret TEXT, pseudo TEXT NOT NULL, birth TEXT NOT NULL,
-  name TEXT NOT NULL DEFAULT '', avatar TEXT NOT NULL, created INTEGER NOT NULL,
+  name TEXT NOT NULL DEFAULT '', gender TEXT NOT NULL DEFAULT '', avatar TEXT NOT NULL, created INTEGER NOT NULL,
   UNIQUE(provider,subject)
 );
 CREATE TABLE IF NOT EXISTS member_sessions (token TEXT PRIMARY KEY, member TEXT NOT NULL REFERENCES members(id), expires INTEGER NOT NULL);

@@ -24,7 +24,7 @@ function setup(){
   const api=(path,body,session,from=origin)=>worker.fetch(new Request(origin+'/api/membres/'+path,{method:body?'POST':'GET',headers:{origin:from,cookie:session||'','content-type':'application/json'},body:body?JSON.stringify(body):undefined}),env);
   return {db,DB,api,env};
 }
-const account={email:'account@example.invalid',password:'passphrase-bateau',birth:'1977-06-28',pseudo:'Ahmed',name:''};
+const account={email:'account@example.invalid',password:'passphrase-bateau',birth:'1977-06-28',gender:'homme',pseudo:'Ahmed',name:''};
 test('Le compte privé persiste, les accès sont séparés et la déconnexion révoque la session',async()=>{
   const {api}=setup();
   assert.equal((await api('me')).status,401);
@@ -127,17 +127,69 @@ test('Les fournisseurs se configurent seulement depuis une session auteur et leu
 });
 
 test('L’aperçu gratuit isole le parcours et applique les limites du compte non abonné',async()=>{
-  const {createFreePreview}=await import('./free-preview.js');
-  const preview=createFreePreview(),original=preview('me');
+  const {createMemberPreview}=await import('./free-preview.js');
+  const preview=createMemberPreview(),original=preview('me');
   assert.equal(original.companion,false);assert.equal(original.author,null);
   const paid={...original.studio,outfit:{...original.studio.outfit,bas:'mh1194'}};
   assert.throws(()=>preview('avatar',{studio:paid}));
   const free={...original.studio,outfit:{...original.studio.outfit,haut:'mh1416'}};
+  delete free.outfit.robe;
   assert.deepEqual(preview('avatar',{studio:free}).studio,free);
   preview('journey',{games:['sarajevo']});
   assert.deepEqual(preview('me').journey.games,['sarajevo']);
-  assert.deepEqual(createFreePreview()('me').journey.games,[]);
+  assert.deepEqual(createMemberPreview()('me').journey.games,[]);
   for(const path of ['checkout','admin/providers'])assert.throws(()=>preview(path,{}));
   preview('logout',{});
   assert.throws(()=>preview('me'),{status:401});
+});
+
+test('L’inscription crée une seule apparence pour le genre et l’âge choisis',async()=>{
+  const {api}=setup();
+  for(const gender of [undefined,'invalide'])assert.equal((await api('signup',{...account,gender})).status,400);
+  const year=new Date().getUTCFullYear();
+  for(const [gender,birth,index] of [['femme',(year-71)+'-01-01',4],['homme',(year-15)+'-01-01',5]]){
+    const data={...account,email:gender+'@example.invalid',gender,birth};
+    const r=await api('signup',data);assert.equal(r.status,200);
+    const cookie=r.headers.get('set-cookie').split(';')[0];
+    const first=await (await api('me',null,cookie)).json();
+    assert.equal(first.gender,gender);assert.equal(first.studio.face.age,index);
+    const studio={...first.studio,face:{...first.studio.face,nose:1}};
+    assert.equal((await api('avatar',{avatar:first.avatar,studio},cookie)).status,200);
+    await api('logout',{},cookie);const login=await api('login',data);
+    const next=await (await api('me',null,login.headers.get('set-cookie').split(';')[0])).json();
+    assert.deepEqual(next.studio,studio);assert.equal(next.gender,gender);
+  }
+});
+test('La fin de l’inscription sociale initialise le modèle après le choix du genre',async()=>{
+  const {db,DB,api}=setup();
+  const {newSession}=await import('./identity.mjs');
+  const id=crypto.randomUUID();
+  db.prepare("INSERT INTO members(id,provider,subject,email,pseudo,birth,avatar,created) VALUES(?,'google','test','test@example.invalid','','','{}',0)").run(id);
+  const cookie=(await newSession(DB,id)).split(';')[0];
+  const data={pseudo:'Test',birth:(new Date().getUTCFullYear()-55)+'-01-01',gender:'femme'};
+  assert.equal((await api('profile',{...data,gender:''},cookie)).status,400);
+  assert.equal((await api('profile',data,cookie)).status,200);
+  const model=await (await api('me',null,cookie)).json();
+  assert.equal(model.gender,'femme');assert.equal(model.studio.face.age,3);
+  await api('profile',{...data,name:'Test Deux'},cookie);
+  assert.deepEqual((await (await api('me',null,cookie)).json()).studio,model.studio);
+});
+test('Les deux genres existent dans les deux aperçus avec les droits du plan et des tirages variés',async()=>{
+  const {createMemberPreview}=await import('./free-preview.js');
+  const {startingAppearance,visualAge}=await import('./starting-appearance.js');
+  const date=new Date('2026-11-21T10:00:00Z');
+  for(const [birth,n] of [['2008-11-22',5],['2008-11-21',0],['1996-11-21',1],['1986-11-21',2],['1976-11-21',3],['1961-11-21',4]])assert.equal(visualAge(birth,date),n);
+  for(const gender of ['homme','femme']){
+    const values=Array.from({length:40},()=>startingAppearance(gender,'1988-05-03').studio);
+    for(const field of [s=>s.skinLevel,s=>s.face.hair,s=>s.face.iris,s=>s.outfit.haut,s=>s.outfit.souliers])
+      assert.ok(new Set(values.map(field)).size>1);
+    for(const companion of [false,true]){
+      const demo=createMemberPreview(gender,companion),p=demo('me');
+      assert.equal(p.gender,gender);assert.equal(p.companion,companion);assert.equal(p.author,null);
+      const studio={...p.studio,outfit:{...p.studio.outfit,bas:'mh1194'}};
+      delete studio.outfit.robe;
+      if(companion)assert.deepEqual(demo('avatar',{studio}).studio,studio);
+      else assert.throws(()=>demo('avatar',{studio}));
+    }
+  }
 });

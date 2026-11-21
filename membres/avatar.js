@@ -193,7 +193,7 @@ function createView(canvas,roomBytes,lightMap) {
 
 export class CheminsAvatar extends HTMLElement {
 
-  #look=legacyStudio(); #figure; #pending; #drawer; #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
+  #look=legacyStudio(); #gender; #figure; #pending; #drawer; #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
   #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #state; #software=false; #frame=0; #last=0; #controls;
   constructor(){
     super();
@@ -206,7 +206,7 @@ export class CheminsAvatar extends HTMLElement {
     this.#gpu.addEventListener('webglcontextlost',e=>{e.preventDefault();if(this.isConnected)this.#open(true);});
     this.#gpu.addEventListener('webglcontextrestored',()=>{if(this.isConnected)this.#open();});
   }
-  configure(look,options){this.#drawer.configure(look,options);return this.apply(look);}
+  configure(look,options){if(this.#gender!==options.gender){this.#pending=null;this.#gender=options.gender;}this.#drawer.configure(look,options);return this.apply(look);}
   openOptions(open=true){this.#drawer.toggle(open);}
   #frameModel(view){
     if(!this.#view)return;
@@ -224,7 +224,7 @@ export class CheminsAvatar extends HTMLElement {
   async apply(look){
     if(this.#pending&&JSON.stringify(this.#look)===JSON.stringify(look))return this.#pending;
     this.#look=look;
-    const p=loadStudio(look);this.#pending=p;
+    const p=loadStudio(look,this.#gender);this.#pending=p;
     try{const figure=await p;if(p===this.#pending){this.#figure=figure;this.#schedule();}return figure;}
     catch(error){if(p===this.#pending)this.#pending=null;throw error;}
   }

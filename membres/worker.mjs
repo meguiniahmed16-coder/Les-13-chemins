@@ -1,5 +1,6 @@
 import {normaliseStudio,exactStudio} from './studio-look.js';
-import {avatarCatalog,normaliseAvatar,randomAvatar} from './avatar-catalog.js';
+import {validGender,startingAppearance,visualAge} from './starting-appearance.js';
+import {avatarCatalog,normaliseAvatar} from './avatar-catalog.js';
 import {mergeJourney} from './journey.js';
 import {membership,checkout,stripeWebhook} from './billing.mjs';
 import {current,newSession,sessionName,cookie,cookieValue,digest,secret,profile,ageBand,now,rate,fail} from './identity.mjs';
@@ -17,7 +18,7 @@ async function view(db,m,author){
   const rows=await sql(db,'SELECT kind,item FROM member_activity WHERE member=?',m.id).all();
   const journey={games:[],videos:[],scenes:[]};for(const row of rows.results)journey[row.kind]?.push(row.item);
   const saved=JSON.parse(m.avatar),plus=Boolean(author)||billing.companion;
-  return {studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus)),id:m.id,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
+  return {studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus)),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
 }
 async function owner(r,env,path){
   if(!await authorSession(r,env))fail(401,'Connecte-toi à l’administration.');
@@ -64,9 +65,10 @@ export default {
       await rate(db,path+':ip:'+request.headers.get('cf-connecting-ip'),path==='signup'?80:250);
       let id;
       if(path==='signup'){
-        const p=profile(b);if(password.length<10)fail(400,'Choisis un mot de passe de dix caractères ou plus.');
+        const p=profile(b);if(!validGender(b.gender))fail(400,'Choisis Homme ou Femme pour ton avatar.');
+        if(password.length<10)fail(400,'Choisis un mot de passe de dix caractères ou plus.');
         id=crypto.randomUUID();
-        const result=await sql(db,"INSERT INTO members(id,provider,subject,email,secret,pseudo,birth,name,avatar,created) VALUES(?,'email',?,?,?,?,?,?,?,?) ON CONFLICT(provider,subject) DO NOTHING",id,email,email,await secret(password),p.pseudo,p.birth,p.name,JSON.stringify(randomAvatar()),now()).run();
+        const result=await sql(db,"INSERT INTO members(id,provider,subject,email,secret,pseudo,birth,name,gender,avatar,created) VALUES(?,'email',?,?,?,?,?,?,?,?,?) ON CONFLICT(provider,subject) DO NOTHING",id,email,email,await secret(password),p.pseudo,p.birth,p.name,b.gender,JSON.stringify(startingAppearance(b.gender,p.birth)),now()).run();
         if(!result.meta.changes)fail(409,'Cette adresse possède déjà un compte. Essaie de te connecter.');
       }else{
         const m=await sql(db,"SELECT id,secret FROM members WHERE provider='email' AND subject=?",email).first();
@@ -86,7 +88,18 @@ export default {
       return json({ok:true},200,{'set-cookie':cookie(sessionName,'',0)});
     }
     if(path==='profile'&&request.method==='POST'){
-      const p=profile(await read(request),Boolean(author));await sql(db,'UPDATE members SET pseudo=?,birth=?,name=? WHERE id=?',p.pseudo,p.birth,p.name,m.id).run();
+      const input=await read(request),p=profile(input,Boolean(author));
+      const gender=input.gender||m.gender;
+      const onboarding=!author&&!m.pseudo&&!m.birth;
+      if((onboarding||gender)&&!validGender(gender))fail(400,'Choisis Homme ou Femme pour ton avatar.');
+      if(onboarding){
+        const look=startingAppearance(gender,p.birth);
+        await sql(db,"UPDATE members SET pseudo=?,birth=?,name=?,gender=?,avatar=? WHERE id=? AND pseudo='' AND birth=''",p.pseudo,p.birth,p.name,gender,JSON.stringify(look),m.id).run();
+      }else{
+        // A profile edit must not overwrite a wardrobe saved from another tab.
+        const updateAge=Boolean(p.birth&&p.birth!==m.birth);
+        await sql(db,"UPDATE members SET pseudo=?,birth=?,name=?,gender=?,avatar=CASE WHEN ? AND json_type(avatar,'$.studio.face')='object' THEN json_set(avatar,'$.studio.face.age',?) ELSE avatar END WHERE id=?",p.pseudo,p.birth,p.name,gender,Number(updateAge),updateAge?visualAge(p.birth):0,m.id).run();
+      }
       return json({ok:true});
     }
     if(!author&&(!m.birth||!m.pseudo))fail(409,'Complète ton profil.');

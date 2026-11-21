@@ -121,6 +121,15 @@ function morph(m,appearance,hat){
   }
  }
 
+ if(appearance.age===5){
+  // Keep the feet and seat anchors in place while softening the jaw and shortening the upper torso.
+  for(let i=0;i<dest.length;i+=3){
+   const y=dest[i+1]/100;
+   const jaw=smoothStep(137,145,y)*(1-smoothStep(147,153,y));
+   dest[i]=Math.round(dest[i]*(1-.035*jaw));
+   dest[i+1]-=Math.round(235*smoothStep(90,150,y));
+  }
+ }
  if(hairList.includes(m.name))tuckHairUnderHat(dest,hat);
  return dest;
 }
@@ -128,11 +137,15 @@ function displayMesh(mesh,n){
  const uv=mesh.uv.slice();for(let i=1;i<uv.length;i+=2)uv[i]=65535-uv[i];
  return {...mesh,uv,n,v:new Int16Array(n*3),vn:new Int8Array(n*3),allFaces:mesh.faces,multiplier:[1,1,1]};
 }
-export async function loadStudio(look){
+export async function loadStudio(look,gender){
+ const female=gender==='femme';
+ const baseShape=female?await resource('female-base'):null;
+ const outfit={...look.outfit};
+ if((female||look.face.age===5)&&!outfit.haut&&!outfit.robe)outfit.haut=female?'mh22':'mh1431';
  const names=['body','eyesNative','browNative','lashes','teethNative','tongueNative',hairList[look.face.hair]];
  const [native,entries]=await Promise.all([
-  Promise.all(names.map(async name=>{const m=await resource('mesh-'+name);return {...m,image:await material(m.texture,look)};})),
-  Promise.all(Object.entries(look.outfit).map(async ([slot,id])=>{
+  Promise.all(names.map(async name=>{const m=await resource('mesh-'+name);return {...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};})),
+  Promise.all(Object.entries(outfit).map(async ([slot,id])=>{
    const raw=await resource('wear-'+id),m=displayMesh(raw,raw.binding.length/8);m.image=await pixels(raw.image);
    m.accum=new Float32Array(m.v.length);m.tailored=true;
    if(id==='mh807'&&look.denim)m.multiplier=[.47,.54,.69];if(id==='mh153'&&look.tortoise)m.multiplier=[1.1,.76,.52];

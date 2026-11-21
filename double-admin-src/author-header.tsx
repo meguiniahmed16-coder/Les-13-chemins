@@ -43,6 +43,7 @@ export default function AuthorHeader({onLogout}:{onLogout:()=>void}){
   </div></header>
   {menuHost&&createPortal(<><div role="group" aria-label="Espace auteur">{links}</div>
     <div className="menu-destinations" role="group" aria-label="Mon compte">
+      <a href={salon+'&apercu=abonne'}>Voir comme un membre abonné</a>
       <a href={salon+'&apercu=non-abonne'}>Voir comme un membre non abonné</a>{accountActions(true)}
     </div></>,menuHost)}</>;
 }

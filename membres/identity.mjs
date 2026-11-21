@@ -1,3 +1,4 @@
+import {yearsAt} from './starting-appearance.js';
 const encoder=new TextEncoder();
 const hex=b=>Array.from(new Uint8Array(b),v=>v.toString(16).padStart(2,'0')).join('');
 const unhex=h=>Uint8Array.from(h.match(/../g)||[],x=>parseInt(x,16));
@@ -15,8 +16,7 @@ export function profile(body,optionalBirth=false){
 }
 export function ageBand(birth,date=new Date()){
   if(!birth)return '';
-  const today=date.toISOString().slice(0,10);
-  const age=Number(today.slice(0,4))-Number(birth.slice(0,4))-(today.slice(5)<birth.slice(5)?1:0);
+  const age=yearsAt(birth,date);
   if(age<18)return 'Moins de 18 ans';
   if(age<25)return '18–24 ans';if(age<35)return '25–34 ans';if(age<50)return '35–49 ans';if(age<65)return '50–64 ans';return '65 ans et plus';
 }

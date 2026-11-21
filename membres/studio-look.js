@@ -3,7 +3,7 @@ import {traits,pieces} from './studio-catalog.js';
 export const slots={hauts:'haut',pantalons:'bas',jupes:'bas',robes:'robe',vestes:'veste',chaussures:'souliers',culottes:'culotte',collants:'collant',chaussettes:'chaussette',combinaisons:'robe',chapeaux:'chapeau',lunettes:'lunettes',gants:'gants',masques:'masque',bijoux:'bijou',accessoires:'accessoire'};
 export const byId=new Map(pieces.map(p=>[p.id,p]));
 export const skinSteps=[0,12,22,34,47,60,74,88,100];
-const common=new Set(['mh2909','mh1416','mh807','mh1655','mh1732','mh438','mh153','mh3461','mh3462']);
+const common=new Set(['mh2909','mh1416','mh807','mh1655','mh1732','mh438','mh153','mh3461','mh3462','mh22','mh1158','mh1728','mh1727','mh1640','mh1734']);
 // Every drawer includes a free entry. Keep the original paid choices on the companion plan.
 for(const group of Object.keys(slots)){
   const first=pieces.find(p=>p.group===group&&!['mh1194','mh1203'].includes(p.id));
@@ -11,7 +11,7 @@ for(const group of Object.keys(slots)){
 }
 export const freePiece=id=>common.has(id);
 export function freeTrait(key,i){
-  if(key==='skin'||key==='iris')return true;
+  if(key==='skin'||key==='iris'||key==='age')return true;
   if(key==='hair')return [1,7,9].includes(i);
   if(key==='face')return [0,3].includes(i);
   if(key==='pile')return [0,1,2].includes(i);

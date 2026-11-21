@@ -84,11 +84,12 @@ export const traits = [
   "key": "age",
   "label": "Tranche d’âge",
   "options": [
-   "20–29 ans",
+   "18–29 ans",
    "30–39 ans",
    "40–49 ans",
    "50–64 ans",
-   "65–80 ans"
+   "65 ans et plus",
+   "Moins de 18 ans"
   ]
  },
  {
@@ -1534,7 +1535,19 @@ export const pieces = [
   "license": "CC0",
   "source": "https://files.makehumancommunity.org/sites/default/files/clothes/39/1438803629/wrestling_suit.mhclo",
   "thumb": 121
- }
+ },
+ {"id":"mh22","label":"T-shirt droit","group":"hauts","author":"Joel Palmius","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1/crudefemaletshirt.mhclo","thumb":0,"sheet":"femme"},
+ {"id":"mh1158","label":"Chemisier","group":"hauts","author":"reizibarrientos","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1601/2039487116/preppyblouse.mhclo","thumb":1,"sheet":"femme"},
+ {"id":"mh1338","label":"T-shirt tie-dye","group":"hauts","author":"Mayhem281","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/2961/798660404/tie_dye_shirt_female.mhclo","thumb":2,"sheet":"femme"},
+ {"id":"mh1728","label":"Pantalon ample","group":"pantalons","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/41028514/pants_harem.mhclo","thumb":3,"sheet":"femme"},
+ {"id":"mh2800","label":"Short en jean","group":"pantalons","author":"Cortu","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/4298/1882157200/jean_shorts.mhclo","thumb":4,"sheet":"femme"},
+ {"id":"mh1727","label":"Jupe longue","group":"jupes","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/822388727/skirt_full_long.mhclo","thumb":5,"sheet":"femme"},
+ {"id":"mh417","label":"Jupe rouge","group":"jupes","author":"reizibarrientos","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1601/1221480974/ewan.mhclo","thumb":6,"sheet":"femme"},
+ {"id":"mh1640","label":"Robe à volants","group":"robes","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/1866133041/dresstierskirt.mhclo","thumb":7,"sheet":"femme"},
+ {"id":"mh1853","label":"Robe au genou","group":"robes","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/1857475569/dress_knee_halter.mhclo","thumb":8,"sheet":"femme"},
+ {"id":"mh1734","label":"Ballerines","group":"chaussures","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/1461460635/flats_ballet.mhclo","thumb":9,"sheet":"femme"},
+ {"id":"mh1738","label":"Bottines","group":"chaussures","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/609559763/boots_ankle.mhclo","thumb":10,"sheet":"femme"},
+ {"id":"mh674","label":"Gilet à capuche","group":"vestes","author":"RadicalToast","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/2045/2053108029/hooded_cardigan.mhclo","thumb":11,"sheet":"femme"}
 ];
 export const looks = [
  [
