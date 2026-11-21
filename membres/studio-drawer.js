@@ -100,6 +100,9 @@ export function createDrawer(root,apply,frameModel){
  function render(){
   if(!look)return;controls.length=0;pane.replaceChildren();
   tabs.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===mode)));
+  const departure=make('a','Le départ à deux');
+  departure.href='/le-depart-a-deux.html';
+  pane.append(departure);
   (mode?wardrobe:appearance)(pane);
   if(options.privateURL){const a=make('a','Mon atelier privé');a.href=options.privateURL;pane.append(a);}
   sync();

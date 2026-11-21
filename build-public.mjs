@@ -72,6 +72,7 @@ const publicFiles = [
   'soutien.css',
   'soutien.js',
   'soutien-config.json',
+  'le-depart-a-deux.html', 'assets/depart-duo/scene.js', 'assets/depart-duo/scene.bin',
   'membre.html','membre-atelier.html','membres/member.css','membres/member.js','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
   'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon-v27.bin','assets/membres/salon-v27-light.bin','assets/membres/salon-v27-apercu.webp','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
   'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/salon-voice.js','membres/salon-voice-worker.js','membres/salon-voice-credits.txt','membres/salon-dictee.js','membres/salon-dictee-worker.js',
