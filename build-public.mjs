@@ -1,3 +1,4 @@
+import {buildDeparture} from './scripts/build-depart.mjs';
 import {buildSalonVoices} from './scripts/build-salon-voices.mjs';
 import {buildSalonAssets} from './scripts/build-salon-assets.mjs';
 import { copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -72,11 +73,11 @@ const publicFiles = [
   'soutien.css',
   'soutien.js',
   'soutien-config.json',
-  'le-depart-a-deux.html', 'assets/depart-duo/scene.js', 'assets/depart-duo/scene.bin',
+  'le-depart-a-deux.html',
   'membre.html','membre-atelier.html','membres/member.css','membres/member.js','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
   'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon-v27.bin','assets/membres/salon-v27-light.bin','assets/membres/salon-v27-apercu.webp','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
   'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/salon-voice.js','membres/salon-voice-worker.js','membres/salon-voice-credits.txt','membres/salon-dictee.js','membres/salon-dictee-worker.js',
-  'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
+  'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-raster.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
   'accueil.css', 'accueil-rencontre.js',
   'ahmed-marie.html',
@@ -257,6 +258,7 @@ const arrivalData = stops.map((stop, i) => {
   return {...base, plateaux:[{...base,plateau:1},...extra]};
 });
 await mkdir(output);
+await buildDeparture(root,output);
 await buildSalonAssets(root,output);
 await buildSalonVoices(root,output);
 const terms=await readFile(join(root,termsFile.slice(1)),'utf8');

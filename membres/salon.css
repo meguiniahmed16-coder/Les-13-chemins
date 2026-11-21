@@ -98,3 +98,18 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .chat-feedback,.voice-state,.dictation-state{grid-column:1/-1;margin:0;font-size:13px;line-height:1.3}
 .chat-feedback{display:flex;align-items:center;gap:6px}.chat-feedback:has(.chat-state:empty):has(.retry-message[hidden]),.voice-state:empty,.dictation-state:empty{display:none}
 @media(max-height:430px){.stage.immersive:has(.guest-message:focus) .conversation-tools,.stage.immersive:has(.guest-message:focus) .camera-slot{display:none}}
+
+.depart-tools{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:5px 8px;background:#f4f1e6;border-top:1px solid #c9c9b8}
+.depart-tools button,#bookcase button,#bookList{min-height:34px;border:1px solid #a8b2a5;border-radius:6px;padding:5px 10px;background:#fffdf5;color:#244636;font:600 13px/1.25 system-ui}
+.depart-tools #chooseDeparture,.depart-tools #angelMode,.depart-tools #beat{background:#294e40;color:white}
+#departChoices,#flightControls,#trickList{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+#departChoices strong{font-size:13px}.depart-tools output{font-variant-numeric:tabular-nums;font-size:13px}
+.stage{grid-template-rows:minmax(0,1fr) auto}
+.stage:has(.conversation-footer:not([hidden])){grid-template-rows:minmax(0,1fr) auto auto}
+.in-garden #chooseDeparture,.in-garden .options-toggle,.in-garden .pan,.in-garden [data-shot]{display:none}
+#bookcase{max-width:min(400px,90%);max-height:86%;overflow:auto;border:1px solid #a8b2a5;border-radius:9px;background:#faf7ed;color:#244636}
+#bookcase h2{font:500 22px Georgia,serif}#bookcase select,#bookcase a{display:block;margin-bottom:12px}
+@media(max-width:650px) and (orientation:portrait){
+ .stage:has(.studio-drawer:not([hidden])){grid-template-rows:minmax(180px,1fr) minmax(210px,43%) auto}
+ .stage:has(.studio-drawer:not([hidden])):has(.conversation-footer:not([hidden])){grid-template-rows:minmax(160px,1fr) minmax(180px,40%) auto auto}
+}

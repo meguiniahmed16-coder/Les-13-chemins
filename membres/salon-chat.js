@@ -104,6 +104,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   }
   reader.querySelector('button').onclick=closeReader;
   reader.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();closeReader();}};
+  let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
   const threads=new Map();
   const dictee=createDictee({
@@ -150,6 +151,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   };
   function cancelRequest(){request?.abort();request=null;dictee.cancel();}
   function finish(clear=false){
+    onChoice=null;
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
     closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
     own.hidden=other.hidden=footer.hidden=true;toggle.hidden=false;leave();
@@ -193,10 +195,11 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       const thread=threads.get(p.id)||[];threads.set(p.id,thread);
       if(thread.length){turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
       else void say(opening,false,p.welcome);
+      const selected=onChoice;onChoice=null;selected?.();
     }catch{if(ticket===version)pickerState.textContent='Le personnage n’a pas pu entrer. Tu peux réessayer.';}
     finally{if(ticket===version){loading=false;random.disabled=false;list.inert=false;}}
   }
-  function dismiss(){if(loading)finish();else closePicker();}
+  function dismiss(){onChoice=null;if(loading)finish();else closePicker();}
   $('.picker-close').onclick=dismiss;
   picker.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();dismiss();}});
   search.oninput=showChoices;
@@ -217,5 +220,5 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       node.querySelector('button').hidden=body.scrollHeight<=body.clientHeight+1;
     }
   }
-  return {playback, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
+  return {playback,chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
 }

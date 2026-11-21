@@ -3,7 +3,7 @@ import {normaliseStudio,traitAvailable,freeTrait,freePiece,slots,skinSteps} from
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
-export function createDrawer(root,apply,frameModel){
+export function createDrawer(root,apply,frameModel,openDeparture){
  const drawer=root.querySelector('.studio-drawer'),toggleButton=root.querySelector('.options-toggle');
  drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Apparence</button><button type="button">Garde-robe</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
  const pane=drawer.querySelector('.studio-scroll'),message=drawer.querySelector('[role=status]'),save=drawer.querySelector('.save');
@@ -100,8 +100,8 @@ export function createDrawer(root,apply,frameModel){
  function render(){
   if(!look)return;controls.length=0;pane.replaceChildren();
   tabs.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===mode)));
-  const departure=make('a','Le départ à deux');
-  departure.href='/le-depart-a-deux.html';
+  const departure=make('button','Le départ à deux');
+  departure.type='button';departure.onclick=()=>{toggle(false);openDeparture()};
   pane.append(departure);
   (mode?wardrobe:appearance)(pane);
   if(options.privateURL){const a=make('a','Mon atelier privé');a.href=options.privateURL;pane.append(a);}

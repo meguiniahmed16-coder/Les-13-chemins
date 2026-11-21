@@ -28,6 +28,21 @@ test('Chaque assise du salon V27 est accessible depuis les neuf autres',()=>{
     }
   }
 });
+test('Depuis chaque siège, les deux personnages peuvent rejoindre la baie et y rester debout',()=>{
+  for(const seat of seats){
+    for(const offset of [-37,37]){
+      const m=newMotion();
+      m.goToSeat(seat);
+      until(m,()=>m.mode==='seated');
+      m.goToBay(offset);
+      until(m,()=>m.mode==='idle');
+      assert.ok(Math.abs(m.x-offset/100)<.001);
+      assert.ok(Math.abs(m.z-2.23)<.001);
+      assert.equal(m.seat,null);
+      assert.equal(m.sit,0);
+    }
+  }
+});
 test('Le joystick interrompt le trajet ou relève le personnage avant de marcher',()=>{
   for(const phase of ['walk','sitDown','seated']){
     const m=newMotion();m.goToSeat(seats[8]);until(m,()=>m.mode===phase);

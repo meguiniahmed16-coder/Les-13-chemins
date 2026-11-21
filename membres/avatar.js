@@ -4,10 +4,10 @@ import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js?v=salon38';
-import {createDrawer} from './studio-drawer.js?v=salon32';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon35';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon36';
-import {createSalonChat} from './salon-chat.js?v=salon38';
+import {createDrawer} from './studio-drawer.js?v=salon39';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon39';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon39';
+import {createSalonChat} from './salon-chat.js?v=salon39';
 import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon38';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
@@ -115,7 +115,8 @@ function makeShader(gl,type,source) {
   return shader;
 }
 function createView(canvas,roomBytes,lightMap) {
-  const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
+  const attributesGL={alpha:false,antialias:true};
+  const gl=canvas.getContext('webgl2',attributesGL)||canvas.getContext('webgl',attributesGL);
   if(!gl) throw new Error('Le navigateur ne propose pas WebGL.');
   const program=gl.createProgram();
   for(const [type,source] of [[gl.VERTEX_SHADER,vertex],[gl.FRAGMENT_SHADER,fragment]]) {
@@ -138,7 +139,8 @@ function createView(canvas,roomBytes,lightMap) {
   }
   const shadow=gl.createTexture();
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,shadow);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE,768,768,0,gl.LUMINANCE,gl.UNSIGNED_BYTE,new Uint8Array(lightMap));
+  const monochrome=gl.RED||gl.LUMINANCE;
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.R8||monochrome,768,768,0,monochrome,gl.UNSIGNED_BYTE,new Uint8Array(lightMap));
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.activeTexture(gl.TEXTURE0);
@@ -166,7 +168,9 @@ function createView(canvas,roomBytes,lightMap) {
     gl.bindBuffer(gl.ARRAY_BUFFER,handle); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,components,type,normalize,stride,offset);
   }
   return {
+    context:gl,
     draw(figure,motion,portrait=false,guest=null) {
+      gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,shadow);gl.activeTexture(gl.TEXTURE0);
       gl.useProgram(program);gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);
       gl.clearColor(.94,.93,.89,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       const w=canvas.width,h=canvas.height;
@@ -217,26 +221,86 @@ function createView(canvas,roomBytes,lightMap) {
 export class CheminsAvatar extends HTMLElement {
 
   #reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  #world; #worldLoad; #worldLife; #bag=null; #inTransit=false; #departCamera;
   #guest=null; #playerStyle=createPerformer('joueur'); #visible=true; #visibility; #chat; #invitation=0;
   #look=legacyStudio(); #gender; #figure; #pending; #drawer; #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
   #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #state; #software=false; #frame=0; #last=0; #controls;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon36',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon39',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
       rate:who=>(who==='player'?this.#playerStyle:this.#guest.style).rate,
       gender:who=>(who==='player'?this.#gender:this.#guest?.gender)||'homme',
-      leave:()=>{this.#invitation++;this.#motion.expression=null;if(this.#guest)Object.assign(this.#motion.camera,this.#guest.previousCamera);this.#guest=null;this.#motion.camera.headroom=0;this.#schedule();}
+      leave:()=>{this.#world?.back();this.#cancelDeparture();this.#invitation++;this.#motion.expression=null;if(this.#guest)Object.assign(this.#motion.camera,this.#guest.previousCamera);this.#guest=null;this.#motion.camera.headroom=0;this.#schedule();}
     });
-    this.#drawer=createDrawer(root,look=>this.apply(look),view=>this.#frameModel(view));
+    this.#drawer=createDrawer(root,look=>this.apply(look),view=>this.#frameModel(view),()=>this.#toggleDeparture());
+    root.getElementById('chooseDeparture').onclick=()=>this.#toggleDeparture();
+    for(const b of root.querySelectorAll('[data-bag]'))b.onclick=()=>this.#selectBag(b.dataset.bag);
     [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
     root.querySelector('.room-retry').addEventListener('click',()=>this.#open());
     this.#poster=root.querySelector('img');this.#state=root.querySelector('.state');
     this.#gpu.addEventListener('webglcontextlost',e=>{e.preventDefault();if(this.isConnected)this.#open(true);});
     this.#gpu.addEventListener('webglcontextrestored',()=>{if(this.isConnected)this.#open();});
+  }
+  #showBags(open){
+    this.shadowRoot.getElementById('departChoices').hidden=!open;
+    this.shadowRoot.getElementById('chooseDeparture').setAttribute('aria-expanded',String(open));
+  }
+  async #toggleDeparture(){
+    if(this.#inTransit){this.#cancelDeparture();return;}
+    if(this.#world?.outside)return;
+    if(!this.shadowRoot.getElementById('departChoices').hidden){this.#showBags(false);return;}
+    if(!this.#view){this.#state.textContent='Le salon s’ouvre…';return;}
+    return this.#loadWorld(true);
+  }
+  async #loadWorld(showBags){
+    if(!this.#worldLoad){
+      const life=this.#worldLife=new AbortController();
+      const context=this.#view.context;
+      if(context&&!(typeof WebGL2RenderingContext!=='undefined'&&context instanceof WebGL2RenderingContext)){
+        await this.#open(true);if(showBags)return this.#loadWorld(true);return;
+      }
+      if(showBags)this.#state.textContent='Ouverture du jardin…';
+      this.#worldLoad=import('./depart.js?v=salon39').then(({createDeparture})=>createDeparture({
+        canvas:this.#canvas,context,roomFrame:()=>this.#view.frame,root:this.shadowRoot,signal:life.signal,makeGait:()=>new SalonMotion(undefined,newCamera()),
+        onBag:which=>this.#selectBag(which),onReturn:()=>this.#cancelDeparture(),wake:this.#schedule
+      })).then(world=>{if(life.signal.aborted){world.dispose();return;}this.#world=world;});
+    }
+    const loading=this.#worldLoad;
+    try{await loading;if(loading!==this.#worldLoad||!this.isConnected)return;
+      if(showBags){this.#state.textContent='';this.#showBags(true)}this.#schedule();
+    }catch{if(loading===this.#worldLoad){this.#worldLife.abort();this.#worldLoad=null;if(showBags)this.#state.textContent='Le jardin n’a pas pu s’ouvrir. Touche « Le départ à deux » pour réessayer.';this.#schedule();}}
+  }
+  #selectBag(which){
+    if(!this.#world||this.#world.outside||this.#inTransit)return;
+    this.#showBags(false);this.#drawer.toggle(false);
+    if(!this.#guest){
+      this.#state.textContent='Choisis la personne qui sortira avec toi.';
+      this.#chat.chooseCompanion(()=>this.#selectBag(which));return;
+    }
+    this.#bag=which;this.#inTransit=true;
+    const camera=this.#motion.camera;this.#departCamera={...camera};
+    Object.assign(camera,newCamera(),{x:0,y:.9,z:.25,angle:2.75,zoom:.93,perspective:0,nearDepth:0,headroom:0});
+    this.#motion.goToBay(-37);this.#guest.motion.goToBay(37);
+    this.shadowRoot.getElementById('chooseDeparture').textContent='Annuler le départ';
+    this.#state.textContent='Vous rejoignez la baie vitrée.';this.#schedule();
+  }
+  #cancelDeparture(){
+    if(this.#inTransit){this.#motion.stand();this.#guest?.motion.stand();}
+    this.#inTransit=false;this.#bag=null;
+    if(this.#departCamera){Object.assign(this.#motion.camera,this.#departCamera);this.#departCamera=null;
+      if(this.#guest)this.#guest.anchors=null;
+    }
+    this.shadowRoot.getElementById('chooseDeparture').textContent='Le départ à deux';
+    this.#state.textContent='';this.#schedule();
+  }
+  #people(){return [{figure:this.#figure,motion:this.#motion,gender:this.#gender},this.#guest];}
+  #closeWorld(){
+    this.#worldLife?.abort();this.#world?.back();this.#world?.dispose();
+    this.#world=null;this.#worldLoad=null;this.#showBags(false);this.#cancelDeparture();
   }
   async #invite(person){
     const invitation=++this.#invitation;
@@ -292,13 +356,13 @@ export class CheminsAvatar extends HTMLElement {
     this.#open();
   }
   disconnectedCallback(){
-    this.#visibility?.disconnect();document.removeEventListener('visibilitychange',this.#resume);this.#chat.reset();
+    this.#closeWorld();this.#visibility?.disconnect();document.removeEventListener('visibilitychange',this.#resume);this.#chat.reset();
     this.#controls?.dispose();this.#controls=null;this.#epoch++;cancelAnimationFrame(this.#frame);this.#frame=0;
     this.#observer?.disconnect();window.removeEventListener('resize',this.#schedule);
     this.#view?.dispose();this.#view=null;this.#poster.hidden=false;
   }
   async #open(forceSoftware=false){
-    const epoch=++this.#epoch;this.#controls?.dispose();this.#controls=null;
+    this.#closeWorld();const epoch=++this.#epoch;this.#controls?.dispose();this.#controls=null;
     this.#view?.dispose();this.#view=null;this.#poster.hidden=false;
     const retry=this.shadowRoot.querySelector('.room-retry');retry.hidden=true;
     this.#state.textContent='Ouverture du salon…';
@@ -308,15 +372,16 @@ export class CheminsAvatar extends HTMLElement {
       if(!forceSoftware){try{view=createView(this.#gpu,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js?v=salon35');
+        const {createSoftwareView}=await import('./avatar-software.js?v=salon39');
         if(epoch!==this.#epoch||!this.isConnected)return;
         view=createSoftwareView(this.#cpu,room,lightMap,cameraProjection);
       }
       this.#view=view;this.#canvas=this.#software?this.#cpu:this.#gpu;
       this.#cpu.hidden=!this.#software;this.#gpu.hidden=this.#software;
       this.#draw();this.#poster.hidden=true;
-      this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule,seat=>this.#guest?.seat?.id!==seat.id,this.#manualCamera);
+      this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule,seat=>this.#guest?.seat?.id!==seat.id,this.#manualCamera,()=>this.#world);
       this.dispatchEvent(new CustomEvent('avatar-ready'));
+      void this.#loadWorld(false);
     }catch{if(epoch===this.#epoch){this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#state.textContent='Le chargement du salon a été interrompu.';retry.hidden=false;}}
   }
   #schedule=()=>{
@@ -333,10 +398,16 @@ export class CheminsAvatar extends HTMLElement {
       const steps=Math.max(1,Math.ceil(dt/.05));
       let moving=false;
       for(let i=0;i<steps;i++){
+        if(this.#world?.outside)break;
         const walking=this.#motion.update(dt/steps);
         moving=(this.#guest?.motion.update(dt/steps)||walking);
       }
-      if(moving)this.#motion.trackWhenWalking(this.#canvas.clientWidth,this.#canvas.clientHeight);
+      if(this.#inTransit&&this.#guest&&[this.#motion,this.#guest.motion].every(m=>m.mode==='idle')){
+        if([this.#motion,this.#guest.motion].every(m=>m.z>2.16)){
+          this.#inTransit=false;this.#world.start(this.#bag,this.#people());this.#state.textContent='';
+        }else this.#cancelDeparture();
+      }
+      if(moving&&!this.#inTransit)this.#motion.trackWhenWalking(this.#canvas.clientWidth,this.#canvas.clientHeight);
       if(this.#guest){
         const speech=this.#chat.playback.frame(),now=time/1000;
         const poses=[[this.#motion,this.#guest.motion,this.#playerStyle,'player'],[this.#guest.motion,this.#motion,this.#guest.style,'guest']];
@@ -348,17 +419,20 @@ export class CheminsAvatar extends HTMLElement {
             jaw:speaking?speech.jaw:0,round:speaking?speech.round:0,spread:speaking?speech.spread:0};
         }
       }
-      this.#draw(moving||!!this.#guest);
-      if((moving||this.#guest&&(!reduced||this.#chat.playback.busy))&&!document.hidden)this.#schedule();else this.#last=0;
+      this.#draw(moving||!!this.#guest,dt);
+      if((moving||this.#inTransit||this.#world?.outside||this.#guest&&(!reduced||this.#chat.playback.busy))&&!document.hidden)this.#schedule();else this.#last=0;
     });
   };
-  #draw(moving=false){
+  #draw(moving=false,dt=0){
     if(!this.#view||!this.#figure)return;
     const canvas=this.#canvas;
     const ratio=this.#software?Math.min(1,(moving?480:960)/Math.max(1,canvas.clientWidth,canvas.clientHeight)):Math.min(1.75,window.devicePixelRatio||1);
     const w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-    if(this.#guest){
+    if(this.#world?.outside&&this.#guest){
+      this.#world.draw({dt,people:this.#people()});return;
+    }
+    if(this.#guest&&!this.#inTransit){
       const w=canvas.clientWidth,h=canvas.clientHeight,c=this.#motion.camera;
       const player=actorHead(this.#motion),guest=actorHead(this.#guest.motion),mode=this.#chat.mode;
       const inset=Math.min(h*.40,this.#chat.inset);
@@ -375,6 +449,8 @@ export class CheminsAvatar extends HTMLElement {
       this.#chat.position(headSide(player,c,w,h)>headSide(guest,c,w,h));
     }
     this.#view.draw(this.#figure,this.#motion,false,this.#guest);
+    this.#world?.draw({dt,projection:cameraProjection(w,h,false,this.#motion.camera)});
+
   }
   snapshot(){
     if(!this.#view)return null;

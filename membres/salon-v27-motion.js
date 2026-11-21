@@ -90,6 +90,7 @@ export class SalonMotion {
   this.camera=camera;
   this.expression=null;
   const room={...start,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
+  let neckLift=0;
   const life={bones:[],knees:[]}, keys=new Set();
   const matrices=new Float32Array(16*15);
   let clock=0,padX=0,padY=0,publishedMode='',publishedSeat=null;
@@ -105,10 +106,16 @@ export class SalonMotion {
   }
   function roomIdle(){room.mode='idle';room.path=null;room.seat=null;room.sit=0;room.t=0;}
   function roomBegin(seat){
-    const path=roomPath([room.x,room.z],seatEntry(seat));
+    const path=roomPath([room.x,room.z],seat.walkOnly?[seat.x,seat.z]:seatEntry(seat));
     if(!path){roomIdle();onStatus('unreachable',seat);return;}
-    room.path=planJourney(path,room.yaw,seat.yaw);room.seat=seat;room.t=0;room.mode='walk';
+    room.path=planJourney(path,room.yaw,seat.yaw);room.seat=seat.walkOnly?null:seat;room.t=0;room.mode='walk';
   }
+  this.goToBay=offset=>{
+    const target={walkOnly:true,x:700+offset,z:-577,yaw:0};
+    this.releaseInputs();
+    if(room.sit>0){room.after=target;room.mode='rise';}else roomBegin(target);
+    notify();
+  };
   this.goToSeat=seat=>{
     if(room.seat===seat&&room.mode!=='rise')return;
     if(room.sit>0){room.after=seat;room.mode='rise';}else roomBegin(seat);
@@ -131,7 +138,7 @@ export class SalonMotion {
     if(room.mode==='steer')steerTick(dt);
     else if(room.mode==='walk'){
       room.t+=dt;[room.x,room.z,room.yaw]=journeySample(room.path,room.t);
-      if(room.t>=room.path.at(-1)[0]){room.mode='sitDown';room.sit=0;}
+      if(room.t>=room.path.at(-1)[0]){if(room.seat){room.mode='sitDown';room.sit=0;}else roomIdle();}
     }else if(room.mode==='sitDown'){
       room.sit=Math.min(1,room.sit+dt/2.1);if(room.sit===1)room.mode='seated';
     }else if(room.mode==='rise'){
@@ -141,6 +148,14 @@ export class SalonMotion {
     notify();return stick.held||!['idle','seated'].includes(room.mode);
   };
   let poseTime=-1,poseExpression,poseMode,poseSeat;
+  // Outdoor figures use the same limb solver and clothing bindings as the room.
+  this.travelPose=(cycle,speed,tilt)=>{
+    const stride=65*speed;
+    room.mode=speed>.03?'walk':'idle';room.seat=null;room.sit=0;room.yaw=0;
+    room.t=2.2+cycle*1.1;room.x=0;room.z=room.t*stride;
+    room.path=[[0,0,0,0],[5,0,5*stride,0]];
+    clock=room.t;neckLift=tilt;poseTime=-1;
+  };
   this.bones=()=>{
     if(clock!==poseTime||this.expression!==poseExpression||room.mode!==poseMode||room.seat!==poseSeat){
       roomPose(clock*1000);
@@ -258,7 +273,7 @@ function roomPose(t){
  bones[0]=torso;bones[14]=upper;
  let anticipation=0;
  if(steering)anticipation=clamp(stick.turn*.21,-.38,.38);else if(walking){const ahead=journeySample(room.path,room.t+.32)[2];anticipation=clamp(turnAngle(ahead-room.yaw),-.42,.42)}
- bones[1]=transformAt(matrixProduct(chest,oriented(anticipation*.66+.024*Math.sin(clock*.76)+(expr?.look||0)*emphasis, -.62*pitch+.035*bend+(gesture?.nod||0)*emphasis,(gesture?.tilt||0)*emphasis)),neck,place(upper,neck));
+ bones[1]=transformAt(matrixProduct(chest,oriented(anticipation*.66+.024*Math.sin(clock*.76)+(expr?.look||0)*emphasis, neckLift-.62*pitch+.035*bend+(gesture?.nod||0)*emphasis,(gesture?.tilt||0)*emphasis)),neck,place(upper,neck));
  life.knees=[];
  for(const i of [2,3,0,1]){
   const l=limbs[i],side=l.side,arm=l.arm,start=place(arm?upper:torso,l.a);
