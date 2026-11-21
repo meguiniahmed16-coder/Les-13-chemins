@@ -1,12 +1,14 @@
 // Summer Man uses the CC0 MakeHuman/MPFB model. Garment authors and original
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
+import {createPerformer} from './salon-performance.js';
+import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
-import {loadStudio} from './studio-model.js';
+import {loadStudio} from './studio-model.js?v=salon35';
 import {createDrawer} from './studio-drawer.js?v=salon32';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon34';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon34';
-import {createSalonChat} from './salon-chat.js?v=salon34';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon34';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon35';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon35';
+import {createSalonChat} from './salon-chat.js?v=salon35';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon35';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 const files = new URL('../assets/membres/', import.meta.url);
@@ -29,6 +31,7 @@ attribute vec4 ink, joints;
 
 uniform vec3 center, side, up, eye;
 uniform vec2 scale, rotation, lens;
+uniform float headroom;
 uniform vec3 location;
 uniform mediump float room;
 varying mediump vec2 coord; varying mediump vec3 color, lightNormal, roomPoint; varying mediump float material;
@@ -43,7 +46,7 @@ void main() {
  vec3 delta = p-center;
  float depth=dot(delta,eye), w=1.-depth*lens.x;
  float z=lens.x>0. ? w-2.*lens.y : -depth/20.;
- gl_Position=vec4(dot(delta,side)*scale.x,dot(delta,up)*scale.y,z,w);
+ gl_Position=vec4(dot(delta,side)*scale.x,dot(delta,up)*scale.y-headroom*w,z,w);
  float part=joints.x;
  roomPoint=p*100.; material=floor(ink.w*255.+.5);
  if(room>.5 && (((part==0.||part==3.||part==4.) && eye.z<=-.20)
@@ -121,7 +124,7 @@ function createView(canvas,roomBytes,lightMap) {
   gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error('Le modèle ne peut pas être affiché.');
   const attributes=Object.fromEntries(['position','normal','uv','ink','joints'].map(id=>[id,gl.getAttribLocation(program,id)]));
-  const uniforms=Object.fromEntries(['center','side','up','eye','scale','lens','rotation','location','room','base','multiplier','floorLight'].map(id=>[id,gl.getUniformLocation(program,id)]));
+  const uniforms=Object.fromEntries(['center','side','up','eye','scale','lens','headroom','rotation','location','room','base','multiplier','floorLight'].map(id=>[id,gl.getUniformLocation(program,id)]));
   const buffers=[];
   function buffer(value,type=gl.ARRAY_BUFFER){
     const handle=gl.createBuffer(); buffers.push(handle); gl.bindBuffer(type,handle); gl.bufferData(type,value,gl.STATIC_DRAW); return handle;
@@ -167,8 +170,9 @@ function createView(canvas,roomBytes,lightMap) {
       gl.useProgram(program);gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);
       gl.clearColor(.94,.93,.89,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       const w=canvas.width,h=canvas.height;
-      const {sy,cy,sp,cp,factor,x,y,z,perspective,nearDepth}=cameraProjection(w,h,portrait,motion.camera);
+      const {sy,cy,sp,cp,factor,x,y,z,perspective,nearDepth,offset}=cameraProjection(w,h,portrait,motion.camera);
       gl.uniform3f(uniforms.side,cy,0,-sy);gl.uniform3f(uniforms.eye,sy*cp,sp,cy*cp);gl.uniform3f(uniforms.up,-sp*sy,cp,-sp*cy);
+      gl.uniform1f(uniforms.headroom,offset);
       gl.uniform2f(uniforms.lens,perspective,1-nearDepth*perspective);
       gl.uniform2f(uniforms.scale,factor*h/w,factor);
       gl.uniform3f(uniforms.center,x,y,z);
@@ -188,7 +192,7 @@ function createView(canvas,roomBytes,lightMap) {
         const yaw=portrait?.42:pose.yaw;
         gl.uniform2f(uniforms.rotation,Math.cos(yaw),Math.sin(yaw));
         gl.uniform3f(uniforms.location,portrait?0:pose.x,portrait?.06:0,portrait?0:pose.z);
-        actor.figure.pose(portrait?portraitBones:pose.bones());
+        actor.figure.pose(portrait?portraitBones:pose.bones(),portrait?null:pose.expression);
         for(const {m,tex,pos,norm,uv,indices} of actor.meshes){
           attr('position',pos,3,gl.SHORT);
           if(actor.revision!==actor.figure.revision)gl.bufferData(gl.ARRAY_BUFFER,m.v,gl.DYNAMIC_DRAW);
@@ -212,17 +216,19 @@ function createView(canvas,roomBytes,lightMap) {
 
 export class CheminsAvatar extends HTMLElement {
 
-  #guest=null; #chat; #invitation=0;
+  #reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  #guest=null; #playerStyle=createPerformer('joueur'); #visible=true; #visibility; #chat; #invitation=0;
   #look=legacyStudio(); #gender; #figure; #pending; #drawer; #motion=new SalonMotion((mode,seat)=>this.#controls?.showStatus(mode,seat),newCamera());
   #view; #epoch=0; #observer; #canvas; #gpu; #cpu; #poster; #state; #software=false; #frame=0; #last=0; #controls;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon34',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon35',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
-      leave:()=>{this.#invitation++;if(this.#guest)Object.assign(this.#motion.camera,this.#guest.previousCamera);this.#guest=null;this.#schedule();}
+      rate:who=>(who==='player'?this.#playerStyle:this.#guest.style).rate,
+      leave:()=>{this.#invitation++;this.#motion.expression=null;if(this.#guest)Object.assign(this.#motion.camera,this.#guest.previousCamera);this.#guest=null;this.#motion.camera.headroom=0;this.#schedule();}
     });
     this.#drawer=createDrawer(root,look=>this.apply(look),view=>this.#frameModel(view));
     [this.#gpu,this.#cpu]=root.querySelectorAll('canvas');this.#canvas=this.#gpu;
@@ -234,18 +240,19 @@ export class CheminsAvatar extends HTMLElement {
   async #invite(person){
     const invitation=++this.#invitation;
     const {studio,gender}=guestAppearance(person);
-    const figure=await loadStudio(studio,gender);
+    const [figure,channels]=await Promise.all([loadStudio(studio,gender),resource('conversation-face')]);
     if(invitation!==this.#invitation||!this.isConnected)return false;
+    figure.enableSpeech(channels);this.#figure.enableSpeech(channels);
     const pair=conversationSeats();
     const motion=new SalonMotion(undefined,newCamera(),{x:722,z:-992,yaw:.3});
     const wideAngle=Math.abs(pair[0].x-pair[1].x)>Math.abs(pair[0].z-pair[1].z)?-.09:1.48;
-    this.#guest={figure,motion,seat:pair[1],wideAngle,previousCamera:{...this.#motion.camera,perspective:0,nearDepth:0}};
+    this.#guest={figure,motion,channels,style:createPerformer(person.id),seat:pair[1],wideAngle,previousCamera:{...this.#motion.camera,perspective:0,nearDepth:0}};
     this.#drawer.toggle(false);
     motion.goToSeat(pair[1]);this.#motion.goToSeat(pair[0]);
     this.#schedule();
     return true;
   }
-  configure(look,options){if(this.#gender!==options.gender){this.#pending=null;this.#gender=options.gender;}this.#drawer.configure(look,options);return this.apply(look);}
+  configure(look,options){if(this.memberKey!==options.memberKey){this.memberKey=options.memberKey;this.#playerStyle=createPerformer(options.memberKey||'joueur');}if(this.#gender!==options.gender){this.#pending=null;this.#gender=options.gender;}this.#drawer.configure(look,options);return this.apply(look);}
   openOptions(open=true){this.#drawer.toggle(open);}
   #manualCamera=()=>{
     if(!this.#guest)return;
@@ -269,16 +276,22 @@ export class CheminsAvatar extends HTMLElement {
     if(this.#pending&&JSON.stringify(this.#look)===JSON.stringify(look))return this.#pending;
     this.#look=look;
     const p=loadStudio(look,this.#gender);this.#pending=p;
-    try{const figure=await p;if(p===this.#pending){this.#figure=figure;this.#schedule();}return figure;}
+    try{const figure=await p;if(p===this.#pending){this.#figure=figure;if(this.#guest)figure.enableSpeech(this.#guest.channels);this.#schedule();}return figure;}
     catch(error){if(p===this.#pending)this.#pending=null;throw error;}
   }
+  #resume=()=>{this.#last=0;this.#schedule();};
   connectedCallback(){
+    document.addEventListener('visibilitychange',this.#resume);
+    if(typeof IntersectionObserver==='function'){
+      this.#visibility=new IntersectionObserver(([entry])=>{this.#visible=entry.isIntersecting;if(this.#visible)this.#resume();});
+      this.#visibility.observe(this);
+    }
     if(typeof ResizeObserver==='function'){this.#observer=new ResizeObserver(()=>this.#schedule());this.#observer.observe(this.shadowRoot.querySelector('.scene-viewport'));}
     else window.addEventListener('resize',this.#schedule);
     this.#open();
   }
   disconnectedCallback(){
-    this.#chat.reset();
+    this.#visibility?.disconnect();document.removeEventListener('visibilitychange',this.#resume);this.#chat.reset();
     this.#controls?.dispose();this.#controls=null;this.#epoch++;cancelAnimationFrame(this.#frame);this.#frame=0;
     this.#observer?.disconnect();window.removeEventListener('resize',this.#schedule);
     this.#view?.dispose();this.#view=null;this.#poster.hidden=false;
@@ -294,7 +307,7 @@ export class CheminsAvatar extends HTMLElement {
       if(!forceSoftware){try{view=createView(this.#gpu,room,lightMap);}catch{/* Use the same scene on the 2D canvas. */}}
       this.#software=!view;
       if(!view){
-        const {createSoftwareView}=await import('./avatar-software.js?v=salon34');
+        const {createSoftwareView}=await import('./avatar-software.js?v=salon35');
         if(epoch!==this.#epoch||!this.isConnected)return;
         view=createSoftwareView(this.#cpu,room,lightMap,cameraProjection);
       }
@@ -308,7 +321,12 @@ export class CheminsAvatar extends HTMLElement {
   #schedule=()=>{
     if(this.#view&&!this.#frame)this.#frame=requestAnimationFrame(time=>{
       this.#frame=0;
-      if(!this.#view||!this.isConnected)return;
+      if(!this.#view||!this.isConnected||!this.#visible||document.hidden){this.#last=0;return;}
+      const reduced=this.#reduced.matches;
+      const settled=actor=>actor.mode==='seated'||actor.mode==='idle';
+      const quiet=this.#guest&&!this.#chat.playback.busy&&settled(this.#motion)&&settled(this.#guest.motion);
+      const interval=this.#software?(quiet?150:85):(quiet?100:42);
+      if(this.#guest&&this.#last&&time-this.#last<interval){this.#schedule();return;}
       const dt=this.#last?Math.min(.60,(time-this.#last)/1000):1/60;
       this.#last=time;
       const steps=Math.max(1,Math.ceil(dt/.05));
@@ -318,8 +336,19 @@ export class CheminsAvatar extends HTMLElement {
         moving=(this.#guest?.motion.update(dt/steps)||walking);
       }
       if(moving)this.#motion.trackWhenWalking(this.#canvas.clientWidth,this.#canvas.clientHeight);
-      this.#draw(moving);
-      if(moving&&!document.hidden)this.#schedule();else this.#last=0;
+      if(this.#guest){
+        const speech=this.#chat.playback.frame(),now=time/1000;
+        const poses=[[this.#motion,this.#guest.motion,this.#playerStyle,'player'],[this.#guest.motion,this.#motion,this.#guest.style,'guest']];
+        for(const [actor,partner,style,who] of poses){
+          const speaking=speech?.who===who,role=speaking?'speak':speech?'listen':'idle';
+          const angle=Math.atan2(partner.x-actor.x,partner.z-actor.z)-actor.yaw;
+          const look=Math.max(-.42,Math.min(.42,Math.atan2(Math.sin(angle),Math.cos(angle))));
+          actor.expression={gesture:style.sample(now,dt,role,speech?.line,reduced),look,
+            jaw:speaking?speech.jaw:0,round:speaking?speech.round:0,spread:speaking?speech.spread:0};
+        }
+      }
+      this.#draw(moving||!!this.#guest);
+      if((moving||this.#guest&&(!reduced||this.#chat.playback.busy))&&!document.hidden)this.#schedule();else this.#last=0;
     });
   };
   #draw(moving=false){
@@ -331,10 +360,16 @@ export class CheminsAvatar extends HTMLElement {
     if(this.#guest){
       const w=canvas.clientWidth,h=canvas.clientHeight,c=this.#motion.camera;
       const player=actorHead(this.#motion),guest=actorHead(this.#guest.motion),mode=this.#chat.mode;
+      const inset=Math.min(h*.40,this.#chat.inset);
+      c.headroom=inset/Math.max(1,h);
       if(mode!=='manual'){
         // Establish the room first while either character is walking to a seat.
         const settled=[this.#motion,this.#guest.motion].every(actor=>actor.mode==='seated'||actor.mode==='idle');
-        frameConversation(c,settled?mode:'wide',this.#chat.speaker,player,guest,w,h,this.#guest.wideAngle);
+        // Keep the camera tripod still during head and torso gestures.
+        if(settled&&!this.#guest.anchors)this.#guest.anchors=[player,guest];
+        if(!settled)this.#guest.anchors=null;
+        const [a,b]=this.#guest.anchors||[player,guest];
+        frameConversation(c,settled?mode:'wide',this.#chat.speaker,a,b,w,h-inset,this.#guest.wideAngle);
       }
       this.#chat.position(headSide(player,c,w,h)>headSide(guest,c,w,h));
     }

@@ -93,7 +93,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./avatar.js?v=salon34');
+  await import('./avatar.js?v=salon35');
   if(!member)return;
   let view=$('room').querySelector('chemins-avatar');
   if(!view){
@@ -102,7 +102,7 @@ async function mountRoom(){
     $('room').append(view);
   }
   const who=member.id;
-  await view.configure(appearance,{savedStudio:member.studio||appearance,gender:member.gender||'homme',plus:Boolean(member.author||member.companion),privateURL:member.author?'/membre-atelier.html?auteur='+encodeURIComponent(member.author):'',change:draft=>{if(member?.id===who)appearance=draft;},save:async studio=>{
+  await view.configure(appearance,{memberKey:member.id,savedStudio:member.studio||appearance,gender:member.gender||'homme',plus:Boolean(member.author||member.companion),privateURL:member.author?'/membre-atelier.html?auteur='+encodeURIComponent(member.author):'',change:draft=>{if(member?.id===who)appearance=draft;},save:async studio=>{
     if(member?.id!==who)throw Error('Ta session a changé.');
     const result=await api('avatar',{avatar:member.avatar,studio});
     if(!result.studio)throw Error('Le serveur n’a pas confirmé cet enregistrement.');

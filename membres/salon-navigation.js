@@ -8,8 +8,9 @@ export function newCamera() {
 }
 export function cameraProjection(w,h,portrait,camera) {
   const c=portrait?{x:0,y:1.55,z:0,angle:.45,pitch:.11,zoom:1}:camera;
-  const factor=portrait?Math.min(2/.49,2*w/(h*.44)):Math.min(2/3.8,2*w/(h*4.7))*c.zoom;
-  return {perspective:c.perspective||0,nearDepth:c.nearDepth||0,x:c.x,y:c.y,z:c.z,sy:Math.sin(c.angle),cy:Math.cos(c.angle),sp:Math.sin(c.pitch),cp:Math.cos(c.pitch),factor};
+  const offset=portrait?0:(c.headroom||0),usable=h*(1-offset);
+  const factor=portrait?Math.min(2/.49,2*w/(h*.44)):Math.min(2/3.8,2*w/(usable*4.7))*c.zoom*(1-offset);
+  return {offset,perspective:c.perspective||0,nearDepth:c.nearDepth||0,x:c.x,y:c.y,z:c.z,sy:Math.sin(c.angle),cy:Math.cos(c.angle),sp:Math.sin(c.pitch),cp:Math.cos(c.pitch),factor};
 }
 export function moveCamera(camera,dx,dy,w,h) {
   const p=cameraProjection(w,h,false,camera);
@@ -29,7 +30,7 @@ export function zoomCamera(c,multiplier) { c.zoom=clamp(c.zoom*multiplier,.48,Ma
 // as both renderers. Furniture IDs live on the actual seat, arms and back.
 export function seatAt(bytes,c,w,h,sx,sy) {
   const p=cameraProjection(w,h,false,c),scale=h*p.factor/2;
-  const targetX=(sx-w/2)/scale,targetY=(h/2-sy)/scale;
+  const targetX=(sx-w/2)/scale,targetY=(h*(1+p.offset)/2-sy)/scale;
   const data=new DataView(bytes),x=[],y=[],depth=[],worldZ=[];
   let closest=-Infinity,seat=null;
   for(let j=0;j<data.byteLength;j+=42) {
@@ -59,4 +60,4 @@ export function seatAt(bytes,c,w,h,sx,sy) {
   return seat;
 }
 
-export {SalonMotion} from './salon-v27-motion.js?v=salon33';
+export {SalonMotion} from './salon-v27-motion.js?v=salon35';

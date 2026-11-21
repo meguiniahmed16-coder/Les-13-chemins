@@ -137,6 +137,43 @@ function displayMesh(mesh,n){
  const uv=mesh.uv.slice();for(let i=1;i<uv.length;i+=2)uv[i]=65535-uv[i];
  return {...mesh,uv,n,v:new Int16Array(n*3),vn:new Int8Array(n*3),allFaces:mesh.faces,multiplier:[1,1,1]};
 }
+function facialChannels(mesh,channels){
+ const jaw=channels[mesh.name+'jaw'],blink=channels[mesh.name+'blink'];
+ if(!jaw&&!blink)return;
+ const entries=new Map();
+ function entry(id){if(!entries.has(id))entries.set(id,new Float32Array(9));return entries.get(id);}
+ function copy(source,start){
+  for(let k=0;source&&k<source.length;k+=4){
+   const target=entry(source[k]&65535);
+   for(let c=0;c<3;c++)target[start+c]=source[k+c+1];
+  }
+ }
+ copy(jaw,0);copy(blink,3);
+ if(mesh.name==='body'){
+  // Use the base topology to find the lips before age and face customization.
+  for(let k=0;k<mesh.position.length;k+=3){
+   const x=mesh.position[k]*.01,y=mesh.position[k+1]*.01,z=mesh.position[k+2]*.01;
+   const mask=(1-smoothStep(1.7,3.05,Math.abs(x)))*(1-smoothStep(.45,1.45,Math.abs(y-147.95)))*smoothStep(7.0,8.45,z);
+   if(mask){const v=entry(k/3);v[6]=-x*15*mask;v[7]=48*mask;v[8]=x*12*mask;}
+  }
+ }
+ const ids=Uint16Array.from(entries.keys()),deltas=new Float32Array(ids.length*9);
+ ids.forEach((id,i)=>deltas.set(entries.get(id),i*9));
+ return {ids,deltas,positions:mesh.rest.slice()};
+}
+function speakingVertices(mesh,face){
+ if(!mesh.speech)return mesh.rest;
+ const {ids,deltas,positions}=mesh.speech;
+ const jaw=face?.jaw||0,blink=face?.gesture?.blink||0,round=face?.round||0,spread=face?.spread||0;
+ if(!(jaw||blink||round||spread))return mesh.rest;
+ for(let i=0;i<ids.length;i++){
+  const k=ids[i]*3,d=i*9;
+  positions[k]=mesh.rest[k]+jaw*deltas[d]+blink*deltas[d+3]+round*deltas[d+6]+spread*deltas[d+8];
+  positions[k+1]=mesh.rest[k+1]+jaw*deltas[d+1]+blink*deltas[d+4];
+  positions[k+2]=mesh.rest[k+2]+jaw*deltas[d+2]+blink*deltas[d+5]+round*deltas[d+7];
+ }
+ return positions;
+}
 export async function loadStudio(look,gender){
  const female=gender==='femme';
  const baseShape=female?await resource('female-base'):null;
@@ -166,12 +203,14 @@ export async function loadStudio(look,gender){
  body.faces=Uint16Array.from(visible);
  adjustLayers(clothes,body);
  for(const m of clothes)m.faces=layerCut(m,m.faces,slots,body.n);
- const output=new Float32Array(6);let prior=null;
- return {meshes:[...skin,...clothes],revision:0,pose(bones){
-  if(prior&&bones.every((v,i)=>v===prior[i]))return;
-  prior=bones.slice();
+ const output=new Float32Array(6);let prior=null,priorFace=null;
+ return {meshes:[...skin,...clothes],revision:0,
+   enableSpeech(channels){for(const m of skin)m.speech??=facialChannels(m,channels);},
+   pose(bones,face=null){
+  if(prior&&priorFace===face&&bones.every((v,i)=>v===prior[i]))return;
+  prior=bones.slice();priorFace=face;
   for(const m of skin){
-   const p=m.rest,n=m.restN;
+   const p=speakingVertices(m,face),n=m.restN;
    for(let i=0;i<p.length;i+=3){
     poseVertex(output,bones,m.rig,i/3,p[i]/10000,p[i+1]/10000,p[i+2]/10000,n[i],n[i+1],n[i+2]);
     for(let j=0;j<3;j++){m.v[i+j]=Math.round(output[j]*10000);m.vn[i+j]=Math.round(output[j+3]);}

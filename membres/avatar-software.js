@@ -1,5 +1,5 @@
 import {visiblePart} from './salon-plan.js?v=salon29';
-import {SalonMotion,newCamera} from './salon-navigation.js?v=salon34';
+import {SalonMotion,newCamera} from './salon-navigation.js?v=salon35';
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 
 const lightDirection = [-.426, .596, .681];
@@ -14,8 +14,9 @@ export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
   let cachedRoom=null;
   function draw(figure,motion,portrait=false,guest=null) {
     const w=canvas.width,h=canvas.height;
-    const camera=projection(w,h,portrait,motion.camera),{sy,cy,sp,cp,factor,perspective,nearDepth}=camera;
-    const zoom=h*factor/2,key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z,perspective,nearDepth].join(',');
+    const camera=projection(w,h,portrait,motion.camera),{sy,cy,sp,cp,factor,perspective,nearDepth,offset}=camera;
+    const zoom=h*factor/2,key=[w,h,sy,cy,sp,cp,factor,camera.x,camera.y,camera.z,perspective,nearDepth,offset].join(',');
+    const midY=h*(1+offset)/2;
     const pixels=ctx.createImageData(w,h),color=pixels.data,depth=new Float32Array(w*h);
     function project(vertices,i,x,y,z,u,v,bright) {
       x-=camera.x;z-=camera.z;
@@ -24,7 +25,7 @@ export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
       const d=cp*forward+sp*dy;
       const invW=1/(1-perspective*Math.min(d,nearDepth));
       vertices[i]=w*.5+zoom*lateral*invW;
-      vertices[i+1]=h*.5-zoom*(cp*dy-sp*forward)*invW;
+      vertices[i+1]=midY-zoom*(cp*dy-sp*forward)*invW;
       vertices[i+2]=d*invW;vertices[i+3]=u*invW;vertices[i+4]=v*invW;vertices[i+5]=bright*invW;vertices[i+6]=invW;
     }
     // Clip furniture crossing the over-the-shoulder camera's near plane before rasterization.
@@ -40,7 +41,7 @@ export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
           const da=p[previous+2]*aW,db=p[current+2]*bW;
           const t=(nearDepth-da)/(db-da),at=7*count++;
           for(let k=0;k<6;k++){
-            const origin=k===0?w/2:k===1?h/2:0;
+            const origin=k===0?w/2:k===1?midY:0;
             clipped[at+k]=origin+((1-t)*(p[previous+k]-origin)*aW+t*(p[current+k]-origin)*bW)*nearInvW;
           }
           clipped[at+6]=nearInvW;
@@ -114,7 +115,7 @@ export function createSoftwareView(canvas,roomBytes,lightMap,projection) {
     function drawActor(figure,motion){
       const yaw=portrait?.42:motion.yaw, offsetY=portrait?.06:0;
       const atX=portrait?0:motion.x,atZ=portrait?0:motion.z;
-      figure.pose(portrait?portraitBones:motion.bones());
+      figure.pose(portrait?portraitBones:motion.bones(),portrait?null:motion.expression);
       const sin=Math.sin(yaw),cos=Math.cos(yaw);
       for(const m of figure.meshes){
         const p=new Float32Array(m.n*7);

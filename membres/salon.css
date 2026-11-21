@@ -57,7 +57,7 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .picker-state,.chat-state{margin:0;font-size:13px}.picker-state:empty,.chat-state:empty{display:none}
 .stage:has(.conversation-footer:not([hidden])){grid-template-rows:minmax(0,1fr) auto}
 .conversation-footer{grid-column:1/-1;background:#f5f2e7;padding:5px 7px;border-top:1px solid #b8bea9;z-index:3}.guest-compose{display:flex;align-items:center;gap:4px}.guest-compose input{flex:1}.guest-compose .guest-send,.guest-picker .guest-random,.guest-mic[aria-pressed=true]{background:#294e40;color:white}.guest-compose button:disabled{opacity:.55}.guest-compose .guest-leave{font-size:12px}.guest-compose .guest-mic{padding:4px 7px}.chat-state{padding:4px}
-/* The conversation has a separate text band. Even an expanded reply never covers the scene. */
+/* The bubbles project over the upper part of the room. The camera leaves room for them. */
 .stage:has(.conversation-footer:not([hidden])):not(.immersive):not(:fullscreen):not(:has(.studio-drawer:not([hidden]))){
  height:calc(var(--room-height,clamp(345px,52dvh,545px)) + 144px)
 }
@@ -66,18 +66,27 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .conversation-tools button{font-size:13px;min-height:33px}
 .conversation-tools [aria-pressed=true]{background:#294e40;color:#fff;border-color:#294e40}
 .conversation-tools .bubbles-toggle{margin-inline-start:auto}
-.speech-rail{grid-column:1/-1;position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;min-width:0;padding:5px 0 2px}
+.speech-rail{z-index:2;position:absolute;inset:7px 7px auto;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;min-width:0;padding:5px 0 2px}
 .speech-rail.player-on-right{flex-direction:row-reverse}
-.speech{position:relative;width:fit-content;max-width:min(46%,320px);min-width:0;font:14px/1.28 system-ui;color:#1e3e31;background:#fffef5;border:1px solid #829384;border-radius:10px;padding:4px 9px;overflow-wrap:anywhere}
-.own-speech{background:#e2efdf}.speech::before{content:'';position:absolute;top:-4px;left:14px;width:6px;height:6px;background:inherit;border-top:inherit;border-left:inherit;transform:rotate(45deg)}
-.speech-rail:not(.player-on-right) .guest-speech::before,.player-on-right .own-speech::before{left:auto;right:14px}
-.speech strong,.speech span{display:block}.speech strong{font-size:11px}.speech span{height:2.56em;overflow:hidden;white-space:pre-line}
-.speech button{background:none;border:0;min-height:0;padding:0;margin:2px 0 0;font:600 12px/1.1 system-ui;text-decoration:underline}
+.speech{position:relative;width:fit-content;max-width:min(41%,285px);min-width:0;font:14px/1.28 system-ui;color:#1e3e31;background:#fffef5f5;border:1px solid #829384;box-shadow:0 2px 7px #25382a24;border-radius:10px;padding:4px 9px;overflow-wrap:anywhere}
+.own-speech{background:#e2efdf}.speech::before{content:'';position:absolute;bottom:-4px;left:22px;width:6px;height:6px;background:inherit;border-bottom:inherit;border-right:inherit;transform:rotate(45deg)}
+.speech-rail:not(.player-on-right) .guest-speech::before,.player-on-right .own-speech::before{left:auto;right:22px}
+.speech strong,.speech span{display:block}.speech strong{font-size:11px}.speech .line{position:relative;max-height:2.56em;overflow:hidden;white-space:pre-line}
+.speech button{pointer-events:auto;background:none;border:0;min-height:0;padding:0;margin:2px 0 0;font:600 12px/1.1 system-ui;text-decoration:underline}
 .speech-rail:has(.speech-reader:not([hidden])) .speech{display:none}
-.speech-reader{width:100%;min-width:0;text-align:left;font:14px/1.35 system-ui}
-.speech-reader header{display:flex;justify-content:space-between;align-items:center}.speech-reader button{min-height:28px;padding:3px 8px}
+.speech-reader{pointer-events:auto;background:#fffef5f5;border:1px solid #829384;border-radius:9px;padding:5px 10px;width:100%;min-width:0;text-align:left;font:14px/1.35 system-ui}
+.speech-reader header{display:flex;justify-content:space-between;align-items:center}.speech-reader button{background:#fffdf5;border:1px solid #9faba2;border-radius:6px;min-height:28px;padding:3px 8px}
 .speech-reader p{margin:4px 0 0;max-height:clamp(3rem,12dvh,8rem);overflow:auto;overscroll-behavior:contain;white-space:pre-wrap;overflow-wrap:anywhere}
 .hud{z-index:2}
 @container(min-width:720px){.conversation-footer{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:12px}.chat-state{grid-column:1/-1}}
 @media(max-width:650px) and (orientation:portrait){.stage:has(.studio-drawer:not([hidden])):has(.conversation-footer:not([hidden])){grid-template-rows:minmax(195px,1fr) minmax(220px,43%) auto}}
 @container(max-width:430px){.guest-compose button{padding:5px 7px}.speech{font-size:13px}.invite-toggle{min-height:36px}.guest-picker{padding:8px}}
+
+.speech mark{background:#eadcb6;color:inherit;border-radius:2px}.speech-rail .line{display:block}
+.camera-slot .bar{position:static;display:flex;gap:4px;flex-wrap:wrap}.camera-slot .tool{height:33px;min-width:33px;min-height:33px}
+.conversation-footer .camera-slot button{padding:4px 8px}.camera-slot .tool[aria-pressed=true]{color:#fff;background:#294e40}
+.conversation-footer{grid-template-columns:minmax(0,1fr)}.guest-compose{grid-column:1/-1}
+@container(min-width:600px){.conversation-footer{grid-template-columns:1fr auto;align-items:center}.camera-slot{justify-self:end}}
+@container(max-width:599px){.camera-slot .full-text{display:none}.camera-slot .bar{justify-content:flex-end}.conversation-footer .conversation-tools{flex-wrap:nowrap}.conversation-tools button{padding:4px 7px}.camera-slot{grid-row:1}.conversation-tools{grid-row:2}}
+@container(max-height:370px){.speech .line{max-height:1.28em}.speech-rail{inset-block-start:3px}.speech-reader p{max-height:3em}}
+.speech-announcement{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

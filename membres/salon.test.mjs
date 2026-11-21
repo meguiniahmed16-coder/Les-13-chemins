@@ -157,3 +157,59 @@ test('Un double toucher en contrechamp suit le rayon de la caméra et ignore le 
   assert.equal(seatAt(triangles,c,w,h,x,h/2)?.id,'east1');
   assert.equal(seatAt(triangles,{...c,perspective:0},w,h,x,h/2)?.id,'west1');
 });
+
+test('Le rythme des lèvres distingue les voyelles, les fermetures et les pauses',async()=>{
+  const {scoreLine,articulation}=await import('./salon-performance.js');
+  const line=scoreLine('Mmm, ou i !');
+  const center=i=>articulation(line,(line.words[i].start+line.words[i].end)/2);
+  assert.equal(center(0).jaw,0);
+  assert.ok(center(1).round>.7&&center(1).spread===0);
+  assert.ok(center(2).spread>.7&&center(2).round===0);
+  assert.equal(articulation(line,line.words[0].end+.03).jaw,0);
+  assert.ok(line.words[1].start-line.words[0].end>.10);
+});
+
+test('Les mouvements varient entre personnages et conservent les appuis assis',async()=>{
+  const {createPerformer}=await import('./salon-performance.js');
+  const seat=seats.find(seat=>seat.id==='sofa2'),actor=newMotion();
+  actor.goToSeat(seat);until(actor,()=>actor.mode==='seated');
+  const resting=actor.bones().slice();
+  function sequence(id,role){
+    let n=30;
+    const performer=createPerformer(id,()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;});
+    return Array.from({length:450},(_,i)=>performer.sample(i/25,.04,role,'Une phrase'));
+  }
+  const speaking=sequence('nora','speak'),listening=sequence('nora','listen');
+  assert.notDeepEqual(speaking,sequence('michel','speak'));
+  assert.ok(speaking.some(p=>p.pitch>.03)&&speaking.some(p=>p.pitch<-.02));
+  assert.ok(listening.some(p=>Math.abs(p.nod)>.03));
+  for(const gesture of speaking){
+    actor.expression={gesture,look:.2};
+    const bones=actor.bones();
+    assert.ok(bones.every(Number.isFinite));
+    for(const foot of [10,13]){
+      for(const offset of [12,13,14])assert.ok(Math.abs(bones[foot*16+offset]-resting[foot*16+offset])<.002);
+    }
+  }
+  assert.ok(speaking.some(p=>Math.max(p.left,p.right)>.4));
+});
+
+test('La voix cale les mots et libère la réponse suivante seulement en fin de réplique',async t=>{
+  const {createDialogue}=await import('./salon-dialogue.js');
+  const Original=globalThis.SpeechSynthesisUtterance;
+  globalThis.SpeechSynthesisUtterance=class {constructor(text){this.text=text;}};
+  t.after(()=>{if(Original)globalThis.SpeechSynthesisUtterance=Original;else delete globalThis.SpeechSynthesisUtterance;});
+  let now=0,utterance,cancelled=0;
+  const starts=[],words=[],rests=[];
+  const synth={speaking:false,getVoices:()=>[],speak(v){utterance=v;},cancel(){cancelled++;this.speaking=false;}};
+  const d=createDialogue({now:()=>now,synth,start:id=>starts.push(id),word:(_,w)=>words.push(w.index),rest:id=>rests.push(id),wake(){}});
+  d.voice(true);d.play('player','Oui, bonjour.',1);d.play('guest','Merci.',1,true);
+  assert.equal(d.frame(),null);assert.deepEqual(starts,['player']);
+  synth.speaking=true;utterance.onstart();d.frame();now=.16;
+  utterance.onboundary({charIndex:5,name:'word'});d.frame();assert.deepEqual(words,[0,5]);
+  now=8;d.frame();assert.deepEqual(starts,['player']);assert.equal(cancelled,0);
+  synth.speaking=false;utterance.onend();assert.deepEqual(starts,['player','guest']);assert.deepEqual(rests,['player']);
+  utterance.onerror();now+=4;d.frame();assert.equal(d.busy,false);
+  d.play('guest','Encore.',1);const stale=utterance.onend;d.clear();stale();
+  assert.equal(cancelled,1);assert.equal(d.busy,false);assert.equal(d.frame(),null);
+});

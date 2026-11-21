@@ -1,7 +1,7 @@
 import {generateAppearance} from './starting-appearance.js?v=salon33';
 import {skinSteps} from './studio-look.js';
 import {seats} from './salon-plan.js';
-import {cameraProjection} from './salon-navigation.js?v=salon34';
+import {cameraProjection} from './salon-navigation.js?v=salon35';
 
 export function guestAppearance(person){
   let seed=Math.imul(Number(person.id)+1279,2654435761)>>>0;
