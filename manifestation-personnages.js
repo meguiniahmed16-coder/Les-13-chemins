@@ -58,30 +58,49 @@ function turnLimb(begin,end,target,origin){
  const q=new T.Quaternion().setFromUnitVectors(direction,aim);
  return new T.Matrix4().makeRotationFromQuaternion(q).setPosition(origin.clone().sub(begin.clone().applyQuaternion(q)));
 }
-function carrierPose(matrices,raised){
+function closedHand(geometry){
+ // Fold the original fingertips toward the palm. The street rig has one hand joint.
+ const result=geometry.clone(),position=result.attributes.position,joints=result.attributes.skinIndex;
+ const pivot=.878,radius=.026;
+ for(let i=0;i<position.count;i++){
+  const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
+  if(joints.getX(i)!==7||y>=pivot)continue;
+  const length=pivot-y,angle=Math.min(Math.PI*1.34,length/radius);
+  position.setXYZ(i,x-.30*length-radius*(1-Math.cos(angle)),pivot-radius*Math.sin(angle),z*.90);
+ }
+ result.computeVertexNormals();return result;
+}
+function carrierPose(matrices,arm){
  const a=new T.Vector3(.173,1.336,-.053),b=new T.Vector3(.2861,1.1231,-.0321),c=new T.Vector3(.4067,.9411,-.009);
  const shoulder=a.clone().applyMatrix4(matrices[14]);
+ const raised=arm>1;
  const elbow=(raised?new T.Vector3(.195,.12,.07):new T.Vector3(.126,-.200,.056)).setLength(a.distanceTo(b)).add(shoulder);
  const hand=elbow.clone().add((raised?new T.Vector3(-.025,.215,.042):new T.Vector3(-.043,.060,.203)).setLength(b.distanceTo(c)));
+ if(raised&&arm<8){
+  const mix=(arm-1)/7,baseElbow=b.clone().applyMatrix4(matrices[5]),baseHand=c.clone().applyMatrix4(matrices[6]);
+  const fore=baseHand.sub(baseElbow).lerp(hand.clone().sub(elbow),mix).setLength(b.distanceTo(c));
+  elbow.copy(baseElbow.lerp(elbow,mix).sub(shoulder).setLength(a.distanceTo(b)).add(shoulder));
+  hand.copy(elbow).add(fore);
+ }
  matrices[5]=turnLimb(a,b,elbow,shoulder);
  matrices[6]=turnLimb(b,c,hand,elbow);
  matrices[7]=matrices[6].clone();
 }
 function pose(step,walking,arm){
- const key=(step*2+Number(walking))*3+arm;
+ const key=(step*2+Number(walking))*9+arm;
  if(poses.has(key))return poses.get(key);
  const cycle=step/4,frame=Math.floor(cycle),blend=cycle-frame,a=walking?motion[frame]:motion.rest,b=walking?motion[(frame+1)%8]:a;
  const matrices=Array.from({length:15},(_,i)=>{
   const m=new T.Matrix4();for(let k=0;k<16;k++)m.elements[k]=a[16*i+k]*(1-blend)+b[16*i+k]*blend;return m;
  });
- if(arm)carrierPose(matrices,arm===2);
+ if(arm)carrierPose(matrices,arm);
  const bones=matrices.map(m=>{const bone=new T.Bone();bone.matrixAutoUpdate=false;bone.matrixWorld.copy(m);return bone;});
  const skeleton=new T.Skeleton(bones,bones.map(()=>identity));skeleton.update();
  const result={skeleton,grip:palm.clone().applyMatrix4(matrices[7]),matrices};poses.set(key,result);return result;
 }
-function bakeFar(source){
- source.low=source.far;source.far=source.low.clone();source.far.userData.cortege=true;
- const g=source.far,m=source.material,skin=new T.SkinnedMesh(g,m),s=pose(3,true,0).skeleton;
+function bakeFar(source,geometry,step,arm){
+ const g=geometry.clone(),skin=new T.SkinnedMesh(g,source.material),s=pose(step,true,arm).skeleton;
+ g.userData.cortege=true;
  skin.bind(s,identity);
  const p=g.attributes.position,n=g.attributes.normal,dir=new T.Vector3(),vertex=new T.Vector3(),part=new T.Vector3();
  const normals=new Float32Array(n.count*3);
@@ -92,7 +111,7 @@ function bakeFar(source){
    const bone=s.bones[g.attributes.skinIndex.getComponent(i,k)];part.fromBufferAttribute(n,i).transformDirection(bone.matrixWorld);dir.addScaledVector(part,w);}
   dir.normalize().toArray(normals,i*3);
  }
- g.setAttribute('normal',new T.BufferAttribute(normals,3));g.deleteAttribute('skinIndex');g.deleteAttribute('skinWeight');g.computeBoundingSphere();
+ g.setAttribute('normal',new T.BufferAttribute(normals,3));g.deleteAttribute('skinIndex');g.deleteAttribute('skinWeight');g.computeBoundingSphere();return g;
 }
 async function loadDistantPortrait(model){
  const map=await new T.TextureLoader().loadAsync('assets/manifestation/cortege-v1/'+model.name+'-distance.webp');
@@ -112,7 +131,16 @@ export async function loadCortege(fallbackCamera=null){
  motion=data.m;
  await Promise.all(models.map(async model=>{
   outfits.set(model.name,model);
-  if(model.far){bakeFar(model);if(softwareCamera)await loadDistantPortrait(model);}
+  if(model.far){
+   model.low=model.far;model.lowFist=closedHand(model.low);model.nearFist=closedHand(model.near);
+   if(!softwareCamera){
+    // Four key poses on one mesh let every distant marcher change stride and raise a fist independently.
+    model.marching=bakeFar(model,model.low,3,0);
+    const targets=[bakeFar(model,model.low,19,0),bakeFar(model,model.lowFist,3,8),bakeFar(model,model.lowFist,19,8)];
+    for(const name of ['position','normal'])model.marching.morphAttributes[name]=targets.map(g=>g.attributes[name]);
+   }
+   if(softwareCamera)await loadDistantPortrait(model);
+  }
  }));
 }
 export function makeMarcher(id,options={}){
@@ -131,30 +159,39 @@ export function makeMarcher(id,options={}){
 }
 export function poseMarcher(actor,time,strength,signal=false,cameraPosition=null){
  const d=actor.userData,moving=strength>.38,step=moving?(Math.floor((time*.85+d.offset)*32)%32+32)%32:0;
- const state=pose(step,moving,signal?2:d.holding?1:0);
+ const lift=Math.round(Math.min(1,Math.max(0,Number(signal)))*7);
+ const state=pose(step,moving,lift?lift+1:d.holding?1:0);
  if(d.card&&cameraPosition){
   const dx=cameraPosition.x-actor.position.x,dz=cameraPosition.z-actor.position.z;
-  d.card.visible=dx*dx+dz*dz>72;d.body.visible=!d.card.visible;
+  d.card.visible=dx*dx+dz*dz>(lift?220:72);d.body.visible=!d.card.visible;
   d.card.rotation.y=Math.atan2(dx,dz)-actor.rotation.y;
   d.card.geometry=d.outfit.portraits[Math.cos(d.card.rotation.y)<0?1:0].geometry;
  }else if(d.card)d.card.visible=false;
- if(d.outfit.low&&cameraPosition)d.body.geometry=actor.position.distanceToSquared(cameraPosition)>144?d.outfit.low:d.outfit.near;
+ if(d.outfit.low&&cameraPosition){
+  const low=actor.position.distanceToSquared(cameraPosition)>144,fist=lift>=3&&!d.holding;
+  d.body.geometry=low?(fist?d.outfit.lowFist:d.outfit.low):(fist?d.outfit.nearFist:d.outfit.near);
+ }
  d.body.skeleton=state.skeleton;d.grip.copy(state.grip).multiplyScalar(d.body.scale.x);
 }
 export function backgroundMarchers(parent,count){
- const dummy=new T.Object3D(),batches=ensemble.map((name,i)=>{
-  const model=outfits.get(name),n=Math.ceil((count-i)/ensemble.length);
-  const parts=model.portraits||[{geometry:model.far,material:model.material}];
+ const dummy=new T.Object3D(),weights={morphTargetInfluences:[0,0,0]};
+ const variants=ensemble.length,batches=Array.from({length:Math.min(variants,count)},(_,index)=>{
+  const model=outfits.get(ensemble[index]),n=Math.ceil((count-index)/variants);
+  const parts=model.portraits||[{geometry:model.marching,material:model.material}];
   return parts.map(({geometry,material})=>{
    const batch=new T.InstancedMesh(geometry,material,n);batch.frustumCulled=false;parent.add(batch);return batch;
   });
  });
- return {count,set(i,x,y,z,heading){
+ return {count,set(i,x,y,z,heading,lift=0,stride=0){
   dummy.position.set(x,y,z);dummy.rotation.y=heading;dummy.scale.setScalar(modelScale*(.93+i*17%13*.011));dummy.updateMatrix();
-  const batchesForActor=batches[i%ensemble.length],slot=Math.floor(i/ensemble.length);
-  if(batchesForActor.length===1){batchesForActor[0].setMatrixAt(slot,dummy.matrix);return;}
+  const batchesForActor=batches[i%variants],slot=Math.floor(i/variants);
+  if(batchesForActor.length===1){
+   const batch=batchesForActor[0],w=weights.morphTargetInfluences;
+   w[0]=stride*(1-lift);w[1]=lift*(1-stride);w[2]=lift*stride;
+   batch.setMatrixAt(slot,dummy.matrix);batch.setMorphAt(slot,weights);return;
+  }
   const angle=Math.atan2(softwareCamera.position.x-x,softwareCamera.position.z-z);
   const facing=Math.cos(angle-heading)<0?1:0;dummy.rotation.y=angle;dummy.updateMatrix();
   batchesForActor[facing].setMatrixAt(slot,dummy.matrix);dummy.scale.setScalar(0);dummy.updateMatrix();batchesForActor[1-facing].setMatrixAt(slot,dummy.matrix);
- },finish(){for(const parts of batches)for(const batch of parts)batch.instanceMatrix.needsUpdate=true;}};
+ },finish(){for(const parts of batches)for(const batch of parts){batch.instanceMatrix.needsUpdate=true;if(batch.morphTexture)batch.morphTexture.needsUpdate=true;}}};
 }

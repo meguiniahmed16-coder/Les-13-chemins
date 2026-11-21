@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
+import {crowdLayout,crowdMotion,cordonPosition} from './manifestation-formation.js';
 import {newRun,advance,yellow,red,selectTarget,selectNext,callFromStatue,gameInstruction,FLAG,STATUE,WEAPONS,CRS_WAVES} from './manifestation-core.js';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 const idle={x:0,y:0,red:false},walk={x:0,y:1,red:false};
@@ -29,7 +30,7 @@ function defeat(r,id){
  const wave=r.crsWaves[id-1];
  for(let i=0;i<180&&wave.status==='waiting';i++)advance(r,.12,walk);
  assert.equal(wave.status,'active');
- for(let officer=0;officer<4;officer++){
+ for(let officer=0;officer<wave.officers.length;officer++){
   assert.equal(selectTarget(r,{type:'crs',wave:id,id:officer}),true);
   assert.equal(red(r),true);
   assert.equal(wave.officers[officer].status,'standing');
@@ -116,7 +117,7 @@ test('Sélection visible : deux anneaux, flèche et état confirmé',()=>{
 });
 test('CRS distincts et cortège de couleur',()=>{
  const js=read('manifestation-app.js');
- assert.ok(js.includes('officer.baseX=(i-1.5)*2.35'));
+ assert.ok(js.includes('cordonPosition(i,wave.officers.length)'));
  assert.ok(js.includes('officer.actor.scale.setScalar(1.30)'));
  assert.ok(read('manifestation-crs.js').includes('Bouclier de maintien de l’ordre'));
  assert.ok(js.includes("'TOUS ENSEMBLE'"));
@@ -182,7 +183,7 @@ test('La fleur et le bisou sont aussi accessibles avant leur vague',()=>{
   r.x=0;
   for(let i=0;i<70&&r.crsWaves[w.id-1].status==='waiting';i++)advance(r,.12,walk);
   assert.equal(r.crsWaves[w.id-1].status,'active');
-  for(let id=0;id<4;id++){
+  for(let id=0;id<w.count;id++){
    assert.ok(selectTarget(r,{type:'crs',wave:w.id,id}));
    assert.ok(red(r));
    for(let k=0;k<8;k++)advance(r,.12,idle);
@@ -215,28 +216,29 @@ test('Sélection individuelle des CRS avant le tir, puis impact différé',()=>{
  assert.equal(w.officers[2].status,'standing');
  for(let i=0;i<8;i++)advance(r,.12,idle);
  assert.equal(w.officers[2].status,'transformed');
- assert.deepEqual(w.officers.filter(o=>o.status==='standing').map(o=>o.id),[0,1,3]);
+ assert.deepEqual(w.officers.filter(o=>o.status==='standing').map(o=>o.id),w.officers.map(o=>o.id).filter(id=>id!==2));
  assert.ok(r.events.some(e=>e.type==='projectile:fire'&&e.officer===2));
  assert.ok(r.events.some(e=>e.type==='projectile:hit'&&e.officer===2));
 });
-test('Le bouton Cible fait défiler quatre CRS différents',()=>{
+test('Le bouton Cible fait le tour du cordon entier',()=>{
  const r=phase3();const p=WEAPONS[0];r.x=p.x;r.z=p.z;
  selectTarget(r,{type:'pickup',id:1});yellow(r);r.x=0;
  const w=r.crsWaves[0];for(let i=0;i<180&&w.status==='waiting';i++)advance(r,.12,walk);
- const result=[];for(let i=0;i<4;i++){assert.ok(selectNext(r));result.push(r.selected.id);}
- assert.deepEqual(result,[0,1,2,3]);
+ const result=[];for(let i=0;i<w.officers.length;i++){assert.ok(selectNext(r));result.push(r.selected.id);}
+ assert.deepEqual(result,w.officers.map(o=>o.id));assert.ok(selectNext(r));assert.equal(r.selected.id,0);
 });
 test('Trois vagues, chacune vaincue avec son arme et non une autre',()=>{
  const r=phase3();
  for(const w of CRS_WAVES){
   const defeated=defeat(r,w.id);
   assert.equal(defeated.kind,w.kind);
-  assert.deepEqual(defeated.officers.map(o=>o.status),Array(4).fill('transformed'));
+  assert.deepEqual(defeated.officers.map(o=>o.status),Array(w.count).fill('transformed'));
   assert.ok(r.events.some(e=>e.type==='crs:repelled'&&e.wave===w.id));
  }
  const hits=r.events.filter(e=>e.type==='projectile:hit');
- assert.equal(hits.length,12);
- assert.equal(new Set(hits.map(e=>e.wave+':'+e.officer)).size,12);
+ assert.deepEqual(CRS_WAVES.map(w=>w.count),[10,14,18]);
+ assert.equal(hits.length,42);
+ assert.equal(new Set(hits.map(e=>e.wave+':'+e.officer)).size,42);
 });
 test('Traverser la foule adverse puis recevoir les seize nouveaux suiveurs',()=>{
  const r=phase3();for(let id=1;id<=3;id++)defeat(r,id);
@@ -308,7 +310,7 @@ test('La seconde foule suit après avoir été traversée',()=>{
  const js=read('manifestation-app.js');
  assert.ok(js.includes('bastilleCrowd.visible=run.z>=92'));
  assert.ok(js.includes('i<run.joined'));
- assert.ok(js.includes('behindNarrator(run.z,run.leaderZ-3-i*.21,6.2)'));
+ assert.ok(js.includes('behindNarrator(run.z,run.leaderZ-15-a.slot.back+m.forward,6.2)'));
  assert.ok(js.includes('updateCarriedProps();'));
  assert.ok(js.includes('const all=[...bastilleActors,...crowdActors]'));
 });
@@ -318,8 +320,8 @@ test('Les 3 chemins et les points du plateau restent compatibles',()=>{
  assert.ok(reader.includes('step!==passed.length+1'));
  assert.ok(reader.includes('state.points+=10'));
  assert.ok(html.includes('Chapitre 4 — « Drapeau rouge »'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261121-republique-v2'));
- assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=20261121-republique-v2'));
+ assert.ok(html.includes('manifestation-runtime.js?v=camarades-cortege-v3'));
+ assert.ok(reader.includes('jeu-manifestation.html?embedded=1&v=camarades-cortege-v3'));
  assert.match(page,/rendezvous-plateau\.js\?v=[^"]+/);
 });
 test('Chaque personnage du cortège possède ses textures et son maillage articulé publié',()=>{
@@ -481,5 +483,23 @@ test('La manette rappelle la fonction DESCENDRE du bouton JAUNE',()=>{
  assert.ok(js.includes("run.climbed||run.climb?.direction==='down'?'DESCENDRE':'MONTER'"));
  assert.ok(js.includes("$('statueDescend').onclick=yellowPress"));
  assert.ok(html.includes('JAUNE pour le récupérer'));
- assert.ok(html.includes('manifestation-runtime.js?v=20261121-republique-v2'));
+ assert.ok(html.includes('manifestation-runtime.js?v=camarades-cortege-v3'));
+});
+
+test('Les groupes gardent leur place dans la foule et leurs gestes restent indépendants',()=>{
+ const layout=crowdLayout(44,6.2,12.8,721);
+ assert.deepEqual(layout,crowdLayout(44,6.2,12.8,721));
+ assert.ok(new Set(layout.map(s=>s.back.toFixed(2))).size>35);
+ for(const time of [0,2.5,4,11]){
+  const poses=layout.map(s=>crowdMotion(s,time));
+  assert.ok(poses.some(p=>p.lift===1)&&poses.some(p=>!p.lift));
+  assert.ok(new Set(poses.map(p=>p.yaw.toFixed(2))).size>18);
+ }
+ for(const wave of CRS_WAVES){
+  const slots=Array.from({length:wave.count},(_,i)=>cordonPosition(i,wave.count));
+  for(const [i,s] of slots.entries()){
+   assert.ok(Math.abs(s.x)<7);
+   assert.ok(slots.slice(i+1).every(t=>Math.hypot(s.x-t.x,s.z-t.z)>1.7));
+  }
+ }
 });

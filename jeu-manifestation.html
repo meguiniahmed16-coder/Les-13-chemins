@@ -12,7 +12,7 @@
 .marquee{color:#ffecbd;font:600 clamp(17px,3vw,27px) Georgia,serif;display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 4px 10px}
 .marquee small{font:700 10px/1.5 system-ui;letter-spacing:.11em;color:#e4d0a5}
 .screen{position:relative;height:clamp(290px,54dvh,590px);border:2px solid #141b18;border-radius:9px;overflow:hidden;background:linear-gradient(#a5c7d1,#e2e5c9);isolation:isolate}
-#world{display:block;width:100%;height:100%;touch-action:pan-y}.hud{position:absolute;z-index:3;top:5px;left:7px;right:7px;display:flex;align-items:center;justify-content:space-between;gap:6px;pointer-events:none;text-shadow:0 1px 2px #101b18}
+#world{display:block;width:100%;height:100%;touch-action:none;user-select:none}.hud{position:absolute;z-index:3;top:5px;left:7px;right:7px;display:flex;align-items:center;justify-content:space-between;gap:6px;pointer-events:none;text-shadow:0 1px 2px #101b18}
 .hudbox{background:#152b2788;padding:4px 7px;border:1px solid #bfd4ba65;border-radius:5px;max-width:60%;min-height:23px}.hudbox strong{display:block;font:700 clamp(10px,1.4vw,12px)/1.25 system-ui,sans-serif;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#fff2d7}.hudbox span{display:none}.pts{font:700 15px/1.1 Georgia,serif;white-space:nowrap;color:#fff0b3}
 .crs-alert[hidden]{display:none!important}.crs-alert{position:absolute;z-index:5;right:8px;bottom:92px;max-width:76%;padding:8px 10px;background:#233b4de8;border:2px solid #f2d9b0;border-radius:7px;color:#fff4e5;font:800 12px/1.35 system-ui,sans-serif;pointer-events:none;box-shadow:0 5px 18px #13242d88}@media(max-width:650px){.crs-alert{right:6px;bottom:86px;font-size:11px;padding:6px 8px}}.hint{position:absolute;z-index:2;bottom:14px;left:12px;right:12px;pointer-events:none;background:#172d27e7;padding:10px 12px;border:1px solid #e0c58b77;color:#f5efd7;font-size:clamp(11px,1.5vw,14px);text-align:center}
 .chapter-sky{position:absolute;z-index:2;left:50%;top:28px;transform:translateX(-50%);width:min(68%,600px);pointer-events:none;user-select:none}
@@ -153,8 +153,8 @@
  <text class="chapter-pages" x="360" y="153" text-anchor="middle">p. 59–60</text>
 </svg>
 </div>
-<button type="button" class="turn-360" id="turn360" aria-label="Faire tourner la caméra et le personnage à 360 degrés">↻ Vue 360°</button>
-<div id="crsAlert" class="crs-alert" role="status" aria-live="polite" hidden>🚨 CRS SUR LA CHAUSSÉE · ❤️ 0/4</div>
+<button type="button" class="turn-360" id="turn360" aria-label="Faire un tour de caméra à 360 degrés">↻ Vue 360°</button>
+<div id="crsAlert" class="crs-alert" role="status" aria-live="polite" hidden>CRS sur la chaussée</div>
 <div id="renderError" class="render-error" role="alert" hidden></div>
 <div id="weaponPrompt" class="weapon-prompt" hidden>Récupère ♥ avant les CRS</div>
 <div class="selection-ui" role="group" aria-label="Sélectionner puis agir">
@@ -207,7 +207,7 @@
 <div class="deck" role="group" aria-label="Manette de jeu"><div><div class="stick-zone" id="stick" aria-label="Joystick de déplacement" role="group"><div class="stick-knob" id="knob"></div></div><span class="dir-label">DÉPLACEMENT</span></div>
 <div class="face-buttons"><div class="face-unit"><button type="button" id="yellow" class="round yellow" aria-label="Jaune : agir et grimper">▲</button><small id="yellowLabel">AGIR / GRIMPER</small></div><div class="face-unit"><button type="button" id="red" class="round red" aria-label="Rouge : appeler et rassembler">●</button><small id="redLabel">RASSEMBLER</small></div></div></div>
 <div id="controlsStatus" class="controls-status" role="status" hidden></div>
-<p class="instructions">Touche un objet, puis JAUNE pour le récupérer. Touche un CRS, puis ROUGE pour lui envoyer un symbole. ◎ Cible permet aussi de sélectionner.</p>
-<div class="under-actions"><button type="button" id="back">← Retour au plateau</button><button type="button" id="next">Suivant · Sans points →</button></div>
+<p class="instructions">Glisse sur la scène pour tourner ou lever la caméra. Au clavier, J/L pour tourner, I/K pour la hauteur, C pour recentrer. Touche un objet, puis JAUNE pour le récupérer. Touche un CRS, puis ROUGE pour lui envoyer un symbole. ◎ Cible permet aussi de sélectionner.</p>
+<div class="under-actions"><button type="button" id="centerView" title="Raccourci C">Recentrer la caméra</button><button type="button" id="back">← Retour au plateau</button><button type="button" id="next">Suivant · Sans points →</button></div>
 </main><div class="footer">Paris, 2002 · Rues réelles, distances adaptées. Boutiques et rencontres librement interprétées.<br>Décors de Paris, statue et personnages · <a href="assets/manifestation/republique/credits.txt">Crédits des modèles 3D</a> · Les Treize Chemins · Chapitre 4, p. 59–60.</div></div>
-<script src="manifestation-runtime.js?v=20261121-republique-v2"></script></body></html>
+<script src="manifestation-runtime.js?v=camarades-cortege-v3"></script></body></html>

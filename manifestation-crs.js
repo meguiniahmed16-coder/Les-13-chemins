@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 let equipment;
+const bodyBounds=new WeakMap();
 function plate(text,width,height,{ground='#192d46',ink='#f3f5ee',stripe=false}={}){
  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;
  const ctx=canvas.getContext('2d');ctx.fillStyle=ground;ctx.fillRect(0,0,512,160);
@@ -51,7 +52,8 @@ export function createOfficer(asset,id){
  const actor=new T.Group(),stage=new T.Group(),body=clone(asset.scene);stage.rotation.y=Math.PI;actor.add(stage);
  const mixer=new T.AnimationMixer(body),idle=mixer.clipAction(asset.animations.find(a=>a.name==='Calm Idle')),walk=mixer.clipAction(asset.animations.find(a=>a.name==='Calm Walk'));
  idle.play();walk.play().setEffectiveWeight(0);mixer.setTime(.3);body.updateMatrixWorld(true);
- const box=new T.Box3().setFromObject(body,true),s=1.79/(box.max.y-box.min.y),c=box.getCenter(new T.Vector3());
+ if(!bodyBounds.has(asset.scene))bodyBounds.set(asset.scene,new T.Box3().setFromObject(body,true));
+ const box=bodyBounds.get(asset.scene),s=1.79/(box.max.y-box.min.y),c=box.getCenter(new T.Vector3());
  body.scale.multiplyScalar(s);body.position.set(-c.x*s,-box.min.y*s,-c.z*s);stage.add(body);
  body.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;o.castShadow=true;}});
  const items=Object.fromEntries(Object.entries(equipment).map(([k,o])=>[k,o.clone(true)]));stage.add(...Object.values(items));

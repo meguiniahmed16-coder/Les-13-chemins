@@ -16,9 +16,9 @@ export const WEAPONS=Object.freeze([
  Object.freeze({id:3,kind:'kiss',icon:'💋',name:'Bisou',x:6.2,z:63})
 ]);
 export const CRS_WAVES=Object.freeze([
- Object.freeze({id:1,trigger:19,anchor:28,kind:'heart'}),
- Object.freeze({id:2,trigger:46,anchor:55,kind:'flower'}),
- Object.freeze({id:3,trigger:73,anchor:82,kind:'kiss'})
+ Object.freeze({id:1,trigger:19,anchor:28,count:10,kind:'heart'}),
+ Object.freeze({id:2,trigger:46,anchor:55,count:14,kind:'flower'}),
+ Object.freeze({id:3,trigger:73,anchor:82,count:18,kind:'kiss'})
 ]);
 export const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -33,7 +33,7 @@ export function newRun(){
   clock:0,finished:false,events:[],selected:null,hasFlag:false,
   weapon:null,pickups:WEAPONS.map(w=>({...w,collected:false})),
   crsWaves:CRS_WAVES.map(w=>({...w,status:'waiting',cooldown:0,startedAt:0,repelledAt:0,
-    officers:Array.from({length:4},(_,id)=>({id,status:'standing',targeted:false,hitAt:0})),shots:[]})),
+    officers:Array.from({length:w.count},(_,id)=>({id,status:'standing',targeted:false,hitAt:0})),shots:[]})),
   leaderZ:-7,cohesion:82,joined:0,joining:false};
 }
 export function progress(run,step){
