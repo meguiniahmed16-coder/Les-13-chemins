@@ -39,6 +39,8 @@ export function generateAppearance(gender,age,plus,random=Math.random){
     if(random()<.2){delete outfit.haut;delete outfit.bas;outfit.robe=plus?pick(['mh1640','mh1853']):'mh1640';}
   }
   if(random()<.22)outfit.lunettes='mh153';
-  const studio=normaliseStudio({face,skinLevel:Math.floor(random()*101),outfit,denim:random()<.5},plus,avatar,gender);
+  // Weight the initial palette toward light and intermediate shades; the slider keeps the entire range.
+  const skinLevel=Math.round(100*random()**1.7);
+  const studio=normaliseStudio({face,skinLevel,outfit,denim:random()<.5},plus,avatar,gender);
   return {...avatar,studio};
 }

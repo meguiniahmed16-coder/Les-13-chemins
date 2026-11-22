@@ -150,3 +150,21 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
   }
   .studio-drawer{grid-column:2;grid-row:1/-1}
 }
+
+/* Anchor the thread inside the available room height, including with the mobile keyboard. */
+.stage:has(.conversation-footer:not([hidden])):not(.immersive):not(:fullscreen):not(:has(.studio-drawer:not([hidden]))){
+ height:var(--room-height,min(78dvh,760px));grid-template-rows:minmax(0,1fr) auto;
+}
+.conversation-footer .thread-heading{display:flex;align-items:center;gap:6px;grid-column:1/-1;grid-row:1;min-width:0;}
+.thread-heading strong{flex:1;overflow-wrap:anywhere;font:600 16px Georgia,serif}
+.thread-heading button{font-size:12px;padding:4px 7px;}
+.conversation-footer .thread-history{grid-column:1/-1;grid-row:2;overflow-y:auto;overscroll-behavior:contain;max-height:clamp(55px,13dvh,110px);font:14px/1.4 system-ui;color:#243d33}
+.thread-history:empty{display:none}.thread-history p{margin:0 0 4px}
+.conversation-footer .camera-slot,.conversation-footer .conversation-tools{grid-row:auto}
+.conversation-footer.thread-folded>:not(.thread-heading){display:none}
+@media(max-width:760px),(max-height:500px){
+ .conversation-footer:not([hidden]){max-height:48dvh;overflow-y:auto;overscroll-behavior:contain;gap:4px;}
+ .conversation-footer .guest-compose{grid-row:3;min-width:0}.guest-compose input{min-width:0}
+ .stage:has(.studio-drawer:not([hidden])) .conversation-footer{display:none}
+}
+.arrival-status{grid-column:1/-1;margin:0;font:13px/1.3 system-ui}.arrival-status:empty{display:none}

@@ -1,18 +1,19 @@
-import {referenceStudio,normaliseStudio} from './studio-look.js?v=duo6';
+import {generateAppearance} from './starting-appearance.js?v=49';
+import {referenceStudio,normaliseStudio} from './studio-look.js?v=presence49';
 import {reactionFor} from './conversation-reactions.js';
-import {createDrawer} from './studio-drawer.js?v=salon47';
-import {createSalonChat} from './salon-chat.js?v=salon44';
-import {guestAppearance} from './salon-encounter.js?v=salon43';
+import {createDrawer} from './studio-drawer.js?v=presence49';
+import {createSalonChat} from './salon-chat.js?v=presence49';
+import {guestAppearance} from './salon-encounter.js?v=presence49';
 import {loadStudio} from './studio-model.js?v=salon43';
 import {resource} from './studio-assets.js';
 import {createPerformer} from './salon-performance.js';
 
 class SalonV27 extends HTMLElement{
-  #frame;#ready;#scene;#drawer;#chat;#options;#look;#guest;#gender;#drafts={};#serial={f:0,m:0,guest:0};#fallback;#listen;#cameraKey='';#ownStyle=createPerformer('joueur');#lastTalk=0;
+  #frame;#ready;#scene;#drawer;#chat;#options;#look;#guest;#gender;#drafts={};#serial={f:0,m:0,guest:0};#fallback;#listen;#cameraKey='';#ownStyle=createPerformer('joueur');#lastTalk=0;#editing='';
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon47"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=presence49"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -39,23 +40,61 @@ class SalonV27 extends HTMLElement{
     </div><aside class="studio-drawer" id="studio-drawer" hidden></aside></div>`;
     this.#chat=createSalonChat(root,{
       invite:async person=>{
-        const {studio,gender}=guestAppearance(person);
+        let {studio,gender}=guestAppearance(person);
+        const ownerLook=this.hasAttribute('salon-auteur')&&String(person.id)==='258'&&(this.#drafts.femme?.look||this.#options.salonLooks?.femme);
+        try{const saved=sessionStorage.getItem(this.#visitorKey(person));if(saved)studio=normaliseStudio(JSON.parse(saved),true,undefined,gender);else if(ownerLook)studio=ownerLook;}catch{}
         if(!await this.#dress('guest',studio,gender))return false;
-        this.#guest={person,gender,performer:createPerformer(person.id)};
-        const channels=await resource('conversation-face');
-        await this.#scene.enableDialogue(channels,()=>this.#speechFrame());
-        this.#drawer.toggle(false);this.#scene.meet();return true;
+        this.#guest={person,gender,studio,performer:createPerformer(person.id)};
+        this.#drawer.toggle(false);this.#scene.meet(String(person.id)==='258');this.#cameraKey='';
+        const visitor=this.#guest;
+        resource('conversation-face').then(channels=>this.#scene?.enableDialogue(channels,()=>this.#speechFrame(),()=>this.#guest===visitor)).catch(()=>{});
+        return true;
       },
-      leave:()=>{this.#cameraKey='';this.#serial.guest++;this.#guest=null;this.#scene?.endDialogue();this.#scene?.reset('guest');this.#scene?.clearMeeting();},
+      customize:()=>this.#editVisitor(),
+      leave:()=>{if(this.#editing==='guest')this.#drawer.toggle(false);this.#cameraKey='';this.#serial.guest++;this.#guest=null;this.#scene?.endDialogue();this.#scene?.clearMeeting();this.#scene?.reset('guest');},
       change:()=>this.#syncCamera(),
       rate:who=>who==='guest'?this.#guest?.performer?.rate||1:1,
       gender:who=>(who==='guest'?this.#guest?.gender:this.#gender)||'homme'
     });
     root.querySelector('.v27-actions').append(root.querySelector('.invite-toggle'));
-    this.#drawer=createDrawer(root,look=>this.#dress(this.#gender==='femme'?'f':'m',look,this.#gender),mode=>this.#scene?.focus(mode),()=>this.#scene?.departure(),(open,mode)=>{
+    this.#drawer=createDrawer(root,look=>this.#editing==='guest'?this.#dress('guest',look,this.#guest.gender):this.#editing==='resident'?this.#dress('f',look,'femme'):this.#dress(this.#gender==='femme'?'f':'m',look,this.#gender),mode=>this.#scene?.focus(mode,this.#editing),()=>this.#scene?.departure(),(open,mode)=>{
       this.#frame?.contentDocument?.body.classList.toggle('editing-duo',open);
-      if(open)this.#scene?.focus(mode?'Corps':'Visage');
+      if(open){this.#targets();this.#chat.manual();this.#cameraKey='';this.#scene?.camera('manual');this.#scene?.focus(mode?'Corps':'Visage',this.#editing);}
+      else if(this.#editing){this.#editing='';void this.#select(this.#gender);}
     });
+  }
+  #targets(){
+    const header=this.shadowRoot.querySelector('.studio-drawer header');
+    let choice=header.querySelector('select');
+    if(!choice){choice=document.createElement('select');choice.setAttribute('aria-label','Personnage à personnaliser');header.querySelector('.close').before(choice);}
+    choice.replaceChildren(new Option('Mon avatar',''));
+    if(this.hasAttribute('salon-auteur')&&this.#gender!=='femme'&&String(this.#guest?.person.id)!=='258')choice.add(new Option('Marianne','resident'));
+    if(this.#guest)choice.add(new Option(this.#guest.person.name,'guest'));
+    choice.hidden=choice.length===1;choice.value=this.#editing;
+    choice.onchange=()=>{
+      this.#editing=choice.value;
+      if(this.#editing==='guest')this.#editVisitor();
+      else if(this.#editing==='resident'){
+        const options=this.#options;
+        const saved=this.#drafts.femme?.look||options.salonLooks?.femme||referenceStudio('femme');
+        const state=this.#drafts.femme??={reference:referenceStudio('femme'),saved:options.salonLooks?.femme,custom:!!options.salonLooks?.femme,look:saved};
+        this.shadowRoot.querySelector('.v27-look-choice').hidden=true;
+        this.#drawer.configure(saved,{gender:'femme',plus:true,savedStudio:state.saved||state.reference,
+          change:look=>{state.look=look;state.custom=true;},
+          save:async look=>{await options.saveCharacter('femme',look);state.saved=look;
+            try{localStorage.setItem('salon-v27-look:'+options.memberKey+(options.gender==='femme'?'':':femme'),'1');}catch{}}});
+      }else void this.#select(this.#gender);
+      this.#scene?.focus('Visage',this.#editing);
+    };
+  }
+  #visitorKey(person){return 'salon-invite-apparence:'+this.#options.memberKey+':'+person.id;}
+  #editVisitor(){
+    const guest=this.#guest;if(!guest)return;
+    this.#editing='guest';
+    this.shadowRoot.querySelector('.v27-look-choice')?.setAttribute('hidden','');
+    this.#drawer.configure(guest.studio,{gender:guest.gender,plus:true,savedStudio:guest.studio,
+      change:look=>{guest.studio=look;},save:async look=>{sessionStorage.setItem(this.#visitorKey(guest.person),JSON.stringify(look));}});
+    this.#drawer.toggle(true);
   }
   #syncCamera(){
     if(!this.#guest||!this.#chat||!this.#scene)return;
@@ -113,7 +152,7 @@ class SalonV27 extends HTMLElement{
         win.addEventListener('salon-role-change',event=>{if(this.#options)this.#select(event.detail);},{signal});
         win.addEventListener('salon-manual-camera',()=>{this.#chat.manual();this.#syncCamera();},{signal});
         if(doc.body.classList.contains('ready'))ready();
-        const failed=()=>{if(doc.getElementById('retry')?.hidden===false&&!this.#scene){resolve(null);
+        const failed=()=>{if(doc.getElementById('retry')?.hidden===false&&!this.#scene){frame.style.visibility='';resolve(null);
           if(!doc.getElementById('compatible-room')){
             const button=doc.createElement('button');button.id='compatible-room';button.textContent='Ouvrir la vue compatible';
             button.onclick=()=>this.#software();doc.getElementById('loading').append(button);
@@ -122,7 +161,7 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.src='/membres/v27/salon.html?v=27duo6';
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=presence49'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
@@ -144,7 +183,12 @@ class SalonV27 extends HTMLElement{
     this.#serial.f++;this.#serial.m++;this.#drafts={};
     return this.#ready.then(async scene=>{
       if(!scene||this.#options?.memberKey!==options.memberKey)return;
-      scene.setGender(options.gender);await this.#select(options.gender);
+      try{scene.setGender(options.gender);await this.#select(options.gender);
+        if(this.hasAttribute('salon-auteur')&&options.gender!=='femme'&&options.salonLooks?.femme){
+          let original=false;try{original=localStorage.getItem('salon-v27-look:'+options.memberKey+':femme')==='0';}catch{}
+          if(!original)await this.#dress('f',options.salonLooks.femme,'femme');
+        }
+      }finally{if(this.#frame)this.#frame.style.visibility='';}
     });
   }
   async #select(gender){
@@ -153,17 +197,24 @@ class SalonV27 extends HTMLElement{
     const pref='salon-v27-look:'+options.memberKey;
     const storage=gender===options.gender?pref:pref+':'+gender;
     const stored=options.salonLooks?.[gender];
-    const saved=stored||(own?options.savedStudio:null),reference=referenceStudio(gender);
+    const saved=stored||(own?options.savedStudio:null),author=this.hasAttribute('salon-auteur');
+    let reference=this.#drafts[gender]?.reference;
+    if(!reference){
+      const key=storage+':initial';
+      try{const raw=sessionStorage.getItem(key);if(!author&&raw)reference=normaliseStudio(JSON.parse(raw),true,undefined,gender);}catch{}
+      reference??=author?referenceStudio(gender):saved||generateAppearance(gender,1,true).studio;
+      if(!author)try{sessionStorage.setItem(key,JSON.stringify(reference));}catch{}
+    }
     let state=this.#drafts[gender];
     if(!state){
       let previous=null;try{previous=(options.temporary?sessionStorage:localStorage).getItem(storage);}catch{}
-      const use=Boolean(saved)&&(previous==='1'||(stored&&previous!=='0'));
-      state=this.#drafts[gender]={look:use?normaliseStudio(saved,options.plus,undefined,gender):reference,custom:use,saved};
+      const use=Boolean(saved)&&(previous==='1'||((stored||!author)&&previous!=='0'));
+      state=this.#drafts[gender]={reference,look:use?normaliseStudio(saved,options.plus,undefined,gender):reference,custom:use,saved};
     }
     const choices=this.shadowRoot.querySelector('.studio-drawer');
     let switcher=choices.querySelector('.v27-look-choice');
     if(!switcher){switcher=document.createElement('button');switcher.className='v27-look-choice';switcher.type='button';choices.querySelector('header').after(switcher);}
-    const label=()=>{switcher.hidden=!state.custom&&!state.saved;switcher.textContent=state.custom?'Reprendre le personnage V27':'Porter mon apparence enregistrée';};
+    const label=()=>{switcher.hidden=!author||!state.custom&&!state.saved;switcher.textContent=state.custom?'Reprendre le personnage V27':'Porter mon apparence enregistrée';};
     const persistChoice=()=>{try{(options.temporary?sessionStorage:localStorage).setItem(storage,state.custom?'1':'0');}catch{}};
     const configureDrawer=()=>this.#drawer.configure(state.look,{...options,gender,savedStudio:state.saved||reference,
       change:draft=>{state.look=draft;state.custom=true;label();if(own)options.change(draft);},
@@ -183,7 +234,7 @@ class SalonV27 extends HTMLElement{
     };
     configureDrawer();label();
     if(!choices.hidden)this.#scene.focus(choices.querySelector('.switch button:last-child').getAttribute('aria-pressed')==='true'?'Corps':'Visage');
-    if(state.custom)await this.#dress(key,state.look,gender);
+    if(state.custom||!author)await this.#dress(key,state.look,gender);
     else{this.#serial[key]++;this.#scene.reset(key);}
   }
   openOptions(open=true){if(this.#fallback)this.#fallback.openOptions(open);else this.#drawer.toggle(open);}

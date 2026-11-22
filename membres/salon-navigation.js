@@ -35,10 +35,13 @@ export function zoomCamera(c,multiplier,anchor){
 // Resolve the frontmost visible triangle along the picking ray used
 // as both renderers. Furniture IDs live on the actual seat, arms and back.
 export function seatAt(bytes,c,w,h,sx,sy) {
+  return surfaceAt(bytes,c,w,h,sx,sy)?.seat||null;
+}
+export function surfaceAt(bytes,c,w,h,sx,sy){
   const p=cameraProjection(w,h,false,c),scale=h*p.factor/2;
   const targetX=(sx-w/2)/scale,targetY=(h*(1+p.offset)/2-sy)/scale;
   const data=new DataView(bytes),x=[],y=[],depth=[],worldZ=[];
-  let closest=-Infinity,seat=null;
+  let closest=-Infinity,hit=null;
   for(let j=0;j<data.byteLength;j+=42) {
     if(!visiblePart(data.getUint8(j+13),p.sy*p.cp,p.cy*p.cp))continue;
     for(let v=0;v<3;v++) {
@@ -61,9 +64,10 @@ export function seatAt(bytes,c,w,h,sx,sy) {
     if(z<=closest||(p.perspective&&z>p.nearDepth))continue;
     closest=z;
     const hitZ=a*worldZ[0]+b*worldZ[1]+d*worldZ[2];
-    seat=seatForPart(data.getUint8(j+13),hitZ*100-800);
+    const inv=1-z*p.perspective,across=targetX*inv,up=targetY*inv,forward=z*p.cp-up*p.sp;
+    hit={x:p.x+p.cy*across+p.sy*forward,y:p.y+p.cp*up+p.sp*z,z:hitZ,depth:z,seat:seatForPart(data.getUint8(j+13),hitZ*100-800)};
   }
-  return seat;
+  return hit;
 }
 
 export {SalonMotion} from './salon-v27-motion.js?v=salon47';

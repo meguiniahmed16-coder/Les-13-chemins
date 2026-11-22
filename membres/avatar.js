@@ -5,11 +5,11 @@ import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js?v=salon43';
-import {createDrawer} from './studio-drawer.js?v=salon47';
+import {createDrawer} from './studio-drawer.js?v=presence49';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon47';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon47';
-import {createSalonChat} from './salon-chat.js?v=salon44';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon44';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=presence49';
+import {createSalonChat} from './salon-chat.js?v=presence49';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=presence49';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 async function loadActor(look,gender){
@@ -234,11 +234,11 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon47',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=presence49',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
-      rate:who=>(who==='player'?this.#playerStyle:this.#guest.style).rate,
+      rate:who=>(who==='player'?this.#playerStyle:this.#guest?.style)?.rate||1,
       gender:who=>(who==='player'?this.#gender:this.#guest?.gender)||'homme',
       leave:()=>{this.#world?.back();this.#cancelDeparture();this.#invitation++;this.#motion.expression=null;if(this.#guest)Object.assign(this.#motion.camera,this.#guest.previousCamera);this.#guest=null;this.#motion.camera.headroom=0;this.#schedule();}
     });
@@ -270,7 +270,7 @@ export class CheminsAvatar extends HTMLElement {
         await this.#open(true);if(showBags)return this.#loadWorld(true);return;
       }
       if(showBags)this.#state.textContent='Ouverture du jardin…';
-      this.#worldLoad=import('./depart.js?v=salon40').then(({createDeparture})=>createDeparture({
+      this.#worldLoad=import('./depart.js?v=presence49').then(({createDeparture})=>createDeparture({
         canvas:this.#canvas,context,roomFrame:()=>this.#view.frame,root:this.shadowRoot,signal:life.signal,makeGait:()=>new SalonMotion(undefined,newCamera()),
         onBag:which=>this.#selectBag(which),onReturn:()=>this.#cancelDeparture(),wake:this.#schedule
       })).then(world=>{if(life.signal.aborted){world.dispose();return;}this.#world=world;});
@@ -385,7 +385,7 @@ export class CheminsAvatar extends HTMLElement {
       this.#view=view;this.#canvas=this.#software?this.#cpu:this.#gpu;
       this.#cpu.hidden=!this.#software;this.#gpu.hidden=this.#software;
       this.#draw();this.#poster.hidden=true;
-      this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule,seat=>this.#guest?.seat?.id!==seat.id,this.#manualCamera,()=>this.#world);
+      this.#controls=bindSalon(this.shadowRoot,this.#motion,room,this.#schedule,seat=>this.#guest?.seat?.id!==seat.id,this.#manualCamera,()=>this.#world,()=>[actorHead(this.#motion),...(this.#guest?[actorHead(this.#guest.motion)]:[])]);
       this.dispatchEvent(new CustomEvent('avatar-ready'));
       void this.#loadWorld(false);
     }catch{if(epoch===this.#epoch){this.#view?.dispose();this.#view=null;this.#poster.hidden=false;this.#state.textContent='Le chargement du salon a été interrompu.';retry.hidden=false;}}

@@ -108,7 +108,7 @@ function shadowImage(){
  grad.addColorStop(0,'rgba(42,36,25,.72)');grad.addColorStop(.50,'rgba(42,36,25,.22)');grad.addColorStop(1,'rgba(42,36,25,0)');ctx.fillStyle=grad;ctx.fillRect(0,0,96,96);return new T.CanvasTexture(c)
 }
 const shadeMat=new T.MeshBasicMaterial({map:shadowImage(),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3});
-function shade(parent,x,z,w,l,y=.024){const o=mesh(new T.PlaneGeometry(w,l),shadeMat,parent,x,y,z);o.rotation.x=-Math.PI/2;return o}
+function shade(parent,x,z,w,l,y=.024){const o=mesh(new T.PlaneGeometry(w,l),shadeMat,parent,x,y,z);o.rotation.x=-Math.PI/2;o.userData.ignorePick=true;return o}
 const bagGeo=geom(info.bag);let start=0;info.bag.groups.forEach((count,i)=>{bagGeo.addGroup(start,count,i);start+=count});
 const bags={},bagSpots={pin:{z:-2.57,yaw:-1.50,tilt:-.12},ocre:{z:-1.94,yaw:-1.65,tilt:.09}};
 const bagBounds=new T.Box3(),bagVertex=new T.Vector3();
@@ -139,6 +139,8 @@ const seats=roomSeats.map(s=>({
  center:[(s.x-700)/100,(s.z+800)/100],gap:s.gap/100,height:s.height/100
 }));
 const actors={};let role='f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
+const authorRoom=new URLSearchParams(location.search).has('resident');
+let visiting=false,visitsMarianne=false;
 const encounter={active:false,loaded:false,loading:null,friends:null,route:null,clock:0,chatView:false};
 const exchange=reunionDialogue();
 function makeActor(id,withDefaultParts=true){
@@ -160,7 +162,12 @@ function makeActor(id,withDefaultParts=true){
  const shadow=shade(root,0,0,.82,.54,.030);return {id,root,body,parts,shadow,phase:0,speed:0,stamp:'',sit:0}
 }
 for(const id of ['f','m'])actors[id]=makeActor(id);
-function actorHome(){actors.f.root.position.set(-1.41,0,-2.30);actors.f.root.rotation.y=-.70;actors.m.root.position.set(-.60,0,-1.82);actors.m.root.rotation.y=-1.12;for(const a of Object.values(actors)){a.root.visible=true;a.sit=0;a.speed=0;a.phase=0;a.stamp='';animateBody(a,0,0)}}
+const visitor=makeActor('m',false);visitor.root.visible=false;
+function presence(){
+ for(const [id,actor] of Object.entries(actors))actor.root.visible=id===role||(authorRoom&&(!visiting||id==='f'&&!visitsMarianne));
+ visitor.root.visible=visiting;
+}
+function actorHome(){presence();actors.f.root.position.set(-1.41,0,-2.30);actors.f.root.rotation.y=-.70;actors.m.root.position.set(-.60,0,-1.82);actors.m.root.rotation.y=-1.12;for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.phase=0;a.stamp='';animateBody(a,0,0)}}
 actorHome();
 const fitData=JSON.parse(strFromU8(files['fit.json']));
 const wornGeo=bagGeo.clone();
@@ -503,7 +510,7 @@ for(let ring=0;ring<2;ring++){
 const keys=new Set(),stick={x:0,y:0,id:null},orbit={angle:1.07,pitch:.23,radius:3.60,focus:new T.Vector3(-2.19,.78,-1.78),follow:false}, player=()=>encounter.active?encounter.friends.ahmed:actors[role], marker=new T.Vector3(),ray=new T.Raycaster(),pointer=new T.Vector2();
 let last=performance.now(),frameHandle=0,reachable=false,panTime=0,jumpLock=0,poseSeat=null,contextLost=false;
 const pins={pin:$('pin'),ocre:$('ocre')},keyButtons=[...document.querySelectorAll('[data-role]')];
-const partner=()=>encounter.active?encounter.friends.lionel:actors[role==='f'?'m':'f'];
+const partner=()=>encounter.active?encounter.friends.lionel:visiting?visitor:actors[role==='f'?'m':'f'];
 const currentPair=()=>[player(),partner()];
 const trail=[];let trailTotal=0,homeView=false,windowView=false,approachedWindow=false;
 function windowCaption(){
@@ -523,7 +530,7 @@ function leaveWindow(){
 }
 function resetTrail(){
  const a=player(),b=partner(),p=a.root.position;trail.length=0;trailTotal=0;trail.push({x:p.x,z:p.z,s:0});
- b.root.visible=true;const offset=[[.78,.42],[-.78,.42],[0,.80],[0,-.80],[0,.38]].find(([x,z])=>canWalk(p.x+x,p.z+z)&&freeLine(p,p.x+x,p.z+z))||[0,0];
+ b.root.visible=visiting||authorRoom;const offset=[[.78,.42],[-.78,.42],[0,.80],[0,-.80],[0,.38]].find(([x,z])=>canWalk(p.x+x,p.z+z)&&freeLine(p,p.x+x,p.z+z))||[0,0];
  b.root.position.set(p.x+offset[0],0,p.z+offset[1]);b.root.rotation.y=Math.PI+.10;b.phase=.47;b.speed=b.sit=0;b.stamp='';animateBody(b,0,0);
 }
 function freeLine(p,x,z){if(where==='jardin'&&!clearPlantSegment(p,x,z))return false;const n=Math.max(1,Math.ceil(Math.hypot(x-p.x,z-p.z)/.13));for(let i=1;i<=n;i++)if(!canWalk(mix(p.x,x,i/n),mix(p.z,z,i/n)))return false;return true}
@@ -571,7 +578,7 @@ function canWalk(x,z){
 }
 function setRole(id){
  if(where!=='salon'||id===role||talkOpen||encounter.active)return;
- if(shelfView)setShelfView(false);if(sitting)getUp();actors[role].body.visible=true;freeCamera();approachedWindow=false;role=id;goal=null;keys.clear();for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0)}
+ if(shelfView)setShelfView(false);if(sitting)getUp();actors[role].body.visible=true;freeCamera();approachedWindow=false;role=id;presence();goal=null;keys.clear();for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0)}
  keyButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===id)));orbit.follow=false;hint();
 }
 keyButtons.forEach(b=>b.onclick=()=>{
@@ -600,7 +607,7 @@ function equip(which){
 }
 function returnHome(){
  if(encounter.active){leaveReunion();return;}
- if(where!=='jardin')return;cancelReveal();resetAir();for(const a of Object.values(actors))unwear(a);
+ if(where!=='jardin')return;cancelReveal();resetAir();for(const a of [...Object.values(actors),visitor])unwear(a);
  chosen=null;setLocation(false);actorHome();resetView();canvas.focus({preventScroll:true})
 }
 function resetView(){travel.reset();detail.reset();
@@ -763,7 +770,7 @@ function manualShot(){if(conversation){conversation=null;window.dispatchEvent(ne
 canvas.addEventListener('pointerdown',e=>{
  if(e.button>0)return;if(revealStart!==null)cancelReveal();canvas.focus();canvas.setPointerCapture(e.pointerId);
  held.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(held.size===2){travel.motion.stop();const mid=midPoint();pinch=mid.span;detail.begin(mid.x,mid.y);manualShot();if(touch)touch.moved=true;}
+ if(held.size===2){cancelTap();travel.motion.stop();const mid=midPoint();pinch=mid.span;detail.begin(mid.x,mid.y);manualShot();if(touch)touch.moved=true;}
  else touch={x:e.clientX,y:e.clientY,moved:false};
 });
 canvas.addEventListener('pointermove',e=>{
@@ -771,7 +778,7 @@ canvas.addEventListener('pointermove',e=>{
  held.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(held.size===2){const mid=midPoint();if(mid.span>0&&pinch>0)detail.zoom(pinch/mid.span,mid.x,mid.y);pinch=mid.span;return;}
  if(touch&&!touch.moved&&Math.hypot(e.clientX-touch.x,e.clientY-touch.y)>5)touch.moved=true;
- if(!touch?.moved)return;
+ if(!touch?.moved)return;cancelTap();
  if(travel.active){if(detail.active)takeCamera();travel.look(dx,dy);return;}
  if(conversation&&!detail.active)detail.begin(canvas.getBoundingClientRect().x+canvas.clientWidth*.5,canvas.getBoundingClientRect().y+canvas.clientHeight*.5);
  manualShot();if(detail.active){detail.orbit(dx,dy);return;}
@@ -779,21 +786,57 @@ canvas.addEventListener('pointermove',e=>{
  orbit.angle-=dx*.007;orbit.pitch=clamp(orbit.pitch+dy*.004,windowView?-.62:-.06,windowView?.68:.93);
 });
 const plane=new T.Plane(new T.Vector3(0,1,0),0),point=new T.Vector3();
+let singleTapTimer;
+function cancelTap(){clearTimeout(singleTapTimer);lastTap=null;}
 function tap(e){
- if(performance.now()<jumpLock)return;const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);ray.setFromCamera(pointer,cam);
- if(where==='salon'){
-  const volume=ray.intersectObjects(bookHits,false)[0];if(volume&&(shelfView||travel.active||player().root.position.distanceTo(volume.point)<1.85)){openBooks(volume.object.userData.book);return}
-  if(shelfView)return;
-  const hit=ray.intersectObjects(Object.values(bags),false)[0];if(hit){equip(hit.object.userData.bag);return}}
- else if(air.mode!=='off')return;else if(ray.intersectObjects(bayPanes,false).length&&player().root.position.z>4.9){returnHome();return}
- const now=performance.now(),dbl=lastTap&&now-lastTap.t<410&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<22;lastTap={t:now,x:e.clientX,y:e.clientY};if(!dbl)return;
- if(where==='salon'){const hit=ray.intersectObjects(roomParts.filter(o=>o.visible),false)[0];if(hit){const s=seats.filter(s=>Math.abs(hit.point.x-s.center[0])<.48&&Math.abs(hit.point.z-s.center[1])<.49&&hit.point.y<1.35)
- .sort((a,b)=>Math.hypot(hit.point.x-a.center[0],hit.point.z-a.center[1])-Math.hypot(hit.point.x-b.center[0],hit.point.z-b.center[1]))[0];
- if(s){walkToSeat(s);return}}}
- if(ray.ray.intersectPlane(plane,point)&&canWalk(point.x,point.z)){if(sitting)getUp();releaseSeatRoute();goal={x:point.x,z:point.z}}
+ if(performance.now()<jumpLock)return;
+ const x=e.clientX,y=e.clientY,now=performance.now();
+ const twice=lastTap&&now-lastTap.t<410&&Math.hypot(x-lastTap.x,y-lastTap.y)<22;
+ cancelTap();
+ if(!twice)lastTap={t:now,x,y};
+ const rect=canvas.getBoundingClientRect();pointer.set((x-rect.left)/rect.width*2-1,1-(y-rect.top)/rect.height*2);ray.setFromCamera(pointer,cam);
+ if(where!=='salon'&&air.mode!=='off')return;
+ if(!twice){
+   if(where==='salon'){
+     const volume=ray.intersectObjects(bookHits,false)[0];
+     if(volume&&(shelfView||detail.active||travel.active||player().root.position.distanceTo(volume.point)<1.85)){
+       singleTapTimer=setTimeout(()=>openBooks(volume.object.userData.book),410);return;
+     }
+     if(!shelfView){const bag=ray.intersectObjects(Object.values(bags),false)[0];if(bag)singleTapTimer=setTimeout(()=>equip(bag.object.userData.bag),410);}
+   }else if(ray.intersectObjects(bayPanes,false).length&&player().root.position.z>4.9)singleTapTimer=setTimeout(returnHome,410);
+   return;
+ }
+ const roots=where==='salon'?[indoor,...currentPair().map(a=>a.root),actors.f.root]:[...currentPair().map(a=>a.root),outdoor];
+ const hit=detail.pick(x,y,[...new Set(roots)].filter(o=>o.visible));
+ if(hit){
+   let object=hit.object,book;
+   const figures=[...new Set([...currentPair(),actors.f,actors.m])];
+   while(object){
+     const actor=figures.find(a=>a.root===object);
+     if(actor){
+       const heading=new T.Vector3(Math.sin(actor.root.rotation.y),.025,Math.cos(actor.root.rotation.y)).normalize();
+       manualShot();travel.reset();detail.framePoint(headCenter(actor),actor.root,.46*Math.max(1,.65/cam.aspect),heading);return;
+     }
+     if(object.userData.book!==undefined)book=object;
+     object=object.parent;
+   }
+   if(book){
+     const page=bookHits.find(p=>p.userData.book===book.userData.book&&!p.userData.spine);
+     manualShot();travel.reset();detail.framePoint(page.getWorldPosition(new T.Vector3()),page,.44*Math.max(1,.70/cam.aspect));return;
+   }
+   if(where==='salon'&&roomParts.includes(hit.object)){
+     const chair=seats.filter(s=>Math.abs(hit.point.x-s.center[0])<.48&&Math.abs(hit.point.z-s.center[1])<.49&&hit.point.y>.18&&hit.point.y<1.35)
+       .sort((a,b)=>Math.hypot(hit.point.x-a.center[0],hit.point.z-a.center[1])-Math.hypot(hit.point.x-b.center[0],hit.point.z-b.center[1]))[0];
+     if(chair){walkToSeat(chair);return;}
+   }
+   if(hit.point.y>.11&&hit.object!==ceiling){
+     manualShot();travel.reset();detail.framePoint(hit.point,hit.object,Math.min(.65,Math.max(.12,hit.distance*.62)));return;
+   }
+ }
+ if(!shelfView&&ray.ray.intersectPlane(plane,point)&&canWalk(point.x,point.z)){if(sitting)getUp();releaseSeatRoute();goal={x:point.x,z:point.z};}
 }
 canvas.onpointerup=e=>{if(!held.has(e.pointerId))return;const ok=held.size===1&&touch&&!touch.moved;held.delete(e.pointerId);if(ok)tap(e);touch=null};
-canvas.onpointercancel=e=>{held.delete(e.pointerId);touch=null};
+canvas.onpointercancel=e=>{cancelTap();held.delete(e.pointerId);touch=null};
 let lastWheel=-Infinity,lastWheelX=0,lastWheelY=0;
 canvas.addEventListener('wheel',e=>{
  e.preventDefault();const now=performance.now();
@@ -952,7 +995,7 @@ function placeBooks(){
      holder.rotation.y=Math.PI;
    }
   }
-  const cover=material(new T.Color(tone));box(holder,0,h*.5,0,w-.012,h-.013,thick,paper);
+  holder.userData.book=i;const cover=material(new T.Color(tone));box(holder,0,h*.5,0,w-.012,h-.013,thick,paper);
   for(const side of [-1,1])box(holder,0,h*.5,side*(thick*.5+.003),w,h,.006,cover);
   box(holder,-w*.49,h*.5,0,.012,h,thick+.012,cover);
   const o=mesh(new T.PlaneGeometry(w-.006,h-.005),bookTexture(title,author,tone),holder,0,h/2,thick/2+.0066);o.userData.book=i;bookHits.push(o);
@@ -1341,19 +1384,19 @@ shelvesButton.onclick=()=>setShelfView(!shelfView);
 
 $('lookHome').onclick=lookAtHome;setLocation(false);resetView();updateSize();
 const member=createMemberBridge({
- T,actors,player:()=>actors[role],partner:()=>actors[role==='f'?'m':'f'],seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,
+ T,actors:{...actors,guest:visitor},player:()=>actors[role],partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,
  unzip:unzipSync,get settled(){return !seatRoute&&player().speed<=.08;},get place(){return where},get role(){return role},setRole,freeCamera,
- focus(view){freeCamera();orbit.follow=false;const a=player(),p=a.root.position;
+ focus(view,target=''){freeCamera();orbit.follow=false;const a=target==='guest'&&visiting?visitor:target==='resident'&&authorRoom?actors.f:player(),p=a.root.position;
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);
  orbit.pitch=.065;orbit.radius=view==='Visage'?1.02:2.8;
  if(view==='Visage')orbit.focus.copy(headCenter(a));else orbit.focus.set(p.x,p.y+(a.sit>.5?.70:.95)*a.root.scale.y,p.z);updateCam(1);},
- meet(){if(encounter.active)leaveReunion();if(where!=='salon')return;releaseSeatRoute();if(sitting)getUp();
+ meet(marianne=false){if(encounter.active)leaveReunion();if(where!=='salon')returnHome();visiting=true;visitsMarianne=marianne;presence();reunionToggle.disabled=true;releaseSeatRoute();if(sitting)getUp();
  const pairs=[['chair','sofa2'],['east1','west1'],['west2','east2'],['end1','end2'],['sofa1','chair'],['sofa3','chair']];
  const pair=pairs[Math.floor(Math.random()*pairs.length)],seat=seats.find(s=>s.id===pair[0]),friend=partner();
  friend.root.position.set(...feetAt(seat,friend));friend.root.rotation.y=seat.yaw;
  friend.sit=1;friend.speed=0;friend.stamp='';animateBody(friend,0,seat);
  companionSeat=seat;$('actors').hidden=true;walkToSeat(seats.find(s=>s.id===pair[1]));talkOpen=true;},
- clearMeeting(){if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
+ clearMeeting(){if(visiting&&where==='jardin')returnHome();unwear(visitor);visiting=false;visitsMarianne=false;visitor.root.visible=false;reunionToggle.disabled=false;if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
  camera(mode,speaker,inset=0){conversation=mode==='manual'?null:{mode,speaker,inset};if(conversation){travel.reset();detail.reset();}},
  snapshot(){
    const a=player(),head=headCenter(a);
@@ -1425,6 +1468,7 @@ async function prepareReunion(){
 }
 async function enterReunion(){
  if(encounter.active||encounter.loading)return;
+ if(visiting)return;
  reunionToggle.disabled=true;reunionToggle.textContent='Ouverture…';
  try{
   encounter.loading=prepareReunion();await encounter.loading;
@@ -1506,7 +1550,7 @@ reunionAction.onclick=()=>{
  canvas.focus({preventScroll:true});
 };
 
-portraitPanel=createFacePanel(()=>player().referenceFace||partner().referenceFace,cam,detail);
+portraitPanel=createFacePanel(()=>player().referenceFace||(partner().root.visible?partner().referenceFace:null),cam,detail);
 window.salonV27=member;
 ready.push(Promise.all(ready).then(()=>member.initialize()));
 Promise.all(ready).then(()=>{document.body.classList.add('ready');window.dispatchEvent(new Event('salon-ready'));$('loading').hidden=true;frameHandle=requestAnimationFrame(frame)}).catch(e=>window.failure(e.message));

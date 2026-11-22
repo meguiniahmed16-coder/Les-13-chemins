@@ -1,5 +1,5 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js?v=duo6';
-import {normaliseStudio,traitAvailable,traitOptionAvailable,freeTrait,freePiece,slots,skinSteps} from './studio-look.js?v=duo6';
+import {normaliseStudio,traitAvailable,traitOptionAvailable,slots,skinSteps} from './studio-look.js?v=presence49';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
@@ -29,8 +29,7 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
     const trait=traits.find(t=>t.key===key),label=make('label',trait.label),select=make('select');
     for(const [i,name] of trait.options.entries()){
      if(!traitOptionAvailable(key,i,options.gender))continue;
-     const locked=!options.plus&&!freeTrait(key,i),option=new Option(name+(locked?' · Compagnon':''),String(i));
-     option.disabled=locked;select.add(option);
+     select.add(new Option(name,String(i)));
     }
     select.name=key;label.append(select);f.append(label);
     select.onchange=()=>{const n=Number(select.value);choose({...look,face:{...look.face,[key]:n},...(key==='skin'?{skinLevel:skinSteps[n]}:{}),...(key==='iris'?{iris:''}:{})});};
@@ -51,12 +50,12 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   reset.onclick=()=>{const {face,skinLevel,iris}=options.savedStudio;choose({...look,face,skinLevel,iris});};parent.append(reset);
 
  }
- function card(parent,label,index,locked,selected,click,author='',sheet=''){
-  const b=make('button'),preview=make('span');b.type='button';b.className='piece';b.dataset.search=(label+' '+author).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();b.disabled=locked;
+ function card(parent,label,index,selected,click,author='',sheet=''){
+  const b=make('button'),preview=make('span');b.type='button';b.className='piece';b.dataset.search=(label+' '+author).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();
   preview.className='swatch';preview.style.backgroundPosition=(-48*(index%12))+'px '+(-60*Math.floor(index/12))+'px';
   if(sheet==='duo'){preview.style.backgroundImage="url('/assets/salon-v27/pieces-duo.webp')";preview.style.backgroundSize='96px 60px';}
   if(sheet==='femme')preview.style.backgroundImage="url('/assets/salon-v27/pieces-femme.webp')";
-  if(sheet!=='duo')preview.style.backgroundSize='576px '+(sheet==='femme'?60:60*thumbRows)+'px';b.append(preview,make('span',label+(locked?' · Compagnon':'')));
+  if(sheet!=='duo')preview.style.backgroundSize='576px '+(sheet==='femme'?60:60*thumbRows)+'px';b.append(preview,make('span',label));
   let lastTap=-Infinity;
   b.onclick=event=>{
    const now=performance.now();if(event.detail>0&&now-lastTap<430)return;
@@ -81,20 +80,20 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
     const inner=Array.isArray(parts)?folder(section,label):section,grid=make('div');grid.className='pieces';inner.append(grid);
     for(const p of pieces.filter(p=>p.group===group)){
      const slot=slots[group];
-     card(grid,p.label,p.thumb,!options.plus&&!freePiece(p.id),()=>look.outfit[slot]===p.id,()=>{
+     card(grid,p.label,p.thumb,()=>look.outfit[slot]===p.id,()=>{
       const outfit={...look.outfit};if(outfit[slot]===p.id)delete outfit[slot];
       else{if(slot==='robe'){delete outfit.haut;delete outfit.bas;}if(slot==='bas'||slot==='haut')delete outfit.robe;outfit[slot]=p.id;}
       choose({...look,outfit});
      },p.author,p.sheet);
     }
     if(group==='tenues'||group==='sport')for(const [id,name,outfit,thumb] of looks.filter(([id])=>['course','training'].includes(id)===(group==='sport'))){
-     card(grid,name,thumb,!options.plus&&Object.values(outfit).some(id=>!freePiece(id)),()=>Object.keys(outfit).length===Object.keys(look.outfit).length&&Object.entries(outfit).every(([s,id])=>look.outfit[s]===id),()=>choose({...look,outfit,denim:false,tortoise:false}));
+     card(grid,name,thumb,()=>Object.keys(outfit).length===Object.keys(look.outfit).length&&Object.entries(outfit).every(([s,id])=>look.outfit[s]===id),()=>choose({...look,outfit,denim:false,tortoise:false}));
     }
    }
   }
   for(const [field,id,slot,label] of [['denim','mh807','bas','Jean de nuit'],['tortoise','mh153','lunettes','Monture écaille']]){
    const l=make('label',label),box=make('input');box.type='checkbox';l.append(box);parent.append(l);
-   controls.push(()=>{l.hidden=look.outfit[slot]!==id;box.checked=look[field];box.disabled=field==='tortoise'&&!options.plus;});box.onchange=()=>choose({...look,[field]:box.checked});
+   controls.push(()=>{l.hidden=look.outfit[slot]!==id;box.checked=look[field];});box.onchange=()=>choose({...look,[field]:box.checked});
   }
   const clear=make('button','Retirer la tenue');clear.type='button';clear.onclick=()=>choose({...look,outfit:{},denim:false,tortoise:false});parent.append(clear);
 

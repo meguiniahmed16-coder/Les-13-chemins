@@ -1107,7 +1107,7 @@ function advanceAir(dt){
    }
    renderer.resetState();
  }
- function pick(x,y){
+ function pick(x,y,focus){
    const r=canvas.getBoundingClientRect();
    const pointer=new T.Vector2(2*(x-r.left)/r.width-1,1-2*(y-r.top)/r.height);
    if(where==='jardin'){
@@ -1121,7 +1121,7 @@ function advanceAir(dt){
    ray.set(from,to.sub(from).normalize());
    const hit=ray.intersectObjects([...Object.values(bags),...bookHits.filter(b=>b.parent.visible)],false)[0];
    if(hit?.object.userData.bag){onBag(hit.object.userData.bag);return true}
-   if(hit){openBooks(hit.object.userData.book);return true}
+   if(hit){if(focus)focus(hit.object.getWorldPosition(new T.Vector3()));else openBooks(hit.object.userData.book);return true}
    return false;
  }
  const listen=(el,event,fn)=>el.addEventListener(event,fn,{signal});

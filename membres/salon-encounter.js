@@ -1,9 +1,10 @@
-import {generateAppearance} from './starting-appearance.js?v=salon43';
-import {skinSteps} from './studio-look.js';
+import {generateAppearance} from './starting-appearance.js?v=presence49';
+import {referenceStudio,skinSteps} from './studio-look.js?v=presence49';
 import {seats} from './salon-plan.js';
 import {cameraProjection} from './salon-navigation.js?v=salon35';
 
 export function guestAppearance(person){
+  if(String(person.id)==='258')return {gender:'femme',studio:referenceStudio('femme')};
   let seed=Math.imul(Number(person.id)+1279,2654435761)>>>0;
   function random(){
     seed=(Math.imul(seed,1664525)+1013904223)>>>0;

@@ -1,6 +1,6 @@
 import {bindCameraStick,bindCameraHeight,createTravelMotion} from './salon-camera-stick.js?v=duo6';
 import {bounds} from './salon-plan.js';
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon47';
+import {moveCamera,orbitCamera,zoomCamera,surfaceAt,cameraProjection} from './salon-navigation.js?v=presence49';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -38,7 +38,7 @@ export function salonMarkup(poster,style) {
       <button type="button" id="bookClose">Fermer</button></dialog></div>
     <div class="info" hidden><p>Glisse pour tourner la caméra. À deux doigts, déplace la vue ou pince pour zoomer. Touche deux fois un siège pour t’asseoir. Le joystick te relève.</p></div><p class="state" role="status" aria-live="polite"></p><button type="button" class="room-retry" hidden>Relancer le salon</button>`;
 }
-export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=()=>{},extension=()=>null) {
+export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=()=>{},extension=()=>null,figures=()=>[]) {
   const stage=root.querySelector('.stage'),stick=root.querySelector('.stick'),thumb=root.querySelector('.thumb');
   const status=root.querySelector('.state');
   const full=root.querySelector('.full'),pan=root.querySelector('.pan'), pointers=new Map();
@@ -106,10 +106,24 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
       if(e.type!=='pointerup'||p.moved||pointers.size){lastTap=null;return;}
       const now=performance.now(),x=e.clientX,y=e.clientY;
       if(lastTap&&now-lastTap.time<430&&Math.hypot(x-lastTap.x,y-lastTap.y)<26){
-        if(extension()?.pick(x,y)){lastTap=null;wake();return;}
-        const v=viewport(),seat=seatAt(roomBytes,motion.camera,v.width,v.height,x-v.left,y-v.top);
-        if(seat&&!available(seat)){status.textContent='Cette place est occupée.';}
-        else if(seat){if(motion.seat===seat&&motion.sit>0)motion.stand();else motion.goToSeat(seat);wake();}lastTap=null;
+        lastTap=null;
+        if(outside()){extension()?.pick(x,y);wake();return;}
+        const v=viewport(),c=motion.camera,sx=x-v.left,sy=y-v.top,p=cameraProjection(v.width,v.height,false,c),scale=v.height*p.factor/2;
+        const hit=surfaceAt(roomBytes,c,v.width,v.height,sx,sy);
+        function closeOn(point,zoom){manual();Object.assign(c,{x:point.x,y:point.y,z:point.z,follow:false,zoom,perspective:0,headroom:0});wake();}
+        const candidates=[];
+        for(const head of figures()){
+          const dx=head.x-p.x,dy=head.y-p.y,dz=head.z-p.z,forward=p.sy*dx+p.cy*dz,depth=forward*p.cp+dy*p.sp;
+          const lens=1-depth*p.perspective;if(lens<=0||hit&&depth+.18<hit.depth)continue;
+          const unit=scale/lens,hx=v.width/2+(p.cy*dx-p.sy*dz)*unit,hy=v.height*(1+p.offset)/2-(p.cp*dy-p.sp*forward)*unit;
+          if(Math.abs(sx-hx)<unit*.22&&sy>hy-unit*.14&&sy<hy+unit*.77)candidates.push({head,depth});
+        }
+        if(candidates.length){closeOn(candidates.sort((a,b)=>b.depth-a.depth)[0].head,Math.max(5,6.2*v.height/v.width));return;}
+        if(extension()?.pick(x,y,point=>closeOn(point,Math.max(6,7*v.height/v.width)))){wake();return;}
+        const seat=hit?.seat;
+        if(seat&&!available(seat))status.textContent='Cette place est occupée.';
+        else if(seat){if(motion.seat===seat&&motion.sit>0)motion.stand();else motion.goToSeat(seat);wake();}
+        else if(hit)closeOn(hit,Math.min(25,Math.max(4,c.zoom*1.7)));
       }else lastTap={time:now,x,y};
     }
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(target,ev,end);

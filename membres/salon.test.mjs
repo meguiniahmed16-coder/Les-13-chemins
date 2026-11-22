@@ -121,6 +121,12 @@ test('Les 400 invités du livre gardent leur identité et les traits présents d
   }
   assert.equal(people.find(p=>p.id==='229').age,0);
   assert.equal(guestAppearance(people.find(p=>p.name==='Élise')).studio.face.iris,0);
+  const {referenceStudio}=await import('./studio-look.js');
+  assert.deepEqual(guestAppearance(people.find(p=>p.name==='Marianne')).studio,referenceStudio('femme'));
+  const palette=people.filter(p=>p.skinLevel==null&&p.name!=='Marianne').map(p=>guestAppearance(p).studio.skinLevel);
+  assert.ok(palette.includes(0)&&palette.includes(100));
+  assert.ok(palette.filter(t=>t>=74).length<palette.length/4);
+
 });
 test('Les deux invités rejoignent des assises opposées et le joueur reste libre de repartir',async()=>{
   const {conversationSeats,frameConversation,actorHead,headSide}=await import('./salon-encounter.js');

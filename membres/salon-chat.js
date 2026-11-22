@@ -14,7 +14,7 @@ function loadDirectory(){
     return people;
   }).catch(error=>{directory=null;throw error;});
 }
-export function createSalonChat(root,{invite,leave,change,rate,gender}){
+export function createSalonChat(root,{invite,leave,change,rate,gender,customize}){
   const $=s=>root.querySelector(s),scene=$('.scene-viewport'),hud=$('.hud');
   hud.insertAdjacentHTML('beforeend','<button class="invite-toggle" type="button" aria-expanded="false" aria-controls="guest-picker">Inviter un personnage</button>');
   scene.insertAdjacentHTML('beforeend',`
@@ -32,7 +32,9 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       </div>
     `);
   $('.stage').insertAdjacentHTML('beforeend',`
-    <div class="conversation-footer" hidden>
+    <section class="conversation-footer" aria-label="Conversation" hidden>
+      <header class="thread-heading"><strong class="thread-name"></strong><button class="guest-style" type="button" hidden>Personnaliser l’invité</button><button class="thread-toggle" type="button" aria-expanded="true" aria-controls="salon-thread">Réduire</button></header>
+      <div id="salon-thread" class="thread-history" role="log" aria-label="Historique de la conversation"></div>
       <div class="conversation-tools" role="group" aria-label="Vues de la conversation">
         <button type="button" data-shot="wide" aria-pressed="false">Vue large</button>
         <button type="button" data-shot="reverse" aria-pressed="true" title="Plans larges, moyens et gros plans en champ et contrechamp">Plans alternés</button>
@@ -43,9 +45,10 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       <form class="guest-compose"><input class="guest-message" type="text" inputmode="text" autocapitalize="sentences" spellcheck="true" placeholder="Écris ton message…" aria-label="Ton message" maxlength="${limit}" autocomplete="off" enterkeyhint="send">
         <button class="guest-mic" aria-label="Dicter un message" title="Dicter un message" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/></svg></button>
         <button class="guest-send" type="submit">Envoyer</button></form>
+      <p class="arrival-status" role="status"></p>
       <div class="chat-feedback"><p class="chat-state" role="status"></p><button class="retry-message" type="button" hidden>Réessayer l’envoi</button></div>
       <p class="dictation-state" role="status"></p><p class="voice-state" role="status"></p><span class="speech-announcement" role="status" aria-atomic="true"></span>
-    </div>`);
+    </section>`);
   const picker=$('.guest-picker'),list=$('.guest-list'),search=$('.guest-search'),random=$('.guest-random'),toggle=$('.invite-toggle');
   const pickerState=$('.picker-state'),footer=$('.conversation-footer'),input=$('.guest-message'),send=$('.guest-send'),mic=$('.guest-mic'),status=$('.chat-state');
   const own=$('.own-speech'),other=$('.guest-speech'),reader=$('.speech-reader');
@@ -111,7 +114,16 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   reader.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();closeReader();}};
   let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
-  const threads=new Map();
+  const threads=new Map(),log=$('.thread-history'),threadToggle=$('.thread-toggle'),styleButton=$('.guest-style');
+  styleButton.onclick=()=>customize?.();
+  function expand(open){
+    footer.classList.toggle('thread-folded',!open);threadToggle.setAttribute('aria-expanded',String(open));
+    threadToggle.textContent=open?'Réduire':'Ouvrir le dialogue';
+  }
+  threadToggle.onclick=()=>expand(footer.classList.contains('thread-folded'));
+  function appendLine(name,text){const row=document.createElement('p'),label=document.createElement('strong');
+    label.textContent=name+' · ';row.append(label,document.createTextNode(text));log.append(row);log.scrollTop=log.scrollHeight;return row;
+  }
   const dictee=createDictee({
     onText(text){
       if(!person||!text.trim())return;
@@ -181,32 +193,35 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
     if(fromDraft){input.value='';dictatedDraft=false;}
     if(spoken){playback.clear();showLine('player',question);}
     else playback.play('player',question,rate('player'));
-    bubble(other,'…');status.textContent='';buttons();
+    const pending=appendLine('Toi',question);bubble(other,'…');status.textContent='';buttons();
     try{
       const answer=welcome||await characterReply(current.id,question,thread,abort.signal);
       if(request!==abort)return;
-      thread.push({question,answer});if(thread.length>40)thread.shift();
+      appendLine(current.name,answer);thread.push({question,answer});if(thread.length>40)thread.shift();
       playback.play('guest',answer,rate('guest'),true);
     }catch(err){
       if(request!==abort)return;
-      bubble(other,'');failedQuestion=question;retryDictated=spoken;retry.hidden=false;
+      pending.remove();bubble(other,'');failedQuestion=question;retryDictated=spoken;retry.hidden=false;
       status.textContent=err.name==='AbortError'||err instanceof TypeError?'Connexion interrompue. Tu peux renvoyer ton message.':err.message;
     }finally{clearTimeout(timer);if(request===abort){request=null;buttons();}}
   }
   async function choose(p){
     if(loading||!p)return;
     const ticket=++version;
-    loading=true;random.disabled=true;list.inert=true;pickerState.textContent='Arrivée de '+p.name+'…';
+    loading=true;random.disabled=true;list.inert=true;
+    closePicker();toggle.hidden=true;footer.hidden=false;expand(true);log.replaceChildren();styleButton.hidden=true;
+    $('.thread-name').textContent='Avec '+p.name;const arrival=$('.arrival-status');arrival.textContent=p.name+' rejoint le salon…';
+    setMode('reverse');person=p;other.querySelector('strong').textContent=p.name;
+    barSlot.prepend(toolbar);rail.hidden=!showSpeech;input.disabled=mic.disabled=false;
+    input.setAttribute('aria-label','Ton message à '+p.name);
+    const thread=threads.get(p.id)||[];threads.set(p.id,thread);
+    if(thread.length){for(const line of thread){appendLine('Toi',line.question);appendLine(p.name,line.answer);}turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
+    else void say(opening,false,p.welcome);
     try{
-      if(!await invite(p)||ticket!==version)return;
-      setMode('reverse');person=p;other.querySelector('strong').textContent=p.name;
-      closePicker();toggle.hidden=true;footer.hidden=false;barSlot.prepend(toolbar);rail.hidden=!showSpeech;
-      input.setAttribute('aria-label','Ton message à '+p.name);
-      const thread=threads.get(p.id)||[];threads.set(p.id,thread);
-      if(thread.length){turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
-      else void say(opening,false,p.welcome);
+      if(!await invite(p))throw Error();if(ticket!==version)return;
+      arrival.textContent='';styleButton.hidden=!customize;change();
       const selected=onChoice;onChoice=null;selected?.();
-    }catch{if(ticket===version)pickerState.textContent='Le personnage n’a pas pu entrer. Tu peux réessayer.';}
+    }catch{if(ticket===version){arrival.textContent='Son portrait 3D est indisponible. Tu peux continuer à lui écrire.';onChoice=null;}}
     finally{if(ticket===version){loading=false;random.disabled=false;list.inert=false;}}
   }
   function dismiss(){onChoice=null;if(loading)finish();else closePicker();}

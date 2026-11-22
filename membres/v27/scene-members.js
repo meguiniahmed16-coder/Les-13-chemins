@@ -117,10 +117,10 @@ export function createMemberBridge(scene){
     async initialize(){if(!Object.values(actors).some(a=>a.id==='f'&&a.parts.length))return;
       const [reference,rig,bytes]=await Promise.all([loadFemaleReference(),getPoses(),fetch('/membres/v27/attaches-v27.bin?v=appui2').then(r=>{if(!r.ok)throw Error('Attaches du duo indisponibles.');return r.arrayBuffer();})]);
       template=reference;const weights=scene.unzip(new Uint8Array(bytes));
-      for(const a of Object.values(actors)){const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}},
-    async enableDialogue(channels,read){
+      for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}},
+    async enableDialogue(channels,read,valid=()=>true){
       const res=await fetch('/membres/v27/visage-indices.json');if(!res.ok)throw Error('Le visage du salon est indisponible.');
-      speech={channels,indices:await res.json()};readSpeech=read;
+      const indices=await res.json();if(valid()){speech={channels,indices};readSpeech=read;}
     },
     endDialogue(){readSpeech=null;for(const a of Object.values(actors))a.conversationPose=null;for(const a of Object.values(actors))if(a.referenceFace&&!a.referenceFace.demo)a.referenceFace.reset();for(const a of Object.values(actors))for(const part of a.parts)if(part.voiceReady)part.obj.morphTargetInfluences.fill(0);},
     speechFrame,

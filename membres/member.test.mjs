@@ -42,13 +42,14 @@ test('Le compte privé persiste, les accès sont séparés et la déconnexion r�
   assert.deepEqual((await (await api('me',null,cookie)).json()).journey,{games:['sarajevo'],videos:[],scenes:['sarajevo']});
   assert.equal((await api('logout',{},cookie)).status,200);assert.equal((await api('me',null,cookie)).status,401);
 });
-test('La garde-robe V27 persiste et refuse les réglages privés ou réservés',async()=>{
+test('La garde-robe V27 persiste y compris les pièces du catalogue complet',async()=>{
   const {api}=setup(),registered=await api('signup',account),c=registered.headers.get('set-cookie').split(';')[0];
   const {avatar,studio}=await (await api('me',null,c)).json();
   const choice={...studio,face:{...studio.face,nose:1},outfit:{...studio.outfit,haut:'mh1416'}};
+  delete choice.outfit.robe;choice.outfit.bas='mh1194';choice.denim=false;
   assert.equal((await api('avatar',{avatar,studio:choice},c)).status,200);
   assert.deepEqual((await (await api('me',null,c)).json()).studio,choice);
-  for(const invalid of [{...choice,face:{...choice.face,seat:2}},{...choice,outfit:{...choice.outfit,bas:'mh1194'}}]){
+  for(const invalid of [{...choice,face:{...choice.face,seat:2}},{...choice,outfit:{...choice.outfit,bas:'inconnu'}}]){
     assert.equal((await api('avatar',{avatar,studio:invalid},c)).status,403);
   }
   assert.deepEqual((await (await api('me',null,c)).json()).studio,choice);
@@ -131,7 +132,7 @@ test('L’aperçu gratuit isole le parcours et applique les limites du compte no
   const preview=createMemberPreview(),original=preview('me');
   assert.equal(original.companion,false);assert.equal(original.author,null);
   const paid={...original.studio,outfit:{...original.studio.outfit,bas:'mh1194'}};
-  assert.throws(()=>preview('avatar',{studio:paid}));
+  delete paid.outfit.robe;paid.denim=false;assert.deepEqual(preview('avatar',{studio:paid}).studio,paid);
   const free={...original.studio,outfit:{...original.studio.outfit,haut:'mh1416'}};
   delete free.outfit.robe;
   assert.deepEqual(preview('avatar',{studio:free}).studio,free);
@@ -188,8 +189,7 @@ test('Les deux genres existent dans les deux aperçus avec les droits du plan et
       assert.equal(p.gender,gender);assert.equal(p.companion,companion);assert.equal(p.author,null);
       const studio={...p.studio,denim:false,outfit:{...p.studio.outfit,bas:'mh1194'}};
       delete studio.outfit.robe;
-      if(companion)assert.deepEqual(demo('avatar',{studio}).studio,studio);
-      else assert.throws(()=>demo('avatar',{studio}));
+      assert.deepEqual(demo('avatar',{studio}).studio,studio);
     }
   }
 });

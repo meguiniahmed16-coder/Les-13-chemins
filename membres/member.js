@@ -1,6 +1,6 @@
 import {hasAuthorSession,logoutAuthor} from './author-access.js';
-import {createMemberPreview} from './free-preview.js?v=duo6';
-import {normaliseStudio} from './studio-look.js?v=duo6';
+import {createMemberPreview} from './free-preview.js?v=presence49';
+import {normaliseStudio} from './studio-look.js?v=presence49';
 import {games,scenes,videos,mergeJourney,importDeviceJourney,enableJourneyTracking,disableJourneyTracking} from './journey.js';
 
 const $=id=>document.getElementById(id);
@@ -98,11 +98,11 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./salon-v27.js?v=duo6');
+  await import('./salon-v27.js?v=visite49');
   if(!member)return;
   let view=$('room').querySelector('chemins-salon');
   if(!view){
-    view=el('chemins-salon');view.setAttribute('scene','salon');
+    view=el('chemins-salon');view.toggleAttribute('salon-auteur',Boolean(member.author));view.setAttribute('scene','salon');
     view.addEventListener('avatar-ready',()=>updatePhoto(view));
     $('room').append(view);
   }
@@ -112,7 +112,7 @@ async function mountRoom(){
     const result=await api('salon-appearance',{gender,studio});
     if(result.gender!==gender||!result.studio)throw Error('L’enregistrement du personnage reste à confirmer.');
     if(member?.id===who){(member.salonLooks??={})[gender]=result.studio;if(gender===(member.gender||'homme'))member.studio=result.studio;}
-  },savedStudio:member.studio||appearance,gender:member.gender||'homme',plus:Boolean(member.author||member.companion),privateURL:member.author?'/membre-atelier.html?auteur='+encodeURIComponent(member.author):'',change:draft=>{if(member?.id===who)appearance=draft;},save:async studio=>{
+  },savedStudio:member.studio||appearance,gender:member.gender||'homme',plus:true,privateURL:member.author?'/membre-atelier.html?auteur='+encodeURIComponent(member.author):'',change:draft=>{if(member?.id===who)appearance=draft;},save:async studio=>{
     if(member?.id!==who)throw Error('Ta session a changé.');
     const result=await api('avatar',{avatar:member.avatar,studio});
     if(!result.studio)throw Error('Le serveur n’a pas confirmé cet enregistrement.');
