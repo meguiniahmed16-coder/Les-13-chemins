@@ -1,12 +1,11 @@
 import {createDetailCamera} from './detail-camera.js';
-import {bindCameraStick,bindCameraHeight} from '../salon-camera-stick.js';
+import {bindCameraStick,bindCameraHeight,touchStickScale,touchGestureGain} from '../salon-camera-stick.js';
 import {createTravelCamera} from './travel-camera.js';
 import {composeDialogue,createFocusPass} from './conversation-camera.js';
 import {livePose} from './live-body.js';
 import * as T from 'three';
 import {seats as roomSeats,roomFree,roomPath} from '../salon-plan.js';
-import {dressFriends,reunionDialogue} from './rencontre-lionel.js';
-import {createFacePanel} from './face-panel.js';
+import {reunionDialogue} from './rencontre-lionel.js';
 import {createMemberBridge} from './scene-members.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
@@ -39,7 +38,7 @@ renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFShadowMap;renderer.
 const scene=new T.Scene(), cam=new T.PerspectiveCamera(48,1,.07,180), indoor=new T.Group(), outdoor=new T.Group();
 scene.add(indoor,outdoor);
 const detail=createDetailCamera(cam,canvas,scene),drawScene=createFocusPass(renderer);
-let portraitPanel=null,focusShot=null;
+let focusShot=null;
 const baySlope=.087173,bayCenter=new T.Vector3(0,0,2.48944),gardenThreshold=new T.Vector3(-.65,.047,10.72);
 const travel=createTravelCamera(cam,baySlope,matchMedia('(prefers-reduced-motion: reduce)'));
 const roomToGarden=new T.Matrix4().makeRotationY(Math.PI+Math.atan(baySlope));
@@ -517,12 +516,12 @@ function windowCaption(){
  const b=$('lookHome');const label=where==='jardin'?'Se retourner vers la maison':windowView?'Reprendre la vue du salon':'Regarder par la baie vitrée';
  b.title=label;b.setAttribute('aria-label',label);b.setAttribute('aria-pressed',String(where==='jardin'?homeView:windowView));
 }
-let beforeWindow=null;
-function faceWindow(){travel.reset();detail.reset();
+let beforeWindow=null,centeredOnPlayer=false;
+function faceWindow(){centeredOnPlayer=false;travel.reset();detail.reset();
  if(!windowView)beforeWindow={angle:orbit.angle,pitch:orbit.pitch,follow:orbit.follow,focus:orbit.focus.clone(),from:player().root.position.clone()};
  windowView=true;orbit.pitch=.025;orbit.angle=Math.PI-Math.atan(baySlope);orbit.follow=true;windowCaption();hint();
 }
-function freeCamera(){travel.reset();detail.reset();homeView=windowView=false;windowCaption();hint()}
+function freeCamera(){centeredOnPlayer=false;travel.reset();detail.reset();homeView=windowView=false;windowCaption();hint()}
 function leaveWindow(){
  const previous=beforeWindow;freeCamera();
  if(previous){orbit.angle=previous.angle;orbit.pitch=previous.pitch;orbit.follow=previous.follow||previous.from.distanceTo(player().root.position)>.30;if(!orbit.follow)orbit.focus.copy(previous.focus)}
@@ -554,7 +553,7 @@ function follow(dt){
  a.speed=mix(a.speed,walk?Math.min(1,speed/1.50):0,Math.min(1,dt*10));if(a.speed<.018)a.speed=0;
  animateBody(a,a.speed,null,dt*a.speed);trackHarness(a);trackHarness(leader);
 }
-function lookAtHome(){
+function lookAtHome(){centeredOnPlayer=false;
  cancelReveal();if(shelfView)setShelfView(false);
  if(where==='salon'){
   if(windowView){leaveWindow()}else{faceWindow();updateCam(1)}return;
@@ -585,7 +584,7 @@ keyButtons.forEach(b=>b.onclick=()=>{
  const old=role;setRole(b.dataset.role);
  if(old!==role)window.dispatchEvent(new CustomEvent('salon-role-change',{detail:role==='f'?'femme':'homme'}));
 });
-function setLocation(out){travel.reset();detail.reset();$('cameraPad').hidden=out;
+function setLocation(out){centeredOnPlayer=false;travel.reset();detail.reset();$('cameraPad').hidden=out;
  where=out?'jardin':'salon';shelfView=false;$('shelves').hidden=out;$('shelfLabel').textContent='Bibliothèque';$('shelves').setAttribute('aria-pressed','false');$('shelfActions').hidden=true;refreshFlight();
  indoor.matrix.copy(out?roomToGarden:identity);outdoor.matrix.copy(out?identity:gardenToRoom);
  indoor.updateMatrixWorld(true);outdoor.updateMatrixWorld(true);
@@ -610,7 +609,7 @@ function returnHome(){
  if(where!=='jardin')return;cancelReveal();resetAir();for(const a of [...Object.values(actors),visitor])unwear(a);
  chosen=null;setLocation(false);actorHome();resetView();canvas.focus({preventScroll:true})
 }
-function resetView(){travel.reset();detail.reset();
+function resetView(){centeredOnPlayer=false;travel.reset();detail.reset();
  orbit.follow=false;orbit.angle=1.07;orbit.pitch=.23;orbit.radius=3.60;orbit.focus.set(-2.19,.78,-1.78);updateCam(1)
 }
 const zoneLabel=$('hint');
@@ -652,13 +651,14 @@ function updateCam(dt){
   if(t>=1)revealStart=null;
  }
  if(orbit.follow){const ft=a.root.position.clone();ft.y=sitting?1.02:out?.98:.9;if(skyMode())ft.y+=a.root.position.y+(air.figure?.type==='loop'?.62:0);
-  if(out&&(!encounter.active||encounter.chatView)){const friend=partner().root.position;ft.x+=(friend.x-ft.x)*(skyMode()?.46:.36);ft.z+=(friend.z-ft.z)*(skyMode()?.46:.32);ft.x+=.12*Math.cos(orbit.angle)-.40*Math.sin(orbit.angle);ft.z-=.19*Math.sin(orbit.angle)+.40*Math.cos(orbit.angle)}orbit.focus.lerp(ft,Math.min(1,dt*8));}
- const nearBay=!out&&orbit.follow&&!sitting?clamp((a.root.position.z-1.02)/1.05,0,1):0;
+  if(out&&!centeredOnPlayer&&(!encounter.active||encounter.chatView)){const friend=partner().root.position;ft.x+=(friend.x-ft.x)*(skyMode()?.46:.36);ft.z+=(friend.z-ft.z)*(skyMode()?.46:.32);ft.x+=.12*Math.cos(orbit.angle)-.40*Math.sin(orbit.angle);ft.z-=.19*Math.sin(orbit.angle)+.40*Math.cos(orbit.angle)}orbit.focus.lerp(ft,Math.min(1,dt*8));}
+ const nearBay=!centeredOnPlayer&&!out&&orbit.follow&&!sitting?clamp((a.root.position.z-1.02)/1.05,0,1):0;
  const portrait=w<h,rad=(skyMode()?Math.max(orbit.radius,portrait?6.60:4.85):orbit.radius)*(portrait?(out?1.13:1.23):1);
  const hp=rad*Math.cos(orbit.pitch);cam.position.set(orbit.focus.x+Math.sin(orbit.angle)*hp,orbit.focus.y+Math.sin(orbit.pitch)*rad,orbit.focus.z+Math.cos(orbit.angle)*hp);
  if(out&&cam.position.z>10.22&&Math.abs(cam.position.x)<5.3)cam.position.z=10.22;
  let fieldOfView=48;
- if(out&&air.mode!=='off'&&!encounter.active){
+ if(centeredOnPlayer){cam.lookAt(orbit.focus);
+ }else if(out&&air.mode!=='off'&&!encounter.active){
   fieldOfView=frameWingedPair(cam,portrait?55:49,w/h);
  }else if(out&&encounter.active&&air.mode!=='off'){
   if(encounter.chatView&&exchange.active){reunionCamera(portrait);}
@@ -686,8 +686,7 @@ function updateCam(dt){
  player().body.visible=!windowView;
  if(!focusShot&&cam.fov!==fieldOfView){cam.fov=fieldOfView;cam.updateProjectionMatrix()}
  if(conversation&&where==='salon'&&!shelfView)memberCamera();
- if(portraitPanel?.tick())focusShot=null;
- else if(travel.active&&!detail.active){focusShot=null;travel.apply(dt);}
+ if(travel.active&&!detail.active){focusShot=null;travel.apply(dt);}
  if(detail.active){focusShot=null;detail.apply();}focusBookPrint();cam.updateMatrixWorld();
  const gardenEye=out?cam.position:marker.copy(cam.position).applyMatrix4(roomToGarden);
  for(const o of sprites)o.rotation.y=Math.atan2(gardenEye.x-o.position.x,gardenEye.z-o.position.z);
@@ -750,10 +749,15 @@ function move(dt){
 }
 function releaseStick(){stick.x=stick.y=0;stick.id=null;$('thumb').style.transform='translate(0,0)'}
 const pad=$('pad');
-function padMove(e){const b=pad.getBoundingClientRect(),x=(e.clientX-b.left-b.width/2)/(b.width*.34),y=(e.clientY-b.top-b.height/2)/(b.height*.34),n=Math.max(1,Math.hypot(x,y));stick.x=x/n;stick.y=y/n;$('thumb').style.transform='translate('+stick.x*22+'px,'+stick.y*22+'px)'}
+function padMove(e){
+ const b=pad.getBoundingClientRect(),x=(e.clientX-b.left-b.width/2)/(b.width*.34),y=(e.clientY-b.top-b.height/2)/(b.height*.34);
+ const length=Math.hypot(x,y),gain=e.pointerType==='touch'?touchStickScale(length):1/Math.max(1,length);
+ stick.x=x*gain;stick.y=y*gain;
+ $('thumb').style.transform='translate('+stick.x*22+'px,'+stick.y*22+'px)';
+}
 pad.onpointerdown=e=>{e.preventDefault();stick.id=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};
 pad.onpointermove=e=>{if(e.pointerId===stick.id)padMove(e)};pad.onpointerup=pad.onpointercancel=pad.onlostpointercapture=e=>{if(e.pointerId===stick.id)releaseStick()};
-function takeCamera(){
+function takeCamera(){centeredOnPlayer=false;
  if(!travel.active||detail.active)travel.capture();
  if(shelfView)setShelfView(false,true);
  if(windowView){windowView=false;windowCaption();hint();}
@@ -764,19 +768,34 @@ bindCameraStick(cameraPad,takeCamera,(x,z)=>travel.motion.input(x,z));
 bindCameraHeight(document.querySelector('.camera-height'),takeCamera,travel.motion);
 window.addEventListener('blur',()=>travel.motion.stop());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)travel.motion.stop();});
-const held=new Map();let touch=null,lastTap=null,pinch=0;
+const held=new Map();let touch=null,lastTap=null,pinch=0,pinchStart=null;
 function midPoint(){const [a,b]=held.values();return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,span:Math.hypot(a.x-b.x,a.y-b.y)};}
+$('recenter').onclick=()=>{
+ cancelTap();cancelReveal();if(shelfView)setShelfView(false);
+ freeCamera();manualShot();air.front=false;refreshFlight();
+ const a=player();
+ centeredOnPlayer=true;orbit.follow=true;orbit.angle=a.root.rotation.y;orbit.pitch=.09;orbit.radius=sitting?2.15:2.75;
+ updateCam(1);canvas.focus({preventScroll:true});
+};
 function manualShot(){if(conversation){conversation=null;window.dispatchEvent(new Event('salon-manual-camera'));}if(encounter.active)encounter.chatView=false;}
 canvas.addEventListener('pointerdown',e=>{
  if(e.button>0)return;if(revealStart!==null)cancelReveal();canvas.focus();canvas.setPointerCapture(e.pointerId);
  held.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(held.size===2){cancelTap();travel.motion.stop();const mid=midPoint();pinch=mid.span;detail.begin(mid.x,mid.y);manualShot();if(touch)touch.moved=true;}
+ if(held.size===2){cancelTap();travel.motion.stop();const mid=midPoint();pinchStart=mid;pinch=mid.span;detail.begin(mid.x,mid.y);manualShot();if(touch)touch.moved=true;}
  else touch={x:e.clientX,y:e.clientY,moved:false};
 });
 canvas.addEventListener('pointermove',e=>{
- const prev=held.get(e.pointerId);if(!prev)return;const dx=e.clientX-prev.x,dy=e.clientY-prev.y;
+ const prev=held.get(e.pointerId);if(!prev)return;const gain=touchGestureGain(e.pointerType);
+ const dx=(e.clientX-prev.x)*gain,dy=(e.clientY-prev.y)*gain;
  held.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(held.size===2){const mid=midPoint();if(mid.span>0&&pinch>0)detail.zoom(pinch/mid.span,mid.x,mid.y);pinch=mid.span;return;}
+ if(held.size===2){
+  const mid=midPoint();
+  if(mid.span>0&&pinch>0&&pinchStart){
+   const x=mix(pinchStart.x,mid.x,gain),y=mix(pinchStart.y,mid.y,gain);
+   detail.zoom((pinch/mid.span)**gain,x,y);
+  }
+  pinch=mid.span;return;
+ }
  if(touch&&!touch.moved&&Math.hypot(e.clientX-touch.x,e.clientY-touch.y)>5)touch.moved=true;
  if(!touch?.moved)return;cancelTap();
  if(travel.active){if(detail.active)takeCamera();travel.look(dx,dy);return;}
@@ -843,7 +862,7 @@ canvas.addEventListener('wheel',e=>{
  if(!detail.active||now-lastWheel>240||Math.hypot(e.clientX-lastWheelX,e.clientY-lastWheelY)>12)detail.begin(e.clientX,e.clientY);
  lastWheel=now;lastWheelX=e.clientX;lastWheelY=e.clientY;manualShot();
  const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?canvas.clientHeight:1);
- detail.zoom(Math.exp(clamp(delta,-900,900)*.0018),e.clientX,e.clientY);
+ detail.zoom(Math.exp(clamp(delta,-900,900)*.001),e.clientX,e.clientY);
 },{passive:false});
 const moveKeys=new Set(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','z','q']);
 window.addEventListener('keydown',e=>{if(e.target.closest?.('input,textarea,select,[contenteditable=true]')||document.querySelector('dialog[open]')||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(moveKeys.has(k)){e.preventDefault();keys.add(k)}else if(where==='salon'&&!e.repeat&&['1','2'].includes(k))equip(k==='1'?'pin':'ocre')});
@@ -1152,6 +1171,7 @@ function resetAir(){
  Object.assign(air,{mode:'off',spread:0,phase:0,power:0,v:0,alt:0,boost:false,down:false,downPulse:0,pulse:0,queued:null,bank:0,time:0,figure:null,landing:null,hover:0,launch:0,front:false,course:0,moving:false});refreshFlight()
 }
 function toggleAngel(){
+ centeredOnPlayer=false;
  if(where!=='jardin')return;cancelReveal();
  if(air.mode==='off'){
   if(homeView)freeCamera();for(const a of currentPair())flightRig(a);
@@ -1340,7 +1360,7 @@ function advanceAir(dt){
  if(air.figure&&air.figure.clock>=air.figure.duration+.14){air.figure=null;refreshFlight()}
  const label=Math.round(air.alt)+' m';if($('altitude').textContent!==label)$('altitude').textContent=label;
 }
-$('flightFace').onclick=()=>{encounter.chatView=false;air.front=!air.front;orbit.angle=air.front?air.heading-.065:air.heading-Math.PI;orbit.pitch=air.front?.055:.16;refreshFlight();updateCam(1);canvas.focus({preventScroll:true})};
+$('flightFace').onclick=()=>{centeredOnPlayer=false;encounter.chatView=false;air.front=!air.front;orbit.angle=air.front?air.heading-.065:air.heading-Math.PI;orbit.pitch=air.front?.055:.16;refreshFlight();updateCam(1);canvas.focus({preventScroll:true})};
 flightButton.onclick=()=>{toggleAngel();canvas.focus({preventScroll:true})};
 function heldControl(button,begin,held,release){
  button.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
@@ -1365,7 +1385,7 @@ function releaseAirInput(){air.boost=air.down=false;air.pulse=air.downPulse=0}
 window.addEventListener('blur',releaseAirInput);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAirInput()});
 
 const shelvesButton=$('shelves'),catalog=$('bookcase'),catalogList=$('bookList');
-function setShelfView(on,keepTravel=false){if(!keepTravel)travel.reset();detail.reset();
+function setShelfView(on,keepTravel=false){centeredOnPlayer=false;if(!keepTravel)travel.reset();detail.reset();
  if(where!=='salon')return;
  if(on){shelfSaved={angle:orbit.angle,pitch:orbit.pitch,radius:orbit.radius,follow:orbit.follow,focus:orbit.focus.clone()};if(windowView)freeCamera();keys.clear();releaseStick();goal=null}
  else if(shelfSaved){Object.assign(orbit,{angle:shelfSaved.angle,pitch:shelfSaved.pitch,radius:shelfSaved.radius,follow:shelfSaved.follow});orbit.focus.copy(shelfSaved.focus)}
@@ -1390,13 +1410,13 @@ const member=createMemberBridge({
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);
  orbit.pitch=.065;orbit.radius=view==='Visage'?1.02:2.8;
  if(view==='Visage')orbit.focus.copy(headCenter(a));else orbit.focus.set(p.x,p.y+(a.sit>.5?.70:.95)*a.root.scale.y,p.z);updateCam(1);},
- meet(marianne=false){if(encounter.active)leaveReunion();if(where!=='salon')returnHome();visiting=true;visitsMarianne=marianne;presence();reunionToggle.disabled=true;releaseSeatRoute();if(sitting)getUp();
+ meet(marianne=false){if(encounter.active)leaveReunion();if(where!=='salon')returnHome();visiting=true;visitsMarianne=marianne;presence();releaseSeatRoute();if(sitting)getUp();
  const pairs=[['chair','sofa2'],['east1','west1'],['west2','east2'],['end1','end2'],['sofa1','chair'],['sofa3','chair']];
  const pair=pairs[Math.floor(Math.random()*pairs.length)],seat=seats.find(s=>s.id===pair[0]),friend=partner();
  friend.root.position.set(...feetAt(seat,friend));friend.root.rotation.y=seat.yaw;
  friend.sit=1;friend.speed=0;friend.stamp='';animateBody(friend,0,seat);
  companionSeat=seat;$('actors').hidden=true;walkToSeat(seats.find(s=>s.id===pair[1]));talkOpen=true;},
- clearMeeting(){if(visiting&&where==='jardin')returnHome();unwear(visitor);visiting=false;visitsMarianne=false;visitor.root.visible=false;reunionToggle.disabled=false;if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
+ clearMeeting(){if(visiting&&where==='jardin')returnHome();unwear(visitor);visiting=false;visitsMarianne=false;visitor.root.visible=false;if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
  camera(mode,speaker,inset=0){conversation=mode==='manual'?null:{mode,speaker,inset};if(conversation){travel.reset();detail.reset();}},
  snapshot(){
    const a=player(),head=headCenter(a);
@@ -1452,45 +1472,15 @@ function placeSkyBubbles(w,h){
   bubble.style.top=clamp(y,49,Math.max(49,h-height-25))+'px';
  }
 }
-const reunionToggle=$('reunionToggle'),reunionAction=$('reunionAction');
+const reunionAction=$('reunionAction');
 const rendezVous=new T.Vector3(.50,10.5,3.65);
-async function prepareReunion(){
- if(encounter.loaded)return;
- if(!encounter.friends){
-  const ahmed=makeActor('m',false),lionel=makeActor('m',false);
-  for(const a of [ahmed,lionel]){a.root.visible=false;a.harness=fitHarness(a);a.harness.h.visible=false;}
-  encounter.friends={ahmed,lionel};
-  encounter.bridge=createMemberBridge({T,actors:encounter.friends,player:()=>ahmed,partner:()=>lionel,roomSeats,animateBody});
- }
- await dressFriends(encounter.bridge,()=>exchange.poses);
- for(const a of Object.values(encounter.friends))flightRig(a);
- encounter.loaded=true;
-}
-async function enterReunion(){
- if(encounter.active||encounter.loading)return;
- if(visiting)return;
- reunionToggle.disabled=true;reunionToggle.textContent='Ouverture…';
- try{
-  encounter.loading=prepareReunion();await encounter.loading;
-  if(where==='jardin')returnHome();
-  if(sitting)getUp();releaseSeatRoute();conversation=null;companionSeat=null;talkOpen=false;
-  if(shelfView)setShelfView(false);
-  encounter.saved=Object.values(actors).map(a=>a.root.visible);
-  for(const a of Object.values(actors))a.root.visible=false;
-  encounter.active=true;encounter.chatView=false;encounter.clock=0;encounter.route=null;exchange.stop();resetAir();freeCamera();goal=null;
-  const a=player();a.root.visible=true;a.body.visible=true;a.root.position.set(-.60,0,-1.82);a.root.rotation.y=.46;a.stamp='';animateBody(a,0,null);partner().root.visible=false;
-  document.body.classList.add('reunion');reunionToggle.textContent='Quitter Lionel';reunionToggle.setAttribute('aria-pressed','true');
-  reunionAction.hidden=false;orbit.angle=.89;orbit.pitch=.13;orbit.radius=3.12;orbit.follow=true;updateCam(1);tickReunion(0);canvas.focus({preventScroll:true});
- }catch(error){console.error('Rencontre avec Lionel',error);reunionToggle.textContent='Réessayer · Lionel';$('notice').textContent='Le chargement des deux personnages a échoué.';}
- finally{encounter.loading=null;reunionToggle.disabled=false;}
-}
 function leaveReunion(){
  if(!encounter.active)return;
  exchange.stop();releaseSeatRoute();goal=null;encounter.route=null;resetAir();
  for(const a of currentPair()){unwear(a);a.root.visible=false;}
  encounter.active=false;chosen=null;document.body.classList.remove('reunion');setLocation(false);resetView();
  Object.values(actors).forEach((a,i)=>a.root.visible=encounter.saved[i]);
- reunionAction.hidden=$('reunionNext').hidden=true;reunionToggle.textContent='Retrouver Lionel';reunionToggle.setAttribute('aria-pressed','false');
+ reunionAction.hidden=$('reunionNext').hidden=true;
  canvas.focus({preventScroll:true});
 }
 function walkToBay(){
@@ -1536,7 +1526,6 @@ function tickReunion(dt){
  reunionAction.disabled=exchange.active||(!out&&!!encounter.route)||(air.mode==='flying'&&!canTalk)||air.mode==='landing'||air.mode==='folding';
  $('reunionNext').hidden=!exchange.finished;
 }
-reunionToggle.onclick=()=>encounter.active?leaveReunion():enterReunion();
 reunionAction.onclick=()=>{
  if(where==='salon')walkToBay();
  else if(underRoof(player().root.position.x,player().root.position.z))encounter.route=[{x:pathX(5.45),z:5.45}];
@@ -1550,7 +1539,6 @@ reunionAction.onclick=()=>{
  canvas.focus({preventScroll:true});
 };
 
-portraitPanel=createFacePanel(()=>player().referenceFace||(partner().root.visible?partner().referenceFace:null),cam,detail);
 window.salonV27=member;
 ready.push(Promise.all(ready).then(()=>member.initialize()));
 Promise.all(ready).then(()=>{document.body.classList.add('ready');window.dispatchEvent(new Event('salon-ready'));$('loading').hidden=true;frameHandle=requestAnimationFrame(frame)}).catch(e=>window.failure(e.message));

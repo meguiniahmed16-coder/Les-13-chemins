@@ -7,7 +7,7 @@ import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js?v=salon43';
 import {createDrawer} from './studio-drawer.js?v=presence49';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon47';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=presence49';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=gestes50';
 import {createSalonChat} from './salon-chat.js?v=presence49';
 import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=presence49';
 
@@ -234,7 +234,7 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=presence49',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=gestes50',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),

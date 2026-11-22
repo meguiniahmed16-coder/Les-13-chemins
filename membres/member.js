@@ -10,7 +10,7 @@ const params=new URLSearchParams(location.search);
 let invitation=params.get('invitation')==='compagnon';
 try{
   if(invitation)sessionStorage.setItem('compagnon-apres-visite','1');
-  else if(!location.search&&!location.hash)invitation=sessionStorage.getItem('compagnon-apres-visite')==='1';
+  else if((!location.search&&!location.hash)||params.has('connexion'))invitation=sessionStorage.getItem('compagnon-apres-visite')==='1';
 }catch{}
 const previewPlan=params.get('apercu');
 const wantsPreview=['abonne','non-abonne'].includes(previewPlan);
@@ -67,9 +67,9 @@ function mode(value){
   note(value?'Choisis un mot de passe de dix caractères ou plus.':'');
 }
 const pages=['salon','avatar','parcours','abonnement','profil'];
-function setPage(){
+function setPage(refreshRoom=false){
   if(!member)return;
-  const selected=location.hash.slice(1);
+  const selected=location.hash.slice(1)||(params.get('abonnement')==='retour'?'abonnement':'');
   const key=member.pseudo?(pages.includes(selected)?selected:'salon'):'profil';
   for(const name of pages){
     if(name!=='salon'&&name!=='avatar')$(name).hidden=name!==key;
@@ -78,9 +78,16 @@ function setPage(){
   }
   const roomOnly=key==='salon'||key==='avatar';
   $('salon-panels').hidden=roomOnly;
-  $('room').querySelector('chemins-salon')?.openOptions(key==='avatar');
-  $('salon').hidden=!member.pseudo;
-  $('salon-layout').classList.toggle('has-panel',!roomOnly&&Boolean(member.pseudo));
+  const showRoom=Boolean(member.pseudo)&&key!=='abonnement'&&!invitation;
+  $('salon').hidden=!showRoom;
+  $('salon-layout').classList.toggle('has-panel',showRoom&&!roomOnly);
+  const view=$('room').querySelector('chemins-salon');
+  if(showRoom){
+    if(!view||refreshRoom)void mountRoom().catch(()=>{
+      if(!$('salon').hidden)note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.');
+    });
+    if(view)view.openOptions(key==='avatar');
+  }
   if(key!=='parcours')closeFilm();
   return key;
 }
@@ -98,8 +105,8 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./salon-v27.js?v=visite49');
-  if(!member)return;
+  await import('./salon-v27.js?v=gestes50');
+  if(!member||$('salon').hidden)return;
   let view=$('room').querySelector('chemins-salon');
   if(!view){
     view=el('chemins-salon');view.toggleAttribute('salon-auteur',Boolean(member.author));view.setAttribute('scene','salon');
@@ -118,7 +125,8 @@ async function mountRoom(){
     if(!result.studio)throw Error('Le serveur n’a pas confirmé cet enregistrement.');
     if(member?.id===who){member.avatar=result.avatar;member.studio=result.studio;updatePhoto(view);}
   }});
-  if(member?.id===who)updatePhoto(view);
+  if(member?.id!==who||$('salon').hidden)return;
+  updatePhoto(view);
   if(location.hash==='#avatar')view.openOptions();
 }
 function updatePhoto(view){
@@ -233,7 +241,7 @@ async function refresh(){
   }
   if(invitation&&member.pseudo&&!wantsPreview){
     try{sessionStorage.removeItem('compagnon-apres-visite');}catch{}
-    history.replaceState(null,'',member.companion?'/membre.html#salon':'/membre.html#abonnement');
+    history.replaceState(null,'','/membre.html#abonnement');
     invitation=false;
   }
   if(!wantsPreview)enableJourneyTracking(member.id);
@@ -249,8 +257,7 @@ async function refresh(){
   if(member.author)$('plan-status').textContent='Ton accès auteur comprend toutes les options de personnalisation.';
   $('offer-price').hidden=$('renewal').hidden=Boolean(member.author);
   const keepDraft=previous?.id===member.id && previous.gender===member.gender && JSON.stringify(previous.studio||previous.avatar)===JSON.stringify(member.studio||member.avatar);
-  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar,member.gender);renderJourney();setPage();
-  if(member.pseudo)void mountRoom().catch(()=>note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.'));
+  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar,member.gender);renderJourney();setPage(true);
   if(member.author){
     const expected=member;
     void loadProviderOptions().then(providers=>{
@@ -280,7 +287,7 @@ $('subscribe').onclick=action(async()=>{const result=await api('checkout',{});lo
 $('close-player').onclick=closeFilm;
 $('film-player').addEventListener('error',()=>{const f=videos.find(x=>x.id===playing);if(!f)return;const player=$('film-player');if(f.alternate&&player.src===f.alternate){player.src=f.url;player.play().catch(()=>{});}else note('Cette vidéo est momentanément indisponible.');});
 $('film-player').addEventListener('timeupdate',async()=>{const p=$('film-player');if(!member||recorded||!playing||p.paused||p.currentTime<.5||document.hidden)return;recorded=true;const id=playing,uid=member.id;try{await api('journey',{memberId:uid,videos:[id]});if(member?.id===uid){member.journey=mergeJourney(member.journey,{videos:[id]});renderJourney();}}catch{if(playing===id)recorded=false;}});
-window.addEventListener('hashchange',setPage);
+window.addEventListener('hashchange',()=>setPage());
 window.addEventListener('pageshow',e=>{if(e.persisted)void openSpace();});
 async function start(){
   await refresh();

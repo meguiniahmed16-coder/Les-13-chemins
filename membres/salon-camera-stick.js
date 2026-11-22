@@ -1,16 +1,24 @@
+// Scale the whole gesture so equal pinches in opposite directions cancel out.
+export const touchGestureGain=pointerType=>pointerType==='touch' ? .5 : 1;
+export function touchStickScale(length){
+  if(length<=.10)return 0;
+  return .78*Math.min(1,(length-.10)/.90)**1.35/length;
+}
+
 // Pointer capture lets one thumb travel while the other hand looks around the scene.
 export function bindCameraStick(pad,begin,input,signal){
   const thumb=pad.querySelector('span'),keys=new Set(),options={signal};
   let pointer=null;
-  function drive(x,y){
-    const length=Math.hypot(x,y),scale=length>.10?Math.min(1,(length-.10)/.90)/length:0;
+  function drive(x,y,touch=false){
+    const length=Math.hypot(x,y);
+    const scale=touch?touchStickScale(length):length>.10?Math.min(1,(length-.10)/.90)/length:0;
     x*=scale;y*=scale;
     thumb.style.transform='translate('+x*16+'px,'+y*16+'px)';
     input(x,-y);
   }
   function point(e){
     const r=pad.getBoundingClientRect(),radius=Math.min(r.width,r.height)*.36;
-    if(radius>0)drive((e.clientX-r.x-r.width/2)/radius,(e.clientY-r.y-r.height/2)/radius);
+    if(radius>0)drive((e.clientX-r.x-r.width/2)/radius,(e.clientY-r.y-r.height/2)/radius,e.pointerType==='touch');
   }
   function release(){pointer=null;keys.clear();drive(0,0);}
   pad.addEventListener('pointerdown',e=>{

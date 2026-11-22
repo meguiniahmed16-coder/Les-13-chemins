@@ -1,4 +1,4 @@
-import {bindCameraStick,bindCameraHeight,createTravelMotion} from './salon-camera-stick.js?v=duo6';
+import {bindCameraStick,bindCameraHeight,createTravelMotion,touchStickScale,touchGestureGain} from './salon-camera-stick.js?v=gestes50';
 import {bounds} from './salon-plan.js';
 import {moveCamera,orbitCamera,zoomCamera,surfaceAt,cameraProjection} from './salon-navigation.js?v=presence49';
 
@@ -16,10 +16,9 @@ export function salonMarkup(poster,style) {
     <img class="poster" src="${poster}" alt="Le personnage habillé dans son salon">
     <div class="hud" hidden><div class="bar">
       ${button('pan','Déplacer le cadrage par glissement',icons.pan,'aria-pressed="false"')}
-      ${button('center','Recentrer sur le personnage',icons.center)}
       ${button('out','Éloigner la caméra','−')}${button('in','Rapprocher la caméra','+')}
       ${button('full','Plein écran',icons.full+'<span class="full-text">Plein écran</span>','aria-pressed="false"')}
-    </div><button type="button" class="stick" aria-label="Joystick de marche. Au clavier, utiliser les flèches." title="Déplacer le personnage"><span class="thumb"></span></button>
+    </div>${button('center','Recentrer sur mon personnage',icons.center+' Recentrer')}<button type="button" class="stick" aria-label="Joystick de marche. Au clavier, utiliser les flèches." title="Déplacer le personnage"><span class="thumb"></span></button>
     <button type="button" class="camera-stick" aria-label="Joystick caméra"><small>Caméra</small><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.2"/></svg></span></button><div class="camera-height" role="group" aria-label="Hauteur de la caméra"><button type="button" data-height="1" aria-label="Monter la caméra" title="Monter la caméra">↑</button><button type="button" data-height="-1" aria-label="Descendre la caméra" title="Descendre la caméra">↓</button></div><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser ▾</button></div></div><aside id="studio-drawer" class="studio-drawer" hidden></aside><div class="depart-tools">
       <button id="chooseDeparture" type="button" aria-expanded="false">Le départ à deux</button>
       <button id="return" type="button" hidden>Rentrer au salon</button>
@@ -85,16 +84,17 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
     });
     listen(target,'pointermove',e=>{
       const p=pointers.get(e.pointerId);if(!p)return;
-      const dx=e.clientX-p.x,dy=e.clientY-p.y;
+      const gain=touchGestureGain(e.pointerType);
+      const dx=(e.clientX-p.x)*gain,dy=(e.clientY-p.y)*gain;
       p.x=e.clientX;p.y=e.clientY;
       if(Math.hypot(p.x-p.x0,p.y-p.y0)>5)p.moved=true;
       if(!p.moved)return;
       const garden=outside();
-      if(garden){if(pointers.size>=2){const next=getPair();if(pair)garden.zoom(next.d/pair.d);pair=next;}else garden.pan(dx,dy);wake();return;}
+      if(garden){if(pointers.size>=2){const next=getPair();if(pair)garden.zoom((next.d/pair.d)**gain);pair=next;}else garden.pan(dx,dy);wake();return;}
       manual();const v=viewport();
       if(pointers.size>=2){
         const next=getPair();
-        if(pair){moveCamera(motion.camera,next.x-pair.x,next.y-pair.y,v.width,v.height);zoomCamera(motion.camera,next.d/pair.d,{w:v.width,h:v.height,x:next.x-v.left,y:next.y-v.top});}
+        if(pair){moveCamera(motion.camera,(next.x-pair.x)*gain,(next.y-pair.y)*gain,v.width,v.height);zoomCamera(motion.camera,(next.d/pair.d)**gain,{w:v.width,h:v.height,x:next.x-v.left,y:next.y-v.top});}
         pair=next;
       }else if(panning||p.pan)moveCamera(motion.camera,dx,dy,v.width,v.height);
       else orbitCamera(motion.camera,dx,dy);
@@ -127,7 +127,7 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
       }else lastTap={time:now,x,y};
     }
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(target,ev,end);
-    listen(target,'wheel',e=>{e.preventDefault();manual();const delta=e.deltaY*(e.deltaMode===1?16:1);const factor=Math.exp(-Math.max(-300,Math.min(300,delta))*.0016);if(outside())outside().zoom(factor);else{const v=target.getBoundingClientRect();zoomCamera(motion.camera,factor,{w:v.width,h:v.height,x:e.clientX-v.left,y:e.clientY-v.top});}wake();},{passive:false});
+    listen(target,'wheel',e=>{e.preventDefault();manual();const delta=e.deltaY*(e.deltaMode===1?16:1);const factor=Math.exp(-Math.max(-300,Math.min(300,delta))*.0009);if(outside())outside().zoom(factor);else{const v=target.getBoundingClientRect();zoomCamera(motion.camera,factor,{w:v.width,h:v.height,x:e.clientX-v.left,y:e.clientY-v.top});}wake();},{passive:false});
   }
   function stickMove(e){
     if(e.pointerId!==stickID)return;
@@ -135,7 +135,8 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
     const dx=(e.clientX-r.left-r.width/2)/radius,dy=(e.clientY-r.top-r.height/2)/radius;
     const scale=1/Math.max(1,Math.hypot(dx,dy));
     thumb.style.transform='translate('+dx*scale*radius+'px,'+dy*scale*radius+'px)';
-    (outside()||motion).stick(dx*scale,dy*scale);wake();
+    const gain=e.pointerType==='touch'?touchStickScale(Math.hypot(dx,dy)):scale;
+    (outside()||motion).stick(dx*gain,dy*gain);wake();
   }
   listen(stick,'pointerdown',e=>{if(stickID!==null)return;stickID=e.pointerId;stick.setPointerCapture(stickID);stickMove(e);});
   listen(stick,'pointermove',stickMove);
@@ -188,7 +189,14 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
     if(['center','in','out'].includes(b.dataset.action))manual();
     switch(b.dataset.action){
       case 'pan':panning=!panning;pan.setAttribute('aria-pressed',String(panning));break;
-      case 'center':if(outside())outside().center();else motion.centerCamera();break;
+      case 'center':
+        drive.stop();
+        if(outside())outside().center();
+        else{
+          motion.centerCamera();
+          Object.assign(motion.camera,{angle:motion.yaw,pitch:.14,headroom:0,perspective:0,nearDepth:0});
+        }
+        break;
       case 'in':if(outside())outside().zoom(1.24);else zoomCamera(motion.camera,1.24);break;
       case 'out':if(outside())outside().zoom(1/1.24);else zoomCamera(motion.camera,1/1.24);break;
       case 'full':void toggleFull();break;
