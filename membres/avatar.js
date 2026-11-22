@@ -7,7 +7,7 @@ import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js?v=salon43';
 import {createDrawer} from './studio-drawer.js?v=salon43';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon44';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon44';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon46';
 import {createSalonChat} from './salon-chat.js?v=salon44';
 import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon44';
 
@@ -234,7 +234,7 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon45',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon46',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
@@ -401,6 +401,7 @@ export class CheminsAvatar extends HTMLElement {
       if(this.#guest&&this.#last&&time-this.#last<interval){this.#schedule();return;}
       const dt=this.#last?Math.min(.60,(time-this.#last)/1000):1/60;
       this.#last=time;
+      const travelling=this.#controls?.cameraFrame(Math.min(dt,.1));
       const steps=Math.max(1,Math.ceil(dt/.05));
       let moving=false;
       for(let i=0;i<steps;i++){
@@ -427,7 +428,7 @@ export class CheminsAvatar extends HTMLElement {
         }
       }
       this.#draw(moving||!!this.#guest,dt);
-      if((moving||this.#inTransit||this.#world?.outside||this.#guest&&(!reduced||this.#chat.playback.busy))&&!document.hidden)this.#schedule();else this.#last=0;
+      if((travelling||moving||this.#inTransit||this.#world?.outside||this.#guest&&(!reduced||this.#chat.playback.busy))&&!document.hidden)this.#schedule();else this.#last=0;
     });
   };
   #draw(moving=false,dt=0){

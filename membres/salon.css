@@ -123,3 +123,8 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
  .camera-slot .bar{min-width:0;flex-wrap:wrap;}
  .studio-drawer .switch,.studio-drawer footer{flex-wrap:wrap;}
 }
+
+.camera-stick{position:absolute;left:calc(max(13px,env(safe-area-inset-left)) + 92px);bottom:max(14px,env(safe-area-inset-bottom));height:64px;width:64px;padding:0;display:grid;place-items:center;border:1px solid #fffa;border-radius:50%;color:#fffbed;background:#213a34aa;user-select:none;touch-action:none}
+.camera-stick small{position:absolute;bottom:3px;font:600 10px/1 system-ui}
+.camera-stick span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#fff9e9ee;color:#264538}
+.in-garden .camera-stick{display:none}

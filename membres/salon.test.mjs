@@ -322,3 +322,22 @@ test('Les deux yeux restent cadrés au plan large et le contrechamp respecte la 
     }
   }
 });
+
+test('Le travelling garde son cadre, tourne sur place et freine au relâchement',async()=>{
+  const {PerspectiveCamera,Vector3}=await import('three');
+  const {createTravelCamera}=await import('./v27/travel-camera.js');
+  const camera=new PerspectiveCamera(48,1,.07,180);
+  camera.position.set(0,1.55,1.3);camera.lookAt(0,1.55,0);
+  const travel=createTravelCamera(camera,.087,{matches:false});
+  travel.capture();travel.motion.input(0,1);
+  const frames=count=>{for(let i=0;i<count;i++)travel.apply(1/60);};
+  frames(60);assert.ok(camera.position.z<.2);
+  travel.motion.input(0,0);const release=camera.position.z;
+  frames(60);assert.ok(release-camera.position.z>.04&&release-camera.position.z<.16);
+  const parked=camera.position.clone();travel.look(65,12);frames(120);
+  assert.ok(parked.distanceTo(camera.position)<.00001);
+  assert.ok(Math.abs(camera.getWorldDirection(new Vector3()).x)>.15);
+  travel.motion.input(1,1);frames(1200);
+  assert.ok(Math.abs(camera.position.x)<=3.16&&camera.position.y<=2.75&&camera.position.z>=-2.52);
+  travel.reset();assert.equal(camera.near,.07);assert.equal(travel.active,false);
+});

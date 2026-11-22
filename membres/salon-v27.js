@@ -11,7 +11,7 @@ class SalonV27 extends HTMLElement{
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon45"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon46"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -112,12 +112,12 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.src='/membres/v27/salon.html?v=27duo4';
+    frame.src='/membres/v27/salon.html?v=27duo5';
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
     if(this.#fallback)return;
-    await import('./avatar.js?v=salon45');
+    await import('./avatar.js?v=salon46');
     if(!this.isConnected||this.#fallback)return;
     this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
     this.shadowRoot.querySelector('.stage').hidden=true;

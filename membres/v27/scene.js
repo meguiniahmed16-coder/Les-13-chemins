@@ -1,4 +1,6 @@
 import {createDetailCamera} from './detail-camera.js';
+import {bindCameraStick} from '../salon-camera-stick.js';
+import {createTravelCamera} from './travel-camera.js';
 import {composeDialogue,createFocusPass} from './conversation-camera.js';
 import {livePose} from './live-body.js';
 import * as T from 'three';
@@ -39,6 +41,7 @@ scene.add(indoor,outdoor);
 const detail=createDetailCamera(cam,canvas,scene),drawScene=createFocusPass(renderer);
 let portraitPanel=null,focusShot=null;
 const baySlope=.087173,bayCenter=new T.Vector3(0,0,2.48944),gardenThreshold=new T.Vector3(-.65,.047,10.72);
+const travel=createTravelCamera(cam,baySlope,matchMedia('(prefers-reduced-motion: reduce)'));
 const roomToGarden=new T.Matrix4().makeRotationY(Math.PI+Math.atan(baySlope));
 roomToGarden.setPosition(gardenThreshold.clone().sub(bayCenter.clone().applyMatrix4(roomToGarden)));
 const gardenToRoom=roomToGarden.clone().invert(), identity=new T.Matrix4();
@@ -508,11 +511,11 @@ function windowCaption(){
  b.title=label;b.setAttribute('aria-label',label);b.setAttribute('aria-pressed',String(where==='jardin'?homeView:windowView));
 }
 let beforeWindow=null;
-function faceWindow(){
+function faceWindow(){travel.reset();detail.reset();
  if(!windowView)beforeWindow={angle:orbit.angle,pitch:orbit.pitch,follow:orbit.follow,focus:orbit.focus.clone(),from:player().root.position.clone()};
  windowView=true;orbit.pitch=.025;orbit.angle=Math.PI-Math.atan(baySlope);orbit.follow=true;windowCaption();hint();
 }
-function freeCamera(){detail.reset();homeView=windowView=false;windowCaption();hint()}
+function freeCamera(){travel.reset();detail.reset();homeView=windowView=false;windowCaption();hint()}
 function leaveWindow(){
  const previous=beforeWindow;freeCamera();
  if(previous){orbit.angle=previous.angle;orbit.pitch=previous.pitch;orbit.follow=previous.follow||previous.from.distanceTo(player().root.position)>.30;if(!orbit.follow)orbit.focus.copy(previous.focus)}
@@ -572,7 +575,7 @@ function setRole(id){
  keyButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===id)));orbit.follow=false;hint();
 }
 keyButtons.forEach(b=>b.onclick=()=>setRole(b.dataset.role));
-function setLocation(out){detail.reset();
+function setLocation(out){travel.reset();detail.reset();$('cameraPad').hidden=out;
  where=out?'jardin':'salon';shelfView=false;$('shelves').hidden=out;$('shelfLabel').textContent='Bibliothèque';$('shelves').setAttribute('aria-pressed','false');$('shelfActions').hidden=true;refreshFlight();
  indoor.matrix.copy(out?roomToGarden:identity);outdoor.matrix.copy(out?identity:gardenToRoom);
  indoor.updateMatrixWorld(true);outdoor.updateMatrixWorld(true);
@@ -597,7 +600,7 @@ function returnHome(){
  if(where!=='jardin')return;cancelReveal();resetAir();for(const a of Object.values(actors))unwear(a);
  chosen=null;setLocation(false);actorHome();resetView();canvas.focus({preventScroll:true})
 }
-function resetView(){detail.reset();
+function resetView(){travel.reset();detail.reset();
  orbit.follow=false;orbit.angle=1.07;orbit.pitch=.23;orbit.radius=3.60;orbit.focus.set(-2.19,.78,-1.78);updateCam(1)
 }
 const zoneLabel=$('hint');
@@ -623,7 +626,7 @@ function walkToSeat(s){
  seatRoute={seat:s,points:route.slice(1).map(([x,z])=>[(x-700)/100,(z+800)/100])};
  keys.clear();releaseStick();goal=null;freeCamera();orbit.follow=true;
 }
-function sitAt(s){detail.reset();
+function sitAt(s){if(!travel.active)detail.reset();
  rising=false; if(where!=='salon')return;freeCamera();const a=player();a.root.position.set(...feetAt(s,a));a.root.rotation.y=s.yaw;sitting=s;poseSeat=s;a.sit=0;a.speed=0;goal=null;$('rise').hidden=false;orbit.follow=true;hint()
 }
 Object.entries(pins).forEach(([k,b])=>b.onclick=()=>equip(k));$('return').onclick=returnHome;$('rise').onclick=()=>{if(sitting)rising=true;};
@@ -674,6 +677,7 @@ function updateCam(dt){
  if(!focusShot&&cam.fov!==fieldOfView){cam.fov=fieldOfView;cam.updateProjectionMatrix()}
  if(conversation&&where==='salon'&&!shelfView)memberCamera();
  if(portraitPanel?.tick())focusShot=null;
+ else if(travel.active&&!detail.active){focusShot=null;travel.apply(dt);}
  if(detail.active){focusShot=null;detail.apply();}focusBookPrint();cam.updateMatrixWorld();
  const gardenEye=out?cam.position:marker.copy(cam.position).applyMatrix4(roomToGarden);
  for(const o of sprites)o.rotation.y=Math.atan2(gardenEye.x-o.position.x,gardenEye.z-o.position.z);
@@ -702,7 +706,7 @@ function move(dt){
  if(keys.has('arrowright')||keys.has('d'))x+=1;
  if(keys.has('arrowleft')||keys.has('a')||keys.has('q'))x-=1;
  let len=Math.hypot(x,z),dx=0,dz=0;
- if(len>.04){detail.reset();releaseSeatRoute();goal=null;encounter.route=null;}
+ if(len>.04){travel.reset();detail.reset();releaseSeatRoute();goal=null;encounter.route=null;}
  if(encounter.active&&encounter.route&&!goal){const next=encounter.route.shift();if(next)goal=next;else{encounter.route=null;if(where==='salon')crossBay();}}
  if(seatRoute&&!goal){
    const p=seatRoute.points.shift();
@@ -739,13 +743,23 @@ const pad=$('pad');
 function padMove(e){const b=pad.getBoundingClientRect(),x=(e.clientX-b.left-b.width/2)/(b.width*.34),y=(e.clientY-b.top-b.height/2)/(b.height*.34),n=Math.max(1,Math.hypot(x,y));stick.x=x/n;stick.y=y/n;$('thumb').style.transform='translate('+stick.x*22+'px,'+stick.y*22+'px)'}
 pad.onpointerdown=e=>{e.preventDefault();stick.id=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};
 pad.onpointermove=e=>{if(e.pointerId===stick.id)padMove(e)};pad.onpointerup=pad.onpointercancel=pad.onlostpointercapture=e=>{if(e.pointerId===stick.id)releaseStick()};
+function takeCamera(){
+ if(!travel.active||detail.active)travel.capture();
+ if(shelfView)setShelfView(false,true);
+ if(windowView){windowView=false;windowCaption();hint();}
+ detail.reset();manualShot();travel.apply(0);
+}
+const cameraPad=$('cameraPad');
+bindCameraStick(cameraPad,takeCamera,(x,z)=>travel.motion.input(x,z));
+window.addEventListener('blur',()=>travel.motion.stop());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)travel.motion.stop();});
 const held=new Map();let touch=null,lastTap=null,pinch=0;
 function midPoint(){const [a,b]=held.values();return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,span:Math.hypot(a.x-b.x,a.y-b.y)};}
 function manualShot(){if(conversation){conversation=null;window.dispatchEvent(new Event('salon-manual-camera'));}if(encounter.active)encounter.chatView=false;}
 canvas.addEventListener('pointerdown',e=>{
  if(e.button>0)return;if(revealStart!==null)cancelReveal();canvas.focus();canvas.setPointerCapture(e.pointerId);
  held.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(held.size===2){const mid=midPoint();pinch=mid.span;detail.begin(mid.x,mid.y);manualShot();if(touch)touch.moved=true;}
+ if(held.size===2){travel.motion.stop();const mid=midPoint();pinch=mid.span;detail.begin(mid.x,mid.y);manualShot();if(touch)touch.moved=true;}
  else touch={x:e.clientX,y:e.clientY,moved:false};
 });
 canvas.addEventListener('pointermove',e=>{
@@ -754,6 +768,7 @@ canvas.addEventListener('pointermove',e=>{
  if(held.size===2){const mid=midPoint();if(mid.span>0&&pinch>0)detail.zoom(pinch/mid.span,mid.x,mid.y);pinch=mid.span;return;}
  if(touch&&!touch.moved&&Math.hypot(e.clientX-touch.x,e.clientY-touch.y)>5)touch.moved=true;
  if(!touch?.moved)return;
+ if(travel.active){if(detail.active)takeCamera();travel.look(dx,dy);return;}
  if(conversation&&!detail.active)detail.begin(canvas.getBoundingClientRect().x+canvas.clientWidth*.5,canvas.getBoundingClientRect().y+canvas.clientHeight*.5);
  manualShot();if(detail.active){detail.orbit(dx,dy);return;}
  if(air.front){orbit.angle=air.heading-.065;air.front=false;refreshFlight();}if(windowView)approachedWindow=true;else if(homeView)freeCamera();
@@ -763,7 +778,7 @@ const plane=new T.Plane(new T.Vector3(0,1,0),0),point=new T.Vector3();
 function tap(e){
  if(performance.now()<jumpLock)return;const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);ray.setFromCamera(pointer,cam);
  if(where==='salon'){
-  const volume=ray.intersectObjects(bookHits,false)[0];if(volume&&(shelfView||player().root.position.distanceTo(volume.point)<1.85)){openBooks(volume.object.userData.book);return}
+  const volume=ray.intersectObjects(bookHits,false)[0];if(volume&&(shelfView||travel.active||player().root.position.distanceTo(volume.point)<1.85)){openBooks(volume.object.userData.book);return}
   if(shelfView)return;
   const hit=ray.intersectObjects(Object.values(bags),false)[0];if(hit){equip(hit.object.userData.bag);return}}
  else if(air.mode!=='off')return;else if(ray.intersectObjects(bayPanes,false).length&&player().root.position.z>4.9){returnHome();return}
@@ -1303,7 +1318,7 @@ function releaseAirInput(){air.boost=air.down=false;air.pulse=air.downPulse=0}
 window.addEventListener('blur',releaseAirInput);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAirInput()});
 
 const shelvesButton=$('shelves'),catalog=$('bookcase'),catalogList=$('bookList');
-function setShelfView(on){detail.reset();
+function setShelfView(on,keepTravel=false){if(!keepTravel)travel.reset();detail.reset();
  if(where!=='salon')return;
  if(on){shelfSaved={angle:orbit.angle,pitch:orbit.pitch,radius:orbit.radius,follow:orbit.follow,focus:orbit.focus.clone()};if(windowView)freeCamera();keys.clear();releaseStick();goal=null}
  else if(shelfSaved){Object.assign(orbit,{angle:shelfSaved.angle,pitch:shelfSaved.pitch,radius:shelfSaved.radius,follow:shelfSaved.follow});orbit.focus.copy(shelfSaved.focus)}
@@ -1335,7 +1350,7 @@ const member=createMemberBridge({
  friend.sit=1;friend.speed=0;friend.stamp='';animateBody(friend,0,seat);
  companionSeat=seat;$('actors').hidden=true;walkToSeat(seats.find(s=>s.id===pair[1]));talkOpen=true;},
  clearMeeting(){if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
- camera(mode,speaker,inset=0){conversation=mode==='manual'?null:{mode,speaker,inset};if(conversation)detail.reset();},
+ camera(mode,speaker,inset=0){conversation=mode==='manual'?null:{mode,speaker,inset};if(conversation){travel.reset();detail.reset();}},
  snapshot(){
    const a=player(),head=headCenter(a);
    const portrait=new T.PerspectiveCamera(32,canvas.width/canvas.height,.05,100);

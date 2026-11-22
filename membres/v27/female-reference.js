@@ -61,7 +61,11 @@ function skinShader(mat,pose,style){
       transformed.x+=w*position.x*(-.31*lips.x+.12*lips.y);
       transformed.z+=w*(.0048*lips.x-.00065*lips.y-.0023*lips.z*lo);
       transformed.y+=w*(.0027*lips.z*lo-.00025*lips.w*(1.-2.*lo));`);
-    s.fragmentShader='varying vec3 headRest;uniform float fold,cosmetics,browStyle,ageStyle;\n'+s.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+    // Use the framed size of the head, so a telephoto close-up keeps its fine detail.
+    s.vertexShader='varying float portraitSpan;varying vec3 cheekNormal;\n'+s.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+      portraitSpan=-mvPosition.z/(projectionMatrix[1][1]*length(modelMatrix[1].xyz));
+      cheekNormal=normalMatrix*normalize(vec3(position.x*8.,.025,1.));`);
+    s.fragmentShader='varying float portraitSpan;varying vec3 cheekNormal;varying vec3 headRest;uniform float fold,cosmetics,browStyle,ageStyle;\n'+s.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
       if(headRest.y<.030)discard;
       float d=abs(headRest.x)-.0478;float u=clamp(d/.0126,0.,1.);float w=.00035+.00018*u;
       float f=exp(-pow((headRest.y-(.1505+.24*d-.0006*u*u))/w,2.))+exp(-pow((headRest.y-(.1499-.16*d-.0006*u*u))/w,2.));
@@ -72,7 +76,31 @@ function skinShader(mat,pose,style){
       float lips=exp(-pow(headRest.x/.022,4.)-pow((headRest.y-.084)/.0047,2.))*front;
       float eyes=exp(-pow((abs(headRest.x)-.031)/.022,4.)-pow((headRest.y-.157)/.0038,2.))*front;
       diffuseColor.rgb*=vec3(1.,1.-.19*cosmetics*lips,1.-.16*cosmetics*lips)*(1.-.16*cosmetics*eyes);`);
-  };mat.customProgramCacheKey=()=>'marianne-face-1';
+    // The arc follows the centreline sampled from the painted eyebrow on this head.
+    // Its filtered cross-section keeps the fine outer tail visible between adjacent pixels.
+    s.fragmentShader=s.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+      float faceLOD=smoothstep(.26,1.04,portraitSpan);
+      float ax=abs(headRest.x),by=headRest.y;
+      float along=clamp((ax-.0108)/.0405,0.,1.);
+      float curve=.17169+along*(.02145+along*(-.06847+along*(.08833-.04512*along)));
+      float dy=by-curve,footprint=clamp(fwidth(dy),.0001,.010);
+      float sideMask=smoothstep(.006,.015,ax)*(1.-smoothstep(.052,.066,ax))*front;
+      float rim=.1432+.0026*clamp((ax-.030)/.021,-1.,1.);
+      float lowerLid=sideMask*smoothstep(.117,.131,by)*(1.-smoothstep(rim+.0012,rim+.0062,by));
+      float browZone=front*smoothstep(.004,.010,ax)*(1.-smoothstep(.053,.062,ax))*(1.-smoothstep(.006,.012,abs(dy)));
+      float orbital=max(lowerLid,browZone);
+      if(faceLOD*orbital>.0001){
+        vec2 cheekUV=vec2(headRest.x<0.?.375:.625,.4409);
+        vec3 bareSkin=texture2D(map,cheekUV).rgb*diffuse;
+        float halfWidth=mix(.00255,.00130,along)*(1.+browStyle*.55);
+        float radius=sqrt(halfWidth*halfWidth+.33*footprint*footprint);
+        float ends=smoothstep(.0102-.3*footprint,.0123+.15*footprint,ax)*(1.-smoothstep(.0502-.25*footprint,.0523+.35*footprint,ax));
+        float ink=ends*exp(-.693*dy*dy/(radius*radius))*clamp(halfWidth/radius+.34,0.,1.);
+        vec3 farSkin=mix(bareSkin,bareSkin*vec3(.14,.092,.071),ink*.90);
+        diffuseColor.rgb=mix(diffuseColor.rgb,farSkin,faceLOD*orbital);
+        normal=normalize(mix(normal,normalize(cheekNormal),faceLOD*orbital));
+      }`);
+  };mat.customProgramCacheKey=()=>'marianne-face-distance-2';
 }
 // The two iris discs share an atlas. Preserve pupil, limbal ring and sclera coverage as its mip level drops.
 function shadeIris(mat,color){
