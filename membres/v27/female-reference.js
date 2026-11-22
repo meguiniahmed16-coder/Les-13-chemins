@@ -94,6 +94,19 @@ function shadeIris(mat,color){
       painted=mix(painted,eyeTint*.29,ring);
       painted=mix(painted,vec3(.014,.019,.023),pupil);
       diffuseColor.rgb=mix(diffuseColor.rgb,painted,farEye*.93);`);
+    // Warm room lights can turn a two-pixel blue iris grey. Retain a little local
+    // colour contrast and the filtered corneal catchlight at that distance.
+    s.fragmentShader=s.fragmentShader.replace('#include <opaque_fragment>',`
+      float eyeLight=clamp(dot(outgoingLight,vec3(.21,.72,.07)),.024,.90);
+      vec3 daylight=eyeTint/max(dot(eyeTint,vec3(.21,.72,.07)),.02);
+      vec3 coloured=mix(outgoingLight,daylight*(eyeLight*.90+.018),.66);
+      coloured*=1.-.38*pupil;
+      vec3 readableWhite=outgoingLight*.94+vec3(.075,.085,.095);
+      vec3 distanceLight=mix(readableWhite,coloured,iris);
+      float glint=(1.-smoothstep(max(0.,.024-edge),.024+edge,length(q-vec2(-.036,.039))))*min(1.,.0012/max(.0012,pixel*pixel));
+      distanceLight+=vec3(.22,.24,.27)*glint;
+      outgoingLight=mix(outgoingLight,distanceLight,farEye);
+      #include <opaque_fragment>`);
   };
   mat.customProgramCacheKey=()=>'marianne-eye-distance';
 }
