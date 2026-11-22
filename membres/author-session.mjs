@@ -33,7 +33,7 @@ export async function authorProfile(db) {
   const find=()=>db.prepare("SELECT * FROM members WHERE provider='author' AND subject='site-owner'").first();
   const existing=await find();
   if(existing)return existing;
-  await db.prepare("INSERT INTO members(id,provider,subject,email,pseudo,birth,avatar,created) VALUES(?,'author','site-owner','','Ahmed Marie','',?,?) ON CONFLICT(provider,subject) DO NOTHING")
+  await db.prepare("INSERT INTO members(id,provider,subject,email,pseudo,birth,avatar,created) VALUES(?,'author','site-owner','meguiniahmed16@gmail.com','Ahmed Marie','',?,?) ON CONFLICT(provider,subject) DO NOTHING")
     .bind(crypto.randomUUID(),JSON.stringify(randomAvatar()),now()).run();
   return find();
 }

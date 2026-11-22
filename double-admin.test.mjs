@@ -71,3 +71,26 @@ test('password change requires authentication and current password; old credenti
  assert.equal((await f.app.fetch(new Request('https://backend.example/admin/blog',{headers:{authorization:'Bearer server-test-only'}}),f.env,{})).status,401);
  f.database.close();
 });
+
+test('les deux formulaires délèguent l’adresse du propriétaire à sa session auteur',async()=>{
+ const {default:memberProxy}=await import('./membres/proxy.mjs');
+ const original=globalThis.fetch,calls=[],site='https://tectonique-des-ames.com';
+ globalThis.fetch=async(url,init)=>{
+   calls.push({url,body:JSON.parse(typeof init.body==='string'?init.body:new TextDecoder().decode(init.body))});
+   return Response.json({error:'Identifiant ou mot de passe incorrect.'},{status:401});
+ };
+ const post=(path,body)=>new Request(site+path,{method:'POST',headers:{origin:site,'content-type':'application/json'},body:JSON.stringify(body)});
+ try{
+   const email='MEGUINIAHMED16@GMAIL.COM',password='essai-invalide';
+   for(const [handler,path,key] of [[proxy,'/api/atelier/auth/login','username'],[memberProxy,'/api/membres/login','email']]){
+     const reply=await handler(post(path,{[key]:email,password}));
+     assert.equal(reply.status,401);assert.equal(reply.headers.get('set-cookie'),null);
+     assert.match(calls.at(-1).url,/\/web-admin\/auth\/login$/);
+     assert.deepEqual(calls.at(-1).body,{username:'admin',password});
+   }
+   const sign=await memberProxy(post('/api/membres/signup',{email,password}));
+   assert.equal(sign.status,409);assert.equal(calls.length,2);
+   await memberProxy(post('/api/membres/login',{email:'autre@example.test',password}));
+   assert.match(calls.at(-1).url,/\/api\/membres\/login$/);
+ }finally{globalThis.fetch=original;}
+});
