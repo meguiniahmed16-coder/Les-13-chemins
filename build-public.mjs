@@ -79,7 +79,7 @@ const publicFiles = [
   'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-assets.js','membres/salon-voice.js','membres/salon-voice-worker.js','membres/salon-voice-credits.txt','membres/salon-dictee.js','membres/salon-dictee-worker.js',
   'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-raster.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
-  'accueil.css', 'accueil-rencontre.js',
+  'accueil.css','salon-invite.html','membres/visite-salon.js','membres/visite-salon.css','membres/visite-salon.vtt','assets/membres/invitation-salon.webp','assets/membres/invitation-salon.mp4',
   'ahmed-marie.html',
   'dialogues.html',
   'dialogues.css',
@@ -275,7 +275,7 @@ await writeFile(join(output,'salon-personnages.json'),JSON.stringify(salonDirect
 await writeFile(join(output, 'etapes-data.js'), 'window.TreizeEtapesData=' + JSON.stringify(arrivalData).replace(/</g, '\\u003c') + ';\n');
 for (const name of publicFiles) {
   await mkdir(dirname(join(output, name)), { recursive: true });
-  if (name==='membres/v27/salon.html') {
+  if (name==='membres/v27/salon.html'||name==='salon-invite.html') {
     // The member page already owns site navigation, cookies and visit tracking.
     await copyFile(join(root,name),join(output,name));
   } else if (name.endsWith('.html')) {
@@ -306,3 +306,4 @@ await copyFile(join(root, 'double-admin-api.mjs'), join(root, '.netlify/function
 await copyFile(join(root,'bois/proxy.mjs'),join(root,'.netlify/functions/creations.mjs'));
 
 await copyFile(join(root,'membres/proxy.mjs'),join(root,'.netlify/functions/membres.mjs'));
+await copyFile(join(root,'membres/guest-visit.mjs'),join(root,'.netlify/functions/visite-salon.mjs'));

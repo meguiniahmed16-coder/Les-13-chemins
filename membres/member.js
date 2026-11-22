@@ -7,6 +7,11 @@ const $=id=>document.getElementById(id);
 const el=(tag,text)=>{const node=document.createElement(tag);if(text)node.textContent=text;return node;};
 const note=text=>{$('status').textContent=text;};
 const params=new URLSearchParams(location.search);
+let invitation=params.get('invitation')==='compagnon';
+try{
+  if(invitation)sessionStorage.setItem('compagnon-apres-visite','1');
+  else if(!location.search&&!location.hash)invitation=sessionStorage.getItem('compagnon-apres-visite')==='1';
+}catch{}
 const previewPlan=params.get('apercu');
 const wantsPreview=['abonne','non-abonne'].includes(previewPlan);
 const previewGender=params.get('genre')==='femme'?'femme':'homme';
@@ -54,7 +59,7 @@ document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))closeMen
 document.addEventListener('focusin',e=>{if(!menu.contains(e.target))closeMenu();});
 document.addEventListener('keydown',e=>{if(menu.open&&e.key==='Escape'){e.preventDefault();closeMenu(true);}});
 function mode(value){
-  signup=value;$('choose-login').setAttribute('aria-pressed',String(!value));$('choose-signup').setAttribute('aria-pressed',String(value));
+  signup=value;$('invitation-switch').textContent=value?'J’ai déjà un compte':'Créer mon compte';$('choose-login').setAttribute('aria-pressed',String(!value));$('choose-signup').setAttribute('aria-pressed',String(value));
   $('auth-title').textContent=value?'Créer mon compte':'Se connecter';
   $('signup-fields').disabled=!value;$('signup-fields').hidden=!value;
   $('password').autocomplete=value?'new-password':'current-password';$('password').minLength=value?10:1;
@@ -216,7 +221,7 @@ async function refresh(){
       note('Ta session auteur a expiré. Rouvre ton administration pour accéder au salon.');
       return;
     }
-    mode(false);
+    $('invitation-auth').hidden=!invitation;mode(invitation);
     const providers=await loadProviderOptions().catch(()=>({}));
     for(const key of ['google','facebook']){
       $(key).hidden=$(key).disabled=!providers[key];
@@ -225,6 +230,11 @@ async function refresh(){
     $('google').parentElement.hidden=!Object.values(providers).some(Boolean);
     if(new URLSearchParams(location.search).has('connexion'))note('Connexion interrompue. Tu peux réessayer.');
     return;
+  }
+  if(invitation&&member.pseudo&&!wantsPreview){
+    try{sessionStorage.removeItem('compagnon-apres-visite');}catch{}
+    history.replaceState(null,'',member.companion?'/membre.html#salon':'/membre.html#abonnement');
+    invitation=false;
   }
   if(!wantsPreview)enableJourneyTracking(member.id);
   $('provider-settings').hidden=!member.author;
@@ -251,6 +261,7 @@ async function refresh(){
   }
   note(member.pseudo?'':'Choisis ton pseudo, ton genre et ta date de naissance pour créer ton avatar.');
 }
+$('invitation-switch').onclick=()=>chooseAccess(!signup);
 function chooseAccess(value){mode(value);closeMenu();$('email').focus();}
 $('choose-login').onclick=()=>chooseAccess(false);$('choose-signup').onclick=()=>chooseAccess(true);
 $('auth-form').onsubmit=action(async e=>{if(preview){note('Quitte l’aperçu pour te connecter à un autre compte.');return;}const form=e.target;await api(signup?'signup':'login',Object.fromEntries(new FormData(form)));form.reset();await refresh();});

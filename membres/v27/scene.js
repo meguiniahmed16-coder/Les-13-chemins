@@ -4,7 +4,7 @@ import {createTravelCamera} from './travel-camera.js';
 import {composeDialogue,createFocusPass} from './conversation-camera.js';
 import {livePose} from './live-body.js';
 import * as T from 'three';
-import {seats as roomSeats,roomPath} from '../salon-plan.js';
+import {seats as roomSeats,roomFree,roomPath} from '../salon-plan.js';
 import {dressFriends,reunionDialogue} from './rencontre-lionel.js';
 import {createFacePanel} from './face-panel.js';
 import {createMemberBridge} from './scene-members.js';
@@ -561,7 +561,7 @@ const walkBlocks=[[-.49,1.62,-2.58,-2.16],[-3.08,-2.18,-1.17,1.64],[-2.79,-2.35,
 for(let x of [.42,2.30])for(let z of [-.12,.51])walkBlocks.push([x-.20,x+.20,z-.2,z+.2]);walkBlocks.push([1.13,1.61,-1.47,-1.08],[1.20,1.64,1.41,1.88]);
 function canWalk(x,z){
  if(where==='salon'){
-  if(x< -3.0||x>3.0||z< -2.40||z>2.01+(x+3)*.09)return false;
+  if(!roomFree(x*100+700,z*100-800))return false;
   for(const bag of Object.values(bags)){const b=bag.userData.restBounds;if(x>b.min.x-.12&&x<b.max.x+.12&&z>b.min.z-.12&&z<b.max.z+.12)return false}
   return !walkBlocks.some(([a,b,c,d])=>x>a-.1&&x<b+.1&&z>c-.1&&z<d+.1)
  }

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Une invitation au salon · La tectonique des âmes</title>
+<meta name="description" content="Prends place dans le salon d’Ahmed Marie. Quinze minutes pour explorer, créer ton avatar et rencontrer les personnages du livre.">
+<link rel="stylesheet" href="/membres/visite-salon.css"><script type="module" src="/membres/visite-salon.js"></script>
+</head><body>
+<header class="mast"><a href="/" aria-label="La tectonique des âmes, accueil">✦ <span>La tectonique des âmes</span></a><a class="personal" href="/membre.html#salon">Mon espace</a></header>
+<main>
+<section id="intro" class="welcome">
+  <div class="intro-text"><p class="eyebrow">Une invitation d’Ahmed Marie</p><h1>Entre dans le salon.</h1><p>Choisis ton visage, installe-toi où tu veux et invite quelqu’un du livre à te rejoindre.</p></div>
+  <div class="film"><video id="tour" autoplay muted playsinline controls preload="metadata" poster="/assets/membres/invitation-salon.webp" aria-label="Dans le salon, déplacer Marianne, choisir un fauteuil et déplacer la caméra"><source src="/assets/membres/invitation-salon.mp4" type="video/mp4"><track kind="captions" srclang="fr" label="Français" src="/membres/visite-salon.vtt"></video></div>
+  <p id="tour-hint">Pousse le joystick de gauche pour avancer.</p>
+  <div class="intro-actions"><p><strong>15 minutes en invité</strong><small>Sans compte. Le temps commence à ton entrée.</small></p><button id="skip" class="button" type="button">Passer la vidéo et entrer</button></div>
+</section>
+<section id="live-room" aria-label="Le salon en invité" hidden><div class="room-head"><h1>Le salon</h1><p>Visite invitée <time id="remaining" aria-label="Temps restant">15:00</time></p></div><div id="room"></div></section>
+<p id="status" role="status"></p><button id="retry" type="button" class="button" hidden>Réessayer</button>
+<div id="goodbye" hidden aria-hidden="true"></div>
+<dialog id="offer" aria-labelledby="offer-title" aria-describedby="offer-copy">
+  <div class="invitation-image" aria-hidden="true"></div>
+  <div class="letter"><p class="eyebrow">Après ta visite de 15 minutes</p><h2 id="offer-title" tabindex="-1">Et si tu reprenais place&nbsp;?</h2>
+  <p>Il y a d’autres fauteuils à essayer et d’autres voix à découvrir. Tu peux revenir les retrouver en devenant <strong>Compagnon de route</strong>.</p>
+  <p id="offer-copy">Le salon est encore en phase de test. Héberger la maison en 3D, ses personnages et leurs conversations demande beaucoup de ressources. Ta contribution aide à couvrir ces frais.</p>
+  <a class="button join" href="/membre.html?invitation=compagnon#abonnement">Devenir Compagnon de route</a><p class="terms"><strong>5 € par mois</strong> · abonnement mensuel résiliable</p>
+  <a class="exit" href="/">Revenir à l’accueil</a></div>
+</dialog>
+<noscript>Active JavaScript pour entrer dans le salon interactif. <a href="/">Revenir à l’accueil</a></noscript>
+</main>
+<footer><a href="/membres/v27/marianne-credits.txt">Crédits du visage</a><a href="/membres/salon-voice-credits.txt">Voix</a><a href="/membre.html#salon">Mon salon</a><a href="/confidentialite.html#membres">Confidentialité</a><details><summary>Modèles 3D</summary><p>Ailes de culturalibre et jean de punkduck adaptés pour le salon. <a href="https://files.makehumancommunity.org/sites/default/files/clothes/4881/1276915208/the_wasp_wings.mhclo">The wasp wings</a> · <a href="https://files.makehumancommunity.org/sites/default/files/clothes/1665/2097948445/tightjeans.mhclo">Tight jeans (female)</a> · <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a></p></details></footer>
+</body></html>

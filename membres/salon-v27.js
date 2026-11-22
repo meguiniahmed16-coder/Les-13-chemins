@@ -156,7 +156,7 @@ class SalonV27 extends HTMLElement{
     const saved=stored||(own?options.savedStudio:null),reference=referenceStudio(gender);
     let state=this.#drafts[gender];
     if(!state){
-      let previous=null;try{previous=localStorage.getItem(storage);}catch{}
+      let previous=null;try{previous=(options.temporary?sessionStorage:localStorage).getItem(storage);}catch{}
       const use=Boolean(saved)&&(previous==='1'||(stored&&previous!=='0'));
       state=this.#drafts[gender]={look:use?normaliseStudio(saved,options.plus,undefined,gender):reference,custom:use,saved};
     }
@@ -164,7 +164,7 @@ class SalonV27 extends HTMLElement{
     let switcher=choices.querySelector('.v27-look-choice');
     if(!switcher){switcher=document.createElement('button');switcher.className='v27-look-choice';switcher.type='button';choices.querySelector('header').after(switcher);}
     const label=()=>{switcher.hidden=!state.custom&&!state.saved;switcher.textContent=state.custom?'Reprendre le personnage V27':'Porter mon apparence enregistrée';};
-    const persistChoice=()=>{try{localStorage.setItem(storage,state.custom?'1':'0');}catch{}};
+    const persistChoice=()=>{try{(options.temporary?sessionStorage:localStorage).setItem(storage,state.custom?'1':'0');}catch{}};
     const configureDrawer=()=>this.#drawer.configure(state.look,{...options,gender,savedStudio:state.saved||reference,
       change:draft=>{state.look=draft;state.custom=true;label();if(own)options.change(draft);},
       save:async draft=>{await options.saveCharacter(gender,draft);state.saved=draft;state.custom=true;persistChoice();if(this.#gender===gender)label();}
