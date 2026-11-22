@@ -291,3 +291,34 @@ test('Le visage réagit dans la pause de parole et la voix laisse un seul rire s
   assert.equal(reactionAfter('Tu me fais rire !').name,'Rire de bon cœur');
   assert.equal(reactionAfter('Je t’aime.').name,'Sourire amoureux');
 });
+
+test('Les plans suivent les répliques et gardent un temps de lecture',async()=>{
+  const {createShotSequence}=await import('./salon-shots.js');
+  const shots=createShotSequence();
+  shots.reset(10);
+  shots.turn('guest');
+  assert.equal(shots.frame(11).size,'wide');
+  assert.deepEqual(shots.frame(12),{size:'medium',speaker:'guest'});
+  shots.turn('player');
+  assert.equal(shots.frame(12.4).speaker,'guest');
+  assert.deepEqual(shots.frame(14),{size:'close',speaker:'player'});
+  assert.deepEqual(shots.frame(23),{size:'close',speaker:'player'});
+  assert.equal(shots.frame(24,false).size,'wide');
+});
+
+test('Les deux yeux restent cadrés au plan large et le contrechamp respecte la ligne des regards',async()=>{
+  const {composeDialogue}=await import('./v27/conversation-camera.js');
+  const {PerspectiveCamera,Vector3}=await import('three');
+  const a=new Vector3(-1,1.04,.1),b=new Vector3(.9,1.17,-.08);
+  const direction=b.clone().sub(a),side=new Vector3(direction.z,0,-direction.x);
+  for(const aspect of [.65,1.7]){
+    const cam=new PerspectiveCamera(48,aspect,.07,85);
+    const inside=p=>{const v=p.clone().project(cam);assert.ok(Math.abs(v.x)<1&&Math.abs(v.y)<1&&v.z<1);};
+    assert.equal(composeDialogue(cam,a,b,'wide','player',.24).blur,0);inside(a);inside(b);
+    for(const [who,eyes] of [['guest',b],['player',a]]){
+      const shot=composeDialogue(cam,a,b,'close',who,.24);
+      assert.ok(cam.position.clone().sub(a).dot(side)>0);inside(eyes);
+      assert.ok(Math.abs(shot.distance+eyes.clone().applyMatrix4(cam.matrixWorldInverse).z)<1e-7);
+    }
+  }
+});

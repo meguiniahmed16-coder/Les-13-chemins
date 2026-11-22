@@ -1,4 +1,4 @@
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon39';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon44';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -76,7 +76,7 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
       manual();const v=viewport();
       if(pointers.size>=2){
         const next=getPair();
-        if(pair){moveCamera(motion.camera,next.x-pair.x,next.y-pair.y,v.width,v.height);zoomCamera(motion.camera,next.d/pair.d);}
+        if(pair){moveCamera(motion.camera,next.x-pair.x,next.y-pair.y,v.width,v.height);zoomCamera(motion.camera,next.d/pair.d,{w:v.width,h:v.height,x:next.x-v.left,y:next.y-v.top});}
         pair=next;
       }else if(panning||p.pan)moveCamera(motion.camera,dx,dy,v.width,v.height);
       else orbitCamera(motion.camera,dx,dy);
@@ -95,7 +95,7 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
       }else lastTap={time:now,x,y};
     }
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])listen(target,ev,end);
-    listen(target,'wheel',e=>{e.preventDefault();manual();const delta=e.deltaY*(e.deltaMode===1?16:1);const factor=Math.exp(-Math.max(-300,Math.min(300,delta))*.0016);if(outside())outside().zoom(factor);else zoomCamera(motion.camera,factor);wake();},{passive:false});
+    listen(target,'wheel',e=>{e.preventDefault();manual();const delta=e.deltaY*(e.deltaMode===1?16:1);const factor=Math.exp(-Math.max(-300,Math.min(300,delta))*.0016);if(outside())outside().zoom(factor);else{const v=target.getBoundingClientRect();zoomCamera(motion.camera,factor,{w:v.width,h:v.height,x:e.clientX-v.left,y:e.clientY-v.top});}wake();},{passive:false});
   }
   function stickMove(e){
     if(e.pointerId!==stickID)return;

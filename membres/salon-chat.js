@@ -1,3 +1,4 @@
+import {createShotSequence} from './salon-shots.js';
 import {createDialogue} from './salon-dialogue.js?v=salon43';
 import {createDictee} from './salon-dictee.js?v=salon41';
 import {characterReply,limit} from '../atlas-chat-client.js';
@@ -33,8 +34,8 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   $('.stage').insertAdjacentHTML('beforeend',`
     <div class="conversation-footer" hidden>
       <div class="conversation-tools" role="group" aria-label="Vues de la conversation">
-        <button type="button" data-shot="wide" aria-pressed="true">Vue large</button>
-        <button type="button" data-shot="reverse" aria-pressed="false">Champ / contrechamp</button>
+        <button type="button" data-shot="wide" aria-pressed="false">Vue large</button>
+        <button type="button" data-shot="reverse" aria-pressed="true" title="Plans larges, moyens et gros plans en champ et contrechamp">Plans alternés</button>
         <button type="button" class="voice-toggle" aria-pressed="false" hidden>Voix</button>
         <button type="button" class="bubbles-toggle" aria-controls="salon-bulles" aria-pressed="true">Bulles</button>
       </div>
@@ -50,7 +51,8 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
   const own=$('.own-speech'),other=$('.guest-speech'),reader=$('.speech-reader');
   const rail=$('.speech-rail'),bubbleSwitch=$('.bubbles-toggle'),shots=[...root.querySelectorAll('[data-shot]')];
   const toolbar=$('.bar'),barSlot=$('.camera-slot'),voiceSwitch=$('.voice-toggle');
-  let mode='wide',speaker='player',reading,showSpeech=true;
+  const sequence=createShotSequence(),now=()=>performance.now()/1000;
+  let mode='reverse',speaker='player',reading,showSpeech=true;
   const nodeFor=who=>who==='player'?own:other,announcement=$('.speech-announcement');
   const voiceStatus=$('.voice-state'),micStatus=$('.dictation-state'),retry=$('.retry-message');
   let micState='idle',failedQuestion='',dictatedDraft=false,retryDictated=false;
@@ -83,10 +85,12 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
     if(enabled&&!playback.busy&&other.lineText&&other.lineText!=='…')playback.play('guest',other.lineText,rate('guest'));
   };
   function setMode(value){
-    mode=value;for(const button of shots)button.setAttribute('aria-pressed',String(button.dataset.shot===mode));
+    if(value==='reverse'){sequence.reset(now());sequence.turn(speaker);}
+    mode=value;
+    for(const button of shots)button.setAttribute('aria-pressed',String(button.dataset.shot===mode));
   }
   for(const button of shots)button.onclick=()=>{setMode(button.dataset.shot);change();};
-  function turn(who){speaker=who;change();}
+  function turn(who){speaker=who;sequence.turn(who);change();}
   function showBubbles(show){
     reader.hidden=true;showSpeech=show;rail.hidden=!person||!show;
     bubbleSwitch.setAttribute('aria-pressed',String(show));
@@ -195,7 +199,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
     loading=true;random.disabled=true;list.inert=true;pickerState.textContent='Arrivée de '+p.name+'…';
     try{
       if(!await invite(p)||ticket!==version)return;
-      setMode('wide');person=p;other.querySelector('strong').textContent=p.name;
+      setMode('reverse');person=p;other.querySelector('strong').textContent=p.name;
       closePicker();toggle.hidden=true;footer.hidden=false;barSlot.prepend(toolbar);rail.hidden=!showSpeech;
       input.setAttribute('aria-label','Ton message à '+p.name);
       const thread=threads.get(p.id)||[];threads.set(p.id,thread);
@@ -226,5 +230,5 @@ export function createSalonChat(root,{invite,leave,change,rate,gender}){
       node.querySelector('button').hidden=body.scrollHeight<=body.clientHeight+1;
     }
   }
-  return {playback,chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
+  return {playback,shot(atRest=true){return mode==='reverse'?sequence.frame(now(),atRest):{size:mode,speaker};},chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
 }

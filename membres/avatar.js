@@ -6,10 +6,10 @@ import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js?v=salon43';
 import {createDrawer} from './studio-drawer.js?v=salon43';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon43';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon39';
-import {createSalonChat} from './salon-chat.js?v=salon43';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon43';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon44';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon44';
+import {createSalonChat} from './salon-chat.js?v=salon44';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon44';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 async function loadActor(look,gender){
@@ -451,7 +451,7 @@ export class CheminsAvatar extends HTMLElement {
         if(settled&&!this.#guest.anchors)this.#guest.anchors=[player,guest];
         if(!settled)this.#guest.anchors=null;
         const [a,b]=this.#guest.anchors||[player,guest];
-        frameConversation(c,settled?mode:'wide',this.#chat.speaker,a,b,w,h-inset,this.#guest.wideAngle);
+        const shot=this.#chat.shot(settled);frameConversation(c,settled?shot.size:'wide',shot.speaker,a,b,w,h-inset,this.#guest.wideAngle);
       }
       this.#chat.position(headSide(player,c,w,h)>headSide(guest,c,w,h));
     }

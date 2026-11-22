@@ -24,7 +24,13 @@ export function orbitCamera(c,dx,dy) {
   c.angle-=dx*.008;
   c.pitch=clamp(c.pitch+dy*.006,.14,1.29);
 }
-export function zoomCamera(c,multiplier) { c.zoom=clamp(c.zoom*multiplier,.48,Math.max(3.7,c.presetMax||0)); }
+export function zoomCamera(c,multiplier,anchor){
+  const before=c.zoom;c.zoom=clamp(before*multiplier,.48,100);
+  if(!anchor)return;
+  const {w,h,x,y}=anchor,p=cameraProjection(w,h,false,c),unit=2*(c.zoom/before-1)/(p.factor*h);
+  const across=(x-w*.5)*unit,up=(h*(1+p.offset)*.5-y)*unit;
+  c.x+=p.cy*across-p.sy*p.sp*up;c.z-=p.sy*across+p.cy*p.sp*up;c.y+=p.cp*up;c.follow=false;
+}
 
 // Resolve the frontmost visible triangle along the picking ray used
 // as both renderers. Furniture IDs live on the actual seat, arms and back.

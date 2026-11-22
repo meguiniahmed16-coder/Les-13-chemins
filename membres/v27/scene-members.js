@@ -129,6 +129,6 @@ export function createMemberBridge(scene){
     reset,focus:scene.focus,meet:scene.meet,clearMeeting:scene.clearMeeting,camera:scene.camera,
     snapshot:scene.snapshot,
     departure(){if(scene.place==='salon'){scene.clearCamera();scene.resetView();document.getElementById('pin').focus({preventScroll:true});}},
-    get place(){return scene.place;}
+    get settled(){return scene.settled;},get place(){return scene.place;}
   };
 }

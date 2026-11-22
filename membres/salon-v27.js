@@ -1,6 +1,6 @@
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=salon43';
-import {createSalonChat} from './salon-chat.js?v=salon43';
+import {createSalonChat} from './salon-chat.js?v=salon44';
 import {guestAppearance} from './salon-encounter.js?v=salon43';
 import {loadStudio} from './studio-model.js?v=salon43';
 import {resource} from './studio-assets.js';
@@ -33,19 +33,24 @@ class SalonV27 extends HTMLElement{
         await this.#scene.enableDialogue(channels,()=>this.#speechFrame());
         this.#drawer.toggle(false);this.#scene.meet();return true;
       },
-      leave:()=>{this.#serial.guest++;this.#guest=null;this.#scene?.endDialogue();this.#scene?.reset('guest');this.#scene?.clearMeeting();},
-      change:()=>{const chat=this.#chat;if(!chat||!this.#scene)return;
-        const key=chat.mode+'/'+chat.speaker;if(key!==this.#cameraKey){this.#scene.camera(chat.mode,chat.speaker);this.#cameraKey=key;}},
+      leave:()=>{this.#cameraKey='';this.#serial.guest++;this.#guest=null;this.#scene?.endDialogue();this.#scene?.reset('guest');this.#scene?.clearMeeting();},
+      change:()=>this.#syncCamera(),
       rate:who=>who==='guest'?this.#guest?.performer?.rate||1:1,
       gender:who=>(who==='guest'?this.#guest?.gender:this.#options?.gender)||'homme'
     });
     root.querySelector('.v27-actions').append(root.querySelector('.invite-toggle'));
     this.#drawer=createDrawer(root,look=>this.#dress('member',look,this.#options.gender),mode=>this.#scene?.focus(mode),()=>this.#scene?.departure());
   }
+  #syncCamera(){
+    if(!this.#guest||!this.#chat||!this.#scene)return;
+    const shot=this.#chat.shot(this.#scene.settled);
+    const inset=Math.min(.40,this.#chat.inset/Math.max(1,this.#frame?.clientHeight||1)),key=shot.size+'/'+shot.speaker+'/'+Math.round(inset*100);
+    if(key!==this.#cameraKey){this.#cameraKey=key;this.#scene.camera(shot.size,shot.speaker,inset);}
+  }
   #speechFrame(){
     if(!this.#guest)return null;
     const now=performance.now()/1000,dt=Math.min(.1,now-this.#lastTalk);this.#lastTalk=now;
-    const line=this.#chat.playback.frame(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.#syncCamera();const line=this.#chat.playback.frame(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     const face=(style,who)=>{
       const active=line?.who===who;
       const pose=style.sample(now,dt,active?'speak':line?.who?'listen':'idle',line?.line,reduced);
@@ -81,6 +86,7 @@ class SalonV27 extends HTMLElement{
           resolve(this.#scene);this.dispatchEvent(new CustomEvent('avatar-ready'));
         };
         win.addEventListener('salon-ready',ready,{signal});
+        win.addEventListener('salon-manual-camera',()=>{this.#chat.manual();this.#syncCamera();},{signal});
         if(doc.body.classList.contains('ready'))ready();
         const failed=()=>{if(doc.getElementById('retry')?.hidden===false&&!this.#scene){resolve(null);
           if(!doc.getElementById('compatible-room')){
@@ -91,12 +97,12 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.src='/membres/v27/salon.html?v=27duo2';
+    frame.src='/membres/v27/salon.html?v=27duo3';
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
     if(this.#fallback)return;
-    await import('./avatar.js?v=salon43');
+    await import('./avatar.js?v=salon44');
     if(!this.isConnected||this.#fallback)return;
     this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
     this.shadowRoot.querySelector('.stage').hidden=true;

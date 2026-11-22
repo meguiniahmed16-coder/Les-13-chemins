@@ -43,7 +43,7 @@ export function joinNeck(actor,body,skin,head,low,high){
   // The body may currently be seated. Measure the section in its authored standing pose.
   const rest=g.clone();rest.setAttribute('position',new T.BufferAttribute(body.base,3));
   const bottom=section(rest,low,body.fullIndex),top=section(skin.geometry,high);
-  lowerClip(rest,body.obj.material,low);g.setAttribute('neckRestY',rest.attributes.neckRestY);
+  lowerClip(rest,body.obj.material,low);g.setAttribute('neckRestY',rest.attributes.neckRestY);g.userData.neckCut=low;
   const depth=new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:T.DoubleSide});lowerClip(rest,depth,low);body.obj.customDepthMaterial=depth;
   rest.dispose();
   const colors=[],indexes=[],positions=new Float32Array(3*(bottom.length+top.length)),count=bottom.length;
@@ -60,7 +60,7 @@ export function joinNeck(actor,body,skin,head,low,high){
   return {update(){head.updateMatrix();normalMatrix.getNormalMatrix(head.matrix);let i=0;for(const [list,geometry,transform] of [[bottom,g,false],[top,skin.geometry,true]]){
     const {position:attr,normal}=geometry.attributes;for(const r of list){read(attr,r.a,point).lerp(read(attr,r.b,upper),r.t);if(transform)point.applyMatrix4(head.matrix);point.toArray(positions,3*i);
       read(normal,r.a,point).lerp(read(normal,r.b,upper),r.t).normalize();if(transform)point.applyNormalMatrix(normalMatrix);point.toArray(normals,3*i++);}
-  }band.attributes.position.needsUpdate=true;band.attributes.normal.needsUpdate=true;},dispose(){obj.removeFromParent();band.dispose();obj.material.dispose();depth.dispose();body.obj.customDepthMaterial=undefined;body.obj.material.onBeforeCompile=()=>{};body.obj.material.customProgramCacheKey=()=>'';body.obj.material.needsUpdate=true;g.deleteAttribute('neckRestY');}};
+  }band.attributes.position.needsUpdate=true;band.attributes.normal.needsUpdate=true;},dispose(){obj.removeFromParent();band.dispose();obj.material.dispose();depth.dispose();body.obj.customDepthMaterial=undefined;body.obj.material.onBeforeCompile=()=>{};body.obj.material.customProgramCacheKey=()=>'';body.obj.material.needsUpdate=true;g.deleteAttribute('neckRestY');delete g.userData.neckCut;}};
 }
 export function headBinding(body,eyes){
   const p=body.base,ep=eyes.base;const min=new T.Vector3(Infinity,Infinity,Infinity),max=new T.Vector3(-Infinity,-Infinity,-Infinity);

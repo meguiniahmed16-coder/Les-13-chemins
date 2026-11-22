@@ -55,7 +55,7 @@ export function frameConversation(camera,mode,who,player,guest,w,h,wideAngle){
   // Both cameras stay on the same side of the line between the actors.
   const direction=Math.atan2(listener.x-speaker.x,listener.z-speaker.z);
   const sign=who==='guest'?1:-1;
-  const scale=Math.min(1.93,2.9*aspect),eyeDistance=distance+1.32;
+  const scale=mode==='close'?Math.min(4.4,6.6*aspect):Math.min(1.93,2.9*aspect),eyeDistance=distance+1.32;
   const lean=Math.asin(Math.min(.62,Math.max(.11,.60*aspect/(scale*distance))));
   const angle=direction+sign*lean,pitch=.09;
   const offset=-sign*.31*aspect/scale;

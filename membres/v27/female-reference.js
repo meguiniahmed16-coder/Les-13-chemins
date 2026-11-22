@@ -74,11 +74,28 @@ function skinShader(mat,pose,style){
       diffuseColor.rgb*=vec3(1.,1.-.19*cosmetics*lips,1.-.16*cosmetics*lips)*(1.-.16*cosmetics*eyes);`);
   };mat.customProgramCacheKey=()=>'marianne-face-1';
 }
-function recolorIris(mat,color){
-  mat.onBeforeCompile=s=>{s.uniforms.eyeTint={value:new T.Color(color)};s.fragmentShader='uniform vec3 eyeTint;\n'+s.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
-    float iris=smoothstep(.002,.033,diffuseColor.b-diffuseColor.r)*smoothstep(.018,.10,diffuseColor.b);
-    diffuseColor.rgb=mix(diffuseColor.rgb,eyeTint*(.30+2.6*dot(diffuseColor.rgb,vec3(.21,.72,.07))),iris);`);};
-  mat.customProgramCacheKey=()=>'marianne-iris-1';
+// The two iris discs share an atlas. Preserve pupil, limbal ring and sclera coverage as its mip level drops.
+function shadeIris(mat,color){
+  mat.onBeforeCompile=s=>{
+    s.uniforms.eyeTint={value:new T.Color(color||'#6389a4')};
+    s.uniforms.customEye={value:color?1:0};
+    s.fragmentShader='uniform vec3 eyeTint;uniform float customEye;\n'+s.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+      vec2 q1=vMapUv-vec2(.705,.295),q2=vMapUv-vec2(.295,.705);
+      vec2 q=dot(q1,q1)<dot(q2,q2)?q1:q2;
+      float r=length(q),pixel=max(length(dFdx(vMapUv)),length(dFdy(vMapUv)));
+      float edge=clamp(.63*pixel,.002,.065),farEye=smoothstep(.012,.081,pixel);
+      float iris=1.-smoothstep(.124-edge,.124+edge,r);
+      float pupil=1.-smoothstep(.052-edge,.052+edge,r);
+      float ring=smoothstep(.105-edge,.105+edge,r)*iris;
+      float tint=smoothstep(.002,.033,diffuseColor.b-diffuseColor.r)*smoothstep(.018,.10,diffuseColor.b);
+      diffuseColor.rgb=mix(diffuseColor.rgb,eyeTint*(.30+2.6*dot(diffuseColor.rgb,vec3(.21,.72,.07))),customEye*tint);
+      vec3 whites=mix(diffuseColor.rgb,vec3(.58,.60,.60),.72);
+      vec3 painted=mix(whites,eyeTint*.79,iris);
+      painted=mix(painted,eyeTint*.29,ring);
+      painted=mix(painted,vec3(.014,.019,.023),pupil);
+      diffuseColor.rgb=mix(diffuseColor.rgb,painted,farEye*.93);`);
+  };
+  mat.customProgramCacheKey=()=>'marianne-eye-distance';
 }
 export function createFemaleHead(template,look){
   const group=template.scene.clone(true),rigs=[],owned=[],materials=[],face=look?.face;
@@ -92,7 +109,7 @@ export function createFemaleHead(template,look){
     if(m.name==='peau'){
       skin=o;skinShader(m,pose,{makeup:(face?.makeup||0)/4,brow:shapeOptions(face).brow,age:shapeOptions(face).age});
       if(look){const t=T.MathUtils.clamp((look.skinLevel-12)/90,0,1);m.color.setRGB(1-.80*t,1-.875*t,1-.90*t);}
-    }else if(m.name==='iris'&&look&&(look.iris||face.iris)){recolorIris(m,look.iris||['#6689a5','#6b8464','#938053','#594030','#8a98a0'][face.iris]);}
+    }else if(m.name==='iris'){const tint=look?.iris||(face?.iris?['#6689a5','#6b8464','#938053','#594030','#8a98a0'][face.iris]:null);shadeIris(m,tint);}
     const hair=/^(06|08|10|13)|Mèches_superposées|Duvet_et_mèches/.test(o.name)||['coiffure','chataignier','meches','fil1','fil2','fil3','Mèches châtain en relief','Reflets des racines'].includes(m.name);
     if(hair){o.visible=(!look||face?.hair===10)&&!look?.outfit?.chapeau;
       if(face?.hairTone){const dye=new T.Color(hairColors[face.hairTone]||hairColors[0]);m.color.r*=dye.r/.216;m.color.g*=dye.g/.095;m.color.b*=dye.b/.041;}
