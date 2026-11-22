@@ -234,7 +234,7 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon39',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon45',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),

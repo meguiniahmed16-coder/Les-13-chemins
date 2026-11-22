@@ -11,7 +11,7 @@ class SalonV27 extends HTMLElement{
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon39"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon45"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -21,6 +21,15 @@ class SalonV27 extends HTMLElement{
     .stage.immersive{position:fixed;inset:0;height:100dvh!important;z-index:2147483646}
     .stage:fullscreen{height:100dvh}.stage{min-height:420px}
     @media(max-width:600px){.stage{height:min(76dvh,750px)}.v27-actions{gap:2px;left:3px}.v27-actions>button{font-size:12px!important;min-height:34px}}
+    @media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+      .scene-viewport{display:grid;grid-template: auto minmax(0,1fr) / minmax(0,1fr);padding:0;}
+      .v27-frame{grid-area:2/1;min-width:0;min-height:0;}
+      .hud{grid-area:1/1;position:relative;inset:auto;}
+      .v27-actions{position:static;display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;
+        padding:4px max(4px,env(safe-area-inset-right)) 0 max(4px,env(safe-area-inset-left));}
+      .v27-actions>button{flex:1 1 auto;min-height:38px;min-width:0;font-size:13px!important;}
+      .speech-rail{grid-area:2/1;inset-block-start:calc(var(--scene-toolbar-height,46px) + 3px);}
+    }
     </style><div class="stage"><div class="scene-viewport">
       <div class="hud"><div class="v27-actions"><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser</button></div><div class="bar"></div></div>
     </div><aside class="studio-drawer" id="studio-drawer" hidden></aside></div>`;
@@ -75,6 +84,12 @@ class SalonV27 extends HTMLElement{
       const settle=()=>{
         const doc=frame.contentDocument,win=frame.contentWindow;
         if(!doc||!win||!doc.getElementById('scene'))return;
+        const toolbarObserver=new win.ResizeObserver(entries=>{
+          const height=entries[0].target.getBoundingClientRect().height;
+          frame.parentElement?.style.setProperty('--scene-toolbar-height',height+'px');
+        });
+        toolbarObserver.observe(doc.querySelector('.top'));
+        signal.addEventListener('abort',()=>toolbarObserver.disconnect(),{once:true});
         const ready=()=>{
           if(signal.aborted||this.#scene)return;
           this.#scene=win.salonV27;this.#scene.setGender(this.#options?.gender);
@@ -97,12 +112,12 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.src='/membres/v27/salon.html?v=27duo3';
+    frame.src='/membres/v27/salon.html?v=27duo4';
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
     if(this.#fallback)return;
-    await import('./avatar.js?v=salon44');
+    await import('./avatar.js?v=salon45');
     if(!this.isConnected||this.#fallback)return;
     this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
     this.shadowRoot.querySelector('.stage').hidden=true;

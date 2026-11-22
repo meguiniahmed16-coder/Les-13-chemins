@@ -87,7 +87,7 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .conversation-footer .camera-slot button{padding:4px 8px}.camera-slot .tool[aria-pressed=true]{color:#fff;background:#294e40}
 .conversation-footer{grid-template-columns:minmax(0,1fr)}.guest-compose{grid-column:1/-1}
 @container(min-width:600px){.conversation-footer{grid-template-columns:1fr auto;align-items:center}.camera-slot{justify-self:end}}
-@container(max-width:599px){.camera-slot .full-text{display:none}.camera-slot .bar{justify-content:flex-end}.conversation-footer .conversation-tools{flex-wrap:nowrap}.conversation-tools button{padding:4px 7px}.camera-slot{grid-row:1}.conversation-tools{grid-row:2}}
+@container(max-width:599px){.camera-slot .full-text{display:none}.camera-slot .bar{justify-content:flex-end}.conversation-footer .conversation-tools{flex-wrap:wrap}.conversation-tools button{padding:4px 7px}.camera-slot{grid-row:1}.conversation-tools{grid-row:2}}
 @container(max-height:370px){.speech .line{max-height:1.28em}.speech-rail{inset-block-start:3px}.speech-reader p{max-height:3em}}
 .speech-announcement{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
@@ -112,4 +112,14 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 @media(max-width:650px) and (orientation:portrait){
  .stage:has(.studio-drawer:not([hidden])){grid-template-rows:minmax(180px,1fr) minmax(210px,43%) auto}
  .stage:has(.studio-drawer:not([hidden])):has(.conversation-footer:not([hidden])){grid-template-rows:minmax(160px,1fr) minmax(180px,40%) auto auto}
+}
+
+@container(max-width:599px){
+ .conversation-footer{padding-inline:max(5px,env(safe-area-inset-left)) max(5px,env(safe-area-inset-right));}
+ .conversation-tools{gap:4px;}
+ .conversation-tools button{flex:1 1 auto;min-height:38px;}
+ .conversation-tools .bubbles-toggle{margin-inline-start:0;}
+ .camera-slot{flex-wrap:wrap;gap:4px;}
+ .camera-slot .bar{min-width:0;flex-wrap:wrap;}
+ .studio-drawer .switch,.studio-drawer footer{flex-wrap:wrap;}
 }
