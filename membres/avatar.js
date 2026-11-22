@@ -14,7 +14,7 @@ import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 async function loadActor(look,gender){
   if(gender!=='femme')return loadStudio(look,gender);
-  const [figure,{wearCompatibleReference}]=await Promise.all([loadStudio(look,gender),import('./v27/compatible-face-bundle.js')]);
+  const [figure,{wearCompatibleReference}]=await Promise.all([loadStudio(look,gender),import('./v27/compatible-face-bundle.js?v=sourire7')]);
   return wearCompatibleReference(figure,portraitBones);
 }
 const files = new URL('../assets/membres/', import.meta.url);

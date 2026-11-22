@@ -13,6 +13,9 @@ const originalDetails=new Set(['eyesNative','browNative','lashes','teethNative',
 const hairNames=new Set(['hair','QueueHaute','Carre','LongOndule','TresseCote','bob02','short01','short02','short03','afro01']);
 const hairColors=['#805739','#362a29','#966c4f','#d3b480','#a75c36','#ceb99a','#a79787','#ded5c6','#c29655','#b28c6c','#915043','#928c89'];
 
+// A closed, slightly uneven smile at rest. The same eyelid movement is applied
+// to the skin, lid margins and lashes so they stay together at every angle.
+const restingExpression={SourireG:.53,SourireD:.45,Plisser:.095};
 const styleValue=(face,key,values)=>values[face?.[key]||0]||0;
 // All values are deviations from the same neutral female head, in metres.
 export function shapeOptions(face){
@@ -42,8 +45,11 @@ function vertexChanges(v,style){
 }
 function fitGeometry(obj,face){
   const style=shapeOptions(face),custom=Object.values(style).some(Boolean);
-  const skin=obj.material.name==='peau',smiles=['SourireG','SourireD'].map(name=>obj.morphTargetDictionary?.[name]).filter(i=>i!=null);
-  if(!custom&&!skin&&!smiles.length)return false;
+  const skin=obj.material.name==='peau';
+  const restingTargets=Object.entries(restingExpression)
+    .map(([name,weight])=>[obj.morphTargetDictionary?.[name],weight])
+    .filter(([index])=>index!=null);
+  if(!custom&&!skin&&!restingTargets.length)return false;
   const g=obj.geometry.clone(),p=g.attributes.position,positions=new Float32Array(p.count*3);
   const features=skin?new Float32Array(positions.length):null;
   for(let i=0;i<p.count;i++){
@@ -52,29 +58,30 @@ function fitGeometry(obj,face){
     const [x,y,z]=original;
     if(skin){
       features.set(v,3*i);
-      // Ease the inner brow down by 1.6 mm at its peak, clear of the upper lid.
-      v[1]-=.0016*Math.exp(-(((Math.abs(x)-.016)/.013)**2)-(((y-.173)/.009)**2))*T.MathUtils.smoothstep(z,.016,.042);
+      // Relax the inner brow and retain a small arch over the outer iris.
+      const ax=Math.abs(x),browBand=Math.exp(-(((y-.173)/.009)**2))*T.MathUtils.smoothstep(z,.016,.042);
+      v[1]+=browBand*(.00065*Math.exp(-(((ax-.038)/.012)**2))-.0024*Math.exp(-(((ax-.016)/.013)**2)));
     }
     if(obj.material.name==='cilsMindfront'){v[1]+=(y-.151)*style.lash;v[2]+=(z-.062)*style.lash;}
     positions.set(v,3*i);
   }
   if(skin)g.setAttribute('featureRest',new T.BufferAttribute(features,3));
   g.setAttribute('position',new T.BufferAttribute(positions,3));
-  // Move a small fraction of the authored closed-mouth smile into the resting shape.
-  // Reserve the remainder for speech and animation, so the full smile meets its original end pose.
+  // Rebase each authored channel. At full weight it still reaches its original
+  // endpoint, including during a blink or a conversational laugh.
   for(const key of ['position','normal']){
     const targets=g.morphAttributes[key];
-    if(!targets||!smiles.length)continue;
+    if(!targets||!restingTargets.length)continue;
     const base=g.getAttribute(key),rest=new Float32Array(p.count*3),v=new T.Vector3(),delta=new T.Vector3();
     for(let i=0;i<p.count;i++)v.fromBufferAttribute(base,i).toArray(rest,3*i);
-    for(const j of smiles){
-      const target=targets[j],remaining=new Float32Array(rest.length);
+    for(const [index,weight] of restingTargets){
+      const target=targets[index],remaining=new Float32Array(rest.length);
       for(let i=0;i<p.count;i++){
         delta.fromBufferAttribute(target,i);
-        v.fromArray(rest,3*i).addScaledVector(delta,.27).toArray(rest,3*i);
-        delta.multiplyScalar(.73).toArray(remaining,3*i);
+        v.fromArray(rest,3*i).addScaledVector(delta,weight).toArray(rest,3*i);
+        delta.multiplyScalar(1-weight).toArray(remaining,3*i);
       }
-      targets[j]=new T.BufferAttribute(remaining,3);
+      targets[index]=new T.BufferAttribute(remaining,3);
     }
     g.setAttribute(key,new T.BufferAttribute(rest,3));
   }
