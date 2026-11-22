@@ -87,7 +87,7 @@ test('La caméra peut pivoter, se déplacer et zoomer indépendamment du personn
 });
 test('Sur les trois coussins, les épaules restent de niveau, les mains reposent sur les cuisses et les pieds touchent le sol',()=>{
   for(const seat of seats.slice(0,3)){
-    const m=newMotion();m.goToSeat(seat);until(m,()=>m.mode==='seated');
+    const m=new SalonMotion(undefined,newCamera(),undefined,()=>0);m.goToSeat(seat);until(m,()=>m.mode==='seated');
     const b=m.bones(),point=(j,v)=>[0,1,2].map(row=>100*b[j*16+12+row]+v.reduce((n,x,k)=>n+x*b[j*16+k*4+row],0));
     const shoulders=[-1,1].map(side=>point(14,[side*17.3,133.6,-5.3]));
     assert.ok(Math.abs(shoulders[0][1]-shoulders[1][1])<3);
@@ -253,4 +253,41 @@ test('Les prêtres du livre ont une tenue et un col romain, y compris en cas de 
     const person=people.find(p=>p.name===name);
     assert.ok(!person.clerical);assert.ok(!guestAppearance(person).studio.outfit.col);
   }
+});
+
+test('Une nouvelle assise tire une posture adaptée et garde les deux types de croisement distincts',async()=>{
+  const {choosePosture}=await import('./seated-postures.js');
+  const chair=seats.find(s=>s.id==='west1');
+  const draw=(s,i)=>choosePosture(s,null,()=>(i+.1)/6);
+  assert.equal(new Set(Array.from({length:6},(_,i)=>draw(chair,i).kind)).size,6);
+  for(let i=0;i<6;i++)assert.notEqual(choosePosture(chair,draw(chair,i),()=>.3).kind,draw(chair,i).kind);
+  assert.notEqual(draw(seats.find(s=>s.id==='end2'),5).kind,'appui');
+  const point=(b,j,v)=>[0,1,2].map(r=>100*b[j*16+12+r]+v.reduce((n,d,i)=>n+d*b[j*16+4*i+r],0));
+  for(const seat of seats.filter(s=>/^(east|west|end1)/.test(s.id))){
+    for(const scale of [1.04,1.075]){
+      const m=new SalonMotion(undefined,newCamera(),undefined,()=>.95);
+      const b=m.sampleSalonPose(seat,1,.3,null,scale);
+      for(const [hand,side] of [[4,-1],[7,1]]){
+        const finger=point(b,hand,[side*45.26,77.79,-1.07]);assert.ok(Math.abs(finger[1]*scale-65.1)<1.1,seat.id+' : appui des doigts');
+      }
+    }
+  }
+  const m=new SalonMotion(undefined,newCamera(),undefined,()=>.44);
+  const b=m.sampleSalonPose(seats[1],1,1,null);
+  const knees=[-1,1].map(side=>point(b,side<0?9:12,[side*12.4664,47.2046,-2.4319]));
+  assert.ok(Math.abs(knees[0][0]-knees[1][0])<4&&Math.abs(knees[0][1]-knees[1][1])>9);
+});
+
+test('Le visage réagit dans la pause de parole et la voix laisse un seul rire se terminer',async()=>{
+  const {createDialogue}=await import('./salon-dialogue.js');
+  const {reactionAfter}=await import('./conversation-reactions.js');let t=0;const started=[];
+  const dialogue=createDialogue({now:()=>t,synth:null,gender:()=> 'femme',start:(id)=>started.push(id),word(){},rest(){},wake(){}});
+  dialogue.play('guest','Oh, tu te moques de moi ?',1);
+  assert.equal(dialogue.frame().recordingTime,6.48);
+  dialogue.play('player','Oui.',1,true);t=2.1;dialogue.frame();t=2.3;
+  assert.equal(dialogue.frame().reaction.name,'Rire gêné');assert.deepEqual(started,['guest']);
+  t=3.4;dialogue.frame();assert.deepEqual(started,['guest','player']);
+  assert.equal(reactionAfter('Ça me fait tellement de peine, depuis son décès.'),null);
+  assert.equal(reactionAfter('Tu me fais rire !').name,'Rire de bon cœur');
+  assert.equal(reactionAfter('Je t’aime.').name,'Sourire amoureux');
 });

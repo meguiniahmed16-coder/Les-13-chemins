@@ -1,6 +1,8 @@
+import {livePose} from './live-body.js';
 import * as T from 'three';
 import {seats as roomSeats,roomPath} from '../salon-plan.js';
 import {dressFriends,reunionDialogue} from './rencontre-lionel.js';
+import {createFacePanel} from './face-panel.js';
 import {createMemberBridge} from './scene-members.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
@@ -126,7 +128,7 @@ for(const [name,q] of Object.entries(bagSpots)){
  const o=mesh(bagGeo,[body,strapMat,clipMat],indoor);o.userData.bag=name;bags[name]=o;o.receiveShadow=o.castShadow=true;o.userData.shadow=shade(indoor,0,0,.67,.50);restBag(o,q);
 }
 const seats=roomSeats.map(s=>({
- id:s.id,yaw:s.yaw,pose:s.id.startsWith('sofa')?8:s.id==='chair'?9:10,
+ id:s.id,source:s,yaw:s.yaw,pose:s.id.startsWith('sofa')?8:s.id==='chair'?9:10,
  center:[(s.x-700)/100,(s.z+800)/100],gap:s.gap/100,height:s.height/100
 }));
 const actors={};let role='f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
@@ -215,6 +217,7 @@ function unwear(a){
 }
 
 function animateBody(a,blend,seat,dt=0){
+ a.motionSeat=seat;if(livePose(a,seat,blend))return;
  a.phase=(a.phase+dt*(1.02+blend*.1))%1;const p=a.phase*8,lo=Math.floor(p),hi=(lo+1)%8,f=p-lo;
  const sittingPose=seat?seat.pose:0;const tag=seat?'seat'+sittingPose+Math.round(a.sit*42):blend>.01?'walk'+Math.floor(p*12)+'/'+Math.round(blend*25):'idle';if(a.stamp===tag)return;a.stamp=tag;
  for(const part of a.parts){
@@ -720,6 +723,7 @@ function move(dt){
  a.speed=mix(a.speed,moved?len:0,Math.min(1,dt*11));if(a.speed<.015)a.speed=0;
  if(sitting){a.sit=clamp(a.sit+(rising?-1:1)*dt/.96,0,1);if(rising&&a.sit===0)getUp();}
  animateBody(a,a.speed,poseSeat,dt*a.speed);
+ if(companionSeat&&!encounter.active)animateBody(partner(),0,companionSeat);
  if(!encounter.active&&chosen&&revealStart===null&&(air.mode!=='ready'||a.speed>.05))follow(dt);if(air.mode!=='off')advanceAir(dt);
 }
 function releaseStick(){stick.x=stick.y=0;stick.id=null;$('thumb').style.transform='translate(0,0)'}
@@ -761,7 +765,7 @@ function adjustResolution(ms){
  if(Math.abs(old-next)>.035)renderer.setPixelRatio(next);
 }
 let shadowTime=-1;function frame(t){if(contextLost)return;const anchor=where==='jardin'?player().root.position:{x:-1,z:-1};sun.position.set(anchor.x-3.6,7,anchor.z+4.8);sun.target.position.set(anchor.x,0,anchor.z);if(t-shadowTime>145||shadowTime<0){renderer.shadowMap.needsUpdate=true;shadowTime=t;}adjustResolution(t-last);const dt=Math.min(.065,Math.max(0,(t-last)/1000));last=t;if(!help.open&&!catalog.open){move(dt);flutter(dt);if(encounter.active)tickReunion(dt)}updateCam(dt);member.speechFrame();if(conversation&&where==='salon')memberCamera();
- renderer.render(scene,cam);frameHandle=requestAnimationFrame(frame)}
+ portraitPanel.tick();renderer.render(scene,cam);frameHandle=requestAnimationFrame(frame)}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;cancelAnimationFrame(frameHandle);window.failure('Le navigateur a interrompu la 3D.');});
 let talkOpen=false;
 const ornaments=new T.Group();indoor.add(ornaments);
@@ -1264,21 +1268,21 @@ shelvesButton.onclick=()=>setShelfView(!shelfView);
 $('lookHome').onclick=lookAtHome;setLocation(false);resetView();updateSize();
 const member=createMemberBridge({
  T,actors,player:()=>actors[role],partner:()=>actors[role==='f'?'m':'f'],seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,
- get place(){return where},get role(){return role},setRole,freeCamera,
+ unzip:unzipSync,get place(){return where},get role(){return role},setRole,freeCamera,
  focus(view){freeCamera();orbit.follow=false;const a=player(),p=a.root.position;
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);
  orbit.pitch=.065;orbit.radius=view==='Visage'?1.02:2.8;
  orbit.focus.set(p.x,p.y+(view==='Visage'?1.55: .95)*a.root.scale.y,p.z);updateCam(1);},
  meet(){if(encounter.active)leaveReunion();if(where!=='salon')return;releaseSeatRoute();if(sitting)getUp();
- const seat=seats.find(s=>s.id==='chair'),friend=partner();
+ const pairs=[['chair','sofa2'],['east1','west1'],['west2','east2'],['end1','end2'],['sofa1','chair'],['sofa3','chair']];
+ const pair=pairs[Math.floor(Math.random()*pairs.length)],seat=seats.find(s=>s.id===pair[0]),friend=partner();
  friend.root.position.set(...feetAt(seat,friend));friend.root.rotation.y=seat.yaw;
  friend.sit=1;friend.speed=0;friend.stamp='';animateBody(friend,0,seat);
- companionSeat=seat;$('actors').hidden=true;walkToSeat(seats.find(s=>s.id==='sofa2'));talkOpen=true;},
+ companionSeat=seat;$('actors').hidden=true;walkToSeat(seats.find(s=>s.id===pair[1]));talkOpen=true;},
  clearMeeting(){if(encounter.active)leaveReunion();$('actors').hidden=where!=='salon';companionSeat=null;conversation=null;talkOpen=false;if(where==='salon'){if(sitting)getUp();releaseSeatRoute();goal=null;actorHome();resetView();}},
  camera(mode,speaker){conversation=mode==='manual'?null:{mode,speaker};},
  snapshot(){
-   const a=player(),scale=a.root.scale.y,y=a.root.position.y+(a.sit>.5?1.13:1.54)*scale;
-   const head=new T.Vector3(a.root.position.x,y,a.root.position.z);
+   const a=player(),head=headCenter(a);
    const portrait=new T.PerspectiveCamera(32,canvas.width/canvas.height,.05,100);
    portrait.position.copy(head).add(new T.Vector3(.08*Math.cos(a.root.rotation.y)+.65*Math.sin(a.root.rotation.y),.035,.65*Math.cos(a.root.rotation.y)-.08*Math.sin(a.root.rotation.y)));
    portrait.lookAt(head);renderer.render(scene,portrait);
@@ -1288,10 +1292,18 @@ const member=createMemberBridge({
  },
  clearCamera(){conversation=null;}
 });
+function headCenter(actor){
+ const center=new T.Vector3(0,.144,.032);
+ if(actor.referenceFace)return actor.referenceFace.group.localToWorld(center);
+ const eyes=actor.parts.find(p=>p.name==='eyesNative');
+ if(!eyes)return actor.root.localToWorld(center.set(0,actor.sit>.5?1.15:1.54,0));
+ const attr=eyes.obj.geometry.attributes.position,point=new T.Vector3();center.set(0,0,0);let count=0;
+ for(let i=0;i<attr.count;i+=Math.max(1,Math.floor(attr.count/64))){center.add(point.fromBufferAttribute(attr,i));count++;}
+ return eyes.obj.localToWorld(center.divideScalar(count));
+}
 function memberCamera(){
  const who=conversation.speaker==='guest'?partner():player(),other=who===player()?partner():player();
- const head=a=>new T.Vector3(a.root.position.x,a.root.position.y+(a.sit>.55?1.16:1.58)*a.root.scale.y,a.root.position.z);
- const eye=head(who),listener=head(other);const center=eye.clone().lerp(listener,.5);
+ const eye=headCenter(who),listener=headCenter(other);const center=eye.clone().lerp(listener,.5);
  if(conversation.mode==='wide'){
    cam.position.copy(center).add(new T.Vector3(.14,.65,Math.max(2.65,2.03/cam.aspect)));cam.lookAt(center);
  }else{
@@ -1428,5 +1440,7 @@ reunionAction.onclick=()=>{
  canvas.focus({preventScroll:true});
 };
 
+const portraitPanel=createFacePanel(()=>player().referenceFace||partner().referenceFace,cam,canvas);
 window.salonV27=member;
+ready.push(Promise.all(ready).then(()=>member.initialize()));
 Promise.all(ready).then(()=>{document.body.classList.add('ready');window.dispatchEvent(new Event('salon-ready'));$('loading').hidden=true;frameHandle=requestAnimationFrame(frame)}).catch(e=>window.failure(e.message));

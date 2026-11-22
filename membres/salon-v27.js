@@ -1,7 +1,8 @@
-import {createDrawer} from './studio-drawer.js?v=salon39';
-import {createSalonChat} from './salon-chat.js?v=salon41';
-import {guestAppearance} from './salon-encounter.js?v=salon38';
-import {loadStudio} from './studio-model.js?v=salon38';
+import {reactionFor} from './conversation-reactions.js';
+import {createDrawer} from './studio-drawer.js?v=salon43';
+import {createSalonChat} from './salon-chat.js?v=salon43';
+import {guestAppearance} from './salon-encounter.js?v=salon43';
+import {loadStudio} from './studio-model.js?v=salon43';
 import {resource} from './studio-assets.js';
 import {createPerformer} from './salon-performance.js';
 
@@ -47,8 +48,9 @@ class SalonV27 extends HTMLElement{
     const line=this.#chat.playback.frame(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     const face=(style,who)=>{
       const active=line?.who===who;
-      const pose=style.sample(now,dt,active?'speak':line?'listen':'idle',line?.line,reduced);
-      return {blink:pose.blink,jaw:active?line.jaw:0,spread:active?line.spread:0,round:active?line.round:0};
+      const pose=style.sample(now,dt,active?'speak':line?.who?'listen':'idle',line?.line,reduced);
+      const reaction=reactionFor(line?.reaction,who);
+      return {gesture:pose,reaction,recordingTime:active?line.recordingTime:reaction?.recordingTime,blink:pose.blink,jaw:active?line.jaw:0,spread:active?line.spread:0,round:active?line.round:0};
     };
     return {member:face(this.#ownStyle,'player'),guest:face(this.#guest.performer,'guest')};
   }
@@ -89,12 +91,12 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.src='/membres/v27/salon.html?v=27duo1';
+    frame.src='/membres/v27/salon.html?v=27duo2';
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
     if(this.#fallback)return;
-    await import('./avatar.js?v=salon41');
+    await import('./avatar.js?v=salon43');
     if(!this.isConnected||this.#fallback)return;
     this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
     this.shadowRoot.querySelector('.stage').hidden=true;

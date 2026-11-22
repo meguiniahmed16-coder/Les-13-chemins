@@ -1,4 +1,4 @@
-import {createDialogue} from './salon-dialogue.js?v=salon41';
+import {createDialogue} from './salon-dialogue.js?v=salon43';
 import {createDictee} from './salon-dictee.js?v=salon41';
 import {characterReply,limit} from '../atlas-chat-client.js';
 import {searchName} from './salon-encounter.js?v=salon38';

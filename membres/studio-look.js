@@ -14,10 +14,11 @@ const restrictedTraits={beard:'homme',pile:'homme',lashes:'femme',makeup:'femme'
 export function traitAvailable(key,gender){
   return !Object.hasOwn(restrictedTraits,key)||restrictedTraits[key]===(gender||'homme');
 }
+export const traitOptionAvailable=(key,index,gender)=>key!=='hair'||index!==10||gender==='femme';
 export const freePiece=id=>common.has(id);
 export function freeTrait(key,i){
   if(key==='skin'||key==='iris'||key==='age')return true;
-  if(key==='hair')return [1,7,9].includes(i);
+  if(key==='hair')return [1,7,9,10].includes(i);
   if(key==='face')return [0,3].includes(i);
   if(key==='pile')return [0,1,2].includes(i);
   return i===0||i===1;
@@ -37,7 +38,7 @@ export function normaliseStudio(value,plus,legacy,gender){
   const base=legacyStudio(undefined,gender),face={};
   for(const t of traits){
     if(!traitAvailable(t.key,gender)){face[t.key]=0;continue;}
-    const n=value.face?.[t.key];face[t.key]=Number.isInteger(n)&&n>=0&&n<t.options.length&&(plus||freeTrait(t.key,n))?n:base.face[t.key];
+    const n=value.face?.[t.key];face[t.key]=Number.isInteger(n)&&n>=0&&n<t.options.length&&traitOptionAvailable(t.key,n,gender)&&(plus||freeTrait(t.key,n))?n:base.face[t.key];
   }
   const outfit={};
   for(const [slot,id] of Object.entries(value.outfit||{})){

@@ -1,9 +1,11 @@
+import {conversationAudio,recordedPhrase,reactionAfter} from './conversation-reactions.js';
 import {scoreLine,articulation} from './salon-performance.js';
 import {frenchVoice,createLocalVoices} from './salon-voice.js?v=salon41';
 
 // One clock drives articulation, word emphasis, conversational gestures and camera cuts.
 export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus=()=>{},now=()=>performance.now()/1000,synth=globalThis.speechSynthesis}){
   const local=createLocalVoices(voiceStatus,wake);
+  const studio=conversationAudio();let reaction=null,lastReaction=-Infinity;
   let active=null,next=null,utterance=null,voiced=false,micOpen=false,lastWord=-1;
   // Browsers may populate the installed voice list after the first request.
   synth?.getVoices?.();
@@ -14,10 +16,17 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
   }
   function stopVoice(){stopNative();local?.stop();}
   function finish(){
-    stopVoice();if(active)rest(active.who);
-    active=null;lastWord=-1;
-    if(next){const ready=next;next=null;begin(ready);}
-    wake();
+    const ended=active;stopVoice();studio.stop();if(ended)rest(ended.who);active=null;lastWord=-1;
+    if(ended&&now()-lastReaction>4.2){
+      const cue=reactionAfter(ended.text);
+      if(cue){
+        reaction={...cue,who:ended.who,origin:now()};lastReaction=now();
+        if(voiced&&cue.clip&&ended.gender==='femme'&&!micOpen){
+          const pending=reaction;studio.play(cue.clip).then(ok=>{if(ok&&reaction===pending)reaction.origin=now();});
+        }
+      }
+    }
+    if(next&&!reaction?.clip){const record=next;next=null;begin(record);}wake();
   }
   function silent(current){
     current.started=false;current.waitUntil=0;current.origin=now()-(current.score.words[Math.max(0,lastWord)]?.start||0);
@@ -63,6 +72,11 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     if(!voiced||!active)return;
     const current=active;
     current.triedNative=false;current.triedLocal=false;
+    if(current.clip&&!current.recordFailed){
+      current.waitRecording=true;
+      studio.play(current.clip).then(ok=>{if(active!==current||!voiced)return;current.waitRecording=false;
+        if(ok){current.origin=now();current.recording=true;}else{current.recordFailed=true;readAloud();}wake();});return;
+    }
     const installed=frenchVoice(synth,current.gender,true,true);
     if(local?.available&&!installed)readLocal(current);
     else if(synth)readNative(current);
@@ -70,21 +84,22 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
   }
   function begin(record){
     active={...record,gender:gender(record.who),score:scoreLine(record.text,record.rate),origin:now(),waitUntil:0,started:false};
-    lastWord=-1;start(record.who,record.text);readAloud();wake();
+    active.clip=active.gender==='femme'?recordedPhrase(record.text):null;lastWord=-1;start(record.who,record.text);readAloud();wake();
   }
-  function clear(){next=null;stopVoice();if(active)rest(active.who);active=null;lastWord=-1;}
+  function clear(){reaction=null;studio.stop();next=null;stopVoice();if(active)rest(active.who);active=null;lastWord=-1;}
   return {
     clear,
     dispose(){clear();micOpen=false;local?.disable();},
-    get busy(){return active!==null;},
+    get busy(){return active!==null||reaction!==null;},
     get supportsVoice(){return Boolean(local||synth&&globalThis.SpeechSynthesisUtterance);},
     play(who,text,rate,queue=false){
       const record={who,text,rate};
-      if((micOpen&&voiced)||(queue&&active)){next=record;return;}
+      if((micOpen&&voiced)||(queue&&(active||reaction?.clip))){next=record;return;}
       clear();begin(record);
     },
     microphone(open){
       micOpen=open;
+      if(open){reaction=null;studio.stop();}
       if(open&&voiced){
         // Interrupt the current line. A reply already queued can wait for the microphone to close.
         const waiting=next;clear();next=waiting;
@@ -93,9 +108,9 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
       }
     },
     voice(enabled){
-      const at=local?.position()?.time;voiced=enabled;stopVoice();voiceStatus('');
+      const at=local?.position()?.time;voiced=enabled;studio.stop();if(active){active.waitRecording=false;active.recording=false;}stopVoice();voiceStatus('');
       if(enabled){
-        local?.unlock(true);
+        studio.prepare();        local?.unlock(true);
         if(!frenchVoice(synth,gender('guest'),true,true))local?.prepare();
       }else local?.disable();
       if(active){
@@ -106,8 +121,21 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
       wake();
     },
     frame(){
-      if(!active)return null;
-      const t=now(),audio=local?.position();
+      const t=now();
+      if(reaction&&t-reaction.origin>=reaction.duration){
+        reaction=null;if(next&&!active&&!micOpen){const record=next;next=null;begin(record);}
+      }
+      const mood=reaction?{who:reaction.who,name:reaction.name,age:Math.max(0,t-reaction.origin),recordingTime:reaction.clip?reaction.clip[0]+Math.max(0,t-reaction.origin):null}:null;
+      const pause=mood?{who:null,line:null,jaw:0,round:0,spread:0,reaction:mood}:null;
+      if(!active||active.waitRecording)return pause;
+      const audio=local?.position();
+      if(active.recording||active.clip&&!voiced){
+        const clip=active.clip,elapsed=Math.max(0,t-active.origin),duration=clip[1]-clip[0];
+        if(elapsed>=duration){finish();return pause;}
+        const pose=articulation(active.score,elapsed*active.score.duration/duration);
+        if(pose.word!==lastWord){lastWord=pose.word;word(active.who,active.score.words[lastWord]);}
+        return {...pose,who:active.who,line:active.score,reaction:mood,recordingTime:clip[0]+elapsed};
+      }
       if(active.waitUntil){
         if(t<active.waitUntil)return null;
         nativeFailure(active);return null;
@@ -120,7 +148,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
         lastWord=pose.word;word(active.who,active.score.words[lastWord]);
       }
       if(audio){pose.jaw*=audio.energy;pose.round*=audio.energy;pose.spread*=audio.energy;}
-      return {...pose,who:active.who,line:active.score};
+      return {...pose,who:active.who,line:active.score,reaction:mood};
     }
   };
 }

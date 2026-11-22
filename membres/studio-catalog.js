@@ -226,7 +226,8 @@ export const traits = [
    "Pixie",
    "Courte texturée",
    "Courte asymétrique",
-   "Afro court"
+   "Afro court",
+   "Chignon de Marianne"
   ]
  },
  {

@@ -190,7 +190,7 @@ export async function loadStudio(look,gender){
  const baseShape=female?await resource('female-base'):null;
  const outfit={...look.outfit};
  if((female||look.face.age===5)&&!outfit.haut&&!outfit.robe)outfit.haut=female?'mh22':'mh1431';
- const names=['body','eyesNative','browNative','lashes','teethNative','tongueNative',hairList[look.face.hair]];
+ const names=['body','eyesNative','browNative','lashes','teethNative','tongueNative',hairList[look.face.hair]||hairList[0]];
  const [native,entries]=await Promise.all([
   Promise.all(names.map(async name=>{const m=await resource('mesh-'+name);return {...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};})),
   Promise.all(Object.entries(outfit).map(async ([slot,id])=>{
@@ -219,7 +219,7 @@ export async function loadStudio(look,gender){
  adjustLayers(clothes,body);
  for(const m of clothes)m.faces=layerCut(m,m.faces,slots,body.n);
  const output=new Float32Array(6);let prior=null,priorFace=null;
- return {meshes:[...skin,...clothes],revision:0,
+ return {meshes:[...skin,...clothes],appearance:look,revision:0,
    enableSpeech(channels){for(const m of skin)m.speech??=facialChannels(m,channels);},
    pose(bones,face=null){
   if(prior&&priorFace===face&&bones.every((v,i)=>v===prior[i]))return;

@@ -1,0 +1,18 @@
+Marianne — référence féminine du salon sur le corps MakeHuman Summer Girl V27.
+Les six expressions, les yeux, les paupières, la coiffure et les arcades proviennent du portrait de Marianne. Les apparences féminines modifient cette base à l’affichage.
+MakeHuman HM08, HighPolyEyes, Blue Eye, eyebrow001, langue et cils Mindfront Eyelashes 02. Chignon adapté de Hair Bun Brown, Rehman Polanski.
+Dentition BodyParts3D / Anatomography 4.3, © The Database Center for Life Science, via OrganUI. Arcades ajustées et recolorées. Géométrie dentaire et rendus dérivés sous CC BY-SA 2.1 Japon.
+https://github.com/organui/teeth-3d
+https://creativecommons.org/licenses/by-sa/2.1/jp/deed.en
+Voix française de synthèse Estelle, Pocket TTS de Kyutai.
+https://kyutai-labs.github.io/pocket-tts/
+Rire gêné : Girl’s Laugh de tomattka (CC0). https://freesound.org/people/tomattka/sounds/402395/
+Rire de bon cœur : Woman Laughing de moxobna (CC0). https://freesound.org/people/moxobna/sounds/399931/
+
+Références de mouvement consultées pour la conversation et les appuis
+Talking With Hands 16.2M, CMU et Meta. https://openaccess.thecvf.com/content_ICCV_2019/papers/Lee_Talking_With_Hands_16.2M_A_Large-Scale_Dataset_of_Synchronized_Body-Finger_ICCV_2019_paper.pdf
+BEAT, PantoMatrix. https://pantomatrix.github.io/BEAT/
+GRAB, Max Planck Institute for Intelligent Systems. https://grab.is.tue.mpg.de/
+CMU Graphics Lab, bibliothèque de captures de mouvement. https://mocap.cs.cmu.edu/
+Blender Manual, cinématique inverse du bras et torsion de l’avant-bras. https://docs.blender.org/manual/en/5.2/animation/armatures/posing/bone_constraints/inverse_kinematics/introduction.html
+Blender Studio, Animation Fundamentals. https://studio.blender.org/training/animation-fundamentals/

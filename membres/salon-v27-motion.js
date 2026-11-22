@@ -1,4 +1,5 @@
 // The Summer Man salon solve from Salon-V27-Duo. Joint coordinates are in centimetres.
+import {choosePosture,tabletop} from './seated-postures.js';
 import {roomClear,roomPath} from './salon-plan.js?v=salon29';
 const clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
 
@@ -86,11 +87,15 @@ function seatEntry(s){return [s.x+s.gap*Math.sin(s.yaw),s.z+s.gap*Math.cos(s.yaw
 
 // The member renderer uses the authenticated wardrobe mesh with the reference bone transforms.
 export class SalonMotion {
- constructor(onStatus=()=>{}, camera, start={x:583,z:-980,yaw:2.65}){
+ constructor(onStatus=()=>{}, camera, start={x:583,z:-980,yaw:2.65},random=Math.random){
   this.camera=camera;
   this.expression=null;
   const room={...start,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
-  let neckLift=0;
+  let neckLift=0,posture=null,postureSeat=null,avatarScale=1;
+  this.sampleSalonPose=(seat,amount,seconds,expression,scale=1)=>{
+    room.mode=seat?'seated':'idle';room.seat=seat;room.sit=amount;clock=seconds;avatarScale=scale;
+    this.expression=expression;roomPose(seconds*1000);return matrices;
+  };
   const life={bones:[],knees:[]}, keys=new Set();
   const matrices=new Float32Array(16*15);
   let clock=0,padX=0,padY=0,publishedMode='',publishedSeat=null;
@@ -244,8 +249,10 @@ function roomPose(t){
  const steering=room.mode==='steer',walking=room.mode==='walk'||room.mode==='brake'||steering,u=room.sit,s=ease(u),seat=room.seat;
  const expr=self.expression, gesture=expr?.gesture, engaged=walking?0:(u>0?phase(.82,1,u):room.mode==='idle'?1:0);
  const emphasis=gesture?engaged:0;
+ if(seat!==postureSeat){if(seat)posture=choosePosture(seat,posture,random);postureSeat=seat;}
+ const kind=seat?posture?.kind:'',crossSide=posture?.side||1,table=seat?tabletop(seat,avatarScale):null;
  const sofa=seat?.id.startsWith('sofa');
- const armrest=seat?.support;
+ const armrest=kind==='appui'?seat?.support:null;
  const settle=phase(.62,1,u),adjust=phase(.16,.62,u),legSide=sofa?0:seat?.id==='east2'?-1:1;
  const lean=armrest?armrest.side*.075*settle:0;
  const feet=walking?[-1,1].map(steering?manualFoot:floorStride):[-1,1].map(side=>{
@@ -253,7 +260,12 @@ function roomPose(t){
   let width=.65,depth=front?4.8:-3;
   if(sofa){width=2.2;depth=-3;}
   if(armrest){width=2.15;depth=front?(onArm?-4:-13):(onArm?-7:-14);}
-  return {point:[side*(8.65+width*adjust),7.85+(front?.95:.55)*Math.sin(Math.PI*adjust)**2,-1+depth*adjust],
+  const point=[side*(8.65+width*adjust),7.85+(front?.95:.55)*Math.sin(Math.PI*adjust)**2,-1+depth*adjust];
+  const crossIn=phase(.50,.98,u);
+  if(kind==='chevilles'){point[0]+=(-side*(side===crossSide?14:6))*crossIn;point[2]+=(side===crossSide?4:-5)*crossIn;point[1]+=(side===crossSide?2.6:0)*crossIn;}
+  if(kind==='genou'&&side===crossSide){point[0]-=side*37*crossIn;point[1]+=23*crossIn+8*Math.sin(Math.PI*crossIn);point[2]+=5*crossIn;}
+  if(kind==='penchee'){point[0]+=side*3*settle;point[2]-=3*settle;}
+  return {point,
    yaw:side*(.043+(front?.12:.055)*s),roll:0,weight:0}
  });
  const drive=Math.max(feet[0].weight,feet[1].weight),step=2*Math.PI*((steering?stick.phase:room.t/1.10)-.30),beat=Math.cos(step),sub=Math.cos(2*step);
@@ -264,7 +276,7 @@ function roomPose(t){
  hip[2]+=-(back-2.1)*phase(.12,.99,u)+2.4*Math.sin(2*Math.PI*s)*bend;
  hip[0]+=.60*bend+.38*legSide*settle;
  // Keep the seated spine over the pelvis on all three sofa cushions.
- const seatedPitch=sofa?.018:armrest?-.040:-.10;
+ const seatedPitch=kind==='penchee'?.23:kind==='appui'&&table ? .40 : kind==='genou'?-.055:sofa?.018:armrest?-.040:-.08;
  const pitch=.018+drive*(.024+.009*sub)+.52*bend+seatedPitch*settle+(gesture?.pitch||0)*emphasis;
  const lowerR=oriented(.038*beat*drive+.025*legSide*settle+(gesture?.yaw||0)*emphasis,pitch,-.021*beat*drive+.014*bend+.025*legSide*settle-lean*.78);
  const torso=transformAt(lowerR,hipPivot,hip);
@@ -290,6 +302,11 @@ function roomPose(t){
     lap=onArm?[armrest.x,armrest.height+4.3,armrest.z-6.4]:[knee[0]-side*1.5,knee[1]+9.2,knee[2]-9];
     if(!onArm){start[1]-=2.4*settle;start[2]+=2.6*settle;}
    }
+   if(kind==='mains-jointes'){
+    const k=life.knees;lap=[side*(side===crossSide?2.3:1.2),(k[0][1]+k[1][1])*.5+12+(side===crossSide?3:0),(k[0][2]+k[1][2])*.5-12+(side===crossSide?2:0)];
+   }else if(kind==='genou'){const k=life.knees[crossSide<0?0:1];lap=[k[0]+side*5,k[1]+9+(side===crossSide?1:0),k[2]-11];}
+   else if(kind==='penchee'){lap=[knee[0]-side*2.5,knee[1]+9,knee[2]-3];}
+   else if(kind==='appui'&&table){lap=[side*15,table.height+2.9,table.forward-7.0];}
    dest=mix3(rest,lap,s);dest[1]+=3.3*bend;dest[2]+=9.8*bend;
    pole=[side*(onArm?.88:.51),-.20-.78*s,-1];
    if(gesture&&emphasis){
@@ -299,7 +316,7 @@ function roomPose(t){
     pole=mix3(pole,[side*.9,-.85,-.55],handLift);
    }
 
-  }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1]}
+  }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1];if(kind==='genou'&&side===crossSide)pole=[-side*.70*settle,.22*settle,1];}
   const [joint,tip]=reachChain(l,start,dest,pole),first=2+3*i;
   const a=rotation(minus(l.b,l.a),minus(joint,start)),b=rotation(minus(l.c,l.b),minus(tip,joint));
   bones[first]=transformAt(a,l.a,start);bones[first+1]=transformAt(b,l.b,joint);
@@ -309,13 +326,20 @@ function roomPose(t){
    const axis=normal(minus(tip,joint)),restAxis=normal(minus(l.c,l.b));
    let palmDown=mix3(rotateV(b,palm),[0,-1,-.13],s);
    if(handLift)palmDown=mix3(palmDown,[-side*.68,gesture.palm,.26],handLift);
-   const forearm=s?mapHand(restAxis,palm,axis,palmDown):b;
+   // Roll follows the forearm; flexion and side deviation pivot at the wrist.
+   const projected=normal(reject(rotateV(b,palm),axis)),wanted=normal(reject(palmDown,axis));
+   const twist=clamp(Math.atan2(dot(cross(projected,wanted),axis),dot(projected,wanted)),-1.15,1.15);
+   const rotated=plus(times(projected,Math.cos(twist)),times(cross(axis,projected),Math.sin(twist)));
+   const forearm=mapHand(restAxis,palm,axis,rotated);
    bones[first+1]=transformAt(forearm,l.b,joint);
    const relaxed=normal(mix3(axis,rotateV(forearm,finger),.30));
-   const desired=normal(mix3(relaxed,[-side*.05,-.18,.98],s));
+   const palmSlope=table?clamp((table.height+1.1-tip[1])/17,-.21,.12):0;
+   const restingAim=kind==='appui'&&table?[-side*.07,palmSlope,.99]:kind==='mains-jointes'?[-side*.60,-.14,.83]:[-side*.14,-.22,.97];
+   let desired=normal(mix3(relaxed,restingAim,s));
+   if(handLift)desired=normal(mix3(desired,plus(axis,[side*.11,.16,.12]),handLift));
    const angle=Math.acos(clamp(dot(axis,desired),-1,1));
    const aim=normal(mix3(axis,desired,Math.min(1,.35/Math.max(.001,angle))));
-   end=mapHand(finger,palm,aim,palmDown);
+   end=mapHand(finger,palm,aim,s||handLift?normal(mix3(rotated,palmDown,.34)):rotated);
 
   }
   bones[first+2]=transformAt(end,l.c,tip);

@@ -1,5 +1,5 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js';
-import {normaliseStudio,traitAvailable,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
+import {normaliseStudio,traitAvailable,traitOptionAvailable,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
@@ -28,6 +28,7 @@ export function createDrawer(root,apply,frameModel,openDeparture){
    for(const key of visibleKeys){
     const trait=traits.find(t=>t.key===key),label=make('label',trait.label),select=make('select');
     for(const [i,name] of trait.options.entries()){
+     if(!traitOptionAvailable(key,i,options.gender))continue;
      const locked=!options.plus&&!freeTrait(key,i),option=new Option(name+(locked?' · Compagnon':''),String(i));
      option.disabled=locked;select.add(option);
     }

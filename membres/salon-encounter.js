@@ -1,4 +1,4 @@
-import {generateAppearance} from './starting-appearance.js?v=salon33';
+import {generateAppearance} from './starting-appearance.js?v=salon43';
 import {skinSteps} from './studio-look.js';
 import {seats} from './salon-plan.js';
 import {cameraProjection} from './salon-navigation.js?v=salon35';

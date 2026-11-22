@@ -1,6 +1,6 @@
 import {randomAvatar} from './avatar-catalog.js?v=salon33';
 import {traits} from './studio-catalog.js';
-import {freeTrait,normaliseStudio,traitAvailable} from './studio-look.js';
+import {freeTrait,normaliseStudio,traitAvailable,traitOptionAvailable} from './studio-look.js';
 
 export const validGender=value=>value==='homme'||value==='femme';
 export function yearsAt(birth,date=new Date()){
@@ -25,7 +25,7 @@ export function generateAppearance(gender,age,plus,random=Math.random){
   const avatar=randomAvatar(random),face={};
   for(const trait of traits){
     if(!traitAvailable(trait.key,gender))continue;
-    const choices=trait.options.map((_,index)=>index).filter(i=>plus||freeTrait(trait.key,i));
+    const choices=trait.options.map((_,index)=>index).filter(i=>traitOptionAvailable(trait.key,i,gender)&&(plus||freeTrait(trait.key,i)));
     face[trait.key]=pick(choices);
   }
   face.age=age;

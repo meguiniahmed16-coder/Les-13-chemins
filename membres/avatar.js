@@ -1,16 +1,22 @@
+import {reactionFor} from './conversation-reactions.js';
 // Summer Man uses the CC0 MakeHuman/MPFB model. Garment authors and original
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
 import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
-import {loadStudio} from './studio-model.js?v=salon38';
-import {createDrawer} from './studio-drawer.js?v=salon39';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon39';
+import {loadStudio} from './studio-model.js?v=salon43';
+import {createDrawer} from './studio-drawer.js?v=salon43';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon43';
 import {salonMarkup,bindSalon} from './salon-controls.js?v=salon39';
-import {createSalonChat} from './salon-chat.js?v=salon41';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon38';
+import {createSalonChat} from './salon-chat.js?v=salon43';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon43';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
+async function loadActor(look,gender){
+  if(gender!=='femme')return loadStudio(look,gender);
+  const [figure,{wearCompatibleReference}]=await Promise.all([loadStudio(look,gender),import('./v27/compatible-face-bundle.js')]);
+  return wearCompatibleReference(figure,portraitBones);
+}
 const files = new URL('../assets/membres/', import.meta.url);
 const posterURL = new URL('salon-v27-apercu.webp', files).href;
 async function unpack(name) {
@@ -305,7 +311,7 @@ export class CheminsAvatar extends HTMLElement {
   async #invite(person){
     const invitation=++this.#invitation;
     const {studio,gender}=guestAppearance(person);
-    const [figure,channels]=await Promise.all([loadStudio(studio,gender),resource('conversation-face')]);
+    const [figure,channels]=await Promise.all([loadActor(studio,gender),resource('conversation-face')]);
     if(invitation!==this.#invitation||!this.isConnected)return false;
     figure.enableSpeech(channels);this.#figure.enableSpeech(channels);
     const pair=conversationSeats();
@@ -340,7 +346,7 @@ export class CheminsAvatar extends HTMLElement {
   async apply(look){
     if(this.#pending&&JSON.stringify(this.#look)===JSON.stringify(look))return this.#pending;
     this.#look=look;
-    const p=loadStudio(look,this.#gender);this.#pending=p;
+    const p=loadActor(look,this.#gender);this.#pending=p;
     try{const figure=await p;if(p===this.#pending){this.#figure=figure;if(this.#guest)figure.enableSpeech(this.#guest.channels);this.#schedule();}return figure;}
     catch(error){if(p===this.#pending)this.#pending=null;throw error;}
   }
@@ -412,10 +418,11 @@ export class CheminsAvatar extends HTMLElement {
         const speech=this.#chat.playback.frame(),now=time/1000;
         const poses=[[this.#motion,this.#guest.motion,this.#playerStyle,'player'],[this.#guest.motion,this.#motion,this.#guest.style,'guest']];
         for(const [actor,partner,style,who] of poses){
-          const speaking=speech?.who===who,role=speaking?'speak':speech?'listen':'idle';
+          const speaking=speech?.who===who,role=speaking?'speak':speech?.who?'listen':'idle';
           const angle=Math.atan2(partner.x-actor.x,partner.z-actor.z)-actor.yaw;
           const look=Math.max(-.42,Math.min(.42,Math.atan2(Math.sin(angle),Math.cos(angle))));
-          actor.expression={gesture:style.sample(now,dt,role,speech?.line,reduced),look,
+          const reaction=reactionFor(speech?.reaction,who);
+          actor.expression={reaction,recordingTime:speaking?speech.recordingTime:reaction?.recordingTime,gesture:style.sample(now,dt,role,speech?.line,reduced),look,
             jaw:speaking?speech.jaw:0,round:speaking?speech.round:0,spread:speaking?speech.spread:0};
         }
       }
