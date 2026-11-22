@@ -41,20 +41,51 @@ function vertexChanges(v,style){
     z+style.bridge*nose+style.lip*.008*lips+style.cheeks*.34*cheek];
 }
 function fitGeometry(obj,face){
-  if(!face||!Object.values(shapeOptions(face)).some(Boolean))return false;
-  const style=shapeOptions(face),g=obj.geometry.clone(),p=g.attributes.position,positions=new Float32Array(p.count*3);
-  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);const v=vertexChanges([x,y,z],style);
+  const style=shapeOptions(face),custom=Object.values(style).some(Boolean);
+  const skin=obj.material.name==='peau',smiles=['SourireG','SourireD'].map(name=>obj.morphTargetDictionary?.[name]).filter(i=>i!=null);
+  if(!custom&&!skin&&!smiles.length)return false;
+  const g=obj.geometry.clone(),p=g.attributes.position,positions=new Float32Array(p.count*3);
+  const features=skin?new Float32Array(positions.length):null;
+  for(let i=0;i<p.count;i++){
+    const original=[p.getX(i),p.getY(i),p.getZ(i)];
+    const v=custom?vertexChanges(original,style):original;
+    const [x,y,z]=original;
+    if(skin){
+      features.set(v,3*i);
+      // Ease the inner brow down by 1.6 mm at its peak, clear of the upper lid.
+      v[1]-=.0016*Math.exp(-(((Math.abs(x)-.016)/.013)**2)-(((y-.173)/.009)**2))*T.MathUtils.smoothstep(z,.016,.042);
+    }
     if(obj.material.name==='cilsMindfront'){v[1]+=(y-.151)*style.lash;v[2]+=(z-.062)*style.lash;}
     positions.set(v,3*i);
   }
-  g.setAttribute('position',new T.BufferAttribute(positions,3));g.computeBoundingSphere();obj.geometry=g;return true;
+  if(skin)g.setAttribute('featureRest',new T.BufferAttribute(features,3));
+  g.setAttribute('position',new T.BufferAttribute(positions,3));
+  // Move a small fraction of the authored closed-mouth smile into the resting shape.
+  // Reserve the remainder for speech and animation, so the full smile meets its original end pose.
+  for(const key of ['position','normal']){
+    const targets=g.morphAttributes[key];
+    if(!targets||!smiles.length)continue;
+    const base=g.getAttribute(key),rest=new Float32Array(p.count*3),v=new T.Vector3(),delta=new T.Vector3();
+    for(let i=0;i<p.count;i++)v.fromBufferAttribute(base,i).toArray(rest,3*i);
+    for(const j of smiles){
+      const target=targets[j],remaining=new Float32Array(rest.length);
+      for(let i=0;i<p.count;i++){
+        delta.fromBufferAttribute(target,i);
+        v.fromArray(rest,3*i).addScaledVector(delta,.27).toArray(rest,3*i);
+        delta.multiplyScalar(.73).toArray(remaining,3*i);
+      }
+      targets[j]=new T.BufferAttribute(remaining,3);
+    }
+    g.setAttribute(key,new T.BufferAttribute(rest,3));
+  }
+  g.computeBoundingSphere();obj.geometry=g;return true;
 }
 
 function skinShader(mat,pose,style){
   mat.onBeforeCompile=s=>{
     Object.assign(s.uniforms,{lips:{value:pose.lips},fold:pose.fold,cosmetics:{value:style.makeup},browStyle:{value:style.brow},ageStyle:{value:style.age}});
-    s.vertexShader='uniform vec4 lips;varying vec3 headRest;\n'+s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-      headRest=position;
+    s.vertexShader='attribute vec3 featureRest;uniform vec4 lips;varying vec3 headRest;\n'+s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      headRest=featureRest;
       float dx=abs(position.x); float line=.0826+.00068*cos(3.14159*min(dx/.0212,1.))-.00045*exp(-pow(dx/.0043,2.));
       float rel=position.y-line; float w=exp(-pow(dx/.030,4.))*smoothstep(.040,.067,position.z)*exp(-rel*rel/.00019);
       float lo=1.-smoothstep(-.0006,.0006,rel);

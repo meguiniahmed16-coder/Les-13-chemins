@@ -1,6 +1,6 @@
-import {bindCameraStick,createTravelMotion} from './salon-camera-stick.js';
+import {bindCameraStick,bindCameraHeight,createTravelMotion} from './salon-camera-stick.js?v=duo6';
 import {bounds} from './salon-plan.js';
-import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon44';
+import {moveCamera,orbitCamera,zoomCamera,seatAt} from './salon-navigation.js?v=salon47';
 
 const icon=(path)=>'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="'+path+'"/></svg>';
 const icons={
@@ -20,7 +20,7 @@ export function salonMarkup(poster,style) {
       ${button('out','Éloigner la caméra','−')}${button('in','Rapprocher la caméra','+')}
       ${button('full','Plein écran',icons.full+'<span class="full-text">Plein écran</span>','aria-pressed="false"')}
     </div><button type="button" class="stick" aria-label="Joystick de marche. Au clavier, utiliser les flèches." title="Déplacer le personnage"><span class="thumb"></span></button>
-    <button type="button" class="camera-stick" aria-label="Joystick caméra"><small>Caméra</small><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.2"/></svg></span></button><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser ▾</button></div></div><aside id="studio-drawer" class="studio-drawer" hidden></aside><div class="depart-tools">
+    <button type="button" class="camera-stick" aria-label="Joystick caméra"><small>Caméra</small><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.2"/></svg></span></button><div class="camera-height" role="group" aria-label="Hauteur de la caméra"><button type="button" data-height="1" aria-label="Monter la caméra" title="Monter la caméra">↑</button><button type="button" data-height="-1" aria-label="Descendre la caméra" title="Descendre la caméra">↓</button></div><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser ▾</button></div></div><aside id="studio-drawer" class="studio-drawer" hidden></aside><div class="depart-tools">
       <button id="chooseDeparture" type="button" aria-expanded="false">Le départ à deux</button>
       <button id="return" type="button" hidden>Rentrer au salon</button>
       <button id="lookHome" type="button" hidden>Regarder la maison</button>
@@ -56,14 +56,16 @@ export function bindSalon(root,motion,roomBytes,wake,available=()=>true,manual=(
   const camPad=root.querySelector('.camera-stick'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const drive=createTravelMotion(()=>reduced.matches);
   bindCameraStick(camPad,()=>{manual();motion.camera.follow=false;},(x,z)=>{drive.input(x,z);wake();},lifetime.signal);
+  bindCameraHeight(root.querySelector('.camera-height'),()=>{manual();motion.camera.follow=false;wake();},drive,lifetime.signal);
   const constrain=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
   function cameraFrame(dt){
     if(outside()){drive.stop();return false;}
     const c=motion.camera;
-    drive.step(dt,(side,forward)=>{
+    drive.step(dt,(side,forward,height)=>{
       const si=Math.sin(c.angle),co=Math.cos(c.angle);c.follow=false;
       c.x=constrain(c.x+co*side-si*forward,bounds.minX,bounds.maxX);
       c.z=constrain(c.z-si*side-co*forward,bounds.minZ,bounds.maxZ);
+      if(height)c.y=constrain(c.y+height,.055,2.75);
     });
     return drive.moving;
   }

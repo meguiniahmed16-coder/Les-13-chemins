@@ -5,9 +5,9 @@ import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
 import {legacyStudio} from './studio-look.js';
 import {loadStudio} from './studio-model.js?v=salon43';
-import {createDrawer} from './studio-drawer.js?v=salon43';
-import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon44';
-import {salonMarkup,bindSalon} from './salon-controls.js?v=salon46';
+import {createDrawer} from './studio-drawer.js?v=salon47';
+import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon47';
+import {salonMarkup,bindSalon} from './salon-controls.js?v=salon47';
 import {createSalonChat} from './salon-chat.js?v=salon44';
 import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=salon44';
 
@@ -234,7 +234,7 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon46',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=salon47',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
@@ -315,7 +315,7 @@ export class CheminsAvatar extends HTMLElement {
     if(invitation!==this.#invitation||!this.isConnected)return false;
     figure.enableSpeech(channels);this.#figure.enableSpeech(channels);
     const pair=conversationSeats();
-    const motion=new SalonMotion(undefined,newCamera(),{x:722,z:-992,yaw:.3});
+    const motion=new SalonMotion(undefined,newCamera(),{x:722,z:-992,yaw:.3});motion.femaleHands=gender==='femme';
     const wideAngle=Math.abs(pair[0].x-pair[1].x)>Math.abs(pair[0].z-pair[1].z)?-.09:1.48;
     this.#guest={figure,motion,channels,gender,style:createPerformer(person.id),seat:pair[1],wideAngle,previousCamera:{...this.#motion.camera,perspective:0,nearDepth:0}};
     this.#drawer.toggle(false);
@@ -323,7 +323,7 @@ export class CheminsAvatar extends HTMLElement {
     this.#schedule();
     return true;
   }
-  configure(look,options){if(this.memberKey!==options.memberKey){this.memberKey=options.memberKey;this.#playerStyle=createPerformer(options.memberKey||'joueur');}if(this.#gender!==options.gender){this.#pending=null;this.#gender=options.gender;}this.#drawer.configure(look,options);return this.apply(look);}
+  configure(look,options){if(this.memberKey!==options.memberKey){this.memberKey=options.memberKey;this.#playerStyle=createPerformer(options.memberKey||'joueur');}if(this.#gender!==options.gender){this.#pending=null;this.#gender=options.gender;this.#motion.femaleHands=options.gender==='femme';}this.#drawer.configure(look,options);return this.apply(look);}
   openOptions(open=true){this.#drawer.toggle(open);}
   #manualCamera=()=>{
     if(!this.#guest)return;

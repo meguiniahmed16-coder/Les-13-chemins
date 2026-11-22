@@ -1,5 +1,6 @@
+import {referenceStudio,normaliseStudio} from './studio-look.js?v=duo6';
 import {reactionFor} from './conversation-reactions.js';
-import {createDrawer} from './studio-drawer.js?v=salon43';
+import {createDrawer} from './studio-drawer.js?v=salon47';
 import {createSalonChat} from './salon-chat.js?v=salon44';
 import {guestAppearance} from './salon-encounter.js?v=salon43';
 import {loadStudio} from './studio-model.js?v=salon43';
@@ -7,11 +8,11 @@ import {resource} from './studio-assets.js';
 import {createPerformer} from './salon-performance.js';
 
 class SalonV27 extends HTMLElement{
-  #frame;#ready;#scene;#drawer;#chat;#options;#look;#guest;#serial={member:0,guest:0};#fallback;#listen;#cameraKey='';#ownStyle=createPerformer('joueur');#lastTalk=0;
+  #frame;#ready;#scene;#drawer;#chat;#options;#look;#guest;#gender;#drafts={};#serial={f:0,m:0,guest:0};#fallback;#listen;#cameraKey='';#ownStyle=createPerformer('joueur');#lastTalk=0;
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon46"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon47"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -19,11 +20,14 @@ class SalonV27 extends HTMLElement{
     .hud .bar:empty{display:none}.v27-actions .invite-toggle{font-size:13px}
     .v27-actions .options-toggle{font-size:13px}.guest-picker{z-index:7}
     .stage.immersive{position:fixed;inset:0;height:100dvh!important;z-index:2147483646}
-    .stage:fullscreen{height:100dvh}.stage{min-height:420px}
-    @media(max-width:600px){.stage{height:min(76dvh,750px)}.v27-actions{gap:2px;left:3px}.v27-actions>button{font-size:12px!important;min-height:34px}}
+    .stage:fullscreen{height:100dvh}.stage{min-height:min(420px,65dvh)}
+    @media(max-width:600px){.stage{height:var(--room-height,min(76dvh,750px))}.v27-actions{gap:2px;left:3px}.v27-actions>button{font-size:12px!important;min-height:34px}}
     @media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
       .scene-viewport{display:grid;grid-template: auto minmax(0,1fr) / minmax(0,1fr);padding:0;}
       .v27-frame{grid-area:2/1;min-width:0;min-height:0;}
+      .stage:has(.studio-drawer:not([hidden])) .scene-viewport{grid-template-rows:minmax(0,1fr)}
+      .stage:has(.studio-drawer:not([hidden])) .v27-frame{grid-area:1/1}
+      .stage:has(.studio-drawer:not([hidden])) .hud{display:none}
       .hud{grid-area:1/1;position:relative;inset:auto;}
       .v27-actions{position:static;display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;
         padding:4px max(4px,env(safe-area-inset-right)) 0 max(4px,env(safe-area-inset-left));}
@@ -45,10 +49,13 @@ class SalonV27 extends HTMLElement{
       leave:()=>{this.#cameraKey='';this.#serial.guest++;this.#guest=null;this.#scene?.endDialogue();this.#scene?.reset('guest');this.#scene?.clearMeeting();},
       change:()=>this.#syncCamera(),
       rate:who=>who==='guest'?this.#guest?.performer?.rate||1:1,
-      gender:who=>(who==='guest'?this.#guest?.gender:this.#options?.gender)||'homme'
+      gender:who=>(who==='guest'?this.#guest?.gender:this.#gender)||'homme'
     });
     root.querySelector('.v27-actions').append(root.querySelector('.invite-toggle'));
-    this.#drawer=createDrawer(root,look=>this.#dress('member',look,this.#options.gender),mode=>this.#scene?.focus(mode),()=>this.#scene?.departure());
+    this.#drawer=createDrawer(root,look=>this.#dress(this.#gender==='femme'?'f':'m',look,this.#gender),mode=>this.#scene?.focus(mode),()=>this.#scene?.departure(),(open,mode)=>{
+      this.#frame?.contentDocument?.body.classList.toggle('editing-duo',open);
+      if(open)this.#scene?.focus(mode?'Corps':'Visage');
+    });
   }
   #syncCamera(){
     if(!this.#guest||!this.#chat||!this.#scene)return;
@@ -71,6 +78,7 @@ class SalonV27 extends HTMLElement{
   async #dress(slot,look,gender){
     const id=++this.#serial[slot],scene=await this.#ready;
     if(!scene||id!==this.#serial[slot])return false;
+    if(scene.wearing(slot,look))return true;
     const figure=await loadStudio(look,gender);
     return scene.dress(slot,figure,gender,()=>this.isConnected&&this.#serial[slot]===id);
   }
@@ -93,6 +101,7 @@ class SalonV27 extends HTMLElement{
         const ready=()=>{
           if(signal.aborted||this.#scene)return;
           this.#scene=win.salonV27;this.#scene.setGender(this.#options?.gender);
+          doc.body.classList.toggle('editing-duo',!this.shadowRoot.querySelector('.studio-drawer').hidden);
           const full=doc.getElementById('fullscreen');
           full.onclick=async()=>{const stage=this.shadowRoot.querySelector('.stage');
             try{if(document.fullscreenElement)await document.exitFullscreen();else if(stage.requestFullscreen)await stage.requestFullscreen();else stage.classList.toggle('immersive');}
@@ -101,6 +110,7 @@ class SalonV27 extends HTMLElement{
           resolve(this.#scene);this.dispatchEvent(new CustomEvent('avatar-ready'));
         };
         win.addEventListener('salon-ready',ready,{signal});
+        win.addEventListener('salon-role-change',event=>{if(this.#options)this.#select(event.detail);},{signal});
         win.addEventListener('salon-manual-camera',()=>{this.#chat.manual();this.#syncCamera();},{signal});
         if(doc.body.classList.contains('ready'))ready();
         const failed=()=>{if(doc.getElementById('retry')?.hidden===false&&!this.#scene){resolve(null);
@@ -112,12 +122,12 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.src='/membres/v27/salon.html?v=27duo5';
+    frame.src='/membres/v27/salon.html?v=27duo6';
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
     if(this.#fallback)return;
-    await import('./avatar.js?v=salon46');
+    await import('./avatar.js?v=salon47');
     if(!this.isConnected||this.#fallback)return;
     this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
     this.shadowRoot.querySelector('.stage').hidden=true;
@@ -125,36 +135,56 @@ class SalonV27 extends HTMLElement{
     this.#fallback.addEventListener('avatar-ready',()=>this.dispatchEvent(new CustomEvent('avatar-ready')));
     if(this.#options)await this.#fallback.configure(this.#look,this.#options);
   }
-  disconnectedCallback(){this.#listen?.abort();this.#serial.member++;this.#serial.guest++;this.#chat.reset();this.#scene=null;this.#frame?.remove();this.#frame=null;}
+  disconnectedCallback(){this.#listen?.abort();this.#serial.f++;this.#serial.m++;this.#serial.guest++;this.#chat.reset();this.#scene=null;this.#frame?.remove();this.#frame=null;}
   configure(look,options){
     const changed=this.#options?.memberKey!==options.memberKey||this.#options.gender!==options.gender;
     this.#look=look;this.#options=options;
     if(this.#fallback)return this.#fallback.configure(look,options);
-    const prefs='salon-v27-look:'+options.memberKey;
+    if(!changed){return;}
+    this.#serial.f++;this.#serial.m++;this.#drafts={};
+    return this.#ready.then(async scene=>{
+      if(!scene||this.#options?.memberKey!==options.memberKey)return;
+      scene.setGender(options.gender);await this.#select(options.gender);
+    });
+  }
+  async #select(gender){
+    const options=this.#options,key=gender==='femme'?'f':'m',own=gender===options.gender;
+    this.#gender=gender;
+    const pref='salon-v27-look:'+options.memberKey;
+    const storage=gender===options.gender?pref:pref+':'+gender;
+    const stored=options.salonLooks?.[gender];
+    const saved=stored||(own?options.savedStudio:null),reference=referenceStudio(gender);
+    let state=this.#drafts[gender];
+    if(!state){
+      let previous=null;try{previous=localStorage.getItem(storage);}catch{}
+      const use=Boolean(saved)&&(previous==='1'||(stored&&previous!=='0'));
+      state=this.#drafts[gender]={look:use?normaliseStudio(saved,options.plus,undefined,gender):reference,custom:use,saved};
+    }
     const choices=this.shadowRoot.querySelector('.studio-drawer');
     let switcher=choices.querySelector('.v27-look-choice');
-    if(!switcher){
-      switcher=document.createElement('button');switcher.className='v27-look-choice';switcher.type='button';
-      choices.querySelector('header').after(switcher);
-    }
-    const label=custom=>{switcher.dataset.custom=String(custom);switcher.textContent=custom?'Reprendre le personnage V27':'Porter mon apparence enregistrée';};
-    let personal=false;try{personal=localStorage.getItem(prefs)==='1';}catch{}label(personal);
-    switcher.onclick=async()=>{
-      const custom=switcher.dataset.custom!=='true';switcher.disabled=true;
-      try{if(custom)await this.#dress('member',options.savedStudio,options.gender);
-        else{this.#serial.member++;this.#scene?.reset('member');}
-        try{localStorage.setItem(prefs,custom?'1':'0');}catch{}label(custom);
-      }finally{switcher.disabled=false;}
-    };
-    this.#drawer.configure(look,{...options,save:async value=>{await options.save(value);label(true);try{localStorage.setItem(prefs,'1');}catch{}}});
-    if(!changed)return;
-    return this.#ready.then(async scene=>{
-      if(!scene||this.#options!==options)return;
-      scene.setGender(options.gender);scene.reset('member');
-      // Accounts originally received a random outfit. Enter with the local duo until the member selects their own look.
-      let chosen=false;try{chosen=localStorage.getItem(prefs)==='1';}catch{}
-      if(chosen)await this.#dress('member',look,options.gender);
+    if(!switcher){switcher=document.createElement('button');switcher.className='v27-look-choice';switcher.type='button';choices.querySelector('header').after(switcher);}
+    const label=()=>{switcher.hidden=!state.custom&&!state.saved;switcher.textContent=state.custom?'Reprendre le personnage V27':'Porter mon apparence enregistrée';};
+    const persistChoice=()=>{try{localStorage.setItem(storage,state.custom?'1':'0');}catch{}};
+    const configureDrawer=()=>this.#drawer.configure(state.look,{...options,gender,savedStudio:state.saved||reference,
+      change:draft=>{state.look=draft;state.custom=true;label();if(own)options.change(draft);},
+      save:async draft=>{await options.saveCharacter(gender,draft);state.saved=draft;state.custom=true;persistChoice();if(this.#gender===gender)label();}
     });
+    switcher.disabled=false;
+    switcher.onclick=async()=>{
+      const before={...state};state.custom=!state.custom;
+      state.look=state.custom?normaliseStudio(state.saved,options.plus,undefined,gender):reference;
+      switcher.disabled=true;
+      try{
+        if(state.custom){if(!await this.#dress(key,state.look,gender))return;}
+        else{this.#serial[key]++;this.#scene.reset(key);}
+        persistChoice();if(this.#gender===gender){configureDrawer();label();}
+      }catch{Object.assign(state,before);if(this.#gender===gender)choices.querySelector('footer [role=status]').textContent='Chargement interrompu.';}
+      finally{if(this.#gender===gender)switcher.disabled=false;}
+    };
+    configureDrawer();label();
+    if(!choices.hidden)this.#scene.focus(choices.querySelector('.switch button:last-child').getAttribute('aria-pressed')==='true'?'Corps':'Visage');
+    if(state.custom)await this.#dress(key,state.look,gender);
+    else{this.#serial[key]++;this.#scene.reset(key);}
   }
   openOptions(open=true){if(this.#fallback)this.#fallback.openOptions(open);else this.#drawer.toggle(open);}
   snapshot(){return this.#fallback?.snapshot()||this.#scene?.snapshot()||null;}

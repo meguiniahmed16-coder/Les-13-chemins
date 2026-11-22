@@ -1,9 +1,9 @@
-import {traits,pieces} from './studio-catalog.js';
+import {traits,pieces} from './studio-catalog.js?v=duo6';
 
 export const slots={hauts:'haut',pantalons:'bas',jupes:'bas',robes:'robe',vestes:'veste',chaussures:'souliers',culottes:'culotte',collants:'collant',chaussettes:'chaussette',combinaisons:'robe',chapeaux:'chapeau',lunettes:'lunettes',gants:'gants',masques:'masque',bijoux:'bijou',accessoires:'accessoire'};
 export const byId=new Map(pieces.map(p=>[p.id,p]));
 export const skinSteps=[0,12,22,34,47,60,74,88,100];
-const common=new Set(['mh2909','mh1416','mh807','mh1655','mh1732','mh438','mh153','mh3461','mh3462','mh22','mh1158','mh1728','mh1727','mh1640','mh1734']);
+const common=new Set(['mh2909','mh1416','mh807','mh1655','mh1732','mh438','mh153','mh391','mh1726','mh3461','mh3462','mh22','mh1158','mh1728','mh1727','mh1640','mh1734']);
 // Every drawer includes a free entry. Keep the original paid choices on the companion plan.
 for(const group of Object.keys(slots)){
   const first=pieces.find(p=>p.group===group&&!['mh1194','mh1203'].includes(p.id));
@@ -53,4 +53,12 @@ export function normaliseStudio(value,plus,legacy,gender){
 export function exactStudio(value,normal){
   const same=(a,b)=>Object.keys(a).length===Object.keys(b).length&&Object.keys(a).every(k=>Object.hasOwn(b,k)&&(a[k]&&typeof a[k]==='object'?b[k]&&typeof b[k]==='object'&&same(a[k],b[k]):a[k]===b[k]));
   return !!value&&typeof value==='object'&&same(value,normal);
+}
+
+// The two figures on arrival have their own V27 face, complexion and complete outfit.
+export function referenceStudio(gender){
+  const female=gender==='femme',face=Object.fromEntries(traits.map(t=>[t.key,0]));
+  Object.assign(face,{hair:female?10:7,skin:2,beard:female?0:1,pile:female?0:2});
+  const outfit=female?{haut:'mh1726',bas:'mh391',souliers:'mh1734'}:{haut:'mh2909',bas:'mh1655',souliers:'mh438'};
+  return normaliseStudio({face,skinLevel:22,outfit},true,undefined,gender);
 }

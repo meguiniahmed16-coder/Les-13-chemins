@@ -46,3 +46,22 @@
   #salon>small{display:block;}
   #room{border-inline:0;border-radius:0;}
 }
+
+.salon-credits{margin:4px 0;color:var(--faded);font-size:.8rem}
+.salon-credits summary{cursor:pointer;width:fit-content}
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+  body:has(#member:not([hidden]) #salon:not([hidden])) .member-page{padding-block:3px 0}
+  .member-page:has(#member:not([hidden])) .member-head{margin:0;padding:2px 0;border:0}
+  .member-page:has(#member:not([hidden])) .identity-head{gap:7px}
+  .member-page:has(#member:not([hidden])) .identity-head h1{font-size:1.12rem;letter-spacing:-.02em}
+  .member-page:has(#member:not([hidden])) .identity-head .overline{display:none}
+  .member-page:has(#member:not([hidden])) #photo{width:28px;height:28px}
+  #member #salon .section-head{margin:0;gap:3px 10px;padding:3px 8px 5px;line-height:1.25}
+  #member #salon h2{font-size:1.12rem}
+  #salon-name{font-size:.77rem}
+  #status:empty{display:none}
+  #salon .salon-credits{margin:0;padding:2px 8px;font-size:.75rem}
+  body:has(#member:not([hidden])) .tda-legal-footer{margin:0 auto;padding:2px 7px;gap:1px 12px}
+  body:has(#member:not([hidden])) .tda-legal-footer :is(a,button){font-size:.72rem;line-height:1.4;padding-block:4px}
+  #salon-layout:not(.has-panel) #room{--room-height:max(280px,calc(100dvh - 116px))}
+}

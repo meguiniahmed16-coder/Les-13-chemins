@@ -33,17 +33,54 @@ export function bindCameraStick(pad,begin,input,signal){
   return release;
 }
 
+// Tap for a precise step, or hold either arrow for a continuous pedestal move.
+export function bindCameraHeight(group,begin,motion,signal){
+  const options={signal};
+  let pointer=null,timer=0,held=false;
+  function release(){
+    clearTimeout(timer);pointer=null;motion.rise(0);
+  }
+  for(const button of group.querySelectorAll('[data-height]')){
+    const direction=Number(button.dataset.height);
+    button.addEventListener('pointerdown',e=>{
+      if(e.button!==0||pointer!==null)return;
+      pointer=e.pointerId;button.setPointerCapture(pointer);held=false;
+      timer=setTimeout(()=>{
+        if(!button.getClientRects().length){release();return;}
+        begin();motion.rise(direction);held=true;
+      },160);
+    },options);
+    for(const event of ['pointerup','pointercancel','lostpointercapture'])
+      button.addEventListener(event,e=>{if(e.pointerId===pointer)release();},options);
+    button.addEventListener('click',e=>{
+      if(!held||e.detail===0){begin();motion.nudge(direction);}
+      held=false;
+    },options);
+    button.addEventListener('contextmenu',e=>e.preventDefault(),options);
+  }
+  window.addEventListener('blur',release,options);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)release();},options);
+  signal?.addEventListener('abort',release,{once:true});
+}
+
 export function createTravelMotion(reduce=()=>false){
-  let x=0,z=0,side=0,forward=0;
+  let x=0,z=0,y=0,side=0,forward=0,vertical=0,stepLeft=0;
   return {input(strafe,advance){x=strafe;z=advance;},
-    stop(){x=z=side=forward=0;},
-    get moving(){return Boolean(x||z||side||forward);},
+    rise(direction){y=direction;},
+    nudge(direction){stepLeft+=direction*.12;},
+    stop(){x=z=y=side=forward=vertical=stepLeft=0;},
+    get moving(){return Boolean(x||z||y||side||forward||vertical||stepLeft);},
     step(dt,move){
-      const gain=reduce()?1:-Math.expm1(-(x||z?8:14)*dt);
-      side+=(x-side)*gain;forward+=(z-forward)*gain;
+      const gain=target=>reduce()?1:-Math.expm1(-(target?8:14)*dt);
+      const planar=gain(x||z);
+      side+=(x-side)*planar;forward+=(z-forward)*planar;
+      vertical+=(y-vertical)*gain(y);
       if(!x&&Math.abs(side)<.003)side=0;
       if(!z&&Math.abs(forward)<.003)forward=0;
-      if(side||forward)move(side*1.45*dt,forward*1.45*dt);
+      if(!y&&Math.abs(vertical)<.003)vertical=0;
+      const step=Math.abs(stepLeft)<.0003?stepLeft:stepLeft*gain(0);
+      stepLeft-=step;
+      if(side||forward||vertical||step)move(side*1.45*dt,forward*1.45*dt,vertical*.85*dt+step);
     }
   };
 }

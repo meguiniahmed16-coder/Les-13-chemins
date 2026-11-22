@@ -409,6 +409,8 @@ export const sections = [
  ]
 ];
 export const pieces = [
+ {"id":"mh1726","group":"hauts","author":"MargaretToigo","license":"CC0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1968/866348581/camisole_top.mhclo","label":"Débardeur fleuri de Marianne","thumb":0,"sheet":"duo"},
+ {"id":"mh391","group":"pantalons","author":"punkduck","license":"CC BY 3.0","source":"https://files.makehumancommunity.org/sites/default/files/clothes/1665/2097948445/tightjeans.mhclo","label":"Jean ajusté de Marianne","thumb":1,"sheet":"duo"},
  {
   "id": "mh1743",
   "label": "Ankle Boots Male",

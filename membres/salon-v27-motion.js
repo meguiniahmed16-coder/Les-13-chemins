@@ -40,6 +40,14 @@ function reachChain(l,start,end,guide){
 const smoothStep=(a,b,x)=>ease(clamp((x-a)/(b-a),0,1));
 const phase=smoothStep;
 const rotateV=(m,p)=>[dot(m.slice(0,3),p),dot(m.slice(3,6),p),dot(m.slice(6,9),p)];
+// Vertical wrist adjustments (cm) measured on the fitted V27 jeans and fingertip pads.
+// Each pair is left/right; a second pair accounts for crossing the opposite leg.
+const palmContacts={
+ sofa:{cuisses:[[-1.1,3.0]], chevilles:[[-1.9,2.9],[-1.3,1.1]], genou:[[1.1,4.7],[4.2,5.2]], penchee:[[1.2,5.3]], 'mains-jointes':[[1.2,2.0],[1.8,1.0]]},
+ armchair:{cuisses:[[0.9,1.7]], chevilles:[[0.7,1.3],[0.8,3.0]], genou:[[1.2,6.5],[3.5,3.9]], penchee:[[0.3,2.0]], 'mains-jointes':[[0.2,3.4],[0.2,3.2]], appui:[[1.9,0]]},
+ dining:{cuisses:[[1.0,1.9]], chevilles:[[0.8,1.7],[0.9,1.6]], genou:[[-1.5,3.6],[3.8,3.9]], penchee:[[0.5,5.2]], 'mains-jointes':[[0.1,1.1],[0.9,0.1]]},
+ opposite:{cuisses:[[-1.2,5.0]], chevilles:[[-1.2,4.6],[-1.5,4.6]], genou:[[-0.3,4.1],[2.8,2.4]], penchee:[[1.2,4.3]], 'mains-jointes':[[0.4,0.8],[0.9,-1.1]]}
+};
 const hipPivot=[0,85.8,-2.1];
 const limbs=[0,1,2,3].map(i=>{
  const side=i%2?1:-1,arm=i<2;
@@ -88,7 +96,7 @@ function seatEntry(s){return [s.x+s.gap*Math.sin(s.yaw),s.z+s.gap*Math.cos(s.yaw
 // The member renderer uses the authenticated wardrobe mesh with the reference bone transforms.
 export class SalonMotion {
  constructor(onStatus=()=>{}, camera, start={x:583,z:-980,yaw:2.65},random=Math.random){
-  this.camera=camera;
+  this.camera=camera;this.femaleHands=false;
   this.expression=null;
   const room={...start,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
   let neckLift=0,posture=null,postureSeat=null,avatarScale=1;
@@ -317,7 +325,14 @@ function roomPose(t){
    }
 
   }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1];if(kind==='genou'&&side===crossSide)pole=[-side*.70*settle,.22*settle,1];}
-  const [joint,tip]=reachChain(l,start,dest,pole),first=2+3*i;
+  let [joint,tip]=reachChain(l,start,dest,pole);
+  if(arm&&self.femaleHands&&seat&&settle){
+    const support=sofa?'sofa':seat.support?'armchair':seat.id==='east2'?'opposite':'dining';
+    const contact=palmContacts[support][kind];
+    const amount=(crossSide>0&&contact?.[1]||contact?.[0])?.[i]||0;
+    if(amount)[joint,tip]=reachChain(l,start,plus(tip,[0,amount*settle*(1-handLift),0]),pole);
+  }
+  const first=2+3*i;
   const a=rotation(minus(l.b,l.a),minus(joint,start)),b=rotation(minus(l.c,l.b),minus(tip,joint));
   bones[first]=transformAt(a,l.a,start);bones[first+1]=transformAt(b,l.b,joint);
   let end=arm?b:oriented(foot.yaw,foot.roll);

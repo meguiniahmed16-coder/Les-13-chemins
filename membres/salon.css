@@ -127,4 +127,26 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .camera-stick{position:absolute;left:calc(max(13px,env(safe-area-inset-left)) + 92px);bottom:max(14px,env(safe-area-inset-bottom));height:64px;width:64px;padding:0;display:grid;place-items:center;border:1px solid #fffa;border-radius:50%;color:#fffbed;background:#213a34aa;user-select:none;touch-action:none}
 .camera-stick small{position:absolute;bottom:3px;font:600 10px/1 system-ui}
 .camera-stick span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#fff9e9ee;color:#264538}
-.in-garden .camera-stick{display:none}
+.camera-height{position:absolute;display:flex;z-index:3;gap:1px;overflow:hidden;border:1px solid #fff9e9bc;border-radius:14px;background:#f9f4df99}
+.camera-height button{width:44px;height:44px;padding:0;border:0;color:#fffbed;background:#244437ed;font:600 22px/1 system-ui;touch-action:none;user-select:none;-webkit-user-select:none}
+.camera-height button:active{background:#496959}
+.camera-height{right:max(12px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom))}
+.in-garden :is(.camera-stick,.camera-height){display:none}
+
+/* Keep the preview and the choices together, anchored to the phone viewport. */
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+  .stage:has(.studio-drawer:not([hidden])),.stage:has(.studio-drawer:not([hidden])):has(.conversation-footer:not([hidden])){
+    position:fixed;inset:0;z-index:2147483646;width:100%;height:100dvh;min-height:0;
+    grid-template-columns:minmax(0,1fr);grid-template-rows:clamp(115px,29dvh,255px) minmax(0,1fr) auto auto;
+  }
+  .studio-drawer{grid-column:1;grid-row:2;padding-bottom:env(safe-area-inset-bottom);overflow:hidden;}
+  .studio-drawer header,.studio-drawer .switch,.studio-drawer footer{flex:none;padding-block:4px}
+  .studio-drawer footer{min-height:42px}
+  .studio-scroll{scroll-padding-block:6px;touch-action:pan-y}
+}
+@media(max-width:960px) and (max-height:500px) and (orientation:landscape){
+  .stage:has(.studio-drawer:not([hidden])),.stage:has(.studio-drawer:not([hidden])):has(.conversation-footer:not([hidden])){
+    grid-template-columns:minmax(0,1fr) minmax(275px,45%);grid-template-rows:minmax(0,1fr) auto auto;
+  }
+  .studio-drawer{grid-column:2;grid-row:1/-1}
+}

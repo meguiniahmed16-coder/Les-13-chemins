@@ -1,19 +1,19 @@
-import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js';
-import {normaliseStudio,traitAvailable,traitOptionAvailable,freeTrait,freePiece,slots,skinSteps} from './studio-look.js';
+import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js?v=duo6';
+import {normaliseStudio,traitAvailable,traitOptionAvailable,freeTrait,freePiece,slots,skinSteps} from './studio-look.js?v=duo6';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
-export function createDrawer(root,apply,frameModel,openDeparture){
+export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}){
  const drawer=root.querySelector('.studio-drawer'),toggleButton=root.querySelector('.options-toggle');
  drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Apparence</button><button type="button">Garde-robe</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
  const pane=drawer.querySelector('.studio-scroll'),message=drawer.querySelector('[role=status]'),save=drawer.querySelector('.save');
  const tabs=[...drawer.querySelectorAll('.switch button')];let mode=0,look,options={},current,revision=0,writing=false;
- function toggle(open){drawer.hidden=!open;toggleButton.setAttribute('aria-expanded',String(open));}
+ function toggle(open){if(drawer.hidden===!open)return;drawer.hidden=!open;toggleButton.setAttribute('aria-expanded',String(open));onToggle(open,mode);}
  toggleButton.onclick=()=>toggle(drawer.hidden);drawer.querySelector('.close').onclick=()=>toggle(false);
  function choose(next){
   look=normaliseStudio(next,options.plus,undefined,options.gender);const version=++revision;
   options.change(look);save.disabled=true;message.textContent='Ajustement…';
-  current=Promise.resolve(apply(look)).then(()=>{if(version===revision){save.disabled=false;message.textContent='';}},()=>{if(version===revision){message.textContent='Chargement interrompu. Réessaie cette option.';save.disabled=true;}});
+  current=Promise.resolve(apply(look)).then(applied=>{if(applied===false)throw Error('Ajustement interrompu.');if(version===revision){save.disabled=false;message.textContent='';}}).catch(()=>{if(version===revision){message.textContent='Chargement interrompu. Réessaie cette option.';save.disabled=true;}});
   sync();
  }
  const controls=[];
@@ -54,8 +54,9 @@ export function createDrawer(root,apply,frameModel,openDeparture){
  function card(parent,label,index,locked,selected,click,author='',sheet=''){
   const b=make('button'),preview=make('span');b.type='button';b.className='piece';b.dataset.search=(label+' '+author).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();b.disabled=locked;
   preview.className='swatch';preview.style.backgroundPosition=(-48*(index%12))+'px '+(-60*Math.floor(index/12))+'px';
+  if(sheet==='duo'){preview.style.backgroundImage="url('/assets/salon-v27/pieces-duo.webp')";preview.style.backgroundSize='96px 60px';}
   if(sheet==='femme')preview.style.backgroundImage="url('/assets/salon-v27/pieces-femme.webp')";
-  preview.style.backgroundSize='576px '+(sheet==='femme'?60:60*thumbRows)+'px';b.append(preview,make('span',label+(locked?' · Compagnon':'')));
+  if(sheet!=='duo')preview.style.backgroundSize='576px '+(sheet==='femme'?60:60*thumbRows)+'px';b.append(preview,make('span',label+(locked?' · Compagnon':'')));
   let lastTap=-Infinity;
   b.onclick=event=>{
    const now=performance.now();if(event.detail>0&&now-lastTap<430)return;
@@ -108,12 +109,14 @@ export function createDrawer(root,apply,frameModel,openDeparture){
   if(options.privateURL){const a=make('a','Mon atelier privé');a.href=options.privateURL;pane.append(a);}
   sync();
  }
- tabs.forEach((b,i)=>b.onclick=()=>{mode=i;render();});
+ tabs.forEach((b,i)=>b.onclick=()=>{mode=i;render();onToggle(true,mode);});
  save.onclick=async()=>{
   if(writing||save.disabled)return;const version=revision,draft=look,settings=options,ready=current;writing=true;save.disabled=true;message.textContent='Enregistrement…';
   try{await ready;await settings.save(draft);settings.savedStudio=draft;if(version===revision)message.textContent='Enregistré.';}
   catch(e){if(version===revision)message.textContent=e.message||'Enregistrement interrompu.';}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };
- return {toggle,configure(value,settings){look=value;options=settings;render();}};
+ return {toggle,configure(value,settings){
+   ++revision;current=null;save.disabled=false;message.textContent='';look=value;options=settings;render();
+ }};
 }

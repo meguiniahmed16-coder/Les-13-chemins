@@ -1,5 +1,5 @@
 import {createDetailCamera} from './detail-camera.js';
-import {bindCameraStick} from '../salon-camera-stick.js';
+import {bindCameraStick,bindCameraHeight} from '../salon-camera-stick.js';
 import {createTravelCamera} from './travel-camera.js';
 import {composeDialogue,createFocusPass} from './conversation-camera.js';
 import {livePose} from './live-body.js';
@@ -574,7 +574,10 @@ function setRole(id){
  if(shelfView)setShelfView(false);if(sitting)getUp();actors[role].body.visible=true;freeCamera();approachedWindow=false;role=id;goal=null;keys.clear();for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0)}
  keyButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===id)));orbit.follow=false;hint();
 }
-keyButtons.forEach(b=>b.onclick=()=>setRole(b.dataset.role));
+keyButtons.forEach(b=>b.onclick=()=>{
+ const old=role;setRole(b.dataset.role);
+ if(old!==role)window.dispatchEvent(new CustomEvent('salon-role-change',{detail:role==='f'?'femme':'homme'}));
+});
 function setLocation(out){travel.reset();detail.reset();$('cameraPad').hidden=out;
  where=out?'jardin':'salon';shelfView=false;$('shelves').hidden=out;$('shelfLabel').textContent='Bibliothèque';$('shelves').setAttribute('aria-pressed','false');$('shelfActions').hidden=true;refreshFlight();
  indoor.matrix.copy(out?roomToGarden:identity);outdoor.matrix.copy(out?identity:gardenToRoom);
@@ -751,6 +754,7 @@ function takeCamera(){
 }
 const cameraPad=$('cameraPad');
 bindCameraStick(cameraPad,takeCamera,(x,z)=>travel.motion.input(x,z));
+bindCameraHeight(document.querySelector('.camera-height'),takeCamera,travel.motion);
 window.addEventListener('blur',()=>travel.motion.stop());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)travel.motion.stop();});
 const held=new Map();let touch=null,lastTap=null,pinch=0;
@@ -1342,7 +1346,7 @@ const member=createMemberBridge({
  focus(view){freeCamera();orbit.follow=false;const a=player(),p=a.root.position;
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);
  orbit.pitch=.065;orbit.radius=view==='Visage'?1.02:2.8;
- orbit.focus.set(p.x,p.y+(view==='Visage'?1.55: .95)*a.root.scale.y,p.z);updateCam(1);},
+ if(view==='Visage')orbit.focus.copy(headCenter(a));else orbit.focus.set(p.x,p.y+(a.sit>.5?.70:.95)*a.root.scale.y,p.z);updateCam(1);},
  meet(){if(encounter.active)leaveReunion();if(where!=='salon')return;releaseSeatRoute();if(sitting)getUp();
  const pairs=[['chair','sofa2'],['east1','west1'],['west2','east2'],['end1','end2'],['sofa1','chair'],['sofa3','chair']];
  const pair=pairs[Math.floor(Math.random()*pairs.length)],seat=seats.find(s=>s.id===pair[0]),friend=partner();

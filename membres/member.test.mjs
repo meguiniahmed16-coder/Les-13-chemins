@@ -231,3 +231,14 @@ test('Le genre filtre les tirages, les anciens avatars et les enregistrements da
     assert.deepEqual(switched.studio.outfit,initial.studio.outfit);
   }
 });
+
+test('Le salon enregistre séparément les deux personnages, y compris les habits V27 de Marianne',async()=>{
+  const {referenceStudio}=await import('./studio-look.js'),{api}=setup();
+  const registered=await api('signup',account),cookie=registered.headers.get('set-cookie').split(';')[0];
+  const female=referenceStudio('femme'),male=referenceStudio('homme');
+  female.face.nose=1;male.face.chin=1;
+  for(const [gender,studio] of [['femme',female],['homme',male]])assert.equal((await api('salon-appearance',{gender,studio},cookie)).status,200);
+  const profile=await (await api('me',null,cookie)).json();
+  assert.deepEqual(profile.salonLooks,{femme:female,homme:male});assert.deepEqual(profile.studio,male);
+  assert.equal((await api('salon-appearance',{gender:'femme',studio:{...female,face:{...female.face,beard:1}}},cookie)).status,403);
+});

@@ -339,5 +339,10 @@ test('Le travelling garde son cadre, tourne sur place et freine au relâchement'
   assert.ok(Math.abs(camera.getWorldDirection(new Vector3()).x)>.15);
   travel.motion.input(1,1);frames(1200);
   assert.ok(Math.abs(camera.position.x)<=3.16&&camera.position.y<=2.75&&camera.position.z>=-2.52);
+  travel.motion.stop();const fixed=camera.position.clone(),orientation=camera.quaternion.clone();
+  travel.motion.nudge(-1);frames(120);assert.ok(Math.abs((fixed.y-camera.position.y)-.12)<.0001);
+  travel.motion.rise(1);frames(300);assert.equal(camera.position.y,2.75);
+  travel.motion.rise(-1);frames(450);assert.equal(camera.position.y,.055);
+  travel.motion.rise(0);frames(90);assert.equal(camera.position.x,fixed.x);assert.equal(camera.position.z,fixed.z);assert.ok(camera.quaternion.angleTo(orientation)<1e-6);
   travel.reset();assert.equal(camera.near,.07);assert.equal(travel.active,false);
 });

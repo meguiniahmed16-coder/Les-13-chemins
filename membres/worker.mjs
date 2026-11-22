@@ -18,7 +18,9 @@ async function view(db,m,author){
   const rows=await sql(db,'SELECT kind,item FROM member_activity WHERE member=?',m.id).all();
   const journey={games:[],videos:[],scenes:[]};for(const row of rows.results)journey[row.kind]?.push(row.item);
   const saved=JSON.parse(m.avatar),plus=Boolean(author)||billing.companion;
-  return {studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus),m.gender),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
+  const salonLooks={};
+  for(const gender of ['femme','homme'])if(saved.salonLooks?.[gender])salonLooks[gender]=normaliseStudio(saved.salonLooks[gender],plus,undefined,gender);
+  return {salonLooks,studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus),m.gender),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
 }
 async function owner(r,env,path){
   if(!await authorSession(r,env))fail(401,'Connecte-toi à l’administration.');
@@ -103,12 +105,22 @@ export default {
       return json({ok:true});
     }
     if(!author&&(!m.birth||!m.pseudo))fail(409,'Complète ton profil.');
+    if(path==='salon-appearance'&&request.method==='POST'){
+      const {gender,studio}=await read(request);
+      if(!validGender(gender))fail(400,'Choisis un personnage.');
+      const plus=Boolean(author)||(await membership(db,m.id,now())).companion;
+      if(!exactStudio(studio,normaliseStudio(studio,plus,undefined,gender)))fail(403,'Cette personnalisation est indisponible.');
+      const key='$.salonLooks.'+gender,value=JSON.stringify(studio);
+      const update=await sql(db,"UPDATE members SET avatar=CASE WHEN gender=? THEN json_set(avatar,?,json(?),'$.studio',json(?)) ELSE json_set(avatar,?,json(?)) END WHERE id=?",gender,key,value,value,key,value,m.id).run();
+      if(!update.meta.changes)fail(409,'Rouvre le salon pour retrouver ton personnage.');
+      return json({gender,studio});
+    }
     if(path==='avatar'&&request.method==='POST'){
       const data=await read(request),input=data.avatar,plan=await membership(db,m.id,now()),plus=Boolean(author)||plan.companion,avatar=normaliseAvatar(input,plus);
       if(!input||typeof input!=='object'||Object.keys(input).length!==avatarCatalog.length||Object.keys(avatar).some(k=>avatar[k]!==input[k]))fail(403,'Cette apparence n’est pas disponible avec ton abonnement.');
       const studio=normaliseStudio(data.studio,plus,avatar,m.gender);
       if(data.studio!==undefined&&!exactStudio(data.studio,studio))fail(403,'Cette personnalisation est indisponible.');
-      const update=await sql(db,'UPDATE members SET avatar=? WHERE id=? AND gender=?',JSON.stringify({...avatar,studio}),m.id,m.gender).run();
+      const update=await sql(db,"UPDATE members SET avatar=json_set(?, '$.salonLooks', coalesce(json_extract(avatar,'$.salonLooks'),json('{}'))) WHERE id=? AND gender=?",JSON.stringify({...avatar,studio}),m.id,m.gender).run();
       if(!update.meta.changes)fail(409,'Ton profil a changé. Rouvre la personnalisation.');
       return json({avatar,studio});
     }

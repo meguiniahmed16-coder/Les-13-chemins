@@ -20,7 +20,7 @@ export function createMemberBridge(scene){
     }).catch(error=>{poses=null;throw error;});
   }
   function restore(actor){
-    clearFace(actor);actor.motion?.release();actor.live=false;actor.motion=originalMotion.get(actor);actor.conversationPose=null;actor.stamp='';
+    clearFace(actor);actor.salonLook=null;actor.motion?.release();actor.live=false;actor.motion=originalMotion.get(actor);actor.conversationPose=null;actor.stamp='';
     if(actor.parts===originals.get(actor))return;
     for(const part of actor.parts){
       part.obj.removeFromParent();part.obj.geometry.dispose();
@@ -52,13 +52,13 @@ export function createMemberBridge(scene){
     figure.pose(rig.rest);
     const bases=figure.meshes.map(m=>({p:m.v.slice(),n:m.vn.slice()}));
     const group=new T.Group(),parts=figure.meshes.map((m,i)=>meshPart(m,bases[i],group));
-    for(const key of [...Array.from({length:8},(_,i)=>String(i)),...scene.roomSeats.flatMap(s=>[s.id+'-35',s.id+'-70',s.id])]){
+    // Seated poses are solved live. Only the eight walking frames use baked deltas.
+    for(let key=0;key<8;key++){
       figure.pose(rig[key]);
       for(const [i,m] of figure.meshes.entries()){
         const delta=Int16Array.from(m.v,(v,k)=>v-bases[i].p[k]);
         const frame={delta,unit:.0001};
-        if(key.length===1)parts[i].poses[Number(key)]=frame;
-        else{const [seat,sample]=key.split('-');(parts[i].seated[seat]??=[])[sample==='35'?0:sample==='70'?1:2]=frame;}
+        parts[i].poses[key]=frame;
       }
     }
     restore(actor);
@@ -66,7 +66,7 @@ export function createMemberBridge(scene){
     for(const part of parts)actor.body.add(part.obj);
     actor.parts=parts;actor.motion=wardrobeMotion(figure,parts);actor.stamp='';
     actor.id=gender==='femme'?'f':'m';actor.root.scale.setScalar(gender==='femme'?1.04:1.075);
-    scene.animateBody(actor,0,null);face(actor,figure.appearance);
+    scene.animateBody(actor,0,actor.motionSeat);face(actor,figure.appearance);actor.salonLook=figure.appearance;
     return true;
   }
   let speech=null,readSpeech=null;
@@ -110,12 +110,12 @@ export function createMemberBridge(scene){
     }
   }
   function reset(slot){
-    const a=slot==='guest'?partner():player();restore(a);
+    const a=actors[slot]||(slot==='guest'?partner():player());restore(a);
     a.id=originalIds.get(a);a.root.scale.setScalar(a.id==='f'?1.04:1.075);face(a);
   }
   return {
     async initialize(){if(!Object.values(actors).some(a=>a.id==='f'&&a.parts.length))return;
-      const [reference,rig,bytes]=await Promise.all([loadFemaleReference(),getPoses(),fetch('/membres/v27/attaches-v27.bin').then(r=>{if(!r.ok)throw Error('Attaches du duo indisponibles.');return r.arrayBuffer();})]);
+      const [reference,rig,bytes]=await Promise.all([loadFemaleReference(),getPoses(),fetch('/membres/v27/attaches-v27.bin?v=appui2').then(r=>{if(!r.ok)throw Error('Attaches du duo indisponibles.');return r.arrayBuffer();})]);
       template=reference;const weights=scene.unzip(new Uint8Array(bytes));
       for(const a of Object.values(actors)){const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}},
     async enableDialogue(channels,read){
@@ -125,8 +125,8 @@ export function createMemberBridge(scene){
     endDialogue(){readSpeech=null;for(const a of Object.values(actors))a.conversationPose=null;for(const a of Object.values(actors))if(a.referenceFace&&!a.referenceFace.demo)a.referenceFace.reset();for(const a of Object.values(actors))for(const part of a.parts)if(part.voiceReady)part.obj.morphTargetInfluences.fill(0);},
     speechFrame,
     setGender:gender=>scene.setRole(gender==='femme'?'f':'m'),
-    dress:(slot,figure,gender,valid)=>dress(slot==='guest'?partner():player(),figure,gender,valid),
-    reset,focus:scene.focus,meet:scene.meet,clearMeeting:scene.clearMeeting,camera:scene.camera,
+    dress:(slot,figure,gender,valid)=>dress(actors[slot]||(slot==='guest'?partner():player()),figure,gender,valid),
+    wearing:(key,look)=>actors[key]?.salonLook===look,reset,focus:scene.focus,meet:scene.meet,clearMeeting:scene.clearMeeting,camera:scene.camera,
     snapshot:scene.snapshot,
     departure(){if(scene.place==='salon'){scene.clearCamera();scene.resetView();document.getElementById('pin').focus({preventScroll:true});}},
     get settled(){return scene.settled;},get place(){return scene.place;}
