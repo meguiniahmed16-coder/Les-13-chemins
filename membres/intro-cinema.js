@@ -141,7 +141,7 @@ function coverMarianneWaist(actor){
 async function loadAhmed(){
  const chunks=new Array(11);let cursor=0;
  async function work(){
-  while(cursor<chunks.length){const i=cursor++;chunks[i]=new Uint8Array(await binary('/api/intro-private/ahmed/'+String(i).padStart(3,'0'),'ahmed'));}
+  while(cursor<chunks.length){const i=cursor++;chunks[i]=new Uint8Array(await binary('/api/intro-private/ahmedv3/'+String(i).padStart(3,'0'),'ahmed'));}
  }
  await Promise.all(Array.from({length:3},work));
  const length=chunks.reduce((n,c)=>n+c.byteLength,0);
@@ -158,7 +158,7 @@ async function loadAhmed(){
   if(o.isBone){const name=normalize(o.name).replace(/^v27/,'');bones.set(name,{o,p:o.position.clone(),q:o.quaternion.clone()});}
   if(o.morphTargetDictionary?.Ouvrir!==undefined)mouth.push(o);
  });
- for(const n of ['bassin','tete','thorax','cuissed','cu isseg'.replace(' ',''),'jambed','jambeg','piedd','piedg','brasd','brasg','avantbrasd','avantbrasg','maind','maing'])if(!bones.has(n))throw Error('Articulation originale manquante : '+n);
+ for(const n of ['bassin','tete','thorax','cuissed','cuisseg','jambed','jambeg','piedd','piedg','brasd','brasg','avantbrasd','avantbrasg','maind','maing'])if(!bones.has(n))throw Error('Articulation originale manquante : '+n);
  const rotX=(a)=>new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),a);
  const set=(n,p,q)=>{const x=bones.get(n);if(!x)return;x.o.position.copy(p);x.o.quaternion.copy(x.q);if(q)x.o.quaternion.premultiply(q);};
  const spin=(v,center,q)=>v.clone().sub(center).applyQuaternion(q).add(center);
@@ -306,9 +306,8 @@ function targetLayout(person,seated,dojoMode=false,nearSeats=false){
   return {pos:new T.Vector3(i*.72,0,.34),yaw:Math.PI,sit:0};
  }
  if(!a)throw Error('Repère de coussin absent');
- const old=person.sit;person.pose(1);
- const contact=seatContact(person);person.pose(old);
- const offset=contact.multiply(person.root.scale).applyAxisAngle(new T.Vector3(0,1,0),a.yaw);
+ if(!person.seatedContact){const old=person.sit;person.pose(1);person.seatedContact=seatContact(person);person.pose(old);}
+ const offset=person.seatedContact.clone().multiply(person.root.scale).applyAxisAngle(new T.Vector3(0,1,0),a.yaw);
  return {pos:a.point.clone().sub(offset),yaw:a.yaw,sit:1};
 }
 let movement=null;
