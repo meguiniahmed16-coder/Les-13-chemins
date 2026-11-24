@@ -15,7 +15,7 @@ const destinations=[
   ['Conversations',home+'?view=review'],
   ['Archives',home+'?view=archives'],
   ['Atelier',home+'?view=atelier'],
-  ['Logiciel intuitif',home+'?view=logiciel'],
+  ['Personnaliser', '/membre.html?auteur=atelier#avatar'],
   ['Prologue 3D','/membres/intro-prive.html?auteur=atelier'],
   ['Le salon existant','/membre.html?auteur=atelier#salon'],
   ['Site public','/ahmed-marie.html']
