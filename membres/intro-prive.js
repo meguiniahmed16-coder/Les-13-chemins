@@ -57,6 +57,7 @@ function scene(i){
  else if(line.camera==='back')world.classList.add('detail');
  else world.classList.add('forward');
  $('tv').querySelector('.screen').textContent=current<6?'':current<11?'LE MONDE DES MASQUES':'UN AUTRE MONDE';
+ window.__intro3d?.show(current);
  if(dojo||garden){$('bubbles').replaceChildren();$('dojo-copy').textContent=line.text.replaceAll('{pseudo}',pseudo)}
  else bubble(line);
  $('prev').disabled=current<=0;$('next').textContent=current===lines.length-1?'Recommencer':'Continuer';
