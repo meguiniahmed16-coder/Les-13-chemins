@@ -40,6 +40,11 @@ export default function MembersAdmin(){
   try{const saved=await api<{invitation:Invite}>('invitations',{email,name});setNotice('Invitation enregistrée pour '+saved.invitation.email+'.');setName('');setEmail('');await load()}
   catch(e){setError(e instanceof Error?e.message:'Enregistrement impossible.')}finally{setBusy(false)}
  }
+ async function markSent(invite:Invite){
+  setBusy(true);setError('');setNotice('');
+  try{await api<{recorded:boolean}>('mark-sent',{email:invite.email});setNotice('Envoi manuel noté pour '+invite.email+'.');await load()}
+  catch(e){setError(e instanceof Error?e.message:'Impossible de noter cet envoi.')}finally{setBusy(false)}
+ }
  async function send(invite:Invite){
   if(busy)return;setBusy(true);setError('');setNotice('');
   try{const sent=await api<{sent:boolean}>('send',{email:invite.email});if(sent.sent){setNotice('Courriel accepté pour '+invite.email+'.');await load()}}
@@ -57,11 +62,11 @@ export default function MembersAdmin(){
    <p>{data?.mailConfigured?'L’envoi automatique est configuré.':'L’envoi automatique n’est pas configuré. Le bouton « Préparer le mail » ouvre un message prêt à envoyer depuis ta messagerie.'}</p>
    {data?.invitations.length?<div className="am-members-list">{data.invitations.map(i=><article key={i.id} className="am-member-row">
     <div><strong>{i.name}</strong><small>{i.email}</small><span className="am-member-state">{i.registered?'Compte créé':i.sent_at?'Invitation envoyée':'Invitation préparée'}</span></div>
-    <div className="am-member-actions"><button type="button" onClick={()=>draftEmail(i.email,i.name)} className="am-button am-button-secondary">Préparer le mail</button>{data.mailConfigured&&!i.sent_at&&!i.registered&&<button className="am-button" disabled={busy} type="button" onClick={()=>void send(i)}>Notifier par mail</button>}</div>
+    <div className="am-member-actions"><button type="button" onClick={()=>draftEmail(i.email,i.name)} className="am-button am-button-secondary">Préparer le mail</button>{!i.sent_at&&<button type="button" onClick={()=>void markSent(i)} className="am-button am-button-secondary" disabled={busy}>Marquer envoyé</button>}{data.mailConfigured&&!i.sent_at&&!i.registered&&<button className="am-button" disabled={busy} type="button" onClick={()=>void send(i)}>Notifier par mail</button>}</div>
    </article>)}</div>:<p>{loading?'Chargement…':'Aucune invitation enregistrée.'}</p>}
   </section>
   <section className="am-members-card"><h2>Comptes créés <small>{data?.members.length??'—'}</small></h2><p>Liste lue directement dans la base des membres du site. Les invitations ne créent pas de compte à la place des personnes.</p>
-   {data?.members.length?<div className="am-members-list">{data.members.map(m=><article className="am-member-row" key={m.id}><div><strong>{m.pseudo||m.name||'Profil à compléter'}</strong><small>{m.email}</small><span className="am-member-state">{m.provider==='email'?'Compte e-mail':m.provider==='google'?'Google':m.provider==='facebook'?'Facebook':m.provider}</span></div><small>Inscrit le {new Date(m.created).toLocaleDateString('fr-FR')}</small></article>)}</div>:<p>{loading?'Chargement…':'Aucun compte membre pour le moment.'}</p>}
+   {data?.members.length?<div className="am-members-list">{data.members.map(m=><article className="am-member-row" key={m.id}><div><strong>{m.pseudo||m.name||'Profil à compléter'}</strong><small>{m.email}</small><span className="am-member-state">{m.provider==='email'?'Compte e-mail':m.provider==='google'?'Google':m.provider==='facebook'?'Facebook':m.provider}</span></div><div className="am-member-actions"><button type="button" onClick={()=>draftEmail(m.email,m.name||m.pseudo)} className="am-button am-button-secondary">Message de bienvenue</button><small>Inscrit le {new Date(m.created).toLocaleDateString('fr-FR')}</small></div></article>)}</div>:<p>{loading?'Chargement…':'Aucun compte membre pour le moment.'}</p>}
   </section>
  </main>;
 }
