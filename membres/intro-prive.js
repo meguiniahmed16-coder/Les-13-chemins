@@ -38,7 +38,7 @@ function display(n){
   stage=scene;
   if(scene==='white')send('pose','white');
   if(scene==='sofa')send('pose','sofa');
-  if(scene==='dojo')send('exit');
+  if(scene==='dojo')send('pose','dojo');
   if(scene==='garden')send('garden');
  }
  if(scene==='white'||scene==='sofa')send('camera',shot);
