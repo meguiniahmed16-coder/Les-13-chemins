@@ -114,7 +114,7 @@ function coverMarianneWaist(actor){
  mat.onBeforeCompile=(shader,renderer)=>{
   previous(shader,renderer);
   shader.vertexShader='attribute vec3 introRest; varying vec3 introClothingRest;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nintroClothingRest=introRest;');
-  shader.fragmentShader='varying vec3 introClothingRest;\n'+shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\nfloat waistBand=step('+lo.toFixed(6)+',introClothingRest.y)*step(introClothingRest.y,'+hi.toFixed(6)+')*step(abs(introClothingRest.x),'+half.toFixed(6)+');\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.86,0.85,0.80),waistBand); diffuseColor.a=mix(diffuseColor.a,1.0,waistBand);');
+  shader.fragmentShader='varying vec3 introClothingRest;\n'+shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\nfloat waistBand=step('+lo.toFixed(6)+',introClothingRest.y)*step(introClothingRest.y,'+hi.toFixed(6)+')*step(abs(introClothingRest.x),'+half.toFixed(6)+');\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.0,1.0,1.0),waistBand); diffuseColor.a=mix(diffuseColor.a,1.0,waistBand);');
  };
  const oldKey=key();mat.customProgramCacheKey=()=>oldKey+'-intro-waist-'+lo.toFixed(5)+'-'+hi.toFixed(5);mat.needsUpdate=true;
 }
@@ -142,8 +142,10 @@ async function loadPeople(){
    if(h.uv)g.setAttribute('uv',new T.BufferAttribute(Float32Array.from(bytesTo(Uint16Array,files[h.uv]),v=>v/65535),2));
    g.setIndex(new T.BufferAttribute(bytesTo(Uint16Array,files[h.i]),1));
    g.computeBoundingSphere();
+   const label=String(h.name+' '+info[id].tex[h.tex]).toLowerCase();
+   const skinOrHair=/(skin|peau|face|visage|body|corps|hair|cheveu|iris|eye|oeil|brow|sourcil|cils|lash|lip|lèvre|mouth|dent|teeth|ongle|nail|oreille|ear|nez|nose)/i.test(label);
    const defaultMaterial=new T.MeshStandardMaterial({
-    map:texture(info[id].tex[h.tex]),
+    map:skinOrHair?texture(info[id].tex[h.tex]):null,
     color:0xffffff,
     roughness:.88,
     alphaTest:/hair|short02|lash|brow/.test(h.name)?.36:.12,
