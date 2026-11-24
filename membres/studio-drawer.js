@@ -163,7 +163,21 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   addTool('Le départ à deux',()=>{toggle(false);openDeparture()});
   advancedSoftware.append(tools);
   if(options.privateURL){
-   const link=make('a','Atelier avancé et modèles de référence');
+   const expand=make('button','Afficher l’atelier avancé dans ce logiciel');expand.type='button';
+   expand.setAttribute('aria-expanded','false');
+   const holder=make('div');holder.className='studio-embedded';holder.hidden=true;
+   expand.onclick=()=>{
+    holder.hidden=!holder.hidden;
+    expand.setAttribute('aria-expanded',String(!holder.hidden));
+    expand.textContent=holder.hidden?'Afficher l’atelier avancé dans ce logiciel':'Masquer l’atelier avancé';
+    if(!holder.hidden&&!holder.firstChild){
+     const iframe=make('iframe');iframe.title='Atelier avancé de personnalisation et modèles de référence';
+     iframe.setAttribute('loading','lazy');iframe.setAttribute('allow','fullscreen');
+     iframe.src=options.privateURL;holder.append(iframe);
+    }
+   };
+   advancedSoftware.append(expand,holder);
+   const link=make('a','Ouvrir cet atelier dans une nouvelle fenêtre');
    link.href=options.privateURL;link.target='_blank';link.rel='noopener';
    advancedSoftware.append(link);
   }
