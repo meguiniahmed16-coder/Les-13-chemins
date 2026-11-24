@@ -644,6 +644,15 @@ document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('
 const help=$('help');$('helpButton').onclick=()=>help.showModal();$('closeHelp').onclick=()=>help.close();help.addEventListener('click',e=>{if(e.target===help)help.close()});
 function updateCam(dt){
  focusShot=null;
+ if(introDirector?.active){
+   const smooth=1-Math.exp(-Math.max(0,dt)*introDirector.speed);
+   cam.position.lerp(introDirector.position,smooth);
+   cam.lookAt(introDirector.focus);
+   if(cam.fov!==introDirector.fov){cam.fov=introDirector.fov;cam.updateProjectionMatrix();}
+   cam.updateMatrixWorld();
+   return;
+ }
+
  const a=player(),out=where==='jardin',w=view.clientWidth,h=view.clientHeight;
  if(out&&revealStart!==null){const elapsed=(performance.now()-revealStart)/1000;const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const t=reduced?(elapsed>1.35?1:0):eased((elapsed-1.05)/2.65);
@@ -1538,6 +1547,87 @@ reunionAction.onclick=()=>{
  }
  canvas.focus({preventScroll:true});
 };
+
+
+/* Author-only 3D cinematography: controls existing, detailed V27 actors and the
+   existing room/garden. This code is entirely dormant on the visitor experience. */
+const introRequested=new URLSearchParams(location.search).get('intro3d')==='1'&&authorRoom;
+let introAuthorized=false;
+let introDirector=null;
+const introFloor=new T.Mesh(new T.PlaneGeometry(90,90),new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide}));
+introFloor.rotation.x=-Math.PI/2;introFloor.position.y=-.026;introFloor.receiveShadow=true;introFloor.visible=false;scene.add(introFloor);
+let introCurrent='room';
+function introPose(mode){
+ if(!introAuthorized)return;
+ keys.clear();releaseStick();goal=null;seatRoute=null;conversation=null;
+ travel.reset();detail.reset();releaseSeatRoute();if(sitting)getUp();if(encounter.active)leaveReunion();
+ if(where==='jardin')returnHome();
+ const m=actors.m,f=actors.f;m.root.visible=true;f.root.visible=true;
+ introCurrent=mode;
+ if(mode==='white'){
+   indoor.visible=false;outdoor.visible=false;introFloor.visible=true;
+   scene.background=new T.Color(0xffffff);scene.fog=new T.FogExp2(0xffffff,.009);
+   for(const [a,x] of [[m,-.76],[f,.76]]){
+     a.root.position.set(x,0,0);a.root.rotation.y=0;
+     a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0);
+   }
+ }else{
+   indoor.visible=true;outdoor.visible=false;introFloor.visible=false;
+   scene.background=new T.Color(0xe2d7c2);scene.fog=new T.FogExp2(0xe2e8db,.014);
+   const sm=seats.find(q=>q.id==='sofa1'),sf=seats.find(q=>q.id==='sofa3');
+   for(const [a,chair] of [[m,sm],[f,sf]]){
+     a.root.position.set(...feetAt(chair,a));a.root.rotation.y=chair.yaw;
+     a.sit=1;a.speed=0;a.stamp='';animateBody(a,0,chair);
+   }
+ }
+ // Keep original 3D character meshes and facial features; never use primitive stand-ins.
+ orbit.follow=false;introDirector??={active:true,position:new T.Vector3(0,1.55,3.1),focus:new T.Vector3(0,1.15,0),speed:.94,fov:48};
+ introDirector.active=true;
+ introShot('face');
+}
+function introShot(kind){
+ if(!introAuthorized||!introDirector)return;
+ const a=actors.m.root.position,b=actors.f.root.position,mid=a.clone().lerp(b,.5),white=introCurrent==='white';
+ const focus=new T.Vector3(mid.x,white?1.03:1.12,mid.z),from=new T.Vector3();
+ if(kind==='tv'){
+  // Reverse angle behind the existing seated actors, for the discussion of masks.
+  from.set(white?mid.x:mid.x-2.95,1.52,white?mid.z-3.25:mid.z);
+ }else if(kind==='wide'){
+  from.set(white?mid.x:mid.x+3.20,2.03,white?mid.z+4.70:mid.z);
+ }else if(kind==='close'){
+  from.set(white?mid.x+.35:mid.x+2.48,1.37,white?mid.z+2.18:mid.z);
+ }else{
+  from.set(white?mid.x:mid.x+3.65,1.59,white?mid.z+3.35:mid.z);
+ }
+ introDirector.position.copy(from);
+ introDirector.focus.copy(focus);introDirector.speed=kind==='tv'?.70:1.17;introDirector.fov=kind==='wide'?51:kind==='close'?37:45;
+}
+function introExit(){
+ if(!introAuthorized)return;
+ if(introDirector)introDirector.active=false;
+ introFloor.visible=false;indoor.visible=true;outdoor.visible=true;
+ if(where==='salon'){actorHome();setLocation(false);resetView();}
+}
+window.addEventListener('message',event=>{
+ if(!introAuthorized||event.origin!==location.origin||event.source!==window.parent)return;
+ const message=event.data;if(message?.scope!=='maison-intro-v27')return;
+ try{
+   if(message.action==='pose'&&['white','sofa'].includes(message.value))introPose(message.value);
+   if(message.action==='camera'&&['face','tv','wide','close'].includes(message.value))introShot(message.value);
+   if(message.action==='garden'){introExit();equip('pin');}
+   if(message.action==='exit')introExit();
+ }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:String(error?.message||error)},location.origin);}
+});
+if(introRequested){
+ Promise.all(ready).then(async()=>{
+   try{
+    const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok||(await response.json()).author==null)return;
+    introAuthorized=true;introPose('white');
+    window.parent.postMessage({scope:'maison-intro-v27',type:'ready'},location.origin);
+   }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:'Session auteur non vérifiable'},location.origin);}
+ });
+}
 
 window.salonV27=member;
 ready.push(Promise.all(ready).then(()=>member.initialize()));
