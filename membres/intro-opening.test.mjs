@@ -42,7 +42,7 @@ test('the two standing actors actually face one another, and not outwards',()=>{
   assert.ok(front.dot(toward)>.999,'Actor forward direction must point at partner');
   assert.equal(self.sit,0);
  }
- assert.ok(Math.abs(a.pos.distanceTo(b.pos)-2.56)<1e-9);
+ assert.ok(Math.abs(Math.hypot(a.pos.x-b.pos.x,a.pos.z-b.pos.z)-2.56)<1e-9);
 });
 test('dialogue reverse shots stay on one side of the actors and face the speaker',()=>{
  const code=source.slice(source.indexOf('function exchangeFrame('),source.indexOf('function discoveryFrame('));

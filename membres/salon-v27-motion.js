@@ -357,8 +357,13 @@ function roomPose(t){
    let desired=normal(mix3(relaxed,restingAim,s));
    if(handLift)desired=normal(mix3(desired,plus(axis,[side*.11,.16,.12]),handLift));
    const angle=Math.acos(clamp(dot(axis,desired),-1,1));
-   const aim=normal(mix3(axis,desired,Math.min(1,.35/Math.max(.001,angle))));
-   end=mapHand(finger,palm,aim,s||handLift?normal(mix3(rotated,palmDown,.34)):rotated);
+   // On a measured armrest the palm rests flat while the wrist bends. The
+   // general salon's small gesture limit would leave the fingers pointing
+   // into the upholstery even when the wrist target is on its upper surface.
+   const wristLimit=.35+(introArms?.65*s*(1-handLift):0);
+   const aim=normal(mix3(axis,desired,Math.min(1,wristLimit/Math.max(.001,angle))));
+   const palmBlend=introArms?.34+.66*s*(1-handLift):.34;
+   end=mapHand(finger,palm,aim,s||handLift?normal(mix3(rotated,palmDown,palmBlend)):rotated);
 
   }
   bones[first+2]=transformAt(end,l.c,tip);

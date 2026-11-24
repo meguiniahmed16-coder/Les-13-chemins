@@ -325,29 +325,50 @@ async function decodeAhmed(buffer){
 function setPending(on){pending=on;for(const id of ['next','prev','skip','auto','personalize'])$(id).disabled=on||!ready||(id==='prev'&&step<=0);$('scene-wait').hidden=!on;}
 const whiteFloor=new T.Group();
 const seamlessFloor=new T.Mesh(new T.PlaneGeometry(180,180),new T.MeshBasicMaterial({color:0xffffff,toneMapped:false}));
-seamlessFloor.rotation.x=-Math.PI/2;seamlessFloor.position.y=-.021;whiteFloor.add(seamlessFloor);
+seamlessFloor.rotation.x=-Math.PI/2;seamlessFloor.position.y=-.003;whiteFloor.add(seamlessFloor);
 const shadowFloor=new T.Mesh(new T.PlaneGeometry(180,180),new T.ShadowMaterial({opacity:.12}));
-shadowFloor.rotation.x=-Math.PI/2;shadowFloor.position.y=-.018;shadowFloor.receiveShadow=true;whiteFloor.add(shadowFloor);
+shadowFloor.rotation.x=-Math.PI/2;shadowFloor.position.y=-.001;shadowFloor.receiveShadow=true;whiteFloor.add(shadowFloor);
 sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:.5,far:25});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.00025;
 const seatAnchors=new Map();
 function findChild(parent,pattern){let result;parent.traverse(o=>{if(!result&&pattern.test(o.name))result=o;});return result;}
 function bounds(o){return new T.Box3().setFromObject(o);}
+const introChairScale=.80;
+function fitOriginalChair(chair){
+ // Keep the supplied chair and its floor position; fit its dimensions to the
+ // original actors so the front cushion stays below their supported thighs.
+ chair.updateWorldMatrix(true,true);
+ const pivot=bounds(chair).getCenter(new T.Vector3());pivot.y=0;
+ const world=new T.Matrix4().makeTranslation(pivot.x,pivot.y,pivot.z)
+  .multiply(new T.Matrix4().makeScale(introChairScale,introChairScale,introChairScale))
+  .multiply(new T.Matrix4().makeTranslation(-pivot.x,-pivot.y,-pivot.z))
+  .multiply(chair.matrixWorld);
+ if(chair.parent)world.premultiply(chair.parent.matrixWorld.clone().invert());
+ world.decompose(chair.position,chair.quaternion,chair.scale);
+ chair.userData.introScale=introChairScale;chair.updateWorldMatrix(false,true);
+}
 
 function measureArmrests(chair,point,forward){
  const side=new T.Vector3(forward.z,0,-forward.x).normalize();
+ const scale=chair.userData.introScale||1,normalMatrix=new T.Matrix3(),normal=new T.Vector3();
  const result=[];
  for(const sign of [-1,1]){
   let best=null,score=Infinity;
-  for(const dx of [.27,.31,.35,.39,.43,.47])for(const dz of [.06,.12,.18,.24,.30]){
+  for(const lateral of [.35,.37,.39,.41,.43,.45])for(const depth of [.04,.08,.12,.16,.20]){
+   const dx=lateral*scale,dz=depth*scale;
    const p=point.clone().addScaledVector(side,sign*dx).addScaledVector(forward,dz);
    const ray=new T.Raycaster(new T.Vector3(p.x,1.46,p.z),new T.Vector3(0,-1,0));
    const hits=ray.intersectObject(chair,true);
-   const hit=hits.find(h=>h.point.y>=point.y+.095&&h.point.y<=point.y+.39);
+   // A wrist must target the padded upper surface, not the low inner flank.
+   const hit=hits.find(h=>{
+    if(h.point.y<point.y+.18*scale||h.point.y>point.y+.39*scale||!h.face)return false;
+    normalMatrix.getNormalMatrix(h.object.matrixWorld);normal.copy(h.face.normal).applyNormalMatrix(normalMatrix);
+    return normal.y>.58;
+   });
    if(!hit)continue;
-   const cost=Math.abs(dx-.34)*2+Math.abs(dz-.18)+Math.abs(hit.point.y-(point.y+.21))*.7;
+   const cost=Math.abs(dx-.40*scale)*2+Math.abs(dz-.10*scale)+Math.abs(hit.point.y-(point.y+.24*scale));
    if(cost<score){score=cost;best=hit.point.clone();}
   }
-  result.push(best||point.clone().addScaledVector(side,sign*.36).addScaledVector(forward,.17).add(new T.Vector3(0,.19,0)));
+  result.push(best||point.clone().addScaledVector(side,sign*.40*scale).addScaledVector(forward,.10*scale).add(new T.Vector3(0,.24*scale,0)));
  }
  return result;
 }
@@ -362,7 +383,7 @@ function measureSeats(){
     const cushion=findChild(chair,/^Cushion_low/i),front=findChild(chair,/^FeetFront/i),back=findChild(chair,/^FeetBack/i);
     if(cushion&&front&&back){
      const cb=bounds(cushion),center=cb.getCenter(new T.Vector3()),dir=bounds(front).getCenter(new T.Vector3()).sub(bounds(back).getCenter(new T.Vector3()));dir.y=0;
-     if(dir.lengthSq()>.001){dir.normalize();const c=center.clone().addScaledVector(dir,-.055);const ray=new T.Raycaster(new T.Vector3(c.x,cb.max.y+.6,c.z),new T.Vector3(0,-1,0));const hit=ray.intersectObject(cushion,true)[0];c.y=(hit?.point.y??cb.max.y)+.012;if(Number.isFinite(c.y)){contact=c;forward=dir;}}
+     if(dir.lengthSq()>.001){dir.normalize();const c=center.clone().addScaledVector(dir,-.055*(chair.userData.introScale||1));const ray=new T.Raycaster(new T.Vector3(c.x,cb.max.y+.6,c.z),new T.Vector3(0,-1,0));const hit=ray.intersectObject(cushion,true)[0];c.y=(hit?.point.y??cb.max.y)+.012;if(Number.isFinite(c.y)){contact=c;forward=dir;}}
     }
    }
   }catch(e){remember('Mesure fauteuil',e.message||e);}
@@ -384,7 +405,9 @@ async function loadWhite(){
   if(o.isMesh){o.castShadow=true;o.receiveShadow=true}
  });
  television=chairs.find(o=>/^TV[\s_]284(?:[\s_]|$)/i.test(o.name));
- scene.add(whiteFloor);chairs.forEach(c=>c.visible=true);measureSeats();chairs.forEach(c=>c.visible=false);room.visible=false;room.removeFromParent();setProgress('white',1);canvasHost.classList.add('room-ready');
+ scene.add(whiteFloor);chairs.forEach(c=>c.visible=true);
+ for(const chair of chairs)if(/^(BLUE|RED)[\s_]*CHAIR/i.test(chair.name))fitOriginalChair(chair);
+ measureSeats();chairs.forEach(c=>c.visible=false);room.visible=false;room.removeFromParent();setProgress('white',1);canvasHost.classList.add('room-ready');
 }
 function prepareDojo(){
  if(dojo)return Promise.resolve(dojo);
@@ -445,7 +468,7 @@ async function loadAhmed(){
  }
  showBootStage('Assemblage du personnage d’Ahmed…');
  const asset=await decodeAhmed(all.buffer);
- const root=new T.Group(),body=asset.scene;root.add(body);root.name='Ahmed';root.position.set(-.78,0,.42);root.rotation.y=Math.PI;scene.add(root);
+ const root=new T.Group(),body=asset.scene;root.add(body);root.name='Ahmed';root.position.set(-.78,.0206,.42);root.rotation.y=Math.PI;scene.add(root);
  const bones=new Map(),mouth=[];
  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
  let pants;
@@ -553,7 +576,7 @@ function prepareSeats(){seatsReady=people.length===2&&people.every(p=>p.wardrobe
 async function preloadNext(){try{await prepareSeats();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojo();}catch(e){remember('Préchargement dojo',e.message);}}
 // Every character is authored with local +Z pointing forward.
 function facingYaw(from,to){return Math.atan2(to.x-from.x,to.z-from.z);}
-function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,0,-1.08);}
+function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,id==='m'?.0206:0,-1.08);}
 function openingLayout(id){const pos=openingPosition(id),other=openingPosition(id==='m'?'f':'m');return {pos,yaw:facingYaw(pos,other),sit:0};}
 function turnDelta(from,to){return Math.atan2(Math.sin(to-from),Math.cos(to-from));}
 function chairLayout(person){
@@ -561,19 +584,25 @@ function chairLayout(person){
  const a=seatAnchors.get(person.id);if(!a)throw Error('Fauteuil original manquant');
  // The reference solver expects the origin to stay in front of the seat:
  // knees bend and pelvis travels backwards, feet remain supported on the floor.
- const scale=person.id==='m'?1.075:1.04,gap=.49,yaw=a.yaw;
- const pos=a.point.clone().addScaledVector(a.forward,gap);pos.y=0;
+ const scale=person.id==='m'?1.075:1.04,footDistance=.49,pelvisRetreat=.43,yaw=a.yaw;
+ // These clearances were measured on both complete trouser meshes against the
+ // original cushion, including its raised front edge, throughout the descent.
+ const supportLift=person.id==='m'?.038:.030;
+ const garment=person.parts.find(p=>p.source?.binding)?.obj;
+ const modelOffsetY=garment?garment.getWorldPosition(new T.Vector3()).y-person.root.position.y:0;
+ const pos=a.point.clone().addScaledVector(a.forward,footDistance);pos.y=person.id==='m'?.0206:0;
  const arms=a.arms.map(p=>{
-  const v=p.clone().sub(pos).applyAxisAngle(new T.Vector3(0,1,0),-yaw).multiplyScalar(100/scale);
-  return [v.x,v.y+3.0,v.z-3.5];
+  const v=p.clone().sub(pos);v.y-=modelOffsetY;
+  v.applyAxisAngle(new T.Vector3(0,1,0),-yaw).multiplyScalar(100/scale);
+  return [v.x,v.y+3.5,v.z-3.5];
  }).sort((a,b)=>a[0]-b[0]);
- const seat={id:'intro-'+person.id,height:100*a.point.y/scale,gap:100*gap/scale,x:700,z:-800,yaw,introArms:arms};
+ const seat={id:'intro-'+person.id,height:100*(a.point.y+supportLift-pos.y)/scale,gap:100*pelvisRetreat/scale,x:700,z:-800,yaw,introArms:arms};
  person.introSeat=seat;person.chairLayout={pos:pos.clone(),yaw,sit:1};
  return {pos,yaw,sit:1};
 }
 function targetLayout(person,seated,dojoMode=false,nearSeats=false){
  const i=person.id==='f'?1:-1;
- if(dojoMode)return {pos:new T.Vector3(i*.9,0,1.5),yaw:Math.PI,sit:0};
+ if(dojoMode)return {pos:new T.Vector3(i*.9,person.id==='m'?.0206:0,1.5),yaw:Math.PI,sit:0};
  if(seated||nearSeats){const target=chairLayout(person);return {...target,sit:seated?1:0};}
  return openingLayout(person.id);
 }
