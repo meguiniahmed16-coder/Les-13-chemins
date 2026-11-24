@@ -2,6 +2,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import './logiciel.css';
 
 const tools=[
+ {id:'prologue',label:'Cinématique',title:'La salle blanche · cinématique',url:'/membres/intro-prive.html?auteur=atelier',description:'Prologue interactif avec les vrais modèles V27 et la caméra narrative.'},
  {id:'personnage',label:'Personnages',title:'Personnaliser le personnage',url:'/membre.html?auteur=atelier#avatar',description:'Le véritable personnage et les réglages du salon V27, avec les options enregistrables.'},
  {id:'scene',label:'Scène 3D',title:'Explorer et mettre en scène',url:'/membre.html?auteur=atelier#salon',description:'Le salon et le jardin 3D existants, les joysticks, les caméras et les interactions.'},
  {id:'reference',label:'Atelier privé',title:'Logiciel privé de référence',url:'/membre-atelier.html?auteur=atelier',description:'Le logiciel de l’auteur, avec sa référence 3D originale.'}
