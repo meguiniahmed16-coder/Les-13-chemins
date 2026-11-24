@@ -135,8 +135,19 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
    advanced.classList.add('studio-advanced');
    appearance(advanced);
   }else{
-   const quick=folder(pane,'Tenues et vêtements',true);
-   wardrobe(quick);
+   const quick=folder(pane,'Choisir une tenue',true);
+   for(const [id,name,outfit] of looks){
+    const b=make('button',name);b.type='button';
+    b.onclick=()=>choose({...look,outfit:{...outfit},denim:false,tortoise:false});
+    quick.append(b);
+    controls.push(()=>b.setAttribute('aria-pressed',String(
+      Object.keys(outfit).length===Object.keys(look.outfit).length &&
+      Object.entries(outfit).every(([slot,item])=>look.outfit[slot]===item)
+    )));
+   }
+   const advanced=folder(pane,'Options avancées · garde-robe complète');
+   advanced.classList.add('studio-advanced');
+   wardrobe(advanced);
   }
   const advancedSoftware=folder(pane,'Options avancées · studio et création');
   advancedSoftware.classList.add('studio-advanced');
