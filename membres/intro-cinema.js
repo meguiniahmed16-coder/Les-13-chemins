@@ -74,7 +74,7 @@ function makeDojo(){
  const back=cube(dojo,18,5.5,.15,mat('#f0e6d5'),0,2.5,7.25);
  for(let x=-7.5;x<8;x+=2.6){cube(dojo,.13,4.8,.25,wood,x,2.6,7.13);cube(dojo,2.40,.1,.25,wood,x+1.2,3.7,7.11)}
  for(const z of [-4,0,4])cube(dojo,18,.20,.17,wood,0,5.4,z);
- for(let z=-5;z<6;z+=3.3)cylinder(dojo,.28,.32,.35,mat('#f8dcaa',{roughness:1}),0,5.12,z);
+ for(let z=-5;z<6;z+=3.3)cylinder(dojo,.28,.32,.35,mat('#f8dcaa',1),0,5.12,z);
  dojo.add(new THREE.AmbientLight('#ffe9ce',.45));
 }makeDojo();dojo.visible=false;
 function makeGarden(){
@@ -92,27 +92,27 @@ function makeGarden(){
  const flowers=[mat('#ffc9d3'),mat('#d6b9ef'),mat('#f4e49d')];for(let i=0;i<155;i++){const x=(Math.sin(i*78.23)*17),z=(Math.cos(i*19.12)*16)-9;if(Math.abs(x)<1.5)continue;ball(garden,.08,.08,.08,flowers[i%3],x,.18,z)}
 }makeGarden();garden.visible=false;
 const butterflies=[];for(let i=0;i<16;i++){const g=group(garden),b=mat(i%2?'#faf6e8':'#fce0ac',.55,{side:THREE.DoubleSide});const left=object(new THREE.PlaneGeometry(.24,.32),b,g,-.14,0,0);const right=object(new THREE.PlaneGeometry(.24,.32),b,g,.14,0,0);left.rotation.y=-.4;right.rotation.y=.4;g.position.set((i%7-3)*1.7,1.2+(i%3)*.5,-4-(i%5)*2);butterflies.push({g,left,right,phase:i*2.4})}
-let targetCamera={angle:Math.PI,height:2.9,radius:5.2},theta=Math.PI,height=2.9,radius=5.2,orbit={angle:Math.PI,height:2.9,radius:5.2},worldPlayer=new THREE.Vector3(0,0,2.0);
+let targetCamera={angle:0,height:2.9,radius:5.2},theta=0,height=2.9,radius=5.2,orbit={angle:0,height:2.9,radius:5.2},worldPlayer=new THREE.Vector3(0,0,2.0);
 const text=[
- ['Narrateur','Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?','white',Math.PI],
- ['Narrateur','Est-ce celui qui me ressemble ? Celui qui me résiste ?','white',Math.PI],
- ['Narrateur','Ou bien celui dont la présence change quelque chose en moi ?','white',Math.PI],
- ['Narrateur','Nous n’avons pas besoin de répondre tout de suite. Viens.','white',Math.PI],
- ['Narrateur','Asseyons-nous.','seat',Math.PI],
- ['Narrateur','Voici le monde tel que tu l’as connu, {pseudo}.','seat',0],
- ['Narrateur','Un monde de masques. Un monde d’illusions.','seat',0],
- ['Narrateur','Un monde où tu as joué un personnage.','seat',0],
- ['Narrateur','Un monde où tous les matins tu te déguises pour aller travailler.','seat',0],
- ['Narrateur','Où tu ne rencontres que les masques des autres.','seat',0],
- ['Narrateur','Il existe un autre monde.','seat',Math.PI],
- ['Narrateur','Ici tu peux prendre le risque d’être toi-même.','seat',Math.PI],
- ['Narrateur','Tu peux aussi te déguiser. Personne ne te jugera.','seat',Math.PI],
- ['Narrateur','Suis-moi.','seat',Math.PI],
- ['Narrateur','Je dois t’expliquer comment ce monde fonctionne.','dojo',Math.PI],
- ['Narrateur','Ce monde est en construction. Et toi, tu participeras à sa construction.','dojo',Math.PI],
- ['Narrateur','Tu peux te déplacer, regarder autour de toi, modifier ton personnage et choisir son apparence.','dojo',Math.PI],
- ['Narrateur','Nous n’avons encore rien terminé. À toi de l’explorer.','dojo',Math.PI],
- ['Narrateur','Voici le jardin. Là-bas, la maison.','garden',Math.PI]
+ ['Narrateur','Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?','white',0],
+ ['Narrateur','Est-ce celui qui me ressemble ? Celui qui me résiste ?','white',0],
+ ['Narrateur','Ou bien celui dont la présence change quelque chose en moi ?','white',0],
+ ['Narrateur','Nous n’avons pas besoin de répondre tout de suite. Viens.','white',0],
+ ['Narrateur','Asseyons-nous.','seat',0],
+ ['Narrateur','Voici le monde tel que tu l’as connu, {pseudo}.','seat',Math.PI],
+ ['Narrateur','Un monde de masques. Un monde d’illusions.','seat',Math.PI],
+ ['Narrateur','Un monde où tu as joué un personnage.','seat',Math.PI],
+ ['Narrateur','Un monde où tous les matins tu te déguises pour aller travailler.','seat',Math.PI],
+ ['Narrateur','Où tu ne rencontres que les masques des autres.','seat',Math.PI],
+ ['Narrateur','Il existe un autre monde.','seat',0],
+ ['Narrateur','Ici tu peux prendre le risque d’être toi-même.','seat',0],
+ ['Narrateur','Tu peux aussi te déguiser. Personne ne te jugera.','seat',0],
+ ['Narrateur','Suis-moi.','seat',0],
+ ['Narrateur','Je dois t’expliquer comment ce monde fonctionne.','dojo',0],
+ ['Narrateur','Ce monde est en construction. Et toi, tu participeras à sa construction.','dojo',0],
+ ['Narrateur','Tu peux te déplacer, regarder autour de toi, modifier ton personnage et choisir son apparence.','dojo',0],
+ ['Narrateur','Nous n’avons encore rien terminé. À toi de l’explorer.','dojo',0],
+ ['Narrateur','Voici le jardin. Là-bas, la maison.','garden',0]
 ];
 function message(line){bubble.replaceChildren();const who=document.createElement('b'),p=document.createElement('p');who.textContent=line[0];p.textContent=line[1].replaceAll('{pseudo}',alias);bubble.append(who,p);bubble.animate([{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:450,fill:'forwards'});}
 function navigate(index){
@@ -124,7 +124,7 @@ function navigate(index){
  else if(s==='garden'){garden.add(player);player.position.set(0,0,2);scene.background.set('#b9e4df');scene.fog.color.set('#b9e4df');scene.fog.density=.007}
  else{whiteRoom.add(narrator,player);scene.background.set('#fffefd');scene.fog.color.set('#fffefd');scene.fog.density=.009}
  targetCamera.angle=line[3];targetCamera.radius=s==='garden'?9:s==='dojo'?7:5.2;targetCamera.height=s==='garden'?3.1:s==='dojo'?2.8:2.9;
- status.textContent=(step+1)+' / '+text.length+' · '+(s==='seat'?'Salle blanche · les fauteuils':s==='dojo'?'Dojo':s==='garden'?'Jardin':'Salle blanche');
+ bubble.hidden=false;status.textContent=(step+1)+' / '+text.length+' · '+(s==='seat'?'Salle blanche · les fauteuils':s==='dojo'?'Dojo':s==='garden'?'Jardin':'Salle blanche');
  message(line);
  $('next').textContent=step===text.length-1?'Revoir depuis le début':'Continuer';
  $('prev').disabled=step===0;controls.hidden=!(s==='dojo'||s==='garden');
