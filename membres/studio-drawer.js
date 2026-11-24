@@ -5,7 +5,7 @@ const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textCont
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
 export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}){
  const drawer=root.querySelector('.studio-drawer'),toggleButton=root.querySelector('.options-toggle');
- drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Apparence</button><button type="button">Garde-robe</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
+ drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Mon personnage</button><button type="button">Tous les vêtements</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
  const pane=drawer.querySelector('.studio-scroll'),message=drawer.querySelector('[role=status]'),save=drawer.querySelector('.save');
  const tabs=[...drawer.querySelectorAll('.switch button')];let mode=0,look,options={},current,revision=0,writing=false;
  function toggle(open){if(drawer.hidden===!open)return;drawer.hidden=!open;toggleButton.setAttribute('aria-expanded',String(open));onToggle(open,mode);}
@@ -128,26 +128,40 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
  function render(){
   if(!look)return;controls.length=0;pane.replaceChildren();
   tabs.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===mode)));
-  // Keep the historical editor and its saves intact; only reorganise its controls.
+  // One intuitive place for appearance, outfit and saved character. Nothing
+  // from the original V27 catalog is removed; full detail stays in accordions.
   if(mode===0){
    basicAppearance(pane);
-   const advanced=folder(pane,'Options avancées · visage et morphologie');
-   advanced.classList.add('studio-advanced');
-   appearance(advanced);
-  }else{
-   const quick=folder(pane,'Choisir une tenue',true);
+   const outfitQuick=folder(pane,'Ma tenue · modèles complets',true);
+   outfitQuick.classList.add('studio-quick-outfits');
    for(const [id,name,outfit] of looks){
-    const b=make('button',name);b.type='button';
-    b.onclick=()=>choose({...look,outfit:{...outfit},denim:false,tortoise:false});
-    quick.append(b);
-    controls.push(()=>b.setAttribute('aria-pressed',String(
+    const button=make('button',name);button.type='button';
+    button.onclick=()=>choose({...look,outfit:{...outfit},denim:false,tortoise:false});
+    outfitQuick.append(button);
+    controls.push(()=>button.setAttribute('aria-pressed',String(
       Object.keys(outfit).length===Object.keys(look.outfit).length &&
-      Object.entries(outfit).every(([slot,item])=>look.outfit[slot]===item)
+      Object.entries(outfit).every(([slot,piece])=>look.outfit[slot]===piece)
     )));
    }
-   const advanced=folder(pane,'Options avancées · garde-robe complète');
-   advanced.classList.add('studio-advanced');
-   wardrobe(advanced);
+   const advancedFace=folder(pane,'Détails du visage et du corps');
+   advancedFace.classList.add('studio-advanced');
+   appearance(advancedFace);
+   const advancedWardrobe=folder(pane,'Tous les vêtements et accessoires');
+   advancedWardrobe.classList.add('studio-advanced');
+   wardrobe(advancedWardrobe);
+  }else{
+   const outfitQuick=folder(pane,'Choisir une tenue complète',true);
+   for(const [id,name,outfit] of looks){
+    const button=make('button',name);button.type='button';
+    button.onclick=()=>choose({...look,outfit:{...outfit},denim:false,tortoise:false});
+    outfitQuick.append(button);
+    controls.push(()=>button.setAttribute('aria-pressed',String(
+      Object.keys(outfit).length===Object.keys(look.outfit).length &&
+      Object.entries(outfit).every(([slot,piece])=>look.outfit[slot]===piece)
+    )));
+   }
+   const full=folder(pane,'Composer ma tenue · tous les articles',true);
+   wardrobe(full);
   }
   const advancedSoftware=folder(pane,'Options avancées · studio et création');
   advancedSoftware.classList.add('studio-advanced');
