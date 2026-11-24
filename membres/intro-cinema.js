@@ -3,12 +3,13 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
-const canvasHost=$('viewport'),bubble=$('bubble'),status=$('status');
+const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
 renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+$('scene')?.remove();
 const canvas=renderer.domElement;canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;';
 canvasHost.prepend(canvas);
 const scene=new T.Scene();scene.background=new T.Color(0xffffff);
@@ -220,14 +221,14 @@ function showScene(index){
  showMessage(line);
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+(step>=4?'les masques':'la rencontre');
  $('prev').disabled=step<=0;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':'Continuer';
- $('controls').hidden=!isDojo;$('save').hidden=!isDojo;$('exit').hidden=true;
+ $('joystick').hidden=!isDojo;$('personalize').hidden=!isDojo;
  if(autoplay&&step<14){
   clearTimeout(autoTimer);autoTimer=setTimeout(()=>showScene(step+1),step===5?6600:4800);
  }else if(autoplay){autoplay=false;$('auto').textContent='Lecture cinéma'}
 }
 function startGarden(){
- autoplay=false;clearTimeout(autoTimer);stage='garden';$('garden-original').hidden=false;
- bubble.hidden=true;$('controls').hidden=true;$('save').hidden=true;$('exit').hidden=false;
+ autoplay=false;clearTimeout(autoTimer);stage='garden';$('garden').hidden=false;
+ bubble.hidden=true;$('joystick').hidden=true;$('personalize').hidden=true;
  status.textContent='Le jardin et la maison 3D du salon V27';
  if(gardenLoaded)return;gardenLoaded=true;
  const frame=$('garden-frame');
@@ -251,24 +252,24 @@ function startGarden(){
 function next(){if(stage==='garden')return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
 function automatic(on){autoplay=on;clearTimeout(autoTimer);$('auto').textContent=on?'Pause cinéma':'Lecture cinéma';
  if(on)autoTimer=setTimeout(next,4800)}
-$('start').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;showScene(0);automatic(true)};
+$('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;showScene(0);automatic(true)};
 $('next').onclick=()=>{automatic(false);next()};
-$('prev').onclick=()=>{automatic(false);showScene(Math.max(0,step-1));$('garden-original').hidden=true};
+$('prev').onclick=()=>{automatic(false);showScene(Math.max(0,step-1));$('garden').hidden=true};
 $('skip').onclick=()=>{automatic(false);$('welcome').hidden=true;showScene(14)};
 $('auto').onclick=()=>automatic(!autoplay);
-$('save').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
+$('personalize').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
 $('exit').onclick=()=>location.assign('/membre.html?auteur=atelier#salon');
-$('bug').onclick=()=>{$('report-scene').value=stage+' · '+(step+1);$('count').textContent=problems.length+' entrées';$('bug-dialog').showModal()};
-$('cancel-report').onclick=()=>$('bug-dialog').close();
-$('add-report').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-kind').value,text);$('report-note').value='';$('count').textContent=problems.length+' entrées'}};
-$('export-report').onclick=()=>{
+$('report-open').onclick=()=>{$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
+$('report-close').onclick=()=>$('report-dialog').close();
+$('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
+$('report-export').onclick=()=>{
  const data={created:new Date().toISOString(),experience:'Prologue original GLB et personnages V27',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download='rapport-maison-des-rencontres-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
 };
 function resize(){const w=canvasHost.clientWidth,h=canvasHost.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(canvasHost);resize();
-const stick=$('pad'),nub=$('nub');
+const stick=$('joystick'),nub=$('nub');
 function stickMove(e){const r=stick.getBoundingClientRect();
  joystick.x=T.MathUtils.clamp((e.clientX-r.left-r.width/2)/(r.width*.4),-1,1);
  joystick.y=T.MathUtils.clamp((e.clientY-r.top-r.height/2)/(r.height*.4),-1,1);
@@ -313,16 +314,16 @@ async function authorize(){
  const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(17000)});
  if(!response.ok)throw Error('La connexion administrateur est nécessaire.');
  const me=await response.json();if(!me.author)throw Error('Réservé au compte auteur.');
- alias=String(me.pseudo||'Voyageur').slice(0,40);$('pseudo').value=alias;authorized=true;$('locked').hidden=true;
+ alias=String(me.pseudo||'Voyageur').slice(0,40);$('pseudo').value=alias;authorized=true;$('access-denied').hidden=true;
 }
 (async()=>{
  try{
   await authorize();await Promise.all([loadRooms(),loadPeople()]);
-  ready=true;status.textContent='Salle blanche et dojo originaux prêts';$('start').disabled=false;
+  ready=true;status.textContent='Salle blanche et dojo originaux prêts';$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
   $('wait')?.remove();frame();
  }catch(e){
   remember('Chargement original',e.message||e);
   status.textContent='Impossible de charger les modèles originaux : '+String(e.message||e);
-  if(!authorized){$('locked').hidden=false;$('welcome').hidden=true}else{$('start').disabled=true}
+  $('loading').hidden=true;if(!authorized){$('access-denied').hidden=false;$('welcome').hidden=true}else{$('enter').disabled=true;$('welcome').hidden=false}
  }
 })();
