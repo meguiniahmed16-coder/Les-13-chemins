@@ -4,12 +4,12 @@ const prefix='/admin-blog.html?view=';
 const links=[
  {heading:'Publications',items:[['Blog et billets','blog','Écrire, publier et relire les articles'],['L’odeur du bois','creations','Bijoux, produits, catalogue et ventes']]},
  {heading:'Manuscrit et parcours',items:[['Documents et éditeurs','documents','Fichiers privés et codes des éditeurs'],['Conversations et corrections','review','Atelier de révision et continuités'],['Archives','archives','Historique conservé']]},
- {heading:'La Maison des rencontres',items:[['Le monde 3D','cinema','Salle blanche, dojo et jardin'],['Membres et invitations','members','Liste des comptes et futurs compagnons'],['Logiciel intuitif','logiciel','Personnages 3D, salon, caméras et atelier privé'],['Conversations et atelier','atelier','Dialogues, corrections et création']]},
+ {heading:'La Maison des rencontres',items:[['Le monde 3D','cinema','Salle blanche, dojo et jardin'],['Membres et invitations','members','Liste des comptes et futurs compagnons'],['Personnaliser les personnages','avatar','Réglages essentiels et options avancées dans le même logiciel'],['Conversations et atelier','atelier','Dialogues, corrections et création']]},
 ] as const;
 export default function Dashboard(){
  return <main className="am-unified-home"><p className="am-eyebrow">Administration générale · La Tectonique des âmes</p>
  <h1>Ton administration</h1><p className="am-unified-lead">Un seul endroit pour gérer les publications, la maison, les personnages, les membres et les documents. Ton accès administrateur actuel est conservé.</p>
- <div className="am-unified-groups">{links.map(group=><section className="am-unified-group" key={group.heading}><h2>{group.heading}</h2><div className="am-unified-cards">{group.items.map(([title,view,desc])=><a key={view} href={view==='cinema'?'/membres/intro-prive.html?auteur=atelier':prefix+view} className="am-unified-card"><strong>{title}</strong><span>{desc}</span><b aria-hidden="true">↗</b></a>)}</div></section>)}</div>
+ <div className="am-unified-groups">{links.map(group=><section className="am-unified-group" key={group.heading}><h2>{group.heading}</h2><div className="am-unified-cards">{group.items.map(([title,view,desc])=><a key={view} href={view==='cinema'?'/membres/intro-prive.html?auteur=atelier':view==='avatar'?'/membre.html?auteur=atelier#avatar':prefix+view} className="am-unified-card"><strong>{title}</strong><span>{desc}</span><b aria-hidden="true">↗</b></a>)}</div></section>)}</div>
  <p className="am-unified-footer">L’ancien accès aux documents est conservé à l’intérieur de cette administration, sans demander un second mot de passe.</p>
  </main>
 }
