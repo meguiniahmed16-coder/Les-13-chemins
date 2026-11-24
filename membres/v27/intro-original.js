@@ -23,8 +23,11 @@ export async function loadOriginalCinemaAssets(scene){
  });
  dojoRoom.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
  whiteRoom.visible=dojoRoom.visible=false;scene.add(whiteRoom,dojoRoom);
- return {whiteRoom,dojoRoom,blueChair:whiteRoom.getObjectByName('BLUE CHAIR_215'),
-  redChair:whiteRoom.getObjectByName('RED CHAIR_232'),
-  television:whiteRoom.getObjectByName('TV_284'),
-  tvCase:whiteRoom.getObjectByName('TV Case_216')};
+ const locate=label=>{
+  const needle=label.toLowerCase().replace(/[^a-z0-9]/g,'');let found=null;
+  whiteRoom.traverse(o=>{if(!found&&o.name.toLowerCase().replace(/[^a-z0-9]/g,'').includes(needle))found=o});
+  return found;
+ };
+ return {whiteRoom,dojoRoom,blueChair:locate('BLUE CHAIR'),
+  redChair:locate('RED CHAIR'),television:locate('TV_284'),tvCase:locate('TV Case')};
 }
