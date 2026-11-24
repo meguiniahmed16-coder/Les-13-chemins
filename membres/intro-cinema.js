@@ -36,10 +36,23 @@ const lines=[
   "text": "",
   "scene": "white",
   "shot": "wide",
-  "ms": 4000,
+  "ms": 4500,
   "move": "dolly",
   "gesture": "listen",
-  "seated": false
+  "seated": false,
+  "furniture": "none"
+ },
+ {
+  "id": "question-initiale",
+  "speaker": "m",
+  "text": "Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?",
+  "scene": "white",
+  "shot": "close",
+  "ms": 7800,
+  "move": "push",
+  "gesture": "question",
+  "seated": false,
+  "furniture": "none"
  },
  {
   "id": "question",
@@ -50,7 +63,8 @@ const lines=[
   "ms": 8000,
   "move": "push",
   "gesture": "question",
-  "seated": false
+  "seated": false,
+  "furniture": "none"
  },
  {
   "id": "miroir",
@@ -61,19 +75,21 @@ const lines=[
   "ms": 8000,
   "move": "drift",
   "gesture": "explain",
-  "seated": false
+  "seated": false,
+  "furniture": "none"
  },
  {
   "id": "invitation",
   "speaker": "m",
   "text": "Prends place.",
   "scene": "white",
-  "shot": "two",
-  "ms": 8000,
+  "shot": "arrival",
+  "ms": 10500,
   "move": "dolly",
   "gesture": "invite",
   "seated": false,
-  "invitation": true
+  "invitation": true,
+  "furniture": "reveal"
  },
  {
   "id": "bruit",
@@ -84,7 +100,8 @@ const lines=[
   "ms": 8000,
   "move": "drift",
   "gesture": "explain",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "masques",
@@ -95,7 +112,8 @@ const lines=[
   "ms": 10000,
   "move": "push",
   "gesture": "reflect",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "verite",
@@ -106,7 +124,8 @@ const lines=[
   "ms": 10000,
   "move": "drift",
   "gesture": "explain",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "soi",
@@ -117,7 +136,8 @@ const lines=[
   "ms": 10000,
   "move": "push",
   "gesture": "open",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "libre",
@@ -128,7 +148,8 @@ const lines=[
   "ms": 8000,
   "move": "drift",
   "gesture": "invite",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "ensemble",
@@ -144,7 +165,20 @@ const lines=[
   "ms": 12000,
   "move": "dolly",
   "gesture": "complice",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
+ },
+ {
+  "id": "vers-ecran",
+  "speaker": null,
+  "text": "",
+  "scene": "white",
+  "shot": "rear",
+  "ms": 5500,
+  "move": "orbit",
+  "gesture": "watch",
+  "seated": true,
+  "furniture": "all"
  },
  {
   "id": "television",
@@ -155,7 +189,8 @@ const lines=[
   "ms": 6000,
   "move": "push",
   "gesture": "watch",
-  "seated": true
+  "seated": true,
+  "furniture": "all"
  },
  {
   "id": "montage",
@@ -166,7 +201,8 @@ const lines=[
   "ms": 10000,
   "move": "cut",
   "gesture": "watch",
-  "seated": true
+  "seated": true,
+  "furniture": "all"
  },
  {
   "id": "lieu",
@@ -177,7 +213,8 @@ const lines=[
   "ms": 12000,
   "move": "dolly",
   "gesture": "open",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "bienvenue",
@@ -188,7 +225,8 @@ const lines=[
   "ms": 10000,
   "move": "dolly",
   "gesture": "invite",
-  "seated": true
+  "seated": true,
+  "furniture": "chairs"
  },
  {
   "id": "dojo-arrivee",
@@ -327,7 +365,7 @@ async function loadWhite(){
   if(o.isMesh){o.castShadow=true;o.receiveShadow=true}
  });
  television=chairs.find(o=>/^TV[\s_]284(?:[\s_]|$)/i.test(o.name));
- scene.add(room,whiteFloor);chairs.forEach(c=>c.visible=true);measureSeats();setProgress('white',1);canvasHost.classList.add('room-ready');
+ scene.add(room,whiteFloor);chairs.forEach(c=>c.visible=true);measureSeats();chairs.forEach(c=>c.visible=false);room.visible=false;setProgress('white',1);canvasHost.classList.add('room-ready');
 }
 function prepareDojo(){
  if(dojo)return Promise.resolve(dojo);
@@ -446,6 +484,18 @@ async function loadAhmed(){
      apply(['avantbras'+side,'main'+side],elbow,flex);
      hand.quaternion.multiply(qEuler(.025*wave,sign*.025*soft,sign*.025*accent));
     }
+    if(gesture.gait&&t<.015){
+     for(const [side,sign] of [['d',-1],['g',1]]){
+      const thigh=bones.get('cuisse'+side)?.o,shin=bones.get('jambe'+side)?.o,foot=bones.get('pied'+side)?.o;
+      if(!thigh||!shin||!foot)continue;
+      const hip=thigh.position.clone().lerp(bones.get('bassin').o.position,.50);
+      const wave=Math.sin(gesture.gait.phase*Math.PI*2+(sign>0?Math.PI:0));
+      const q=qEuler(.22*wave*gesture.gait.strength,0,0);
+      apply(['cuisse'+side,'jambe'+side,'pied'+side],hip,q);
+      const lift=Math.max(0,wave)*.035*gesture.gait.strength;
+      foot.position.y+=lift;
+     }
+    }
     const chest=bones.get('thorax')?.o,head=bones.get('tete')?.o;
     if(chest){chest.position.y+=.0035*Math.sin(time*1.35);chest.quaternion.multiply(qEuler(.009*Math.sin(time*1.35),.015*gaze,0));}
     if(head){head.quaternion.multiply(qEuler(.025*Math.sin(time*.72)+.035*emphasis*energy,.085*gaze,.028*Math.sin(time*.48)));head.position.y+=.0025*Math.sin(time*1.35);}
@@ -500,7 +550,8 @@ async function loadMarianne(){
    });
    const mesh=new T.Mesh(g,defaultMaterial);mesh.castShadow=true;body.add(mesh);
    const reference=pos.slice();
-   parts.push({name:h.name,obj:mesh,base:reference,fullIndex:g.index,mesh,reference,key:id+'/'+h.name+'/sofa2/100',delta:null,unit:0});
+   const walk=(h.units||[]).slice(0,8).map((u,i)=>files[h.anim+i]?{delta:bytesTo(Int8Array,files[h.anim+i]),unit:u/10000}:null);
+   parts.push({name:h.name,obj:mesh,base:reference,fullIndex:g.index,mesh,reference,key:id+'/'+h.name+'/sofa2/100',delta:null,unit:0,walk});
   }
   root.position.set(x,0,.42);root.rotation.y=Math.PI;
   const instance={id,root,body,parts,sit:0,stamp:0,head:null,
@@ -509,6 +560,7 @@ async function loadMarianne(){
     if(part.delta){for(let i=0;i<part.reference.length;i++)array.array[i]=part.reference[i]+part.delta[i]*part.unit*value}
     else array.array.set(part.reference);array.needsUpdate=true;
    }this.stamp++;this.head?.follow(true);this.armCache=null;},
+   walkPose(phase,strength){this.sit=0;const p=((phase%1)+1)%1*8,lo=Math.floor(p),hi=(lo+1)%8,f=p-lo;for(const part of parts){const a=part.walk?.[lo],b=part.walk?.[hi],buf=part.mesh.geometry.attributes.position;if(a&&b&&a.delta.length===part.reference.length&&b.delta.length===part.reference.length){for(let i=0;i<part.reference.length;i++)buf.array[i]=part.reference[i]+strength*((1-f)*a.unit*a.delta[i]+f*b.unit*b.delta[i]);}else buf.array.set(part.reference);buf.needsUpdate=true;}this.stamp++;this.armCache=null;this.head?.follow(true);},
    speak(open,wide=0,blink=0){this.head?.talk?.({jaw:open,spread:wide*.18,round:open*.18,blink});}
   };
   return instance;
@@ -577,7 +629,7 @@ function targetLayout(person,seated,dojoMode=false,nearSeats=false){
  if(dojoMode)return {pos:new T.Vector3(i*.9,0,1.5),yaw:Math.PI,sit:0};
  if(!seated){
   if(nearSeats&&a){const pos=a.point.clone().addScaledVector(a.forward,.44);pos.y=0;return {pos,yaw:a.yaw,sit:0};}
-  return {pos:new T.Vector3(i*.72,0,.34),yaw:Math.PI,sit:0};
+  return {pos:new T.Vector3(i*.68,0,.22),yaw:Math.PI-i*.40,sit:0};
  }
  if(!a)throw Error('Repère de coussin absent');
  if(!person.seatedContact){const old=person.sit;person.pose(1);person.seatedContact=seatContact(person);person.pose(old);}
@@ -593,34 +645,49 @@ function layoutPeople(seated,dojoMode=false,nearSeats=false){
  if(dojoMode||step===0){movement=null;for(const {person,to} of items){person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(to.sit);}return;}
  movement={start:now,duration:seated&&items.some(x=>x.sit<.99)?1150:650,items};
 }
-// The invitation is a continuous shot: speech and hand gesture first, then
-// both actors turn/settle into their own chairs. No seated pose before the cue.
+// The first three dialogue shots take place in the empty white void.
+// Only after the invitation do the chairs appear and the actors approach.
+function furnitureAt(line,elapsed){
+ const mode=line?.furniture||'none';
+ const reveal=mode==='reveal'&&elapsed>=650;
+ const showChairs=mode==='chairs'||mode==='all'||reveal;
+ const showTV=mode==='all';
+ room.visible=line?.scene==='white'&&showChairs;
+ for(const c of chairs){const tv=/^TV[\s_]/i.test(c.name);c.visible=tv?showTV:showChairs;}
+}
 function beginInvitation(){
  movement=null;
  const items=people.map(person=>{
-  const standing=targetLayout(person,false,false,true);
-  person.root.position.copy(standing.pos);person.root.rotation.y=standing.yaw;person.pose(0);
-  const target=targetLayout(person,true);
-  return {person,from:standing.pos.clone(),yaw:standing.yaw,to:target};
+  // Start from the preceding real standing position, never jump to a chair.
+  const initial=targetLayout(person,false),standing=targetLayout(person,false,false,true);
+  if(person.sit>.02){person.root.position.copy(initial.pos);person.root.rotation.y=initial.yaw;person.pose(0);}
+  const from=person.root.position.clone(),yaw=person.root.rotation.y,to=targetLayout(person,true);
+  const walkYaw=Math.atan2(standing.pos.x-from.x,standing.pos.z-from.z);
+  person.gait=null;
+  return {person,from,yaw,standing,to,walkYaw};
  });
  invitationMotion={items,complete:false};lastLayout='standing';
 }
+function angleMix(a,b,t){return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;}
 function updateInvitation(now){
  if(!invitationMotion||invitationMotion.complete)return;
- const elapsed=shotElapsed(now);
- let complete=true;
- for(const {person,from,yaw,to} of invitationMotion.items){
-  // Marianne accepts the invitation first, Ahmed follows slightly later.
-  const start=person.id==='f'?1750:2450,duration=2800;
-  const u=T.MathUtils.clamp((elapsed-start)/duration,0,1);
-  const positionMix=u*u*(3-2*u),bend=T.MathUtils.smoothstep(u,.12,.92);
-  person.root.position.lerpVectors(from,to.pos,positionMix);
-  const turn=Math.atan2(Math.sin(to.yaw-yaw),Math.cos(to.yaw-yaw));
-  person.root.rotation.y=yaw+positionMix*turn;
-  if(Math.abs(person.sit-bend)>.001||u===1&&person.sit!==1)person.pose(bend);
-  if(u<1)complete=false;
+ const elapsed=shotElapsed(now);let complete=true;
+ for(const {person,from,yaw,standing,to,walkYaw} of invitationMotion.items){
+  const delay=person.id==='f'?0:650;
+  const t=elapsed-delay;
+  // The words appear first. Then the turn, the steps, the second turn, and the sit.
+  const turn=T.MathUtils.smoothstep(t,1350,2050),walk=T.MathUtils.smoothstep(t,2050,4300);
+  const face=T.MathUtils.smoothstep(t,4300,5100),sit=T.MathUtils.smoothstep(t,5100,7400);
+  person.root.position.lerpVectors(from,standing.pos,walk).lerp(to.pos,sit);
+  person.root.rotation.y=angleMix(angleMix(yaw,walkYaw,turn),standing.yaw,face);
+  person.root.rotation.y=angleMix(person.root.rotation.y,to.yaw,sit);
+  const strength=T.MathUtils.smoothstep(t,1900,2300)*(1-T.MathUtils.smoothstep(t,3900,4350));
+  person.gait=strength>.002?{phase:Math.max(0,(t-2050)/1000)*1.25,strength}:null;
+  if(person.id==='f'&&person.gait&&sit<.01){person.walkPose?.(person.gait.phase,strength);}
+  else if(Math.abs(person.sit-sit)>.001||t>=4350&&t<=5100||sit===1&&person.sit!==1)person.pose(sit);
+  if(t<7400)complete=false;
  }
- if(complete){invitationMotion.complete=true;lastLayout='seated';}
+ if(complete){for(const {person,to} of invitationMotion.items){person.gait=null;person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(1);}invitationMotion.complete=true;lastLayout='seated';$('next').disabled=false;}
 }
 function advanceMovement(now){
  if(!movement)return;const u=T.MathUtils.clamp((now-movement.start)/movement.duration,0,1),t=u*u*(3-2*u);
@@ -710,7 +777,7 @@ function updateActing(now){
   const pulse=.45+.55*Math.sin(localTime*1.75)**2,emphasis=actionEnvelope(t,duration)*pulse;
   const blinkPhase=(localTime+1.65)%5.1,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
   const gaze=(p.id==='m'?1:-1)*(line.gesture==='watch'?.1:speaking?.45:.95);
-  const g={time:localTime,energy,emphasis,kind:speaking?line.gesture:'listen',gaze,blink};
+  const g={time:localTime,energy,emphasis,kind:speaking?line.gesture:'listen',gaze,blink,gait:p.gait};
   try{if(p.id==='m')p.pose(p.sit,g);else moveMarianneArms(p,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
   let jaw=0,wide=0;
   if(speaking&&speech&&speech.id===p.id){
@@ -799,6 +866,19 @@ function cameraShot(line,elapsed,dt){
   angle+=(targetAngle-angle)*(1-Math.exp(-dt*2));
   shotAim.set(.1,1.25,.65);const d=Math.max(radius,3.0/htan);
   shotEye.set(shotAim.x+Math.sin(angle)*d,shotAim.y+1.12,shotAim.z+Math.cos(angle)*d);
+ }else if(line.shot==='arrival'){
+  const a=people[0].root.position,b=people[1].root.position,center=a.clone().add(b).multiplyScalar(.5);
+  const halfWidth=Math.max(1.85,Math.abs(a.x-b.x)*.5+.70);
+  const d=Math.max(3.45,halfWidth/htan,1.16/Math.tan(T.MathUtils.degToRad(vfov*.5)))*(1-.035*push);
+  shotAim.set(center.x,.90,center.z-.10);
+  const theta=Math.PI-.18+.16*push;
+  shotEye.set(shotAim.x+Math.sin(theta)*d,1.53,shotAim.z+Math.cos(theta)*d);
+ }else if(line.shot==='rear'){
+  const a=actorHead(people[0]),b=actorHead(people[1]),mid=a.clone().add(b).multiplyScalar(.5);
+  const tv=television?bounds(television).getCenter(new T.Vector3()):new T.Vector3(0,.65,-2.2);
+  shotAim.copy(mid).lerp(tv,.32+.22*push);shotAim.y=.91;
+  const d=Math.max(3.8,1.95/htan),theta=Math.PI*(1-push);
+  shotEye.set(shotAim.x+Math.sin(theta)*d,1.55+.22*push,shotAim.z+Math.cos(theta)*d);
  }else if(line.shot==='tv'&&television){
   const b=bounds(television),center=b.getCenter(new T.Vector3()),size=b.getSize(new T.Vector3());
   const target=televisionFilm?bounds(televisionFilm.mesh).getCenter(new T.Vector3()):center;
@@ -815,9 +895,9 @@ function cameraShot(line,elapsed,dt){
   shotEye.y=head.y+.015;
  }else{
   const a=actorHead(people[0]),b=actorHead(people[1]),center=a.clone().add(b).multiplyScalar(.5);
-  const width=Math.max(1.4,Math.abs(a.x-b.x)*.5+.42),dist=Math.max(3.15,width/htan)*(1-.06*push);
-  const theta=line.shot==='wide'?2.76-.12*push:Math.PI-.055+.04*push;
-  shotAim.copy(center);shotAim.y-=line.shot==='wide'?.35:.22;
+  const width=Math.max(1.4,Math.abs(a.x-b.x)*.5+.42),dist=Math.max(line.shot==='wide'?3.55:3.15,width/htan)*(1-.06*push);
+  const theta=line.shot==='wide'?2.97+.12*push:Math.PI-.055+.04*push;
+  shotAim.copy(center);shotAim.y=line.shot==='wide'?.92:center.y-.22;
   shotEye.set(shotAim.x+Math.sin(theta)*dist,shotAim.y+.33,shotAim.z+Math.cos(theta)*dist);
  }
  if(cutCamera){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
@@ -841,24 +921,19 @@ async function showScene(index){
  stage=isDojo?'dojo':'white';
  room.visible=!isDojo;whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
- invitationMotion=null;
+ invitationMotion=null;for(const p of people)p.gait=null;
  const layout=isDojo?'dojo':line.seated?'seated':'standing';
  if(line.invitation){beginInvitation();}
- else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,!isDojo&&!line.seated);}
- if(isDojo){chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
- else{
-  // In the frontal shots the television is behind the camera, not in front of the actors.
-  // Keep the original furniture, reveal the television only for its own insert.
-  chairs.forEach(c=>{const isTV=/^TV[\s_]/i.test(c.name);c.visible=isTV?line.shot==='tv':true;});
-  if(line.shot==='tv')prepareFilm();
- }
+ else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
+ if(isDojo){room.visible=false;chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
+ else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
  if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
  updateFilm(line,0);
  if(!previous||previous.scene!==line.scene||line.move==='fade'){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
  }
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+line.id;
- $('prev').disabled=step<=0;$('next').disabled=false;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':step===dojoStart-1?'Découvrir le dojo':'Continuer';
+ $('prev').disabled=step<=0;$('next').disabled=!!line.invitation;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':step===dojoStart-1?'Découvrir le dojo':'Continuer';
  $('joystick').hidden=!isDojo;$('personalize').hidden=!isDojo;
  if(autoplay&&step<lines.length-1&&step!==dojoStart-1)scheduleNext(line.ms);
  else if(autoplay){automatic(false,true);}
@@ -887,7 +962,7 @@ function startGarden(){
  });
  frame.src='/membres/v27/salon.html?resident=marianne&v=gestes50';
 }
-function next(){if(!started||pending||stage==='garden')return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
+function next(){if(!started||pending||stage==='garden'||invitationMotion&&!invitationMotion.complete)return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
 
 function automatic(on,hold=false){
  const now=performance.now();autoplay=on;clearTimeout(autoTimer);$('auto').textContent=on?'Pause cinéma':'Lecture cinéma';
@@ -944,8 +1019,9 @@ function frame(){
  }
 
  const now=performance.now();if(!shotPaused){advanceMovement(now);updateInvitation(now);}
- if(!started||step<0){camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
+ if(!started||step<0){room.visible=false;camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
  const line=lines[step],elapsed=shotElapsed(now);
+ if(stage==='white')furnitureAt(line,elapsed);
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
  updateFilm(line,elapsed);cameraShot(line,elapsed,dt);
  renderer.render(scene,camera);anchorBubble();
