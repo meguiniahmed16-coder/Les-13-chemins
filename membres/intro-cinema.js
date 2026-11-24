@@ -28,26 +28,214 @@ function remember(type,message){
 }
 window.addEventListener('error',e=>remember('Erreur JavaScript',e.message||'Erreur'));
 window.addEventListener('unhandledrejection',e=>remember('Erreur asynchrone',e.reason?.message||String(e.reason)));
+// Approved silent storyboard. Durations are measured from the first shot, not from the variable loading screen.
 const lines=[
- ['Narrateur','Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?','white',Math.PI],
- ['Narrateur','Est-ce simplement quelqu’un qui me ressemble ?','white',Math.PI],
- ['Narrateur','Ou quelqu’un qui me révèle ce que je ne savais pas de moi-même ?','white',Math.PI],
- ['Narrateur','Nous n’avons pas besoin de répondre tout de suite. Viens, asseyons-nous.','white',Math.PI],
- ['Narrateur','Prends place.','seated',Math.PI],
- ['Narrateur','Voici le monde tel que tu l’as connu, {pseudo}.','seated',0],
- ['Narrateur','Un monde de masques. Un monde d’illusions.','seated',0],
- ['Narrateur','Un monde où tu as joué un personnage.','seated',0],
- ['Narrateur','Un monde où, tous les matins, tu te déguises pour aller travailler.','seated',0],
- ['Narrateur','Où tu ne rencontres que les masques des autres.','seated',0],
- ['Narrateur','Il existe un autre monde.','seated',Math.PI],
- ['Narrateur','Ici, tu peux prendre le risque d’être toi-même.','seated',Math.PI],
- ['Narrateur','Tu peux aussi te déguiser. Personne ne te jugera.','seated',Math.PI],
- ['Narrateur','Suis-moi.','seated',Math.PI],
- ['Narrateur','Je dois t’expliquer comment ce monde fonctionne.','dojo',Math.PI],
- ['Narrateur','Tu peux apprendre à avancer, faire tourner la caméra et modifier ton personnage.','dojo',Math.PI],
- ['Narrateur','Ce monde est encore en construction. Et toi aussi, tu participeras à sa construction.','dojo',Math.PI],
- ['Narrateur','Les papillons et la maison t’attendent dans le jardin.','dojo',Math.PI]
+ {
+  "id": "ouverture",
+  "speaker": null,
+  "text": "",
+  "scene": "white",
+  "shot": "wide",
+  "ms": 4000,
+  "move": "dolly",
+  "gesture": "listen",
+  "seated": true
+ },
+ {
+  "id": "question",
+  "speaker": "m",
+  "text": "Est-ce simplement quelqu’un qui me ressemble ?",
+  "scene": "white",
+  "shot": "close",
+  "ms": 8000,
+  "move": "push",
+  "gesture": "question",
+  "seated": true
+ },
+ {
+  "id": "miroir",
+  "speaker": "f",
+  "text": "Une rencontre n’est pas un miroir… C’est un espace où l’on se dépose, sans masque, ou presque.",
+  "scene": "white",
+  "shot": "close",
+  "ms": 8000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": true
+ },
+ {
+  "id": "invitation",
+  "speaker": "m",
+  "text": "Prends place.",
+  "scene": "white",
+  "shot": "medium",
+  "ms": 8000,
+  "move": "push",
+  "gesture": "invite",
+  "seated": true
+ },
+ {
+  "id": "bruit",
+  "speaker": "f",
+  "text": "Ici, on laisse dehors le bruit, les rôles, les étiquettes…",
+  "scene": "white",
+  "shot": "medium",
+  "ms": 8000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": true
+ },
+ {
+  "id": "masques",
+  "speaker": "m",
+  "text": "Un monde de masques. Un monde d’illusions.",
+  "scene": "white",
+  "shot": "close",
+  "ms": 10000,
+  "move": "push",
+  "gesture": "reflect",
+  "seated": true
+ },
+ {
+  "id": "verite",
+  "speaker": "f",
+  "text": "Et pourtant… c’est aussi un lieu de vérité, de jeux, de désir, de création…",
+  "scene": "white",
+  "shot": "close",
+  "ms": 10000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": true
+ },
+ {
+  "id": "soi",
+  "speaker": "m",
+  "text": "Ici, on peut être tour à tour lecteur, acteur, voyageur… ou simplement soi.",
+  "scene": "white",
+  "shot": "medium",
+  "ms": 10000,
+  "move": "push",
+  "gesture": "open",
+  "seated": true
+ },
+ {
+  "id": "libre",
+  "speaker": "f",
+  "text": "Tu es libre d’explorer, de construire, de rencontrer, d’imaginer…",
+  "scene": "white",
+  "shot": "close",
+  "ms": 8000,
+  "move": "drift",
+  "gesture": "invite",
+  "seated": true
+ },
+ {
+  "id": "ensemble",
+  "speaker": "m",
+  "text": "Alors…",
+  "secondary": {
+   "speaker": "f",
+   "text": "…on commence ?",
+   "at": 4200
+  },
+  "scene": "white",
+  "shot": "two",
+  "ms": 12000,
+  "move": "dolly",
+  "gesture": "complice",
+  "seated": true
+ },
+ {
+  "id": "television",
+  "speaker": null,
+  "text": "",
+  "scene": "white",
+  "shot": "tv",
+  "ms": 6000,
+  "move": "push",
+  "gesture": "watch",
+  "seated": true
+ },
+ {
+  "id": "montage",
+  "speaker": null,
+  "text": "La Maison des rencontres, c’est un espace en construction…",
+  "scene": "white",
+  "shot": "montage",
+  "ms": 10000,
+  "move": "cut",
+  "gesture": "watch",
+  "seated": true
+ },
+ {
+  "id": "lieu",
+  "speaker": "f",
+  "text": "…un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
+  "scene": "white",
+  "shot": "two",
+  "ms": 12000,
+  "move": "dolly",
+  "gesture": "open",
+  "seated": true
+ },
+ {
+  "id": "bienvenue",
+  "speaker": "m",
+  "text": "Bienvenue.",
+  "scene": "white",
+  "shot": "two",
+  "ms": 10000,
+  "move": "dolly",
+  "gesture": "invite",
+  "seated": true
+ },
+ {
+  "id": "dojo-arrivee",
+  "speaker": "m",
+  "text": "Suis-moi. Je dois t’expliquer comment ce monde fonctionne.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 7000,
+  "move": "fade",
+  "gesture": "invite",
+  "seated": false
+ },
+ {
+  "id": "dojo-deplacement",
+  "speaker": "m",
+  "text": "Tu peux apprendre à avancer, faire tourner la caméra et modifier ton personnage.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 8500,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false
+ },
+ {
+  "id": "dojo-construction",
+  "speaker": "m",
+  "text": "Ce monde est encore en construction. Et toi aussi, tu participeras à sa construction.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 8500,
+  "move": "drift",
+  "gesture": "open",
+  "seated": false
+ },
+ {
+  "id": "jardin",
+  "speaker": "m",
+  "text": "Les papillons et la maison t’attendent dans le jardin.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 6500,
+  "move": "drift",
+  "gesture": "invite",
+  "seated": false
+ }
 ];
+const dojoStart=lines.findIndex(s=>s.scene==='dojo');
+let shotStart=0,shotPaused=false,pausedAt=0,pausedElapsed=0,currentSpeaker=null,lastLayout='',secondCue=false;
 
 const progress={white:0,people:0,ahmed:0},weights={white:.25,people:.40,ahmed:.35};
 const downloadCache=new Map();let bootStage='Connexion';let assetAhmed=null,assetMarianne=null;
@@ -220,7 +408,7 @@ async function loadAhmed(){
  const set=(n,p,q)=>{const x=bones.get(n);if(!x)return;x.o.position.copy(p);x.o.quaternion.copy(x.q);if(q)x.o.quaternion.premultiply(q);};
  const spin=(v,center,q)=>v.clone().sub(center).applyQuaternion(q).add(center);
  const instance={id:'m',root,body,parts:[],sit:0,pants,mouth,headBone:bones.get('tete')?.o||null,
-  pose(value){
+  pose(value,gesture=null){
    this.sit=value;if(!canSit)return;const t=T.MathUtils.clamp(value,0,1),drop=new T.Vector3(0,-.295*t,0);
    for(const [n,x] of bones)set(n,x.p.clone().add(drop));
    if(t){
@@ -238,6 +426,29 @@ async function loadAhmed(){
      set('avantbras'+side,spin(fore.p,elbow,bend).add(drop),bend);
      set('main'+side,spin(hand.p,elbow,bend).add(drop),bend);
     }
+   }
+   if(gesture){
+    const {time,energy,emphasis,kind,gaze,blink}=gesture;
+    const qEuler=(x,y,z)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z,'XYZ'));
+    const apply=(names,pivot,q)=>{for(const n of names){const o=bones.get(n)?.o;if(!o)continue;o.position.copy(spin(o.position,pivot,q));o.quaternion.premultiply(q);}};
+    for(const [side,sign] of [['d',-1],['g',1]]){
+     const upper=bones.get('bras'+side)?.o,fore=bones.get('avantbras'+side)?.o,hand=bones.get('main'+side)?.o;
+     if(!upper||!fore||!hand)continue;
+     const phase=side==='d'?0:1.5,active=side==='d'?1:.58;
+     const wave=Math.sin(time*.86+phase),soft=Math.sin(time*1.47+phase*.7);
+     const accent=energy*emphasis*active,invitation=kind==='invite'?accent:0;
+     const shoulder=upper.position.clone().add(new T.Vector3(0,.085,-.015));
+     const swing=qEuler(-.028*wave-.095*accent,-sign*(.018*soft+.05*invitation),sign*(.020*wave+.038*accent));
+     apply(['bras'+side,'avantbras'+side,'main'+side],shoulder,swing);
+     const elbow=upper.position.clone().lerp(fore.position,.56);
+     const flex=qEuler(-.050*soft-(kind==='invite'?.27:.13)*accent,sign*.035*accent,sign*.024*wave);
+     apply(['avantbras'+side,'main'+side],elbow,flex);
+     hand.quaternion.multiply(qEuler(.025*wave,sign*.025*soft,sign*.025*accent));
+    }
+    const chest=bones.get('thorax')?.o,head=bones.get('tete')?.o;
+    if(chest){chest.position.y+=.0035*Math.sin(time*1.35);chest.quaternion.multiply(qEuler(.009*Math.sin(time*1.35),.015*gaze,0));}
+    if(head){head.quaternion.multiply(qEuler(.025*Math.sin(time*.72)+.035*emphasis*energy,.085*gaze,.028*Math.sin(time*.48)));head.position.y+=.0025*Math.sin(time*1.35);}
+    for(const o of mouth){const i=o.morphTargetDictionary?.Cligner;if(i!==undefined)o.morphTargetInfluences[i]=blink;}
    }
    root.updateMatrixWorld(true);
   },
@@ -296,7 +507,8 @@ async function loadMarianne(){
     const array=part.mesh.geometry.attributes.position;
     if(part.delta){for(let i=0;i<part.reference.length;i++)array.array[i]=part.reference[i]+part.delta[i]*part.unit*value}
     else array.array.set(part.reference);array.needsUpdate=true;
-   }this.stamp++;this.head?.follow(true);}
+   }this.stamp++;this.head?.follow(true);this.armCache=null;},
+   speak(open,wide=0,blink=0){this.head?.talk?.({jaw:open,spread:wide*.18,round:open*.18,blink});}
   };
   return instance;
  }
@@ -389,90 +601,239 @@ function advanceMovement(now){
  }
  if(u===1)movement=null;
 }
-let speech=null,voiceEnabled=true,speechSerial=0;
-function stopSpeech(){
- speechSerial++;if('speechSynthesis' in window)window.speechSynthesis.cancel();
- speech=null;people[0]?.speak?.(0);
-}
-function startSpeech(text){
- stopSpeech();const serial=speechSerial,now=performance.now();
- const duration=Math.max(1700,text.length*58);
- const state=speech={serial,text,start:now,duration,index:0,boundary:0,active:true,voiced:false,ended:false};
- if(voiceEnabled&&'speechSynthesis' in window&&'SpeechSynthesisUtterance' in window){
-  try{
-   const u=new SpeechSynthesisUtterance(text);u.lang='fr-FR';u.rate=.94;u.pitch=1;
-   const voices=window.speechSynthesis.getVoices(),fr=voices.find(v=>/^fr[-_]FR/i.test(v.lang))||voices.find(v=>/^fr/i.test(v.lang));if(fr)u.voice=fr;
-   state.utterance=u;
-   u.onstart=()=>{if(speech?.serial===serial){state.start=performance.now();state.voiced=true;}};
-   u.onboundary=e=>{if(speech?.serial===serial){state.index=e.charIndex;state.boundary=performance.now();}};
-   u.onend=()=>{if(speech?.serial===serial){state.ended=true;state.active=false;people[0]?.speak?.(0);}};
-   u.onerror=()=>{if(speech?.serial===serial){state.voiced=false;state.utterance=null;}};
-   window.speechSynthesis.speak(u);
-  }catch(e){state.voiced=false;remember('Voix',e.message);}
+
+// A quiet actor keeps breathing, looking and moving even when the other actor speaks.
+// The female meshes do not share Ahmed's skeleton: deform their existing posed vertices
+// coherently, using the same elbow pivots for the visible skin and the outfit.
+function prepareArmMotion(person){
+ const bodyPart=person.parts.find(p=>/^(body|corps|skin)$/i.test(p.name));if(!bodyPart)return null;
+ const rest=bodyPart.reference,posed=bodyPart.mesh.geometry.attributes.position.array;
+ let top=0,extent=0;for(let k=0;k<rest.length;k+=3){top=Math.max(top,rest[k+1]);extent=Math.max(extent,Math.abs(rest[k]));}
+ if(top<.5||extent<.12)return null;
+ const pivots={},parts=[];
+ for(const sign of [-1,1]){
+  const nearest=[];const goalY=top*.61,goalX=extent*.83;
+  for(let k=0;k<rest.length;k+=3){if(sign*rest[k]<=0)continue;const d=(Math.abs(rest[k])-goalX)**2+(rest[k+1]-goalY)**2+(rest[k+2]-.015)**2;nearest.push([d,k]);}
+  nearest.sort((a,b)=>a[0]-b[0]);const a=nearest.slice(0,20),v=new T.Vector3();
+  for(const [,k] of a)v.add(new T.Vector3(posed[k],posed[k+1],posed[k+2]));pivots[sign]=v.multiplyScalar(1/Math.max(1,a.length));
  }
- return duration;
+ for(const part of person.parts){
+  if(/hair|brow|lash|eye|teeth|tongue|visage|cheveu/i.test(part.name))continue;
+  const g=part.mesh.geometry,attr=g.attributes.position,norm=g.attributes.normal,a=attr.array,r=part.reference,indices=[],weights=[],sides=[];
+  const base=a.slice(),normalBase=norm?.array.slice();
+  for(let k=0;k<r.length;k+=3){
+   const x=Math.abs(r[k]),y=r[k+1];
+   const sideWeight=T.MathUtils.smoothstep(x,extent*.57,extent*.78);
+   const low=T.MathUtils.smoothstep(y,top*.39,top*.44),high=1-T.MathUtils.smoothstep(y,top*.61,top*.725);
+   const w=sideWeight*low*high;if(w<.012)continue;
+   indices.push(k);weights.push(w);sides.push(r[k]<0?-1:1);
+  }
+  if(indices.length)parts.push({attr,norm,indices,weights,sides,base,normalBase});
+ }
+ return {parts,pivots,stamp:person.stamp};
 }
-function animateSpeech(now){
- const s=speech,p=people[0];if(!p?.speak)return;
- if(!s||s.ended||!s.active){p.speak(0);return;}
- const elapsed=now-s.start;if(elapsed>s.duration+850&&!s.voiced||elapsed>Math.max(18000,s.duration*2.5)){s.active=false;p.speak(0);return;}
- const pos=s.boundary&&now-s.boundary<1000?s.index+Math.floor((now-s.boundary)/62):Math.floor(elapsed/58);
- const c=s.text[Math.min(s.text.length-1,Math.max(0,pos))]?.toLowerCase()||' ';
- const vowel=/[aeiouyàâéèêëîïôùûüœ]/.test(c),closed=/[bmpfvw\s.,;:!?]/.test(c),phase=(Math.sin(elapsed*.022)+1)*.5;
- p.speak(closed?.025:(vowel?.22+.34*phase:.065+.15*phase),vowel?.5:0);
+const armVector=new T.Vector3(),armNormal=new T.Vector3();
+function moveMarianneArms(person,g){
+ if(!person.armCache||person.armCache.stamp!==person.stamp)person.armCache=prepareArmMotion(person);
+ const cache=person.armCache;if(!cache)return;
+ const transforms={};
+ for(const sign of [-1,1]){
+  const phase=sign===-1?.9:2.1,accent=g.energy*g.emphasis*(sign===-1?1:.7);
+  const x=.045*Math.sin(g.time*1.15+phase)-(g.kind==='invite'?.23:.12)*accent;
+  transforms[sign]=new T.Quaternion().setFromEuler(new T.Euler(x,sign*.045*accent,sign*(.018*Math.sin(g.time*.7+phase)+.035*accent)));
+ }
+ for(const p of cache.parts){
+  for(let i=0;i<p.indices.length;i++){
+   const k=p.indices[i],sign=p.sides[i],w=p.weights[i],pivot=cache.pivots[sign],q=transforms[sign];
+   armVector.fromArray(p.base,k).sub(pivot).applyQuaternion(q).add(pivot);
+   const a=p.attr.array;a[k]=T.MathUtils.lerp(p.base[k],armVector.x,w);a[k+1]=T.MathUtils.lerp(p.base[k+1],armVector.y,w);a[k+2]=T.MathUtils.lerp(p.base[k+2],armVector.z,w);
+   if(p.norm&&p.normalBase){armNormal.fromArray(p.normalBase,k).applyQuaternion(q);const n=p.norm.array;n[k]=T.MathUtils.lerp(p.normalBase[k],armNormal.x,w);n[k+1]=T.MathUtils.lerp(p.normalBase[k+1],armNormal.y,w);n[k+2]=T.MathUtils.lerp(p.normalBase[k+2],armNormal.z,w);}
+  }
+  p.attr.needsUpdate=true;if(p.norm)p.norm.needsUpdate=true;
+ }
+ const sway=.012*Math.sin(g.time*.8)+.012*g.gaze;
+ person.body.rotation.z=sway;person.body.rotation.x=.009*Math.sin(g.time*1.2);
+ const pivot=person.sit?.64:.86;person.body.position.x=pivot*Math.sin(sway);person.body.position.y=.0028*Math.sin(g.time*1.3);
 }
-function showMessage(line){
- const b=document.createElement('b'),p=document.createElement('p'),text=line[1].replaceAll('{pseudo}',alias);
- b.textContent='Ahmed';p.textContent=text;bubble.replaceChildren(b,p);bubble.hidden=false;
- bubble.getAnimations().forEach(a=>a.cancel());bubble.animate([{opacity:0},{opacity:1}],{duration:220});
- return startSpeech(text);
+function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?pausedAt:now)-shotStart);}
+function speakerActor(id){return people.find(p=>p.id===id);}
+function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
+let speech=null,lastMotion=0;
+function stopSpeech(){speech=null;currentSpeaker=null;for(const p of people)p.speak?.(0,0,0);}
+function setCue(id,text,offset=0){
+ stopSpeech();if(!id||!text){bubble.hidden=true;return;}
+ const actor=speakerActor(id);currentSpeaker=id;
+ const b=document.createElement('b'),p=document.createElement('p');
+ b.textContent=actor?.root.name||(id==='m'?'Ahmed':'Marianne');p.textContent=text.replaceAll('{pseudo}',alias);
+ bubble.replaceChildren(b,p);bubble.hidden=false;
+ bubble.getAnimations().forEach(a=>a.cancel());bubble.animate([{opacity:0},{opacity:1}],{duration:260});
+ speech={id,text:p.textContent,start:offset,duration:Math.max(1400,text.length*58)};
+}
+function updateActing(now){
+ const line=lines[step];if(!line||!started||!ready||stage==='garden')return;
+ const elapsed=shotElapsed(now),t=elapsed/1000,duration=line.ms/1000;
+ if(line.secondary&&!secondCue&&elapsed>=line.secondary.at){secondCue=true;setCue(line.secondary.speaker,line.secondary.text,line.secondary.at);}
+ if(now-lastMotion<33)return;lastMotion=now;
+ for(const p of people){
+  const speaking=currentSpeaker===p.id,energy=speaking?1:.20;
+  const localTime=t+(p.id==='f'?2.6:0);
+  const pulse=.45+.55*Math.sin(localTime*1.75)**2,emphasis=actionEnvelope(t,duration)*pulse;
+  const blinkPhase=(localTime+1.65)%5.1,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
+  const gaze=(p.id==='m'?1:-1)*(line.gesture==='watch'?.1:speaking?.45:.95);
+  const g={time:localTime,energy,emphasis,kind:speaking?line.gesture:'listen',gaze,blink};
+  try{if(p.id==='m')p.pose(p.sit,g);else moveMarianneArms(p,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
+  let jaw=0,wide=0;
+  if(speaking&&speech&&speech.id===p.id){
+   const st=elapsed-speech.start;
+   if(st>=0&&st<speech.duration&&!shotPaused){
+    const char=speech.text[Math.min(speech.text.length-1,Math.floor(st/58))]?.toLowerCase()||' ';
+    const vowel=/[aeiouyàâéèêëîïôùûüœ]/.test(char),closed=/[bmpfvw\s.,;:!?]/.test(char),phase=(Math.sin(st*.022)+1)*.5;
+    jaw=closed?.014:(vowel?.07+.16*phase:.04+.07*phase);wide=vowel?.35:.08;
+   }
+  }
+  p.speak?.(jaw,wide,blink);
+ }
 }
 const headPoint=new T.Vector3();
+function actorHead(person,out=new T.Vector3()){
+ if(person?.headBone){person.headBone.getWorldPosition(out);out.y+=.135;return out;}
+ if(person?.head?.group){person.head.group.updateWorldMatrix(true,false);return person.head.group.localToWorld(out.set(0,.145,.035));}
+ if(person){out.set(0,person.sit?1.12:1.53,0);return person.root.localToWorld(out);}
+ return out.set(0,1.2,0);
+}
 function anchorBubble(){
- const speaker=people[0];if(!speaker||bubble.hidden)return;
- if(speaker.headBone){speaker.headBone.getWorldPosition(headPoint);headPoint.y+=.20;}else{headPoint.set(0,speaker.sit?1.35:1.85,0);speaker.root.localToWorld(headPoint);}
- headPoint.project(camera);
+ const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
+ actorHead(speaker,headPoint);headPoint.project(camera);
  const w=canvasHost.clientWidth,h=canvasHost.clientHeight,x=(headPoint.x+1)*w/2,y=(1-headPoint.y)*h/2;
- const bw=bubble.offsetWidth,bh=bubble.offsetHeight,pad=9;
+ const bw=bubble.offsetWidth,bh=bubble.offsetHeight,pad=10;
  const left=T.MathUtils.clamp(x-bw/2,pad,Math.max(pad,w-bw-pad));
- const above=y-bh-22>=pad,top=above?y-bh-18:T.MathUtils.clamp(y+32,pad,Math.max(pad,h-bh-12));
+ const above=y-bh-28>=pad,top=above?y-bh-22:T.MathUtils.clamp(y+38,pad,Math.max(pad,h-bh-12));
  bubble.style.left=left+'px';bubble.style.top=top+'px';bubble.style.bottom='auto';
  bubble.style.setProperty('--tail-x',T.MathUtils.clamp(x-left,15,bw-15)+'px');
  bubble.classList.toggle('below',!above);
 }
-function scheduleNext(ms){
- clearTimeout(autoTimer);
- const advance=()=>{if(!autoplay||pending)return;if(speech?.voiced&&speech.active&&performance.now()-speech.start<Math.max(18000,speech.duration*2.5)){autoTimer=setTimeout(advance,250);return;}next();};
- autoTimer=setTimeout(advance,ms);
+function scheduleNext(ms){clearTimeout(autoTimer);if(autoplay)autoTimer=setTimeout(()=>{if(autoplay&&!pending)next();},Math.max(100,ms));}
+
+// The original television remains in the scene. A texture, not a replacement
+// television model, carries a short silent montage of existing site artwork.
+const filmFrames=[
+ {url:'/assets/membres/salon-decor.webp',title:'Découvrir',subtitle:'Un monde à explorer'},
+ {url:'/assets/membres/invitation-salon.webp',title:'Rencontrer',subtitle:'La Maison des rencontres'},
+ {url:'/assets/board/scene-cards-v1.png',title:'Voyager',subtitle:'Les Treize Chemins'},
+ {url:'/assets/membres/salon-v27-apercu.webp',title:'Créer',subtitle:'Un espace en construction'}
+];
+let televisionFilm=null,filmIndex=-1,filmShot='',filmImages=[];
+function prepareFilm(){
+ if(televisionFilm||!television)return;
+ try{
+  const screen=findChild(television,/^Screen_LowB/i);let mesh=null;screen?.traverse(o=>{if(!mesh&&o.isMesh)mesh=o;});if(!mesh)return;
+  const geo=mesh.geometry.clone(),p=geo.attributes.position;geo.computeBoundingBox();const b=geo.boundingBox,s=b.getSize(new T.Vector3()),uv=new Float32Array(p.count*2);
+  for(let i=0;i<p.count;i++){uv[2*i]=(p.getX(i)-b.min.x)/Math.max(s.x,.0001);uv[2*i+1]=(p.getY(i)-b.min.y)/Math.max(s.y,.0001);}
+  geo.setAttribute('uv',new T.BufferAttribute(uv,2));mesh.geometry=geo;
+  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=500;
+  const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;tex.minFilter=T.LinearFilter;
+  const ctx=canvas.getContext('2d');mesh.material=new T.MeshBasicMaterial({map:tex,toneMapped:false,side:T.DoubleSide});
+  televisionFilm={mesh,ctx,canvas,tex};
+  filmImages=filmFrames.map(frame=>{const image=new Image();image.src=frame.url;return image;});drawFilm(-1);
+ }catch(e){remember('Écran de télévision',e.message||e);}
 }
+function drawFilm(index){
+ if(!televisionFilm)return;const {ctx,canvas,tex}=televisionFilm,w=canvas.width,h=canvas.height;
+ ctx.fillStyle='#142b26';ctx.fillRect(0,0,w,h);
+ if(index>=0){const im=filmImages[index];if(im?.complete&&im.naturalWidth){const s=Math.max(w/im.naturalWidth,h/im.naturalHeight),iw=im.naturalWidth*s,ih=im.naturalHeight*s;ctx.drawImage(im,(w-iw)/2,(h-ih)/2,iw,ih);}
+  const grad=ctx.createLinearGradient(0,h*.48,0,h);grad.addColorStop(0,'rgba(20,43,38,0)');grad.addColorStop(1,'rgba(15,32,28,.85)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+  ctx.textAlign='center';ctx.fillStyle='#fffdf4';ctx.font='36px Georgia';ctx.fillText(filmFrames[index].title,w/2,h-68);
+  ctx.font='20px system-ui';ctx.fillText(filmFrames[index].subtitle,w/2,h-32);
+ }
+ tex.needsUpdate=true;
+}
+function updateFilm(line,elapsed){
+ const overlay=$('film-montage');
+ if(line.shot!=='tv'&&line.shot!=='montage'){overlay.hidden=true;if(filmShot){filmShot='';filmIndex=-1;drawFilm(-1);}return;}
+ const interval=line.shot==='tv'?1500:2500,i=Math.min(filmFrames.length-1,Math.floor(elapsed/interval));
+ if(filmShot!==line.id||filmIndex!==i){
+  filmShot=line.id;filmIndex=i;drawFilm(i);
+  const frame=filmFrames[i];$('film-image').style.backgroundImage='url("'+frame.url+'")';$('film-title').textContent=frame.title;$('film-subtitle').textContent=frame.subtitle;
+  if(line.shot==='montage')overlay.animate([{opacity:.35},{opacity:1}],{duration:420,easing:'ease-out'});
+ }
+ overlay.hidden=line.shot!=='montage';
+ if(line.shot==='montage')$('film-caption').textContent=line.text;
+}
+let cutCamera=true;
+const shotAim=new T.Vector3(),shotEye=new T.Vector3(),smoothAim=new T.Vector3(),smoothEye=new T.Vector3();
+function cameraShot(line,elapsed,dt){
+ const t=T.MathUtils.clamp(elapsed/line.ms,0,1),push=t*t*(3-2*t);
+ const aspect=Math.max(.25,camera.aspect),vfov=46,htan=Math.tan(T.MathUtils.degToRad(vfov*.5))*aspect;
+ camera.fov=vfov;camera.updateProjectionMatrix();
+ if(line.shot==='dojo'){
+  angle+=(targetAngle-angle)*(1-Math.exp(-dt*2));
+  shotAim.set(.1,1.25,.65);const d=Math.max(radius,3.0/htan);
+  shotEye.set(shotAim.x+Math.sin(angle)*d,shotAim.y+1.12,shotAim.z+Math.cos(angle)*d);
+ }else if(line.shot==='tv'&&television){
+  const b=bounds(television),center=b.getCenter(new T.Vector3()),size=b.getSize(new T.Vector3());
+  const target=televisionFilm?bounds(televisionFilm.mesh).getCenter(new T.Vector3()):center;
+  const towards=new T.Vector3().subVectors(new T.Vector3(0,center.y,0),center);towards.y=0;towards.normalize();
+  const d=Math.max(.95,(size.x*.58)/htan)*(1-.13*push);
+  shotAim.copy(target);shotEye.copy(target).addScaledVector(towards,d);shotEye.y+=.03;shotEye.x+=.045*(1-push);
+ }else if(line.shot==='close'||line.shot==='medium'){
+  const person=speakerActor(line.speaker)||people[0],head=actorHead(person),forward=new T.Vector3(Math.sin(person.root.rotation.y),0,Math.cos(person.root.rotation.y)),side=new T.Vector3(forward.z,0,-forward.x);
+  const isClose=line.shot==='close',half=isClose?.225:.38;
+  const dist=Math.max(isClose?.94:1.52,half/htan)*(1-(line.move==='push'?.095:.028)*push);
+  shotAim.copy(head);shotAim.y-=isClose?.055:.19;
+  const s=person.id==='m'?1:-1;
+  shotEye.copy(shotAim).addScaledVector(forward,dist).addScaledVector(side,s*(.11+.055*Math.sin(push*Math.PI)));
+  shotEye.y=head.y+.015;
+ }else{
+  const a=actorHead(people[0]),b=actorHead(people[1]),center=a.clone().add(b).multiplyScalar(.5);
+  const width=Math.max(1.4,Math.abs(a.x-b.x)*.5+.42),dist=Math.max(3.15,width/htan)*(1-.06*push);
+  const theta=line.shot==='wide'?2.76-.12*push:Math.PI-.055+.04*push;
+  shotAim.copy(center);shotAim.y-=line.shot==='wide'?.35:.22;
+  shotEye.set(shotAim.x+Math.sin(theta)*dist,shotAim.y+.33,shotAim.z+Math.cos(theta)*dist);
+ }
+ if(cutCamera){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
+ else{const alpha=1-Math.exp(-Math.max(.001,dt)*5);smoothEye.lerp(shotEye,alpha);smoothAim.lerp(shotAim,alpha);}
+ camera.position.copy(smoothEye);camera.lookAt(smoothAim);camera.updateMatrixWorld(true);
+}
+
+
 async function showScene(index){
  if(!ready||pending)return;
- const requested=Math.max(0,Math.min(index,lines.length-1));
- if((requested>=4&&requested<14&&!seatsReady)||(requested>=14&&!dojo)){
+ const requested=Math.max(0,Math.min(index,lines.length-1)),line=lines[requested],isDojo=line.scene==='dojo';
+ clearTimeout(autoTimer);
+ if((line.seated&&!seatsReady)||(isDojo&&!dojo)){
   setPending(true);$('scene-wait').textContent='La suite se prépare…';
-  try{if(requested>=14)await prepareDojo();else await prepareSeats();}
+  try{if(isDojo)await prepareDojo();else await prepareSeats();}
   catch(e){remember('Chargement de la suite',e.message||e);automatic(false);$('scene-wait').textContent='La suite n’a pas pu se charger. Réessaie avec Continuer.';setPending(false);$('scene-wait').hidden=false;return;}
   setPending(false);
  }
- $('scene-wait').hidden=true;step=requested;
- const line=lines[step],level=line[2],isDojo=level==='dojo';
+ const previous=step>=0?lines[step]:null;
+ $('scene-wait').hidden=true;step=requested;shotStart=performance.now();shotPaused=false;secondCue=false;cutCamera=true;
  stage=isDojo?'dojo':'white';
  room.visible=!isDojo;whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
- const seated=!isDojo&&step>=4;
- if(isDojo){room.visible=false;chairs.forEach(c=>c.visible=false);layoutPeople(false,true);}
- else{chairs.forEach(c=>c.visible=step>=3);layoutPeople(seated,false,step===3);}
- targetAngle=isDojo?line[3]:(seated&&line[3]===Math.PI?2.35:line[3]);radius=isDojo?6.1:(seated?4.4:3.6);
- const talkingTime=showMessage(line);
- status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+(step>=4?'les masques':'la rencontre');
- $('prev').disabled=step<=0;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':'Continuer';
+ const layout=isDojo?'dojo':line.seated?'seated':'standing';
+ if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
+ if(isDojo){chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
+ else{
+  // In the frontal shots the television is behind the camera, not in front of the actors.
+  // Keep the original furniture, reveal the television only for its own insert.
+  chairs.forEach(c=>{const isTV=/^TV[\s_]/i.test(c.name);c.visible=isTV?line.shot==='tv':true;});
+  if(line.shot==='tv')prepareFilm();
+ }
+ if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
+ updateFilm(line,0);
+ if(!previous||previous.scene!==line.scene||line.move==='fade'){
+  $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
+ }
+ status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+line.id;
+ $('prev').disabled=step<=0;$('next').disabled=false;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':step===dojoStart-1?'Découvrir le dojo':'Continuer';
  $('joystick').hidden=!isDojo;$('personalize').hidden=!isDojo;
- if(autoplay&&step<lines.length-1){
-  scheduleNext(Math.max(step===5?6600:4800,talkingTime+650));
- }else if(autoplay){autoplay=false;$('auto').textContent='Lecture cinéma'}
+ if(autoplay&&step<lines.length-1&&step!==dojoStart-1)scheduleNext(line.ms);
+ else if(autoplay){automatic(false,true);}
 }
+
 function startGarden(){
- autoplay=false;clearTimeout(autoTimer);stopSpeech();stage='garden';$('garden').hidden=false;
+ autoplay=false;clearTimeout(autoTimer);stopSpeech();$('film-montage').hidden=true;stage='garden';$('garden').hidden=false;
  bubble.hidden=true;$('joystick').hidden=true;$('personalize').hidden=true;
  status.textContent='Le jardin et la maison';
  if(gardenLoaded)return;gardenLoaded=true;
@@ -495,14 +856,19 @@ function startGarden(){
  frame.src='/membres/v27/salon.html?resident=marianne&v=gestes50';
 }
 function next(){if(!started||pending||stage==='garden')return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
-function automatic(on){autoplay=on;clearTimeout(autoTimer);$('auto').textContent=on?'Pause cinéma':'Lecture cinéma';
- if(on)scheduleNext(Math.max(4800,(speech?.duration||0)+650));}
-$('sound-toggle').onclick=()=>{voiceEnabled=!voiceEnabled;$('sound-toggle').textContent=voiceEnabled?'Son activé':'Son coupé';if(!voiceEnabled)stopSpeech();else if(started&&step>=0&&stage!=='garden')startSpeech(lines[step][1].replaceAll('{pseudo}',alias));};
-$('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;setPending(false);automatic(true);showScene(0)};
-$('next').onclick=()=>{automatic(false);next()};
-$('prev').onclick=()=>{automatic(false);showScene(Math.max(0,step-1));$('garden').hidden=true};
-$('skip').onclick=()=>{if(!authorized||!ready||pending)return;automatic(false);$('welcome').hidden=true;started=true;showScene(14)};
-$('auto').onclick=()=>{if(started&&!pending){if(autoplay){automatic(false);stopSpeech();}else{if(step>=0)startSpeech(lines[step][1].replaceAll('{pseudo}',alias));automatic(true);}}};
+
+function automatic(on,hold=false){
+ const now=performance.now();autoplay=on;clearTimeout(autoTimer);$('auto').textContent=on?'Pause cinéma':'Lecture cinéma';
+ if(on){
+  if(shotPaused){shotStart=now-pausedElapsed;shotPaused=false;}
+  const line=lines[step];if(line)scheduleNext(Math.max(250,line.ms-shotElapsed(now)));
+ }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
+}
+$('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;$('auto').textContent='Pause cinéma';void showScene(0)};
+$('next').onclick=()=>{automatic(false,true);next()};
+$('prev').onclick=()=>{automatic(false,true);$('garden').hidden=true;void showScene(Math.max(0,step-1));};
+$('skip').onclick=()=>{if(!authorized||!ready||pending)return;automatic(false,true);$('welcome').hidden=true;started=true;void showScene(dojoStart);};
+$('auto').onclick=()=>{if(started&&!pending)automatic(!autoplay)};
 $('personalize').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
 
 $('report-open').onclick=()=>{$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
@@ -530,7 +896,7 @@ canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('poin
 const keys=new Set();
 window.addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-const cameraTarget=new T.Vector3(),cameraEye=new T.Vector3();
+
 function frame(){
  requestAnimationFrame(frame);const dt=Math.min(.06,clock.getDelta());
  if(!room||stage==='garden')return;
@@ -544,16 +910,15 @@ function frame(){
    people[1].root.rotation.y=Math.atan2(-moveX,-moveZ);
   }
  }
- angle+= (targetAngle-angle)*(1-Math.exp(-dt*(stage==='dojo'?2:1.05)));
- const now=performance.now();advanceMovement(now);animateSpeech(now);
- const seated=stage==='white'&&step>=4,reverse=seated&&targetAngle<.5;
- const mid=stage==='dojo'?new T.Vector3(.1,1.25,.65):new T.Vector3(0,seated?.89:.98,seated?-.20:.20);
- const htan=Math.tan(T.MathUtils.degToRad(camera.fov*.5))*Math.max(.25,camera.aspect);
- const dist=stage==='dojo'?Math.max(radius,3.0/htan):Math.max(radius,(seated?(reverse?1.96:1.85):1.19)/htan);
- cameraEye.set(mid.x+Math.sin(angle)*dist,mid.y+(stage==='dojo'?1.12:seated?.85:.36),mid.z+Math.cos(angle)*dist);
- camera.position.copy(cameraEye);camera.lookAt(mid);camera.updateMatrixWorld(true);
+
+ const now=performance.now();if(!shotPaused)advanceMovement(now);
+ if(!started||step<0){camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
+ const line=lines[step],elapsed=shotElapsed(now);
+ if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
+ updateFilm(line,elapsed);cameraShot(line,elapsed,dt);
  renderer.render(scene,camera);anchorBubble();
 }
+
 async function authorize(){
  const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(17000)});
  if(!response.ok)throw Error('La connexion administrateur est nécessaire.');
