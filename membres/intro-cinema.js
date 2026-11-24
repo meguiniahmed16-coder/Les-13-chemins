@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+const authorKind=new URLSearchParams(location.search).get('auteur')==='edition'?'edition':'atelier';
 const $=id=>document.getElementById(id),host=$('viewport'),bubble=$('bubble'),status=$('status'),controls=$('controls');
 const reportKey='maison-rencontres-rapports-v2';let log=[],stage='white',step=-1,auto=false,timer=0,authorized=false,alias='Invité',last=performance.now(),stick={x:0,y:0},drag=null;
 try{const old=JSON.parse(localStorage.getItem(reportKey)||'[]');if(Array.isArray(old))log=old.slice(-150)}catch{}
@@ -133,8 +134,8 @@ function navigate(index){
 }
 function setAutomatic(value){auto=value;clearTimeout(timer);$('auto').textContent=value?'Pause cinéma':'Lecture cinéma';if(value)timer=setTimeout(()=>navigate(step===text.length-1?0:step+1),5200)}
 $('next').onclick=()=>navigate(step===text.length-1?0:step+1);$('prev').onclick=()=>navigate(step-1);$('auto').onclick=()=>setAutomatic(!auto);
-$('skip').onclick=()=>{setAutomatic(false);navigate(14)};$('exit').onclick=()=>location.href='/membre.html?auteur=atelier#salon';
-$('save').onclick=()=>location.href='/membre.html?auteur=atelier#avatar';
+$('skip').onclick=()=>{setAutomatic(false);navigate(14)};$('exit').onclick=()=>location.href='/membre.html?auteur='+authorKind+'#salon';
+$('save').onclick=()=>location.href='/membre.html?auteur='+authorKind+'#avatar';
 $('start').onclick=()=>{alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;navigate(0);setAutomatic(true)};
 $('bug').onclick=()=>{$('bug-dialog').showModal();$('report-scene').value=stage+' · scène '+(step+1);$('count').textContent=log.length+' signalements mémorisés'};
 $('cancel-report').onclick=()=>$('bug-dialog').close();
@@ -165,6 +166,7 @@ function draw(){
  renderer.render(scene,camera);
 }draw();
 async function auth(){
+ const oldRoom=document.querySelector('header a[href*=\"membre.html\"]');if(oldRoom)oldRoom.href='/membre.html?auteur='+authorKind+'#salon';
  try{const res=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(13000)});if(!res.ok)throw Error('Session auteur absente');const who=await res.json();if(!who.author)throw Error('Accès réservé à l’auteur');authorized=true;alias=(who.pseudo||'Invité').slice(0,40);$('pseudo').value=alias;$('locked').hidden=true}
  catch(e){record('auth',e.message);$('locked').hidden=false;$('welcome').hidden=true;$('toolbox').hidden=true}
 }auth();
