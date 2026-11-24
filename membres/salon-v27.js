@@ -124,7 +124,7 @@ class SalonV27 extends HTMLElement{
   connectedCallback(){
     if(this.#frame||this.#fallback)return;
     const frame=this.#frame=document.createElement('iframe');
-    frame.title='Mon salon, la maison et le jardin';frame.className='v27-frame';frame.allowFullscreen=true;
+    frame.title='La Croisée des Âmes, le salon et le parc';frame.className='v27-frame';frame.allowFullscreen=true;
     this.#listen=new AbortController();
     const signal=this.#listen.signal;
     this.#ready=new Promise(resolve=>{

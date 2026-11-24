@@ -62,9 +62,11 @@ function makeController(figure,rig,parts,actor,originalRig=null,originalRest=nul
   pose(amount,g=null){
    actor.sit=amount;const t=g?.time??time;time=t;
    const seat=amount>0?actor.introSeat:null,expr=motionGesture(g,amount);
-   const key=Math.round(amount*200)+'/'+Math.floor(t*18)+'/'+(seat?.id||'')+'/'+Math.round((g?.headYaw||0)*100)+'/'+Math.round((g?.energy||0)*10);
+   const footwork=g?.gait?.footwork;
+   const key=Math.round(amount*200)+'/'+(footwork?'step:'+Math.round(t*1000):Math.floor(t*18))+'/'+(seat?.id||'')+'/'+Math.round((g?.headYaw||0)*100)+'/'+Math.round((g?.energy||0)*10);
    if(key===last)return;last=key;
-   if(g?.gait?.strength>.01&&amount<.01){solver.expression=expr;solver.travelPose(g.gait.phase,g.gait.strength*.7,0);apply(solver.bones());}
+   if(footwork&&amount<.01)apply(solver.sampleFootworkPose(footwork,t,expr,actor.id==='m'?1.075:1.04));
+   else if(g?.gait?.strength>.01&&amount<.01){solver.expression=expr;solver.travelPose(g.gait.phase,g.gait.strength*.7,0);apply(solver.bones());}
    else apply(solver.sampleSalonPose(seat,amount,t,expr,actor.id==='m'?1.075:1.04));
   }
  };
@@ -182,6 +184,26 @@ export async function prepareIntroAppearance(actor,figure,{look=figure.appearanc
  figure.pose(binding.rig.rest);
  const group=new T.Group();group.name='Ahmed · tenue de démonstration';group.visible=false;binding.parent.add(group);
  const parts=figure.meshes.filter(m=>m.binding).map(m=>partMesh(m,group,white));
+ if(look?.outfit?.culotte&&!look.outfit.bas&&!look.outfit.robe){
+  // The private portrait's source skin omits the legs hidden by its original
+  // trousers. Complete only the lower body for the opaque underwear preview;
+  // its covered waistband conceals the join. Keep the private hands, neck,
+  // face, speech and skeleton, and never duplicate their skin geometry.
+  const body=figure.meshes.find(m=>m.name==='body'),lower=new Uint8Array(body.n);
+  for(let i=0;i<body.n;i++){
+   let weight=0;
+   for(let k=0;k<4;k++){
+    const bone=body.rig[i*8+k],amount=body.rig[i*8+4+k];
+    if(bone===0||(bone>=8&&bone<=13))weight+=amount;
+   }
+   lower[i]=body.v[i*3+1]<8400&&weight>220?1:0;
+  }
+  const faces=[];
+  for(let i=0;i<body.faces.length;i+=3){const a=body.faces[i],b=body.faces[i+1],c=body.faces[i+2];if(lower[a]&&lower[b]&&lower[c])faces.push(a,b,c);}
+  if(!faces.length)throw Error('Les jambes d’Ahmed sont indisponibles pour cet ensemble.');
+  const indices=Uint16Array.from(faces),legSource={...body,name:'introAhmedLegs',faces:indices,allFaces:indices};
+  const legs=partMesh(legSource,group,false);legs.introSkinSupplement=true;parts.push(legs);
+ }
  const wardrobe=makeController(figure,binding.rig,parts,actor,binding.bones,binding.rest);
  const fields=Object.fromEntries(appearanceFields.map(key=>[key,actor[key]]));
  Object.assign(fields,{parts,wardrobe,pose:(amount,g)=>wardrobe.pose(amount,g),pants:null});

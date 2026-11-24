@@ -59,12 +59,13 @@ function clockFixture(){
 }
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject}}
 function harness({dojoLoaded=true}={}){
- const dom=domFixture(),time=clockFixture(),visits=[];let renders=0,filmStops=0;
+ const dom=domFixture(),time=clockFixture(),visits=[],arrivals=[];let renders=0,filmStops=0;
  const actors=['m','f'].map((id,i)=>({id,root:{name:i?'Marianne':'Ahmed',position:new T.Vector3(i?1:-1,0,0),rotation:{y:0}},sit:false,pose(){},speak(){}}));
  const state={T,...dom,...time,lines,dojoStart:lines.findIndex(s=>s.scene==='dojo'),
   room:{},dojo:dojoLoaded?{visible:false}:null,people:actors,
   dojoWardrobe:{ready:dojoLoaded,cancelled:false,async prepare(){if(!this.cancelled)this.ready=true},restore(){this.cancelled=true;this.ready=false}},
   dojoDemo:{hidden:true,updates:[],update(line,elapsed){this.hidden=line.scene!=='dojo';this.updates.push([line.id,elapsed])},hide(){this.hidden=true}},
+  promotionMode:false,arrivalPlayer:{start(options){arrivals.push(options);dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee27'},tick(){},pause(){},resume(){}},
   isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
   stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
   pending:false,sceneRequest:0,seatsReady:true,initialTask:null,shotStart:0,shotPaused:false,pausedAt:0,pausedElapsed:0,
@@ -80,7 +81,7 @@ function harness({dojoLoaded=true}={}){
   prepareDojo:async()=>{state.dojo={visible:false}},prepareSeats:async()=>{state.seatsReady=true},
  };
  createContext(state);runInContext(production,state,{filename:'intro-cinema.production-fragments.js'});
- return {state,dom,time,visits,get renders(){return renders},get filmStops(){return filmStops},
+ return {state,dom,time,visits,arrivals,get renders(){return renders},get filmStops(){return filmStops},
   async enter(){dom.$('enter').click();await flush()},
   frames(count){for(let i=0;i<count;i++){time.tick(16);state.frame()}},
  };
@@ -123,7 +124,8 @@ test('one start automatically visits every white-room and dojo line, then opens 
  assert.equal(h.state.stage,'garden');assert.equal(h.state.autoplay,false);assert.equal(h.time.count(),0);
  assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.dom.$('skip').hidden,true);
- assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&v=accueil51');
+ assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee27');
+ assert.equal(h.arrivals.length,1);assert.equal(h.arrivals[0].skip,false);
 });
 
 test('a delayed sitting animation retains its continuation until the movement is complete',async()=>{
@@ -175,10 +177,8 @@ test('skipping during the initial room download keeps the garden visible after t
  assert.equal(h.time.count(),0);
 });
 
-test('garden load and salon-ready events open the destination once',async()=>{
- const h=harness();let pin=0,home=0;const frame=h.dom.$('garden-frame'),body=h.dom.element();body.classList.add('ready');
- frame.contentDocument={body,getElementById:id=>({click(){if(id==='pin')pin++;if(id==='lookHome')home++}})};
- frame.contentWindow=h.dom.element();h.state.startGarden();frame.dispatch('load');
- frame.contentWindow.dispatch('salon-ready');h.state.startGarden();
- assert.equal(pin,1);assert.equal(h.time.count(),1);await h.time.advance();assert.equal(home,1);
+test('garden entry delegates once to the explicit arrival sequence instead of racing simulated controls',async()=>{
+ const h=harness();h.state.startGarden();h.state.startGarden();
+ assert.equal(h.arrivals.length,1);assert.equal(h.time.count(),0);assert.equal(h.arrivals[0].skip,false);
+ const skipped=harness();skipped.dom.$('skip').click();assert.equal(skipped.arrivals.length,1);assert.equal(skipped.arrivals[0].skip,true);
 });

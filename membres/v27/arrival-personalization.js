@@ -85,6 +85,7 @@ export function mountArrivalPersonalization({doc=document,win=window,request=aut
   if(task)return task;button.disabled=true;status.textContent='';
   task=(async()=>{
    try{
+    win.salonArrival?.personalization('loading');
     const member=await request('me');if(!member.author)throw Error('Rouvre ce salon depuis ton administration.');
     const scene=win.salonV27;if(!scene)throw Error('Le salon se prépare encore.');
     editor=createArrivalCharacterEditor({scene,member,request});editor.select('homme');
@@ -105,8 +106,8 @@ export function mountArrivalPersonalization({doc=document,win=window,request=aut
     const note=doc.createElement('p');note.className='portrait-note';note.textContent='Les tenues gardent le visage d’Ahmed. Les réglages du personnage créent une nouvelle apparence. Tu peux toujours reprendre Ahmed d’origine.';
     characterTools=doc.createElement('section');characterTools.className='character-tools';characterTools.setAttribute('aria-label','Apparence d’origine et enregistrée');characterTools.append(original,saved,note);
     win.addEventListener('salon-role-change',event=>{editor.select(event.detail);configure();if(!host.hidden)focus('Visage');});
-    configure();button.disabled=false;
-   }catch(error){status.textContent=error.message;button.disabled=false;button.onclick=()=>{task=null;void initialize();};}
+    configure();button.disabled=false;win.salonArrival?.personalization('ready');
+   }catch(error){status.textContent=error.message;win.salonArrival?.personalization('error',error.message);button.disabled=false;button.onclick=()=>{task=null;void initialize();};}
   })();return task;
  }
  host.addEventListener('keydown',event=>{if(event.key==='Escape')drawer?.toggle(false);event.stopPropagation();});

@@ -6,11 +6,15 @@ import {planSpeechBubble} from './intro-bubbles.js';
 import {dojoBlocking,dojoDirectedCamera,DOJO_DURATIONS} from './intro-dojo-director.js';
 import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
+import {mountIntroArrival} from './intro-arrival.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
 const dojoDemo=mountDojoDemo(canvasHost);
+const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
+if(promotionMode)document.body.classList.add('promotion');
+const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message)});
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -201,7 +205,7 @@ const lines=[
  {
   "id": "montage",
   "speaker": null,
-  "text": "La Maison des rencontres, c’est un espace en construction…",
+  "text": "La Croisée des Âmes, c’est un espace en construction…",
   "scene": "white",
   "shot": "montage",
   "ms": 15000,
@@ -213,7 +217,7 @@ const lines=[
  {
   "id": "lieu",
   "speaker": "f",
-  "text": "La Maison des rencontres, c’est un espace en construction… Un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
+  "text": "La Croisée des Âmes, c’est un espace en construction… Un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
   "scene": "white",
   "shot": "two",
   "ms": 12000,
@@ -267,6 +271,18 @@ const lines=[
   "ms": 11000,
   "move": "drift",
   "gesture": "invite",
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-demi-tour",
+  "speaker": "m",
+  "text": "Pour se retourner, les pieds accompagnent le mouvement.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 9000,
+  "move": "drift",
+  "gesture": "explain",
   "seated": false,
   "demo": true
  },
@@ -835,7 +851,7 @@ function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
  const b=document.createElement('b'),p=document.createElement('p');
- b.textContent=actor?.root.name||(id==='m'?'Ahmed':id==='f'?'Marianne':'La Maison des rencontres');p.textContent=text.replaceAll('{pseudo}',alias);
+ b.textContent=actor?.root.name||(id==='m'?'Ahmed':id==='f'?'Marianne':'La Croisée des Âmes');p.textContent=text.replaceAll('{pseudo}',alias);
  bubble.replaceChildren(b,p);bubble.hidden=false;
  // Place the complete reply only after the new camera is set, then latch it.
  // No alternate footer, typewriter animation or per-frame position switching.
@@ -845,7 +861,7 @@ function updateActing(now){
  const line=lines[step];if(!line||!started||!ready||stage==='garden')return;
  const elapsed=shotElapsed(now),t=elapsed/1000,duration=line.ms/1000;
  if(line.secondary&&!secondCue&&elapsed>=line.secondary.at){secondCue=true;setCue(line.secondary.speaker,line.secondary.text,line.secondary.at);}
- if(now-lastMotion<50)return;lastMotion=now;
+ if(now-lastMotion<50&&!people.some(p=>p.gait?.footwork))return;lastMotion=now;
  for(const p of people){
   const speaking=currentSpeaker===p.id,energy=speaking?1:.20;
   const localTime=(stage==='dojo'?elapsed/1000:now/1000)+(p.id==='f'?2.6:0);
@@ -1178,29 +1194,13 @@ async function showScene(index){
  if(autoplay)scheduleNext(line.ms);
 }
 
-function startGarden(){
+function startGarden(skipFinale=false){
  ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();dojoDemo.hide();dojoWardrobe?.restore();stage='garden';$('garden').hidden=false;setPending(false);
  $('joystick').hidden=true;$('skip').hidden=true;
  $('welcome').hidden=true;$('loading').hidden=true;$('scene-wait').hidden=true;
- status.textContent='Le jardin et la maison';
+ status.textContent='La Croisée des Âmes';
  if(gardenLoaded)return;gardenLoaded=true;
- const frame=$('garden-frame');let gardenOpened=false;
- function openGarden(){
-  try{
-   const d=frame.contentDocument;
-   if(gardenOpened||!d?.body?.classList.contains('ready'))return;gardenOpened=true;
-   d.getElementById('pin')?.click();
-   setTimeout(()=>{try{d.getElementById('lookHome')?.click()}catch{}},700);
-  }catch(e){remember('Jardin',e.message)}
- }
- frame.addEventListener('load',()=>{
-  try{
-   frame.contentWindow.addEventListener('salon-ready',openGarden,{once:true});
-   frame.contentWindow.addEventListener('error',e=>remember('Erreur jardin',e.message));
-   if(frame.contentDocument?.body?.classList.contains('ready'))openGarden();
-  }catch(e){remember('Jardin',e.message)}
- });
- frame.src='/membres/v27/salon.html?resident=marianne&arrival=cinema&v=accueil51';
+ arrivalPlayer.start({promo:promotionMode,skip:skipFinale,paused:$('report-dialog').open});
 }
 function next(){
  if(!started||pending||stage==='garden')return;
@@ -1217,17 +1217,17 @@ function automatic(on,hold=false){
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
 }
 $('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
-$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden();};
+$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden(true);};
 
 let resumeAfterReport=false;
-$('report-open').onclick=()=>{resumeAfterReport=autoplay;automatic(false);$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
+$('report-open').onclick=()=>{resumeAfterReport=autoplay;automatic(false);if(stage==='garden')arrivalPlayer.pause();$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
 $('report-close').onclick=()=>$('report-dialog').close();
-$('report-dialog').addEventListener('close',()=>{if(resumeAfterReport&&stage!=='garden')automatic(true);resumeAfterReport=false;});
+$('report-dialog').addEventListener('close',()=>{if(stage==='garden')arrivalPlayer.resume();else if(resumeAfterReport)automatic(true);resumeAfterReport=false;});
 $('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
 $('report-export').onclick=()=>{
- const data={created:new Date().toISOString(),experience:'La Maison des rencontres',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
+ const data={created:new Date().toISOString(),experience:'La Croisée des Âmes',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
- const a=document.createElement('a');a.href=url;a.download='rapport-maison-des-rencontres-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ const a=document.createElement('a');a.href=url;a.download='rapport-croisee-des-ames-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
 };
 function resize(){const w=canvasHost.clientWidth,h=canvasHost.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(canvasHost);resize();
@@ -1249,7 +1249,8 @@ window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 
 function frame(){
  requestAnimationFrame(frame);const dt=Math.min(.06,clock.getDelta());
- if(!room||stage==='garden')return;
+ if(stage==='garden'){arrivalPlayer.tick();return;}
+ if(!room)return;
  if(stage==='dojo'&&people[1]&&!isStagedDojo(lines[step])){
   const moveX=joystick.x+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('q')?1:0);
   const moveZ=joystick.y+(keys.has('arrowdown')||keys.has('s')?1:0)-(keys.has('arrowup')||keys.has('z')?1:0);

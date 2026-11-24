@@ -47,7 +47,15 @@ test('a not-yet-ready real wardrobe cannot be misrepresented by the preview',()=
  const line=cue('dojo-vetements',12000);
  assert.equal(dojoDemoFrame(line,4500,{wardrobe:{ready:false,lookIndex:2}}).visible,false);
  const shown=dojoDemoFrame(line,4500,{wardrobe:{ready:true,lookIndex:1,bodyIndex:0,actor:'m'}});
- assert.equal(shown.visible,true);assert.equal(shown.lookIndex,1);assert.equal(shown.label,'Ville');
+ assert.equal(shown.visible,true);assert.equal(shown.lookIndex,1);assert.equal(shown.label,'Élégance');
+});
+
+test('the underwear selection is brief, complete for the pair, and followed by a return to white',()=>{
+ const line=cue('dojo-vetements',12000),frame=dojoDemoFrame(line,5000);
+ assert.equal(DOJO_LOOKS.length,4);assert.equal(frame.title,'Sous-vêtements');assert.equal(frame.lookIndex,3);
+ assert.equal(frame.context,'Ahmed · Marianne');assert.match(frame.description,/caleçon marine/);assert.match(frame.description,/shorty marine/);
+ assert.notEqual(dojoDemoFrame(line,4200).lookIndex,3);assert.notEqual(dojoDemoFrame(line,6000).lookIndex,3);
+ assert.equal(dojoDemoFrame(line,10000).lookIndex,0);
 });
 
 test('the reserved panel stays small and leaves the existing left joystick clear on phones',()=>{

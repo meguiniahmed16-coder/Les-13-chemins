@@ -1,5 +1,7 @@
 // Each file contains one public V27 resource. Fetch only the selected outfit.
-const base=new URL('../assets/salon-v27/',import.meta.url);
+// Bundles also live one level deeper in /membres/v27/. These public assets
+// belong to the site root, independently of the importing bundle's directory.
+const base=new URL('/assets/salon-v27/',import.meta.url);
 const types={Uint8Array,Uint16Array,Int8Array,Int16Array};
 const cache=new Map();
 export function resource(name){

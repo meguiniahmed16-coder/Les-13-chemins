@@ -134,10 +134,10 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>pe
     if(skin&&beforeIndex)skin.geometry.setIndex(beforeIndex);current=beforeWardrobe;last='';throw error;
    }
   },
-  animate(blend,seat,dt=0){
+  animate(blend,seat,dt=0,sampleTime){
    if(!active)return false;
    actor.phase=(actor.phase+dt*(1.02+blend*.1))%1;
-   const time=now(),express=actor.conversationPose;
+   const time=Number.isFinite(sampleTime)?sampleTime:now(),express=actor.conversationPose;
    const stamp=Math.floor(time*(blend>.015||express?25:15))+'/'+(seat?.id||'')+'/'+Math.round(actor.sit*50)+'/'+Math.round(blend*100);
    if(stamp===last)return true;last=stamp;
    if(!seat&&blend>.015){solver.expression=express;solver.travelPose(actor.phase,blend,0);current.apply(solver.bones());}
@@ -152,9 +152,9 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>pe
   headPosition(out=new T.Vector3()){
    rig[1].getWorldPosition(out);out.y+=.135;return out;
   },
-  talk(p={}){
+  talk(p={},sampleTime){
    if(!active)return;
-   const phase=(now()+1.65)%5.1,blink=p.blink??(phase<.16?Math.sin(phase/.16*Math.PI):0);
+   const phase=((Number.isFinite(sampleTime)?sampleTime:now())+1.65)%5.1,blink=p.blink??(phase<.16?Math.sin(phase/.16*Math.PI):0);
    for(const object of mouth){
     const map=object.morphTargetDictionary,values=object.morphTargetInfluences;
     for(const [key,value] of Object.entries({Ouvrir:p.jaw||0,Decouvrir:(p.spread||0)*.18,SourireG:(p.spread||0)*.07,SourireD:(p.spread||0)*.07,Cligner:blink}))if(map[key]!==undefined)values[map[key]]=value;

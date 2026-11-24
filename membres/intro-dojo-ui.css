@@ -31,8 +31,8 @@
 .dojo-demo-field{font-size:9px;color:#738066;line-height:10px}
 .dojo-demo-body-options{display:flex;gap:6px;min-height:0}
 .dojo-demo-body .dojo-demo-choice{height:25px;font-size:10px}
-.dojo-demo-wardrobe{gap:5px}
-.dojo-demo-look{flex-direction:column;gap:2px;height:39px;font-size:9.5px}
+.dojo-demo-wardrobe{gap:4px}
+.dojo-demo-look{flex-direction:column;gap:2px;height:39px;font-size:9px}
 .dojo-demo-look svg{width:17px!important;height:17px!important;fill:var(--look-color);stroke:#3c5144;stroke-width:1.2!important}
 .dojo-demo-look.selected svg{stroke:#f8f3e2}
 .dojo-demo-save{position:relative;justify-content:center;height:32px;margin-top:11px;width:132px;margin-inline:auto;border:1px solid #5c7559;border-radius:8px;background:#f0f1df;color:#3d593e}
@@ -55,4 +55,4 @@
 #dojo-demo.compact .dojo-demo-body .dojo-demo-choice{height:20px}
 #dojo-demo.compact .dojo-demo-body{gap:2px!important}
 #dojo-demo.compact .dojo-demo-save{height:28px;margin-top:8px}
-@media(max-width:350px){.dojo-demo-heading{gap:4px}.dojo-demo-context{font-size:8px}.dojo-demo-title{font-size:10.5px}.dojo-demo-choice{gap:3px}.dojo-demo-wardrobe{gap:4px}.dojo-demo-look{font-size:9px}#dojo-demo[data-mode=wardrobe] .dojo-demo-context{display:none}}
+@media(max-width:350px){.dojo-demo-heading{gap:4px}.dojo-demo-context{font-size:8px}.dojo-demo-title{font-size:10.5px}.dojo-demo-choice{gap:3px}.dojo-demo-wardrobe{gap:3px}.dojo-demo-look{font-size:8.2px}#dojo-demo[data-mode=wardrobe] .dojo-demo-context{display:none}}

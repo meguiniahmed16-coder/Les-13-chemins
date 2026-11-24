@@ -85,7 +85,8 @@ test('account reads and saves use the same authenticated author API as the exist
 
 test('the direct arrival loads the editor and the dojo explains its actual controls automatically',()=>{
  const html=readFileSync(new URL('./v27/salon.html',import.meta.url),'utf8');
- assert.match(html,/arrival-personalization\.js\?v=maison25/);assert.match(html,/arrival-personalization\.css\?v=maison25/);
+ assert.match(html,/salon-runtime\.js\?v=croisee27/);assert.match(html,/arrival-personalization\.css\?v=croisee27/);
+ const runtime=readFileSync(new URL('./v27/salon-runtime.js',import.meta.url),'utf8');assert.match(runtime,/arrival-personalization\.js\?v=croisee27/);
  const source=readFileSync(new URL('./intro-cinema.js',import.meta.url),'utf8'),start=source.indexOf('const lines=')+'const lines='.length;
  const shots=JSON.parse(source.slice(start,source.indexOf(';\nconst dojoStart',start)));
  const tutorial=shots.filter(s=>['dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer'].includes(s.id));

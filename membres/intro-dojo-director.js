@@ -3,7 +3,7 @@ import * as T from 'three';
 // All time is supplied by the introduction's paused/resumed shot clock. Nothing
 // here starts a timer, moves a real actor, or writes a saved appearance.
 export const DOJO_DURATIONS=Object.freeze({
- 'dojo-arrivee':7000,'dojo-camera':10000,'dojo-deplacement':11000,
+ 'dojo-arrivee':7000,'dojo-camera':10000,'dojo-deplacement':11000,'dojo-demi-tour':9000,
  'dojo-personnaliser':8000,'dojo-apparence':10000,'dojo-vetements':12000,
  'dojo-enregistrer':7000,'dojo-construction':9000,jardin:6000
 });
@@ -34,6 +34,41 @@ const walkLength=walkPath.getLength();
 // Marianne's1.04 model scale. Keep its finite internal walk path in one cycle.
 const walkCycleDistance=.65*1.10*.7*1.04;
 const pathHeading=u=>{const v=walkPath.getTangentAt(clamp(u,0,1));return Math.atan2(v.x,v.z);};
+const upAxis=new T.Vector3(0,1,0);
+
+// Four small advancing steps make the half-turn; the fifth gathers the last
+// foot. The support footprint stays in world space while the pelvis turns.
+// Coordinates remain in the leg solver's centimetres until the actor root
+// applies its original scale, so both bodies keep their measured sole height.
+function plantedTurn(yaw,angle,progress){
+ const direction=Math.sign(angle)||1,firstSide=direction,p=clamp(progress,0,1),step=Math.min(4,Math.floor(p*5)),u=p===1?1:p*5-step;
+ const footprint=(side,heading,widen=0)=>new T.Vector3(side*(8.65+widen),7.85,-1).applyAxisAngle(upAxis,heading);
+ const feet=[-1,1].map(side=>({side,world:footprint(side,yaw),heading:yaw,roll:0,planted:true}));
+ for(let n=0;n<step;n++){
+  const side=firstSide*(n%2?-1:1),foot=feet[side<0?0:1];
+  foot.heading=yaw+angle*Math.min((n+1)/4,1);foot.world.copy(footprint(side,foot.heading));
+ }
+ const swingSide=firstSide*(step%2?-1:1),swing=feet[swingSide<0?0:1],support=feet[swingSide<0?1:0];
+ const liftPhase=clamp((u-.14)/.72,0,1),travel=smooth(liftPhase),lift=Math.sin(Math.PI*liftPhase)**2;
+ const target=yaw+angle*Math.min((step+1)/4,1),bodyYaw=lerp(yaw+angle*Math.min(step/4,1),target,travel);
+ swing.heading=lerp(swing.heading,target,travel);
+ swing.world.copy(footprint(swingSide,swing.heading,2.0*lift));swing.world.y+=3.8*lift;
+ swing.roll=.06*Math.sin(2*Math.PI*liftPhase)*Math.sin(Math.PI*liftPhase);
+ swing.planted=liftPhase===0||liftPhase===1;
+ const localSupport=support.world.clone().applyAxisAngle(upAxis,-bodyYaw);
+ const activity=Math.sin(Math.PI*u)**2;
+ return {yaw:bodyYaw,footwork:{phase:(step+u)*.5,direction,activity,
+  hipShift:[localSupport.x*.22*activity,-.70*activity,(localSupport.z+1)*.12*activity],
+  feet:feet.map(foot=>({point:foot.world.clone().applyAxisAngle(upAxis,-bodyYaw).toArray(),
+   yaw:foot.heading-bodyYaw+foot.side*.043,roll:foot.roll,weight:.30*activity,planted:foot.planted,side:foot.side}))
+ }};
+}
+
+function halfTurnSequence(id,time){
+ const direction=id==='m'?1:-1,start=id==='m'?.55:.90,returnAt=id==='m'?4.55:4.90,duration=2.70;
+ return time<returnAt?plantedTurn(openYaw[id],direction*Math.PI,(time-start)/duration):
+  plantedTurn(openYaw[id]+direction*Math.PI,-direction*Math.PI,(time-returnAt)/duration);
+}
 
 function poseGesture({left=.04,right=.04,nod=0,tilt=0,reach=24,height=-20,forward=20}={}){
  return {left,right,reach,height,forward,palm:.18,pitch:0,yaw:0,nod,tilt};
@@ -70,6 +105,13 @@ export function dojoBlocking(line,elapsed,{center=new T.Vector3(),floorY=0}={}){
   m.yaw=turn(openYaw.m,yawBetween(m.position,f.position)-.14,.8*segment(t,.05,.25)*(1-segment(t,.82,1)));
   m.gesture='invite';m.poseGesture=poseGesture({right:.42*pulse(t,.02,.34),height:-11,forward:29});
   f.poseGesture=poseGesture({nod:.06*pulse(t,.91,.08)});
+ }else if(line.id==='dojo-demi-tour'){
+  phase='turning';
+  for(const [id,actor]of [['m',m],['f',f]]){
+   const turning=halfTurnSequence(id,time);
+   actor.yaw=turning.yaw;actor.gait={phase:0,strength:0,footwork:turning.footwork};
+   actor.poseGesture=poseGesture({left:.03,right:.03});
+  }
  }else if(line.id==='dojo-personnaliser'){
   phase='selection';m.gesture='invite';
   m.poseGesture=poseGesture({right:.40*pulse(t,.03,.49),left:.20*pulse(t,.42,.48),height:-11,forward:27});
@@ -101,7 +143,10 @@ export function dojoBlocking(line,elapsed,{center=new T.Vector3(),floorY=0}={}){
  }
  for(const [actor,other]of [[m,f],[f,m]]){
   const limit=actor.gait.strength>.05?.34:.58;
-  actor.headYaw=clamp(delta(actor.yaw,yawBetween(actor.position,other.position)),-limit,limit);
+  // A partner crossing behind the turning body must not snap the head from
+  // one neck limit to the other; retain the relaxed exchange during the steps.
+  const lookYaw=actor.gait.footwork?(actor===m?openYaw.m:openYaw.f):actor.yaw;
+  actor.headYaw=clamp(delta(lookYaw,yawBetween(actor.position,other.position)),-limit,limit);
  }
  return {m,f,phase,cue:line.id,time};
 }
@@ -145,6 +190,8 @@ export function dojoDirectedCamera({line,elapsed,aspect=16/9,actors,bounds,floor
   azimuth=lerp(Math.PI-1.42,Math.PI+1.42,s);distance=3.25;height=base+1.52+.15*Math.sin(t*Math.PI);
  }else if(line.id==='dojo-deplacement'){
   azimuth=lerp(Math.PI-.43,Math.PI+.29,s);distance=3.7;height=base+1.57;
+ }else if(line.id==='dojo-demi-tour'){
+  azimuth=lerp(Math.PI-.16,Math.PI+.18,s);distance=3.6;height=base+1.46;minimum=40;
  }else if(line.id==='dojo-personnaliser'){
   framing='american';lower=base+.64;distance=3.08;minimum=29;azimuth=lerp(Math.PI+.28,Math.PI-.22,s);height=base+1.45;
   if(aspect<.95){subject=line.speaker==='f'?'f':'m';targets=[byId.get(subject)];distance=2.0;azimuth=subject==='m'?2.40:3.88;}

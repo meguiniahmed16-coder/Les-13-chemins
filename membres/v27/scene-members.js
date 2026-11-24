@@ -131,6 +131,7 @@ export function createMemberBridge(scene){
       template=reference;const weights=scene.unzip(new Uint8Array(bytes));
       for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}
       if(scene.cinemaArrival){
+        globalThis.window?.salonArrival?.progress('ahmed','Retrouvons Ahmed dans La Croisée des Âmes…');
         const original=await attachCinemaAhmed(actors.m);
         originals.set(actors.m,original.parts);originalMotion.set(actors.m,original.motion);
       }},

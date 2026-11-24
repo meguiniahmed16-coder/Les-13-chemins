@@ -8,11 +8,14 @@ import {seats as roomSeats,roomFree,roomPath} from '../salon-plan.js';
 import {reunionDialogue} from './rencontre-lionel.js';
 import {createMemberBridge} from './scene-members.js';
 import {loadOriginalCinemaAssets} from './intro-original.js';
+import {createIntroFinale} from './intro-finale.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const view=$('stage'), canvas=$('scene'), clamp=T.MathUtils.clamp, mix=T.MathUtils.lerp, tau=Math.PI*2;
+let arrivalFinale=null,introDirector=null;
+window.salonArrival?.progress('decor','Ouverture de la maison et de son parc…');
 const response=await fetch('/assets/depart-duo/scene.bin');
 if(!response.ok)throw Error('Le salon ne répond pas.');
 const packed=new Uint8Array(await response.arrayBuffer());
@@ -480,8 +483,9 @@ for(let i=0;i<mothCount;i++)moths.push({group:i%7,r:flightRand(),a:flightRand()*
 const flyer=new T.Object3D(),hinge=new T.Object3D(),matrixWing=new T.Matrix4();
 const watchLead=new T.Vector3(pathX(3),0,3),watchFriend=new T.Vector3(pathX(3)+.78,0,3.42);
 let flightClock=0,flightFresh=true;
-function flutter(dt){
- flightClock+=dt;const t=flightClock;
+function flutter(dt,absoluteTime){
+ const clocked=Number.isFinite(absoluteTime);
+ if(clocked){flightClock=absoluteTime;flightFresh=true;}else flightClock+=dt;const t=flightClock;
  const out=where==='jardin',lead=out?player().root.position:watchLead,other=out?partner().root.position:watchFriend;
  for(let i=0;i<flocks.length;i++){
   const f=flocks[i],a=f.angle,phase=(t+f.time)*tau/f.period,near=(1+Math.cos(phase))*.5,s=near*near*(3-2*near),person=i%2?lead:other;
@@ -494,7 +498,8 @@ function flutter(dt){
  for(let i=0;i<moths.length;i++){
   const m=moths[i],f=flocks[m.group],u=t*(.93+m.r*.65)+m.a,spread=.34+m.r*.57;
   const x=f.pos.x+spread*Math.cos(u)+.16*Math.sin(u*2.5),y=f.pos.y+.28*Math.sin(u*1.7+m.phase)+.08*Math.sin(u*4.7),z=f.pos.z+spread*Math.sin(u*1.14+m.phase);
-  if(!flightFresh){const dx=x-m.prev.x,dz=z-m.prev.z;if(Math.abs(dx)+Math.abs(dz)>.00001){const yaw=Math.atan2(dx,dz);m.heading+=Math.atan2(Math.sin(yaw-m.heading),Math.cos(yaw-m.heading))*Math.min(1,dt*10)}}
+  if(clocked)m.heading=-u+Math.PI/2;
+  else if(!flightFresh){const dx=x-m.prev.x,dz=z-m.prev.z;if(Math.abs(dx)+Math.abs(dz)>.00001){const yaw=Math.atan2(dx,dz);m.heading+=Math.atan2(Math.sin(yaw-m.heading),Math.cos(yaw-m.heading))*Math.min(1,dt*10)}}
   m.prev.set(x,y,z);flyer.position.set(x,y,z);flyer.rotation.set(.17*Math.sin(2*u),m.heading,.25*Math.sin(u*1.7),'YXZ');flyer.scale.setScalar(m.size);flyer.updateMatrix();
   insectParts.Body.setMatrixAt(i,flyer.matrix);const beat=.28+.81*Math.sin(t*tau*m.beat+m.phase);for(const [which,side] of [['Wing_Left',-1],['Wing_Right',1]]){
    hinge.position.set(0,0,0);hinge.rotation.set(0,0,side*beat);hinge.updateMatrix();matrixWing.multiplyMatrices(flyer.matrix,hinge.matrix);insectParts[which].setMatrixAt(i,matrixWing);
@@ -595,7 +600,7 @@ function setLocation(out){centeredOnPlayer=false;travel.reset();detail.reset();$
  if(!out){syncChunks(3);if(player().root.position.z< -24)flightFresh=true}
  view.dataset.place=where;document.body.dataset.place=where;
  scene.background=new T.Color(out?0xdce7df:0xe2d7c2);scene.fog=new T.FogExp2(0xe2e8db,.014);
- $('place').textContent=out?'Le jardin':'Le salon';$('return').hidden=!out;$('actors').hidden=out;for(const b of Object.values(pins))b.hidden=out;
+ $('place').textContent=cinemaArrival?(out?'Le parc · La Croisée des Âmes':'La Croisée des Âmes'):(out?'Le jardin':'Le salon');$('return').hidden=!out;$('actors').hidden=out;for(const b of Object.values(pins))b.hidden=out;
  $('rise').hidden=true;goal=null;sitting=null;poseSeat=null;
  $('lookHome').hidden=false;homeView=windowView=approachedWindow=false;windowCaption();keys.clear();releaseStick();hint();$('notice').textContent=out?'Le sac est sur ton dos. Tu es dans le jardin.':'De retour au salon.';
 }
@@ -647,6 +652,7 @@ document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('
 const help=$('help');$('helpButton').onclick=()=>help.showModal();$('closeHelp').onclick=()=>help.close();help.addEventListener('click',e=>{if(e.target===help)help.close()});
 function updateCam(dt){
  focusShot=null;
+ if(arrivalFinale?.active)return;
  if(introDirector?.active){
    const smooth=1-Math.exp(-Math.max(0,dt)*introDirector.speed);
    cam.position.lerp(introDirector.position,smooth);
@@ -715,7 +721,7 @@ function updateCam(dt){
   for(const [k,[x,y]] of Object.entries(outPins)){pins[k].style.left=clamp(x,34,w-34)+'px';pins[k].style.top=clamp(y,37,h-15)+'px'}
  }
 }
-function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
+function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();if(arrivalFinale?.active)arrivalFinale.sample(arrivalFinale.elapsedMs);else updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
 new ResizeObserver(updateSize).observe(view);
 function move(dt){
  if(introAuthorized&&introCurrent==='sofa'){
@@ -919,7 +925,16 @@ function adjustResolution(ms){
  const next=frameCost>59?Math.max(floor,old-.18):frameCost<24?Math.min(high,old+.09):old;
  if(Math.abs(old-next)>.035)renderer.setPixelRatio(next);
 }
-let shadowTime=-1;function frame(t){if(contextLost)return;const anchor=where==='jardin'?player().root.position:{x:-1,z:-1};sun.position.set(anchor.x-3.6,7,anchor.z+4.8);sun.target.position.set(anchor.x,0,anchor.z);if(t-shadowTime>145||shadowTime<0){renderer.shadowMap.needsUpdate=true;shadowTime=t;}adjustResolution(t-last);const dt=Math.min(.065,Math.max(0,(t-last)/1000));last=t;if(!help.open&&!catalog.open){move(dt);flutter(dt);if(encounter.active)tickReunion(dt)}member.speechFrame();updateCam(dt);drawScene(scene,cam,focusShot);frameHandle=requestAnimationFrame(frame)}
+let shadowTime=-1;function frame(t){
+ if(contextLost)return;
+ try{
+  const anchor=where==='jardin'?player().root.position:{x:-1,z:-1};sun.position.set(anchor.x-3.6,7,anchor.z+4.8);sun.target.position.set(anchor.x,0,anchor.z);
+  if(t-shadowTime>145||shadowTime<0){renderer.shadowMap.needsUpdate=true;shadowTime=t;}
+  adjustResolution(t-last);const dt=Math.min(.065,Math.max(0,(t-last)/1000));last=t;
+  if(!arrivalFinale?.active){if(!help.open&&!catalog.open){move(dt);flutter(dt);if(encounter.active)tickReunion(dt)}member.speechFrame();updateCam(dt);}
+  drawScene(scene,cam,focusShot);frameHandle=requestAnimationFrame(frame);
+ }catch(error){contextLost=true;window.failure(error?.message||String(error),'RENDER_ERROR');}
+}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;cancelAnimationFrame(frameHandle);window.failure('Le navigateur a interrompu la 3D.');});
 let talkOpen=false;
 const ornaments=new T.Group();indoor.add(ornaments);
@@ -1137,6 +1152,7 @@ const featherMat=new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide
 const featherGeo=[angelGeometry(-1),angelGeometry(1)];
 function flightRig(a){
  if(a.angel)return a.angel;
+ if(!a.harness)a.harness=fitHarness(a);
  const pivot=new T.Group(),load=new T.Group();pivot.rotation.order='YXZ';pivot.position.y=.97;load.position.y=-.97;a.root.add(pivot);pivot.add(load);load.add(a.body,a.harness.h);
  const wings=[];
  for(const [index,side] of [-1,1].entries()){
@@ -1589,7 +1605,6 @@ reunionAction.onclick=()=>{
 const introRequested=new URLSearchParams(location.search).get('intro3d')==='1'&&authorRoom;
 let introAuthorized=false,introOriginal=null,introCurrent='none';
 let introSeatClock=0;
-let introDirector=null;
 const introFloor=new T.Mesh(new T.PlaneGeometry(90,90),
  new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide}));
 introFloor.rotation.x=-Math.PI/2;introFloor.position.y=-.026;introFloor.receiveShadow=true;
@@ -1711,6 +1726,69 @@ if(introRequested){
  });
 }
 
+if(cinemaArrival){
+ const centerX=pathX(3.62);
+ arrivalFinale=createIntroFinale({
+  viewport:()=>({width:view.clientWidth,height:view.clientHeight}),
+  begin(){
+   document.body.classList.add('intro-finale');
+   if(help.open)help.close();if(catalog.open)catalog.close();
+   if(encounter.active)leaveReunion();
+   keys.clear();releaseStick();releaseAirInput();travel.reset();detail.reset();releaseSeatRoute();
+   conversation=null;companionSeat=null;goal=null;sitting=null;poseSeat=null;rising=false;chosen=null;
+   resetAir();setLocation(true);revealStart=null;homeView=windowView=false;
+   for(const a of [actors.m,actors.f]){
+    unwear(a);flightRig(a);a.root.visible=a.body.visible=true;a.body.position.y=0;
+    a.sit=a.speed=a.phase=0;a.stamp='';animateBody(a,0,null);
+   }
+   updateSize();
+  },
+  apply(frame){
+   for(const id of ['m','f']){
+    const a=actors[id],p=frame.actors[id];
+    a.root.position.set(centerX+p.x,0,p.z);a.root.rotation.set(0,p.yaw,0);
+    a.angel.pivot.position.set(0,.97,0);a.angel.pivot.rotation.set(0,0,0);a.angel.lean=0;
+    a.shadow.position.y=.03;a.shadow.scale.set(1,1,1);
+    poseWings(a,frame.wings,frame.wingPhase+(id==='f'?-.24:0),frame.wingPower);
+    if(a.cinemaAhmed?.active){
+     const speaking=frame.time>=2&&frame.time<8;
+     a.conversationPose=speaking?{gesture:{left:.06,right:.10,reach:20,height:-18,forward:18,palm:.12,nod:.018*Math.sin(frame.time*2)},look:0}:null;
+     a.cinemaAhmed.animate(0,null,0,frame.time);a.cinemaAhmed.talk({jaw:speaking?.035*(1+Math.sin(frame.time*12)):0,spread:.20},frame.time);
+    }
+   }
+   air.spread=frame.wings;air.time=frame.time;
+   cam.fov=frame.camera.fov;cam.aspect=frame.viewport.width/frame.viewport.height;
+   cam.position.fromArray(frame.camera.position);cam.position.x+=centerX;
+   cam.lookAt(centerX+frame.camera.target[0],frame.camera.target[1],frame.camera.target[2]);cam.updateProjectionMatrix();cam.updateMatrixWorld(true);
+   scene.updateMatrixWorld(true);flutter(0,frame.time);focusShot=null;
+   // The same shrubs/billboards and real house stay in the scene.
+   for(const sprite of sprites)sprite.rotation.y=Math.atan2(cam.position.x-sprite.position.x,cam.position.z-sprite.position.z);
+   distanceGroup.position.set(centerX,0,3.62);
+  },
+  faces(){
+   const width=view.clientWidth,height=view.clientHeight;
+   return ['m','f'].map(id=>{
+    const world=headCenter(actors[id]),point=world.clone().project(cam),edge=world.clone().add(new T.Vector3(.17,0,0)).project(cam);
+    return {id,x:(point.x*.5+.5)*width,y:(-.5*point.y+.5)*height,r:Math.max(9,Math.abs(edge.x-point.x)*width*.5),visible:point.z>-1&&point.z<1};
+   });
+  },
+  finish(){
+   document.body.classList.remove('intro-finale');
+   keys.clear();releaseStick();releaseAirInput();travel.reset();detail.reset();
+   for(const a of [actors.m,actors.f])a.conversationPose=null;
+   resetAir();for(const a of [actors.m,actors.f])unwear(a);
+   chosen=null;revealStart=null;conversation=null;companionSeat=null;goal=null;sitting=null;poseSeat=null;
+   setLocation(false);actorHome();resetView();updateSize();last=performance.now();
+   $('notice').textContent='Bienvenue à La Croisée des Âmes.';canvas.focus({preventScroll:true});
+  }
+ });
+ member.introFinale=arrivalFinale;
+}
 window.salonV27=member;
-ready.push(Promise.all(ready).then(()=>member.initialize()));
-Promise.all(ready).then(()=>{document.body.classList.add('ready');window.dispatchEvent(new Event('salon-ready'));$('loading').hidden=true;frameHandle=requestAnimationFrame(frame)}).catch(e=>window.failure(e.message));
+Promise.all(ready).then(async()=>{
+ window.salonArrival?.progress('characters','Préparation d’Ahmed et de Marianne…');
+ await member.initialize();
+ updateSize();updateCam(0);renderer.render(scene,cam);
+ document.body.classList.add('ready');$('loading').hidden=true;
+ window.dispatchEvent(new Event('salon-ready'));frameHandle=requestAnimationFrame(frame);
+}).catch(e=>window.failure(e.message,'SCENE_ASSETS'));

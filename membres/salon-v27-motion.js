@@ -99,9 +99,18 @@ export class SalonMotion {
   this.camera=camera;this.femaleHands=false;
   this.expression=null;
   const room={...start,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
-  let neckLift=0,posture=null,postureSeat=null,avatarScale=1;
+  let neckLift=0,posture=null,postureSeat=null,avatarScale=1,authoredFootwork=null;
   this.sampleSalonPose=(seat,amount,seconds,expression,scale=1)=>{
+    authoredFootwork=null;
     room.mode=seat?'seated':'idle';room.seat=seat;room.sit=amount;clock=seconds;avatarScale=scale;
+    this.expression=expression;roomPose(seconds*1000);return matrices;
+  };
+  // A directed step can hold its support foot in world space while the actor
+  // root turns. Targets use the same centimetre space as the ordinary leg IK.
+  this.sampleFootworkPose=(footwork,seconds,expression,scale=1)=>{
+    if(!Array.isArray(footwork?.feet)||footwork.feet.length!==2)throw Error('Deux appuis sont nécessaires pour les pas dirigés.');
+    authoredFootwork=footwork;room.mode='idle';room.seat=null;room.sit=0;
+    clock=seconds;avatarScale=scale;neckLift=0;poseTime=-1;
     this.expression=expression;roomPose(seconds*1000);return matrices;
   };
   const life={bones:[],knees:[]}, keys=new Set();
@@ -139,6 +148,7 @@ export class SalonMotion {
   this.stick=(x,y)=>{padX=x;padY=y;};
   this.releaseInputs=()=>{keys.clear();padX=padY=0;};
   this.update=dt=>{
+    authoredFootwork=null;
     clock+=dt;
     const any=(...codes)=>Number(codes.some(c=>keys.has(c)));
     stick.x=padX+any('ArrowRight','KeyD')-any('ArrowLeft','KeyA','KeyQ');
@@ -163,6 +173,7 @@ export class SalonMotion {
   let poseTime=-1,poseExpression,poseMode,poseSeat;
   // Outdoor figures use the same limb solver and clothing bindings as the room.
   this.travelPose=(cycle,speed,tilt)=>{
+    authoredFootwork=null;
     const stride=65*speed;
     room.mode=speed>.03?'walk':'idle';room.seat=null;room.sit=0;room.yaw=0;
     room.t=2.2+cycle*1.1;room.x=0;room.z=room.t*stride;
@@ -264,7 +275,7 @@ function roomPose(t){
  const armrest=kind==='appui'?seat?.support:null;
  const settle=phase(.62,1,u),adjust=phase(.16,.62,u),legSide=sofa?0:seat?.id==='east2'?-1:1;
  const lean=armrest?armrest.side*.075*settle:0;
- const feet=walking?[-1,1].map(steering?manualFoot:floorStride):[-1,1].map(side=>{
+ const feet=authoredFootwork?.feet||(walking?[-1,1].map(steering?manualFoot:floorStride):[-1,1].map(side=>{
   const front=side===legSide,onArm=side===armrest?.side;
   let width=.65,depth=front?4.8:-3;
   if(sofa){width=2.2;depth=-3;}
@@ -277,10 +288,11 @@ function roomPose(t){
   if(kind==='penchee'){point[0]+=side*3*settle;point[2]-=3*settle;}
   return {point,
    yaw:side*(.043+(front?.12:.055)*s),roll:0,weight:0}
- });
- const drive=Math.max(feet[0].weight,feet[1].weight),step=2*Math.PI*((steering?stick.phase:room.t/1.10)-.30),beat=Math.cos(step),sub=Math.cos(2*step);
+ }));
+ const drive=Math.max(feet[0].weight,feet[1].weight),step=2*Math.PI*((authoredFootwork?.phase??(steering?stick.phase:room.t/1.10))-.30),beat=Math.cos(step),sub=Math.cos(2*step);
  const clock=t/1000,breath=Math.sin(clock*1.64),bend=Math.sin(Math.PI*s),back=seat?.gap||42;
  const hip=[drive*(1.04*beat+.12*Math.sin(2*step))+.32*breath*(1-drive),83.8+drive*(.64*sub-.12)+.24*breath*(1-drive),-2.1];
+ if(authoredFootwork?.hipShift)for(let axis=0;axis<3;axis++)hip[axis]+=authoredFootwork.hipShift[axis];
  // First flex at the hips, keep both feet loaded, then transfer weight onto the cushion.
  hip[1]+=( (seat?.height||40)+8.65-hip[1])*s;
  hip[2]+=-(back-2.1)*phase(.12,.99,u)+2.4*Math.sin(2*Math.PI*s)*bend;
@@ -328,7 +340,7 @@ function roomPose(t){
     pole=mix3(pole,[side*.9,-.85,-.55],handLift);
    }
 
-  }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1];if(kind==='genou'&&side===crossSide)pole=[-side*.70*settle,.22*settle,1];}
+  }else {dest=foot.point;pole=[side*(.09+.06*s),.012,1];if(authoredFootwork)pole=rotateV(oriented(clamp(foot.yaw,-.95,.95)*.6),pole);if(kind==='genou'&&side===crossSide)pole=[-side*.70*settle,.22*settle,1];}
   let [joint,tip]=reachChain(l,start,dest,pole);
   if(arm&&self.femaleHands&&seat&&settle&&!introArms){
     const support=sofa?'sofa':seat.support?'armchair':seat.id==='east2'?'opposite':'dining';

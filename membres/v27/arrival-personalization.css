@@ -3,6 +3,11 @@
 #arrival-options-status{font-size:12px;max-width:260px}
 #arrival-options-status:empty{display:none}
 #arrival-personalization{min-width:0;min-height:0;overflow:hidden;z-index:4}
+body.cinema-arrival .where strong{font-size:clamp(14px,2.4vw,21px);letter-spacing:-.025em}
+body.intro-finale #app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+body.intro-finale #app>.top,body.intro-finale #app>.bottom,body.intro-finale #chatPanel,body.intro-finale #arrival-personalization{display:none!important}
+body.intro-finale #stage{grid-column:1;grid-row:1;pointer-events:none}
+body.intro-finale #stage>:not(#scene):not(#loading){visibility:hidden!important}
 body.editing-arrival #app{grid-template-columns:minmax(0,1fr) minmax(285px,35%);grid-template-rows:auto minmax(0,1fr) auto auto}
 body.editing-arrival #app>.top{grid-column:1/-1;grid-row:1}
 body.editing-arrival #stage{grid-column:1;grid-row:2}

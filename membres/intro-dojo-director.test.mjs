@@ -53,6 +53,65 @@ test('every late walking frame remains within the real skeleton solver’s valid
  }
 });
 
+test('both half-turns articulate the knees and ankles around alternating planted feet',()=>{
+ const line=lines.find(l=>l.id==='dojo-demi-tour');
+ for(const id of ['m','f']){
+  const scale=id==='m'?1.075:1.04,solver=new SalonMotion(()=>{},{angle:0},undefined,()=>.42);
+  solver.femaleHands=id==='f';
+  const first=sample(line,0).blocking[id],supports=new Map(),kneeAngles=[[],[]];
+  let previous=null,maxLift=[0,0],supportFrames=0,maxAnkleYaw=0;
+  for(let at=0;at<=line.ms;at+=15){
+   const actor=sample(line,at).blocking[id],footwork=actor.gait.footwork;
+   assert.deepEqual(actor.position.toArray(),first.position.toArray(),'The root stays at its original floor mark during the steps');
+   assert.ok(footwork.feet.some(foot=>foot.planted),'At least one foot always carries the body');
+   if(previous)assert.ok(Math.abs(actor.yaw-previous.yaw)<.055,'The pelvis turns continuously, in small supported steps');
+   const matrices=solver.sampleFootworkPose(footwork,at/1000+(id==='f'?2.6:0),{gesture:actor.poseGesture,look:actor.headYaw},scale);
+   const root=new T.Matrix4().compose(actor.position,new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),actor.yaw),new T.Vector3(scale,scale,scale));
+   for(const [i,side]of [[0,-1],[1,1]]){
+    const foot=footwork.feet[i],firstBone=i?11:8;
+    const ankleMatrix=new T.Matrix4().fromArray(matrices,(firstBone+2)*16);
+    const ankle=new T.Vector3(side*.157455,.078552,-.018594).applyMatrix4(ankleMatrix).applyMatrix4(root);
+    const wanted=new T.Vector3(...foot.point).multiplyScalar(.01).applyMatrix4(root);
+    assert.ok(ankle.distanceTo(wanted)<.000003,'The actual IK reaches the authored ankle target');
+    const toe=new T.Vector3(side*.157455,.008552,.101406).applyMatrix4(ankleMatrix).applyMatrix4(root);
+    if(foot.planted){
+     const saved=supports.get(side);
+     if(saved){
+      assert.ok(ankle.distanceTo(saved.ankle)<.000004,'The planted ankle does not skate while the root rotates');
+      assert.ok(toe.distanceTo(saved.toe)<.000004,'The planted sole also keeps its world orientation');
+     }else supports.set(side,{ankle:ankle.clone(),toe:toe.clone()});
+     supportFrames++;
+    }else supports.delete(side);
+    maxLift[i]=Math.max(maxLift[i],(foot.point[1]-7.85)*.01*scale);
+    maxAnkleYaw=Math.max(maxAnkleYaw,Math.abs(foot.yaw-side*.043));
+    const hip=new T.Vector3(side*.091,.858,-.021).applyMatrix4(new T.Matrix4().fromArray(matrices,firstBone*16));
+    const knee=new T.Vector3(side*.124664,.472046,-.024319).applyMatrix4(new T.Matrix4().fromArray(matrices,(firstBone+1)*16));
+    const localAnkle=new T.Vector3(side*.157455,.078552,-.018594).applyMatrix4(ankleMatrix);
+    kneeAngles[i].push(hip.sub(knee).angleTo(localAnkle.sub(knee)));
+   }
+   previous=actor;
+  }
+  assert.ok(maxLift.every(value=>value>.035),'Both feet visibly lift and reposition');
+  assert.ok(kneeAngles.every(values=>Math.max(...values)-Math.min(...values)>.15),'Both knees flex during the step');
+  assert.ok(maxAnkleYaw>.7,'The ankle articulates against the turning pelvis');
+  assert.ok(supportFrames>700,'Support is checked throughout both complete half-turns');
+  assert.ok(Math.abs(sample(line,3800).blocking[id].yaw-first.yaw)>Math.PI-.00001,'The figure actually completes a half-turn');
+  assert.ok(Math.abs(sample(line,line.ms).blocking[id].yaw-first.yaw)<1e-10,'The original facing is recovered without a jump');
+ }
+});
+
+test('explicit footwork is deterministic and cannot leak into ordinary standing or walking poses',()=>{
+ const solver=new SalonMotion(()=>{},{angle:0},undefined,()=>.42),fresh=new SalonMotion(()=>{},{angle:0},undefined,()=>.42);
+ const actor=sample(lines.find(l=>l.id==='dojo-demi-tour'),2300).blocking.f,expression={gesture:actor.poseGesture,look:actor.headYaw};
+ const first=solver.sampleFootworkPose(actor.gait.footwork,4.9,expression,1.04).slice();
+ solver.sampleSalonPose(null,0,7,expression,1.04);
+ assert.deepEqual(solver.sampleFootworkPose(actor.gait.footwork,4.9,expression,1.04),first,'Paused or revisited frames retain their exact support pose');
+ assert.deepEqual(solver.sampleSalonPose(null,0,3.1,expression,1.04),fresh.sampleSalonPose(null,0,3.1,expression,1.04));
+ solver.sampleFootworkPose(actor.gait.footwork,4.9,expression,1.04);
+ solver.expression=fresh.expression=expression;solver.travelPose(.37,.7,0);fresh.travelPose(.37,.7,0);
+ assert.deepEqual(solver.bones(),fresh.bones(),'Ordinary walking discards the directed contact targets');
+});
+
 test('wardrobe changes keep both actors in the same place and orientation',()=>{
  const line=lines.find(l=>l.id==='dojo-vetements'),initial=sample(line,0).blocking;
  for(let i=0;i<=120;i++)for(const id of ['m','f']){
