@@ -11,24 +11,24 @@ window.addEventListener('unhandledrejection',e=>fault(e.reason?.message||'Promes
 function sceneName(){return current<0?'accueil':current<4?'salle-blanche':current<15?'fauteuils-tv':current<18?'dojo':'jardin'}
 const lines=[
  {who:'Narrateur',text:'Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?',camera:'front',stage:'white'},
- {who:'Joueur',text:'Vous me posez la question… mais vous ne savez pas vous-même y répondre ?',camera:'front'},
- {who:'Narrateur',text:'J’ai quelques idées. Aucune certitude. Et toi, qu’en penses-tu ?',camera:'front'},
- {who:'Joueur',text:'Je ne sais pas encore. Mais je veux bien écouter.',camera:'front'},
- {who:'Narrateur',text:'Alors asseyons-nous.',camera:'front',seat:true},
+ {who:'Narrateur',text:'Quelqu’un qui me ressemble ? Quelqu’un qui me résiste ? Ou simplement une présence que je ne connais pas encore ?',camera:'front'},
+ {who:'Narrateur',text:'Et si nous commencions par nous regarder, sans chercher tout de suite une réponse ?',camera:'front'},
+ {who:'Narrateur',text:'Viens. Asseyons-nous.',camera:'front'},
+ {who:'Narrateur',text:'Prends place. Regarde.',camera:'front',seat:true},
  {who:'Narrateur',text:'Voici le monde tel que tu l’as connu, {pseudo}.',camera:'turn',tv:true},
- {who:'Narrateur',text:'Un monde de masques. Un monde d’illusions. Un monde où tu as joué un personnage.',camera:'rear'},
- {who:'Joueur',text:'Mais ce n’est pas seulement un rôle. C’est aussi ma vie.',camera:'rear'},
- {who:'Narrateur',text:'Chaque matin, tu te déguises pour aller travailler. Et tu rencontres les masques des autres.',camera:'rear'},
- {who:'Joueur',text:'Et si mon masque me protégeait ?',camera:'rear'},
- {who:'Narrateur',text:'Il y a un autre monde. Ici tu peux prendre le risque d’être toi-même.',camera:'back'},
+ {who:'Narrateur',text:'Un monde de masques. Un monde d’illusions.',camera:'rear'},
+ {who:'Narrateur',text:'Un monde où tu as joué un personnage.',camera:'rear'},
+ {who:'Narrateur',text:'Un monde où, chaque matin, tu te déguises pour aller travailler.',camera:'rear'},
+ {who:'Narrateur',text:'Où tu ne rencontres bien souvent que les masques des autres.',camera:'rear'},
+ {who:'Narrateur',text:'Mais il existe un autre monde.',camera:'back'},
+ {who:'Narrateur',text:'Ici, tu peux prendre le risque d’être toi-même.',camera:'front'},
  {who:'Narrateur',text:'Tu peux aussi te déguiser. Personne ne te jugera.',camera:'front'},
- {who:'Joueur',text:'Et comment vais-je savoir qui je suis, ici ?',camera:'front'},
- {who:'Narrateur',text:'Tu n’as pas besoin de le savoir tout de suite.',camera:'front'},
+ {who:'Narrateur',text:'Ce monde n’est pas achevé. Tu vas contribuer à le construire.',camera:'front'},
  {who:'Narrateur',text:'Suis-moi.',camera:'front'},
  {who:'Narrateur',text:'Avant d’aller plus loin, je dois t’expliquer comment ce monde fonctionne.',stage:'dojo'},
- {who:'Narrateur',text:'Il n’est pas achevé. C’est un monde en construction, et tu vas participer à sa construction.',stage:'dojo'},
- {who:'Narrateur',text:'Essaie les commandes. Choisis ton apparence, explore et reviens quand tu le souhaites.',stage:'dojo'},
- {who:'Narrateur',text:'La porte est ouverte. Dehors, le jardin et la maison t’attendent.',stage:'garden'}
+ {who:'Narrateur',text:'Tu vas apprendre à avancer, à déplacer la caméra, à modifier ton personnage et à l’habiller.',stage:'dojo'},
+ {who:'Narrateur',text:'Tu peux revenir ici à tout moment. Ce monde est aussi le tien.',stage:'dojo'},
+ {who:'Narrateur',text:'Regarde. Le jardin, les papillons… et la maison. À toi de découvrir ce qui s’y trouve.',stage:'garden'}
 ];
 function bubble(line){$('bubbles').replaceChildren();const box=document.createElement('div');box.className='bubble';const label=document.createElement('div');label.className='speaker';label.textContent=line.who;const p=document.createElement('p');p.textContent=line.text.replaceAll('{pseudo}',pseudo);box.append(label,p);$('bubbles').append(box)}
 let liveFrame=null;
