@@ -45,7 +45,7 @@ export default {
  async fetch(request,env){
   try{
    const url=new URL(request.url),pathname=url.pathname.replace(/^\/api\/admin-unified\//,'');
-   if(url.origin!==SITE)invalid(403,'Origine non autorisée.');
+   if(url.origin!==SITE&&!url.hostname.endsWith('.workers.dev'))invalid(403,'Origine non autorisée.');
    if(request.method!=='GET'&&request.method!=='POST')invalid(405,'Méthode non autorisée.');
    if(request.method==='POST'&&request.headers.get('origin')!==SITE)invalid(403,'Origine invalide.');
    if(!await authorized(request,env))invalid(401,'Reconnecte-toi à ton administration.');
