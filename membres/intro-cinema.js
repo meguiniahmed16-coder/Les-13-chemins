@@ -258,7 +258,7 @@ $('prev').onclick=()=>{automatic(false);showScene(Math.max(0,step-1));$('garden'
 $('skip').onclick=()=>{automatic(false);$('welcome').hidden=true;showScene(14)};
 $('auto').onclick=()=>automatic(!autoplay);
 $('personalize').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
-$('exit').onclick=()=>location.assign('/membre.html?auteur=atelier#salon');
+
 $('report-open').onclick=()=>{$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
 $('report-close').onclick=()=>$('report-dialog').close();
 $('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
@@ -320,7 +320,7 @@ async function authorize(){
  try{
   await authorize();await Promise.all([loadRooms(),loadPeople()]);
   ready=true;status.textContent='Salle blanche et dojo originaux prêts';$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
-  $('wait')?.remove();frame();
+  frame();
  }catch(e){
   remember('Chargement original',e.message||e);
   status.textContent='Impossible de charger les modèles originaux : '+String(e.message||e);
