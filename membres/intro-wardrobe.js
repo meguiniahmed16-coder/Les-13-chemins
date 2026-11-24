@@ -69,19 +69,23 @@ function makeController(figure,rig,parts,actor,originalRig=null){
 }
 // Keep the original Ahmed portrait and rig. Remove only the three improvised
 // garment meshes; actual library garments follow the same V27 deformation matrices.
-export async function dressAhmed(actor,originalRig,parent,oldGarments){
- if(originalRig?.length!==15||!parent||oldGarments.length!==3)throw Error('Atelier Ahmed : pièces originales non reconnues');
+export async function dressAhmed(actor,originalRig,parent,oldGarments,options={}){
+ if(originalRig?.length!==15||!parent||(!options.figure&&oldGarments.length!==3))throw Error('Atelier Ahmed : pièces originales non reconnues');
  const look=referenceStudio('homme');look.outfit={...introOutfits.m};
- const [data,figure]=await Promise.all([poses(),loadStudio(look,'homme')]);
+ const [data,figure]=await Promise.all([poses(),options.figure||loadStudio(look,'homme')]);
  figure.pose(data.m.rest);
  const garmentMeshes=figure.meshes.filter(m=>m.binding);
- if(garmentMeshes.length!==3)throw Error('Bibliothèque : tenue Ahmed incomplète');
- const parts=garmentMeshes.map(m=>partMesh(m,parent,true));
+ if(!options.figure&&garmentMeshes.length!==3)throw Error('Bibliothèque : tenue Ahmed incomplète');
+ const white=options.white??true;
+ const parts=garmentMeshes.map(m=>partMesh(m,parent,typeof white==='function'?white(m):white));
  // Hide only skin triangles covered by the actual selected garments. The
  // original hands, face, neck and every uncovered part retain their source.
  const originalSkin=parent.children.find(o=>o.isSkinnedMesh&&!oldGarments.includes(o));
  if(originalSkin){
-  const g=originalSkin.geometry,p=g.attributes.position,ids=g.index.array;
+  const g=originalSkin.geometry,p=g.attributes.position;
+  // A later wardrobe choice can uncover skin hidden by the preceding outfit.
+  // Always derive its mask from the original triangles, not an accumulated cut.
+  const ids=g.userData.ahmedOriginalIndex??=g.index.array.slice();
   const body=figure.meshes.find(m=>m.name==='body'),shown=new Uint8Array(body.n);
   for(const i of body.faces)shown[i]=1;
   const cell=.025,buckets=new Map(),key=(x,y,z)=>x+','+y+','+z;

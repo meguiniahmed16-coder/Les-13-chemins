@@ -1,0 +1,111 @@
+{
+  "sourceScene": "membres/v27/scene.js",
+  "sourceArchive": "assets/depart-duo/scene.bin",
+  "sourceSceneSha256": "8661a9d9e90df70a9b0f37421f6afb0405df94212dd6f45bec5ef687fd561790",
+  "sourceArchiveSha256": "2e877738d6aa816287210812881e3a24d3d9d39d992ba0f9158969d6e63e4920",
+  "method": "Execute original static room and garden source, retain original instance placement and colors, rasterize original Canvas commands through SVG, export authored geometry and texture maps; butterflies exported separately from original flutter.",
+  "geometry": {
+    "objects": 215,
+    "vertices": 607251,
+    "triangles": 322543,
+    "billboards": 20
+  },
+  "butterflies": {
+    "method": "Original butterfly constructor and flutter(dt) executed unchanged at 60 Hz using the authored watcher anchors.",
+    "count": 76,
+    "seconds": 6,
+    "fps": 20,
+    "simulationHz": 60,
+    "seed": 71523,
+    "anchors": {
+      "lead": [
+        -0.19900456649413245,
+        0,
+        3
+      ],
+      "friend": [
+        0.5809954335058676,
+        0,
+        3.42
+      ]
+    },
+    "sizeRange": [
+      0.08101304701901972,
+      0.15079098232486285
+    ],
+    "beatRange": [
+      5.012152313720435,
+      7.951827161479741
+    ],
+    "material": {
+      "type": "MeshBasicMaterial",
+      "map": "papillon-blanc.webp",
+      "color": [
+        1,
+        1,
+        1
+      ],
+      "side": "DoubleSide",
+      "alphaTest": 0.22,
+      "castShadow": false,
+      "textureSha256": "752146879f51277d883e8dc0733eecf69f0845ec41a93de1f1b8380024b8583f"
+    }
+  },
+  "camera": {
+    "from": [
+      1.4,
+      1.35,
+      -3
+    ],
+    "to": [
+      0.5,
+      1.25,
+      -0.5
+    ],
+    "target": [
+      0.1,
+      2,
+      8.3
+    ],
+    "lensMillimeters": 21
+  },
+  "render": {
+    "method": "Offline render of source geometry and original sampled butterfly motion; lighting translated to Cycles, not a browser pixel recording.",
+    "resolution": [
+      800,
+      450
+    ],
+    "seconds": 6,
+    "fps": 20,
+    "frames": 120,
+    "samples": 8,
+    "renderer": "Blender 4.3.2 CPU Cycles",
+    "denoiseFilter": "hqdn3d=6:6:8:8"
+  },
+  "scripts": [
+    "prepare-garden.mjs",
+    "export-butterflies.mjs",
+    "garden-butterflies.py",
+    "render-garden.py"
+  ],
+  "clip": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 800,
+        "height": 450,
+        "pix_fmt": "yuv420p",
+        "r_frame_rate": "20/1",
+        "nb_frames": "120"
+      }
+    ],
+    "format": {
+      "duration": "6.000000",
+      "size": "1747801"
+    },
+    "sha256": "5579a8f36c7683c28a9bc2eab326e5e6f959ee1fc09ab7a0999d8f63e964d8f0",
+    "intermediateFile": "garden-6s.mp4"
+  }
+}

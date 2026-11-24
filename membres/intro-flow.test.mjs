@@ -119,7 +119,7 @@ test('one start automatically visits every white-room and dojo line, then opens 
  assert.equal(h.state.stage,'garden');assert.equal(h.state.autoplay,false);assert.equal(h.time.count(),0);
  assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.dom.$('skip').hidden,true);
- assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&v=gestes50');
+ assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&v=accueil51');
 });
 
 test('a delayed sitting animation retains its continuation until the movement is complete',async()=>{

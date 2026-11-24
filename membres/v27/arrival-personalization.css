@@ -1,0 +1,20 @@
+#arrival-options{font-weight:650;color:#244235;background:#f4efd9;border-color:#c6c7a8}
+#arrival-options:disabled{opacity:.65}
+#arrival-options-status{font-size:12px;max-width:260px}
+#arrival-options-status:empty{display:none}
+#arrival-personalization{min-width:0;min-height:0;overflow:hidden;z-index:4}
+body.editing-arrival #app{grid-template-columns:minmax(0,1fr) minmax(285px,35%);grid-template-rows:auto minmax(0,1fr) auto auto}
+body.editing-arrival #app>.top{grid-column:1/-1;grid-row:1}
+body.editing-arrival #stage{grid-column:1;grid-row:2}
+body.editing-arrival .bottom{grid-column:1;grid-row:3}
+body.editing-arrival #chatPanel{grid-column:1;grid-row:4}
+body.editing-arrival #arrival-personalization{grid-column:2;grid-row:2/-1}
+@media(max-width:760px) and (orientation:portrait){
+ body.editing-arrival #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(140px,34%) minmax(0,1fr)}
+ body.editing-arrival #arrival-personalization{grid-column:1;grid-row:3}
+ body.editing-arrival #chatPanel{display:none}
+ .top .controls #arrival-options{grid-column:span 3;min-width:100px}
+}
+@media(max-height:500px) and (orientation:landscape){
+ body.editing-arrival #app{grid-template-columns:minmax(0,1fr) minmax(275px,43%)}
+}

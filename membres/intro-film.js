@@ -1,12 +1,13 @@
-// The reel uses the existing salon mesh and the current chapter-board artwork.
+// The reel uses the existing salon and garden meshes, butterflies and board artwork.
 // No substitute illustration of the room is used in the introduction.
 export const INTRO_FILM={
- url:'/assets/membres/intro-montage-reel22.mp4',
- poster:'/assets/membres/intro-montage-reel22.webp',
- duration:15,
+ url:'/assets/membres/intro-montage-reel23.mp4',
+ poster:'/assets/membres/intro-montage-reel23.webp',
+ duration:21,
  chapters:[
   {at:0,title:'Rencontrer',subtitle:'Dans le salon'},
-  {at:8,title:'Jouer',subtitle:'Les Treize Chemins'}
+  {at:8,title:'Jouer',subtitle:'Les Treize Chemins'},
+  {at:15,title:'Explorer',subtitle:'Le jardin et ses papillons'}
  ]
 };
 

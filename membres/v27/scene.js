@@ -138,7 +138,8 @@ const seats=roomSeats.map(s=>({
  id:s.id,source:s,yaw:s.yaw,pose:s.id.startsWith('sofa')?8:s.id==='chair'?9:10,
  center:[(s.x-700)/100,(s.z+800)/100],gap:s.gap/100,height:s.height/100
 }));
-const actors={};let role='f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
+const cinemaArrival=new URLSearchParams(location.search).get('arrival')==='cinema';
+const actors={};let role=cinemaArrival?'m':'f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
 const authorRoom=new URLSearchParams(location.search).has('resident');
 let visiting=false,visitsMarianne=false;
 const encounter={active:false,loaded:false,loading:null,friends:null,route:null,clock:0,chatView:false};
@@ -231,6 +232,7 @@ function unwear(a){
 }
 
 function animateBody(a,blend,seat,dt=0){
+ if(a.cinemaAhmed?.active){a.motionSeat=seat;a.cinemaAhmed.animate(blend,seat,dt);return;}
  a.motionSeat=seat;if(livePose(a,seat,blend))return;
  a.phase=(a.phase+dt*(1.02+blend*.1))%1;const p=a.phase*8,lo=Math.floor(p),hi=(lo+1)%8,f=p-lo;
  const sittingPose=seat?seat.pose:0;const tag=seat?'seat'+sittingPose+Math.round(a.sit*42):blend>.01?'walk'+Math.floor(p*12)+'/'+Math.round(blend*25):'idle';if(a.stamp===tag)return;a.stamp=tag;
@@ -1283,6 +1285,7 @@ function startLanding(){
  air.landing={target,other};air.mode='landing';air.queued=null;air.figure=null;air.pulse=0;air.boost=air.down=false;air.v=0;refreshFlight();hint();
 }
 function glidingLimbs(a,altitude,neckTilt){
+ if(a.cinemaAhmed?.active){a.cinemaAhmed.glide(altitude,neckTilt);return;}
  // The standing mesh already has relaxed shoulders, elbows and hands.
  const amount=Math.round(eased(altitude/1.5)*24)/24,tilt=Math.round(neckTilt*180)/180;
  const stamp='flight/'+amount+'/'+tilt;if(a.stamp===stamp)return;
@@ -1444,9 +1447,9 @@ shelvesButton.onclick=()=>setShelfView(!shelfView);
 
 $('lookHome').onclick=lookAtHome;setLocation(false);resetView();updateSize();
 const member=createMemberBridge({
- T,actors:{...actors,guest:visitor},player:()=>actors[role],partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,
+ T,actors:{...actors,guest:visitor},player:()=>actors[role],partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,cinemaArrival,
  unzip:unzipSync,get settled(){return !seatRoute&&player().speed<=.08;},get place(){return where},get role(){return role},setRole,freeCamera,
- focus(view,target=''){freeCamera();orbit.follow=false;const a=target==='guest'&&visiting?visitor:target==='resident'&&authorRoom?actors.f:player(),p=a.root.position;
+ focus(view,target=''){freeCamera();orbit.follow=false;const a=target==='m'||target==='f'?actors[target]:target==='guest'&&visiting?visitor:target==='resident'&&authorRoom?actors.f:player(),p=a.root.position;
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);
  orbit.pitch=.065;orbit.radius=view==='Visage'?1.02:2.8;
  if(view==='Visage')orbit.focus.copy(headCenter(a));else orbit.focus.set(p.x,p.y+(a.sit>.5?.70:.95)*a.root.scale.y,p.z);updateCam(1);},
@@ -1471,6 +1474,7 @@ const member=createMemberBridge({
 });
 function headCenter(actor){
  const center=new T.Vector3(0,.144,.032);
+ if(actor.cinemaAhmed?.active)return actor.cinemaAhmed.headPosition(center);
  if(actor.referenceFace)return actor.referenceFace.group.localToWorld(center);
  const eyes=actor.parts.find(p=>p.name==='eyesNative');
  if(!eyes)return actor.root.localToWorld(center.set(0,actor.sit>.5?1.15:1.54,0));

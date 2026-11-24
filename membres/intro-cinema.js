@@ -200,7 +200,7 @@ const lines=[
   "text": "La Maison des rencontres, c’est un espace en construction…",
   "scene": "white",
   "shot": "montage",
-  "ms": 10000,
+  "ms": 15000,
   "move": "cut",
   "gesture": "watch",
   "seated": true,
@@ -244,7 +244,51 @@ const lines=[
  {
   "id": "dojo-deplacement",
   "speaker": "m",
-  "text": "Tu peux apprendre à avancer, faire tourner la caméra et modifier ton personnage.",
+  "text": "Le joystick te fait avancer. Glisse sur la scène pour tourner la caméra.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 8500,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false
+ },
+ {
+  "id": "dojo-personnaliser",
+  "speaker": "m",
+  "text": "Dans le salon, « Personnaliser » ouvre ton atelier. Choisis Ahmed ou Marianne.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 9000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false
+ },
+ {
+  "id": "dojo-apparence",
+  "speaker": "f",
+  "text": "« Mon personnage » règle le visage, les cheveux, la peau et la silhouette.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 8500,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false
+ },
+ {
+  "id": "dojo-vetements",
+  "speaker": "m",
+  "text": "Choisis une tenue, ou compose-la dans « Tous les vêtements ». Tu vois le résultat tout de suite.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 10000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false
+ },
+ {
+  "id": "dojo-enregistrer",
+  "speaker": "f",
+  "text": "Pour garder tes changements, touche « Enregistrer ». La croix ferme l’atelier.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 8500,
@@ -1117,7 +1161,7 @@ function startGarden(){
    if(frame.contentDocument?.body?.classList.contains('ready'))openGarden();
   }catch(e){remember('Jardin',e.message)}
  });
- frame.src='/membres/v27/salon.html?resident=marianne&v=gestes50';
+ frame.src='/membres/v27/salon.html?resident=marianne&arrival=cinema&v=accueil51';
 }
 function next(){
  if(!started||pending||stage==='garden')return;

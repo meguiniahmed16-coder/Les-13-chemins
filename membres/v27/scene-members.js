@@ -1,6 +1,7 @@
 import {perform} from './reference-performance.js';
 import {defaultMotion,wardrobeMotion} from './live-body.js';
 import {attachFemaleHead,loadFemaleReference} from './female-reference.js';
+import {attachCinemaAhmed} from './cinema-ahmed.js';
 // Clothes and invited characters use the local V27 skeleton sampled in the original salon.
 // The two original dressed figures stay in memory so returning to the duo is instantaneous.
 export function createMemberBridge(scene){
@@ -21,13 +22,14 @@ export function createMemberBridge(scene){
   }
   function restore(actor){
     clearFace(actor);actor.salonLook=null;actor.motion?.release();actor.live=false;actor.motion=originalMotion.get(actor);actor.conversationPose=null;actor.stamp='';
-    if(actor.parts===originals.get(actor))return;
+    if(actor.parts===originals.get(actor)){actor.cinemaAhmed?.restore();return;}
     for(const part of actor.parts){
       part.obj.removeFromParent();part.obj.geometry.dispose();
       part.obj.material.map.dispose();part.obj.material.dispose();
     }
     actor.parts=originals.get(actor);
     for(const part of actor.parts)part.obj.visible=true;
+    actor.cinemaAhmed?.restore();
     actor.stamp='';
     scene.animateBody(actor,0,null);
   }
@@ -45,6 +47,13 @@ export function createMemberBridge(scene){
     return {obj,base,name:m.name||'',fullIndex:m.name==='body'?new T.BufferAttribute(m.allFaces,1):null,poses:[],seated:{}};
   }
   async function dress(actor,figure,gender,valid){
+    if(actor.cinemaAhmed?.supports(figure.appearance,gender)){
+      if(!valid())return false;
+      clearFace(actor);
+      const changed=await actor.cinemaAhmed.dress(figure,valid);
+      if(changed){actor.live=false;actor.stamp='';scene.animateBody(actor,0,actor.motionSeat);}
+      return changed;
+    }
     const [poses,source]=await Promise.all([getPoses(),gender==='femme'?loadFemaleReference():null]);
     if(source)template=source;
     const rig=poses[gender==='femme'?'f':'m'];
@@ -62,6 +71,7 @@ export function createMemberBridge(scene){
       }
     }
     restore(actor);
+    actor.cinemaAhmed?.hide();
     for(const part of originals.get(actor))part.obj.visible=false;
     for(const part of parts)actor.body.add(part.obj);
     actor.parts=parts;actor.motion=wardrobeMotion(figure,parts);actor.stamp='';
@@ -98,10 +108,12 @@ export function createMemberBridge(scene){
   }
   function speechFrame(){
     for(const a of Object.values(actors))a.referenceFace?.follow();
+    for(const a of Object.values(actors))if(a.cinemaAhmed?.active)a.cinemaAhmed.talk();
     if(!readSpeech)return;
     const poses=readSpeech();if(!poses)return;
     for(const [slot,a] of [['member',player()],['guest',partner()]]){
       const p=poses[slot];a.conversationPose=p?.gesture?p:null;
+      if(a.cinemaAhmed?.active){a.cinemaAhmed.talk(p);continue;}
       if(a.referenceFace){perform(a.referenceFace,p);continue;}
       for(const part of a.parts){
         addVisemes(a,part);
@@ -117,13 +129,18 @@ export function createMemberBridge(scene){
     async initialize(){if(!Object.values(actors).some(a=>a.id==='f'&&a.parts.length))return;
       const [reference,rig,bytes]=await Promise.all([loadFemaleReference(),getPoses(),fetch('/membres/v27/attaches-v27.bin?v=appui2').then(r=>{if(!r.ok)throw Error('Attaches du duo indisponibles.');return r.arrayBuffer();})]);
       template=reference;const weights=scene.unzip(new Uint8Array(bytes));
-      for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}},
+      for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}
+      if(scene.cinemaArrival){
+        const original=await attachCinemaAhmed(actors.m);
+        originals.set(actors.m,original.parts);originalMotion.set(actors.m,original.motion);
+      }},
     async enableDialogue(channels,read,valid=()=>true){
       const res=await fetch('/membres/v27/visage-indices.json');if(!res.ok)throw Error('Le visage du salon est indisponible.');
       const indices=await res.json();if(valid()){speech={channels,indices};readSpeech=read;}
     },
     endDialogue(){readSpeech=null;for(const a of Object.values(actors))a.conversationPose=null;for(const a of Object.values(actors))if(a.referenceFace&&!a.referenceFace.demo)a.referenceFace.reset();for(const a of Object.values(actors))for(const part of a.parts)if(part.voiceReady)part.obj.morphTargetInfluences.fill(0);},
     speechFrame,
+    originalLook(slot){const look=actors[slot]?.cinemaAhmed?.look;return look?{...look,face:{...look.face},outfit:{...look.outfit}}:null;},
     setGender:gender=>scene.setRole(gender==='femme'?'f':'m'),
     dress:(slot,figure,gender,valid)=>dress(actors[slot]||(slot==='guest'?partner():player()),figure,gender,valid),
     wearing:(key,look)=>actors[key]?.salonLook===look,reset,focus:scene.focus,meet:scene.meet,clearMeeting:scene.clearMeeting,camera:scene.camera,
