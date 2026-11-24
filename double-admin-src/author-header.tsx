@@ -16,7 +16,8 @@ const destinations=[
   ['Archives',home+'?view=archives'],
   ['Atelier',home+'?view=atelier'],
   ['Logiciel intuitif',home+'?view=logiciel'],
-  ['Le monde 3D','/membre.html?auteur=atelier#salon'],
+  ['Prologue 3D','/membres/intro-prive.html?auteur=atelier'],
+  ['Le salon existant','/membre.html?auteur=atelier#salon'],
   ['Site public','/ahmed-marie.html']
 
 ];
