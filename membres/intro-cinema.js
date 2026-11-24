@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {attachFemaleHead,loadFemaleReference} from './v27/female-reference.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -97,15 +98,36 @@ function prepareDojo(){
 }
 function bytesTo(type,input){return new type(input.buffer.slice(input.byteOffset,input.byteOffset+input.byteLength))}
 
+// A fitted, neutral inner layer covers the waist on the original body surface.
+ // Rest-pose coordinates follow the same vertices in standing and seated poses.
+function coverMarianneWaist(actor){
+ const part=actor.parts.find(p=>p.name==='body')||actor.parts.find(p=>/^(corps|skin)$/i.test(p.name));
+ if(!part){remember('Tenue de Marianne','Corps de référence introuvable');return;}
+ const g=part.obj.geometry,mat=part.obj.material;
+ let min=Infinity,max=-Infinity;
+ for(let k=1;k<part.base.length;k+=3){min=Math.min(min,part.base[k]);max=Math.max(max,part.base[k]);}
+ const height=max-min;
+ if(!Number.isFinite(height)||height<.5)return;
+ const lo=min+height*.46,hi=min+height*.71,half=height*.155;
+ const rest=part.base.slice();g.setAttribute('introRest',new T.BufferAttribute(rest,3));
+ const previous=mat.onBeforeCompile.bind(mat),key=mat.customProgramCacheKey.bind(mat);
+ mat.onBeforeCompile=(shader,renderer)=>{
+  previous(shader,renderer);
+  shader.vertexShader='attribute vec3 introRest; varying vec3 introClothingRest;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nintroClothingRest=introRest;');
+  shader.fragmentShader='varying vec3 introClothingRest;\n'+shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\nfloat waistBand=step('+lo.toFixed(6)+',introClothingRest.y)*step(introClothingRest.y,'+hi.toFixed(6)+')*step(abs(introClothingRest.x),'+half.toFixed(6)+');\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.86,0.85,0.80),waistBand); diffuseColor.a=mix(diffuseColor.a,1.0,waistBand);');
+ };
+ const oldKey=key();mat.customProgramCacheKey=()=>oldKey+'-intro-waist-'+lo.toFixed(5)+'-'+hi.toFixed(5);mat.needsUpdate=true;
+}
 async function loadPeople(){
  const roomBin=await binary('/assets/depart-duo/scene.bin','people');
  const files=unzipSync(new Uint8Array(roomBin)),info=JSON.parse(strFromU8(files['index.json']));
- const texCache=new Map();
+ const texCache=new Map(),textureJobs=[];
  function texture(name){
   if(texCache.has(name))return texCache.get(name);
   if(!files[name])return null;
   const blob=URL.createObjectURL(new Blob([files[name]],{type:'image/webp'}));
-  const tex=new T.TextureLoader().load(blob,()=>URL.revokeObjectURL(blob));
+  const tex=new T.Texture();
+  textureJobs.push(new Promise(resolve=>{const image=new Image();image.onload=()=>{tex.image=image;tex.needsUpdate=true;URL.revokeObjectURL(blob);resolve();};image.onerror=()=>{URL.revokeObjectURL(blob);remember('Texture','Image non chargée : '+name);resolve();};image.src=blob;}));
   tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=2;texCache.set(name,tex);return tex;
  }
  function actor(id,x,name){
@@ -120,31 +142,34 @@ async function loadPeople(){
    if(h.uv)g.setAttribute('uv',new T.BufferAttribute(Float32Array.from(bytesTo(Uint16Array,files[h.uv]),v=>v/65535),2));
    g.setIndex(new T.BufferAttribute(bytesTo(Uint16Array,files[h.i]),1));
    g.computeBoundingSphere();
-   const label=String(h.name+' '+info[id].tex[h.tex]).toLowerCase();
-   const skinOrHair=/(skin|peau|face|visage|body|corps|hair|cheveu|iris|eye|oeil|brow|sourcil|cils|lash|lip|lèvre|mouth|dent|teeth|ongle|nail|oreille|ear|nez|nose)/i.test(label);
    const defaultMaterial=new T.MeshStandardMaterial({
-    map:skinOrHair?texture(info[id].tex[h.tex]):null,
-    color:skinOrHair?0xffffff:0xffffff,
+    map:texture(info[id].tex[h.tex]),
+    color:0xffffff,
     roughness:.88,
     alphaTest:/hair|short02|lash|brow/.test(h.name)?.36:.12,
     side:T.DoubleSide
    });
    const mesh=new T.Mesh(g,defaultMaterial);mesh.castShadow=true;body.add(mesh);
    const reference=pos.slice();
-   parts.push({mesh,reference,key:id+'/'+h.name+'/sofa2/100',delta:null,unit:0});
+   parts.push({name:h.name,obj:mesh,base:reference,fullIndex:g.index,mesh,reference,key:id+'/'+h.name+'/sofa2/100',delta:null,unit:0});
   }
   root.position.set(x,0,.42);root.rotation.y=Math.PI;
-  const instance={id,root,parts,sit:0,
+  const instance={id,root,body,parts,sit:0,stamp:0,head:null,
    pose(value){this.sit=value;for(const part of parts){
     const array=part.mesh.geometry.attributes.position;
     if(part.delta){for(let i=0;i<part.reference.length;i++)array.array[i]=part.reference[i]+part.delta[i]*part.unit*value}
     else array.array.set(part.reference);array.needsUpdate=true;
-   }}
+   }this.stamp++;this.head?.follow(true);}
   };
   return instance;
  }
- const a=actor('m',-.9,'Narrateur Ahmed'),b=actor('f',.9,'Joueur Marianne');
- people=[a,b];setProgress('people',1);
+ const a=actor('m',-.9,'Ahmed'),b=actor('f',.9,'Marianne');
+ people=[a,b];
+ await Promise.all(textureJobs);
+ // Reuse the authored Marianne reference face already available in the salon.
+ // If it is not reachable, retain the existing character rather than block the intro.
+ try{const template=await Promise.race([loadFemaleReference(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Référence Marianne trop longue à charger')),20000))]);b.head=attachFemaleHead(b,template);b.head.follow(true);}catch(e){remember('Visage de Marianne',e.message||e);}
+ coverMarianneWaist(b);setProgress('people',1);
 }
 
 let seatsReady=false;
