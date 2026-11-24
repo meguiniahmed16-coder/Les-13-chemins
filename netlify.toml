@@ -128,3 +128,10 @@ from = "/atelier"
 to = "/l-odeur-du-bois.html"
 status = 301
 force = true
+
+# Do not reuse an earlier private introduction HTML after a correction.
+[[headers]]
+for = "/membres/intro-prive.html"
+[headers.values]
+Cache-Control = "private, no-store, max-age=0"
+X-Robots-Tag = "noindex, nofollow"

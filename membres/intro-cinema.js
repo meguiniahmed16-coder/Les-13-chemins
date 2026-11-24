@@ -365,7 +365,7 @@ async function loadWhite(){
   if(o.isMesh){o.castShadow=true;o.receiveShadow=true}
  });
  television=chairs.find(o=>/^TV[\s_]284(?:[\s_]|$)/i.test(o.name));
- scene.add(room,whiteFloor);chairs.forEach(c=>c.visible=true);measureSeats();chairs.forEach(c=>c.visible=false);room.visible=false;setProgress('white',1);canvasHost.classList.add('room-ready');
+ scene.add(whiteFloor);chairs.forEach(c=>c.visible=true);measureSeats();chairs.forEach(c=>c.visible=false);room.visible=false;room.removeFromParent();setProgress('white',1);canvasHost.classList.add('room-ready');
 }
 function prepareDojo(){
  if(dojo)return Promise.resolve(dojo);
@@ -647,12 +647,20 @@ function layoutPeople(seated,dojoMode=false,nearSeats=false){
 }
 // The first three dialogue shots take place in the empty white void.
 // Only after the invitation do the chairs appear and the actors approach.
+// Empty white opening invariant: the downloaded room is not a scene child.
+// Removing the complete original GLB also removes any furniture descendants
+// that have unexpected names. Only mount it after the actual invitation.
+function mountRoom(visible){
+ if(!room)return;
+ if(visible){if(room.parent!==scene)scene.add(room);room.visible=true;}
+ else{room.visible=false;room.removeFromParent();}
+}
 function furnitureAt(line,elapsed){
  const mode=line?.furniture||'none';
  const reveal=mode==='reveal'&&elapsed>=650;
- const showChairs=mode==='chairs'||mode==='all'||reveal;
- const showTV=mode==='all';
- room.visible=line?.scene==='white'&&showChairs;
+ const showChairs=line?.scene==='white'&&(mode==='chairs'||mode==='all'||reveal);
+ const showTV=showChairs&&mode==='all';
+ mountRoom(showChairs);
  for(const c of chairs){const tv=/^TV[\s_]/i.test(c.name);c.visible=tv?showTV:showChairs;}
 }
 function beginInvitation(){
@@ -919,13 +927,13 @@ async function showScene(index){
  const previous=step>=0?lines[step]:null;
  $('scene-wait').hidden=true;step=requested;shotStart=performance.now();shotPaused=false;secondCue=false;cutCamera=true;
  stage=isDojo?'dojo':'white';
- room.visible=!isDojo;whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
+ mountRoom(false);whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
  invitationMotion=null;for(const p of people)p.gait=null;
  const layout=isDojo?'dojo':line.seated?'seated':'standing';
  if(line.invitation){beginInvitation();}
  else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
- if(isDojo){room.visible=false;chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
+ if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
  else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
  if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
  updateFilm(line,0);
@@ -1019,7 +1027,7 @@ function frame(){
  }
 
  const now=performance.now();if(!shotPaused){advanceMovement(now);updateInvitation(now);}
- if(!started||step<0){room.visible=false;camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
+ if(!started||step<0){mountRoom(false);camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
  const line=lines[step],elapsed=shotElapsed(now);
  if(stage==='white')furnitureAt(line,elapsed);
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);

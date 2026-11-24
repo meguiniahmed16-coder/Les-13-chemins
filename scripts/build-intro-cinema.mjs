@@ -1,6 +1,7 @@
 import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';
 import {resolve,dirname} from 'node:path';
+import {copyFile} from 'node:fs/promises';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 await build({
   entryPoints:[resolve(root,'membres/intro-cinema.js')],
@@ -9,4 +10,5 @@ await build({
   platform:'browser',sourcemap:false,legalComments:'none',
   define:{'process.env.NODE_ENV':'"production"'}
 });
-console.log('Cinématique 3D privée construite.');
+await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-blanc15.js'));
+console.log('Cinématique 3D privée construite : blanc15.');
