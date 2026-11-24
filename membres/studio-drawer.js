@@ -128,8 +128,6 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
  function render(){
   if(!look)return;controls.length=0;pane.replaceChildren();
   tabs.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===mode)));
-  const departure=make('button','Le départ à deux');
-  departure.type='button';departure.onclick=()=>{toggle(false);openDeparture()};
   // Keep the historical editor and its saves intact; only reorganise its controls.
   if(mode===0){
    basicAppearance(pane);
@@ -140,16 +138,23 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
    const quick=folder(pane,'Tenues et vêtements',true);
    wardrobe(quick);
   }
-  const advancedSoftware=folder(pane,'Options avancées · logiciel complet');
+  const advancedSoftware=folder(pane,'Options avancées · studio et création');
   advancedSoftware.classList.add('studio-advanced');
-  const about=make('p','Retrouve ici les outils existants, les vues et la création de scènes, sans ouvrir un second logiciel de personnalisation.');
-  advancedSoftware.append(about);
-  const scene=make('button','Explorer le salon et le jardin 3D');scene.type='button';
-  scene.onclick=()=>toggle(false);
-  advancedSoftware.append(scene);
+  advancedSoftware.append(make('p','Les outils complémentaires du logiciel se trouvent ici. Tes réglages de personnage et ta garde-robe restent enregistrables dans le même espace.'));
+  const tools=make('div');tools.className='figure-tools';
+  const addTool=(title,action)=>{
+   const b=make('button',title);b.type='button';b.onclick=action;tools.append(b);
+  };
+  addTool('Voir mon personnage de face',()=>frameModel('Visage'));
+  addTool('Voir mon personnage de profil',()=>frameModel('Profil'));
+  addTool('Voir mon personnage de dos',()=>frameModel('Dos'));
+  addTool('Explorer le salon et le jardin',()=>toggle(false));
+  addTool('Le départ à deux',()=>{toggle(false);openDeparture()});
+  advancedSoftware.append(tools);
   if(options.privateURL){
-   const a=make('a','Ouvrir les réglages de référence du personnage');a.href=options.privateURL;
-   a.target='_blank';a.rel='noopener';advancedSoftware.append(a);
+   const link=make('a','Atelier avancé et modèles de référence');
+   link.href=options.privateURL;link.target='_blank';link.rel='noopener';
+   advancedSoftware.append(link);
   }
   sync();
  }
