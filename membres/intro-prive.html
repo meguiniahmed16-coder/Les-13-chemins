@@ -43,6 +43,12 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 #cinema-fade{position:absolute;inset:0;background:white;z-index:10;opacity:0;pointer-events:none}
 @keyframes film-drift{from{transform:scale(1)}to{transform:scale(1.045)}}
 @media(prefers-reduced-motion:reduce){#film-image{animation:none}}
+
+#bubble.left:after{left:100%;top:var(--tail-y,50%);transform:translate(-6px,-50%) rotate(-45deg)}
+#bubble.right:after{left:0;top:var(--tail-y,50%);transform:translate(-6px,-50%) rotate(135deg)}
+#bubble.caption-fallback{max-width:94%;width:max-content;background:#fffffff8;box-shadow:none;padding:6px 10px;border-radius:8px}
+#bubble.caption-fallback:after{display:none}
+#bubble.caption-fallback p{font-size:clamp(12px,2.15vw,17px);margin:2px 0}
 </style></head>
 <body><div id="app"><header><div><strong>La Maison des rencontres</strong></div><a href="/admin-blog.html?view=dashboard">Administration</a></header>
 <main id="stage"><canvas id="scene" aria-label="Scène cinématographique 3D et dojo original"></canvas><div id="status" hidden></div><div id="scene-wait" hidden role="status"></div><div id="bubble" hidden aria-live="polite"></div><div id="film-montage" hidden><div id="film-image"></div><div class="film-gradient"></div><div class="film-copy"><small>LA MAISON DES RENCONTRES</small><strong id="film-title"></strong><span id="film-subtitle"></span></div><div id="film-caption"></div></div><div id="cinema-fade" aria-hidden="true"></div>
@@ -54,4 +60,4 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 </main>
 <footer><div class="controls"><button type="button" id="prev" disabled>Retour</button><button type="button" id="next" class="primary" disabled>Continuer</button><button type="button" id="auto" disabled>Lecture cinéma</button><button type="button" id="skip" disabled>Dojo</button></div><div class="controls"><button type="button" id="personalize" disabled hidden>Personnaliser</button><button type="button" id="report-open">Signaler / améliorer</button></div></footer>
 <dialog id="report-dialog"><h2>Rapport de test</h2><label>Type<select id="report-type"><option value="bug">Signaler un problème</option><option value="amelioration">Demander une amélioration</option></select></label><label>Scène<input id="report-scene" readonly></label><label>Observation<textarea id="report-note" placeholder="Décris le problème ou la modification souhaitée."></textarea></label><small id="report-count"></small><div class="actions"><button id="report-add">Ajouter</button><button id="report-export" class="primary">Télécharger le rapport JSON</button><button id="report-close">Fermer</button></div></dialog>
-</div><script type="module" src="/membres/intro-cinema-construct18.js"></script></body></html>
+</div><script type="module" src="/membres/intro-cinema-vestiaire19.js"></script></body></html>

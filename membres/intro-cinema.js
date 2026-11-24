@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {attachFemaleHead,loadFemaleReference} from './v27/female-reference.js';
+import {dressAhmed,createMarianne} from './intro-wardrobe.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -333,22 +333,41 @@ const seatAnchors=new Map();
 function findChild(parent,pattern){let result;parent.traverse(o=>{if(!result&&pattern.test(o.name))result=o;});return result;}
 function bounds(o){return new T.Box3().setFromObject(o);}
 
+function measureArmrests(chair,point,forward){
+ const side=new T.Vector3(forward.z,0,-forward.x).normalize();
+ const result=[];
+ for(const sign of [-1,1]){
+  let best=null,score=Infinity;
+  for(const dx of [.27,.31,.35,.39,.43,.47])for(const dz of [.06,.12,.18,.24,.30]){
+   const p=point.clone().addScaledVector(side,sign*dx).addScaledVector(forward,dz);
+   const ray=new T.Raycaster(new T.Vector3(p.x,1.46,p.z),new T.Vector3(0,-1,0));
+   const hits=ray.intersectObject(chair,true);
+   const hit=hits.find(h=>h.point.y>=point.y+.095&&h.point.y<=point.y+.39);
+   if(!hit)continue;
+   const cost=Math.abs(dx-.34)*2+Math.abs(dz-.18)+Math.abs(hit.point.y-(point.y+.21))*.7;
+   if(cost<score){score=cost;best=hit.point.clone();}
+  }
+  result.push(best||point.clone().addScaledVector(side,sign*.36).addScaledVector(forward,.17).add(new T.Vector3(0,.19,0)));
+ }
+ return result;
+}
 function measureSeats(){
  room.updateMatrixWorld(true);seatAnchors.clear();
  const measured={m:{p:[-1.2469093,.5705407,-.05081394],f:[.6425154,0,-.7662728]},f:{p:[1.2875239,.5705407,-.06313361],f:[-.6425154,0,-.7662728]}};
  for(const [id,pattern] of [['m',/RED[\s_]*CHAIR/i],['f',/BLUE[\s_]*CHAIR/i]]){
-  const fixed=measured[id];let contact=new T.Vector3(...fixed.p),forward=new T.Vector3(...fixed.f);
+  const fixed=measured[id];let contact=new T.Vector3(...fixed.p),forward=new T.Vector3(...fixed.f),chair=null;
   try{
-   const chair=chairs.find(o=>pattern.test(o.name));
+   chair=chairs.find(o=>pattern.test(o.name));
    if(chair){
     const cushion=findChild(chair,/^Cushion_low/i),front=findChild(chair,/^FeetFront/i),back=findChild(chair,/^FeetBack/i);
     if(cushion&&front&&back){
      const cb=bounds(cushion),center=cb.getCenter(new T.Vector3()),dir=bounds(front).getCenter(new T.Vector3()).sub(bounds(back).getCenter(new T.Vector3()));dir.y=0;
-     if(dir.lengthSq()>.001){dir.normalize();const c=center.clone().addScaledVector(dir,-.12);const ray=new T.Raycaster(new T.Vector3(c.x,cb.max.y+.6,c.z),new T.Vector3(0,-1,0));const hit=ray.intersectObject(cushion,true)[0];c.y=(hit?.point.y??cb.max.y)-.009;if(Number.isFinite(c.y)){contact=c;forward=dir;}}
+     if(dir.lengthSq()>.001){dir.normalize();const c=center.clone().addScaledVector(dir,-.055);const ray=new T.Raycaster(new T.Vector3(c.x,cb.max.y+.6,c.z),new T.Vector3(0,-1,0));const hit=ray.intersectObject(cushion,true)[0];c.y=(hit?.point.y??cb.max.y)+.012;if(Number.isFinite(c.y)){contact=c;forward=dir;}}
     }
    }
   }catch(e){remember('Mesure fauteuil',e.message||e);}
-  seatAnchors.set(id,{point:contact,forward,yaw:Math.atan2(forward.x,forward.z)});
+  const arms=chair?measureArmrests(chair,contact,forward):[-1,1].map(sign=>contact.clone().addScaledVector(new T.Vector3(forward.z,0,-forward.x),sign*.36).addScaledVector(forward,.17).add(new T.Vector3(0,.19,0)));
+  seatAnchors.set(id,{point:contact,forward,yaw:Math.atan2(forward.x,forward.z),arms});
  }
 }
 async function loadWhite(){
@@ -512,66 +531,15 @@ async function loadAhmed(){
    }
   }
  };
+ const garments=[];body.traverse(o=>{if(o.isSkinnedMesh&&/^(Haut|Pantalon|Chaussures)[\s_]*blanc/i.test(o.name))garments.push(o);});
+ const garmentParent=garments[0]?.parent;
+ try{await dressAhmed(instance,rig?.bones,garmentParent,garments);}catch(e){root.removeFromParent();throw e;}
  setProgress('ahmed',1);return instance;
 }
 
 async function loadMarianne(){
- const roomBin=await binary('/assets/depart-duo/scene.bin','people');
- const files=unzipSync(new Uint8Array(roomBin),{filter:f=>!f.name.startsWith('m/')});const info=JSON.parse(strFromU8(files['index.json']));
- const texCache=new Map(),textureJobs=[];
- function texture(name){
-  if(texCache.has(name))return texCache.get(name);
-  if(!files[name])return null;
-  const blob=URL.createObjectURL(new Blob([files[name]],{type:'image/webp'}));
-  const tex=new T.Texture();
-  textureJobs.push(new Promise(resolve=>{const image=new Image();image.onload=()=>{tex.image=image;tex.needsUpdate=true;URL.revokeObjectURL(blob);resolve();};image.onerror=()=>{URL.revokeObjectURL(blob);remember('Texture','Image non chargée : '+name);resolve();};image.src=blob;}));
-  tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=2;texCache.set(name,tex);return tex;
- }
- function actor(id,x,name){
-  const root=new T.Group(),body=new T.Group(),parts=[];root.add(body);scene.add(root);
-  root.scale.setScalar(id==='m'?1.075:1.04);root.name=name;
-  for(const h of info[id].parts){
-   const g=new T.BufferGeometry();
-   const pos=Float32Array.from(bytesTo(Int16Array,files[h.p]),v=>v/10000);
-   const nor=Float32Array.from(bytesTo(Int8Array,files[h.n]),v=>v/127);
-   g.setAttribute('position',new T.BufferAttribute(pos,3));
-   g.setAttribute('normal',new T.BufferAttribute(nor,3));
-   if(h.uv)g.setAttribute('uv',new T.BufferAttribute(Float32Array.from(bytesTo(Uint16Array,files[h.uv]),v=>v/65535),2));
-   g.setIndex(new T.BufferAttribute(bytesTo(Uint16Array,files[h.i]),1));
-   g.computeBoundingSphere();
-   const label=String(h.name+' '+info[id].tex[h.tex]).toLowerCase();
-   const skinOrHair=/^(body|corps|skin)$/i.test(h.name)||/(skin|peau|face|visage|body|corps|hair|cheveu|iris|eye|oeil|brow|sourcil|cils|lash|lip|lèvre|mouth|dent|teeth|ongle|nail|oreille|ear|nez|nose)/i.test(label);
-   const defaultMaterial=new T.MeshStandardMaterial({
-    map:skinOrHair?texture(info[id].tex[h.tex]):null,
-    color:0xffffff,
-    roughness:.88,
-    alphaTest:/hair|short02|lash|brow/.test(h.name)?.36:.12,
-    side:T.DoubleSide
-   });
-   const mesh=new T.Mesh(g,defaultMaterial);mesh.castShadow=true;body.add(mesh);
-   const reference=pos.slice();
-   const walk=(h.units||[]).slice(0,8).map((u,i)=>files[h.anim+i]?{delta:bytesTo(Int8Array,files[h.anim+i]),unit:u/10000}:null);
-   parts.push({name:h.name,obj:mesh,base:reference,fullIndex:g.index,mesh,reference,key:id+'/'+h.name+'/sofa2/100',delta:null,unit:0,walk});
-  }
-  root.position.set(x,0,.42);root.rotation.y=Math.PI;
-  const instance={id,root,body,parts,sit:0,stamp:0,head:null,
-   pose(value){this.sit=value;for(const part of parts){
-    const array=part.mesh.geometry.attributes.position;
-    if(part.delta){for(let i=0;i<part.reference.length;i++)array.array[i]=part.reference[i]+part.delta[i]*part.unit*value}
-    else array.array.set(part.reference);array.needsUpdate=true;
-   }this.stamp++;this.head?.follow(true);this.armCache=null;},
-   walkPose(phase,strength){this.sit=0;const p=((phase%1)+1)%1*8,lo=Math.floor(p),hi=(lo+1)%8,f=p-lo;for(const part of parts){const a=part.walk?.[lo],b=part.walk?.[hi],buf=part.mesh.geometry.attributes.position;if(a&&b&&a.delta.length===part.reference.length&&b.delta.length===part.reference.length){for(let i=0;i<part.reference.length;i++)buf.array[i]=part.reference[i]+strength*((1-f)*a.unit*a.delta[i]+f*b.unit*b.delta[i]);}else buf.array.set(part.reference);buf.needsUpdate=true;}this.stamp++;this.armCache=null;this.head?.follow(true);},
-   speak(open,wide=0,blink=0){this.head?.talk?.({jaw:open,spread:wide*.18,round:open*.18,blink});}
-  };
-  return instance;
- }
- const b=actor('f',.9,'Marianne');
- await Promise.race([Promise.all(textureJobs),new Promise(resolve=>setTimeout(resolve,15000))]);
- // Reuse the authored Marianne reference face already available in the salon.
- // If it is not reachable, retain the existing character rather than block the intro.
- try{const template=await Promise.race([loadFemaleReference(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Référence Marianne trop longue à charger')),20000))]);b.head=attachFemaleHead(b,template);b.head.follow(true);}catch(e){remember('Visage de Marianne',e.message||e);}
- try{coverMarianneWaist(b);}catch(e){remember('Tenue de Marianne',e.message||e);}
- setProgress('people',1);return b;
+ const root=new T.Group(),body=new T.Group();root.add(body);root.name='Marianne';root.scale.setScalar(1.04);root.position.set(.9,0,.42);root.rotation.y=Math.PI;
+ const actor=await createMarianne(root,body);scene.add(root);setProgress('people',1);return actor;
 }
 async function loadPeople(){
  // Do not inflate two large 3D models at the same time on a phone. Retain each successful stage for retry.
@@ -581,69 +549,32 @@ async function loadPeople(){
 }
 
 let seatsReady=false;
-function prepareSeats(){
- if(seatsReady)return Promise.resolve();
- if(!seatTask)seatTask=(async()=>{
-  const assises=unzipSync(new Uint8Array(await binary('/membres/v27/assises.bin','seats'))),poseIndex=JSON.parse(strFromU8(assises['index.json'])),poses=new Map(),active=new Set();
-  function poseArray(index){
-   if(poses.has(index))return poses.get(index);
-   if(active.has(index)||!assises[index])throw Error('Pose assise invalide');
-   active.add(index);const raw=assises[index].slice(),base=poseIndex.bases[index];
-   if(base!==null&&base!==undefined){const prior=poseArray(base);if(prior.length!==raw.length)throw Error('Pose assise incompatible');for(let i=0;i<raw.length;i++)raw[i]+=prior[i];}
-   const pose=new Int8Array(raw.buffer,raw.byteOffset,raw.byteLength);poses.set(index,pose);active.delete(index);return pose;
-  }
-  const changes=[];
-  for(const person of people)for(const part of person.parts){const index=poseIndex.keys[part.key];if(index!==undefined&&index!==null){const delta=poseArray(index),unit=poseIndex.units[part.key]/10000;if(delta.length!==part.reference.length||!Number.isFinite(unit))throw Error('Pose assise incompatible : '+part.key);changes.push([part,delta,unit]);}}
-  for(const [part,delta,unit] of changes){part.delta=delta;part.unit=unit;}
-  seatsReady=true;
- })().catch(e=>{seatTask=null;throw e});
- return seatTask;
-}
+function prepareSeats(){seatsReady=people.length===2&&people.every(p=>p.wardrobe&&seatAnchors.has(p.id));return seatsReady?Promise.resolve():Promise.reject(Error('Articulations des fauteuils indisponibles'));}
 async function preloadNext(){try{await prepareSeats();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojo();}catch(e){remember('Préchargement dojo',e.message);}}
-
-// Find the bottom of the seated pelvis on the original clothed mesh, not the feet.
-function seatContact(person){
- const points=[],tmp=new T.Vector3();person.root.updateMatrixWorld(true);
- function add(rest,mesh,read){
-  if(!rest||!mesh)return;
-  let max=-Infinity,min=Infinity;for(let k=1;k<rest.length;k+=3){max=Math.max(max,rest[k]);min=Math.min(min,rest[k]);}
-  const fullHeight=person.id==='m'?1.64:(person.parts.find(x=>x.name==='body')?.reference.reduce((a,v,i)=>i%3===1?Math.max(a,v):a,-Infinity)||1.64);
-  const bottom=person.id==='m'?.76:fullHeight*.455,top=person.id==='m'?.94:fullHeight*.585;
-  for(let k=0;k<rest.length;k+=3){const x=rest[k],y=rest[k+1],z=rest[k+2];if(Math.abs(x)>.155||y<bottom||y>top||z>-.028)continue;
-   read(k/3,tmp);mesh.localToWorld(tmp);person.root.worldToLocal(tmp);points.push(tmp.clone());
-  }
- }
- if(person.id==='m'&&person.pants){
-  const g=person.pants.geometry;add(g.attributes.position.array,person.pants,(i,v)=>person.pants.getVertexPosition(i,v));
- }else{
-  const body=person.parts.find(p=>/^body$|^corps$|^skin$/i.test(p.name));
-  if(body)add(body.reference,body.mesh,(i,v)=>v.fromBufferAttribute(body.mesh.geometry.attributes.position,i));
- }
- if(points.length<15)return new T.Vector3(0,person.id==='m'?.52:.48,-.055);
- points.sort((a,b)=>a.y-b.y);
- const bottom=points.slice(Math.floor(points.length*.06),Math.max(1,Math.floor(points.length*.22)));
- return bottom.reduce((sum,p)=>sum.add(p),new T.Vector3()).multiplyScalar(1/Math.max(1,bottom.length));
-}
 // Every character is authored with local +Z pointing forward.
 function facingYaw(from,to){return Math.atan2(to.x-from.x,to.z-from.z);}
-function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,0,.88);}
+function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,0,-1.08);}
 function openingLayout(id){const pos=openingPosition(id),other=openingPosition(id==='m'?'f':'m');return {pos,yaw:facingYaw(pos,other),sit:0};}
 function turnDelta(from,to){return Math.atan2(Math.sin(to-from),Math.cos(to-from));}
+function chairLayout(person){
+ const a=seatAnchors.get(person.id);if(!a)throw Error('Fauteuil original manquant');
+ // The reference solver expects the origin to stay in front of the seat:
+ // knees bend and pelvis travels backwards, feet remain supported on the floor.
+ const scale=person.id==='m'?1.075:1.04,gap=.49,yaw=a.yaw;
+ const pos=a.point.clone().addScaledVector(a.forward,gap);pos.y=0;
+ const arms=a.arms.map(p=>{
+  const v=p.clone().sub(pos).applyAxisAngle(new T.Vector3(0,1,0),-yaw).multiplyScalar(100/scale);
+  return [v.x,v.y+3.0,v.z-3.5];
+ }).sort((a,b)=>a[0]-b[0]);
+ const seat={id:'intro-'+person.id,height:100*a.point.y/scale,gap:100*gap/scale,x:700,z:-800,yaw,introArms:arms};
+ person.introSeat=seat;
+ return {pos,yaw,sit:1};
+}
 function targetLayout(person,seated,dojoMode=false,nearSeats=false){
- const a=seatAnchors.get(person.id),i=person.id==='f'?1:-1;
+ const i=person.id==='f'?1:-1;
  if(dojoMode)return {pos:new T.Vector3(i*.9,0,1.5),yaw:Math.PI,sit:0};
- if(!seated){
-  if(nearSeats&&a){const pos=a.point.clone().addScaledVector(a.forward,.44);pos.y=0;return {pos,yaw:a.yaw,sit:0};}
-  return openingLayout(person.id);
- }
- if(!a)throw Error('Repère de coussin absent');
- if(!person.seatedContact){const old=person.sit;person.pose(1);person.seatedContact=seatContact(person);person.pose(old);}
- const other=seatAnchors.get(person.id==='m'?'f':'m');
- const toward=other?facingYaw(a.point,other.point):a.yaw;
- // Small, physically plausible inward turn; keep the actual pelvis contact fixed.
- const yaw=a.yaw+T.MathUtils.clamp(turnDelta(a.yaw,toward),-.25,.25);
- const offset=person.seatedContact.clone().multiply(person.root.scale).applyAxisAngle(new T.Vector3(0,1,0),yaw);
- return {pos:a.point.clone().sub(offset),yaw,sit:1};
+ if(seated||nearSeats){const target=chairLayout(person);return {...target,sit:seated?1:0};}
+ return openingLayout(person.id);
 }
 let movement=null,invitationMotion=null;
 function layoutPeople(seated,dojoMode=false,nearSeats=false){
@@ -695,13 +626,13 @@ function updateInvitation(now){
   // The words appear first. Then the turn, the steps, the second turn, and the sit.
   const turn=T.MathUtils.smoothstep(t,1350,2050),walk=T.MathUtils.smoothstep(t,2050,4600);
   const face=T.MathUtils.smoothstep(t,4600,5350),sit=T.MathUtils.smoothstep(t,5350,7650);
-  person.root.position.lerpVectors(from,standing.pos,walk).lerp(to.pos,sit);
+  person.root.position.lerpVectors(from,standing.pos,walk);
   person.root.rotation.y=angleMix(angleMix(yaw,walkYaw,turn),standing.yaw,face);
   person.root.rotation.y=angleMix(person.root.rotation.y,to.yaw,sit);
   const strength=T.MathUtils.smoothstep(t,1900,2300)*(1-T.MathUtils.smoothstep(t,4200,4650));
   person.gait=strength>.002?{phase:Math.max(0,(t-2050)/1000)*1.25,strength}:null;
-  if(person.id==='f'&&person.gait&&sit<.01){person.walkPose?.(person.gait.phase,strength);}
-  else if(Math.abs(person.sit-sit)>.001||t>=4650&&t<=5350||sit===1&&person.sit!==1)person.pose(sit);
+  person.sit=sit;
+  if(!person.wardrobe)person.pose(sit);
   if(t<7650)complete=false;
  }
  if(complete){for(const {person,to} of invitationMotion.items){person.gait=null;person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(1);}invitationMotion.complete=true;lastLayout='seated';$('next').disabled=false;}
@@ -787,10 +718,10 @@ function updateActing(now){
  const line=lines[step];if(!line||!started||!ready||stage==='garden')return;
  const elapsed=shotElapsed(now),t=elapsed/1000,duration=line.ms/1000;
  if(line.secondary&&!secondCue&&elapsed>=line.secondary.at){secondCue=true;setCue(line.secondary.speaker,line.secondary.text,line.secondary.at);}
- if(now-lastMotion<33)return;lastMotion=now;
+ if(now-lastMotion<50)return;lastMotion=now;
  for(const p of people){
   const speaking=currentSpeaker===p.id,energy=speaking?1:.20;
-  const localTime=t+(p.id==='f'?2.6:0);
+  const localTime=now/1000+(p.id==='f'?2.6:0);
   const pulse=.45+.55*Math.sin(localTime*1.75)**2,emphasis=actionEnvelope(t,duration)*pulse;
   const blinkPhase=(localTime+1.65)%5.1,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
   const partner=people.find(other=>other!==p);
@@ -802,7 +733,7 @@ function updateActing(now){
   const headYaw=lookTarget&&!moving&&stage==='white'?T.MathUtils.clamp(turnDelta(p.root.rotation.y,facingYaw(p.root.position,lookTarget)),-.64,.64):0;
   const gaze=headYaw/.64;
   const g={time:localTime,energy,emphasis,kind:speaking?line.gesture:'listen',gaze,headYaw,blink,gait:p.gait};
-  try{if(p.id==='m')p.pose(p.sit,g);else moveMarianneArms(p,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
+  try{p.pose(p.sit,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
   let jaw=0,wide=0;
   if(speaking&&speech&&speech.id===p.id){
    const st=elapsed-speech.start;
@@ -822,16 +753,53 @@ function actorHead(person,out=new T.Vector3()){
  if(person){out.set(0,person.sit?1.12:1.53,0);return person.root.localToWorld(out);}
  return out.set(0,1.2,0);
 }
+function faceRect(person,w,h){
+ const head=actorHead(person),scale=person.id==='m'?1.075:1.04;
+ const right=new T.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new T.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
+ const points=[];
+ for(const x of [-.115,.115])for(const y of [-.20,.12]){
+  const p=head.clone().addScaledVector(right,x*scale).addScaledVector(up,y*scale).project(camera);
+  if(Number.isFinite(p.x)&&Number.isFinite(p.y))points.push({x:(p.x+1)*w/2,y:(1-p.y)*h/2});
+ }
+ if(!points.length)return null;
+ const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+ return {l:Math.min(...xs)-12,r:Math.max(...xs)+12,t:Math.min(...ys)-12,b:Math.max(...ys)+12};
+}
+function bubblePosition(w,h,bw,bh,face,blocked){
+ const pad=8,gap=12,cx=(face.l+face.r)/2,cy=(face.t+face.b)/2;
+ const choices=[
+  [cx-bw/2,face.t-bh-gap,'above'],
+  [face.r+gap,cy-bh/2,'right'],
+  [face.l-bw-gap,cy-bh/2,'left'],
+  [cx-bw/2,face.b+gap,'below'],
+  [pad,pad,'above'],[w-bw-pad,pad,'above'],
+  [pad,h-bh-pad,'below'],[w-bw-pad,h-bh-pad,'below']
+ ];
+ const candidates=[];
+ for(const [x,y,dir] of choices){
+  const l=T.MathUtils.clamp(x,pad,Math.max(pad,w-bw-pad)),t=T.MathUtils.clamp(y,pad,Math.max(pad,h-bh-pad));
+  if(blocked.some(r=>r&&l<r.r&&l+bw>r.l&&t<r.b&&t+bh>r.t))continue;
+  candidates.push({l,t,dir,score:Math.hypot(l+bw/2-cx,t+bh/2-cy)});
+ }
+ return candidates.sort((a,b)=>a.score-b.score)[0]||null;
+}
 function anchorBubble(){
  const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
- actorHead(speaker,headPoint);headPoint.project(camera);
- const w=canvasHost.clientWidth,h=canvasHost.clientHeight,x=(headPoint.x+1)*w/2,y=(1-headPoint.y)*h/2;
- const bw=bubble.offsetWidth,bh=bubble.offsetHeight,pad=10;
- const left=T.MathUtils.clamp(x-bw/2,pad,Math.max(pad,w-bw-pad));
- const above=y-bh-28>=pad,top=above?y-bh-22:T.MathUtils.clamp(y+38,pad,Math.max(pad,h-bh-12));
- bubble.style.left=left+'px';bubble.style.top=top+'px';bubble.style.bottom='auto';
- bubble.style.setProperty('--tail-x',T.MathUtils.clamp(x-left,15,bw-15)+'px');
- bubble.classList.toggle('below',!above);
+ const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
+ bubble.classList.remove('caption-fallback','above','below','left','right');
+ const face=faceRect(speaker,w,h);if(!face)return;
+ const blocked=people.map(p=>faceRect(p,w,h)).filter(Boolean);
+ const bw=bubble.offsetWidth,bh=bubble.offsetHeight;
+ const pos=bubblePosition(w,h,bw,bh,face,blocked);
+ if(!pos){
+  bubble.classList.add('caption-fallback');
+  const l=Math.max(6,(w-bubble.offsetWidth)/2);
+  bubble.style.left=l+'px';bubble.style.top='auto';bubble.style.bottom='6px';
+  return;
+ }
+ bubble.classList.add(pos.dir);bubble.style.left=pos.l+'px';bubble.style.top=pos.t+'px';bubble.style.bottom='auto';
+ bubble.style.setProperty('--tail-x',T.MathUtils.clamp((face.l+face.r)/2-pos.l,12,bw-12)+'px');
+ bubble.style.setProperty('--tail-y',T.MathUtils.clamp((face.t+face.b)/2-pos.t,12,bh-12)+'px');
 }
 function scheduleNext(ms){clearTimeout(autoTimer);if(autoplay)autoTimer=setTimeout(()=>{if(autoplay&&!pending)next();},Math.max(100,ms));}
 
