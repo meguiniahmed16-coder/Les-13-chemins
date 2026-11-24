@@ -130,7 +130,7 @@ function navigate(index){
  $('next').textContent=step===text.length-1?'Revoir depuis le début':'Continuer';
  $('prev').disabled=step===0;controls.hidden=!(s==='dojo'||s==='garden');
  $('exit').hidden=s!=='garden';$('save').hidden=s!=='dojo';
- if(auto){clearTimeout(timer);timer=setTimeout(()=>navigate(step===text.length-1?0:step+1),s==='seat'&&step===5?6900:5300)}
+ if(auto && step<14){clearTimeout(timer);timer=setTimeout(()=>navigate(step+1),s==='seat'&&step===5?6900:5300)}else if(auto){auto=false;clearTimeout(timer);$('auto').textContent='Lecture cinéma'}
 }
 function setAutomatic(value){auto=value;clearTimeout(timer);$('auto').textContent=value?'Pause cinéma':'Lecture cinéma';if(value)timer=setTimeout(()=>navigate(step===text.length-1?0:step+1),5200)}
 $('next').onclick=()=>navigate(step===text.length-1?0:step+1);$('prev').onclick=()=>navigate(step-1);$('auto').onclick=()=>setAutomatic(!auto);
