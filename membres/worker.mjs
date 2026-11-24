@@ -24,6 +24,18 @@ async function view(db,m,author){
 }
 async function owner(r,env,path){
   if(!await authorSession(r,env))fail(401,'Connecte-toi à l’administration.');
+  // Original uploaded 3D environments, stored as fixed-size R2 chunks.
+  // Author session has already been verified; no public route exposes these files.
+  const original=path.match(/^admin\/intro-assets\/(white|dojo)\/(\d{3})$/);
+  if(r.method==='GET'&&original){
+    const type=original[1],index=Number(original[2]),count=type==='white'?18:13;
+    if(index>=count)fail(404,'Fragment introuvable.');
+    if(!env.STUDIO)fail(503,'Les décors 3D privés ne sont pas disponibles.');
+    const key='maison-v1/'+(type==='white'?'white-room.glb':'dojo-original.glb')+'.part'+original[2];
+    const object=await env.STUDIO.get(key);
+    if(!object)fail(404,'Un fragment du décor original est manquant : '+original[2]);
+    return new Response(object.body,{headers:{...h,'content-type':'application/octet-stream','content-length':String(object.size)}});
+  }
   if(r.method==='GET'&&(path==='admin/reference'||/^admin\/reference\/\d{3}$/.test(path))){
     if(!env.STUDIO)fail(503,'Le modèle privé est momentanément indisponible.');
     const key=path==='admin/reference'?'manifest.json':path.split('/').pop();
