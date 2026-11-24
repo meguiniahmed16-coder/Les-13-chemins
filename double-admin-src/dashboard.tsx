@@ -9,7 +9,7 @@ const links=[
 export default function Dashboard(){
  return <main className="am-unified-home"><p className="am-eyebrow">Administration générale · La Tectonique des âmes</p>
  <h1>Ton administration</h1><p className="am-unified-lead">Un seul endroit pour gérer les publications, la maison, les personnages, les membres et les documents. Ton accès administrateur actuel est conservé.</p>
- <div className="am-unified-groups">{links.map(group=><section className="am-unified-group" key={group.heading}><h2>{group.heading}</h2><div className="am-unified-cards">{group.items.map(([title,view,desc])=><a key={view} href={view==='cinema'?'/membre.html?auteur=atelier#salon':prefix+view} className="am-unified-card"><strong>{title}</strong><span>{desc}</span><b aria-hidden="true">↗</b></a>)}</div></section>)}</div>
+ <div className="am-unified-groups">{links.map(group=><section className="am-unified-group" key={group.heading}><h2>{group.heading}</h2><div className="am-unified-cards">{group.items.map(([title,view,desc])=><a key={view} href={view==='cinema'?'/membres/intro-prive.html?auteur=atelier':prefix+view} className="am-unified-card"><strong>{title}</strong><span>{desc}</span><b aria-hidden="true">↗</b></a>)}</div></section>)}</div>
  <p className="am-unified-footer">L’ancien accès aux documents est conservé à l’intérieur de cette administration, sans demander un second mot de passe.</p>
  </main>
 }
