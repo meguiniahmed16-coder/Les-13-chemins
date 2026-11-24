@@ -109,11 +109,13 @@ async function loadRooms(){
  // The supplied model includes 200 alternative video-screen frames. The actual TV
  // geometry is a separate node called TV_284, and must remain visible.
  room.traverse(o=>{
-  if(o.name.startsWith('TV Screen.'))o.visible=false;
-  if(/^BLUE CHAIR|^RED CHAIR|^TV_284/.test(o.name)){chairs.push(o);o.visible=false}
+  // GLTFLoader sanitizes spaces and dots in supplied node names.
+  const name=o.name.replace(/[\s_.]+/g,' ').trim().toUpperCase();
+  if(/^TV SCREEN(?: |\d|$)/.test(name))o.visible=false;
+  if(/^(?:BLUE CHAIR|RED CHAIR|TV 284|TV CASE)(?: |$)/.test(name)){chairs.push(o);o.visible=false}
   if(o.isMesh){o.castShadow=true;o.receiveShadow=true}
  });
- television=chairs.find(o=>/^TV_284/.test(o.name));
+ television=chairs.find(o=>/^TV[\s_]284(?:[\s_]|$)/i.test(o.name));
  scene.add(room,whiteFloor);
  status.textContent='Chargement du dojo original…';
  const full=await pieces('dojo',13);
@@ -197,7 +199,8 @@ function showMessage(line){
  const b=document.createElement('b'),p=document.createElement('p');
  b.textContent=line[0];p.textContent=line[1].replaceAll('{pseudo}',alias);
  bubble.replaceChildren(b,p);bubble.hidden=false;
- bubble.animate([{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'translateY(0)'}],{duration:500,fill:'forwards'});
+ bubble.getAnimations().forEach(a=>a.cancel());
+ bubble.animate([{opacity:0,transform:'translate(-50%,10px)'},{opacity:1,transform:'translate(-50%,0)'}],{duration:500});
 }
 function showScene(index){
  if(!ready)return;
@@ -255,7 +258,7 @@ function automatic(on){autoplay=on;clearTimeout(autoTimer);$('auto').textContent
 $('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;showScene(0);automatic(true)};
 $('next').onclick=()=>{automatic(false);next()};
 $('prev').onclick=()=>{automatic(false);showScene(Math.max(0,step-1));$('garden').hidden=true};
-$('skip').onclick=()=>{automatic(false);$('welcome').hidden=true;showScene(14)};
+$('skip').onclick=()=>{if(!authorized||!ready)return;automatic(false);$('welcome').hidden=true;showScene(14)};
 $('auto').onclick=()=>automatic(!autoplay);
 $('personalize').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
 
