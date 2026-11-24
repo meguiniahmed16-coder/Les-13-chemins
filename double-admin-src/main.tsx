@@ -7,9 +7,11 @@ import Archives from './archives';
 import AuthorHeader from './author-header';
 import Dashboard,{Documents} from './dashboard';
 import MembersAdmin from './members';
-import Logiciel from './logiciel';
+
 import './base.css';
 import './login.css';
+
+function LegacySoftwareRedirect(){useEffect(()=>{location.replace('/membre.html?auteur=atelier#avatar');},[]);return <main className="am-login"><p>Ouverture de la personnalisation des personnages…</p></main>;}
 
 function App(){
   const [state,setState]=useState<'loading'|'login'|'ready'|'error'>('loading');
@@ -42,7 +44,7 @@ function App(){
       view==='archives'?<Archives/>:
       view==='atelier'||view==='review'?<Atelier/>:
       view==='members'||view==='membres'?<MembersAdmin/>:
-      view==='logiciel'?<Logiciel/>:
+      view==='logiciel'?<LegacySoftwareRedirect/>:
       view==='documents'?<Documents/>:
       view==='blog'?<Blog/>:<Dashboard/>
     }</>;
