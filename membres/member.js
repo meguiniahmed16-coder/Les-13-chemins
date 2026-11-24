@@ -208,9 +208,7 @@ async function refresh(){
     $('preview-title').textContent='Aperçu · '+(previewGender==='femme'?(paid?'Femme abonnée':'Femme non abonnée'):(paid?'Homme abonné':'Homme non abonné'));
     previewControls($('preview-switch'),authorEntry,previewPlan,previewGender,fromProfile);
   }
-  $('intro-admin').hidden=!member?.author||Boolean(preview);
-  if(member?.author)$('intro-admin').href='/membres/intro-prive.html?auteur='+encodeURIComponent(member.author);
-  $('author-previews').hidden=$('preview-subscriber').hidden=!member?.author;
+$('author-previews').hidden=$('preview-subscriber').hidden=!member?.author;
   if(member?.author){
     $('preview-subscriber').href='/membre.html?auteur='+encodeURIComponent(member.author)+'&apercu=abonne&retour=profil';
     previewControls($('profile-preview-switch'),member.author,'abonne','homme',true);
