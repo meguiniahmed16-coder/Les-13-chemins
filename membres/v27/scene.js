@@ -716,6 +716,16 @@ function updateCam(dt){
 function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
 new ResizeObserver(updateSize).observe(view);
 function move(dt){
+ if(introAuthorized&&introCurrent==='sofa'){
+  introSeatClock=Math.min(1,introSeatClock+dt*.60);
+  const settle=introSeatClock*introSeatClock*(3-2*introSeatClock);
+  for(const [a,id] of [[actors.m,'chair'],[actors.f,'sofa2']]){
+   a.sit=settle;const seat=seats.find(q=>q.id===id);
+   a.stamp='';animateBody(a,0,seat);
+  }
+  return;
+ }
+ if(introAuthorized&&introCurrent==='white')return;
  if(introAuthorized&&introCurrent==='dojo'){
   const a=player();let dx=stick.x, dz=-stick.y;
   if(keys.has('arrowup')||keys.has('z')||keys.has('w'))dz+=1;
@@ -1574,6 +1584,7 @@ reunionAction.onclick=()=>{
    and the already detailed / animated actors of Salon V27. */
 const introRequested=new URLSearchParams(location.search).get('intro3d')==='1'&&authorRoom;
 let introAuthorized=false,introOriginal=null,introCurrent='none';
+let introSeatClock=0;
 let introDirector=null;
 const introFloor=new T.Mesh(new T.PlaneGeometry(90,90),
  new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide}));
@@ -1613,10 +1624,11 @@ function introPose(mode){
  const m=actors.m,f=actors.f;
  m.root.visible=f.root.visible=true;
  if(mode==='sofa'){
+  introSeatClock=0;
   const seatM=seats.find(q=>q.id==='chair'),seatF=seats.find(q=>q.id==='sofa2');
   for(const [actor,x,seat] of [[m,-1.28,seatM],[f,1.32,seatF]]){
-   actor.root.position.set(x,0,0.04);actor.root.rotation.y=Math.PI;
-   actor.sit=1;actor.speed=0;actor.stamp='';animateBody(actor,0,seat);
+   actor.root.position.set(x,0,.04);actor.root.rotation.y=Math.PI;
+   actor.sit=0;actor.speed=0;actor.stamp='';animateBody(actor,0,seat);
   }
  }else{
   for(const [actor,x] of [[m,-.88],[f,.88]]){
