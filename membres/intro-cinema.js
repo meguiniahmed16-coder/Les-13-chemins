@@ -39,7 +39,7 @@ const lines=[
   "ms": 4000,
   "move": "dolly",
   "gesture": "listen",
-  "seated": true
+  "seated": false
  },
  {
   "id": "question",
@@ -50,7 +50,7 @@ const lines=[
   "ms": 8000,
   "move": "push",
   "gesture": "question",
-  "seated": true
+  "seated": false
  },
  {
   "id": "miroir",
@@ -61,18 +61,19 @@ const lines=[
   "ms": 8000,
   "move": "drift",
   "gesture": "explain",
-  "seated": true
+  "seated": false
  },
  {
   "id": "invitation",
   "speaker": "m",
   "text": "Prends place.",
   "scene": "white",
-  "shot": "medium",
+  "shot": "two",
   "ms": 8000,
-  "move": "push",
+  "move": "dolly",
   "gesture": "invite",
-  "seated": true
+  "seated": false,
+  "invitation": true
  },
  {
   "id": "bruit",
@@ -583,7 +584,7 @@ function targetLayout(person,seated,dojoMode=false,nearSeats=false){
  const offset=person.seatedContact.clone().multiply(person.root.scale).applyAxisAngle(new T.Vector3(0,1,0),a.yaw);
  return {pos:a.point.clone().sub(offset),yaw:a.yaw,sit:1};
 }
-let movement=null;
+let movement=null,invitationMotion=null;
 function layoutPeople(seated,dojoMode=false,nearSeats=false){
  const now=performance.now(),items=people.map(person=>{
   const from=person.root.position.clone(),yaw=person.root.rotation.y,sit=person.sit;
@@ -591,6 +592,35 @@ function layoutPeople(seated,dojoMode=false,nearSeats=false){
  });
  if(dojoMode||step===0){movement=null;for(const {person,to} of items){person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(to.sit);}return;}
  movement={start:now,duration:seated&&items.some(x=>x.sit<.99)?1150:650,items};
+}
+// The invitation is a continuous shot: speech and hand gesture first, then
+// both actors turn/settle into their own chairs. No seated pose before the cue.
+function beginInvitation(){
+ movement=null;
+ const items=people.map(person=>{
+  const standing=targetLayout(person,false,false,true);
+  person.root.position.copy(standing.pos);person.root.rotation.y=standing.yaw;person.pose(0);
+  const target=targetLayout(person,true);
+  return {person,from:standing.pos.clone(),yaw:standing.yaw,to:target};
+ });
+ invitationMotion={items,complete:false};lastLayout='standing';
+}
+function updateInvitation(now){
+ if(!invitationMotion||invitationMotion.complete)return;
+ const elapsed=shotElapsed(now);
+ let complete=true;
+ for(const {person,from,yaw,to} of invitationMotion.items){
+  // Marianne accepts the invitation first, Ahmed follows slightly later.
+  const start=person.id==='f'?1750:2450,duration=2800;
+  const u=T.MathUtils.clamp((elapsed-start)/duration,0,1);
+  const positionMix=u*u*(3-2*u),bend=T.MathUtils.smoothstep(u,.12,.92);
+  person.root.position.lerpVectors(from,to.pos,positionMix);
+  const turn=Math.atan2(Math.sin(to.yaw-yaw),Math.cos(to.yaw-yaw));
+  person.root.rotation.y=yaw+positionMix*turn;
+  if(Math.abs(person.sit-bend)>.001||u===1&&person.sit!==1)person.pose(bend);
+  if(u<1)complete=false;
+ }
+ if(complete){invitationMotion.complete=true;lastLayout='seated';}
 }
 function advanceMovement(now){
  if(!movement)return;const u=T.MathUtils.clamp((now-movement.start)/movement.duration,0,1),t=u*u*(3-2*u);
@@ -800,7 +830,7 @@ async function showScene(index){
  if(!ready||pending)return;
  const requested=Math.max(0,Math.min(index,lines.length-1)),line=lines[requested],isDojo=line.scene==='dojo';
  clearTimeout(autoTimer);
- if((line.seated&&!seatsReady)||(isDojo&&!dojo)){
+ if(((line.seated||line.invitation)&&!seatsReady)||(isDojo&&!dojo)){
   setPending(true);$('scene-wait').textContent='La suite se prépare…';
   try{if(isDojo)await prepareDojo();else await prepareSeats();}
   catch(e){remember('Chargement de la suite',e.message||e);automatic(false);$('scene-wait').textContent='La suite n’a pas pu se charger. Réessaie avec Continuer.';setPending(false);$('scene-wait').hidden=false;return;}
@@ -811,8 +841,10 @@ async function showScene(index){
  stage=isDojo?'dojo':'white';
  room.visible=!isDojo;whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
+ invitationMotion=null;
  const layout=isDojo?'dojo':line.seated?'seated':'standing';
- if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
+ if(line.invitation){beginInvitation();}
+ else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,!isDojo&&!line.seated);}
  if(isDojo){chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
  else{
   // In the frontal shots the television is behind the camera, not in front of the actors.
@@ -911,7 +943,7 @@ function frame(){
   }
  }
 
- const now=performance.now();if(!shotPaused)advanceMovement(now);
+ const now=performance.now();if(!shotPaused){advanceMovement(now);updateInvitation(now);}
  if(!started||step<0){camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
  const line=lines[step],elapsed=shotElapsed(now);
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
