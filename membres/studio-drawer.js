@@ -17,6 +17,33 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   sync();
  }
  const controls=[];
+ // One familiar editor: the frequently used adjustments remain visible; everything
+ // else from the established V27 catalog stays available under Options avancées.
+ function basicAppearance(parent){
+  const quick=folder(parent,'Personnalisation rapide',true);
+  quick.classList.add('studio-quick');
+  for(const [key,labelText] of [['skin','Teinte de peau'],['iris','Couleur des yeux'],['hair','Coiffure'],['hairTone','Couleur des cheveux'],['body','Silhouette']]){
+   if(!traitAvailable(key,options.gender))continue;
+   const trait=traits.find(t=>t.key===key);if(!trait)continue;
+   const label=make('label',labelText),select=make('select');
+   for(const [i,name] of trait.options.entries()){
+    if(traitOptionAvailable(key,i,options.gender))select.add(new Option(name,String(i)));
+   }
+   label.append(select);quick.append(label);
+   select.onchange=()=>{
+    const n=Number(select.value);
+    choose({...look,face:{...look.face,[key]:n},
+      ...(key==='skin'?{skinLevel:skinSteps[n]}:{}),
+      ...(key==='iris'?{iris:''}:{})});
+   };
+   controls.push(()=>{select.value=String(look.face[key])});
+  }
+  const views=make('div');views.className='figure-tools';views.setAttribute('role','group');views.setAttribute('aria-label','Vues du modèle');
+  for(const title of ['Corps','Visage','Profil','Dos']){
+   const b=make('button',title);b.type='button';b.onclick=()=>frameModel(title);views.append(b);
+  }
+  parent.append(views);
+ }
  function sync(){for(const update of controls)update();}
  function appearance(parent){
   for(const [id,title,keys] of families){
@@ -103,9 +130,27 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   tabs.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===mode)));
   const departure=make('button','Le départ à deux');
   departure.type='button';departure.onclick=()=>{toggle(false);openDeparture()};
-  pane.append(departure);
-  (mode?wardrobe:appearance)(pane);
-  if(options.privateURL){const a=make('a','Mon atelier privé');a.href=options.privateURL;pane.append(a);}
+  // Keep the historical editor and its saves intact; only reorganise its controls.
+  if(mode===0){
+   basicAppearance(pane);
+   const advanced=folder(pane,'Options avancées · visage et morphologie');
+   advanced.classList.add('studio-advanced');
+   appearance(advanced);
+  }else{
+   const quick=folder(pane,'Tenues et vêtements',true);
+   wardrobe(quick);
+  }
+  const advancedSoftware=folder(pane,'Options avancées · logiciel complet');
+  advancedSoftware.classList.add('studio-advanced');
+  const about=make('p','Retrouve ici les outils existants, les vues et la création de scènes, sans ouvrir un second logiciel de personnalisation.');
+  advancedSoftware.append(about);
+  const scene=make('button','Explorer le salon et le jardin 3D');scene.type='button';
+  scene.onclick=()=>{toggle(false);onToggle(false,mode);};
+  advancedSoftware.append(scene);
+  if(options.privateURL){
+   const a=make('a','Ouvrir les réglages de référence du personnage');a.href=options.privateURL;
+   a.target='_blank';a.rel='noopener';advancedSoftware.append(a);
+  }
   sync();
  }
  tabs.forEach((b,i)=>b.onclick=()=>{mode=i;render();onToggle(true,mode);});
