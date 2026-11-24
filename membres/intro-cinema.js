@@ -118,7 +118,43 @@ function coverMarianneWaist(actor){
  };
  const oldKey=key();mat.customProgramCacheKey=()=>oldKey+'-intro-waist-'+lo.toFixed(5)+'-'+hi.toFixed(5);mat.needsUpdate=true;
 }
+
+async function loadAhmed(){
+ const chunks=new Array(7);let cursor=0;
+ async function work(){
+  while(cursor<chunks.length){const i=cursor++;chunks[i]=new Uint8Array(await binary('/api/intro-private/ahmed/'+String(i).padStart(3,'0'),'ahmed'));}
+ }
+ await Promise.all(Array.from({length:3},work));
+ const length=chunks.reduce((n,c)=>n+c.byteLength,0);
+ if(length!==6819712)throw Error('Le modèle original d’Ahmed est incomplet.');
+ const all=new Uint8Array(length);let at=0;for(const c of chunks){all.set(c,at);at+=c.byteLength;}
+ if(crypto.subtle){const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',all)),b=>b.toString(16).padStart(2,'0')).join('');if(hash!=='5b8aee226d8222e1e822954bafaab6db7506ba6f69f6b2ee7b948cd61da36235')throw Error('Le modèle original d’Ahmed est altéré.');}
+ const asset=await loader.parseAsync(all.buffer,'');
+ const root=new T.Group(),body=asset.scene;root.add(body);root.name='Ahmed';root.scale.setScalar(1.075);root.position.set(-.9,0,.42);root.rotation.y=Math.PI;scene.add(root);
+ const bones=[];
+ const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ body.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=false;o.frustumCulled=false;}if(o.isBone)bones.push({o,name:normalize(o.name),p:o.position.clone(),q:o.quaternion.clone()});});
+ const rx=new T.Quaternion(),axis=new T.Vector3(1,0,0);
+ const instance={id:'m',root,body,parts:[],sit:0,pose(value){
+  this.sit=value;const v=T.MathUtils.clamp(value,0,1);
+  for(const {o,name,p,q} of bones){
+   o.position.copy(p);o.quaternion.copy(q);
+   if(!v)continue;
+   if(/cuisse/.test(name)){
+    const hipY=.91,dy=p.y-hipY,angle=-Math.PI/2*v;
+    o.position.y=hipY-.40*v+dy*Math.cos(angle);o.position.z=p.z+dy*Math.sin(angle);
+    rx.setFromAxisAngle(axis,angle);o.quaternion.premultiply(rx);
+   }else if(/jambe|pied/.test(name)){o.position.z+=.34*v;o.position.y-=.025*v;}
+   else if(/avantbras|main/.test(name)){o.position.y-=.28*v;o.position.z+=.12*v;if(/avantbras/.test(name)){rx.setFromAxisAngle(axis,-.33*v);o.quaternion.premultiply(rx);}}
+   else{o.position.y-=.40*v;}
+  }
+  body.updateMatrixWorld(true);
+ }};
+ return instance;
+}
+
 async function loadPeople(){
+ const ahmedJob=loadAhmed();
  const roomBin=await binary('/assets/depart-duo/scene.bin','people');
  const files=unzipSync(new Uint8Array(roomBin)),info=JSON.parse(strFromU8(files['index.json']));
  const texCache=new Map(),textureJobs=[];
@@ -165,7 +201,8 @@ async function loadPeople(){
   };
   return instance;
  }
- const a=actor('m',-.9,'Ahmed'),b=actor('f',.9,'Marianne');
+ const b=actor('f',.9,'Marianne');
+ const a=await ahmedJob;
  people=[a,b];
  await Promise.all(textureJobs);
  // Reuse the authored Marianne reference face already available in the salon.

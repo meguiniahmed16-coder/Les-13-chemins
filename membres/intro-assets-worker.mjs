@@ -1,12 +1,12 @@
 // Private original 3D assets, streamed from existing R2 storage to authenticated author only.
 // No public static asset and no separate login.
 const origin='https://tectonique-des-ames.com';
-const names={white:{stem:'maison-v1/white-room.glb',count:18},dojo:{stem:'maison-v1/dojo-original.glb',count:13}};
+const names={white:{stem:'maison-v1/white-room.glb',count:18},dojo:{stem:'maison-v1/dojo-original.glb',count:13},ahmed:{stem:'maison-v2/ahmed-atelier-blanc.glb',count:7}};
 const noStore={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 export default {async fetch(request,env){
  const u=new URL(request.url);
  if(request.method!=='GET')return new Response(null,{status:405});
- const match=u.pathname.match(/^\/api\/intro-private\/(white|dojo)\/(\d{3})$/);
+ const match=u.pathname.match(/^\/api\/intro-private\/(white|dojo|ahmed)\/(\d{3})$/);
  if(!match)return new Response(null,{status:404});
  const conf=names[match[1]],part=Number(match[2]);
  if(part>=conf.count)return new Response(null,{status:404});
