@@ -11,7 +11,7 @@ import {byId} from '../../membres/studio-look.js';
 const here=path.dirname(fileURLToPath(import.meta.url)),repo=path.resolve(here,'../..');
 const args=process.argv.slice(2),out=path.resolve(args.find(a=>!a.startsWith('--'))||'promotion-output');
 const archive=path.resolve(args.find(a=>a.startsWith('--archive='))?.slice('--archive='.length)||process.env.PROMOTION_ARCHIVE||'../verification');
-const cardsOnly=args.includes('--cards-only'),prepareOnly=args.includes('--prepare'),waitForRenders=args.includes('--wait');
+const cardsOnly=args.includes('--cards-only'),prepareOnly=args.includes('--prepare'),waitForRenders=args.includes('--wait'),assembleOnly=args.includes('--assemble-only');
 const fps=20,width=960,height=540,transition=.25;
 const renderedFilter='nlmeans=s=3:p=5:pc=5:r=9:rc=9';
 for(const directory of ['cards','segments','provenance','proof'])fs.mkdirSync(path.join(out,directory),{recursive:true});
@@ -149,19 +149,22 @@ function inputs(clip){
 const encode=['-an','-c:v','libx264','-preset','medium','-crf','17','-pix_fmt','yuv420p','-threads','2','-movflags','+faststart'];
 for(const clip of clips){
  if(prepareOnly&&clip.kind==='frames')continue;
+ if(!assembleOnly){
  const input=inputs(clip),filters=[...(clip.kind==='frames'?[renderedFilter]:[]),`scale=${width}:${height}:force_original_aspect_ratio=decrease:flags=lanczos`,`pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:color=0x10291f`,`fps=${fps}`,'setsar=1'];
  if(clip.id==='opening')filters.push('fade=t=in:st=0:d=0.25');
  if(clip.id==='closing')filters.push(`fade=t=out:st=${clip.seconds-.4}:d=0.4`);
  console.log('ENCODE_SEGMENT',clip.id);
  run('ffmpeg',['-hide_banner','-loglevel','error','-y',...input,'-filter_threads','2','-vf',filters.join(','),'-frames:v',String(clip.seconds*fps),...encode,clip.segment]);
- const info=probe(clip.segment);if(Math.abs(Number(info.format.duration)-clip.seconds)>.06)throw Error('Segment duration mismatch: '+clip.id);
+ }
+ const info=probe(clip.segment),video=info.streams.find(s=>s.codec_type==='video');
+ if(Math.abs(Number(info.format.duration)-clip.seconds)>.06||video?.width!==width||video?.height!==height||video?.r_frame_rate!==`${fps}/1`)throw Error('Segment duration, dimensions or cadence mismatch: '+clip.id);
 }
 if(prepareOnly){writeJSON('provenance/prepare-commands.json',commands);console.log('MONTAGE_PREPARED',duration+' seconds; waiting for rendered frames');process.exit(0);}
 
-const filters=clips.map((clip,i)=>`[${i}:v]settb=AVTB,setpts=PTS-STARTPTS,format=yuv420p[v${i}]`);
+const filters=clips.map((clip,i)=>`[${i}:v]setpts=PTS-STARTPTS,fps=${fps},settb=1/${fps},format=yuv420p[v${i}]`);
 let previous='v0',end=clips[0].seconds;
 for(let i=1;i<clips.length;i++){
- const name='mix'+i;filters.push(`[${previous}][v${i}]xfade=transition=fade:duration=${transition}:offset=${(end-transition).toFixed(2)}[${name}]`);
+ const name='mix'+i;filters.push(`[${previous}][v${i}]xfade=transition=fade:duration=${transition}:offset=${(end-transition).toFixed(2)},fps=${fps},settb=1/${fps}[${name}]`);
  previous=name;end+=clips[i].seconds-transition;
 }
 const escaped=subtitleFile.replaceAll('\\','/').replaceAll(':','\\:').replaceAll("'","\\'");

@@ -54,6 +54,12 @@ Quand les images sont toutes présentes, lancer :
 node cinematics/promotion/compose.mjs /chemin/promotion-output --archive=/chemin/verification
 ```
 
+Si les dix fichiers de `segments/` ont déjà été calculés, `--assemble-only` reprend uniquement les fondus, les sous-titres et le MP4. Leur durée, leurs dimensions et leur cadence sont contrôlées avant réutilisation. Chaque entrée et chaque fondu sont explicitement ramenés à 20 i/s avec la même base de temps.
+
+```sh
+node cinematics/promotion/compose.mjs /chemin/promotion-output --assemble-only
+```
+
 Les séries attendues commencent à `0000.png`, à 20 images par seconde, dans `rendered/` :
 
 L’option `--wait` permet de lancer la composition pendant le rendu. Elle attend les 660 PNG complets (marqueur PNG `IEND`) et `PROMOTION_RENDER_COMPLETE` dans les six journaux `render-duo.log`, `render-walk.log`, `render-turn.log`, `render-wardrobe.log`, `render-finale-first.log` et `render-finale.log`. Un témoin déjà présent ne peut ainsi déclencher prématurément le montage. L’attente s’arrête après deux heures si un lot n’est pas terminé.

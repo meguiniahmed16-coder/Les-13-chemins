@@ -81,7 +81,8 @@ for y, text in zip([223, 260], invitation.splitlines()):
 centered(draw, copy["contribution"], 313, SANS, 18, GOLD)
 line(draw, 448, 355, 512, "#65765a")
 centered(draw, copy["site"], 397, SANS, 24)
-centered(draw, copy["email"], 441, SANS, 20, MUTED)
+centered(draw, "ou contactez Ahmed Marie :", 435, SANS, 18, MUTED)
+centered(draw, copy["email"], 465, SANS, 20, MUTED)
 save(closing, "closing.png")
 
 print(json.dumps({"opening": str(args.directory / "opening.png"), "closing": str(args.directory / "closing.png")}))
