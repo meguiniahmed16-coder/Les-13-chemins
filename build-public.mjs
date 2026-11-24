@@ -87,7 +87,7 @@ const publicFiles = [
   'dialogues.js',
   'blog-content-public.js',
   'blog-content.css',
-  'admin-blog.html', 'admin-edition.html',
+  'admin-blog.html', 'admin-edition.html', 'admin-redirect.js',
   'double-admin.js',
   'double-admin.css',
   'site-nav.css',
