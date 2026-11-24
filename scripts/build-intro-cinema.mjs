@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 import {resolve,dirname} from 'node:path';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 await build({
-  entryPoints:[resolve(root,'membres/intro-cinema.js')],
+  entryPoints:[resolve(root,'membres/intro-original.js')],
   outfile:resolve(root,'membres/intro-cinema-bundle.js'),
   bundle:true,minify:true,format:'esm',target:'es2022',
   platform:'browser',sourcemap:false,legalComments:'none',
