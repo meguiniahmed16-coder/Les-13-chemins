@@ -116,19 +116,36 @@ const text=[
  ['Narrateur','Voici le jardin. Là-bas, la maison.','garden',0]
 ];
 function message(line){bubble.replaceChildren();const who=document.createElement('b'),p=document.createElement('p');who.textContent=line[0];p.textContent=line[1].replaceAll('{pseudo}',alias);bubble.append(who,p);bubble.animate([{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:450,fill:'forwards'});}
+let gardenOpened=false;
+function revealRealGarden(){
+ const holder=$('garden-original'),frame=$('garden-frame');holder.hidden=false;
+ if(gardenOpened)return;gardenOpened=true;
+ const ready=()=>{
+  try{
+   const doc=frame.contentDocument;
+   if(!doc?.body?.classList.contains('ready'))return;
+   const outdoor=doc.getElementById('pin');if(outdoor)outdoor.click();
+   setTimeout(()=>{try{doc.getElementById('lookHome')?.click()}catch{}},650);
+   status.textContent='Le véritable jardin 3D · utilise le joystick du salon';
+  }catch(e){record('jardin','Ouverture du jardin original : '+String(e))}
+ };
+ frame.addEventListener('load',()=>{try{frame.contentWindow.addEventListener('salon-ready',ready,{once:true});if(frame.contentDocument?.body?.classList.contains('ready'))ready()}catch(e){record('jardin',e.message)}});
+ frame.src='/membres/v27/salon.html?v=gestes50&resident=marianne';
+}
 function navigate(index){
  step=Math.max(0,Math.min(index,text.length-1));const line=text[step],s=line[2];stage=s==='seat'?'white':s;
  whiteRoom.visible=s==='white'||s==='seat';dojo.visible=s==='dojo';garden.visible=s==='garden';
+ $('garden-original').hidden=s!=='garden';if(s==='garden')revealRealGarden();
  furniture.visible=s==='seat';seatActors(s==='seat');performers.forEach(a=>a.visible=s==='white'||s==='seat'||s==='dojo');
  narrator.position.set(-1.05,0,0);player.position.set(1.05,0,0);
  if(s==='dojo'){dojo.add(narrator,player);narrator.position.set(-1,0,0);player.position.set(1,0,0);scene.background.set('#d5c2a4');scene.fog.color.set('#d5c2a4');scene.fog.density=.006}
  else if(s==='garden'){garden.add(player);player.position.set(0,0,2);scene.background.set('#b9e4df');scene.fog.color.set('#b9e4df');scene.fog.density=.007}
  else{whiteRoom.add(narrator,player);scene.background.set('#fffefd');scene.fog.color.set('#fffefd');scene.fog.density=.009}
  targetCamera.angle=line[3];targetCamera.radius=s==='garden'?9:s==='dojo'?7:5.2;targetCamera.height=s==='garden'?3.1:s==='dojo'?2.8:2.9;
- bubble.hidden=false;status.textContent=(step+1)+' / '+text.length+' · '+(s==='seat'?'Salle blanche · les fauteuils':s==='dojo'?'Dojo':s==='garden'?'Jardin':'Salle blanche');
+ bubble.hidden=false;if(s==='garden')setTimeout(()=>{if(stage==='garden')bubble.hidden=true},7000);status.textContent=(step+1)+' / '+text.length+' · '+(s==='seat'?'Salle blanche · les fauteuils':s==='dojo'?'Dojo':s==='garden'?'Jardin':'Salle blanche');
  message(line);
  $('next').textContent=step===text.length-1?'Revoir depuis le début':'Continuer';
- $('prev').disabled=step===0;controls.hidden=!(s==='dojo'||s==='garden');
+ $('prev').disabled=step===0;controls.hidden=s!=='dojo';
  $('exit').hidden=s!=='garden';$('save').hidden=s!=='dojo';
  if(auto && step<14){clearTimeout(timer);timer=setTimeout(()=>navigate(step+1),s==='seat'&&step===5?6900:5300)}else if(auto){auto=false;clearTimeout(timer);$('auto').textContent='Lecture cinéma'}
 }
