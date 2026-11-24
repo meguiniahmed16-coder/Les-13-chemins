@@ -4,7 +4,7 @@ const prefix='/admin-blog.html?view=';
 const links=[
  {heading:'Publications',items:[['Blog et billets','blog','Écrire, publier et relire les articles'],['L’odeur du bois','creations','Bijoux, produits, catalogue et ventes']]},
  {heading:'Manuscrit et parcours',items:[['Documents et éditeurs','documents','Fichiers privés et codes des éditeurs'],['Conversations et corrections','review','Atelier de révision et continuités'],['Archives','archives','Historique conservé']]},
- {heading:'La Maison des rencontres',items:[['Le monde 3D','cinema','Salle blanche, dojo et jardin'],['Membres et invitations','members','Liste des comptes et futurs compagnons'],['Personnages et atelier','atelier','Dialogues, personnalisation et création']]},
+ {heading:'La Maison des rencontres',items:[['Le monde 3D','cinema','Salle blanche, dojo et jardin'],['Membres et invitations','members','Liste des comptes et futurs compagnons'],['Logiciel intuitif','logiciel','Personnages 3D, salon, caméras et atelier privé'],['Conversations et atelier','atelier','Dialogues, corrections et création']]},
 ] as const;
 export default function Dashboard(){
  return <main className="am-unified-home"><p className="am-eyebrow">Administration générale · La Tectonique des âmes</p>
