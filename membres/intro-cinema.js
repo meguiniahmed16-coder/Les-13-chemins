@@ -557,6 +557,7 @@ function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,0,-1.08);}
 function openingLayout(id){const pos=openingPosition(id),other=openingPosition(id==='m'?'f':'m');return {pos,yaw:facingYaw(pos,other),sit:0};}
 function turnDelta(from,to){return Math.atan2(Math.sin(to-from),Math.cos(to-from));}
 function chairLayout(person){
+ if(person.chairLayout)return {...person.chairLayout,pos:person.chairLayout.pos.clone()};
  const a=seatAnchors.get(person.id);if(!a)throw Error('Fauteuil original manquant');
  // The reference solver expects the origin to stay in front of the seat:
  // knees bend and pelvis travels backwards, feet remain supported on the floor.
@@ -567,7 +568,7 @@ function chairLayout(person){
   return [v.x,v.y+3.0,v.z-3.5];
  }).sort((a,b)=>a[0]-b[0]);
  const seat={id:'intro-'+person.id,height:100*a.point.y/scale,gap:100*gap/scale,x:700,z:-800,yaw,introArms:arms};
- person.introSeat=seat;
+ person.introSeat=seat;person.chairLayout={pos:pos.clone(),yaw,sit:1};
  return {pos,yaw,sit:1};
 }
 function targetLayout(person,seated,dojoMode=false,nearSeats=false){
@@ -704,7 +705,7 @@ function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?paused
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
 let speech=null,lastMotion=0;
-function stopSpeech(){speech=null;currentSpeaker=null;for(const p of people)p.speak?.(0,0,0);}
+function stopSpeech(){speech=null;currentSpeaker=null;const rail=$('dialogue-rail');rail.hidden=true;rail.replaceChildren();bubble.classList.remove('caption-fallback');for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
@@ -784,18 +785,18 @@ function bubblePosition(w,h,bw,bh,face,blocked){
  return candidates.sort((a,b)=>a.score-b.score)[0]||null;
 }
 function anchorBubble(){
- const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
+ const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden||bubble.classList.contains('caption-fallback'))return;
  const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
- bubble.classList.remove('caption-fallback','above','below','left','right');
+ bubble.classList.remove('above','below','left','right');
  const face=faceRect(speaker,w,h);if(!face)return;
  const blocked=people.map(p=>faceRect(p,w,h)).filter(Boolean);
  const bw=bubble.offsetWidth,bh=bubble.offsetHeight;
  const pos=bubblePosition(w,h,bw,bh,face,blocked);
  if(!pos){
-  bubble.classList.add('caption-fallback');
-  const l=Math.max(6,(w-bubble.offsetWidth)/2);
-  bubble.style.left=l+'px';bubble.style.top='auto';bubble.style.bottom='6px';
-  return;
+  // Reserve space outside the 3D viewport, so a tight close-up cannot be obscured.
+  // Once selected, retain this caption for the whole dialogue cue to avoid flicker.
+  const rail=$('dialogue-rail');rail.replaceChildren(...Array.from(bubble.children,n=>n.cloneNode(true)));rail.hidden=false;
+  bubble.classList.add('caption-fallback');return;
  }
  bubble.classList.add(pos.dir);bubble.style.left=pos.l+'px';bubble.style.top=pos.t+'px';bubble.style.bottom='auto';
  bubble.style.setProperty('--tail-x',T.MathUtils.clamp((face.l+face.r)/2-pos.l,12,bw-12)+'px');

@@ -97,3 +97,10 @@ test('speech bubble chooses a location outside both face rectangles',()=>{
  const p=f(700,340,270,75,a,[a,b]);assert.ok(p);
  for(const r of [a,b])assert.ok(!(p.l<r.r&&p.l+270>r.l&&p.t<r.b&&p.t+75>r.t));
 });
+
+test('when a close-up cannot fit a bubble, the caption goes outside the viewport',()=>{
+ const html=readFileSync(new URL('./intro-prive.html',import.meta.url),'utf8');
+ assert.match(html,/<footer><div id="dialogue-rail" hidden/);
+ assert.match(html,/#bubble\.caption-fallback\{visibility:hidden\}/);
+ assert.match(source,/rail\.replaceChildren\(\.\.\.Array\.from\(bubble\.children/);
+});

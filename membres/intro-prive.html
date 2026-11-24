@@ -46,7 +46,9 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 
 #bubble.left:after{left:100%;top:var(--tail-y,50%);transform:translate(-6px,-50%) rotate(-45deg)}
 #bubble.right:after{left:0;top:var(--tail-y,50%);transform:translate(-6px,-50%) rotate(135deg)}
-#bubble.caption-fallback{max-width:94%;width:max-content;background:#fffffff8;box-shadow:none;padding:6px 10px;border-radius:8px}
+#bubble.caption-fallback{visibility:hidden}
+#dialogue-rail{flex:1 0 100%;text-align:center;padding:3px 9px 7px;color:#20392d;border-bottom:1px solid #d0d9d1}
+#dialogue-rail b{font-size:10px;text-transform:uppercase;letter-spacing:.07em}#dialogue-rail p{font:clamp(13px,2.2vw,18px)/1.3 Georgia,serif;margin:2px auto;max-width:800px}
 #bubble.caption-fallback:after{display:none}
 #bubble.caption-fallback p{font-size:clamp(12px,2.15vw,17px);margin:2px 0}
 </style></head>
@@ -58,6 +60,6 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 <div id="welcome" hidden><div class="welcome-panel"><h1>Qu’est-ce qu’une rencontre ?</h1><label>Ton prénom ou pseudonyme<input id="pseudo" maxlength="40" autocomplete="nickname" placeholder="Ton pseudonyme"></label><button class="primary" id="enter" disabled>Commencer</button></div></div>
 <div id="access-denied" hidden><h2>Accès réservé à l’auteur</h2><p>Connecte-toi à ton administration pour accéder à ce monde.</p><a href="/admin-blog.html">Administration</a></div>
 </main>
-<footer><div class="controls"><button type="button" id="prev" disabled>Retour</button><button type="button" id="next" class="primary" disabled>Continuer</button><button type="button" id="auto" disabled>Lecture cinéma</button><button type="button" id="skip" disabled>Dojo</button></div><div class="controls"><button type="button" id="personalize" disabled hidden>Personnaliser</button><button type="button" id="report-open">Signaler / améliorer</button></div></footer>
+<footer><div id="dialogue-rail" hidden aria-live="polite"></div><div class="controls"><button type="button" id="prev" disabled>Retour</button><button type="button" id="next" class="primary" disabled>Continuer</button><button type="button" id="auto" disabled>Lecture cinéma</button><button type="button" id="skip" disabled>Dojo</button></div><div class="controls"><button type="button" id="personalize" disabled hidden>Personnaliser</button><button type="button" id="report-open">Signaler / améliorer</button></div></footer>
 <dialog id="report-dialog"><h2>Rapport de test</h2><label>Type<select id="report-type"><option value="bug">Signaler un problème</option><option value="amelioration">Demander une amélioration</option></select></label><label>Scène<input id="report-scene" readonly></label><label>Observation<textarea id="report-note" placeholder="Décris le problème ou la modification souhaitée."></textarea></label><small id="report-count"></small><div class="actions"><button id="report-add">Ajouter</button><button id="report-export" class="primary">Télécharger le rapport JSON</button><button id="report-close">Fermer</button></div></dialog>
-</div><script type="module" src="/membres/intro-cinema-vestiaire19.js"></script></body></html>
+</div><script type="module" src="/membres/intro-cinema-vestiaire20.js"></script></body></html>
