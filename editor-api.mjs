@@ -163,7 +163,7 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       if (action === 'unified-login') {
         if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
         const mainCookie = cookieToken(request, '__Host-am_site_admin');
-        if (!/^[a-zA-Z0-9.\\-]{1,200}$/.test(mainCookie)) return json({ error: 'Connecte-toi à ton administration principale.' }, 401);
+        if (!/^[A-Za-z0-9.-]{1,200}$/.test(mainCookie)) return json({ error: 'Connecte-toi à ton administration principale.' }, 401);
         const verify = await fetch(canonicalOrigin + '/api/atelier/auth/session', {
           method: 'GET', headers: { cookie: '__Host-am_site_admin=' + mainCookie },
           cache: 'no-store', signal: AbortSignal.timeout(12000)
