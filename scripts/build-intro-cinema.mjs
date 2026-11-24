@@ -10,5 +10,5 @@ await build({
   platform:'browser',sourcemap:false,legalComments:'none',
   define:{'process.env.NODE_ENV':'"production"'}
 });
-await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-construct17.js'));
-console.log('Cinématique 3D privée construite : construct17.');
+await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-construct18.js'));
+console.log('Cinématique 3D privée construite : construct18.');

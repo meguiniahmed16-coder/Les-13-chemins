@@ -70,5 +70,10 @@ test('reference blocking: opening pullback and orbit before furniture, guide app
   assert.ok(last.eye.z<visitor.head.z);
   const far=helpers.guideApproachFrame(visitor,guide,0,htan),near=helpers.guideApproachFrame(visitor,guide,1,htan);
   assert.ok(near.eye.distanceTo(guide.head)<far.eye.distanceTo(guide.head));
+  assert.ok(last.eye.distanceTo(far.eye)<1e-8,'No camera jump between discovery and approach');
+  assert.ok(last.aim.distanceTo(far.aim)<1e-8);
+  const view=last.aim.clone().sub(last.eye);view.y=0;view.normalize();
+  const direction=guide.head.clone().sub(last.eye);direction.y=0;direction.normalize();
+  assert.ok(view.dot(direction)>Math.cos(Math.atan(htan)),'Guide must remain inside the horizontal portrait framing');
  }
 });

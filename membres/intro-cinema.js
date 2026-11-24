@@ -907,20 +907,29 @@ function discoveryFrame(visitor,guide,t,htan){
  const axis=g.clone().sub(v);axis.y=0;axis.normalize();
  const side=new T.Vector3(axis.z,0,-axis.x);if(side.z>0)side.negate();
  const u=T.MathUtils.smoothstep(t,.04,.42),orbit=T.MathUtils.smoothstep(t,.28,.93);
- const near=Math.max(.40,.105/htan),far=Math.max(.96,.30/htan);
- const radius=T.MathUtils.lerp(near,far,u);
- const az=orbit*2.46;
- const aim=v.clone().addScaledVector(axis,T.MathUtils.lerp(0,.76,orbit));aim.y-=T.MathUtils.lerp(.015,.12,u);
+ const near=Math.max(.40,.105/htan),far=Math.max(1.10,.50/htan);
+ const radius=T.MathUtils.lerp(near,far,u),az=orbit*2.66;
  const eye=v.clone().addScaledVector(axis,Math.cos(az)*radius).addScaledVector(side,Math.sin(az)*radius+.045);
  eye.y=v.y+.045-.05*orbit;
- return {aim,eye,roll:(1-T.MathUtils.smoothstep(t,.0,.24))*Math.PI*.5};
+ const front=v.clone().sub(eye).normalize(),back=g.clone().sub(eye).normalize();
+ const reveal=T.MathUtils.smoothstep(orbit,.40,1);
+ // Bisect actual sight lines rather than using a fixed target in world space.
+ // On a narrow portrait screen this keeps the second actor visible.
+ const view=front.clone().lerp(back,.55*reveal).normalize();
+ const aim=eye.clone().addScaledVector(view,Math.max(.4,radius));
+ aim.y-=T.MathUtils.lerp(.015,.10,reveal);
+ return {aim,eye,roll:(1-T.MathUtils.smoothstep(t,0,.24))*Math.PI*.5};
 }
 function guideApproachFrame(visitor,guide,t,htan){
  const v=actorHead(visitor),g=actorHead(guide),axis=v.clone().sub(g);axis.y=0;axis.normalize();
  const side=new T.Vector3(axis.z,0,-axis.x);if(side.z>0)side.negate();
- const far=axis.clone().multiplyScalar(Math.max(2.2,.65/htan)),near=axis.clone().multiplyScalar(Math.max(.85,.25/htan));
- const aim=g.clone();aim.y-=T.MathUtils.lerp(.28,.06,t);
- const eye=g.clone().add(far.lerp(near,t)).addScaledVector(side,T.MathUtils.lerp(.50,.34,t));eye.y=g.y+.04;
+ const previous=discoveryFrame(visitor,guide,1,htan);
+ const near=g.clone().addScaledVector(axis,Math.max(.85,.25/htan)).addScaledVector(side,.34);near.y=g.y+.04;
+ // First leave the visitor's shoulder to one side, then advance past it.
+ const shoulder=previous.eye.clone().lerp(near,.46).addScaledVector(side,.42);
+ const s=1-t;
+ const eye=previous.eye.clone().multiplyScalar(s*s).addScaledVector(shoulder,2*s*t).addScaledVector(near,t*t);
+ const aim=previous.aim.clone().lerp(g.clone().add(new T.Vector3(0,-.06,0)),T.MathUtils.smoothstep(t,0,.85));
  return {aim,eye};
 }
 function cameraShot(line,elapsed,dt){
