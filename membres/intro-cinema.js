@@ -129,7 +129,7 @@ function revealRealGarden(){
    status.textContent='Le véritable jardin 3D · utilise le joystick du salon';
   }catch(e){record('jardin','Ouverture du jardin original : '+String(e))}
  };
- frame.addEventListener('load',()=>{try{frame.contentWindow.addEventListener('salon-ready',ready,{once:true});if(frame.contentDocument?.body?.classList.contains('ready'))ready()}catch(e){record('jardin',e.message)}});
+ frame.addEventListener('load',()=>{try{frame.contentWindow.addEventListener('error',e=>record('erreur-jardin',e.message,{file:e.filename,line:e.lineno}));frame.contentWindow.addEventListener('unhandledrejection',e=>record('erreur-jardin',String(e.reason)));frame.contentWindow.addEventListener('salon-ready',ready,{once:true});if(frame.contentDocument?.body?.classList.contains('ready'))ready()}catch(e){record('jardin',e.message)}});
  frame.src='/membres/v27/salon.html?v=gestes50&resident=marianne';
 }
 function navigate(index){
