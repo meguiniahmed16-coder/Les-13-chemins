@@ -15,6 +15,7 @@ const destinations=[
   ['Conversations',home+'?view=review'],
   ['Archives',home+'?view=archives'],
   ['Atelier',home+'?view=atelier'],
+  ['Logiciel intuitif',home+'?view=logiciel'],
   ['Le monde 3D','/membre.html?auteur=atelier#salon'],
   ['Site public','/ahmed-marie.html']
 
