@@ -7,8 +7,17 @@ import './author-header.css';
 const home='/admin-blog.html';
 const salon='/membre.html?auteur=atelier';
 const destinations=[
-  ['Le carnet',home],['Mes créations',home+'?view=creations'],['Archives',home+'?view=archives'],
-  ['Conversations et corrections',home+'?view=review'],['L’atelier',home+'?view=atelier'],['L’espace public','/ahmed-marie.html']
+  ['Tableau de bord',home+'?view=dashboard'],
+  ['Blog et billets',home+'?view=blog'],
+  ['L’odeur du bois',home+'?view=creations'],
+  ['Documents et éditeurs',home+'?view=documents'],
+  ['Membres',home+'?view=members'],
+  ['Conversations',home+'?view=review'],
+  ['Archives',home+'?view=archives'],
+  ['Atelier',home+'?view=atelier'],
+  ['Le monde 3D','/membres/intro-prive.html?auteur=atelier'],
+  ['Site public','/ahmed-marie.html']
+
 ];
 
 export default function AuthorHeader({onLogout}:{onLogout:()=>void}){
@@ -30,7 +39,7 @@ export default function AuthorHeader({onLogout}:{onLogout:()=>void}){
     aria-current={home+location.search===href?'page':undefined}
     target={href==='/ahmed-marie.html'?'_blank':undefined} rel={href==='/ahmed-marie.html'?'noopener noreferrer':undefined}>{label}</a>);
   const accountActions=(inMenu:boolean)=><>
-    <a href={salon}>Compagnon de route</a>
+    <a href={home+'?view=members'}>Gérer les membres</a>
     <button type="button" ref={inMenu?undefined:passwordButton} aria-expanded={passwordOpen} aria-controls="password-panel" onClick={togglePassword}>Changer le mot de passe</button>
     <button type="button" onClick={signOut} disabled={busy}>{busy?'Déconnexion…':'Se déconnecter'}</button>
   </>;
