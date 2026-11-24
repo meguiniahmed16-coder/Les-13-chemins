@@ -1619,7 +1619,7 @@ window.addEventListener('message',event=>{
  }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:String(error?.message||error)},location.origin);}
 });
 if(introRequested){
- Promise.all(ready).then(async()=>{
+ window.addEventListener('salon-ready',async()=>{
    try{
     const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store'});
     if(!response.ok||(await response.json()).author==null)return;
