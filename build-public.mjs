@@ -1,6 +1,7 @@
 import {buildDeparture} from './scripts/build-depart.mjs';
 import {buildSalonVoices} from './scripts/build-salon-voices.mjs';
 import {buildSalonAssets} from './scripts/build-salon-assets.mjs';
+import {buildIntroOriginalAssets} from './scripts/build-intro-original-assets.mjs';
 import { copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -263,6 +264,7 @@ const arrivalData = stops.map((stop, i) => {
 await mkdir(output);
 await buildDeparture(root,output);
 await buildSalonAssets(root,output);
+await buildIntroOriginalAssets(root,output);
 await buildSalonVoices(root,output);
 const terms=await readFile(join(root,termsFile.slice(1)),'utf8');
 const termsPage='conditions-de-vente.html';
