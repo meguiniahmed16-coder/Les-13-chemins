@@ -31,11 +31,25 @@ const lines=[
  {who:'Narrateur',text:'La porte est ouverte. Dehors, le jardin et la maison t’attendent.',stage:'garden'}
 ];
 function bubble(line){$('bubbles').replaceChildren();const box=document.createElement('div');box.className='bubble';const label=document.createElement('div');label.className='speaker';label.textContent=line.who;const p=document.createElement('p');p.textContent=line.text.replaceAll('{pseudo}',pseudo);box.append(label,p);$('bubbles').append(box)}
+let liveFrame=null;
+function ensureLiveRoom(host){
+ if(!authorized)return;
+ if(!liveFrame){
+  liveFrame=document.createElement('iframe');
+  liveFrame.title='Salon 3D existant — version auteur';
+  liveFrame.loading='eager';
+  liveFrame.allow='fullscreen';
+  liveFrame.src='/membres/v27/salon.html?v=gestes50&resident=marianne';
+  liveFrame.addEventListener('error',()=>fault('Chargement du salon 3D interrompu'));
+ }
+ if(liveFrame.parentNode!==host)host.append(liveFrame);
+}
 function scene(i){
  current=Math.min(lines.length-1,Math.max(0,i));const line=lines[current];
  const dojo=current>=15&&current<18,garden=current>=18;
  $('stage').style.display=dojo||garden?'none':'block';
  $('dojo').classList.toggle('active',dojo);$('garden').classList.toggle('active',garden);
+ if(dojo)ensureLiveRoom($('live3d-host'));else if(garden)ensureLiveRoom($('garden-live-host'));
  $('scene-caption').textContent=sceneName()==='salle-blanche'?'Salle blanche · la rencontre':sceneName()==='fauteuils-tv'?'Salle blanche · les masques':dojo?'Le dojo':'Le jardin';
  const world=$('world');world.classList.toggle('visible',current>=4);
  world.classList.remove('forward','reverse','detail','front');
