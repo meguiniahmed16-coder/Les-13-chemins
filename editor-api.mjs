@@ -153,11 +153,29 @@ export function createHandler({ openStore, configuration, now = Date.now, identi
       // create codes, revoke access, upload documents or become an administrator.
       const ownerToken = cookieToken(request, ADMIN_COOKIE);
       const credentialKey = 'owner-credential/' + cfg.adminHash;
-      const credentialSnapshot = (HEX.test(ownerToken) || action === 'admin-login') ? await store.getWithMetadata(credentialKey, { type: 'json' }) : null;
+      const credentialSnapshot = (HEX.test(ownerToken) || action === 'admin-login' || action === 'unified-login') ? await store.getWithMetadata(credentialKey, { type: 'json' }) : null;
       const credential = credentialSnapshot?.data || null;
       const ownerRevision = credential?.revision || cfg.adminHash;
       const ownerSession = HEX.test(ownerToken) ? await store.get('owner-sessions/' + digest(ownerToken), { type: 'json' }) : null;
       const owner = !!ownerSession && ownerSession.expires > now() && ownerSession.revision === ownerRevision;
+      // A valid primary author login opens the document vault without a second password.
+      // This creates the same short-lived private session used by the original editor.
+      if (action === 'unified-login') {
+        if (request.method !== 'POST' || origin !== url.origin) return json({ error: 'Requête refusée.' }, 403);
+        const mainCookie = cookieToken(request, '__Host-am_site_admin');
+        if (!/^[a-zA-Z0-9.\\-]{1,200}$/.test(mainCookie)) return json({ error: 'Connecte-toi à ton administration principale.' }, 401);
+        const verify = await fetch(canonicalOrigin + '/api/atelier/auth/session', {
+          method: 'GET', headers: { cookie: '__Host-am_site_admin=' + mainCookie },
+          cache: 'no-store', signal: AbortSignal.timeout(12000)
+        });
+        if (!verify.ok || (await verify.json().catch(() => ({}))).ok !== true)
+          return json({ error: 'Session auteur non confirmée.' }, 401);
+        const token = randomBytes(32).toString('hex');
+        await store.setJSON('owner-sessions/' + digest(token), {
+          expires: now() + SESSION_SECONDS * 1000, revision: ownerRevision
+        });
+        return json({ ok: true }, 200, { 'Set-Cookie': cookie(token, SESSION_SECONDS, ADMIN_COOKIE) });
+      }
       if (action === 'owner-session') {
         if (request.method !== 'GET') return json({ error: 'Méthode refusée.' }, 405);
         return json({ ok: owner }, owner ? 200 : 401);
