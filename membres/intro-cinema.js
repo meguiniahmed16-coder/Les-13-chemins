@@ -35,9 +35,9 @@ const lines=[
   "speaker": null,
   "text": "",
   "scene": "white",
-  "shot": "wide",
-  "ms": 4500,
-  "move": "dolly",
+  "shot": "discovery",
+  "ms": 6200,
+  "move": "orbit",
   "gesture": "listen",
   "seated": false,
   "furniture": "none"
@@ -47,7 +47,7 @@ const lines=[
   "speaker": "m",
   "text": "Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?",
   "scene": "white",
-  "shot": "exchange",
+  "shot": "approach",
   "ms": 7800,
   "move": "push",
   "gesture": "question",
@@ -61,7 +61,7 @@ const lines=[
   "scene": "white",
   "shot": "reverse",
   "ms": 8000,
-  "move": "push",
+  "move": "drift",
   "gesture": "question",
   "seated": false,
   "furniture": "none"
@@ -84,8 +84,8 @@ const lines=[
   "text": "Prends place.",
   "scene": "white",
   "shot": "arrival",
-  "ms": 10500,
-  "move": "dolly",
+  "ms": 11200,
+  "move": "orbit",
   "gesture": "invite",
   "seated": false,
   "invitation": true,
@@ -96,9 +96,9 @@ const lines=[
   "speaker": "f",
   "text": "Ici, on laisse dehors le bruit, les rôles, les étiquettes…",
   "scene": "white",
-  "shot": "medium",
+  "shot": "two",
   "ms": 8000,
-  "move": "drift",
+  "move": "dolly",
   "gesture": "explain",
   "seated": true,
   "furniture": "chairs"
@@ -174,7 +174,7 @@ const lines=[
   "text": "",
   "scene": "white",
   "shot": "rear",
-  "ms": 5500,
+  "ms": 6000,
   "move": "orbit",
   "gesture": "watch",
   "seated": true,
@@ -186,7 +186,7 @@ const lines=[
   "text": "",
   "scene": "white",
   "shot": "tv",
-  "ms": 6000,
+  "ms": 7000,
   "move": "push",
   "gesture": "watch",
   "seated": true,
@@ -626,7 +626,7 @@ function seatContact(person){
 }
 // Every character is authored with local +Z pointing forward.
 function facingYaw(from,to){return Math.atan2(to.x-from.x,to.z-from.z);}
-function openingPosition(id){return new T.Vector3(id==='m'?-.74:.74,0,.22);}
+function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,0,.88);}
 function openingLayout(id){const pos=openingPosition(id),other=openingPosition(id==='m'?'f':'m');return {pos,yaw:facingYaw(pos,other),sit:0};}
 function turnDelta(from,to){return Math.atan2(Math.sin(to-from),Math.cos(to-from));}
 function targetLayout(person,seated,dojoMode=false,nearSeats=false){
@@ -690,19 +690,19 @@ function updateInvitation(now){
  if(!invitationMotion||invitationMotion.complete)return;
  const elapsed=shotElapsed(now);let complete=true;
  for(const {person,from,yaw,standing,to,walkYaw} of invitationMotion.items){
-  const delay=person.id==='f'?0:650;
+  const delay=person.id==='m'?0:1250;
   const t=elapsed-delay;
   // The words appear first. Then the turn, the steps, the second turn, and the sit.
-  const turn=T.MathUtils.smoothstep(t,1350,2050),walk=T.MathUtils.smoothstep(t,2050,4300);
-  const face=T.MathUtils.smoothstep(t,4300,5100),sit=T.MathUtils.smoothstep(t,5100,7400);
+  const turn=T.MathUtils.smoothstep(t,1350,2050),walk=T.MathUtils.smoothstep(t,2050,4600);
+  const face=T.MathUtils.smoothstep(t,4600,5350),sit=T.MathUtils.smoothstep(t,5350,7650);
   person.root.position.lerpVectors(from,standing.pos,walk).lerp(to.pos,sit);
   person.root.rotation.y=angleMix(angleMix(yaw,walkYaw,turn),standing.yaw,face);
   person.root.rotation.y=angleMix(person.root.rotation.y,to.yaw,sit);
-  const strength=T.MathUtils.smoothstep(t,1900,2300)*(1-T.MathUtils.smoothstep(t,3900,4350));
+  const strength=T.MathUtils.smoothstep(t,1900,2300)*(1-T.MathUtils.smoothstep(t,4200,4650));
   person.gait=strength>.002?{phase:Math.max(0,(t-2050)/1000)*1.25,strength}:null;
   if(person.id==='f'&&person.gait&&sit<.01){person.walkPose?.(person.gait.phase,strength);}
-  else if(Math.abs(person.sit-sit)>.001||t>=4350&&t<=5100||sit===1&&person.sit!==1)person.pose(sit);
-  if(t<7400)complete=false;
+  else if(Math.abs(person.sit-sit)>.001||t>=4650&&t<=5350||sit===1&&person.sit!==1)person.pose(sit);
+  if(t<7650)complete=false;
  }
  if(complete){for(const {person,to} of invitationMotion.items){person.gait=null;person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(1);}invitationMotion.complete=true;lastLayout='seated';$('next').disabled=false;}
 }
@@ -877,8 +877,8 @@ function updateFilm(line,elapsed){
   const frame=filmFrames[i];$('film-image').style.backgroundImage='url("'+frame.url+'")';$('film-title').textContent=frame.title;$('film-subtitle').textContent=frame.subtitle;
   if(line.shot==='montage')overlay.animate([{opacity:.35},{opacity:1}],{duration:420,easing:'ease-out'});
  }
- overlay.hidden=line.shot!=='montage';
- if(line.shot==='montage')$('film-caption').textContent=line.text;
+ overlay.hidden=line.shot!=='montage'||elapsed<900;
+ if(line.shot==='montage'){$('film-caption').textContent=line.text;overlay.style.opacity=String(T.MathUtils.smoothstep(elapsed,900,1450));}else overlay.style.opacity='1';
 }
 let cutCamera=true;
 const shotAim=new T.Vector3(),shotEye=new T.Vector3(),smoothAim=new T.Vector3(),smoothEye=new T.Vector3();
@@ -898,11 +898,41 @@ function exchangeFrame(person,other,isClose,push,htan,move){
  eye.y=head.y+.025;
  return {aim,eye};
 }
+
+// Blocking adapted from the Construct scene: an extreme close shot pulls out,
+// rotates to an over-the-shoulder discovery, then travels toward the guide.
+// No furniture exists in the scene graph during these two shots.
+function discoveryFrame(visitor,guide,t,htan){
+ const v=actorHead(visitor),g=actorHead(guide);
+ const axis=g.clone().sub(v);axis.y=0;axis.normalize();
+ const side=new T.Vector3(axis.z,0,-axis.x);if(side.z>0)side.negate();
+ const u=T.MathUtils.smoothstep(t,.04,.42),orbit=T.MathUtils.smoothstep(t,.28,.93);
+ const near=Math.max(.40,.105/htan),far=Math.max(.96,.30/htan);
+ const radius=T.MathUtils.lerp(near,far,u);
+ const az=orbit*2.46;
+ const aim=v.clone().addScaledVector(axis,T.MathUtils.lerp(0,.76,orbit));aim.y-=T.MathUtils.lerp(.015,.12,u);
+ const eye=v.clone().addScaledVector(axis,Math.cos(az)*radius).addScaledVector(side,Math.sin(az)*radius+.045);
+ eye.y=v.y+.045-.05*orbit;
+ return {aim,eye,roll:(1-T.MathUtils.smoothstep(t,.0,.24))*Math.PI*.5};
+}
+function guideApproachFrame(visitor,guide,t,htan){
+ const v=actorHead(visitor),g=actorHead(guide),axis=v.clone().sub(g);axis.y=0;axis.normalize();
+ const side=new T.Vector3(axis.z,0,-axis.x);if(side.z>0)side.negate();
+ const far=axis.clone().multiplyScalar(Math.max(2.2,.65/htan)),near=axis.clone().multiplyScalar(Math.max(.85,.25/htan));
+ const aim=g.clone();aim.y-=T.MathUtils.lerp(.28,.06,t);
+ const eye=g.clone().add(far.lerp(near,t)).addScaledVector(side,T.MathUtils.lerp(.50,.34,t));eye.y=g.y+.04;
+ return {aim,eye};
+}
 function cameraShot(line,elapsed,dt){
  const t=T.MathUtils.clamp(elapsed/line.ms,0,1),push=t*t*(3-2*t);
  const aspect=Math.max(.25,camera.aspect),vfov=46,htan=Math.tan(T.MathUtils.degToRad(vfov*.5))*aspect;
- camera.fov=vfov;camera.updateProjectionMatrix();
- if(line.shot==='dojo'){
+ camera.fov=vfov;camera.updateProjectionMatrix();camera.up.set(0,1,0);
+ let roll=0;
+ if(line.shot==='discovery'){
+  const v=discoveryFrame(people[1],people[0],t,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);roll=v.roll;
+ }else if(line.shot==='approach'){
+  const v=guideApproachFrame(people[1],people[0],push,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);
+ }else if(line.shot==='dojo'){
   angle+=(targetAngle-angle)*(1-Math.exp(-dt*2));
   shotAim.set(.1,1.25,.65);const d=Math.max(radius,3.0/htan);
   shotEye.set(shotAim.x+Math.sin(angle)*d,shotAim.y+1.12,shotAim.z+Math.cos(angle)*d);
@@ -911,19 +941,20 @@ function cameraShot(line,elapsed,dt){
   const halfWidth=Math.max(1.85,Math.abs(a.x-b.x)*.5+.70);
   const d=Math.max(3.45,halfWidth/htan,1.16/Math.tan(T.MathUtils.degToRad(vfov*.5)))*(1-.035*push);
   shotAim.set(center.x,.90,center.z-.10);
-  const theta=Math.PI-.18+.16*push;
-  shotEye.set(shotAim.x+Math.sin(theta)*d,1.53,shotAim.z+Math.cos(theta)*d);
+  const reveal=T.MathUtils.smoothstep(elapsed,450,3000);
+  const theta=Math.PI-.95+.95*reveal;
+  shotEye.set(shotAim.x+Math.sin(theta)*d,1.53+.12*(1-reveal),shotAim.z+Math.cos(theta)*d);
  }else if(line.shot==='rear'){
   const a=actorHead(people[0]),b=actorHead(people[1]),mid=a.clone().add(b).multiplyScalar(.5);
   const tv=television?bounds(television).getCenter(new T.Vector3()):new T.Vector3(0,.65,-2.2);
   shotAim.copy(mid).lerp(tv,.32+.22*push);shotAim.y=.91;
   const d=Math.max(3.8,1.95/htan),theta=Math.PI*(1-push);
-  shotEye.set(shotAim.x+Math.sin(theta)*d,1.55+.22*push,shotAim.z+Math.cos(theta)*d);
- }else if(line.shot==='tv'&&television){
+  shotEye.set(shotAim.x+Math.sin(theta)*d,1.70+.30*Math.sin(push*Math.PI),shotAim.z+Math.cos(theta)*d);
+ }else if((line.shot==='tv'||line.shot==='montage')&&television){
   const b=bounds(television),center=b.getCenter(new T.Vector3()),size=b.getSize(new T.Vector3());
   const target=televisionFilm?bounds(televisionFilm.mesh).getCenter(new T.Vector3()):center;
   const towards=new T.Vector3().subVectors(new T.Vector3(0,center.y,0),center);towards.y=0;towards.normalize();
-  const d=Math.max(.95,(size.x*.58)/htan)*(1-.13*push);
+  const d=line.shot==='montage'?Math.max(.12,Math.max(.95,(size.x*.58)/htan)*(.87-.80*T.MathUtils.smoothstep(elapsed,0,950))):Math.max(.95,(size.x*.58)/htan)*(1-.13*push);
   shotAim.copy(target);shotEye.copy(target).addScaledVector(towards,d);shotEye.y+=.03;shotEye.x+=.045*(1-push);
  }else if(line.shot==='close'||line.shot==='medium'||line.shot==='reverse'){
   const person=speakerActor(line.speaker)||people[0],other=people.find(p=>p!==person);
@@ -940,7 +971,7 @@ function cameraShot(line,elapsed,dt){
  }
  if(cutCamera){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
  else{const alpha=1-Math.exp(-Math.max(.001,dt)*5);smoothEye.lerp(shotEye,alpha);smoothAim.lerp(shotAim,alpha);}
- camera.position.copy(smoothEye);camera.lookAt(smoothAim);camera.updateMatrixWorld(true);
+ camera.position.copy(smoothEye);camera.lookAt(smoothAim);if(roll)camera.rotateZ(roll);camera.updateMatrixWorld(true);
 }
 
 

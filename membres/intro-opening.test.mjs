@@ -42,10 +42,10 @@ test('the two standing actors actually face one another, and not outwards',()=>{
   assert.ok(front.dot(toward)>.999,'Actor forward direction must point at partner');
   assert.equal(self.sit,0);
  }
- assert.ok(Math.abs(a.pos.distanceTo(b.pos)-1.48)<1e-9);
+ assert.ok(Math.abs(a.pos.distanceTo(b.pos)-2.56)<1e-9);
 });
 test('dialogue reverse shots stay on one side of the actors and face the speaker',()=>{
- const code=source.slice(source.indexOf('function exchangeFrame('),source.indexOf('function cameraShot('));
+ const code=source.slice(source.indexOf('function exchangeFrame('),source.indexOf('function discoveryFrame('));
  const frame=new Function('T','actorHead',code+'\nreturn exchangeFrame;')({Vector3},p=>p.head.clone());
  const a={id:'m',head:new Vector3(-.74,1.65,.22)},b={id:'f',head:new Vector3(.74,1.58,.22)};
  for(const [self,other] of [[a,b],[b,a]])for(const aspect of [.48,1,1.7]){
@@ -54,5 +54,21 @@ test('dialogue reverse shots stay on one side of the actors and face the speaker
   const view=v.eye.clone().sub(self.head);view.y=0;
   assert.ok(view.dot(forward)>0,'Camera must see the front of the actor');
   assert.ok(v.eye.z<self.head.z,'Reverse cuts must stay on the same side of the line');
+ }
+});
+
+test('reference blocking: opening pullback and orbit before furniture, guide approach next',()=>{
+ assert.equal(shots[0].shot,'discovery');assert.equal(shots[1].shot,'approach');
+ const code=source.slice(source.indexOf('function discoveryFrame('),source.indexOf('function cameraShot('));
+ const helpers=new Function('T','actorHead',code+'\nreturn {discoveryFrame,guideApproachFrame};')({Vector3,MathUtils:{lerp:(a,b,t)=>a+(b-a)*t,smoothstep:(x,a,b)=>{const u=Math.max(0,Math.min(1,(x-a)/(b-a)));return u*u*(3-2*u);}}},p=>p.head.clone());
+ const visitor={head:new Vector3(1.28,1.56,.88)},guide={head:new Vector3(-1.28,1.65,.88)};
+ for(const aspect of [.45,1,1.78]){
+  const htan=Math.tan(23*Math.PI/180)*aspect;
+  const first=helpers.discoveryFrame(visitor,guide,0,htan),last=helpers.discoveryFrame(visitor,guide,1,htan);
+  assert.ok(last.eye.distanceTo(visitor.head)>first.eye.distanceTo(visitor.head));
+  assert.ok(Math.abs(last.roll)<1e-9);assert.ok(first.roll>1.5);
+  assert.ok(last.eye.z<visitor.head.z);
+  const far=helpers.guideApproachFrame(visitor,guide,0,htan),near=helpers.guideApproachFrame(visitor,guide,1,htan);
+  assert.ok(near.eye.distanceTo(guide.head)<far.eye.distanceTo(guide.head));
  }
 });
