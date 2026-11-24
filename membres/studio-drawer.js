@@ -177,6 +177,12 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
     }
    };
    advancedSoftware.append(expand,holder);
+   advancedSoftware.addEventListener('toggle',()=>{
+    if(!advancedSoftware.open&& !holder.hidden){
+     holder.hidden=true;expand.setAttribute('aria-expanded','false');
+     expand.textContent='Afficher l’atelier avancé dans ce logiciel';
+    }
+   });
    const link=make('a','Ouvrir cet atelier dans une nouvelle fenêtre');
    link.href=options.privateURL;link.target='_blank';link.rel='noopener';
    advancedSoftware.append(link);
