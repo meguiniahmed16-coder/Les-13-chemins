@@ -49,24 +49,51 @@ const lines=[
  ['Narrateur','Les papillons et la maison t’attendent dans le jardin.','dojo',Math.PI]
 ];
 
-const progress={white:0,people:0},weights={white:.32,people:.68};
+const progress={white:0,people:0,ahmed:0},weights={white:.25,people:.40,ahmed:.35};
+const downloadCache=new Map();let bootStage='Connexion';let assetAhmed=null,assetMarianne=null;
 let pending=false,dojoTask=null,seatTask=null,initialTask=null;
 function setProgress(key,value){if(!(key in progress))return;progress[key]=Math.max(progress[key],Math.min(1,value));const total=Math.floor(100*Object.keys(progress).reduce((a,k)=>a+progress[k]*weights[k],0));$('load-progress').value=total;$('load-percent').textContent=total+' %';}
-async function binary(url,key){
+
+function showBootStage(s){bootStage=s;const e=$('load-description');if(e)e.textContent=s;}
+async function binary(url,key,{expected=0,cache=false}={}){
+ if(cache&&downloadCache.has(url))return downloadCache.get(url);
  let last;
- for(let attempt=0;attempt<2;attempt++){
+ for(let attempt=0;attempt<3;attempt++){
   try{
-   const response=await fetch(url,{credentials:'same-origin',signal:AbortSignal.timeout(90000)});
-   if(!response.ok)throw Error(url+' : HTTP '+response.status);
-   const total=Number(response.headers.get('content-length'));
-   if(!response.body||!total){const bytes=await response.arrayBuffer();setProgress(key,.9);return bytes;}
-   const reader=response.body.getReader(),chunks=[];let received=0;
-   for(;;){const {done,value}=await reader.read();if(done)break;chunks.push(value);received+=value.byteLength;setProgress(key,.9*received/total);}
-   if(!received)throw Error('Fichier vide : '+url);
-   const result=new Uint8Array(received);let at=0;for(const c of chunks){result.set(c,at);at+=c.byteLength;}return result.buffer;
-  }catch(e){last=e;if(attempt===0)await new Promise(r=>setTimeout(r,600));}
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),95000);
+   let response,result;
+   try{
+    response=await fetch(url,{credentials:'same-origin',signal:controller.signal,cache:attempt?'reload':'default'});
+    if(!response.ok)throw Error('HTTP '+response.status+' · '+url.split('/').slice(-2).join('/'));
+    const total=Number(response.headers.get('content-length'))||expected;
+    if(!response.body||!total){result=await response.arrayBuffer();setProgress(key,.9);}
+    else{
+     const reader=response.body.getReader();let received=0;const chunks=[];
+     for(;;){const {done,value}=await reader.read();if(done)break;chunks.push(value);received+=value.byteLength;if(key!=='ahmed')setProgress(key,.9*received/total);}
+     if(!received)throw Error('Fichier vide');
+     const data=new Uint8Array(received);let at=0;for(const c of chunks){data.set(c,at);at+=c.byteLength;}result=data.buffer;
+    }
+   }finally{clearTimeout(timer);}
+   if(expected&&result.byteLength!==expected)throw Error('Fragment incomplet : '+result.byteLength+'/'+expected);
+   if(cache)downloadCache.set(url,result);return result;
+  }catch(e){last=e;if(attempt<2)await new Promise(r=>setTimeout(r,450*(attempt+1)));}
  }
  throw last;
+}
+function withoutOptionalMorphs(buffer){
+ const bytes=new Uint8Array(buffer),v=new DataView(buffer),n=v.getUint32(12,true),j=JSON.parse(new TextDecoder().decode(bytes.subarray(20,20+n)));
+ for(const m of j.meshes||[]){delete m.weights;if(m.extras?.targetNames)delete m.extras.targetNames;for(const p of m.primitives||[])delete p.targets;}
+ for(const node of j.nodes||[])delete node.weights;delete j.animations;
+ const json=new TextEncoder().encode(JSON.stringify(j)),pad=(json.length+3)&~3,tail=bytes.subarray(20+n),out=new Uint8Array(20+pad+tail.length),h=new DataView(out.buffer);
+ h.setUint32(0,0x46546c67,true);h.setUint32(4,2,true);h.setUint32(8,out.length,true);h.setUint32(12,pad,true);h.setUint32(16,0x4e4f534a,true);out.fill(32,20,20+pad);out.set(json,20);out.set(tail,20+pad);return out.buffer;
+}
+async function decodeAhmed(buffer){
+ try{return await loader.parseAsync(buffer,'');}
+ catch(error){
+  remember('Expressions du visage',error.message||error);
+  // Keep the exact same original character, arms, textures and clothes; only omit optional mouth targets if the graphics driver cannot read them.
+  return await loader.parseAsync(withoutOptionalMorphs(buffer),'');
+ }
 }
 function setPending(on){pending=on;for(const id of ['next','prev','skip','auto','personalize'])$(id).disabled=on||!ready||(id==='prev'&&step<=0);$('scene-wait').hidden=!on;}
 const whiteFloor=new T.Group();
@@ -78,19 +105,27 @@ sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-5,right
 const seatAnchors=new Map();
 function findChild(parent,pattern){let result;parent.traverse(o=>{if(!result&&pattern.test(o.name))result=o;});return result;}
 function bounds(o){return new T.Box3().setFromObject(o);}
+
 function measureSeats(){
- room.updateMatrixWorld(true);
+ room.updateMatrixWorld(true);seatAnchors.clear();
+ const measured={m:{p:[-1.2469093,.5705407,-.05081394],f:[.6425154,0,-.7662728]},f:{p:[1.2875239,.5705407,-.06313361],f:[-.6425154,0,-.7662728]}};
  for(const [id,pattern] of [['m',/RED[\s_]*CHAIR/i],['f',/BLUE[\s_]*CHAIR/i]]){
-  const chair=chairs.find(o=>pattern.test(o.name));if(!chair)throw Error('Fauteuil original manquant : '+id);
-  const cushion=findChild(chair,/^Cushion_low/i),front=findChild(chair,/^FeetFront/i),back=findChild(chair,/^FeetBack/i);
-  if(!cushion||!front||!back)throw Error('Repères de fauteuil incomplets : '+id);
-  const cb=bounds(cushion),center=cb.getCenter(new T.Vector3()),forward=bounds(front).getCenter(new T.Vector3()).sub(bounds(back).getCenter(new T.Vector3()));forward.y=0;forward.normalize();
-  const contact=center.clone().addScaledVector(forward,-.12);const ray=new T.Raycaster(new T.Vector3(contact.x,cb.max.y+.6,contact.z),new T.Vector3(0,-1,0));
-  const hit=ray.intersectObject(cushion,true)[0];contact.y=(hit?.point.y??cb.max.y)-.009;
+  const fixed=measured[id];let contact=new T.Vector3(...fixed.p),forward=new T.Vector3(...fixed.f);
+  try{
+   const chair=chairs.find(o=>pattern.test(o.name));
+   if(chair){
+    const cushion=findChild(chair,/^Cushion_low/i),front=findChild(chair,/^FeetFront/i),back=findChild(chair,/^FeetBack/i);
+    if(cushion&&front&&back){
+     const cb=bounds(cushion),center=cb.getCenter(new T.Vector3()),dir=bounds(front).getCenter(new T.Vector3()).sub(bounds(back).getCenter(new T.Vector3()));dir.y=0;
+     if(dir.lengthSq()>.001){dir.normalize();const c=center.clone().addScaledVector(dir,-.12);const ray=new T.Raycaster(new T.Vector3(c.x,cb.max.y+.6,c.z),new T.Vector3(0,-1,0));const hit=ray.intersectObject(cushion,true)[0];c.y=(hit?.point.y??cb.max.y)-.009;if(Number.isFinite(c.y)){contact=c;forward=dir;}}
+    }
+   }
+  }catch(e){remember('Mesure fauteuil',e.message||e);}
   seatAnchors.set(id,{point:contact,forward,yaw:Math.atan2(forward.x,forward.z)});
  }
 }
 async function loadWhite(){
+ showBootStage('La salle blanche se prépare…');
  const original=await binary('/assets/intro-original/white-room-start.glb','white');
  room=(await loader.parseAsync(original,'')).scene;room.name='Salle blanche originale';
  // The supplied model includes 200 alternative video-screen frames. The actual TV
@@ -138,17 +173,32 @@ function coverMarianneWaist(actor){
  const oldKey=key();mat.customProgramCacheKey=()=>oldKey+'-intro-waist-'+lo.toFixed(5)+'-'+hi.toFixed(5);mat.needsUpdate=true;
 }
 
+
 async function loadAhmed(){
- const chunks=new Array(11);let cursor=0;
- async function work(){
-  while(cursor<chunks.length){const i=cursor++;chunks[i]=new Uint8Array(await binary('/api/intro-private/ahmedv3/'+String(i).padStart(3,'0'),'ahmed'));}
+ const total=10671740,unit=1048576,chunks=new Array(11);
+ async function group(g){
+  const first=g*3,last=Math.min(chunks.length,first+3),size=Math.min(total-first*unit,3*unit);
+  try{
+   const data=new Uint8Array(await binary('/api/intro-private/ahmedfast/'+String(g).padStart(3,'0'),'ahmed',{expected:size,cache:true}));
+   for(let i=first;i<last;i++)chunks[i]=data.subarray((i-first)*unit,Math.min(data.length,(i-first+1)*unit));
+  }catch(e){
+   remember('Téléchargement groupé',e.message||e);
+   // An older hosting release can still provide the same verified model through the original fragment URL.
+   for(let i=first;i<last;i++)if(!chunks[i])chunks[i]=new Uint8Array(await binary('/api/intro-private/ahmedv3/'+String(i).padStart(3,'0'),'ahmed',{expected:Math.min(unit,total-i*unit),cache:true}));
+  }
+  setProgress('ahmed',.92*chunks.reduce((n,c)=>n+(c?.byteLength||0),0)/total);
  }
- await Promise.all(Array.from({length:3},work));
- const length=chunks.reduce((n,c)=>n+c.byteLength,0);
- if(length!==10671740)throw Error('Le modèle original d’Ahmed est incomplet.');
- const all=new Uint8Array(length);let at=0;for(const c of chunks){all.set(c,at);at+=c.byteLength;}
- if(crypto.subtle){const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',all)),b=>b.toString(16).padStart(2,'0')).join('');if(hash!=='66040c78a23c862dd39090802129eabab252638f1d1e863836a1e71f37f53192')throw Error('Le modèle original d’Ahmed est altéré.');}
- const asset=await loader.parseAsync(all.buffer,'');
+ showBootStage('Préparation des personnages…');
+ // Limit concurrency on mobile networks; each request carries at most 3 MiB.
+ for(let g=0;g<4;g+=2)await Promise.all([group(g),group(g+1)]);
+ const all=new Uint8Array(total);let at=0;for(const c of chunks){all.set(c,at);at+=c.byteLength;}
+ if(at!==total)throw Error('Le modèle d’Ahmed est incomplet.');
+ if(globalThis.crypto?.subtle){
+  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',all)),b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash!=='66040c78a23c862dd39090802129eabab252638f1d1e863836a1e71f37f53192'){downloadCache.clear();throw Error('Le modèle original d’Ahmed doit être retéléchargé.');}
+ }
+ showBootStage('Assemblage du personnage d’Ahmed…');
+ const asset=await decodeAhmed(all.buffer);
  const root=new T.Group(),body=asset.scene;root.add(body);root.name='Ahmed';root.position.set(-.78,0,.42);root.rotation.y=Math.PI;scene.add(root);
  const bones=new Map(),mouth=[];
  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -158,13 +208,20 @@ async function loadAhmed(){
   if(o.isBone){const name=normalize(o.name).replace(/^v27/,'');bones.set(name,{o,p:o.position.clone(),q:o.quaternion.clone()});}
   if(o.morphTargetDictionary?.Ouvrir!==undefined)mouth.push(o);
  });
- for(const n of ['bassin','tete','thorax','cuissed','cuisseg','jambed','jambeg','piedd','piedg','brasd','brasg','avantbrasd','avantbrasg','maind','maing'])if(!bones.has(n))throw Error('Articulation originale manquante : '+n);
+
+ const jointOrder=['bassin','tete','brasd','avantbrasd','maind','brasg','avantbrasg','maing','cuissed','jambed','piedd','cuisseg','jambeg','piedg','thorax'];
+ // GLTFLoader can uniquify names on some builds. The skin's verified joint order is the reliable source.
+ let rig;pants?.skeleton?.bones?.length===15&&(rig=pants.skeleton);
+ if(!rig)body.traverse(o=>{if(!rig&&o.isSkinnedMesh&&o.skeleton?.bones.length===15)rig=o.skeleton;});
+ if(rig)jointOrder.forEach((name,i)=>{const o=rig.bones[i];bones.set(name,{o,p:o.position.clone(),q:o.quaternion.clone()});});
+ const canSit=jointOrder.every(n=>bones.has(n));if(!canSit)remember('Articulations','Animation assise indisponible, modèle original conservé.');
+
  const rotX=(a)=>new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),a);
  const set=(n,p,q)=>{const x=bones.get(n);if(!x)return;x.o.position.copy(p);x.o.quaternion.copy(x.q);if(q)x.o.quaternion.premultiply(q);};
  const spin=(v,center,q)=>v.clone().sub(center).applyQuaternion(q).add(center);
- const instance={id:'m',root,body,parts:[],sit:0,pants,mouth,headBone:bones.get('tete').o,
+ const instance={id:'m',root,body,parts:[],sit:0,pants,mouth,headBone:bones.get('tete')?.o||null,
   pose(value){
-   this.sit=value;const t=T.MathUtils.clamp(value,0,1),drop=new T.Vector3(0,-.295*t,0);
+   this.sit=value;if(!canSit)return;const t=T.MathUtils.clamp(value,0,1),drop=new T.Vector3(0,-.295*t,0);
    for(const [n,x] of bones)set(n,x.p.clone().add(drop));
    if(t){
     for(const [side,sgn] of [['d',-1],['g',1]]){
@@ -193,13 +250,12 @@ async function loadAhmed(){
    }
   }
  };
- return instance;
+ setProgress('ahmed',1);return instance;
 }
 
-async function loadPeople(){
- const ahmedJob=loadAhmed();
+async function loadMarianne(){
  const roomBin=await binary('/assets/depart-duo/scene.bin','people');
- const files=unzipSync(new Uint8Array(roomBin)),info=JSON.parse(strFromU8(files['index.json']));
+ const files=unzipSync(new Uint8Array(roomBin),{filter:f=>!f.name.startsWith('m/')});const info=JSON.parse(strFromU8(files['index.json']));
  const texCache=new Map(),textureJobs=[];
  function texture(name){
   if(texCache.has(name))return texCache.get(name);
@@ -245,13 +301,18 @@ async function loadPeople(){
   return instance;
  }
  const b=actor('f',.9,'Marianne');
- const a=await ahmedJob;
- people=[a,b];
- await Promise.all(textureJobs);
+ await Promise.race([Promise.all(textureJobs),new Promise(resolve=>setTimeout(resolve,15000))]);
  // Reuse the authored Marianne reference face already available in the salon.
  // If it is not reachable, retain the existing character rather than block the intro.
  try{const template=await Promise.race([loadFemaleReference(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Référence Marianne trop longue à charger')),20000))]);b.head=attachFemaleHead(b,template);b.head.follow(true);}catch(e){remember('Visage de Marianne',e.message||e);}
- coverMarianneWaist(b);setProgress('people',1);
+ try{coverMarianneWaist(b);}catch(e){remember('Tenue de Marianne',e.message||e);}
+ setProgress('people',1);return b;
+}
+async function loadPeople(){
+ // Do not inflate two large 3D models at the same time on a phone. Retain each successful stage for retry.
+ if(!assetAhmed)assetAhmed=await loadAhmed();
+ if(!assetMarianne){showBootStage('Assemblage du personnage de Marianne…');assetMarianne=await loadMarianne();}
+ people=[assetAhmed,assetMarianne];downloadCache.clear();
 }
 
 let seatsReady=false;
@@ -502,11 +563,13 @@ async function authorize(){
 
 async function initialize(){
  if(initialTask)return initialTask;
- $('retry-load').hidden=true;$('load-title').textContent='Un instant…';$('load-description').textContent='La rencontre se prépare.';$('loading').hidden=false;$('welcome').hidden=true;
+ $('retry-load').hidden=true;$('load-error-details').hidden=true;$('load-title').textContent='Un instant…';showBootStage('La rencontre se prépare.');$('loading').hidden=false;$('welcome').hidden=true;
  initialTask=(async()=>{
  try{
   if(!authorized)await authorize();
-  await Promise.all([room?Promise.resolve():loadWhite(),people.length===2?Promise.resolve():loadPeople()]);
+  if(!room)await loadWhite();
+  if(people.length!==2)await loadPeople();
+  showBootStage('La rencontre est prête.');
   ready=true;$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
   // The opening scene can now be played, independently of the rest.
   setPending(false);$('prev').disabled=true;$('next').disabled=true;$('auto').disabled=true;$('personalize').hidden=true;
@@ -514,7 +577,7 @@ async function initialize(){
  }catch(e){
   remember('Chargement initial',e.message||e);
   if(!authorized&&/connexion|Réservé/i.test(String(e.message))){$('loading').hidden=true;$('access-denied').hidden=false;return;}
-  $('load-title').textContent='Un contretemps';$('load-description').textContent='Le chargement a été interrompu. Tu peux réessayer.';$('retry-load').hidden=false;
+  $('load-title').textContent='Un contretemps';$('load-description').textContent='Le chargement a été interrompu. Les fichiers déjà reçus sont conservés.';const detail=$('load-error-details');detail.textContent=bootStage+' · '+String(e.message||e).slice(0,180);detail.hidden=false;$('retry-load').hidden=false;
  }finally{initialTask=null;}
  })();return initialTask;
 }
