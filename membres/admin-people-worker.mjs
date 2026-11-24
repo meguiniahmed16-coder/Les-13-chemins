@@ -68,6 +68,13 @@ export default {
     const row=await db.prepare('SELECT id,email,name,state,created,sent_at FROM member_invites WHERE email=?').bind(email).first();
     return json({invitation:row,subject:'Bienvenue dans La Tectonique des âmes — invitation',text:invitationText(name)},201);
    }
+   if(pathname==='mark-sent'&&request.method==='POST'){
+    const input=await body(request),email=validEmail(input.email);
+    const row=await db.prepare('SELECT id FROM member_invites WHERE email=?').bind(email).first();
+    if(!row)invalid(404,'Invitation introuvable.');
+    await db.prepare("UPDATE member_invites SET state='sent-manually',sent_at=coalesce(sent_at,?) WHERE id=?").bind(new Date().toISOString(),row.id).run();
+    return json({recorded:true,method:'manual'});
+   }
    if(pathname==='send'&&request.method==='POST'){
     const input=await body(request),email=validEmail(input.email);
     const row=await db.prepare('SELECT id,email,name,state,sent_at FROM member_invites WHERE email=?').bind(email).first();if(!row)invalid(404,'Invitation introuvable.');
