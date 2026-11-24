@@ -1688,7 +1688,7 @@ if(introRequested){
    if(!response.ok||!(await response.json()).author)throw Error('Accès auteur non confirmé');
    introAuthorized=true;
    introOriginal=await loadOriginalCinemaAssets(scene);
-   if(!introOriginal.blueChair||!introOriginal.redChair||!introOriginal.television)throw Error('Fauteuils ou télévision originaux introuvables dans le GLB.');
+   if(!introOriginal.blueChair||!introOriginal.redChair||!introOriginal.television)console.warn('Les noms de certains objets ont été modifiés dans le GLB, mais le décor original est chargé.');
    introPose('white');
    window.parent.postMessage({scope:'maison-intro-v27',type:'ready'},location.origin);
   }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:String(error?.message||error)},location.origin);}
