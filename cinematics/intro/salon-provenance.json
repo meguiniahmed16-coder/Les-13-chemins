@@ -1,0 +1,32 @@
+{
+  "sourceScene": "membres/v27/scene.js",
+  "sourceArchive": "assets/depart-duo/scene.bin",
+  "sourceSceneSha256": "8661a9d9e90df70a9b0f37421f6afb0405df94212dd6f45bec5ef687fd561790",
+  "sourceArchiveSha256": "2e877738d6aa816287210812881e3a24d3d9d39d992ba0f9158969d6e63e4920",
+  "method": "Execute original static interior construction code and export unchanged room vertices, normals, colors, UVs, source textures, original bag transforms, fitted wall and ceiling. Render camera movement offline; no generated or recreated furnishings.",
+  "shot": {
+    "width": 800,
+    "height": 450,
+    "fps": 20,
+    "frames": 160,
+    "durationSeconds": 8,
+    "renderer": "Blender 4.3.2 CPU Cycles",
+    "samples": 8,
+    "cameraLensMm": 23,
+    "cameraStart": [
+      1.5,
+      1.52,
+      2.2
+    ],
+    "cameraEnd": [
+      0.4,
+      1.55,
+      2.08
+    ],
+    "filter": "hqdn3d=6:6:8:8",
+    "codec": "H.264 yuv420p, CRF24, preset slow",
+    "intermediateClip": "salon-v27-8s.mp4",
+    "bytes": 300925,
+    "sha256": "0dbe2d0990caa02ba8e6f5c95dc79377082cd569a30d03d72be7545e18623e69"
+  }
+}

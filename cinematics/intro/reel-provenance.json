@@ -1,0 +1,38 @@
+{
+  "reel": {
+    "path": "assets/membres/intro-montage-reel22.mp4",
+    "sha256": "5bbbafad157b28fd940b23a8c8c575b85d3b4b639ce0651128ac4d589bb830b6",
+    "poster": "assets/membres/intro-montage-reel22.webp",
+    "posterSha256": "37bcef3853c9d99eb21e8021c7019d7efad7ad71fcec496f5bca418a1d2e9e7e",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 800,
+        "height": 450,
+        "pix_fmt": "yuv420p",
+        "r_frame_rate": "20/1",
+        "nb_frames": "300"
+      }
+    ],
+    "format": {
+      "duration": "15.000000",
+      "size": "1281752"
+    }
+  },
+  "segments": [
+    {
+      "start": 0,
+      "duration": 8,
+      "source": "salon-provenance.json"
+    },
+    {
+      "start": 8,
+      "duration": 7,
+      "source": "board-provenance.json"
+    }
+  ],
+  "composition": "scripts/compose-intro-reel.py",
+  "baseCommit": "dc4bda5cf5cd17f53276598be5ceb851293732df"
+}

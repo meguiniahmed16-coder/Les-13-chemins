@@ -30,13 +30,17 @@ function adaptSpecGlossGLB(input){
 }
 
 
-/* Keep the original furniture geometry and base-colour textures, but discard
-   the 200 unused screen-frame meshes and expensive normal/roughness maps.
+/* Keep the original furniture geometry, one original television display plane,
+   and base-colour textures. Discard the other 199 alternative screen frames and
+   expensive normal/roughness maps.
    The complete, checksum-verified original remains available separately. */
 export function compactWhiteRoom(input){
  const n=input.readUInt32LE(12),j=JSON.parse(input.subarray(20,20+n).toString('utf8'));
  const bin=input.subarray(28+n),used=new Set();
- const visible=i=>!/^TV Screen(?:[.\s_]|$)/i.test(j.nodes[i].name||'');
+ const screenPattern=/^TV Screen(?:[.\s_]|$)/i;
+ const displayIndex=j.nodes.findIndex(n=>screenPattern.test(n.name||''));
+ if(displayIndex<0)throw Error('Écran original de télévision manquant');
+ const visible=i=>i===displayIndex||!screenPattern.test(j.nodes[i].name||'');
  function visit(i){if(used.has(i)||!visible(i))return;used.add(i);for(const c of j.nodes[i].children||[])visit(c);}
  for(const s of j.scenes)for(const i of s.nodes||[])visit(i);
  const select=(items,ids)=>{const order=[...ids].sort((a,b)=>a-b);return {items:order.map(i=>items[i]),map:new Map(order.map((v,i)=>[v,i]))}};
@@ -82,7 +86,7 @@ export async function buildIntroOriginalAssets(root,output){
   const data=Buffer.concat(buffers),checksum=createHash('sha256').update(data).digest('hex');
   if(data.length!==item.size||checksum!==item.sha256)throw Error('GLB original '+item.name+' incomplet ou altéré.');
   await writeFile(join(dest,item.name),item.folder==='dojo'?adaptSpecGlossGLB(data):data);
-  if(item.folder==='white'){const fast=compactWhiteRoom(data);if(fast.length>=data.length)throw Error('Salle blanche non optimisée');await writeFile(join(dest,'white-room-start.glb'),fast);console.log('Salle blanche optimisée : '+fast.length+' octets');}
+  if(item.folder==='white'){const fast=compactWhiteRoom(data);if(fast.length>=data.length)throw Error('Salle blanche non optimisée');await writeFile(join(dest,'white-room-start.glb'),fast);await writeFile(join(dest,'white-room-start-ecran22.glb'),fast);console.log('Salle blanche optimisée : '+fast.length+' octets');}
   console.log('GLB original vérifié : '+item.name+' ('+data.length+' octets)');
  }
 }

@@ -1,0 +1,102 @@
+{
+  "description": "Cinematic composition of the actual current first-chapter components and original six dice faces.",
+  "width": 800,
+  "height": 450,
+  "fps": 20,
+  "seconds": 7,
+  "source_files": {
+    "jeu.html": "7330ffbf889fa9df1078ee41e5a139b3b381d639a0356c318ae784b4a23b4c3b",
+    "chapitre1-plateau.js": "a0b4e625d7196486f3fdbedd82bde64cd7da26b6f3d7e01c3dde5375457d97ee",
+    "vignettes.css": "d74bf74581b6b9b3571e114fac56b406516f192c77721196d4543b28cdba61a6",
+    "voyage.js": "7fdc45bd8e3e791784e369362663b902c0c61934764d2dfa3ee875ba45bace01",
+    "assets/board/scene-cards-v1.png": "2a5aee28c151483e4763fdfd6faecb031b6c824b436af7d4fa2e0a8006eb0d7a"
+  },
+  "sprite_crops": [
+    [
+      68,
+      148,
+      343,
+      340
+    ],
+    [
+      435,
+      148,
+      334,
+      340
+    ],
+    [
+      789,
+      148,
+      343,
+      340
+    ]
+  ],
+  "pips": [
+    [
+      5
+    ],
+    [
+      1,
+      9
+    ],
+    [
+      1,
+      5,
+      9
+    ],
+    [
+      1,
+      3,
+      7,
+      9
+    ],
+    [
+      1,
+      3,
+      5,
+      7,
+      9
+    ],
+    [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9
+    ]
+  ],
+  "face_angles": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      -90
+    ],
+    [
+      -90,
+      0
+    ],
+    [
+      90,
+      0
+    ],
+    [
+      0,
+      90
+    ],
+    [
+      0,
+      180
+    ]
+  ],
+  "final_faces": [
+    5,
+    3
+  ],
+  "artwork_edits": "Only source sprite cropping and scaling. No generated imagery.",
+  "layout": "Current first-chapter cards arranged on the current parchment board for a cinematic close-up.",
+  "animation": "Deterministic 3D translation, rotation and decaying bounces; cube support height derived from orientation."
+}

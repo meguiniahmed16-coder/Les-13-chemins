@@ -4,13 +4,12 @@
 #app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto}header{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:8px 14px;background:#203b30;color:#fff;z-index:8}header strong{font:normal clamp(16px,2.7vw,24px) Georgia,serif}header small{display:block;opacity:.75;font-size:11px}header a{color:white;text-decoration:none;font-size:12px;border:1px solid #637f6d;border-radius:9px;padding:8px}
 #stage{position:relative;min-height:0;overflow:hidden;background:#fff}#scene{width:100%;height:100%;display:block;touch-action:none}
 #status{position:absolute;top:12px;left:12px;background:#fffffff0;border:1px solid #d7ddd5;border-radius:20px;padding:6px 12px;font-size:12px;z-index:3;max-width:85vw;pointer-events:none}
-#bubble{position:absolute;bottom:13%;left:50%;transform:translateX(-50%);width:min(650px,88vw);border:1px solid #cbd2c8;border-radius:20px;padding:14px 20px;z-index:5;background:#fffffff1;box-shadow:0 8px 35px #17251d38;pointer-events:none;backdrop-filter:blur(5px)}#bubble b{font:700 11px system-ui;letter-spacing:.08em;text-transform:uppercase;color:#64816c}#bubble p{font:clamp(18px,2.7vw,28px)/1.34 Georgia,serif;margin:5px 0;color:#20392d;white-space:pre-line}
 #joystick{position:absolute;left:15px;bottom:17px;width:82px;height:82px;border:2px solid #fff9;border-radius:50%;background:#22432eaa;z-index:7;display:grid;place-items:center;touch-action:none}#joystick #nub{width:34px;height:34px;border-radius:50%;background:#fffdf0e8;box-shadow:0 3px 8px #0003;pointer-events:none}
 #garden{position:absolute;inset:0;z-index:4;background:#203a30}#garden-frame{width:100%;height:100%;border:0}
 #loading,#welcome,#access-denied{position:absolute;inset:0;z-index:11;background:#fdfdf9f5;display:grid;place-content:center;justify-items:center;text-align:center;gap:15px;padding:20px}#welcome h1{font:normal clamp(32px,6vw,58px) Georgia,serif;margin:0}#welcome p{max-width:530px;font-size:15px;line-height:1.5;margin:0}#welcome input{padding:12px;min-width:min(320px,82vw);background:#fff;border:1px solid #a2b6a4;border-radius:9px;text-align:center}#loading{font-size:15px}#access-denied{font-size:17px}[hidden]{display:none!important}
 footer{padding:7px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;background:#f1f3ed;border-top:1px solid #cad1c8;z-index:8}.controls{display:flex;gap:6px;flex-wrap:wrap}.primary{background:#264c36;color:white;border-color:#264c36}
 dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radius:16px;box-shadow:0 16px 60px #0006;padding:20px;color:#23402d}dialog::backdrop{background:#0009}dialog h2{font:normal 28px Georgia,serif;margin:0 0 13px}dialog label{display:grid;gap:6px;margin:12px 0}dialog textarea,dialog select,dialog input{width:100%;border:1px solid #a7bcae;border-radius:8px;padding:10px}dialog textarea{min-height:100px}dialog .actions{display:flex;gap:7px;flex-wrap:wrap}dialog small{color:#66796b;font-size:12px}
-@media(max-width:650px){header{padding:7px}header strong{font-size:17px}#bubble{bottom:17%;padding:10px 13px;width:92vw}#bubble p{font-size:18px}#joystick{width:70px;height:70px}footer{padding:5px}footer button{min-height:35px;font-size:11px;padding:6px 8px}}
+@media(max-width:650px){header{padding:7px}header strong{font-size:17px}#joystick{width:70px;height:70px}footer{padding:5px}footer button{min-height:35px;font-size:12px;padding:6px 8px}}
 
 #loading{overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 50% 25%,#759a83 0,#234c40 43%,#142e29 78%);color:#fffdf4;gap:clamp(12px,3vh,30px);align-content:center;justify-content:center;}
 .load-art{position:relative;width:min(210px,45vw,30vh);aspect-ratio:1;display:grid;place-items:center}
@@ -27,39 +26,27 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 #scene-wait{position:absolute;z-index:9;bottom:7px;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;padding:10px 14px;border-radius:12px;background:#203b30e8;color:#fff;text-align:center}
 @media(max-height:450px){#loading{grid-template-columns:auto auto;gap:20px}.load-art{width:min(120px,25vw)}.welcome-panel{padding:16px;gap:9px}.welcome-panel h1{font-size:28px}}
 
-/* Speech bubbles follow the speaker's projected head position. */
-#bubble{width:max-content;max-width:min(310px,76vw);left:0;top:0;bottom:auto;transform:none;padding:9px 13px;border-radius:13px;box-shadow:0 4px 15px #213a2d1c;background:#fffffff5;backdrop-filter:none}
-#bubble b{font-size:10px;letter-spacing:.08em}#bubble p{font:clamp(14px,2.4vw,20px)/1.33 Georgia,serif;margin:4px 0}
-#bubble:after{content:'';position:absolute;left:var(--tail-x,50%);top:100%;width:12px;height:12px;background:#fff;transform:translate(-50%,-6px) rotate(45deg);border-right:1px solid #cbd2c8;border-bottom:1px solid #cbd2c8}
-#bubble.below:after{top:0;transform:translate(-50%,-7px) rotate(225deg)}
-@media(max-width:650px){#bubble{max-width:min(265px,74vw);padding:8px 11px}#bubble p{font-size:16px}}
+/* One reserved reading area: camera movement cannot move or cover dialogue. */
+#dialogue-rail{flex:1 0 100%;min-height:96px;display:grid;place-items:center;padding:7px 10px;border-bottom:1px solid #d0d9d1;text-align:center}
+#bubble{width:min(800px,100%);padding:0 5px;color:#20392d}
+#bubble b{font:700 11px system-ui;letter-spacing:.07em;text-transform:uppercase;color:#52725c}
+#bubble p{font:clamp(15px,2.2vw,18px)/1.35 Georgia,serif;margin:5px 0 0;white-space:pre-line;overflow-wrap:anywhere}
+@media(max-width:650px){#dialogue-rail{min-height:112px;padding:7px 3px}}
+@media(max-height:450px){#dialogue-rail{min-height:80px;padding:5px}#bubble p{font-size:14px}}
 
 #film-montage{position:absolute;inset:0;z-index:6;overflow:hidden;background:#183129;color:#fff;pointer-events:none}
-#film-image{position:absolute;inset:-2%;background-size:cover;background-position:center;animation:film-drift 10s ease-out both}
-.film-gradient{position:absolute;inset:0;background:linear-gradient(0deg,#142b27eb 0%,#142b2740 40%,transparent 80%)}
-.film-copy{position:absolute;left:7%;right:7%;bottom:17%;display:flex;flex-direction:column;gap:7px;color:#fffdf4}
-.film-copy small{font-size:10px;letter-spacing:.18em}.film-copy strong{font:normal clamp(30px,6vw,55px) Georgia,serif}.film-copy span{font-size:clamp(13px,2vw,19px);opacity:.88}
-#film-caption{position:absolute;bottom:4%;left:6%;right:6%;text-align:center;font:clamp(15px,2.5vw,21px)/1.4 Georgia,serif;color:#fffdf4}
+#film-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#142b27}
 #cinema-fade{position:absolute;inset:0;background:white;z-index:10;opacity:0;pointer-events:none}
-@keyframes film-drift{from{transform:scale(1)}to{transform:scale(1.045)}}
-@media(prefers-reduced-motion:reduce){#film-image{animation:none}}
 
-#bubble.left:after{left:100%;top:var(--tail-y,50%);transform:translate(-6px,-50%) rotate(-45deg)}
-#bubble.right:after{left:0;top:var(--tail-y,50%);transform:translate(-6px,-50%) rotate(135deg)}
-#bubble.caption-fallback{visibility:hidden}
-#dialogue-rail{flex:1 0 100%;text-align:center;padding:3px 9px 7px;color:#20392d;border-bottom:1px solid #d0d9d1}
-#dialogue-rail b{font-size:10px;text-transform:uppercase;letter-spacing:.07em}#dialogue-rail p{font:clamp(13px,2.2vw,18px)/1.3 Georgia,serif;margin:2px auto;max-width:800px}
-#bubble.caption-fallback:after{display:none}
-#bubble.caption-fallback p{font-size:clamp(12px,2.15vw,17px);margin:2px 0}
 </style></head>
 <body><div id="app"><header><div><strong>La Maison des rencontres</strong></div><a href="/admin-blog.html?view=dashboard">Administration</a></header>
-<main id="stage"><canvas id="scene" aria-label="Scène cinématographique 3D et dojo original"></canvas><div id="status" hidden></div><div id="scene-wait" hidden role="status"></div><div id="bubble" hidden aria-live="polite"></div><div id="film-montage" hidden><div id="film-image"></div><div class="film-gradient"></div><div class="film-copy"><small>LA MAISON DES RENCONTRES</small><strong id="film-title"></strong><span id="film-subtitle"></span></div><div id="film-caption"></div></div><div id="cinema-fade" aria-hidden="true"></div>
+<main id="stage"><canvas id="scene" aria-label="Scène cinématographique 3D et dojo original"></canvas><div id="status" hidden></div><div id="scene-wait" hidden role="status"></div><div id="film-montage" hidden><video id="film-video" playsinline muted preload="auto" disablepictureinpicture aria-label="Travelling dans le salon et dés roulant sur le plateau des Treize Chemins"></video></div><div id="cinema-fade" aria-hidden="true"></div>
 <div id="joystick" hidden aria-label="Joystick pour se déplacer dans le dojo"><div id="nub"></div></div>
 <div id="garden" hidden><iframe id="garden-frame" title="Le véritable jardin 3D et la maison" allow="fullscreen"></iframe></div>
 <div id="loading"><div class="load-art" aria-hidden="true"><div class="portal"><div class="horizon"></div><div class="path"></div><i></i><i></i><i></i></div></div><div class="load-panel"><div class="load-kicker">LA MAISON DES RENCONTRES</div><h1 id="load-title">Un instant…</h1><p id="load-description">La rencontre se prépare.</p><progress id="load-progress" max="100" value="0" aria-label="Chargement de la rencontre"></progress><span id="load-percent">0 %</span><button id="retry-load" type="button" hidden>Réessayer</button><small id="load-error-details" hidden style="max-width: min(350px,82vw);overflow-wrap:anywhere;color:#e0e8df;font-size:11px;line-height:1.4"></small></div></div>
 <div id="welcome" hidden><div class="welcome-panel"><h1>Qu’est-ce qu’une rencontre ?</h1><label>Ton prénom ou pseudonyme<input id="pseudo" maxlength="40" autocomplete="nickname" placeholder="Ton pseudonyme"></label><button class="primary" id="enter" disabled>Commencer</button></div></div>
 <div id="access-denied" hidden><h2>Accès réservé à l’auteur</h2><p>Connecte-toi à ton administration pour accéder à ce monde.</p><a href="/admin-blog.html">Administration</a></div>
 </main>
-<footer><div id="dialogue-rail" hidden aria-live="polite"></div><div class="controls"><button type="button" id="prev" disabled>Retour</button><button type="button" id="next" class="primary" disabled>Continuer</button><button type="button" id="auto" disabled>Lecture cinéma</button><button type="button" id="skip" disabled>Dojo</button></div><div class="controls"><button type="button" id="personalize" disabled hidden>Personnaliser</button><button type="button" id="report-open">Signaler / améliorer</button></div></footer>
+<footer><div id="dialogue-rail" hidden><div id="bubble" hidden aria-live="polite" aria-atomic="true"></div></div><button type="button" id="report-open">Signaler une erreur</button><button type="button" id="skip" disabled>Passer l’introduction</button></footer>
 <dialog id="report-dialog"><h2>Rapport de test</h2><label>Type<select id="report-type"><option value="bug">Signaler un problème</option><option value="amelioration">Demander une amélioration</option></select></label><label>Scène<input id="report-scene" readonly></label><label>Observation<textarea id="report-note" placeholder="Décris le problème ou la modification souhaitée."></textarea></label><small id="report-count"></small><div class="actions"><button id="report-add">Ajouter</button><button id="report-export" class="primary">Télécharger le rapport JSON</button><button id="report-close">Fermer</button></div></dialog>
-</div><script type="module" src="/membres/intro-cinema-assise21.js"></script></body></html>
+</div><script type="module" src="/membres/intro-cinema-lecture22.js"></script></body></html>

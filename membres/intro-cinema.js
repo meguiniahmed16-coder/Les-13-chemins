@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dressAhmed,createMarianne} from './intro-wardrobe.js';
+import {INTRO_FILM,filmPosition,createFilmPlayback} from './intro-film.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -278,7 +279,7 @@ let shotStart=0,shotPaused=false,pausedAt=0,pausedElapsed=0,currentSpeaker=null,
 
 const progress={white:0,people:0,ahmed:0},weights={white:.25,people:.40,ahmed:.35};
 const downloadCache=new Map();let bootStage='Connexion';let assetAhmed=null,assetMarianne=null;
-let pending=false,dojoTask=null,seatTask=null,initialTask=null;
+let pending=false,dojoTask=null,seatTask=null,initialTask=null,sceneRequest=0;
 function setProgress(key,value){if(!(key in progress))return;progress[key]=Math.max(progress[key],Math.min(1,value));const total=Math.floor(100*Object.keys(progress).reduce((a,k)=>a+progress[k]*weights[k],0));$('load-progress').value=total;$('load-percent').textContent=total+' %';}
 
 function showBootStage(s){bootStage=s;const e=$('load-description');if(e)e.textContent=s;}
@@ -322,7 +323,7 @@ async function decodeAhmed(buffer){
   return await loader.parseAsync(withoutOptionalMorphs(buffer),'');
  }
 }
-function setPending(on){pending=on;for(const id of ['next','prev','skip','auto','personalize'])$(id).disabled=on||!ready||(id==='prev'&&step<=0);$('scene-wait').hidden=!on;}
+function setPending(on){pending=on;$('skip').disabled=!authorized||stage==='garden';$('scene-wait').hidden=!on;}
 const whiteFloor=new T.Group();
 const seamlessFloor=new T.Mesh(new T.PlaneGeometry(180,180),new T.MeshBasicMaterial({color:0xffffff,toneMapped:false}));
 seamlessFloor.rotation.x=-Math.PI/2;seamlessFloor.position.y=-.003;whiteFloor.add(seamlessFloor);
@@ -393,7 +394,7 @@ function measureSeats(){
 }
 async function loadWhite(){
  showBootStage('La salle blanche se prépare…');
- const original=await binary('/assets/intro-original/white-room-start.glb','white');
+ const original=await binary('/assets/intro-original/white-room-start-ecran22.glb','white');
  room=(await loader.parseAsync(original,'')).scene;room.name='Salle blanche originale';
  // The supplied model includes 200 alternative video-screen frames. The actual TV
  // geometry is a separate node called TV_284, and must remain visible.
@@ -409,12 +410,32 @@ async function loadWhite(){
  for(const chair of chairs)if(/^(BLUE|RED)[\s_]*CHAIR/i.test(chair.name))fitOriginalChair(chair);
  measureSeats();chairs.forEach(c=>c.visible=false);room.visible=false;room.removeFromParent();setProgress('white',1);canvasHost.classList.add('room-ready');
 }
+function alignDojoFloor(model){
+ let tatami=null;model.traverse(o=>{if(!tatami&&/tatami/i.test(o.name))tatami=o;});
+ if(!tatami)throw Error('Le sol du dojo est introuvable.');
+ model.updateWorldMatrix(true,true);
+ const floor=new T.Box3().setFromObject(tatami);
+ // The original building has foundations below its raised floor. Align the
+ // walking surface, not the bottom of the entire building, with the actors.
+ model.position.y+=-.003-floor.max.y;model.updateWorldMatrix(true,true);
+ floor.setFromObject(tatami);model.userData.introFloorBounds=floor;
+ // Stay within the central tatami, clear of the original perimeter pillars.
+ model.userData.introCameraBounds=new T.Box3(
+  new T.Vector3(floor.min.x+.80,floor.max.y+.35,floor.min.z+.45),
+  new T.Vector3(floor.max.x-.80,floor.max.y+2.45,floor.max.z-.45)
+ );
+ model.userData.introWalkBounds=new T.Box3(
+  new T.Vector3(floor.min.x+1.05,floor.max.y,floor.min.z+.65),
+  new T.Vector3(floor.max.x-1.05,floor.max.y+2,floor.max.z-.65)
+ );
+ return floor;
+}
 function prepareDojo(){
  if(dojo)return Promise.resolve(dojo);
  if(!dojoTask)dojoTask=(async()=>{
  const full=await binary('/assets/intro-original/dojo-original.glb','dojo');
  dojo=(await loader.parseAsync(full,'')).scene;
- dojo.position.y=2.04;dojo.visible=false;scene.add(dojo);
+ alignDojoFloor(dojo);dojo.visible=false;scene.add(dojo);
  dojo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return dojo;
  })().catch(e=>{dojoTask=null;throw e});
  return dojoTask;
@@ -573,7 +594,7 @@ async function loadPeople(){
 
 let seatsReady=false;
 function prepareSeats(){seatsReady=people.length===2&&people.every(p=>p.wardrobe&&seatAnchors.has(p.id));return seatsReady?Promise.resolve():Promise.reject(Error('Articulations des fauteuils indisponibles'));}
-async function preloadNext(){try{await prepareSeats();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojo();}catch(e){remember('Préchargement dojo',e.message);}}
+async function preloadNext(){try{await prepareSeats();prepareFilm();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojo();}catch(e){remember('Préchargement dojo',e.message);}}
 // Every character is authored with local +Z pointing forward.
 function facingYaw(from,to){return Math.atan2(to.x-from.x,to.z-from.z);}
 function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,id==='m'?.0206:0,-1.08);}
@@ -602,7 +623,10 @@ function chairLayout(person){
 }
 function targetLayout(person,seated,dojoMode=false,nearSeats=false){
  const i=person.id==='f'?1:-1;
- if(dojoMode)return {pos:new T.Vector3(i*.9,person.id==='m'?.0206:0,1.5),yaw:Math.PI,sit:0};
+ if(dojoMode){
+  const center=dojo.userData.introFloorBounds.getCenter(new T.Vector3());
+  return {pos:new T.Vector3(center.x+i*.8,person.id==='m'?.0206:0,center.z+.35),yaw:Math.PI,sit:0};
+ }
  if(seated||nearSeats){const target=chairLayout(person);return {...target,sit:seated?1:0};}
  return openingLayout(person.id);
 }
@@ -665,7 +689,7 @@ function updateInvitation(now){
   if(!person.wardrobe)person.pose(sit);
   if(t<7650)complete=false;
  }
- if(complete){for(const {person,to} of invitationMotion.items){person.gait=null;person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(1);}invitationMotion.complete=true;lastLayout='seated';$('next').disabled=false;}
+ if(complete){for(const {person,to} of invitationMotion.items){person.gait=null;person.root.position.copy(to.pos);person.root.rotation.y=to.yaw;person.pose(1);}invitationMotion.complete=true;lastLayout='seated';}
 }
 function advanceMovement(now){
  if(!movement)return;const u=T.MathUtils.clamp((now-movement.start)/movement.duration,0,1),t=u*u*(3-2*u);
@@ -734,14 +758,15 @@ function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?paused
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
 let speech=null,lastMotion=0;
-function stopSpeech(){speech=null;currentSpeaker=null;const rail=$('dialogue-rail');rail.hidden=true;rail.replaceChildren();bubble.classList.remove('caption-fallback');for(const p of people)p.speak?.(0,0,0);}
+function stopSpeech(){speech=null;currentSpeaker=null;bubble.hidden=true;bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
  const b=document.createElement('b'),p=document.createElement('p');
- b.textContent=actor?.root.name||(id==='m'?'Ahmed':'Marianne');p.textContent=text.replaceAll('{pseudo}',alias);
+ b.textContent=actor?.root.name||(id==='m'?'Ahmed':id==='f'?'Marianne':'La Maison des rencontres');p.textContent=text.replaceAll('{pseudo}',alias);
  bubble.replaceChildren(b,p);bubble.hidden=false;
- bubble.getAnimations().forEach(a=>a.cancel());bubble.animate([{opacity:0},{opacity:1}],{duration:260});
+ // Keep the complete cue in the same reserved reading area for its duration.
+ // Camera motion never moves the text or changes the 3D viewport's height.
  speech={id,text:p.textContent,start:offset,duration:Math.max(1400,text.length*58)};
 }
 function updateActing(now){
@@ -783,100 +808,52 @@ function actorHead(person,out=new T.Vector3()){
  if(person){out.set(0,person.sit?1.12:1.53,0);return person.root.localToWorld(out);}
  return out.set(0,1.2,0);
 }
-function faceRect(person,w,h){
- const head=actorHead(person),scale=person.id==='m'?1.075:1.04;
- const right=new T.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new T.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
- const points=[];
- for(const x of [-.115,.115])for(const y of [-.20,.12]){
-  const p=head.clone().addScaledVector(right,x*scale).addScaledVector(up,y*scale).project(camera);
-  if(Number.isFinite(p.x)&&Number.isFinite(p.y))points.push({x:(p.x+1)*w/2,y:(1-p.y)*h/2});
- }
- if(!points.length)return null;
- const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
- return {l:Math.min(...xs)-12,r:Math.max(...xs)+12,t:Math.min(...ys)-12,b:Math.max(...ys)+12};
-}
-function bubblePosition(w,h,bw,bh,face,blocked){
- const pad=8,gap=12,cx=(face.l+face.r)/2,cy=(face.t+face.b)/2;
- const choices=[
-  [cx-bw/2,face.t-bh-gap,'above'],
-  [face.r+gap,cy-bh/2,'right'],
-  [face.l-bw-gap,cy-bh/2,'left'],
-  [cx-bw/2,face.b+gap,'below'],
-  [pad,pad,'above'],[w-bw-pad,pad,'above'],
-  [pad,h-bh-pad,'below'],[w-bw-pad,h-bh-pad,'below']
- ];
- const candidates=[];
- for(const [x,y,dir] of choices){
-  const l=T.MathUtils.clamp(x,pad,Math.max(pad,w-bw-pad)),t=T.MathUtils.clamp(y,pad,Math.max(pad,h-bh-pad));
-  if(blocked.some(r=>r&&l<r.r&&l+bw>r.l&&t<r.b&&t+bh>r.t))continue;
-  candidates.push({l,t,dir,score:Math.hypot(l+bw/2-cx,t+bh/2-cy)});
- }
- return candidates.sort((a,b)=>a.score-b.score)[0]||null;
-}
-function anchorBubble(){
- const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden||bubble.classList.contains('caption-fallback'))return;
- const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
- bubble.classList.remove('above','below','left','right');
- const face=faceRect(speaker,w,h);if(!face)return;
- const blocked=people.map(p=>faceRect(p,w,h)).filter(Boolean);
- const bw=bubble.offsetWidth,bh=bubble.offsetHeight;
- const pos=bubblePosition(w,h,bw,bh,face,blocked);
- if(!pos){
-  // Reserve space outside the 3D viewport, so a tight close-up cannot be obscured.
-  // Once selected, retain this caption for the whole dialogue cue to avoid flicker.
-  const rail=$('dialogue-rail');rail.replaceChildren(...Array.from(bubble.children,n=>n.cloneNode(true)));rail.hidden=false;
-  bubble.classList.add('caption-fallback');return;
- }
- bubble.classList.add(pos.dir);bubble.style.left=pos.l+'px';bubble.style.top=pos.t+'px';bubble.style.bottom='auto';
- bubble.style.setProperty('--tail-x',T.MathUtils.clamp((face.l+face.r)/2-pos.l,12,bw-12)+'px');
- bubble.style.setProperty('--tail-y',T.MathUtils.clamp((face.t+face.b)/2-pos.t,12,bh-12)+'px');
-}
 function scheduleNext(ms){clearTimeout(autoTimer);if(autoplay)autoTimer=setTimeout(()=>{if(autoplay&&!pending)next();},Math.max(100,ms));}
 
 // The original television remains in the scene. A texture, not a replacement
-// television model, carries a short silent montage of existing site artwork.
-const filmFrames=[
- {url:'/assets/membres/salon-decor.webp',title:'Découvrir',subtitle:'Un monde à explorer'},
- {url:'/assets/membres/invitation-salon.webp',title:'Rencontrer',subtitle:'La Maison des rencontres'},
- {url:'/assets/board/scene-cards-v1.png',title:'Voyager',subtitle:'Les Treize Chemins'},
- {url:'/assets/membres/salon-v27-apercu.webp',title:'Créer',subtitle:'Un espace en construction'}
-];
-let televisionFilm=null,filmIndex=-1,filmShot='',filmImages=[];
+// television model, carries the silent film of the actual salon and game board.
+let televisionFilm=null,filmShot='',lastFilmDraw=-Infinity;
+function attachOriginalTVScreen(room,television){
+ // Screen_LowB is the hollow bezel. The supplied TV Screen plane is the
+ // actual display surface; retain its original geometry and authored UVs.
+ const display=findChild(room,/^TV[\s_]*Screen/i);let mesh=null;
+ display?.traverse(o=>{if(!mesh&&o.isMesh)mesh=o;});
+ if(!display||!mesh)throw Error('La surface originale de l’écran est indisponible.');
+ room.updateMatrixWorld(true);television.attach(display);
+ display.traverse(o=>{o.visible=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});
+ return mesh;
+}
 function prepareFilm(){
  if(televisionFilm||!television)return;
  try{
-  const screen=findChild(television,/^Screen_LowB/i);let mesh=null;screen?.traverse(o=>{if(!mesh&&o.isMesh)mesh=o;});if(!mesh)return;
-  const geo=mesh.geometry.clone(),p=geo.attributes.position;geo.computeBoundingBox();const b=geo.boundingBox,s=b.getSize(new T.Vector3()),uv=new Float32Array(p.count*2);
-  for(let i=0;i<p.count;i++){uv[2*i]=(p.getX(i)-b.min.x)/Math.max(s.x,.0001);uv[2*i+1]=(p.getY(i)-b.min.y)/Math.max(s.y,.0001);}
-  geo.setAttribute('uv',new T.BufferAttribute(uv,2));mesh.geometry=geo;
-  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=500;
+  const mesh=attachOriginalTVScreen(room,television),size=bounds(mesh).getSize(new T.Vector3());
+  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=Math.round(640*size.y/size.x);
   const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;tex.minFilter=T.LinearFilter;
   const ctx=canvas.getContext('2d');mesh.material=new T.MeshBasicMaterial({map:tex,toneMapped:false,side:T.DoubleSide});
-  televisionFilm={mesh,ctx,canvas,tex};
-  filmImages=filmFrames.map(frame=>{const image=new Image();image.src=frame.url;return image;});drawFilm(-1);
+  const video=$('film-video'),poster=new Image();poster.src=INTRO_FILM.poster;
+  const playback=createFilmPlayback(video,message=>remember('Film de présentation',message));
+  televisionFilm={mesh,ctx,canvas,tex,video,poster,playback};drawFilm(false);
  }catch(e){remember('Écran de télévision',e.message||e);}
 }
-function drawFilm(index){
- if(!televisionFilm)return;const {ctx,canvas,tex}=televisionFilm,w=canvas.width,h=canvas.height;
+function drawFilm(active=true){
+ if(!televisionFilm)return;const {ctx,canvas,tex,video,poster}=televisionFilm,w=canvas.width,h=canvas.height;
  ctx.fillStyle='#142b26';ctx.fillRect(0,0,w,h);
- if(index>=0){const im=filmImages[index];if(im?.complete&&im.naturalWidth){const s=Math.max(w/im.naturalWidth,h/im.naturalHeight),iw=im.naturalWidth*s,ih=im.naturalHeight*s;ctx.drawImage(im,(w-iw)/2,(h-ih)/2,iw,ih);}
-  const grad=ctx.createLinearGradient(0,h*.48,0,h);grad.addColorStop(0,'rgba(20,43,38,0)');grad.addColorStop(1,'rgba(15,32,28,.85)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
-  ctx.textAlign='center';ctx.fillStyle='#fffdf4';ctx.font='36px Georgia';ctx.fillText(filmFrames[index].title,w/2,h-68);
-  ctx.font='20px system-ui';ctx.fillText(filmFrames[index].subtitle,w/2,h-32);
+ if(active){
+  const image=video.readyState>=2?video:poster.complete&&poster.naturalWidth?poster:null;
+  if(image){const iw=image.videoWidth||image.naturalWidth,ih=image.videoHeight||image.naturalHeight,s=Math.max(w/iw,h/ih);ctx.drawImage(image,(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s);}
  }
  tex.needsUpdate=true;
 }
+function stopFilm(){televisionFilm?.playback.stop();filmShot='';$('film-montage').hidden=true;}
 function updateFilm(line,elapsed){
  const overlay=$('film-montage');
- if(line.shot!=='tv'&&line.shot!=='montage'){overlay.hidden=true;if(filmShot){filmShot='';filmIndex=-1;drawFilm(-1);}return;}
- const interval=line.shot==='tv'?1500:2500,i=Math.min(filmFrames.length-1,Math.floor(elapsed/interval));
- if(filmShot!==line.id||filmIndex!==i){
-  filmShot=line.id;filmIndex=i;drawFilm(i);
-  const frame=filmFrames[i];$('film-image').style.backgroundImage='url("'+frame.url+'")';$('film-title').textContent=frame.title;$('film-subtitle').textContent=frame.subtitle;
-  if(line.shot==='montage')overlay.animate([{opacity:.35},{opacity:1}],{duration:420,easing:'ease-out'});
- }
+ if(line.shot!=='tv'&&line.shot!=='montage'){if(filmShot){stopFilm();drawFilm(false);}return;}
+ const {seconds}=filmPosition(line.shot,elapsed),now=performance.now();
+ televisionFilm?.playback.sync(seconds,shotPaused);
+ if(filmShot!==line.id||now-lastFilmDraw>=45){drawFilm();lastFilmDraw=now;}
+ filmShot=line.id;
  overlay.hidden=line.shot!=='montage'||elapsed<900;
- if(line.shot==='montage'){$('film-caption').textContent=line.text;overlay.style.opacity=String(T.MathUtils.smoothstep(elapsed,900,1450));}else overlay.style.opacity='1';
+ overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,900,1450)):'1';
 }
 let cutCamera=true;
 const shotAim=new T.Vector3(),shotEye=new T.Vector3(),smoothAim=new T.Vector3(),smoothEye=new T.Vector3();
@@ -930,6 +907,32 @@ function guideApproachFrame(visitor,guide,t,htan){
  const aim=previous.aim.clone().lerp(g.clone().add(new T.Vector3(0,-.06,0)),T.MathUtils.smoothstep(t,0,.85));
  return {aim,eye};
 }
+function dojoCameraFrame(azimuth,distance){
+ const floor=dojo.userData.introFloorBounds,limit=dojo.userData.introCameraBounds;
+ const aim=people.reduce((v,p)=>v.add(p.root.position),new T.Vector3()).multiplyScalar(1/people.length);
+ const top=Math.max(...people.map(p=>actorHead(p).y+.20));aim.y=floor.max.y+(top-floor.max.y)*.53;
+ const dir=new T.Vector3(Math.sin(azimuth),0,Math.cos(azimuth));
+ let available=Infinity;
+ for(const key of ['x','z'])if(Math.abs(dir[key])>.00001){
+  const edge=dir[key]>0?limit.max[key]:limit.min[key];available=Math.min(available,(edge-aim[key])/dir[key]);
+ }
+ const eye=aim.clone().addScaledVector(dir,Math.min(distance,available));eye.y=floor.max.y+1.55;
+ limit.clampPoint(eye,eye);return {aim,eye};
+}
+function dojoCameraFov(eye,aim,aspect){
+ const forward=aim.clone().sub(eye).normalize(),right=new T.Vector3().crossVectors(forward,new T.Vector3(0,1,0)).normalize(),up=new T.Vector3().crossVectors(right,forward);
+ let tangent=Math.tan(T.MathUtils.degToRad(23));
+ // Fit the two real actor positions inside the remaining canvas on phones.
+ // Widen the lens within the room instead of moving it through the walls.
+ for(const person of people){
+  const top=actorHead(person).y+.20,base=dojo.userData.introFloorBounds.max.y;
+  for(const x of [-.4,.4])for(const z of [-.28,.28])for(const y of [base,top]){
+   const v=new T.Vector3(person.root.position.x+x,y,person.root.position.z+z).sub(eye),depth=Math.max(.1,v.dot(forward));
+   tangent=Math.max(tangent,Math.abs(v.dot(up))/(depth*.88),Math.abs(v.dot(right))/(depth*Math.max(.25,aspect)*.88));
+  }
+ }
+ return T.MathUtils.clamp(T.MathUtils.radToDeg(2*Math.atan(tangent)),46,112);
+}
 function cameraShot(line,elapsed,dt){
  const t=T.MathUtils.clamp(elapsed/line.ms,0,1),push=t*t*(3-2*t);
  const aspect=Math.max(.25,camera.aspect),vfov=46,htan=Math.tan(T.MathUtils.degToRad(vfov*.5))*aspect;
@@ -940,9 +943,10 @@ function cameraShot(line,elapsed,dt){
  }else if(line.shot==='approach'){
   const v=guideApproachFrame(people[1],people[0],push,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);
  }else if(line.shot==='dojo'){
+  targetAngle=T.MathUtils.clamp(targetAngle,Math.PI-.68,Math.PI+.68);
   angle+=(targetAngle-angle)*(1-Math.exp(-dt*2));
-  shotAim.set(.1,1.25,.65);const d=Math.max(radius,3.0/htan);
-  shotEye.set(shotAim.x+Math.sin(angle)*d,shotAim.y+1.12,shotAim.z+Math.cos(angle)*d);
+  angle=T.MathUtils.clamp(angle,Math.PI-.68,Math.PI+.68);
+  const frame=dojoCameraFrame(angle,radius);shotAim.copy(frame.aim);shotEye.copy(frame.eye);
  }else if(line.shot==='arrival'){
   const a=people[0].root.position,b=people[1].root.position,center=a.clone().add(b).multiplyScalar(.5);
   const halfWidth=Math.max(1.85,Math.abs(a.x-b.x)*.5+.70);
@@ -978,22 +982,28 @@ function cameraShot(line,elapsed,dt){
  }
  if(cutCamera){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
  else{const alpha=1-Math.exp(-Math.max(.001,dt)*5);smoothEye.lerp(shotEye,alpha);smoothAim.lerp(shotAim,alpha);}
+ if(line.shot==='dojo'){
+  dojo.userData.introCameraBounds.clampPoint(smoothEye,smoothEye);
+  camera.fov=dojoCameraFov(smoothEye,smoothAim,aspect);camera.updateProjectionMatrix();
+ }
  camera.position.copy(smoothEye);camera.lookAt(smoothAim);if(roll)camera.rotateZ(roll);camera.updateMatrixWorld(true);
 }
 
 
 async function showScene(index){
- if(!ready||pending)return;
+ if(!ready||pending||stage==='garden')return;
+ const request=++sceneRequest;
  const requested=Math.max(0,Math.min(index,lines.length-1)),line=lines[requested],isDojo=line.scene==='dojo';
  clearTimeout(autoTimer);
  if(((line.seated||line.invitation)&&!seatsReady)||(isDojo&&!dojo)){
   setPending(true);$('scene-wait').textContent='La suite se prépare…';
   try{if(isDojo)await prepareDojo();else await prepareSeats();}
-  catch(e){remember('Chargement de la suite',e.message||e);automatic(false);$('scene-wait').textContent='La suite n’a pas pu se charger. Réessaie avec Continuer.';setPending(false);$('scene-wait').hidden=false;return;}
+  catch(e){if(request!==sceneRequest||stage==='garden')return;remember('Chargement de la suite',e.message||e);automatic(false);$('scene-wait').textContent='La suite n’a pas pu se charger. Tu peux passer l’introduction ou signaler une erreur.';setPending(false);$('scene-wait').hidden=false;return;}
+  if(request!==sceneRequest||stage==='garden')return;
   setPending(false);
  }
  const previous=step>=0?lines[step]:null;
- $('scene-wait').hidden=true;step=requested;shotStart=performance.now();shotPaused=false;secondCue=false;cutCamera=true;
+ $('scene-wait').hidden=true;step=requested;shotStart=performance.now();shotPaused=$('report-dialog').open;pausedAt=shotStart;pausedElapsed=0;secondCue=false;cutCamera=true;
  stage=isDojo?'dojo':'white';
  mountRoom(false);whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
@@ -1001,30 +1011,29 @@ async function showScene(index){
  const layout=isDojo?'dojo':line.seated?'seated':'standing';
  if(line.invitation){beginInvitation();}
  else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
- if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);targetAngle=Math.PI;radius=6.1;}
+ if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);if(previous?.scene!=='dojo'){angle=targetAngle=Math.PI;radius=3.7;}}
  else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
- if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
+ if(line.speaker)setCue(line.speaker,line.text);else if(line.shot==='montage'&&line.text)setCue('film',line.text);else{stopSpeech();bubble.hidden=true;}
  updateFilm(line,0);
  if(!previous||previous.scene!==line.scene||line.move==='fade'){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
  }
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+line.id;
- $('prev').disabled=step<=0;$('next').disabled=!!line.invitation;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':step===dojoStart-1?'Découvrir le dojo':'Continuer';
- $('joystick').hidden=!isDojo;$('personalize').hidden=!isDojo;
- if(autoplay&&step<lines.length-1&&step!==dojoStart-1)scheduleNext(line.ms);
- else if(autoplay){automatic(false,true);}
+ $('joystick').hidden=!isDojo;
+ if(autoplay)scheduleNext(line.ms);
 }
 
 function startGarden(){
- autoplay=false;clearTimeout(autoTimer);stopSpeech();$('film-montage').hidden=true;stage='garden';$('garden').hidden=false;
- bubble.hidden=true;$('joystick').hidden=true;$('personalize').hidden=true;
+ ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();stage='garden';$('garden').hidden=false;setPending(false);
+ $('dialogue-rail').hidden=true;$('joystick').hidden=true;$('skip').hidden=true;
+ $('welcome').hidden=true;$('loading').hidden=true;$('scene-wait').hidden=true;
  status.textContent='Le jardin et la maison';
  if(gardenLoaded)return;gardenLoaded=true;
- const frame=$('garden-frame');
+ const frame=$('garden-frame');let gardenOpened=false;
  function openGarden(){
   try{
    const d=frame.contentDocument;
-   if(!d?.body?.classList.contains('ready'))return;
+   if(gardenOpened||!d?.body?.classList.contains('ready'))return;gardenOpened=true;
    d.getElementById('pin')?.click();
    setTimeout(()=>{try{d.getElementById('lookHome')?.click()}catch{}},700);
   }catch(e){remember('Jardin',e.message)}
@@ -1038,24 +1047,27 @@ function startGarden(){
  });
  frame.src='/membres/v27/salon.html?resident=marianne&v=gestes50';
 }
-function next(){if(!started||pending||stage==='garden'||invitationMotion&&!invitationMotion.complete)return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
+function next(){
+ if(!started||pending||stage==='garden')return;
+ // A throttled animation frame must not consume the only continuation timer.
+ if(invitationMotion&&!invitationMotion.complete){scheduleNext(200);return;}
+ if(step>=lines.length-1)startGarden();else void showScene(step+1);
+}
 
 function automatic(on,hold=false){
- const now=performance.now();autoplay=on;clearTimeout(autoTimer);$('auto').textContent=on?'Pause cinéma':'Lecture cinéma';
+ const now=performance.now();autoplay=on;clearTimeout(autoTimer);
  if(on){
   if(shotPaused){shotStart=now-pausedElapsed;shotPaused=false;}
   const line=lines[step];if(line)scheduleNext(Math.max(250,line.ms-shotElapsed(now)));
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
 }
-$('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;$('auto').textContent='Pause cinéma';void showScene(0)};
-$('next').onclick=()=>{automatic(false,true);next()};
-$('prev').onclick=()=>{automatic(false,true);$('garden').hidden=true;void showScene(Math.max(0,step-1));};
-$('skip').onclick=()=>{if(!authorized||!ready||pending)return;automatic(false,true);$('welcome').hidden=true;started=true;void showScene(dojoStart);};
-$('auto').onclick=()=>{if(started&&!pending)automatic(!autoplay)};
-$('personalize').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
+$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;$('dialogue-rail').hidden=false;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
+$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden();};
 
-$('report-open').onclick=()=>{$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
+let resumeAfterReport=false;
+$('report-open').onclick=()=>{resumeAfterReport=autoplay;automatic(false);$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
 $('report-close').onclick=()=>$('report-dialog').close();
+$('report-dialog').addEventListener('close',()=>{if(resumeAfterReport&&stage!=='garden')automatic(true);resumeAfterReport=false;});
 $('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
 $('report-export').onclick=()=>{
  const data={created:new Date().toISOString(),experience:'La Maison des rencontres',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
@@ -1074,7 +1086,7 @@ stick.addEventListener('pointerdown',e=>{stick.setPointerCapture(e.pointerId);st
 stick.addEventListener('pointermove',e=>{if(stick.hasPointerCapture(e.pointerId))stickMove(e)});
 for(const type of ['pointercancel','pointerup'])stick.addEventListener(type,()=>{joystick={x:0,y:0};nub.style.transform=''});
 canvas.addEventListener('pointerdown',e=>{if(stage==='dojo'){drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)}});
-canvas.addEventListener('pointermove',e=>{if(!drag)return;targetAngle+=(e.clientX-drag[0])*.007;radius=T.MathUtils.clamp(radius+(e.clientY-drag[1])*.011,3,11);drag=[e.clientX,e.clientY]});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;targetAngle=T.MathUtils.clamp(targetAngle+(e.clientX-drag[0])*.007,Math.PI-.68,Math.PI+.68);radius=T.MathUtils.clamp(radius+(e.clientY-drag[1])*.011,3,6);drag=[e.clientX,e.clientY]});
 canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
 const keys=new Set();
 window.addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));
@@ -1087,9 +1099,9 @@ function frame(){
   const moveX=joystick.x+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('q')?1:0);
   const moveZ=joystick.y+(keys.has('arrowdown')||keys.has('s')?1:0)-(keys.has('arrowup')||keys.has('z')?1:0);
   if(Math.hypot(moveX,moveZ)>.1){
-   const p=people[1].root.position;
-   p.x=T.MathUtils.clamp(p.x+moveX*dt*2.2,-3.9,3.9);
-   p.z=T.MathUtils.clamp(p.z+moveZ*dt*2.2,-3.3,3.3);
+   const p=people[1].root.position,walk=dojo.userData.introWalkBounds;
+   p.x=T.MathUtils.clamp(p.x+moveX*dt*2.2,walk.min.x,walk.max.x);
+   p.z=T.MathUtils.clamp(p.z+moveZ*dt*2.2,walk.min.z,walk.max.z);
    people[1].root.rotation.y=Math.atan2(-moveX,-moveZ);
   }
  }
@@ -1100,14 +1112,14 @@ function frame(){
  if(stage==='white')furnitureAt(line,elapsed);
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
  updateFilm(line,elapsed);cameraShot(line,elapsed,dt);
- renderer.render(scene,camera);anchorBubble();
+ renderer.render(scene,camera);
 }
 
 async function authorize(){
  const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(17000)});
  if(!response.ok)throw Error('La connexion administrateur est nécessaire.');
  const me=await response.json();if(!me.author)throw Error('Réservé au compte auteur.');
- alias=String(me.pseudo||'Voyageur').slice(0,40);$('pseudo').value=alias;authorized=true;$('access-denied').hidden=true;
+ alias=String(me.pseudo||'Voyageur').slice(0,40);$('pseudo').value=alias;authorized=true;$('access-denied').hidden=true;$('skip').disabled=false;
 }
 
 async function initialize(){
@@ -1117,13 +1129,16 @@ async function initialize(){
  try{
   if(!authorized)await authorize();
   if(!room)await loadWhite();
+  if(stage==='garden')return;
   if(people.length!==2)await loadPeople();
+  if(stage==='garden')return;
   showBootStage('La rencontre est prête.');
   ready=true;$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
   // The opening scene can now be played, independently of the rest.
-  setPending(false);$('prev').disabled=true;$('next').disabled=true;$('auto').disabled=true;$('personalize').hidden=true;
+  setPending(false);
   void preloadNext();
  }catch(e){
+  if(stage==='garden')return;
   remember('Chargement initial',e.message||e);
   if(!authorized&&/connexion|Réservé/i.test(String(e.message))){$('loading').hidden=true;$('access-denied').hidden=false;return;}
   $('load-title').textContent='Un contretemps';$('load-description').textContent='Le chargement a été interrompu. Les fichiers déjà reçus sont conservés.';const detail=$('load-error-details');detail.textContent=bootStage+' · '+String(e.message||e).slice(0,180);detail.hidden=false;$('retry-load').hidden=false;

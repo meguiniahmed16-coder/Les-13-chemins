@@ -90,17 +90,3 @@ test('seating uses the live wardrobe solver, not the old sofa mesh deltas',()=>{
  assert.match(wardrobe,/loadStudio\(look,'femme'\)/);
  assert.match(wardrobe,/old\.removeFromParent\(\)/);
 });
-test('speech bubble chooses a location outside both face rectangles',()=>{
- const code=source.slice(source.indexOf('function bubblePosition('),source.indexOf('function anchorBubble('));
- const f=new Function('T',code+'\nreturn bubblePosition;')({MathUtils:{clamp:(x,a,b)=>Math.max(a,Math.min(b,x))}});
- const a={l:180,r:270,t:80,b:205},b={l:410,r:495,t:92,b:215};
- const p=f(700,340,270,75,a,[a,b]);assert.ok(p);
- for(const r of [a,b])assert.ok(!(p.l<r.r&&p.l+270>r.l&&p.t<r.b&&p.t+75>r.t));
-});
-
-test('when a close-up cannot fit a bubble, the caption goes outside the viewport',()=>{
- const html=readFileSync(new URL('./intro-prive.html',import.meta.url),'utf8');
- assert.match(html,/<footer><div id="dialogue-rail" hidden/);
- assert.match(html,/#bubble\.caption-fallback\{visibility:hidden\}/);
- assert.match(source,/rail\.replaceChildren\(\.\.\.Array\.from\(bubble\.children/);
-});
