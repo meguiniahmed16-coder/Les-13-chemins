@@ -38,13 +38,14 @@ function updatePart(p){
 }
 function motionGesture(g,amount){
  if(!g)return null;
+ if(g.poseGesture)return {gesture:g.poseGesture,look:g.headYaw||0};
  const accent=(g.emphasis||0)*(g.energy||0),invite=g.kind==='invite',left=(g.kind==='question'?.7:.38)*accent,right=(invite?.86:.62)*accent;
  return {gesture:{left,right,reach:26,height:invite?-12:-20,forward:invite?31:21,palm:.20,pitch:.018*accent,yaw:0,nod:.035*accent,tilt:.012*Math.sin(g.time||0)},look:g.headYaw||0};
 }
-function makeController(figure,rig,parts,actor,originalRig=null){
+function makeController(figure,rig,parts,actor,originalRig=null,originalRest=null){
  const solver=new SalonMotion(()=>{},{angle:0},undefined,()=>.42);solver.femaleHands=actor.id==='f';
  const inv=originalRig?Array.from({length:15},(_,i)=>new T.Matrix4().fromArray(rig.rest,i*16).invert()):null;
- const old=originalRig?.map(o=>new T.Matrix4().compose(o.position.clone(),o.quaternion.clone(),o.scale.clone()));
+ const old=originalRest||originalRig?.map(o=>new T.Matrix4().compose(o.position.clone(),o.quaternion.clone(),o.scale.clone()));
  const matrix=new T.Matrix4();
  let last='',time=0;
  function apply(mats){
@@ -57,31 +58,21 @@ function makeController(figure,rig,parts,actor,originalRig=null){
  }
  return {
   apply,
+  invalidate(){last='';},
   pose(amount,g=null){
    actor.sit=amount;const t=g?.time??time;time=t;
    const seat=amount>0?actor.introSeat:null,expr=motionGesture(g,amount);
    const key=Math.round(amount*200)+'/'+Math.floor(t*18)+'/'+(seat?.id||'')+'/'+Math.round((g?.headYaw||0)*100)+'/'+Math.round((g?.energy||0)*10);
    if(key===last)return;last=key;
-   if(g?.gait?.strength>.01&&amount<.01){solver.travelPose(g.gait.phase,g.gait.strength*.7,0);apply(solver.bones());}
+   if(g?.gait?.strength>.01&&amount<.01){solver.expression=expr;solver.travelPose(g.gait.phase,g.gait.strength*.7,0);apply(solver.bones());}
    else apply(solver.sampleSalonPose(seat,amount,t,expr,actor.id==='m'?1.075:1.04));
   }
  };
 }
-// Keep the original Ahmed portrait and rig. Remove only the three improvised
-// garment meshes; actual library garments follow the same V27 deformation matrices.
-export async function dressAhmed(actor,originalRig,parent,oldGarments,options={}){
- if(originalRig?.length!==15||!parent||(!options.figure&&oldGarments.length!==3))throw Error('Atelier Ahmed : pièces originales non reconnues');
- const look=referenceStudio('homme');look.outfit={...introOutfits.m};
- const [data,figure]=await Promise.all([poses(),options.figure||loadStudio(look,'homme')]);
- figure.pose(data.m.rest);
- const garmentMeshes=figure.meshes.filter(m=>m.binding);
- if(!options.figure&&garmentMeshes.length!==3)throw Error('Bibliothèque : tenue Ahmed incomplète');
- const white=options.white??true;
- const parts=garmentMeshes.map(m=>partMesh(m,parent,typeof white==='function'?white(m):white));
- // Hide only skin triangles covered by the actual selected garments. The
- // original hands, face, neck and every uncovered part retain their source.
- const originalSkin=parent.children.find(o=>o.isSkinnedMesh&&!oldGarments.includes(o));
- if(originalSkin){
+// Plan a visibility mask without changing the live actor. Cached wardrobe
+// variants can then be prepared while the preceding scene is still visible.
+function ahmedSkinMask(figure,originalSkin){
+ if(!originalSkin)return null;
   const g=originalSkin.geometry,p=g.attributes.position;
   // A later wardrobe choice can uncover skin hidden by the preceding outfit.
   // Always derive its mask from the original triangles, not an accumulated cut.
@@ -104,8 +95,24 @@ export async function dressAhmed(actor,originalRig,parent,oldGarments,options={}
    if(best>=0&&!shown[best])hidden[i]=1;
   }
   const kept=[];for(let i=0;i<ids.length;i+=3){const a=ids[i],b=ids[i+1],c=ids[i+2];if(!(hidden[a]&&hidden[b]&&hidden[c]))kept.push(a,b,c);}
-  g.setIndex(new T.BufferAttribute(new Uint32Array(kept),1));
- }
+  return new T.BufferAttribute(new Uint32Array(kept),1);
+}
+
+// Keep the original Ahmed portrait and rig. Remove only the three improvised
+// garment meshes; actual library garments follow the same V27 deformation matrices.
+export async function dressAhmed(actor,originalRig,parent,oldGarments,options={}){
+ if(originalRig?.length!==15||!parent||(!options.figure&&oldGarments.length!==3))throw Error('Atelier Ahmed : pièces originales non reconnues');
+ const look=referenceStudio('homme');look.outfit={...introOutfits.m};
+ const [data,figure]=await Promise.all([poses(),options.figure||loadStudio(look,'homme')]);
+ figure.pose(data.m.rest);
+ const garmentMeshes=figure.meshes.filter(m=>m.binding);
+ if(!options.figure&&garmentMeshes.length!==3)throw Error('Bibliothèque : tenue Ahmed incomplète');
+ const white=options.white??true;
+ const parts=garmentMeshes.map(m=>partMesh(m,parent,typeof white==='function'?white(m):white));
+ const originalSkin=parent.children.find(o=>o.isSkinnedMesh&&!oldGarments.includes(o));
+ const mask=ahmedSkinMask(figure,originalSkin);if(mask)originalSkin.geometry.setIndex(mask);
+ const rest=originalRig.map(o=>new T.Matrix4().compose(o.position.clone(),o.quaternion.clone(),o.scale.clone()));
+ actor.introRig={bones:originalRig,parent,skin:originalSkin,rig:data.m,rest};
  for(const old of oldGarments){old.visible=false;old.removeFromParent();}
  actor.parts=parts;actor.pants=null;
  actor.wardrobe=makeController(figure,data.m,parts,actor,originalRig);
@@ -113,12 +120,12 @@ export async function dressAhmed(actor,originalRig,parent,oldGarments,options={}
  actor.wardrobe.apply(data.m.rest);
  return actor;
 }
-export async function createMarianne(root,body){
- const look=referenceStudio('femme');look.outfit={...introOutfits.f};
- const [data,figure,template]=await Promise.all([poses(),loadStudio(look,'femme'),loadFemaleReference()]);
+export async function createMarianne(root,body,options={}){
+ const look=options.look||referenceStudio('femme');if(!options.look)look.outfit={...introOutfits.f};
+ const [data,figure,template]=await Promise.all([poses(),options.figure||loadStudio(look,'femme'),loadFemaleReference()]);
  figure.pose(data.f.rest);
- const parts=figure.meshes.map(m=>partMesh(m,body,!!m.binding));
- if(parts.filter(p=>p.source.binding).length!==3)throw Error('Bibliothèque : tenue Marianne incomplète');
+ const parts=figure.meshes.map(m=>partMesh(m,body,!!m.binding&&(options.white??true)));
+ if(!options.figure&&parts.filter(p=>p.source.binding).length!==3)throw Error('Bibliothèque : tenue Marianne incomplète');
  const actor={id:'f',root,body,parts,sit:0,stamp:0,head:null};
  actor.wardrobe=makeController(figure,data.f,parts,actor);
  actor.pose=(amount,g)=>actor.wardrobe.pose(amount,g);
@@ -126,4 +133,59 @@ export async function createMarianne(root,body){
  actor.head=attachFemaleHead(actor,template,look);actor.head.follow(true);
  actor.speak=(open,wide=0,blink=0)=>actor.head.talk({jaw:open,spread:wide*.18,round:open*.18,blink});
  return actor;
+}
+
+
+const appearanceFields=['body','parts','wardrobe','pose','walkPose','head','speak','pants'];
+function appearanceHandle(actor,fields,{skin=null,index=null,owned=false,group=null}={}){
+ const visibility=fields.parts.map(part=>part.obj.visible);
+ let disposed=false;
+ return {
+  activate(){
+   if(disposed)throw Error('Cette tenue de démonstration a été libérée.');
+   for(const part of actor.parts)part.obj.visible=false;
+   if(actor.body!==fields.body)actor.body.visible=false;
+   for(const key of appearanceFields)actor[key]=fields[key];
+   actor.body.visible=true;if(group)group.visible=true;
+   fields.parts.forEach((part,i)=>part.obj.visible=visibility[i]);
+   if(skin&&index)skin.geometry.setIndex(index.clone());
+   actor.wardrobe.invalidate?.();actor.pose(actor.sit||0,{time:0,energy:0,emphasis:0});
+  },
+  dispose(){
+   if(!owned||disposed)return;disposed=true;
+   fields.head?.detach?.();
+   for(const part of fields.parts){part.obj.removeFromParent();part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
+   group?.removeFromParent();
+  }
+ };
+}
+export function captureIntroAppearance(actor){
+ const fields=Object.fromEntries(appearanceFields.map(key=>[key,actor[key]]));
+ const skin=actor.introRig?.skin;
+ return appearanceHandle(actor,fields,{skin,index:skin?.geometry.index.clone()});
+}
+// Build only hidden geometry. Activation is synchronous and never moves a
+// root, replaces the private Ahmed portrait, or writes the saved appearance.
+export async function prepareIntroAppearance(actor,figure,{look=figure.appearance,white=false}={}){
+ if(actor.id==='f'){
+  const group=new T.Group();group.name='Marianne · tenue de démonstration';group.visible=false;actor.root.add(group);
+  let variant;
+  try{variant=await createMarianne(actor.root,group,{figure,look,white});}
+  catch(error){group.removeFromParent();throw error;}
+  const fields=Object.fromEntries(appearanceFields.map(key=>[key,variant[key]]));
+  // The scene keeps the original actor object. Its current head and speech
+  // controller become those fitted to the cached body, with the same face.
+  const pose=fields.pose;fields.pose=(amount,g)=>{actor.sit=amount;pose(amount,g);actor.stamp=variant.stamp;};
+  return appearanceHandle(actor,fields,{owned:true,group});
+ }
+ const binding=actor.introRig;if(!binding)throw Error('Les articulations originales d’Ahmed sont indisponibles.');
+ figure.pose(binding.rig.rest);
+ const group=new T.Group();group.name='Ahmed · tenue de démonstration';group.visible=false;binding.parent.add(group);
+ const parts=figure.meshes.filter(m=>m.binding).map(m=>partMesh(m,group,white));
+ const wardrobe=makeController(figure,binding.rig,parts,actor,binding.bones,binding.rest);
+ const fields=Object.fromEntries(appearanceFields.map(key=>[key,actor[key]]));
+ Object.assign(fields,{parts,wardrobe,pose:(amount,g)=>wardrobe.pose(amount,g),pants:null});
+ // Use the complete original rest-pose skin, never the preceding outfit's cut.
+ const index=ahmedSkinMask(figure,binding.skin);
+ return appearanceHandle(actor,fields,{skin:binding.skin,index,owned:true,group});
 }

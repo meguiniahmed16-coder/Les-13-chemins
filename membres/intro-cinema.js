@@ -3,10 +3,14 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dressAhmed,createMarianne} from './intro-wardrobe.js';
 import {INTRO_FILM,filmPosition,createFilmPlayback} from './intro-film.js';
 import {planSpeechBubble} from './intro-bubbles.js';
+import {dojoBlocking,dojoDirectedCamera,DOJO_DURATIONS} from './intro-dojo-director.js';
+import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
+import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
+const dojoDemo=mountDojoDemo(canvasHost);
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -233,68 +237,86 @@ const lines=[
  {
   "id": "dojo-arrivee",
   "speaker": "m",
-  "text": "Suis-moi. Je dois t’expliquer comment ce monde fonctionne.",
+  "text": "Ici, on apprend en essayant. Regarde.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 7000,
   "move": "fade",
   "gesture": "invite",
-  "seated": false
+  "seated": false,
+  "demo": true
  },
  {
-  "id": "dojo-deplacement",
-  "speaker": "m",
-  "text": "Le joystick te fait avancer. Glisse sur la scène pour tourner la caméra.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 8500,
-  "move": "drift",
-  "gesture": "explain",
-  "seated": false
- },
- {
-  "id": "dojo-personnaliser",
-  "speaker": "m",
-  "text": "Dans le salon, « Personnaliser » ouvre ton atelier. Choisis Ahmed ou Marianne.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 9000,
-  "move": "drift",
-  "gesture": "explain",
-  "seated": false
- },
- {
-  "id": "dojo-apparence",
+  "id": "dojo-camera",
   "speaker": "f",
-  "text": "« Mon personnage » règle le visage, les cheveux, la peau et la silhouette.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 8500,
-  "move": "drift",
-  "gesture": "explain",
-  "seated": false
- },
- {
-  "id": "dojo-vetements",
-  "speaker": "m",
-  "text": "Choisis une tenue, ou compose-la dans « Tous les vêtements ». Tu vois le résultat tout de suite.",
+  "text": "La caméra tourne, se rapproche… et te laisse choisir ton regard.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 10000,
   "move": "drift",
   "gesture": "explain",
-  "seated": false
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-deplacement",
+  "speaker": "m",
+  "text": "Quelques pas suffisent. Le corps suit le mouvement.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 11000,
+  "move": "drift",
+  "gesture": "invite",
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-personnaliser",
+  "speaker": "m",
+  "text": "« Personnaliser » : choisis Ahmed ou Marianne.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 8000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-apparence",
+  "speaker": "f",
+  "text": "Dans « Mon personnage », la silhouette se transforme.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 10000,
+  "move": "drift",
+  "gesture": "open",
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-vetements",
+  "speaker": "m",
+  "text": "« Tous les vêtements » : une autre tenue, et c’est toujours nous.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 12000,
+  "move": "drift",
+  "gesture": "open",
+  "seated": false,
+  "demo": true
  },
  {
   "id": "dojo-enregistrer",
   "speaker": "f",
-  "text": "Pour garder tes changements, touche « Enregistrer ». La croix ferme l’atelier.",
+  "text": "« Enregistrer » garde ton choix. La croix ferme l’atelier.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 8500,
+  "ms": 7000,
   "move": "drift",
   "gesture": "explain",
-  "seated": false
+  "seated": false,
+  "demo": true
  },
  {
   "id": "dojo-construction",
@@ -302,10 +324,11 @@ const lines=[
   "text": "Ce monde est encore en construction. Et toi aussi, tu participeras à sa construction.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 8500,
+  "ms": 9000,
   "move": "drift",
   "gesture": "open",
-  "seated": false
+  "seated": false,
+  "demo": true
  },
  {
   "id": "jardin",
@@ -313,10 +336,11 @@ const lines=[
   "text": "Les papillons et la maison t’attendent dans le jardin.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 6500,
+  "ms": 6000,
   "move": "drift",
   "gesture": "invite",
-  "seated": false
+  "seated": false,
+  "demo": true
  }
 ];
 const dojoStart=lines.findIndex(s=>s.scene==='dojo');
@@ -325,6 +349,7 @@ let shotStart=0,shotPaused=false,pausedAt=0,pausedElapsed=0,currentSpeaker=null,
 const progress={white:0,people:0,ahmed:0},weights={white:.25,people:.40,ahmed:.35};
 const downloadCache=new Map();let bootStage='Connexion';let assetAhmed=null,assetMarianne=null;
 let pending=false,dojoTask=null,seatTask=null,initialTask=null,sceneRequest=0;
+let dojoWardrobe=null;
 function setProgress(key,value){if(!(key in progress))return;progress[key]=Math.max(progress[key],Math.min(1,value));const total=Math.floor(100*Object.keys(progress).reduce((a,k)=>a+progress[k]*weights[k],0));$('load-progress').value=total;$('load-percent').textContent=total+' %';}
 
 function showBootStage(s){bootStage=s;const e=$('load-description');if(e)e.textContent=s;}
@@ -635,11 +660,13 @@ async function loadPeople(){
  if(!assetAhmed)assetAhmed=await loadAhmed();
  if(!assetMarianne){showBootStage('Assemblage du personnage de Marianne…');assetMarianne=await loadMarianne();}
  people=[assetAhmed,assetMarianne];downloadCache.clear();
+ dojoWardrobe??=createDojoWardrobe(people);
 }
 
 let seatsReady=false;
 function prepareSeats(){seatsReady=people.length===2&&people.every(p=>p.wardrobe&&seatAnchors.has(p.id));return seatsReady?Promise.resolve():Promise.reject(Error('Articulations des fauteuils indisponibles'));}
-async function preloadNext(){try{await prepareSeats();prepareFilm();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojo();}catch(e){remember('Préchargement dojo',e.message);}}
+async function prepareDojoPerformance(){await prepareDojo();dojoWardrobe??=createDojoWardrobe(people);await dojoWardrobe.prepare();}
+async function preloadNext(){try{await prepareSeats();prepareFilm();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojoPerformance();}catch(e){remember('Préchargement dojo',e.message);}}
 // Every character is authored with local +Z pointing forward.
 function facingYaw(from,to){return Math.atan2(to.x-from.x,to.z-from.z);}
 function openingPosition(id){return new T.Vector3(id==='m'?-1.28:1.28,id==='m'?.0206:0,-1.08);}
@@ -821,7 +848,7 @@ function updateActing(now){
  if(now-lastMotion<50)return;lastMotion=now;
  for(const p of people){
   const speaking=currentSpeaker===p.id,energy=speaking?1:.20;
-  const localTime=now/1000+(p.id==='f'?2.6:0);
+  const localTime=(stage==='dojo'?elapsed/1000:now/1000)+(p.id==='f'?2.6:0);
   const pulse=.45+.55*Math.sin(localTime*1.75)**2,emphasis=actionEnvelope(t,duration)*pulse;
   const blinkPhase=(localTime+1.65)%5.1,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
   const partner=people.find(other=>other!==p);
@@ -830,9 +857,9 @@ function updateActing(now){
   // While walking/sitting, let the body lead the motion. Otherwise direct
   // the eyes/head toward the actual other actor or the screen.
   const moving=line.invitation&&invitationMotion&&!invitationMotion.complete&&elapsed>=1350;
-  const headYaw=lookTarget&&!moving&&stage==='white'?T.MathUtils.clamp(turnDelta(p.root.rotation.y,facingYaw(p.root.position,lookTarget)),-.64,.64):0;
+  const headYaw=p.dojoPerformance?.headYaw??(lookTarget&&!moving&&stage==='white'?T.MathUtils.clamp(turnDelta(p.root.rotation.y,facingYaw(p.root.position,lookTarget)),-.64,.64):0);
   const gaze=headYaw/.64;
-  const g={time:localTime,energy,emphasis,kind:speaking?line.gesture:'listen',gaze,headYaw,blink,gait:p.gait};
+  const g={time:localTime,energy,emphasis,kind:p.dojoPerformance?.gesture||(speaking?line.gesture:'listen'),gaze,headYaw,blink,gait:p.gait,poseGesture:p.dojoPerformance?.poseGesture};
   try{p.pose(p.sit,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
   let jaw=0,wide=0;
   if(speaking&&speech&&speech.id===p.id){
@@ -867,9 +894,17 @@ function faceRect(person,view,w,h){
  const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
  return {l:Math.min(...xs)-14,r:Math.max(...xs)+14,t:Math.min(...ys)-14,b:Math.max(...ys)+14};
 }
-function previewPeople(elapsed){
+function isStagedDojo(line){return line?.scene==='dojo'&&line.demo===true;}
+function dojoPoseAt(line,elapsed){return dojoBlocking(line,elapsed,{center:dojo.userData.introFloorBounds.getCenter(new T.Vector3()),floorY:dojo.userData.introFloorBounds.max.y});}
+function stageDojoPeople(line,elapsed){
+ const state=dojoPoseAt(line,elapsed);
+ for(const person of people){const pose=state[person.id];person.root.position.copy(pose.position);person.root.rotation.y=pose.yaw;person.sit=0;person.gait=pose.gait;person.dojoPerformance=pose;}
+ return dojoWardrobe?.apply(line,elapsed);
+}
+function previewPeople(elapsed,line=lines[step]){
  return people.map(person=>{
   const root={position:person.root.position.clone()},head=actorHead(person);
+  if(isStagedDojo(line)){const pose=dojoPoseAt(line,elapsed)[person.id];head.add(pose.position.clone().sub(root.position));root.position.copy(pose.position);return {id:person.id,root,previewHead:head,sit:0};}
   const item=invitationMotion?.items.find(item=>item.person===person);
   if(item){
    const t=elapsed-(person.id==='m'?0:1250),walk=T.MathUtils.smoothstep(t,2050,4600),sit=T.MathUtils.smoothstep(t,5350,7650);
@@ -886,10 +921,10 @@ function dialogueFaceSamples(line,elapsed,w,h){
  // Cover the whole camera path, not just the instant at which words appear.
  // Padding also accounts for breathing and the gentle head/eye animation.
  for(let i=0;i<=32;i++){
-  const at=T.MathUtils.lerp(elapsed,Math.max(elapsed,end),i/32),actors=previewPeople(at);
+  const at=T.MathUtils.lerp(elapsed,Math.max(elapsed,end),i/32),actors=previewPeople(at,line);
   const shot=cameraFrame(line,at,w/h,actors,angle);
   view.fov=shot.fov;view.updateProjectionMatrix();view.position.copy(shot.eye);view.lookAt(shot.aim);if(shot.roll)view.rotateZ(shot.roll);view.updateMatrixWorld(true);
-  for(const person of actors){const rect=faceRect(person,view,w,h);if(rect&&rect.r>0&&rect.l<w&&rect.b>0&&rect.t<h)faces.push(rect);}
+  for(const person of actors){const rect=faceRect(person,view,w,h);if(rect&&(isStagedDojo(line)||rect.r>0&&rect.l<w&&rect.b>0&&rect.t<h))faces.push(rect);}
  }
  return faces;
 }
@@ -903,10 +938,11 @@ function anchorBubble(line,elapsed){
  const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
  const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
  if(!bubbleLayout||bubbleLayout.w!==w||bubbleLayout.h!==h){
-  bubble.style.width=Math.min(w-28,w<560?330:h<350?320:390)+'px';
+  bubble.style.width=Math.min(w-28,w<560?330:h<350&&isStagedDojo(line)?Math.min(300,w*.33):h<350?320:390)+'px';
   const face=faceRect(speaker,camera,w,h);if(!face)return;
   const faces=dialogueFaceSamples(line,elapsed,w,h);
-  bubbleLayout={...planSpeechBubble({width:w,height:h,bubbleWidth:bubble.offsetWidth,bubbleHeight:bubble.offsetHeight,face,faces,reserve:line.shot==='dojo'}),w,h};
+  const panel=isStagedDojo(line)?dojoDemoReservedRect(w,h,line):null;
+  bubbleLayout={...planSpeechBubble({width:w,height:h,bubbleWidth:bubble.offsetWidth,bubbleHeight:bubble.offsetHeight,face,faces,obstacles:panel?[panel]:[],reserve:line.shot==='dojo'&&!isStagedDojo(line)}),w,h};
   bubble.classList.remove('above','below','left','right');bubble.classList.add(bubbleLayout.side);
   bubble.style.left=bubbleLayout.l+'px';bubble.style.top=bubbleLayout.t+'px';bubble.style.visibility='visible';
  }
@@ -1051,6 +1087,8 @@ function cameraFrame(line,elapsed,aspect,actors=people,azimuth=angle){
   const v=discoveryFrame(actors[1],actors[0],t,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);roll=v.roll;
  }else if(line.shot==='approach'){
   const v=guideApproachFrame(actors[1],actors[0],push,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);
+ }else if(isStagedDojo(line)){
+  return dojoDirectedCamera({line,elapsed,aspect,actors,bounds:dojo.userData.introCameraBounds,floor:dojo.userData.introFloorBounds,headPosition:actorHead});
  }else if(line.shot==='dojo'){
   const frame=dojoCameraFrame(azimuth,radius,actors);shotAim.copy(frame.aim);shotEye.copy(frame.eye);
  }else if(line.shot==='arrival'){
@@ -1090,17 +1128,17 @@ function cameraFrame(line,elapsed,aspect,actors=people,azimuth=angle){
 }
 function cameraShot(line,elapsed,dt){
  const aspect=Math.max(.25,camera.aspect);
- if(line.shot==='dojo'){
+ if(line.shot==='dojo'&&!isStagedDojo(line)){
   targetAngle=T.MathUtils.clamp(targetAngle,Math.PI-.68,Math.PI+.68);
   angle=T.MathUtils.clamp(angle+(targetAngle-angle)*(1-Math.exp(-dt*2)),Math.PI-.68,Math.PI+.68);
  }
  const shot=cameraFrame(line,elapsed,aspect),shotEye=shot.eye,shotAim=shot.aim;
  camera.fov=shot.fov;camera.updateProjectionMatrix();camera.up.set(0,1,0);
- if(cutCamera){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
+ if(cutCamera||isStagedDojo(line)){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
  else{const alpha=1-Math.exp(-Math.max(.001,dt)*5);smoothEye.lerp(shotEye,alpha);smoothAim.lerp(shotAim,alpha);}
  if(line.shot==='dojo'){
   dojo.userData.introCameraBounds.clampPoint(smoothEye,smoothEye);
-  camera.fov=dojoCameraFov(smoothEye,smoothAim,aspect);camera.updateProjectionMatrix();
+  camera.fov=isStagedDojo(line)?shot.fov:dojoCameraFov(smoothEye,smoothAim,aspect);camera.updateProjectionMatrix();
  }
  camera.position.copy(smoothEye);camera.lookAt(smoothAim);if(shot.roll)camera.rotateZ(shot.roll);camera.updateMatrixWorld(true);
 }
@@ -1111,9 +1149,9 @@ async function showScene(index){
  const request=++sceneRequest;
  const requested=Math.max(0,Math.min(index,lines.length-1)),line=lines[requested],isDojo=line.scene==='dojo';
  clearTimeout(autoTimer);
- if(((line.seated||line.invitation)&&!seatsReady)||(isDojo&&!dojo)){
+ if(((line.seated||line.invitation)&&!seatsReady)||(isDojo&&(!dojo||!dojoWardrobe?.ready))){
   setPending(true);$('scene-wait').textContent='La suite se prépare…';
-  try{if(isDojo)await prepareDojo();else await prepareSeats();}
+  try{if(isDojo)await prepareDojoPerformance();else await prepareSeats();}
   catch(e){if(request!==sceneRequest||stage==='garden')return;remember('Chargement de la suite',e.message||e);automatic(false);$('scene-wait').textContent='La suite n’a pas pu se charger. Tu peux passer l’introduction ou signaler une erreur.';setPending(false);$('scene-wait').hidden=false;return;}
   if(request!==sceneRequest||stage==='garden')return;
   setPending(false);
@@ -1123,7 +1161,7 @@ async function showScene(index){
  stage=isDojo?'dojo':'white';
  mountRoom(false);whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
- invitationMotion=null;for(const p of people)p.gait=null;
+ invitationMotion=null;for(const p of people){p.gait=null;p.dojoPerformance=null;}
  const layout=isDojo?'dojo':line.seated?'seated':'standing';
  if(line.invitation){beginInvitation();}
  else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
@@ -1135,12 +1173,13 @@ async function showScene(index){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
  }
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+line.id;
- $('joystick').hidden=!isDojo;
+ $('joystick').hidden=!isDojo||isStagedDojo(line);
+ dojoDemo.update(line,0,{wardrobe:isStagedDojo(line)?stageDojoPeople(line,0):null});
  if(autoplay)scheduleNext(line.ms);
 }
 
 function startGarden(){
- ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();stage='garden';$('garden').hidden=false;setPending(false);
+ ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();dojoDemo.hide();dojoWardrobe?.restore();stage='garden';$('garden').hidden=false;setPending(false);
  $('joystick').hidden=true;$('skip').hidden=true;
  $('welcome').hidden=true;$('loading').hidden=true;$('scene-wait').hidden=true;
  status.textContent='Le jardin et la maison';
@@ -1201,7 +1240,7 @@ function stickMove(e){const r=stick.getBoundingClientRect();
 stick.addEventListener('pointerdown',e=>{stick.setPointerCapture(e.pointerId);stickMove(e)});
 stick.addEventListener('pointermove',e=>{if(stick.hasPointerCapture(e.pointerId))stickMove(e)});
 for(const type of ['pointercancel','pointerup'])stick.addEventListener(type,()=>{joystick={x:0,y:0};nub.style.transform=''});
-canvas.addEventListener('pointerdown',e=>{if(stage==='dojo'){drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)}});
+canvas.addEventListener('pointerdown',e=>{if(stage==='dojo'&&!isStagedDojo(lines[step])){drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)}});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;targetAngle=T.MathUtils.clamp(targetAngle+(e.clientX-drag[0])*.007,Math.PI-.68,Math.PI+.68);radius=T.MathUtils.clamp(radius+(e.clientY-drag[1])*.011,3,6);drag=[e.clientX,e.clientY]});
 canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
 const keys=new Set();
@@ -1211,7 +1250,7 @@ window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 function frame(){
  requestAnimationFrame(frame);const dt=Math.min(.06,clock.getDelta());
  if(!room||stage==='garden')return;
- if(stage==='dojo'&&people[1]){
+ if(stage==='dojo'&&people[1]&&!isStagedDojo(lines[step])){
   const moveX=joystick.x+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('q')?1:0);
   const moveZ=joystick.y+(keys.has('arrowdown')||keys.has('s')?1:0)-(keys.has('arrowup')||keys.has('z')?1:0);
   if(Math.hypot(moveX,moveZ)>.1){
@@ -1226,8 +1265,9 @@ function frame(){
  if(!started||step<0){mountRoom(false);camera.position.set(0,1.45,-4.5);camera.lookAt(0,1,0);renderer.render(scene,camera);return;}
  const line=lines[step],elapsed=shotElapsed(now);
  if(stage==='white')furnitureAt(line,elapsed);
+ const wardrobe=isStagedDojo(line)?stageDojoPeople(line,elapsed):null;
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
- updateFilm(line,elapsed);cameraShot(line,elapsed,dt);anchorBubble(line,elapsed);
+ updateFilm(line,elapsed);cameraShot(line,elapsed,dt);dojoDemo.update(line,elapsed,{wardrobe});anchorBubble(line,elapsed);
  renderer.render(scene,camera);
 }
 

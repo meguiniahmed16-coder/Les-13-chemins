@@ -15,6 +15,7 @@ const lines=JSON.parse(fragment('const lines=',';\nconst dojoStart').slice('cons
 const production=[
  fragment('function setPending(','const whiteFloor='),
  fragment('function shotElapsed(','const headPoint='),
+ fragment('async function prepareDojoPerformance(','async function preloadNext('),
  fragment('function scheduleNext(','// The original television'),
  fragment('async function showScene(',"$('report-add').onclick="),
  fragment('function frame(','async function authorize('),
@@ -48,7 +49,7 @@ function domFixture(){
  const $=id=>{assert.ok(nodes.has(id),`Production refers to absent DOM element #${id}`);return nodes.get(id)};
  return {$,nodes,element,document:{getElementById:$,createElement:element}};
 }
-async function flush(){await Promise.resolve();await Promise.resolve();await Promise.resolve()}
+async function flush(){for(let i=0;i<10;i++)await Promise.resolve()}
 function clockFixture(){
  let now=0,serial=0;const timers=new Map();
  return {performance:{now:()=>now},setTimeout(fn,ms){const id=++serial;timers.set(id,{fn,at:now+ms});return id},clearTimeout(id){timers.delete(id)},
@@ -61,7 +62,10 @@ function harness({dojoLoaded=true}={}){
  const dom=domFixture(),time=clockFixture(),visits=[];let renders=0,filmStops=0;
  const actors=['m','f'].map((id,i)=>({id,root:{name:i?'Marianne':'Ahmed',position:new T.Vector3(i?1:-1,0,0),rotation:{y:0}},sit:false,pose(){},speak(){}}));
  const state={T,...dom,...time,lines,dojoStart:lines.findIndex(s=>s.scene==='dojo'),
-  room:{},dojo:dojoLoaded?{visible:false}:null,people:actors,chairs:[],whiteFloor:{visible:true},
+  room:{},dojo:dojoLoaded?{visible:false}:null,people:actors,
+  dojoWardrobe:{ready:dojoLoaded,cancelled:false,async prepare(){if(!this.cancelled)this.ready=true},restore(){this.cancelled=true;this.ready=false}},
+  dojoDemo:{hidden:true,updates:[],update(line,elapsed){this.hidden=line.scene!=='dojo';this.updates.push([line.id,elapsed])},hide(){this.hidden=true}},
+  isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
   stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
   pending:false,sceneRequest:0,seatsReady:true,initialTask:null,shotStart:0,shotPaused:false,pausedAt:0,pausedElapsed:0,
   currentSpeaker:null,lastLayout:'',secondCue:false,cutCamera:false,invitationMotion:null,targetAngle:Math.PI,radius:3.7,

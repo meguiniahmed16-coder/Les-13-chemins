@@ -30,6 +30,7 @@ const actorHead=p=>p.root.position.clone().add(new T.Vector3(0,p.id==='m'?1.60:1
 const camera=new T.PerspectiveCamera(46,16/9,.07,120);
 const controls=new Function('T','dojo','people','actorHead','camera',`
  let angle=Math.PI,targetAngle=Math.PI,radius=3.7,cutCamera=true;
+ function isStagedDojo(line){return line.demo===true;}
  const shotAim=new T.Vector3(),shotEye=new T.Vector3(),smoothAim=new T.Vector3(0,.9,0),smoothEye=new T.Vector3(0,2.37,-20);
  ${source.slice(source.indexOf('function dojoCameraFrame('),source.indexOf('async function showScene('))}
  return {

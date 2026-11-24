@@ -89,7 +89,7 @@ test('the direct arrival loads the editor and the dojo explains its actual contr
  const source=readFileSync(new URL('./intro-cinema.js',import.meta.url),'utf8'),start=source.indexOf('const lines=')+'const lines='.length;
  const shots=JSON.parse(source.slice(start,source.indexOf(';\nconst dojoStart',start)));
  const tutorial=shots.filter(s=>['dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer'].includes(s.id));
- assert.equal(tutorial.length,4);assert.ok(tutorial.every(s=>s.scene==='dojo'&&s.ms>=8500&&s.speaker));
+ assert.equal(tutorial.length,4);assert.ok(tutorial.every(s=>s.scene==='dojo'&&s.ms>=6000&&s.speaker));
  const text=tutorial.map(s=>s.text).join(' ');
  for(const label of ['Personnaliser','Ahmed','Marianne','Mon personnage','Tous les vêtements','Enregistrer'])assert.ok(text.includes(label),label);
 });
