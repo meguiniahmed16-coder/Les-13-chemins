@@ -87,7 +87,7 @@ const publicFiles = [
   'dialogues.js',
   'blog-content-public.js',
   'blog-content.css',
-  'admin-blog.html',
+  'admin-blog.html', 'admin-edition.html',
   'double-admin.js',
   'double-admin.css',
   'site-nav.css',
@@ -307,4 +307,5 @@ await copyFile(join(root, 'double-admin-api.mjs'), join(root, '.netlify/function
 await copyFile(join(root,'bois/proxy.mjs'),join(root,'.netlify/functions/creations.mjs'));
 
 await copyFile(join(root,'membres/proxy.mjs'),join(root,'.netlify/functions/membres.mjs'));
+await copyFile(join(root,'membres/admin-unified-proxy.mjs'),join(root,'.netlify/functions/admin-unified.mjs'));
 await copyFile(join(root,'membres/guest-visit.mjs'),join(root,'.netlify/functions/visite-salon.mjs'));
