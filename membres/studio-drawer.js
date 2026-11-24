@@ -145,7 +145,7 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   const about=make('p','Retrouve ici les outils existants, les vues et la création de scènes, sans ouvrir un second logiciel de personnalisation.');
   advancedSoftware.append(about);
   const scene=make('button','Explorer le salon et le jardin 3D');scene.type='button';
-  scene.onclick=()=>{toggle(false);onToggle(false,mode);};
+  scene.onclick=()=>toggle(false);
   advancedSoftware.append(scene);
   if(options.privateURL){
    const a=make('a','Ouvrir les réglages de référence du personnage');a.href=options.privateURL;
