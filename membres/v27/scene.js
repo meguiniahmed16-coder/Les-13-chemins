@@ -7,6 +7,7 @@ import * as T from 'three';
 import {seats as roomSeats,roomFree,roomPath} from '../salon-plan.js';
 import {reunionDialogue} from './rencontre-lionel.js';
 import {createMemberBridge} from './scene-members.js';
+import {loadOriginalCinemaAssets} from './intro-original.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
 
@@ -715,6 +716,26 @@ function updateCam(dt){
 function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
 new ResizeObserver(updateSize).observe(view);
 function move(dt){
+ if(introAuthorized&&introCurrent==='dojo'){
+  const a=player();let dx=stick.x, dz=-stick.y;
+  if(keys.has('arrowup')||keys.has('z')||keys.has('w'))dz+=1;
+  if(keys.has('arrowdown')||keys.has('s'))dz-=1;
+  if(keys.has('arrowright')||keys.has('d'))dx+=1;
+  if(keys.has('arrowleft')||keys.has('q')||keys.has('a'))dx-=1;
+  const length=Math.hypot(dx,dz),moving=length>.06;
+  if(moving){dx/=Math.max(1,length);dz/=Math.max(1,length);
+   const c=Math.cos(orbit.angle),s=Math.sin(orbit.angle);
+   const vx=dx*c-dz*s,vz=-dx*s-dz*c;
+   a.root.position.x=clamp(a.root.position.x+vx*dt*2,-4.1,4.1);
+   a.root.position.z=clamp(a.root.position.z+vz*dt*2,-2.9,3.7);
+   a.root.rotation.y=Math.atan2(vx,vz);
+   a.phase=(a.phase+dt*1.4)%1;
+  }
+  a.speed=mix(a.speed,moving?.85:0,Math.min(1,dt*7));
+  animateBody(a,a.speed,0,dt*a.speed);
+  orbit.follow=true;
+  return;
+ }
  const a=player();if(skyMode()){advanceAir(dt);return}
  if(shelfView&&(stick.x||stick.y||keys.size))setShelfView(false);
  if(revealStart!==null&&(stick.x||stick.y||keys.size))cancelReveal();
@@ -1549,83 +1570,128 @@ reunionAction.onclick=()=>{
 };
 
 
-/* Author-only 3D cinematography: controls existing, detailed V27 actors and the
-   existing room/garden. This code is entirely dormant on the visitor experience. */
+/* Author-only prologue uses the supplied GLB room, supplied GLB dojo,
+   and the already detailed / animated actors of Salon V27. */
 const introRequested=new URLSearchParams(location.search).get('intro3d')==='1'&&authorRoom;
-let introAuthorized=false;
+let introAuthorized=false,introOriginal=null,introCurrent='none';
 let introDirector=null;
-const introFloor=new T.Mesh(new T.PlaneGeometry(90,90),new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide}));
-introFloor.rotation.x=-Math.PI/2;introFloor.position.y=-.026;introFloor.receiveShadow=true;introFloor.visible=false;scene.add(introFloor);
-let introCurrent='room';
-function introPose(mode){
- if(!introAuthorized)return;
- keys.clear();releaseStick();goal=null;seatRoute=null;conversation=null;
- travel.reset();detail.reset();releaseSeatRoute();if(sitting)getUp();if(encounter.active)leaveReunion();
- if(where==='jardin')returnHome();
- const m=actors.m,f=actors.f;m.root.visible=true;f.root.visible=true;
- introCurrent=mode;
- if(mode==='white'){
-   indoor.visible=false;outdoor.visible=false;introFloor.visible=true;
-   scene.background=new T.Color(0xffffff);scene.fog=new T.FogExp2(0xffffff,.009);
-   for(const [a,x] of [[m,-.76],[f,.76]]){
-     a.root.position.set(x,0,0);a.root.rotation.y=0;
-     a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0);
-   }
- }else{
-   indoor.visible=true;outdoor.visible=false;introFloor.visible=false;
-   scene.background=new T.Color(0xe2d7c2);scene.fog=new T.FogExp2(0xe2e8db,.014);
-   const sm=seats.find(q=>q.id==='sofa1'),sf=seats.find(q=>q.id==='sofa3');
-   for(const [a,chair] of [[m,sm],[f,sf]]){
-     a.root.position.set(...feetAt(chair,a));a.root.rotation.y=chair.yaw;
-     a.sit=1;a.speed=0;a.stamp='';animateBody(a,0,chair);
-   }
+const introFloor=new T.Mesh(new T.PlaneGeometry(90,90),
+ new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide}));
+introFloor.rotation.x=-Math.PI/2;introFloor.position.y=-.026;introFloor.receiveShadow=true;
+introFloor.visible=false;scene.add(introFloor);
+const introMaterials=new Map();
+function introWhiteClothes(){
+ for(const a of [actors.m,actors.f])for(const p of a.parts){
+  // Keep the real skin, hair, eyes, expressions and geometry. Only lighten garments.
+  if(/body|skin|face|hair|eye|brow|lash|teeth|tongue|nail|beard|moustache/i.test(p.name))continue;
+  if(!introMaterials.has(p.obj))introMaterials.set(p.obj,p.obj.material);
+  const material=p.obj.material.clone();material.color.set(0xffffff);
+  material.map=null;material.metalness=0;material.roughness=.94;material.needsUpdate=true;
+  p.obj.material=material;
  }
- // Keep original 3D character meshes and facial features; never use primitive stand-ins.
- orbit.follow=false;introDirector??={active:true,position:new T.Vector3(0,1.55,3.1),focus:new T.Vector3(0,1.15,0),speed:.94,fov:48};
- introDirector.active=true;
- introShot('face');
+}
+function restoreIntroClothes(){
+ for(const [mesh,material] of introMaterials){mesh.material.dispose();mesh.material=material;}
+ introMaterials.clear();
+}
+function introPose(mode){
+ if(!introAuthorized||!introOriginal)return;
+ keys.clear();releaseStick();goal=null;seatRoute=null;conversation=null;
+ travel.reset();detail.reset();releaseSeatRoute();
+ if(sitting)getUp();
+ if(encounter.active)leaveReunion();
+ if(where==='jardin')returnHome();
+ introCurrent=mode;
+ const {whiteRoom,dojoRoom}=introOriginal;
+ whiteRoom.visible=mode==='sofa';
+ dojoRoom.visible=mode==='dojo';
+ introFloor.visible=mode==='white';
+ indoor.visible=false;outdoor.visible=false;
+ scene.background=new T.Color(mode==='dojo'?0xe7d8c3:0xffffff);
+ scene.fog=new T.FogExp2(mode==='dojo'?0xe7d8c3:0xffffff,mode==='dojo'?.006:.008);
+ introWhiteClothes();
+ const m=actors.m,f=actors.f;
+ m.root.visible=f.root.visible=true;
+ if(mode==='sofa'){
+  const seatM=seats.find(q=>q.id==='chair'),seatF=seats.find(q=>q.id==='sofa2');
+  for(const [actor,x,seat] of [[m,-1.28,seatM],[f,1.32,seatF]]){
+   actor.root.position.set(x,0,0.04);actor.root.rotation.y=Math.PI;
+   actor.sit=1;actor.speed=0;actor.stamp='';animateBody(actor,0,seat);
+  }
+ }else{
+  for(const [actor,x] of [[m,-.88],[f,.88]]){
+   actor.root.position.set(x,0,mode==='dojo'?.7:0);
+   actor.root.rotation.y=mode==='dojo'?0:Math.PI;
+   actor.sit=0;actor.speed=0;actor.stamp='';animateBody(actor,0,0);
+  }
+ }
+ if(mode==='dojo'){
+  if(introDirector)introDirector.active=false;
+  orbit.follow=true;orbit.angle=2.95;orbit.pitch=.19;orbit.radius=4.4;
+  orbit.focus.set(f.root.position.x,.92,f.root.position.z);
+  $('pad').hidden=false;$('cameraPad').hidden=false;
+  document.body.classList.remove('intro-cinematic');
+ }else{
+  document.body.classList.add('intro-cinematic');
+  $('pad').hidden=true;$('cameraPad').hidden=true;
+  orbit.follow=false;
+  introDirector??={active:true,position:new T.Vector3(0,1.85,-3.85),focus:new T.Vector3(0,1.1,0),speed:1.0,fov:46};
+  introDirector.active=true;
+  introShot('face');
+ }
 }
 function introShot(kind){
- if(!introAuthorized||!introDirector)return;
- const a=actors.m.root.position,b=actors.f.root.position,mid=a.clone().lerp(b,.5),white=introCurrent==='white';
- const focus=new T.Vector3(mid.x,white?1.03:1.12,mid.z),from=new T.Vector3();
+ if(!introAuthorized||!introDirector||introCurrent==='dojo')return;
+ const white=introCurrent==='white';
+ const target=new T.Vector3(0,white?1.12:1.14,white?0:.03);
+ const aim=new T.Vector3();
  if(kind==='tv'){
-  // Reverse angle behind the existing seated actors, for the discussion of masks.
-  from.set(white?mid.x:mid.x-2.95,1.52,white?mid.z-3.25:mid.z);
+  // Behind the characters, pointing toward the ORIGINAL television.
+  aim.set(0,1.68,3.50);target.set(0,1.05,-1.05);
  }else if(kind==='wide'){
-  from.set(white?mid.x:mid.x+3.20,2.03,white?mid.z+4.70:mid.z);
+  aim.set(1.55,2.14,-4.30);
  }else if(kind==='close'){
-  from.set(white?mid.x+.35:mid.x+2.48,1.37,white?mid.z+2.18:mid.z);
+  aim.set(-.95,1.49,-2.80);target.set(-.62,1.32,0);
  }else{
-  from.set(white?mid.x:mid.x+3.65,1.59,white?mid.z+3.35:mid.z);
+  // Facing the two characters, from behind the supplied television.
+  aim.set(0,1.80,-3.95);
  }
- introDirector.position.copy(from);
- introDirector.focus.copy(focus);introDirector.speed=kind==='tv'?.70:1.17;introDirector.fov=kind==='wide'?51:kind==='close'?37:45;
+ introDirector.position.copy(aim);introDirector.focus.copy(target);
+ introDirector.speed=kind==='tv'?.68:kind==='wide'?.88:1.16;
+ introDirector.fov=kind==='close'?37:kind==='wide'?52:46;
 }
 function introExit(){
  if(!introAuthorized)return;
- if(introDirector)introDirector.active=false;
- introFloor.visible=false;indoor.visible=true;outdoor.visible=true;
+ introCurrent='none';if(introDirector)introDirector.active=false;
+ introOriginal.whiteRoom.visible=false;introOriginal.dojoRoom.visible=false;
+ introFloor.visible=false;restoreIntroClothes();
+ indoor.visible=true;outdoor.visible=true;
+ document.body.classList.remove('intro-cinematic');
+ $('pad').hidden=false;$('cameraPad').hidden=false;
  if(where==='salon'){actorHome();setLocation(false);resetView();}
 }
 window.addEventListener('message',event=>{
  if(!introAuthorized||event.origin!==location.origin||event.source!==window.parent)return;
- const message=event.data;if(message?.scope!=='maison-intro-v27')return;
+ const message=event.data;
+ if(message?.scope!=='maison-intro-v27')return;
  try{
-   if(message.action==='pose'&&['white','sofa'].includes(message.value))introPose(message.value);
-   if(message.action==='camera'&&['face','tv','wide','close'].includes(message.value))introShot(message.value);
-   if(message.action==='garden'){introExit();equip('pin');}
-   if(message.action==='exit')introExit();
- }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:String(error?.message||error)},location.origin);}
+  if(message.action==='pose'&&['white','sofa','dojo'].includes(message.value))introPose(message.value);
+  else if(message.action==='camera'&&['face','tv','wide','close'].includes(message.value))introShot(message.value);
+  else if(message.action==='garden'){introExit();equip('pin');}
+  else if(message.action==='exit')introExit();
+ }catch(e){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:String(e?.message||e)},location.origin);}
 });
 if(introRequested){
  window.addEventListener('salon-ready',async()=>{
-   try{
-    const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store'});
-    if(!response.ok||(await response.json()).author==null)return;
-    introAuthorized=true;introPose('white');
-    window.parent.postMessage({scope:'maison-intro-v27',type:'ready'},location.origin);
-   }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:'Session auteur non vérifiable'},location.origin);}
+  try{
+   const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store'});
+   if(!response.ok||!(await response.json()).author)throw Error('Accès auteur non confirmé');
+   introAuthorized=true;
+   introOriginal=await loadOriginalCinemaAssets(scene);
+   if(!introOriginal.blueChair||!introOriginal.redChair||!introOriginal.television)throw Error('Fauteuils ou télévision originaux introuvables dans le GLB.');
+   introPose('white');
+   window.parent.postMessage({scope:'maison-intro-v27',type:'ready'},location.origin);
+  }catch(error){window.parent.postMessage({scope:'maison-intro-v27',type:'error',message:String(error?.message||error)},location.origin);}
  });
 }
 
