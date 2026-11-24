@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useRef,useState,type FormEvent} from 'react';
 import './logiciel.css';
 
 const tools=[
@@ -22,7 +22,7 @@ export default function Logiciel(){
  const current=tools.find(x=>x.id===active)!;
  useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(reports.slice(-100)))}catch{}},[reports]);
  // Keep each tool mounted when switching tabs so unsaved changes in the existing editor are not discarded.
- function save(e:React.FormEvent){e.preventDefault();const text=details.trim();if(!text)return;setReports(old=>[...old,{date:new Date().toISOString(),outil:active,type,details:text.slice(0,3000),url:current.url}].slice(-100));setDetails('');setNotice('Signalement ajouté au rapport local.');}
+ function save(e:FormEvent){e.preventDefault();const text=details.trim();if(!text)return;setReports(old=>[...old,{date:new Date().toISOString(),outil:active,type,details:text.slice(0,3000),url:current.url}].slice(-100));setDetails('');setNotice('Signalement ajouté au rapport local.');}
  function open(){window.open(current.url,'_blank','noopener,noreferrer')}
  return <main className="am-software"><div className="am-software-heading"><div><p className="am-eyebrow">La Maison des rencontres · administration privée</p><h1>Le logiciel intuitif</h1><p>Les outils 3D existants sont réunis ici, sans remplacer les personnages ni le décor du salon par des objets simplifiés.</p></div><a className="am-button am-button-secondary" href="/admin-blog.html?view=dashboard">Administration</a></div>
   <div role="tablist" aria-label="Les outils du logiciel" className="am-software-tabs">{tools.map(t=><button type="button" key={t.id} role="tab" aria-selected={active===t.id} aria-controls={'am-software-'+t.id} onClick={()=>{setActive(t.id);setNotice('')}}>{t.label}</button>)}</div>
