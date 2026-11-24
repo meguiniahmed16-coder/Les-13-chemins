@@ -2,6 +2,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dressAhmed,createMarianne} from './intro-wardrobe.js';
 import {INTRO_FILM,filmPosition,createFilmPlayback} from './intro-film.js';
+import {planSpeechBubble} from './intro-bubbles.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -208,7 +209,7 @@ const lines=[
  {
   "id": "lieu",
   "speaker": "f",
-  "text": "…un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
+  "text": "La Maison des rencontres, c’est un espace en construction… Un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
   "scene": "white",
   "shot": "two",
   "ms": 12000,
@@ -757,16 +758,16 @@ function moveMarianneArms(person,g){
 function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?pausedAt:now)-shotStart);}
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
-let speech=null,lastMotion=0;
-function stopSpeech(){speech=null;currentSpeaker=null;bubble.hidden=true;bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
+let speech=null,lastMotion=0,bubbleLayout=null;
+function stopSpeech(){speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
  const b=document.createElement('b'),p=document.createElement('p');
  b.textContent=actor?.root.name||(id==='m'?'Ahmed':id==='f'?'Marianne':'La Maison des rencontres');p.textContent=text.replaceAll('{pseudo}',alias);
  bubble.replaceChildren(b,p);bubble.hidden=false;
- // Keep the complete cue in the same reserved reading area for its duration.
- // Camera motion never moves the text or changes the 3D viewport's height.
+ // Place the complete reply only after the new camera is set, then latch it.
+ // No alternate footer, typewriter animation or per-frame position switching.
  speech={id,text:p.textContent,start:offset,duration:Math.max(1400,text.length*58)};
 }
 function updateActing(now){
@@ -803,10 +804,74 @@ function updateActing(now){
 }
 const headPoint=new T.Vector3();
 function actorHead(person,out=new T.Vector3()){
+ if(person?.previewHead)return out.copy(person.previewHead);
  if(person?.headBone){person.headBone.getWorldPosition(out);out.y+=.135;return out;}
  if(person?.head?.group){person.head.group.updateWorldMatrix(true,false);return person.head.group.localToWorld(out.set(0,.145,.035));}
  if(person){out.set(0,person.sit?1.12:1.53,0);return person.root.localToWorld(out);}
  return out.set(0,1.2,0);
+}
+function faceRect(person,view,w,h){
+ const head=actorHead(person),depth=head.clone().applyMatrix4(view.matrixWorldInverse).z;
+ if(depth>=-.04)return null;
+ const scale=person.id==='m'?1.075:1.04;
+ const right=new T.Vector3().setFromMatrixColumn(view.matrixWorld,0),up=new T.Vector3().setFromMatrixColumn(view.matrixWorld,1),points=[];
+ for(const x of [-.14,.14])for(const y of [-.23,.17]){
+  const p=head.clone().addScaledVector(right,x*scale).addScaledVector(up,y*scale).project(view);
+  if(Number.isFinite(p.x)&&Number.isFinite(p.y))points.push({x:(p.x+1)*w/2,y:(1-p.y)*h/2});
+ }
+ if(!points.length)return null;
+ const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+ return {l:Math.min(...xs)-14,r:Math.max(...xs)+14,t:Math.min(...ys)-14,b:Math.max(...ys)+14};
+}
+function previewPeople(elapsed){
+ return people.map(person=>{
+  const root={position:person.root.position.clone()},head=actorHead(person);
+  const item=invitationMotion?.items.find(item=>item.person===person);
+  if(item){
+   const t=elapsed-(person.id==='m'?0:1250),walk=T.MathUtils.smoothstep(t,2050,4600),sit=T.MathUtils.smoothstep(t,5350,7650);
+   root.position.lerpVectors(item.from,item.standing.pos,walk);
+   head.add(root.position.clone().sub(person.root.position));
+   head.y-=(sit-person.sit)*.55;
+  }
+  return {id:person.id,root,previewHead:head,sit:person.sit};
+ });
+}
+function dialogueFaceSamples(line,elapsed,w,h){
+ const view=new T.PerspectiveCamera(46,w/h,.07,120),faces=[];
+ const end=!secondCue&&line.secondary?line.secondary.at:line.ms;
+ // Cover the whole camera path, not just the instant at which words appear.
+ // Padding also accounts for breathing and the gentle head/eye animation.
+ for(let i=0;i<=32;i++){
+  const at=T.MathUtils.lerp(elapsed,Math.max(elapsed,end),i/32),actors=previewPeople(at);
+  const shot=cameraFrame(line,at,w/h,actors,angle);
+  view.fov=shot.fov;view.updateProjectionMatrix();view.position.copy(shot.eye);view.lookAt(shot.aim);if(shot.roll)view.rotateZ(shot.roll);view.updateMatrixWorld(true);
+  for(const person of actors){const rect=faceRect(person,view,w,h);if(rect&&rect.r>0&&rect.l<w&&rect.b>0&&rect.t<h)faces.push(rect);}
+ }
+ return faces;
+}
+function applyDialogueProjection(projection){
+ if(!projection||projection.scale===1&&projection.shift===0)return;
+ const k=projection.scale,offset=1-k-2*projection.shift/canvasHost.clientHeight;
+ camera.projectionMatrix.premultiply(new T.Matrix4().set(k,0,0,0,0,k,0,offset,0,0,1,0,0,0,0,1));
+ camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+}
+function anchorBubble(line,elapsed){
+ const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
+ const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
+ if(!bubbleLayout||bubbleLayout.w!==w||bubbleLayout.h!==h){
+  bubble.style.width=Math.min(w-28,w<560?330:h<350?320:390)+'px';
+  const face=faceRect(speaker,camera,w,h);if(!face)return;
+  const faces=dialogueFaceSamples(line,elapsed,w,h);
+  bubbleLayout={...planSpeechBubble({width:w,height:h,bubbleWidth:bubble.offsetWidth,bubbleHeight:bubble.offsetHeight,face,faces,reserve:line.shot==='dojo'}),w,h};
+  bubble.classList.remove('above','below','left','right');bubble.classList.add(bubbleLayout.side);
+  bubble.style.left=bubbleLayout.l+'px';bubble.style.top=bubbleLayout.t+'px';bubble.style.visibility='visible';
+ }
+ applyDialogueProjection(bubbleLayout.projection);
+ const face=faceRect(speaker,camera,w,h);if(!face)return;
+ // Moving the little pointer leaves the body and the full text untouched.
+ const x=T.MathUtils.clamp((face.l+face.r)/2-bubbleLayout.l,20,bubble.offsetWidth-20);
+ const y=T.MathUtils.clamp((face.t+face.b)/2-bubbleLayout.t,18,bubble.offsetHeight-18);
+ bubble.style.setProperty('--tail-x',Math.round(x)+'px');bubble.style.setProperty('--tail-y',Math.round(y)+'px');
 }
 function scheduleNext(ms){clearTimeout(autoTimer);if(autoplay)autoTimer=setTimeout(()=>{if(autoplay&&!pending)next();},Math.max(100,ms));}
 
@@ -907,10 +972,10 @@ function guideApproachFrame(visitor,guide,t,htan){
  const aim=previous.aim.clone().lerp(g.clone().add(new T.Vector3(0,-.06,0)),T.MathUtils.smoothstep(t,0,.85));
  return {aim,eye};
 }
-function dojoCameraFrame(azimuth,distance){
+function dojoCameraFrame(azimuth,distance,actors=people){
  const floor=dojo.userData.introFloorBounds,limit=dojo.userData.introCameraBounds;
- const aim=people.reduce((v,p)=>v.add(p.root.position),new T.Vector3()).multiplyScalar(1/people.length);
- const top=Math.max(...people.map(p=>actorHead(p).y+.20));aim.y=floor.max.y+(top-floor.max.y)*.53;
+ const aim=actors.reduce((v,p)=>v.add(p.root.position),new T.Vector3()).multiplyScalar(1/actors.length);
+ const top=Math.max(...actors.map(p=>actorHead(p).y+.20));aim.y=floor.max.y+(top-floor.max.y)*.53;
  const dir=new T.Vector3(Math.sin(azimuth),0,Math.cos(azimuth));
  let available=Infinity;
  for(const key of ['x','z'])if(Math.abs(dir[key])>.00001){
@@ -919,12 +984,12 @@ function dojoCameraFrame(azimuth,distance){
  const eye=aim.clone().addScaledVector(dir,Math.min(distance,available));eye.y=floor.max.y+1.55;
  limit.clampPoint(eye,eye);return {aim,eye};
 }
-function dojoCameraFov(eye,aim,aspect){
+function dojoCameraFov(eye,aim,aspect,actors=people){
  const forward=aim.clone().sub(eye).normalize(),right=new T.Vector3().crossVectors(forward,new T.Vector3(0,1,0)).normalize(),up=new T.Vector3().crossVectors(right,forward);
  let tangent=Math.tan(T.MathUtils.degToRad(23));
  // Fit the two real actor positions inside the remaining canvas on phones.
  // Widen the lens within the room instead of moving it through the walls.
- for(const person of people){
+ for(const person of actors){
   const top=actorHead(person).y+.20,base=dojo.userData.introFloorBounds.max.y;
   for(const x of [-.4,.4])for(const z of [-.28,.28])for(const y of [base,top]){
    const v=new T.Vector3(person.root.position.x+x,y,person.root.position.z+z).sub(eye),depth=Math.max(.1,v.dot(forward));
@@ -933,22 +998,19 @@ function dojoCameraFov(eye,aim,aspect){
  }
  return T.MathUtils.clamp(T.MathUtils.radToDeg(2*Math.atan(tangent)),46,112);
 }
-function cameraShot(line,elapsed,dt){
+function cameraFrame(line,elapsed,aspect,actors=people,azimuth=angle){
+ const shotAim=new T.Vector3(),shotEye=new T.Vector3();
  const t=T.MathUtils.clamp(elapsed/line.ms,0,1),push=t*t*(3-2*t);
- const aspect=Math.max(.25,camera.aspect),vfov=46,htan=Math.tan(T.MathUtils.degToRad(vfov*.5))*aspect;
- camera.fov=vfov;camera.updateProjectionMatrix();camera.up.set(0,1,0);
+ aspect=Math.max(.25,aspect);const vfov=46,htan=Math.tan(T.MathUtils.degToRad(vfov*.5))*aspect;
  let roll=0;
  if(line.shot==='discovery'){
-  const v=discoveryFrame(people[1],people[0],t,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);roll=v.roll;
+  const v=discoveryFrame(actors[1],actors[0],t,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);roll=v.roll;
  }else if(line.shot==='approach'){
-  const v=guideApproachFrame(people[1],people[0],push,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);
+  const v=guideApproachFrame(actors[1],actors[0],push,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);
  }else if(line.shot==='dojo'){
-  targetAngle=T.MathUtils.clamp(targetAngle,Math.PI-.68,Math.PI+.68);
-  angle+=(targetAngle-angle)*(1-Math.exp(-dt*2));
-  angle=T.MathUtils.clamp(angle,Math.PI-.68,Math.PI+.68);
-  const frame=dojoCameraFrame(angle,radius);shotAim.copy(frame.aim);shotEye.copy(frame.eye);
+  const frame=dojoCameraFrame(azimuth,radius,actors);shotAim.copy(frame.aim);shotEye.copy(frame.eye);
  }else if(line.shot==='arrival'){
-  const a=people[0].root.position,b=people[1].root.position,center=a.clone().add(b).multiplyScalar(.5);
+  const a=actors[0].root.position,b=actors[1].root.position,center=a.clone().add(b).multiplyScalar(.5);
   const halfWidth=Math.max(1.85,Math.abs(a.x-b.x)*.5+.70);
   const d=Math.max(3.45,halfWidth/htan,1.16/Math.tan(T.MathUtils.degToRad(vfov*.5)))*(1-.035*push);
   shotAim.set(center.x,.90,center.z-.10);
@@ -956,7 +1018,7 @@ function cameraShot(line,elapsed,dt){
   const theta=Math.PI-.95+.95*reveal;
   shotEye.set(shotAim.x+Math.sin(theta)*d,1.53+.12*(1-reveal),shotAim.z+Math.cos(theta)*d);
  }else if(line.shot==='rear'){
-  const a=actorHead(people[0]),b=actorHead(people[1]),mid=a.clone().add(b).multiplyScalar(.5);
+  const a=actorHead(actors[0]),b=actorHead(actors[1]),mid=a.clone().add(b).multiplyScalar(.5);
   const tv=television?bounds(television).getCenter(new T.Vector3()):new T.Vector3(0,.65,-2.2);
   shotAim.copy(mid).lerp(tv,.32+.22*push);shotAim.y=.91;
   const d=Math.max(3.8,1.95/htan),theta=Math.PI*(1-push);
@@ -968,11 +1030,11 @@ function cameraShot(line,elapsed,dt){
   const d=line.shot==='montage'?Math.max(.12,Math.max(.95,(size.x*.58)/htan)*(.87-.80*T.MathUtils.smoothstep(elapsed,0,950))):Math.max(.95,(size.x*.58)/htan)*(1-.13*push);
   shotAim.copy(target);shotEye.copy(target).addScaledVector(towards,d);shotEye.y+=.03;shotEye.x+=.045*(1-push);
  }else if(line.shot==='close'||line.shot==='medium'||line.shot==='reverse'){
-  const person=speakerActor(line.speaker)||people[0],other=people.find(p=>p!==person);
+  const person=actors.find(p=>p.id===line.speaker)||actors[0],other=actors.find(p=>p!==person);
   const v=exchangeFrame(person,other,line.shot!=='medium',push,htan,line.move);
   shotAim.copy(v.aim);shotEye.copy(v.eye);
  }else{
-  const a=actorHead(people[0]),b=actorHead(people[1]),center=a.clone().add(b).multiplyScalar(.5);
+  const a=actorHead(actors[0]),b=actorHead(actors[1]),center=a.clone().add(b).multiplyScalar(.5);
   const wide=line.shot==='wide',exchange=line.shot==='exchange';
   const width=Math.max(exchange?1.02:1.40,Math.abs(a.x-b.x)*.5+(exchange?.31:.42));
   const dist=Math.max(wide?3.55:exchange?2.25:3.15,width/htan)*(1-.06*push);
@@ -980,13 +1042,23 @@ function cameraShot(line,elapsed,dt){
   shotAim.copy(center);shotAim.y=wide?.92:center.y-(exchange?.24:.22);
   shotEye.set(shotAim.x+Math.sin(theta)*dist,shotAim.y+.33,shotAim.z+Math.cos(theta)*dist);
  }
+ return {eye:shotEye,aim:shotAim,roll,fov:line.shot==='dojo'?dojoCameraFov(shotEye,shotAim,aspect,actors):vfov};
+}
+function cameraShot(line,elapsed,dt){
+ const aspect=Math.max(.25,camera.aspect);
+ if(line.shot==='dojo'){
+  targetAngle=T.MathUtils.clamp(targetAngle,Math.PI-.68,Math.PI+.68);
+  angle=T.MathUtils.clamp(angle+(targetAngle-angle)*(1-Math.exp(-dt*2)),Math.PI-.68,Math.PI+.68);
+ }
+ const shot=cameraFrame(line,elapsed,aspect),shotEye=shot.eye,shotAim=shot.aim;
+ camera.fov=shot.fov;camera.updateProjectionMatrix();camera.up.set(0,1,0);
  if(cutCamera){smoothEye.copy(shotEye);smoothAim.copy(shotAim);cutCamera=false;}
  else{const alpha=1-Math.exp(-Math.max(.001,dt)*5);smoothEye.lerp(shotEye,alpha);smoothAim.lerp(shotAim,alpha);}
  if(line.shot==='dojo'){
   dojo.userData.introCameraBounds.clampPoint(smoothEye,smoothEye);
   camera.fov=dojoCameraFov(smoothEye,smoothAim,aspect);camera.updateProjectionMatrix();
  }
- camera.position.copy(smoothEye);camera.lookAt(smoothAim);if(roll)camera.rotateZ(roll);camera.updateMatrixWorld(true);
+ camera.position.copy(smoothEye);camera.lookAt(smoothAim);if(shot.roll)camera.rotateZ(shot.roll);camera.updateMatrixWorld(true);
 }
 
 
@@ -1013,7 +1085,7 @@ async function showScene(index){
  else if(layout!==lastLayout){lastLayout=layout;layoutPeople(line.seated,isDojo,false);}
  if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);if(previous?.scene!=='dojo'){angle=targetAngle=Math.PI;radius=3.7;}}
  else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
- if(line.speaker)setCue(line.speaker,line.text);else if(line.shot==='montage'&&line.text)setCue('film',line.text);else{stopSpeech();bubble.hidden=true;}
+ if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
  updateFilm(line,0);
  if(!previous||previous.scene!==line.scene||line.move==='fade'){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
@@ -1025,7 +1097,7 @@ async function showScene(index){
 
 function startGarden(){
  ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();stage='garden';$('garden').hidden=false;setPending(false);
- $('dialogue-rail').hidden=true;$('joystick').hidden=true;$('skip').hidden=true;
+ $('joystick').hidden=true;$('skip').hidden=true;
  $('welcome').hidden=true;$('loading').hidden=true;$('scene-wait').hidden=true;
  status.textContent='Le jardin et la maison';
  if(gardenLoaded)return;gardenLoaded=true;
@@ -1061,7 +1133,7 @@ function automatic(on,hold=false){
   const line=lines[step];if(line)scheduleNext(Math.max(250,line.ms-shotElapsed(now)));
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
 }
-$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;$('dialogue-rail').hidden=false;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
+$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden();};
 
 let resumeAfterReport=false;
@@ -1111,7 +1183,7 @@ function frame(){
  const line=lines[step],elapsed=shotElapsed(now);
  if(stage==='white')furnitureAt(line,elapsed);
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
- updateFilm(line,elapsed);cameraShot(line,elapsed,dt);
+ updateFilm(line,elapsed);cameraShot(line,elapsed,dt);anchorBubble(line,elapsed);
  renderer.render(scene,camera);
 }
 

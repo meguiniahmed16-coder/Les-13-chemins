@@ -26,6 +26,6 @@ python scripts/compose-intro-reel.py --salon /tmp/les13-salon-film/salon-v27-8s.
 
 The composition script verifies the two source durations, joins them in that order, writes a streaming-friendly H.264 file and derives its poster from the encoded first frame.
 
-The introduction preloads this single video. It plays from 0 to 7 seconds on the original TV display, then continues from 7 seconds into the full-frame montage. Its captions remain in the fixed reading area under the scene. Reporting an error pauses it; closing the report resumes it. Skipping the introduction stops it and enters the garden.
+The introduction preloads this single video. It plays from 0 to 7 seconds on the original TV display, then continues from 7 seconds into the full-frame montage. The film stays unobstructed; its introductory sentence is included in Marianne's next spoken reply. Dialogue appears in a speech bubble beside its speaker, inside the scene. Each bubble keeps its position for the full reply, with space reserved around both faces throughout the camera movement. Only its pointer follows the speaker. Reporting an error pauses the film; closing the report resumes it. Skipping the introduction stops it and enters the garden.
 
 The source hashes and media metadata used for this published reel are recorded beside these instructions. The build copies the verified encoded assets; it does not re-render them on every deployment.

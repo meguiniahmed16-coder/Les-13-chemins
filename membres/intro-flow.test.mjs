@@ -68,7 +68,7 @@ function harness({dojoLoaded=true}={}){
   bubble:dom.$('bubble'),status:dom.$('status'),scene:{background:{set(){}}},problems:[],bootStage:'Test',
   joystick:{x:0,y:0},keys:new Set(),camera:{position:new T.Vector3(),lookAt(){}},clock:{getDelta:()=>.016},
   renderer:{render(){renders++}},requestAnimationFrame(){},
-  mountRoom(){},layoutPeople(){},furnitureAt(){},prepareFilm(){},stopFilm(){filmStops++},advanceMovement(){},updateInvitation(){},cameraShot(){},
+  mountRoom(){},layoutPeople(){},furnitureAt(){},prepareFilm(){},anchorBubble(){},stopFilm(){filmStops++},advanceMovement(){},updateInvitation(){},cameraShot(){},
   beginInvitation(){state.invitationMotion={complete:true}},
   updateFilm(line,elapsed){if(elapsed===0)visits.push(line.id)},
   remember(type,message){state.problems.push({type,message})},showBootStage(){},preloadNext(){},
@@ -82,33 +82,33 @@ function harness({dojoLoaded=true}={}){
  };
 }
 
-test('the complete dialogue is outside the stage, with exactly the two requested footer buttons',()=>{
+test('dialogue uses one in-scene speech bubble and exactly the two requested footer buttons',()=>{
  const footer=html.match(/<footer>([\s\S]*?)<\/footer>/)?.[1];assert.ok(footer);
- assert.ok(html.indexOf('<footer>')>html.indexOf('</main>'));
+ const stage=html.match(/<main id="stage">([\s\S]*?)<\/main>/)?.[1];assert.ok(stage);
  assert.equal([...html.matchAll(/id="bubble"/g)].length,1);
- assert.match(footer,/<div id="dialogue-rail" hidden><div id="bubble" hidden aria-live="polite" aria-atomic="true"><\/div><\/div>/);
+ assert.match(stage,/<div id="bubble" hidden aria-live="polite" aria-atomic="true"><\/div>/);
+ assert.doesNotMatch(footer,/bubble|dialogue-rail/);
  const controls=[...footer.matchAll(/<button\b[^>]*id="([^"]+)"[^>]*>([^<]+)<\/button>/g)].map(m=>[m[1],m[2]]);
  assert.deepEqual(controls,[['report-open','Signaler une erreur'],['skip','Passer l’introduction']]);
- assert.match(html,/#dialogue-rail\{[^}]*min-height:96px/);
- assert.match(html,/@media\(max-width:650px\)\{#dialogue-rail\{min-height:112px/);
- assert.match(html,/@media\(max-height:450px\)\{#dialogue-rail\{min-height:80px/);
+ assert.match(html,/#bubble\{position:absolute/);
+ assert.match(html,/#bubble:after\{content:''/);
 });
 
-test('camera and lip animation leave the displayed cue and reserved rail untouched',async()=>{
+test('camera and lip animation keep the entire reply intact until the next speaker',async()=>{
  const h=harness();await h.enter();
  h.state.step=lines.findIndex(line=>line.speaker&&!line.secondary&&!line.invitation);
  h.state.shotStart=h.time.now();h.state.setCue('m','Bienvenue, {pseudo}. Voici le texte complet.');
- const bubble=h.dom.$('bubble'),rail=h.dom.$('dialogue-rail');
- assert.equal(rail.hidden,false);assert.equal(bubble.hidden,false);
+ const bubble=h.dom.$('bubble');
+ assert.equal(bubble.hidden,false);
  assert.deepEqual(bubble.children.map(n=>n.textContent),['Ahmed','Bienvenue, Camille. Voici le texte complet.']);
- const children=[...bubble.children];bubble.writes.length=0;rail.writes.length=0;
+ const children=[...bubble.children];bubble.writes.length=0;
  h.frames(180);
- assert.equal(h.renders,180);assert.deepEqual(bubble.writes,[]);assert.deepEqual(rail.writes,[]);
+ assert.equal(h.renders,180);assert.deepEqual(bubble.writes,[]);
  assert.deepEqual(bubble.children,children);
- h.state.stopSpeech();assert.equal(rail.hidden,false);assert.deepEqual(rail.writes,[]);
- h.state.setCue('f','La réponse reste au même endroit.');assert.equal(rail.hidden,false);
+ h.state.stopSpeech();assert.equal(bubble.hidden,true);
+ h.state.setCue('f','La réponse reste au même endroit.');
  assert.equal(bubble.children[0].textContent,'Marianne');
- assert.equal(bubble.writes.some(w=>w[0]==='style'||w[0]==='animation'),false);
+ assert.equal(bubble.writes.some(w=>w[0]==='animation'),false);
 });
 
 test('one start automatically visits every white-room and dojo line, then opens the garden',async()=>{
@@ -117,7 +117,7 @@ test('one start automatically visits every white-room and dojo line, then opens 
  assert.deepEqual(h.visits,lines.map(line=>line.id));
  assert.ok(h.visits.includes('dojo-arrivee'));assert.ok(h.visits.includes('dojo-construction'));
  assert.equal(h.state.stage,'garden');assert.equal(h.state.autoplay,false);assert.equal(h.time.count(),0);
- assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('dialogue-rail').hidden,true);
+ assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.dom.$('skip').hidden,true);
  assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&v=gestes50');
 });
@@ -158,7 +158,7 @@ test('skipping a pending dojo load cannot restore the old scene or another conti
  const visits=h.visits.length;load.resolve();await pending;
  assert.equal(h.state.stage,'garden');assert.equal(h.visits.length,visits);assert.equal(h.state.pending,false);
  assert.equal(h.time.count(),0);assert.equal(h.dom.$('scene-wait').hidden,true);
- assert.equal(h.dom.$('welcome').hidden,true);assert.equal(h.dom.$('dialogue-rail').hidden,true);
+ assert.equal(h.dom.$('welcome').hidden,true);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.filmStops,1,'Skipping a pending scene stops the shared film before leaving the introduction');
 });
 
