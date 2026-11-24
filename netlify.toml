@@ -39,6 +39,17 @@ X-Content-Type-Options = "nosniff"
 X-Robots-Tag = "noindex, nofollow"
 Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
 
+# Ancien gestionnaire de documents, maintenant intégré au tableau de bord sur la même origine.
+[[headers]]
+for = "/admin-edition.html"
+[headers.values]
+Cache-Control = "private, no-store"
+Referrer-Policy = "no-referrer"
+X-Frame-Options = "SAMEORIGIN"
+X-Content-Type-Options = "nosniff"
+X-Robots-Tag = "noindex, nofollow"
+Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+
 # The administrator UI is served locally; its API verifies the secure session.
 [[headers]]
 for = "/admin-blog*"
