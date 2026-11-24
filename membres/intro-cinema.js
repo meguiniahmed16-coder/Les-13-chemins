@@ -47,64 +47,31 @@ const lines=[
  ['Narrateur','Ce monde est encore en construction. Et toi aussi, tu participeras à sa construction.','dojo',Math.PI],
  ['Narrateur','Les papillons et la maison t’attendent dans le jardin.','dojo',Math.PI]
 ];
-const png=T?Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg=='),c=>c.charCodeAt(0)):new Uint8Array();
-async function pieces(name,n){
- const result=Array(n);let next=0;
- async function worker(){
-  while(next<n){const index=next++,which=String(index).padStart(3,'0');
-   const response=await fetch('/api/intro-private/'+name+'/'+which,{cache:'no-store',credentials:'same-origin',signal:AbortSignal.timeout(35000)});
-   if(!response.ok)throw Error('Décor original '+name+' indisponible, fragment '+which+' : '+response.status);
-   result[index]=new Uint8Array(await response.arrayBuffer());
-   status.textContent='Décor original '+(name==='white'?'salle blanche':'dojo')+' · '+result.filter(Boolean).length+'/'+n;
-  }
+
+const progress={white:0,people:0},weights={white:.32,people:.68};
+let pending=false,dojoTask=null,seatTask=null,initialTask=null;
+function setProgress(key,value){if(!(key in progress))return;progress[key]=Math.max(progress[key],Math.min(1,value));const total=Math.floor(100*Object.keys(progress).reduce((a,k)=>a+progress[k]*weights[k],0));$('load-progress').value=total;$('load-percent').textContent=total+' %';}
+async function binary(url,key){
+ let last;
+ for(let attempt=0;attempt<2;attempt++){
+  try{
+   const response=await fetch(url,{credentials:'same-origin',signal:AbortSignal.timeout(90000)});
+   if(!response.ok)throw Error(url+' : HTTP '+response.status);
+   const total=Number(response.headers.get('content-length'));
+   if(!response.body||!total){const bytes=await response.arrayBuffer();setProgress(key,.9);return bytes;}
+   const reader=response.body.getReader(),chunks=[];let received=0;
+   for(;;){const {done,value}=await reader.read();if(done)break;chunks.push(value);received+=value.byteLength;setProgress(key,.9*received/total);}
+   if(!received)throw Error('Fichier vide : '+url);
+   const result=new Uint8Array(received);let at=0;for(const c of chunks){result.set(c,at);at+=c.byteLength;}return result.buffer;
+  }catch(e){last=e;if(attempt===0)await new Promise(r=>setTimeout(r,600));}
  }
- await Promise.all(Array.from({length:Math.min(3,n)},()=>worker()));
- const total=result.reduce((sum,part)=>sum+part.length,0),joined=new Uint8Array(total);
- let position=0;for(const part of result){joined.set(part,position);position+=part.length}
- return joined;
+ throw last;
 }
-// The private R2 copy of the user's white-room GLB contains its geometry and 103 textures
-// but the final six image payloads were not uploaded. Replace only those incomplete
-// image payloads with one valid transparent pixel; preserve all original mesh vertices,
-// original chair/TV transforms, original scene animation structures and available textures.
-function restoreOriginal(bytes){
- const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
- if(String.fromCharCode(...bytes.subarray(0,4))!=='glTF')throw Error('Modèle de salle blanche invalide');
- const declared=view.getUint32(8,true);
- if(declared===bytes.byteLength)return bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
- const jsonLen=view.getUint32(12,true),json=JSON.parse(new TextDecoder().decode(bytes.subarray(20,20+jsonLen)));
- const binaryStart=20+jsonLen+8,binary=bytes.subarray(binaryStart),missing=[];
- for(let i=0;i<(json.images||[]).length;i++){
-  const img=json.images[i];if(img.bufferView==null)continue;
-  const ref=json.bufferViews[img.bufferView];
-  if((ref.byteOffset||0)+ref.byteLength>binary.length)missing.push(i);
- }
- if(!missing.length)throw Error('La salle blanche est incomplète sans image remplaçable');
- const viewId=json.bufferViews.length;
- json.bufferViews.push({buffer:0,byteOffset:binary.length,byteLength:png.length});
- for(const i of missing){json.images[i].bufferView=viewId;json.images[i].mimeType='image/png'}
- for(let i=0;i<viewId;i++){
-  const ref=json.bufferViews[i];
-  if((ref.byteOffset||0)+ref.byteLength>binary.length){ref.byteOffset=0;ref.byteLength=0}
- }
- const text=new TextEncoder().encode(JSON.stringify(json));
- const jsonLength=Math.ceil(text.byteLength/4)*4,binLength=Math.ceil((binary.length+png.length)/4)*4;
- json.buffers[0].byteLength=binary.length+png.length;
- const jsonBytes=new TextEncoder().encode(JSON.stringify(json));
- const jsonPad=Math.ceil(jsonBytes.length/4)*4;
- const output=new Uint8Array(12+8+jsonPad+8+binLength),dv=new DataView(output.buffer);
- output.set([103,108,84,70],0);dv.setUint32(4,2,true);dv.setUint32(8,output.length,true);
- dv.setUint32(12,jsonPad,true);output.set([74,83,79,78],16);
- output.fill(32,20,20+jsonPad);output.set(jsonBytes,20);
- const at=20+jsonPad;dv.setUint32(at,binLength,true);output.set([66,73,78,0],at+4);
- output.set(binary,at+8);output.set(png,at+8+binary.length);
- return output.buffer;
-}
+function setPending(on){pending=on;for(const id of ['next','prev','skip','auto','personalize'])$(id).disabled=on||!ready||(id==='prev'&&step<=0);$('scene-wait').hidden=!on;}
 const whiteFloor=new T.Mesh(new T.PlaneGeometry(80,80),new T.MeshStandardMaterial({color:0xfafafa,roughness:.96}));
 whiteFloor.rotation.x=-Math.PI/2;whiteFloor.position.y=-.018;whiteFloor.receiveShadow=true;
-async function loadRooms(){
- status.textContent='Chargement de la salle blanche originale…';
- const original=restoreOriginal(await pieces('white',18));
+async function loadWhite(){
+ const original=await binary('/assets/intro-original/white-room-start.glb','white');
  room=(await loader.parseAsync(original,'')).scene;room.name='Salle blanche originale';
  // The supplied model includes 200 alternative video-screen frames. The actual TV
  // geometry is a separate node called TV_284, and must remain visible.
@@ -116,31 +83,23 @@ async function loadRooms(){
   if(o.isMesh){o.castShadow=true;o.receiveShadow=true}
  });
  television=chairs.find(o=>/^TV[\s_]284(?:[\s_]|$)/i.test(o.name));
- scene.add(room,whiteFloor);
- status.textContent='Chargement du dojo original…';
- const full=await pieces('dojo',13);
- dojo=(await loader.parseAsync(full.buffer,'')).scene;
+ scene.add(room,whiteFloor);chairs.forEach(c=>c.visible=true);setProgress('white',1);canvasHost.classList.add('room-ready');
+}
+function prepareDojo(){
+ if(dojo)return Promise.resolve(dojo);
+ if(!dojoTask)dojoTask=(async()=>{
+ const full=await binary('/assets/intro-original/dojo-original.glb','dojo');
+ dojo=(await loader.parseAsync(full,'')).scene;
  dojo.position.y=2.04;dojo.visible=false;scene.add(dojo);
- dojo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+ dojo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return dojo;
+ })().catch(e=>{dojoTask=null;throw e});
+ return dojoTask;
 }
 function bytesTo(type,input){return new type(input.buffer.slice(input.byteOffset,input.byteOffset+input.byteLength))}
+
 async function loadPeople(){
- status.textContent='Chargement des véritables personnages V27…';
- const [roomBin,seatBin]=await Promise.all([
-  fetch('/assets/depart-duo/scene.bin').then(r=>{if(!r.ok)throw Error('Modèles V27 indisponibles');return r.arrayBuffer()}),
-  fetch('/membres/v27/assises.bin').then(r=>{if(!r.ok)throw Error('Poses assises indisponibles');return r.arrayBuffer()})
- ]);
+ const roomBin=await binary('/assets/depart-duo/scene.bin','people');
  const files=unzipSync(new Uint8Array(roomBin)),info=JSON.parse(strFromU8(files['index.json']));
- const assises=unzipSync(new Uint8Array(seatBin)),poseIndex=JSON.parse(strFromU8(assises['index.json']));
- const poses=new Map();
- function poseArray(index){
-  if(!poses.has(index)){
-   const raw=assises[index],base=poseIndex.bases[index];
-   if(base!==null){const prior=poseArray(base);for(let i=0;i<raw.length;i++)raw[i]+=prior[i]}
-   poses.set(index,new Int8Array(raw.buffer,raw.byteOffset,raw.byteLength));
-  }
-  return poses.get(index);
- }
  const texCache=new Map();
  function texture(name){
   if(texCache.has(name))return texCache.get(name);
@@ -171,9 +130,8 @@ async function loadPeople(){
     side:T.DoubleSide
    });
    const mesh=new T.Mesh(g,defaultMaterial);mesh.castShadow=true;body.add(mesh);
-   const reference=pos.slice(),index=poseIndex.keys[id+'/'+h.name+'/sofa2/100'];
-   const delta=index?poseArray(index):null,unit=index?poseIndex.units[id+'/'+h.name+'/sofa2/100']/10000:0;
-   parts.push({mesh,reference,delta,unit});
+   const reference=pos.slice();
+   parts.push({mesh,reference,key:id+'/'+h.name+'/sofa2/100',delta:null,unit:0});
   }
   root.position.set(x,0,.42);root.rotation.y=Math.PI;
   const instance={id,root,parts,sit:0,
@@ -186,8 +144,29 @@ async function loadPeople(){
   return instance;
  }
  const a=actor('m',-.9,'Narrateur Ahmed'),b=actor('f',.9,'Joueur Marianne');
- people=[a,b];
+ people=[a,b];setProgress('people',1);
 }
+
+let seatsReady=false;
+function prepareSeats(){
+ if(seatsReady)return Promise.resolve();
+ if(!seatTask)seatTask=(async()=>{
+  const assises=unzipSync(new Uint8Array(await binary('/membres/v27/assises.bin','seats'))),poseIndex=JSON.parse(strFromU8(assises['index.json'])),poses=new Map(),active=new Set();
+  function poseArray(index){
+   if(poses.has(index))return poses.get(index);
+   if(active.has(index)||!assises[index])throw Error('Pose assise invalide');
+   active.add(index);const raw=assises[index].slice(),base=poseIndex.bases[index];
+   if(base!==null&&base!==undefined){const prior=poseArray(base);if(prior.length!==raw.length)throw Error('Pose assise incompatible');for(let i=0;i<raw.length;i++)raw[i]+=prior[i];}
+   const pose=new Int8Array(raw.buffer,raw.byteOffset,raw.byteLength);poses.set(index,pose);active.delete(index);return pose;
+  }
+  const changes=[];
+  for(const person of people)for(const part of person.parts){const index=poseIndex.keys[part.key];if(index!==undefined&&index!==null){const delta=poseArray(index),unit=poseIndex.units[part.key]/10000;if(delta.length!==part.reference.length||!Number.isFinite(unit))throw Error('Pose assise incompatible : '+part.key);changes.push([part,delta,unit]);}}
+  for(const [part,delta,unit] of changes){part.delta=delta;part.unit=unit;}
+  seatsReady=true;
+ })().catch(e=>{seatTask=null;throw e});
+ return seatTask;
+}
+async function preloadNext(){try{await prepareSeats();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojo();}catch(e){remember('Préchargement dojo',e.message);}}
 function seatPeople(value){
  for(const [i,person] of people.entries()){
   person.pose(value);
@@ -202,12 +181,19 @@ function showMessage(line){
  bubble.getAnimations().forEach(a=>a.cancel());
  bubble.animate([{opacity:0,transform:'translate(-50%,10px)'},{opacity:1,transform:'translate(-50%,0)'}],{duration:500});
 }
-function showScene(index){
- if(!ready)return;
- step=Math.max(0,Math.min(index,lines.length-1));
+async function showScene(index){
+ if(!ready||pending)return;
+ const requested=Math.max(0,Math.min(index,lines.length-1));
+ if((requested>=4&&requested<14&&!seatsReady)||(requested>=14&&!dojo)){
+  setPending(true);$('scene-wait').textContent='La suite se prépare…';
+  try{if(requested>=14)await prepareDojo();else await prepareSeats();}
+  catch(e){remember('Chargement de la suite',e.message||e);automatic(false);$('scene-wait').textContent='La suite n’a pas pu se charger. Réessaie avec Continuer.';setPending(false);$('scene-wait').hidden=false;return;}
+  setPending(false);
+ }
+ $('scene-wait').hidden=true;step=requested;
  const line=lines[step],level=line[2],isDojo=level==='dojo';
  stage=isDojo?'dojo':'white';
- room.visible=!isDojo;whiteFloor.visible=!isDojo;dojo.visible=isDojo;
+ room.visible=!isDojo;whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
  if(isDojo){
   room.visible=false;chairs.forEach(c=>c.visible=false);
@@ -225,14 +211,14 @@ function showScene(index){
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+(step>=4?'les masques':'la rencontre');
  $('prev').disabled=step<=0;$('next').textContent=step===lines.length-1?'Entrer dans le jardin':'Continuer';
  $('joystick').hidden=!isDojo;$('personalize').hidden=!isDojo;
- if(autoplay&&step<14){
+ if(autoplay&&step<lines.length-1){
   clearTimeout(autoTimer);autoTimer=setTimeout(()=>showScene(step+1),step===5?6600:4800);
  }else if(autoplay){autoplay=false;$('auto').textContent='Lecture cinéma'}
 }
 function startGarden(){
  autoplay=false;clearTimeout(autoTimer);stage='garden';$('garden').hidden=false;
  bubble.hidden=true;$('joystick').hidden=true;$('personalize').hidden=true;
- status.textContent='Le jardin et la maison 3D du salon V27';
+ status.textContent='Le jardin et la maison';
  if(gardenLoaded)return;gardenLoaded=true;
  const frame=$('garden-frame');
  function openGarden(){
@@ -252,21 +238,21 @@ function startGarden(){
  });
  frame.src='/membres/v27/salon.html?resident=marianne&v=gestes50';
 }
-function next(){if(stage==='garden')return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
+function next(){if(!started||pending||stage==='garden')return;if(step>=lines.length-1)startGarden();else showScene(step+1)}
 function automatic(on){autoplay=on;clearTimeout(autoTimer);$('auto').textContent=on?'Pause cinéma':'Lecture cinéma';
  if(on)autoTimer=setTimeout(next,4800)}
-$('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;showScene(0);automatic(true)};
+$('enter').onclick=()=>{if(!authorized||!ready)return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;setPending(false);automatic(true);showScene(0)};
 $('next').onclick=()=>{automatic(false);next()};
 $('prev').onclick=()=>{automatic(false);showScene(Math.max(0,step-1));$('garden').hidden=true};
-$('skip').onclick=()=>{if(!authorized||!ready)return;automatic(false);$('welcome').hidden=true;showScene(14)};
-$('auto').onclick=()=>automatic(!autoplay);
+$('skip').onclick=()=>{if(!authorized||!ready||pending)return;automatic(false);$('welcome').hidden=true;started=true;showScene(14)};
+$('auto').onclick=()=>{if(started&&!pending)automatic(!autoplay)};
 $('personalize').onclick=()=>location.assign('/membre.html?auteur=atelier#avatar');
 
 $('report-open').onclick=()=>{$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
 $('report-close').onclick=()=>$('report-dialog').close();
 $('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
 $('report-export').onclick=()=>{
- const data={created:new Date().toISOString(),experience:'Prologue original GLB et personnages V27',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
+ const data={created:new Date().toISOString(),experience:'La Maison des rencontres',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download='rapport-maison-des-rencontres-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
 };
@@ -290,7 +276,7 @@ window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 const cameraTarget=new T.Vector3(),cameraEye=new T.Vector3();
 function frame(){
  requestAnimationFrame(frame);const dt=Math.min(.06,clock.getDelta());
- if(!ready||stage==='garden')return;
+ if(!room||stage==='garden')return;
  if(stage==='dojo'&&people[1]){
   const moveX=joystick.x+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('q')?1:0);
   const moveZ=joystick.y+(keys.has('arrowdown')||keys.has('s')?1:0)-(keys.has('arrowup')||keys.has('z')?1:0);
@@ -319,14 +305,24 @@ async function authorize(){
  const me=await response.json();if(!me.author)throw Error('Réservé au compte auteur.');
  alias=String(me.pseudo||'Voyageur').slice(0,40);$('pseudo').value=alias;authorized=true;$('access-denied').hidden=true;
 }
-(async()=>{
+
+async function initialize(){
+ if(initialTask)return initialTask;
+ $('retry-load').hidden=true;$('load-title').textContent='Un instant…';$('load-description').textContent='La rencontre se prépare.';$('loading').hidden=false;$('welcome').hidden=true;
+ initialTask=(async()=>{
  try{
-  await authorize();await Promise.all([loadRooms(),loadPeople()]);
-  ready=true;status.textContent='Salle blanche et dojo originaux prêts';$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
-  frame();
+  if(!authorized)await authorize();
+  await Promise.all([room?Promise.resolve():loadWhite(),people.length===2?Promise.resolve():loadPeople()]);
+  ready=true;$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
+  // The opening scene can now be played, independently of the rest.
+  setPending(false);$('prev').disabled=true;$('next').disabled=true;$('auto').disabled=true;$('personalize').hidden=true;
+  void preloadNext();
  }catch(e){
-  remember('Chargement original',e.message||e);
-  status.textContent='Impossible de charger les modèles originaux : '+String(e.message||e);
-  $('loading').hidden=true;if(!authorized){$('access-denied').hidden=false;$('welcome').hidden=true}else{$('enter').disabled=true;$('welcome').hidden=false}
- }
-})();
+  remember('Chargement initial',e.message||e);
+  if(!authorized&&/connexion|Réservé/i.test(String(e.message))){$('loading').hidden=true;$('access-denied').hidden=false;return;}
+  $('load-title').textContent='Un contretemps';$('load-description').textContent='Le chargement a été interrompu. Tu peux réessayer.';$('retry-load').hidden=false;
+ }finally{initialTask=null;}
+ })();return initialTask;
+}
+$('retry-load').onclick=()=>void initialize();
+frame();void initialize();
