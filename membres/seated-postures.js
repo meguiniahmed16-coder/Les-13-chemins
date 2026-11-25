@@ -2,7 +2,12 @@
 export const seatedPostures=['cuisses','chevilles','genou','penchee','mains-jointes','appui'];
 export function choosePosture(seat,previous,random=Math.random){
   const dining=/^(east|west|end)/.test(seat.id);
-  const choices=seatedPostures.filter(p=>p!==previous?.kind&&(p!=='appui'||(dining&&tabletop(seat).forward<29)||seat.support));
+  if(seat.introArms)return {kind:'armrests',side:1};
+  // Keep ordinary seated guests dignified. More expressive poses can still be
+  // authored explicitly; they should not be selected at random.
+  const choices=seatedPostures.filter(p=>p!==previous?.kind&&
+    !['penchee','mains-jointes'].includes(p)&&
+    (p!=='appui'||(dining&&tabletop(seat).forward<29)||seat.support));
   return {kind:choices[Math.floor(random()*choices.length)],side:random()<.5?-1:1};
 }
 export function tabletop(seat,scale=1){

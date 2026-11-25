@@ -14,7 +14,7 @@ const openai='https://api.openai.com/v1';
 const eleven='https://api.elevenlabs.io';
 const privateHeaders={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','vary':'Cookie'};
 export const VOICE_LIMITS=Object.freeze({maxSeconds:45,maxBytes:2*1024*1024});
-export const VOICE_DAILY_LIMITS=Object.freeze({transcribe:60,reply:60,speech:60,voices:40,speechCharacters:6000,audioBytes:24*1024*1024,openaiSpeechFallback:30});
+export const VOICE_DAILY_LIMITS=Object.freeze({transcribe:60,reply:60,speech:60,voices:40,speechCharacters:6000,audioBytes:24*1024*1024,openaiSpeechFallback:30,openaiSpeechAuto:60});
 const maxJSONBytes=48*1024,maxText=1600,maxHistory=8,maxOutputTokens=320;
 const extensions=new Map([
   ['audio/webm','webm'],['video/webm','webm'],['audio/ogg','ogg'],
@@ -153,9 +153,9 @@ export async function voiceConversation(request,env,{member,author},action){
           return {label,ready:false,reconnect:true};
         }
       }));
-      const missing=connections.filter(connection=>!connection.ready).map(connection=>connection.label);
+      const missing=connections.filter(connection=>connection.label==='OpenAI'&&!connection.ready).map(connection=>connection.label);
       const reconnectNeeded=connections.filter(connection=>connection.reconnect).map(connection=>connection.label);
-      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'ElevenLabs'}});
+      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'OpenAI'}});
     }
     signal=AbortSignal.any([request.signal,AbortSignal.timeout(65000)]);
     if(action==='settings'){
@@ -173,7 +173,7 @@ export async function voiceConversation(request,env,{member,author},action){
       });
       aborted(signal);return json({ok:true});
     }
-    const useEleven=action==='voices'||action==='speech';
+    const useEleven=action==='voices';
     const credential=await voiceCredential(env,useEleven?'elevenlabs':'openai');
     env={...env,[useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY']:credential};
     need(env,action==='voices'||action==='speech'?'ELEVENLABS_API_KEY':'OPENAI_API_KEY',action==='voices'||action==='speech'?'ElevenLabs':'OpenAI');
@@ -208,6 +208,30 @@ export async function voiceConversation(request,env,{member,author},action){
       if(!answer||answer.length>maxText||result.status==='incomplete'||result.status==='failed')failure(502,'La réponse n’a pas pu être terminée. Tu peux réessayer.');
       return json({answer});
     }
+    // Gender-matched French TTS is automatic. Avoid ElevenLabs listing and
+    // repeated 401 failure before the fallback on every audible answer.
+    if(!Object.hasOwn(data,'voiceId')){
+      if(!exactKeys(data,['text','gender'])||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
+      const spoken=text(data.text);
+      await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
+      await reserve(env,member,'openaiSpeechAuto');
+      const generated=await provider(openai+'/audio/speech',{
+        method:'POST',
+        headers:{authorization:'Bearer '+env.OPENAI_API_KEY,'content-type':'application/json',accept:'audio/mpeg'},
+        body:JSON.stringify({
+          model:'gpt-4o-mini-tts',input:spoken,voice:data.gender==='femme'?'nova':'onyx',
+          response_format:'mp3',
+          instructions:'Parle en français avec un ton naturel et une cadence conversationnelle. Respecte la ponctuation.'
+        })
+      },signal,'OpenAI');
+      if(!generated.body||!/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(generated.headers.get('content-type')||'')){
+        await generated.body?.cancel().catch(()=>{});failure(502,'La voix automatique n’a pas fourni de fichier audio.');
+      }
+      return new Response(generated.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'openai','x-voice-auto-gender':data.gender}});
+    }
+    // Legacy explicitly selected ElevenLabs voices remain supported for backward compatibility.
+    env={...env,ELEVENLABS_API_KEY:await voiceCredential(env,'elevenlabs')};
+    need(env,'ELEVENLABS_API_KEY','ElevenLabs');
     if(!exactKeys(data,['text','voiceId','gender']))failure(400,'La demande de voix est invalide.');
     const spoken=text(data.text),voiceId=data.voiceId;
     if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix dans la liste du Salon.');

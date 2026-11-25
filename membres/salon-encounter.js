@@ -15,6 +15,24 @@ export function guestAppearance(person){
   const age=person.age??(1+Math.floor(random()*2));
   const {studio}=generateAppearance(gender,age,true,random);
   Object.assign(studio.face,person.face);
+  // Indoor portraits are documentary, not random disguises. Start from the
+  // common V27 Ahmed/Marianne body rig; the mesh is individualized by the
+  // documented age, gender, face and outfit, with restrained grooming.
+  if(gender==='homme'&&person.face?.hair===undefined){
+    studio.face.hair=[1,7,8][Math.floor(random()*3)];
+  }
+  if(gender==='femme'&&person.face?.hair===undefined){
+    studio.face.hair=[0,1,2,3,4,7][Math.floor(random()*6)];
+  }
+  delete studio.outfit.lunettes;
+  // Abdelouahab is documented as Ahmed's father. Keep a sober, mature look
+  // without invented long hair, dark glasses or elaborate costumes.
+  if(String(person.id)==='1'){
+    studio.face.hair=1;
+    studio.face.beard=0;
+    studio.face.age=Math.max(3,age);
+    studio.outfit={haut:'mh1800',bas:'mh1796',souliers:'mh438'};
+  }
   if(person.skinLevel!=null){
     studio.skinLevel=person.skinLevel;
     studio.face.skin=skinSteps.reduce((closest,tone,i)=>Math.abs(tone-person.skinLevel)<Math.abs(skinSteps[closest]-person.skinLevel)?i:closest,0);
@@ -26,7 +44,7 @@ export function guestAppearance(person){
     const garments=person.clerical==='soutane-vert-canard'?{robe:'mh225',col:'roman-collar'}:{haut:'clergy-shirt',bas:'mh1796'};
     studio.outfit={...garments,souliers:'mh620'};
   }
-  if(person.glasses)studio.outfit.lunettes='mh153';
+  if(person.glasses&&String(person.id)!=='1')studio.outfit.lunettes='mh153';
   return {gender,studio};
 }
 const pairIds=[['sofa2','chair'],['west1','east1'],['west2','east2'],['end1','end2']];
