@@ -1,5 +1,6 @@
 import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {normaliseStudio} from './studio-look.js?v=incarnations33';
+import {attachSalonVideoLoading} from './salon-cinema.js?v=cinema61';
 
 const $=id=>document.getElementById(id);
 const video=$('tour'), stage=$('room'), offer=$('offer');
@@ -85,9 +86,10 @@ function check(){
   initial=visit();
   initial.then(state=>{
     if(state.state==='expired'){finish();return;}
-    if(state.state==='active'||introDone)return enter(state);
+    if(introDone)return enter(state);
   }).catch(retry);
 }
+attachSalonVideoLoading(video);
 video.addEventListener('timeupdate',()=>{
   const t=video.currentTime;
   const hint=t<3.5?'Pousse le joystick de gauche pour avancer.':t<10?'Touche deux fois le fauteuil pour t’y installer.':'Fais glisser le joystick Caméra pour changer de point de vue.';
