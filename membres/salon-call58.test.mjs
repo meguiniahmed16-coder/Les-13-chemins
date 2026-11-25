@@ -23,10 +23,16 @@ test('Le père d’Ahmed garde un portrait sobre sans lunettes fantaisistes',()=
  assert.equal(guest.studio.outfit.lunettes,undefined);
 });
 
-test('Le fauteuil donne aux invités un appui crédible avec le rig V27 partagé',()=>{
+test('Le fauteuil donne aux invités un appui crédible sans altérer le rig V27',()=>{
  const chair=seats.find(s=>s.id==='chair');
  assert.deepEqual(chair?.support,{x:30,z:-55,height:56.9,side:1});
- assert.equal(choosePosture(chair,null,()=>.95).kind,'appui');
+ assert.equal(choosePosture(chair,null,()=>.99).kind,'appui');
+ const motion=src('membres/salon-v27-motion.js');
+ const live=src('membres/v27/live-body.js');
+ const scene=src('membres/v27/scene.js');
+ assert.match(motion,/preferGuestArmrest/);
+ assert.match(live,/solver\.preferGuestArmrest=actor\.isGuest===true/);
+ assert.match(scene,/visitor\.isGuest=true/);
 });
 
 test('Recherche et hasard restent visibles hors du défilement des personnages',()=>{

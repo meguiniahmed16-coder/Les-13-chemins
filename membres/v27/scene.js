@@ -168,7 +168,7 @@ function makeActor(id,withDefaultParts=true){
  const shadow=shade(root,0,0,.82,.54,.030);return {id,root,body,parts,shadow,phase:0,speed:0,stamp:'',sit:0}
 }
 for(const id of ['f','m'])actors[id]=makeActor(id);
-const visitor=makeActor('m',false);visitor.root.visible=false;
+const visitor=makeActor('m',false);visitor.root.visible=false;visitor.isGuest=true;
 function presence(){
  for(const [id,actor] of Object.entries(actors))actor.root.visible=id===role||(authorRoom&&(!visiting||id==='f'&&!visitsMarianne));
  visitor.root.visible=visiting;

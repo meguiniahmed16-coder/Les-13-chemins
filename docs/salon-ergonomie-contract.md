@@ -21,7 +21,7 @@ La bibliothèque, les modes de déplacement et de caméra, les interactions, les
 
 ## Invités et conversation — décisions validées
 
-- Tous les invités utilisent le même système de squelette V27 qu’Ahmed et Marianne, y compris l’appui calibré sur un accoudoir du fauteuil et la posture naturelle de l’autre main.
+- Tous les invités utilisent le même système de squelette V27 qu’Ahmed et Marianne. L’appui calibré sur l’accoudoir du fauteuil est favorisé pour les invités sans modifier les poses originales d’Ahmed et de Marianne.
 - La génération d'un invité doit respecter les informations documentées, employer une apparence sobre et ne jamais lui attribuer au hasard des lunettes à l'intérieur. Le portrait d'Abdelouahab est explicitement sobre, avec cheveux courts.
 - La recherche de personnages et **Inviter au hasard** sont fixes en haut de leur volet ; seule la liste défile. Ces contrôles restent disponibles après une invitation.
 - La voix est attribuée automatiquement selon le genre renseigné dans le répertoire : masculine pour un homme, féminine pour une femme. Le menu déroulant « Marianne » n'est plus affiché.

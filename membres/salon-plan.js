@@ -12,7 +12,6 @@ export const seats=[
  return {id,name,label:name,x:x-depth*Math.sin(yaw),z:z-depth*Math.cos(yaw),height,yaw,gap:gap+depth}
 });
 // Local armrest contact on the upholstered armchair. On the sofa the hands rest on the thighs.
-// The original measured armrest contact is shared by Ahmed, Marianne and invited guests.
 seats.find(seat=>seat.id==='chair').support={x:30,z:-55,height:56.9,side:1};
 const blocks=[[392,482,-917,-636],[421,465,-956,-910],[516,586,-717,-607],[600,702,-834,-734],[796,874,-871,-696],[954,1015,-843,-721]];
 for(const s of seats.slice(4))blocks.push([s.x-21,s.x+21,s.z-21,s.z+21]);
