@@ -11,7 +11,7 @@ Cette note décrit l’implémentation et sa validation technique. Elle ne const
 ## Parcours et tours de parole
 
 1. Le propriétaire ouvre le Salon, invite un personnage et ouvre **Conversation vocale**.
-2. Le panneau vérifie les connexions et propose les voix françaises accessibles dans le compte ElevenLabs. La voix du même genre que le personnage est proposée lorsque les métadonnées le permettent ; le choix reste modifiable avant le démarrage.
+2. Le panneau vérifie les connexions et propose les voix françaises accessibles dans le compte ElevenLabs. Une voix masculine est proposée pour un homme et féminine pour une femme lorsque les métadonnées le permettent. Le choix est propre à chaque personnage et reste mémorisé pendant la visite, avec modification possible avant le démarrage. Le genre est celui de la fiche et de l’apparence du personnage, sans attendre le chargement du portrait 3D. Si aucune voix correspondante n’est identifiée, le panneau demande un choix explicite ; il ne sélectionne pas automatiquement une voix de l’autre genre.
 3. **Commencer** déverrouille le son, vérifie la disponibilité et demande l’accès au micro.
 4. Le navigateur enregistre une phrase. Une pause d’environ 1,2 seconde termine le tour après une durée minimale de parole détectée. Le bouton **J’ai terminé** permet de conclure le tour manuellement.
 5. OpenAI transcrit l’enregistrement en français. Le texte reconnu apparaît dans le dialogue.
