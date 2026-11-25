@@ -75,6 +75,7 @@ export function createSalonNavigation(root){
  viewport.insertAdjacentHTML('beforeend',menu+dock+'<output class="maison-nav-current" role="status" aria-live="polite" hidden></output>'+panel+phone);
  const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),menuToggle=$('.maison-menu-toggle'),phoneNode=$('.maison-phone'),currentLabel=$('.maison-nav-current');
  const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle');
+ const standaloneAhmed=root.host.hasAttribute('ahmed-numerique');
  const voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
  const chat=$('.guest-message'),nativeStudio=$('.options-toggle');
  const panelLabel=$('.maison-rail-title');
@@ -117,7 +118,7 @@ export function createSalonNavigation(root){
  }
  function sync(){
    const hasGuest=Boolean(companion);
-   phoneNode.hidden=!hasGuest||legacyPhone.hidden;
+   phoneNode.hidden=standaloneAhmed?false:!hasGuest||legacyPhone.hidden;
    const status=$('.maison-companion-label');
    if(status)status.textContent=hasGuest?'Avec '+companion:'Invite un personnage pour dialoguer.';
    for(const id of ['call','write','history']){
@@ -168,7 +169,10 @@ export function createSalonNavigation(root){
    if(legacyPhone.hidden)return;
    legacyPhone.click();
  }
- phoneNode.onclick=call;
+ phoneNode.onclick=()=>{
+   if(standaloneAhmed){root.host.dispatchEvent(new CustomEvent('salon-ahmed-call'));return;}
+   call();
+ };
  function fullscreen(){
    close();
    try{
