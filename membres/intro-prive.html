@@ -25,6 +25,8 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 #welcome{background:#fdfcf3b0;backdrop-filter:blur(5px);padding:20px}.welcome-panel{background:#fffdf4ed;border:1px solid #e0dfce;border-radius:22px;box-shadow:0 12px 60px #19382b20;display:grid;justify-items:center;gap:22px;padding:clamp(20px,5vw,42px);width:min(480px,92vw);text-align:center}.welcome-panel h1{font:normal clamp(32px,6vw,55px)/1.13 Georgia,serif;color:#243e31;margin:0}.welcome-panel label{display:grid;gap:9px;width:100%;text-align:center}.welcome-panel input{width:100%;min-width:0!important}.welcome-panel button{min-width:140px;font-weight:600}
 #scene-wait{position:absolute;z-index:9;bottom:7px;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;padding:10px 14px;border-radius:12px;background:#203b30e8;color:#fff;text-align:center}
 @media(max-height:450px){#loading{grid-template-columns:auto auto;gap:20px}.load-art{width:min(120px,25vw)}.welcome-panel{padding:16px;gap:9px}.welcome-panel h1{font-size:28px}}
+#loading.startup-failed{overflow:auto}.startup-failed .load-panel p{line-height:1.45}
+@media(max-height:450px){#loading.startup-failed{grid-template-columns:1fr;padding:12px;gap:0}.startup-failed .load-art,.startup-failed .load-kicker{display:none}.startup-failed .load-panel{gap:6px;width:min(530px,92vw)}.startup-failed .load-panel h1{font-size:24px}.startup-failed .load-panel p{font-size:13px;margin:0}.startup-failed #retry-load{margin-top:0;min-height:34px;padding:6px 12px}}
 
 /* A real speech bubble lives beside its speaker, inside the scene. Its body
    stays still for the complete reply; only the small pointer follows a face. */
@@ -54,4 +56,4 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 </main>
 <footer><button type="button" id="report-open">Signaler une erreur</button><button type="button" id="skip" disabled>Passer l’introduction</button></footer>
 <dialog id="report-dialog"><h2>Rapport de test</h2><label>Type<select id="report-type"><option value="bug">Signaler un problème</option><option value="amelioration">Demander une amélioration</option></select></label><label>Scène<input id="report-scene" readonly></label><label>Observation<textarea id="report-note" placeholder="Décris le problème ou la modification souhaitée."></textarea></label><small id="report-count"></small><div class="actions"><button id="report-add">Ajouter</button><button id="report-export" class="primary">Télécharger le rapport JSON</button><button id="report-close">Fermer</button></div></dialog>
-</div><script type="module" src="/membres/intro-cinema-croisee30.js"></script></body></html>
+</div><script type="module" src="/membres/intro-cinema-croisee31.js"></script></body></html>

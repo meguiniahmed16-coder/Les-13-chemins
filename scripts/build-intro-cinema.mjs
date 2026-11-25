@@ -4,7 +4,7 @@ import {resolve,dirname} from 'node:path';
 import {copyFile} from 'node:fs/promises';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 await build({
-  entryPoints:[resolve(root,'membres/intro-cinema.js')],
+  entryPoints:[resolve(root,'membres/intro-entry.js')],
   outfile:resolve(root,'membres/intro-cinema-bundle.js'),
   bundle:true,minify:true,format:'esm',target:'es2022',
   platform:'browser',sourcemap:false,legalComments:'none',
@@ -14,4 +14,5 @@ await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'memb
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee28.js'));
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee29.js'));
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee30.js'));
-console.log('Cinématique 3D privée construite : croisee30.');
+await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee31.js'));
+console.log('Cinématique 3D privée construite : croisee31.');
