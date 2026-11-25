@@ -8,7 +8,7 @@ import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
 import {createIntroSound} from './intro-sound.js';
-import {frenchVoice} from './salon-voice.js?v=salon41';
+import {frenchVoice,createLocalVoices} from './salon-voice.js?v=salon41';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -244,7 +244,7 @@ const lines=[
  {
   "id": "dojo-arrivee",
   "speaker": "m",
-  "text": "Dans le Salon, commence par le bouton Menu. Un appui affiche les icônes des fonctions.",
+  "text": "Dans ce dojo, je vais te montrer les commandes du véritable Salon. D’abord le bouton Menu : un appui ouvre les icônes, un second les replie.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 7000,
@@ -256,7 +256,7 @@ const lines=[
  {
   "id": "dojo-camera",
   "speaker": "f",
-  "text": "L'icône Caméra permet de tourner, zoomer et recentrer le personnage.",
+  "text": "L’icône Caméra te permet de tourner autour de nous, de zoomer et de changer de point de vue.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 10000,
@@ -268,7 +268,7 @@ const lines=[
  {
   "id": "dojo-deplacement",
   "speaker": "m",
-  "text": "Le joystick te permet de marcher, en gardant les pieds au sol près des fauteuils.",
+  "text": "Avec le joystick, tu peux avancer, reculer et marcher dans la pièce. Regarde, Marianne te montre.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 11000,
@@ -280,7 +280,7 @@ const lines=[
  {
   "id": "dojo-demi-tour",
   "speaker": "m",
-  "text": "Le bouton Recentrer retrouve ton personnage, même après un changement de caméra.",
+  "text": "Si tu perds ton personnage de vue, touche Recentrer. Tu le retrouves sans devoir tout recommencer.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 9000,
@@ -292,7 +292,7 @@ const lines=[
  {
   "id": "dojo-personnaliser",
   "speaker": "m",
-  "text": "Ouvre Menu, puis Avatar. Chaque petite icône mène à une partie du corps.",
+  "text": "Pour modifier ton personnage, ouvre Menu, puis Avatar. Tu retrouves ici les vrais outils de personnalisation.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12000,
@@ -304,7 +304,7 @@ const lines=[
  {
   "id": "dojo-apparence",
   "speaker": "f",
-  "text": "Le volet reste translucide. Appuie à nouveau sur une icône pour le replier.",
+  "text": "Le volet est translucide : tu continues de voir mon visage et les personnages pendant les changements. Une seconde pression le replie.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 10000,
@@ -316,7 +316,7 @@ const lines=[
  {
   "id": "dojo-vetements",
   "speaker": "m",
-  "text": "Pour une chemise, un pantalon ou des chaussures, choisis leur icône.",
+  "text": "Les vêtements se choisissent dans leur catégorie, sans quitter le Salon. Tu peux changer la tenue et continuer à regarder le personnage.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12000,
@@ -328,7 +328,7 @@ const lines=[
  {
   "id": "dojo-enregistrer",
   "speaker": "f",
-  "text": "Enregistrer garde ta création. Pour parler, invite un personnage puis touche le téléphone.",
+  "text": "Le bouton Enregistrer conserve tes choix. Nous allons maintenant te montrer comment rencontrer quelqu’un.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 7000,
@@ -340,12 +340,36 @@ const lines=[
  {
   "id": "dojo-construction",
   "speaker": "m",
-  "text": "Les voix accompagnent désormais les rencontres. Tu peux appeler et discuter à voix haute.",
+  "text": "Le petit pictogramme Ajouter un personnage ouvre la liste des invités. Il ne faut pas créer un autre bouton : celui-ci suffit.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 9000,
   "move": "drift",
   "gesture": "open",
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-appeler",
+  "speaker": "f",
+  "text": "Une fois ton invité présent, touche le petit téléphone déjà dans le Salon. Tu peux lui parler de vive voix, et il te répond avec sa propre voix.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 11000,
+  "move": "drift",
+  "gesture": "explain",
+  "seated": false,
+  "demo": true
+ },
+ {
+  "id": "dojo-bulles",
+  "speaker": "m",
+  "text": "Et les bulles de dialogue ? C’est toi qui décides. Tu peux les afficher ou les masquer à tout moment. Les voix continuent même sans les bulles.",
+  "scene": "dojo",
+  "shot": "dojo",
+  "ms": 11500,
+  "move": "drift",
+  "gesture": "explain",
   "seated": false,
   "demo": true
  },
