@@ -244,7 +244,7 @@ const lines=[
  {
   "id": "dojo-arrivee",
   "speaker": "m",
-  "text": "Dans ce dojo, je vais te montrer les commandes du véritable Salon. D’abord le bouton Menu : un appui ouvre les icônes, un second les replie.",
+  "text": "Voici l’interface du Salon. Appuie sur Menu : les icônes apparaissent. Appuie encore : elles se replient.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 11000,
@@ -340,7 +340,7 @@ const lines=[
  {
   "id": "dojo-construction",
   "speaker": "m",
-  "text": "Le petit pictogramme Ajouter un personnage ouvre la liste des invités. Il ne faut pas créer un autre bouton : celui-ci suffit.",
+  "text": "Avec ce pictogramme, tu ajoutes un personnage du livre. Choisis-le dans le répertoire : il viendra nous rejoindre ici.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 11000,
@@ -352,7 +352,7 @@ const lines=[
  {
   "id": "dojo-appeler",
   "speaker": "f",
-  "text": "Une fois ton invité présent, touche le petit téléphone déjà dans le Salon. Tu peux lui parler de vive voix, et il te répond avec sa propre voix.",
+  "text": "Une fois ton invité arrivé, touche le petit téléphone du Salon. Tu lui parles directement, et il te répond à voix haute.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 13000,
@@ -364,7 +364,7 @@ const lines=[
  {
   "id": "dojo-bulles",
   "speaker": "m",
-  "text": "Et les bulles de dialogue ? C’est toi qui décides. Tu peux les afficher ou les masquer à tout moment. Les voix continuent même sans les bulles.",
+  "text": "Les bulles de dialogue sont facultatives. Cette icône les affiche ou les masque. Les voix continuent, même si tu retires les bulles.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12500,
