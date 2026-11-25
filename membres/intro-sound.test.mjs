@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createIntroSound,createIntroSoundCues,introSoundEnvelope,INTRO_SOUND_TIMING} from './intro-sound.js';
 
 const flush=async()=>{await Promise.resolve();await Promise.resolve();await Promise.resolve();};
-const dojoScenes=['dojo-arrivee','dojo-camera','dojo-deplacement','dojo-demi-tour','dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer','dojo-construction','jardin'];
+const dojoScenes=['dojo-arrivee','dojo-camera','dojo-deplacement','dojo-demi-tour','dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer','dojo-construction','dojo-appeler','dojo-bulles','jardin'];
 
 function fixture({webAudio=true,waitForBuffers=false}={}){
  const problems=[],media=[],sources=[],gains=[];let fetchResolve;
