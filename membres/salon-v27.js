@@ -3,7 +3,7 @@ import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=incarnations33';
 import {createSalonChat} from './salon-chat.js?v=maison2';
-import {createSalonNavigation} from './salon-navigation.js?v=maison2';
+import {createSalonNavigation} from './salon-maison-ui.js?v=maison2';
 import {guestAppearance} from './salon-encounter.js?v=incarnations33';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
