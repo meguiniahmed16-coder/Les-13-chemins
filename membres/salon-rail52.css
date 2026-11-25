@@ -135,3 +135,7 @@
  :host .stage .scene-viewport>.voice-conversation:not([hidden]){top:64px!important;right:6px!important;bottom:6px!important;width:min(280px,60%)!important}
 }
 @media(prefers-reduced-motion:reduce){:host .stage .maison-rail-panel{transition:none!important}}
+
+/* Les commandes réservées à la conversation ne s’affichent jamais sans invité. */
+:host .stage .maison-phone[hidden]{display:none!important}
+:host .stage .maison-tool[hidden]{display:none!important}
