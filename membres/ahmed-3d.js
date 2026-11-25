@@ -15,11 +15,12 @@ async function mount(){
   await import('./salon-v27.js?v=call60');
   if($('ahmed-3d').hidden)return null;
   const view=document.createElement('chemins-salon');
-  view.setAttribute('scene','salon');view.className='ahmed-avatar-v27';
+  view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');view.className='ahmed-avatar-v27';
+  view.addEventListener('salon-ahmed-call',()=>void begin());
   view.style.setProperty('--room-height','100%');
   host.append(view);
   const style=document.createElement('style');
-  style.textContent='.stage{height:100%!important;min-height:0!important}.scene-viewport{height:100%!important;min-height:0!important}.conversation-footer,.maison-menu-toggle,.maison-dock,.maison-phone,.maison-rail-panel,.studio-drawer,.maison-studio-peek,.v27-actions{display:none!important}';
+  style.textContent='.stage{height:100%!important;min-height:0!important}.scene-viewport{height:100%!important;min-height:0!important}.conversation-footer,.maison-menu-toggle,.maison-dock,.maison-rail-panel,.studio-drawer,.maison-studio-peek,.v27-actions{display:none!important}';
   view.shadowRoot?.append(style);
   const original=referenceStudio('homme');
   await view.configure(original,{
