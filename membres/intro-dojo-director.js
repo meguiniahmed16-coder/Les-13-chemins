@@ -135,7 +135,7 @@ export function dojoBlocking(line,elapsed,{center=new T.Vector3(),floorY=0}={}){
   const response=pulse(t,.32,.48);
   m.yaw=openYaw.m-.12*response;f.yaw=openYaw.f+.12*response;
   m.poseGesture=poseGesture({left:.26*pulse(t,.04,.78),right:.35*pulse(t,.04,.78),height:-12,forward:25});
-  f.poseGesture=poseGesture({left:.19*response,right:.14*response,nod:.075*pulse(t,.55,.28)});
+  f.poseGesture=poseGesture({left:.19*response,right:.14*response,nod:.075*pulse(t,.45,.35)});
  }else if(line.id==='dojo-appeler'){
   phase='calling';f.gesture='explain';
   f.poseGesture=poseGesture({left:.24*pulse(t,.08,.62),right:.18*pulse(t,.26,.50),nod:.09*pulse(t,.55,.22),height:-14,forward:23});
