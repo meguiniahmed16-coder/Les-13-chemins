@@ -1,3 +1,4 @@
+import {connectSalonEngine} from './salon-hud-native.js?v=hud54';
 // Le Salon : un seul système de navigation, discret et ancré au décor.
 // Les vrais contrôles sont déplacés dans les tiroirs ; aucun double système.
 const icons={
@@ -52,21 +53,21 @@ export function createSalonNavigation(root){
  '<button type="button" data-maison-action="close" title="Replier le menu" aria-label="Replier le menu">'+svg('close')+'</button></div></header>'+
  '<div class="maison-rail-scroll">'+
  '<section class="maison-rail-room" data-rail-room="encounter" hidden>'+
- '<div class="maison-mini-actions">'+tool('choose','encounter','Choisir un personnage')+'</div><div class="maison-slot" data-maison-slot="picker"></div></section>'+
+ '<div class="maison-mini-actions">'+tool('choose','encounter','Choisir un personnage')+'</div><div class="maison-slot" data-maison-slot="picker"></div><section class="maison-native-category"><h3>Visiter le lieu</h3><div class="maison-native-grid" data-native-zone="encounter"></div></section></section>'+
  '<section class="maison-rail-room" data-rail-room="dialogue" hidden>'+
  '<p class="maison-companion-label">Invite un personnage.</p>'+
  '<div class="maison-mini-actions">'+tool('call','phone','Appeler')+tool('write','write','Écrire')+tool('history','history','Historique')+'</div>'+
  '<div class="maison-slot" data-maison-slot="history" hidden></div>'+
  '<div class="maison-slot" data-maison-slot="gueststyle"></div>'+
- '<div class="maison-slot" data-maison-slot="leave"></div></section>'+
+ '<div class="maison-slot" data-maison-slot="leave"></div><section class="maison-native-category"><h3>Dialoguer dans le jeu</h3><div class="maison-native-grid" data-native-zone="dialogue"></div></section></section>'+
  '<section class="maison-rail-room" data-rail-room="explore" hidden>'+
  '<div class="maison-mini-actions">'+modes.map(([id,icon,name])=>tool(id,icon,name)).join('')+'</div>'+
  '<div class="maison-slot maison-legacy-tools" data-maison-slot="views"></div>'+
- '<div class="maison-slot maison-legacy-camera" data-maison-slot="camera"></div></section>'+
+ '<div class="maison-slot maison-legacy-camera" data-maison-slot="camera"></div><section class="maison-native-category"><h3>Vues et commandes</h3><div class="maison-native-grid" data-native-zone="explore"></div></section></section>'+
  '</div></section>';
  const phone='<button class="maison-phone" type="button" hidden title="Conversation vocale" aria-label="Appeler le personnage" aria-expanded="false">'+svg('phone')+'</button>';
- viewport.insertAdjacentHTML('beforeend',dock+panel+phone);
- const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),phoneNode=$('.maison-phone');
+ viewport.insertAdjacentHTML('beforeend',dock+'<output class="maison-nav-current" role="status" aria-live="polite" hidden></output>'+panel+phone);
+ const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),phoneNode=$('.maison-phone'),currentLabel=$('.maison-nav-current');
  const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle');
  const voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
  const chat=$('.guest-message'),nativeStudio=$('.options-toggle');
@@ -79,9 +80,12 @@ export function createSalonNavigation(root){
  slots('gueststyle').append($('.guest-style'));
  slots('leave').append($('.guest-leave'));
  viewport.append(voicePanel);
- let companion='',current=null,labels=false,lastFocus=null,historyOpen=false;
+ let companion='',current=null,labels=false,lastFocus=null,historyOpen=false,engineBridge=null;
  const labelMap=Object.fromEntries(main.map(([id,short,label])=>[id,label]));
  function updateButtons(){
+   const selected=main.find(item=>item[0]===current);
+   currentLabel.textContent=selected?.[1]||'';
+   currentLabel.hidden=!selected;
    for(const b of mainDock.querySelectorAll('[data-maison-open]')){
      b.setAttribute('aria-expanded',String(b.dataset.maisonOpen===current&&!panelNode.hidden));
      b.setAttribute('aria-pressed',String(b.dataset.maisonOpen===current&&
@@ -108,7 +112,7 @@ export function createSalonNavigation(root){
    if(panelNode.hidden)return;
    panelNode.hidden=true;
    current=null;
-   updateButtons();
+   updateButtons();engineBridge?.sync();
    if(restore&&lastFocus?.isConnected)lastFocus.focus({preventScroll:true});
  }
  function open(id,origin){
@@ -119,13 +123,13 @@ export function createSalonNavigation(root){
    panelLabel.textContent=labelMap[id]||'Options';
    for(const area of panelNode.querySelectorAll('[data-rail-room]'))area.hidden=area.dataset.railRoom!==id;
    if(id==='encounter'&&picker.hidden)legacyInvite.click();
-   updateButtons();sync();
+   updateButtons();sync();engineBridge?.sync();
  }
  function studio(group){
    close();
    const name=group==='avatar'?'body':'underwear';
    root.host.dispatchEvent(new CustomEvent('salon-open-studio',{detail:{category:name}}));
-   current=group;updateButtons();
+   current=group;updateButtons();engineBridge?.sync();
  }
  function press(id,origin){
    if(id==='avatar'||id==='clothes')studio(id);
@@ -158,7 +162,7 @@ export function createSalonNavigation(root){
    const command=b.dataset.maisonAction||b.dataset.tool;
    if(!command)return;
    if(command==='close'){close(true);return;}
-   if(command==='swap-side'){stage.classList.toggle('maison-panel-right');return;}
+   if(command==='swap-side'){stage.classList.toggle('maison-panel-right');engineBridge?.sync();return;}
    if(command==='labels'){
      labels=!labels;
      panelNode.classList.toggle('maison-show-labels',labels);
@@ -214,5 +218,13 @@ export function createSalonNavigation(root){
    else if(!voicePanel.hidden){voicePanel.querySelector('.voice-conversation-close')?.click();event.preventDefault();}
  });
  sync();updateButtons();
- return {open,close,sync};
+ return {
+   open,close,sync,
+   linkScene(doc,scene){
+     engineBridge?.dispose();
+     engineBridge=connectSalonEngine({doc,scene,stage,root});
+     engineBridge.sync();
+   },
+   dispose(){engineBridge?.dispose();engineBridge=null;}
+ };
 }
