@@ -1,0 +1,137 @@
+
+/* LA CROISÉE — Navigation 52. Enveloppe fine, scène 3D inchangée. */
+/* Chargé après les anciennes règles: le grand panneau Maison n'existe plus. */
+:host .stage .maison-hub,:host .stage .maison-scrim{display:none!important}
+:host .stage .maison-dock{
+ position:absolute!important;z-index:20!important;left:8px!important;right:auto!important;
+ top:10px!important;bottom:auto!important;width:auto!important;max-width:calc(100% - 74px)!important;
+ display:flex!important;flex-direction:row!important;gap:5px!important;padding:0!important;
+ transform:none!important;border:0!important;background:transparent!important;
+ box-shadow:none!important;backdrop-filter:none!important;pointer-events:none!important;
+}
+:host .stage .maison-dock button{
+ pointer-events:auto!important;position:relative!important;flex:0 0 auto!important;
+ width:47px!important;min-width:47px!important;height:48px!important;min-height:48px!important;
+ padding:0!important;display:grid!important;place-items:center!important;
+ background:#254537d6!important;border:1px solid #f0e2c4a6!important;
+ border-radius:14px!important;box-shadow:0 3px 13px #071c1668!important;
+ color:#fff6df!important;overflow:hidden!important;white-space:nowrap!important;
+ font:600 10px/1.1 system-ui!important;
+}
+:host .stage .maison-dock button[aria-expanded=true],
+:host .stage .maison-dock button[aria-pressed=true]{
+ background:#e2cfa6!important;color:#244136!important;border-color:#e2cfa6!important
+}
+:host .stage .maison-dock svg{display:block!important;position:static!important;flex:none!important;width:24px!important;height:24px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important}
+:host .stage .maison-dock button>span{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important}
+:host .stage.maison-hub-open .maison-dock{visibility:visible!important;pointer-events:none!important}
+:host .stage:has(.studio-drawer:not([hidden])) .maison-dock{display:flex!important}
+:host .stage .maison-phone{position:absolute!important;right:8px!important;top:10px!important;left:auto!important;bottom:auto!important;z-index:21!important;
+ width:48px!important;min-width:48px!important;height:48px!important;min-height:48px!important;
+ display:grid!important;place-items:center!important;padding:0!important;
+ border:1px solid #f4e3c3!important;border-radius:50%!important;background:#ead3a4!important;
+ color:#254537!important;box-shadow:0 3px 14px #071c166b!important}
+:host .stage .maison-phone svg{width:22px!important;height:22px!important;stroke:currentColor!important}
+:host .stage .maison-rail-panel{
+ position:absolute!important;z-index:23!important;left:7px!important;right:auto!important;
+ top:65px!important;bottom:7px!important;width:min(238px,39%)!important;
+ display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;
+ background:#f6f3e7f2!important;color:#274237!important;
+ border:1px solid #b3c0b2!important;border-radius:15px!important;
+ box-shadow:0 5px 24px #09251e53!important;overflow:hidden!important;
+}
+:host .stage .maison-rail-panel[hidden]{display:none!important}
+:host .stage.maison-panel-right .maison-rail-panel{left:auto!important;right:7px!important}
+:host .stage .maison-rail-head{display:flex;justify-content:space-between;align-items:center;gap:3px;
+ flex:0 0 auto!important;min-width:0;padding:5px 5px 5px 9px;border-bottom:1px solid #cfd8c9!important}
+:host .stage .maison-rail-title{font:650 13px/1.25 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:host .stage .maison-rail-head>div{display:flex;gap:2px}
+:host .stage .maison-rail-head button{display:grid;place-items:center;width:39px;min-width:39px;height:42px;min-height:42px;
+ padding:0;border:0;border-radius:9px;background:transparent;color:#2b4e3e}
+:host .stage .maison-rail-head button:active,:host .stage .maison-rail-head button[aria-pressed=true]{background:#e8deca}
+:host .stage .maison-rail-head svg{width:20px;height:20px}
+:host .stage .maison-rail-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
+ padding:8px;scrollbar-width:thin;scrollbar-color:#a6b5a8 transparent}
+:host .stage .maison-rail-room{min-width:0;display:grid;gap:7px}
+:host .stage .maison-rail-room[hidden]{display:none!important}
+:host .stage .maison-mini-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+:host .stage .maison-tool{
+ display:flex!important;flex-direction:column;justify-content:center;align-items:center;gap:2px;
+ min-width:0;min-height:51px;padding:5px 2px;background:#fffdf5;border:1px solid #bbcab9;
+ border-radius:11px;color:#254537;box-shadow:0 1px 3px #122d2315;
+ font:600 11px/1.15 system-ui;text-align:center;touch-action:manipulation;
+}
+:host .stage .maison-tool[aria-pressed=true]{background:#274e3b;color:#fff7e9}
+:host .stage .maison-tool:disabled{opacity:.4}
+:host .stage .maison-tool svg{display:block!important;width:25px!important;height:25px!important;
+ flex:none;stroke:currentColor;fill:none}
+:host .stage .maison-tool>span{display:none!important;max-width:100%;overflow-wrap:anywhere}
+:host .stage .maison-show-labels .maison-tool>span{display:block!important}
+:host .stage .maison-show-labels .maison-tool{min-height:67px}
+:host .stage .maison-slot{display:block;min-width:0;max-width:100%}
+:host .stage .maison-slot[hidden]{display:none!important}
+:host .stage .maison-rail-room .guest-picker{
+ position:relative!important;inset:auto!important;width:100%!important;max-width:100%!important;
+ max-height:none!important;min-height:0!important;padding:4px!important;border:0!important;
+ border-radius:0!important;box-shadow:none!important;background:transparent!important;
+}
+:host .stage .maison-rail-room .guest-picker>header{display:none!important}
+:host .stage .maison-rail-room .guest-search{font-size:14px!important;min-height:45px;padding:6px!important}
+:host .stage .maison-rail-room .guest-picker label{font-size:12px}
+:host .stage .maison-rail-room .guest-list{max-height:45dvh!important;overflow-y:auto!important;touch-action:pan-y}
+:host .stage .maison-rail-room .guest-list button{min-height:48px!important;font-size:13px}
+:host .stage .maison-companion-label{font:600 12px/1.35 system-ui;margin:0}
+:host .stage .maison-rail-room .thread-history{font:12px/1.45 system-ui;max-height:38dvh!important;overflow-y:auto!important;
+ border:1px solid #d4ddce;background:#fffdf5;border-radius:9px;padding:6px}
+:host .stage .maison-rail-room .thread-history p{margin:0 0 6px;padding:3px 0;border-bottom:1px solid #e1e8dc}
+:host .stage .maison-rail-room .guest-style,:host .stage .maison-rail-room .guest-leave{
+ display:block;width:100%;min-height:43px;font:600 12px system-ui;border:1px solid #b0c2b4;
+ border-radius:9px;background:#fffdf6;color:#2a4c3d;padding:7px}
+:host .stage .maison-rail-room .conversation-tools{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;
+ padding:4px 0!important;max-height:none!important;overflow:visible!important}
+:host .stage .maison-rail-room .conversation-tools button{
+ display:block!important;min-height:44px!important;font-size:12px!important;white-space:normal!important;
+ padding:5px!important;border:1px solid #b8c8b9!important;border-radius:10px!important}
+:host .stage .maison-rail-room .conversation-tools button[hidden]{display:none!important}
+:host .stage .maison-rail-room .camera-slot{display:block!important;width:100%!important}
+:host .stage .maison-rail-room .camera-slot .bar{position:static!important;display:flex!important;
+ flex-wrap:wrap!important;gap:4px!important}
+:host .stage .maison-rail-room .camera-slot button{min-width:45px;min-height:45px}
+:host .stage .scene-viewport>.voice-conversation:not([hidden]){position:absolute!important;z-index:25!important;
+ top:65px!important;bottom:7px!important;left:auto!important;right:7px!important;
+ width:min(330px,56%)!important;max-height:none!important;overflow-y:auto!important}
+:host .stage .scene-viewport>.voice-conversation .voice-conversation-help,
+:host .stage .scene-viewport>.voice-conversation>small{display:none!important}
+:host .stage .studio-drawer:not([hidden]){width:min(315px,40%)!important}
+:host .stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer{width:59px!important}
+:host .stage .studio-drawer .studio-rail{flex-basis:49px!important}
+:host .stage .studio-drawer .studio-scroll{padding:5px 7px!important}
+:host .stage:has(.studio-embedded:not([hidden])) .scene-viewport{display:block!important}
+:host .stage:has(.studio-embedded:not([hidden])) .studio-drawer{grid-area:auto!important;width:min(360px,42%)!important}
+:host .stage .studio-embedded iframe{height:55dvh!important;min-height:200px!important}
+@media(max-width:760px),(max-height:500px) and (pointer:coarse){
+ :host .stage .maison-dock{top:6px!important;left:6px!important;gap:4px!important;max-width:calc(100% - 61px)!important}
+ :host .stage .maison-dock button{width:44px!important;min-width:44px!important;height:46px!important;min-height:46px!important}
+ :host .stage .maison-phone{top:6px!important;right:6px!important;width:45px!important;min-width:45px!important;height:46px!important;min-height:46px!important}
+ :host .stage .maison-rail-panel{top:58px!important;bottom:5px!important;left:5px!important;width:min(212px,46%)!important}
+ :host .stage.maison-panel-right .maison-rail-panel{left:auto!important;right:5px!important}
+ :host .stage .maison-rail-head{padding:3px 4px}
+ :host .stage .maison-rail-title{font-size:12px}
+ :host .stage .maison-rail-head button{min-width:36px;width:36px;min-height:40px;height:40px}
+ :host .stage .maison-rail-scroll{padding:5px}
+ :host .stage .maison-mini-actions{gap:4px}
+ :host .stage .maison-tool{min-height:47px}
+ :host .stage .studio-drawer:not([hidden]){width:min(270px,47%)!important}
+ :host .stage .scene-viewport>.voice-conversation:not([hidden]){top:58px!important;bottom:5px!important;right:5px!important;width:min(300px,58%)!important}
+}
+@media(max-width:600px) and (orientation:portrait){
+ :host .stage .maison-dock{top:8px!important;left:8px!important;bottom:auto!important;transform:none!important;
+ flex-direction:row!important}
+ :host .stage .maison-dock button{width:45px!important;min-width:45px!important}
+ :host .stage .maison-rail-panel{top:63px!important;bottom:6px!important;left:6px!important;width:min(220px,52%)!important}
+ :host .stage.maison-panel-right .maison-rail-panel{left:auto!important;right:6px!important}
+ :host .stage .studio-drawer:not([hidden]){width:min(260px,53%)!important}
+ :host .stage .scene-viewport>.voice-conversation:not([hidden]){top:64px!important;right:6px!important;bottom:6px!important;width:min(280px,60%)!important}
+}
+@media(prefers-reduced-motion:reduce){:host .stage .maison-rail-panel{transition:none!important}}

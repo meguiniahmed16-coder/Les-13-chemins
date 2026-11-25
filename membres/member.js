@@ -105,7 +105,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./salon-v27.js?v=studio-rail1');
+  await import('./salon-v27.js?v=rail-52');
   if(!member||$('salon').hidden)return;
   let view=$('room').querySelector('chemins-salon');
   if(!view){
