@@ -547,3 +547,13 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
  .stage .maison-hub-head h2{font-size:16px}
  .stage .maison-hub{top:100px!important}
 }
+
+/* The panel uses the whole vertical space; icons return as soon as it closes. */
+.stage.maison-hub-open .maison-dock{visibility:hidden!important;pointer-events:none!important}
+.stage .maison-hub{top:6px!important;bottom:6px!important}
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+ .stage .maison-hub{top:5px!important;bottom:5px!important}
+}
+@media(max-width:600px) and (orientation:portrait){
+ .stage .maison-hub{top:6px!important;bottom:6px!important}
+}
