@@ -18,3 +18,13 @@ Ce document formalise les corrections répétées et validées pour « La Crois�
 ## Préservation
 
 La bibliothèque, les modes de déplacement et de caméra, les interactions, les options propriétaires et les fonctions V27 ne sont pas retirés pour faire de la place. Ils sont organisés dans les catégories correspondantes.
+
+## Invités et conversation — décisions validées
+
+- Tous les invités utilisent le même système de squelette V27 qu’Ahmed et Marianne, y compris les deux appuis de poignets sur les accoudoirs du fauteuil.
+- La génération d'un invité doit respecter les informations documentées, employer une apparence sobre et ne jamais lui attribuer au hasard des lunettes à l'intérieur. Le portrait d'Abdelouahab est explicitement sobre, avec cheveux courts.
+- La recherche de personnages et **Inviter au hasard** sont fixes en haut de leur volet ; seule la liste défile. Ces contrôles restent disponibles après une invitation.
+- La voix est attribuée automatiquement selon le genre renseigné dans le répertoire : masculine pour un homme, féminine pour une femme. Le menu déroulant « Marianne » n'est plus affiché.
+- L'appel doit privilégier trois actions compréhensibles : Appeler, Micro (pause/interruption de la réponse) et Raccrocher ; le statut reste lisible et les réglages techniques secondaires sont repliés.
+- L'envoi d'une phrase peut se déclencher après une pause naturelle plus courte pour réduire la latence. La voix OpenAI doit être demandée directement, sans refaire la liste des voix ni déclencher systématiquement une erreur ElevenLabs avant de répondre.
+- Ne pas présenter cette chaîne de transcription / réponse / synthèse comme une session WebRTC temps réel : il s'agit de l'amélioration de l'architecture actuelle.
