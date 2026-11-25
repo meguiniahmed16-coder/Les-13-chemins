@@ -69,9 +69,18 @@ for (const args of [
   ['--test', 'lecteur-chemins.test.mjs'],
   ['--test', 'libre-parcours.test.mjs'], // ensure optional challenges never award points
 ]) {
-  const { stdout, stderr } = await run(process.execPath, args, { cwd: root, maxBuffer: 4 * 1024 * 1024 });
-  if (stdout.trim()) console.log(stdout.trim());
-  if (stderr.trim()) console.error(stderr.trim());
+  let result;
+  try {
+    result=await run(process.execPath,args,{cwd:root,maxBuffer:4*1024*1024});
+  } catch(error) {
+    // Preserve the full failing test name and assertion in Actions logs rather
+    // than only showing Node's truncated Error object (>10 kB of TAP output).
+    if(error.stdout?.trim())console.error(error.stdout.trim());
+    if(error.stderr?.trim())console.error(error.stderr.trim());
+    throw new Error('Contrôle du build interrompu : '+args.join(' '));
+  }
+  if (result.stdout.trim()) console.log(result.stdout.trim());
+  if (result.stderr.trim()) console.error(result.stderr.trim());
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
