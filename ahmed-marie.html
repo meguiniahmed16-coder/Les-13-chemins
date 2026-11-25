@@ -16,7 +16,7 @@
 .cited-message{border-left:3px solid #92795b;margin:8px 0;padding:8px 12px;background:rgba(255,255,255,.5);color:#44392f;white-space:pre-wrap}.cited-message cite{font-size:12px;font-weight:600}.cited-message p{margin:7px 0 0}
 .message-label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.message-time{font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:#766c5f}
 </style>
-<link rel="stylesheet" href="/blog-content.css">
+<link rel="stylesheet" href="/blog-content.css"><link rel="stylesheet" href="/membres/ahmed-3d.css?v=ahmed3d1">
 <style>.author-orientation{padding:40px 0 28px;border-bottom:1px solid var(--line);max-width:790px;margin:auto}.author-orientation h1{font-size:clamp(34px,5vw,52px)}.author-orientation>p:not(.eyebrow){font-size:15px;line-height:1.7}.author-entry-links{display:flex;gap:12px 24px;flex-wrap:wrap;margin-top:18px}.author-entry-links a{display:inline-flex;min-height:44px;align-items:center;font-size:13px;text-underline-offset:4px}.page-foot{flex-wrap:wrap}@media(min-width:900px){.aside{top:var(--site-nav-offset,90px)}}</style></head>
 <body>
 <div class="page">
@@ -38,6 +38,15 @@
 <div class="intro-actions"><button class="primary" id="startButton" type="button" disabled>Commencer la conversation <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button><span class="intro-caption">Tu pourras revenir ici<br>pour reprendre le fil.</span></div>
 </div>
 <div class="loading" id="loadingPanel" hidden><strong>Retrouver le fil.</strong><span id="loadingText">Je reprends ta conversation sur cet appareil…</span></div>
+<section id="ahmed-3d" class="ahmed-3d" hidden aria-label="Ahmed numérique dans le Salon 3D">
+ <div id="ahmed-3d-room" class="ahmed-3d-room" role="img" aria-label="Le personnage original 3D d’Ahmed"></div>
+ <div class="ahmed-3d-controls">
+  <button id="ahmed-call" class="primary" type="button">☎ Appeler Ahmed</button>
+  <button id="ahmed-hangup" type="button" hidden>Raccrocher</button>
+  <p id="ahmed-call-status" role="status" aria-live="polite">Parle à Ahmed numérique. Ses réponses sont générées et ne sont pas toutes validées par l’auteur.</p>
+ </div>
+</section>
+<details id="ahmed-written" class="ahmed-written" hidden><summary>Lire les échanges ou écrire un message</summary>
 <div id="chatPanel" hidden>
 <div class="transcript" id="transcript" role="log" aria-label="Messages de la conversation" aria-live="polite" aria-relevant="additions text" tabindex="0"></div>
 <div class="suggestions" id="suggestions" aria-label="Quelques idées pour commencer">
@@ -54,6 +63,7 @@
 <p class="compose-hint" id="composeHint">Horaires de Paris. Tu peux demander « archive notre conversation entre 19h et 19h30 ».</p>
 <div class="compose-bottom"><label class="switch-label"><input class="switch" id="emojiPreference" type="checkbox" role="switch" checked><span>Emojis bienvenus dans les réponses</span></label><span class="session-label">Échanges transmis à Ahmed</span></div>
 </form>
+</details>
 </section>
 <aside class="aside" aria-label="À propos de cette expérience">
 <section class="aside-card"><h2>Ce qui nourrit Ahmed numérique</h2><div class="figures"><strong>300</strong><span>questions<br>900 variantes de réponses</span></div><p>Un travail en cours, à partir de mes manuscrits, dont le texte du 29 juillet.</p><div class="aside-rule"></div><p>Je relis les échanges après coup. Je valide, je corrige, je refuse parfois. Ça lui évitera, je l’espère, de me faire dire n’importe quoi.</p><p>Une réponse générée reste une proposition. Elle ne devient pas automatiquement ma parole approuvée.</p></section>
@@ -96,8 +106,8 @@ function updateControls(){ui.startButton.disabled=!ui.consent.checked||busy;ui.s
 function showStatus(message,error=false,retry=null){ui.statusText.textContent=message;ui.statusBox.hidden=!message;ui.statusBox.classList.toggle('error',error);retryAction=retry;ui.retryButton.hidden=!retry;updateControls()}
 function setBusy(value){busy=value;ui.composer.setAttribute('aria-busy',String(value));updateControls()}
 function scrollLatest(){ui.transcript.scrollTop=ui.transcript.scrollHeight}
-function showChat(){ui.introPanel.hidden=true;ui.loadingPanel.hidden=true;ui.chatPanel.hidden=false;ui.composer.hidden=false;document.body.classList.add('active');updateControls()}
-function showIntro(){ui.introPanel.hidden=false;ui.loadingPanel.hidden=true;ui.chatPanel.hidden=true;ui.composer.hidden=true;ui.consent.checked=false;document.body.classList.remove('active');updateControls()}
+function showChat(){ui.introPanel.hidden=true;ui.loadingPanel.hidden=true;ui.chatPanel.hidden=false;ui.composer.hidden=false;document.body.classList.add('active');$('ahmed-3d').hidden=false;$('ahmed-written').hidden=false;updateControls();document.dispatchEvent(new Event('ahmed-3d-ready'))}
+function showIntro(){ui.introPanel.hidden=false;ui.loadingPanel.hidden=true;ui.chatPanel.hidden=true;ui.composer.hidden=true;ui.consent.checked=false;document.body.classList.remove('active');$('ahmed-3d').hidden=true;$('ahmed-written').hidden=true;document.dispatchEvent(new Event('ahmed-3d-inactive'));updateControls()}
 function chooseQuote(id,text){if(busy||dictating||pendingRequest)return;selectedQuote={id,text};ui.quoteText.textContent=text;ui.quotePreview.hidden=false;ui.messageInput.focus();ui.composer.scrollIntoView({block:'nearest',behavior:'smooth'});updateControls()}
 function clearQuote(){selectedQuote=null;ui.quoteText.textContent='';ui.quotePreview.hidden=true}
 function quotePrompt(quote,message){return quote?'Citation d’Ahmed numérique :\n'+quote.text.split('\n').map(line=>'> '+line).join('\n')+'\n\n'+message:message}
@@ -111,7 +121,7 @@ function uuid(){if(globalThis.crypto&&typeof crypto.randomUUID==='function')retu
 function expired(){clearSession();pendingRequest=null;pendingNodes=null;ui.messageInput.value='';resetTranscript();showIntro();showStatus('Cette session n’est plus disponible. Tu peux accepter à nouveau les conditions pour ouvrir un nouveau fil.',true)}
 async function start(){if(busy||!ui.consent.checked)return;setBusy(true);ui.startButton.textContent='Ouverture du fil…';showStatus('');try{const data=await post('/start',{consent:true,invite_token:invitationToken,post_id:currentPost?.id});if(typeof data.session_id!=='string'||typeof data.token!=='string'||!data.session_id||!data.token)throw new Error('Invalid session');session={session_id:data.session_id,token:data.token};const stored=saveSession();resetTranscript();showChat();if(!stored)showStatus('Cette conversation reste ouverte ici. Ton navigateur empêche sa reprise après fermeture de la page.');ui.messageInput.focus()}catch(error){showStatus(publicError(error,'start'),true)}finally{setBusy(false);ui.startButton.textContent='Commencer la conversation'}}
 async function resume(){if(!session||busy)return;setBusy(true);ui.introPanel.hidden=true;ui.loadingPanel.hidden=false;ui.chatPanel.hidden=true;ui.composer.hidden=true;ui.loadingText.textContent='Je reprends ta conversation sur cet appareil…';showStatus('');try{const data=await post('/history',{session_id:session.session_id,token:session.token});if(!Array.isArray(data.turns))throw new Error('Invalid history');renderHistory(data.turns);showChat()}catch(error){if(error.status===401||error.status===403||error.status===404){expired()}else{ui.loadingText.textContent='Le fil n’a pas pu être chargé. Il reste lié à cet appareil.';showStatus(publicError(error,'history'),true,resume)}}finally{setBusy(false)}}
-async function sendPending(){if(busy||!session||!pendingRequest)return;const request=pendingRequest;setBusy(true);showStatus('Ahmed numérique prépare sa réponse.');if(pendingNodes)pendingNodes.article.classList.add('waiting');try{const data=await post('/chat',{session_id:session.session_id,token:session.token,message:request.message,request_id:request.request_id,emojis:request.emojis,...(request.quote?{quote_turn_id:request.quote.id}:{})});if(!data.turn||typeof data.turn.response!=='string'||!data.turn.response.trim())throw new Error('Invalid turn');if(pendingNodes){pendingNodes.article.classList.remove('waiting');pendingNodes.content.textContent=request.message;const time=pendingNodes.article.querySelector('time');if(time&&data.turn.created_at){time.dateTime=data.turn.created_at;time.textContent=messageDate(data.turn.created_at)}}const turnId=data.turn.id==null?null:String(data.turn.id);if(!turnId||!seenTurns.has(turnId)){const response=addMessage('assistant',data.turn.response,turnId,data.turn.created_at);if(turnId)seenTurns.add(turnId)}pendingRequest=null;pendingNodes=null;hasHistory=true;ui.suggestions.hidden=true;showStatus('');scrollLatest()}catch(error){if(error.status===401||error.status===403){expired()}else{if(pendingNodes)pendingNodes.article.classList.remove('waiting');showStatus(publicError(error),true,sendPending)}}finally{setBusy(false)}}
+async function sendPending(){if(busy||!session||!pendingRequest)return;const request=pendingRequest;setBusy(true);showStatus('Ahmed numérique prépare sa réponse.');if(pendingNodes)pendingNodes.article.classList.add('waiting');try{const data=await post('/chat',{session_id:session.session_id,token:session.token,message:request.message,request_id:request.request_id,emojis:request.emojis,...(request.quote?{quote_turn_id:request.quote.id}:{})});if(!data.turn||typeof data.turn.response!=='string'||!data.turn.response.trim())throw new Error('Invalid turn');if(pendingNodes){pendingNodes.article.classList.remove('waiting');pendingNodes.content.textContent=request.message;const time=pendingNodes.article.querySelector('time');if(time&&data.turn.created_at){time.dateTime=data.turn.created_at;time.textContent=messageDate(data.turn.created_at)}}const turnId=data.turn.id==null?null:String(data.turn.id);if(!turnId||!seenTurns.has(turnId)){const response=addMessage('assistant',data.turn.response,turnId,data.turn.created_at);if(turnId)seenTurns.add(turnId)}document.dispatchEvent(new CustomEvent('ahmed-3d-answer',{detail:{text:data.turn.response}}));pendingRequest=null;pendingNodes=null;hasHistory=true;ui.suggestions.hidden=true;showStatus('');scrollLatest()}catch(error){if(error.status===401||error.status===403){expired()}else{if(pendingNodes)pendingNodes.article.classList.remove('waiting');showStatus(publicError(error),true,sendPending)}}finally{setBusy(false)}}
 function submitMessage(event){event.preventDefault();if(!session||busy||dictating||pendingRequest)return;const message=ui.messageInput.value.trim();if(!message||message.length>LIMIT)return;let requestId;try{requestId=uuid()}catch{showStatus('Ce navigateur ne permet pas de créer un identifiant de message sûr. Essaie avec un navigateur plus récent.',true);return}pendingRequest={message,request_id:requestId,emojis:ui.emojiPreference.checked,quote:selectedQuote,created_at:new Date().toISOString()};pendingNodes=addMessage('user',quotePrompt(selectedQuote,message),null,pendingRequest.created_at);clearQuote();ui.messageInput.value='';ui.suggestions.hidden=true;closeEmojis();updateControls();sendPending()}
 function closeEmojis(){ui.emojiMenu.hidden=true;ui.emojiButton.setAttribute('aria-expanded','false')}
 function insertText(text){const input=ui.messageInput;const begin=input.selectionStart??input.value.length;const end=input.selectionEnd??begin;if(input.value.length-(end-begin)+text.length>LIMIT){ui.composeHint.textContent='Le message est limité à 3 000 caractères.';return}input.setRangeText(text,begin,end,'end');input.focus();updateControls()}
@@ -145,7 +155,7 @@ $('commentForm').addEventListener('submit',async e=>{e.preventDefault();const bu
 try{const supplied=new URLSearchParams(location.hash.slice(1)).get('invitation');if(supplied){invitationToken=supplied;localStorage.setItem('ahmed-marie-invitation',supplied);history.replaceState(null,'',location.pathname);}else invitationToken=localStorage.getItem('ahmed-marie-invitation')||'';}catch{}
 updateControls();openBlog();
 
-</script>
+</script><script type="module" src="/membres/ahmed-3d.js?v=ahmed3d1"></script>
 </body>
 </html>
 
