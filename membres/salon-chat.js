@@ -84,7 +84,10 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   // character dialogue: no private provider credential is given to visitors.
   const publicCall=!root.host.hasAttribute('salon-auteur');
   let publicMic=null,publicCallActive=false,publicCallGeneration=0,publicMicAnswered=false;
-  if(publicCall)phonePanel.querySelector('.voice-conversation-settings').hidden=true;
+  if(publicCall){
+    phonePanel.querySelector('.voice-conversation-settings').hidden=true;
+    phonePanel.querySelector('.voice-call-hint').textContent='Le micro utilise la reconnaissance vocale du navigateur. Selon l’appareil, ce service peut transmettre les paroles à son fournisseur. Les messages respectent les limites de la visite.';
+  }
   const sequence=createShotSequence(),now=()=>performance.now()/1000;
   let mode='reverse',speaker='player',reading,showSpeech=true;
   const nodeFor=who=>who==='player'?own:other,announcement=$('.speech-announcement');
@@ -274,7 +277,10 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   phoneToggle.onclick=()=>{
     if(publicCall){
       if(!phonePanel.hidden){closePhone();return;}
-      void loadPhone(true);return;
+      phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');
+      phonePanel.querySelector('.voice-call-name').textContent=person?.name||'le personnage';
+      if(person)startPublicCall();else void loadPhone(true);
+      return;
     }
     if(!phonePanel.hidden){closePhone();return;}
     if(person&&phoneReady&&!request){
