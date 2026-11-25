@@ -65,3 +65,7 @@
   body:has(#member:not([hidden])) .tda-legal-footer :is(a,button){font-size:.72rem;line-height:1.4;padding-block:4px}
   #salon-layout:not(.has-panel) #room{--room-height:max(280px,calc(100dvh - 116px))}
 }
+
+.salon-film-button,.salon-original-intro{display:inline-flex;align-items:center;min-height:42px;margin:4px 7px 8px 0;padding:7px 10px;border-radius:9px;
+ background:#f3ead6;border:1px solid #c6bfa8;color:#274635;text-decoration:none;font:600 12px/1.25 system-ui}
+.salon-original-intro{background:transparent}

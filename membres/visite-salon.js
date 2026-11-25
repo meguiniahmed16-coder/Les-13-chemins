@@ -74,6 +74,8 @@ async function enter(state){
   if(lease.state!=='active'){finish();return;}
   phase='live';setTime(lease.remaining);$('status').textContent='';
   window.dispatchEvent(new CustomEvent('salon-guest-ready',{detail:{view}}));
+  const goal=new URLSearchParams(location.search).get('ouvrir');
+  if(['inviter','appeler'].includes(goal))view.invitePersonnage();
 }
 async function begin(){
   introDone=true;
@@ -96,6 +98,10 @@ video.addEventListener('error',()=>{$('skip').textContent='Entrer dans le salon'
 if(matchMedia('(prefers-reduced-motion: reduce)').matches){video.autoplay=false;video.pause();}
 $('skip').onclick=begin;
 $('retry').onclick=()=>{introDone=true;check();};
+let activeView=null;
+window.addEventListener('salon-guest-ready',event=>{activeView=event.detail.view;});
+$('quick-invite').onclick=()=>activeView?.invitePersonnage();
+$('quick-call').onclick=()=>activeView?.appelerPersonnage();
 offer.addEventListener('cancel',e=>{e.preventDefault();location.assign('/');});
 async function resume(){
   if(phase!=='live'&&phase!=='loading')return;

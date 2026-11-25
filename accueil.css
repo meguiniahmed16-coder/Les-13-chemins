@@ -18,3 +18,21 @@
 .home-atelier p{margin:8px 0 15px}
 .home-atelier .home-button{background:var(--ink);border-color:var(--ink);color:#fff4df}
 @media(max-width:550px){.home-atelier{grid-template-columns:1fr}.home-atelier img{height:165px}.home-atelier div{padding:19px 23px 24px}}
+
+/* Entrée du Salon : gestes directs sur l'accueil, extrait filmé facultatif. */
+.home-salon-direct{display:flex;flex-wrap:wrap;gap:9px;margin:13px 0 18px}
+.home-salon-direct a{display:inline-flex;align-items:center;gap:7px;min-height:48px;padding:10px 15px;
+ border-radius:14px;border:1px solid #dfce9f;background:rgba(31,66,49,.89);
+ color:#fff9e8;text-decoration:none;font:700 13px/1.2 system-ui;box-shadow:0 3px 12px #17291d4c}
+.home-salon-direct a span{font-size:23px;line-height:1}
+.home-salon-direct a:hover,.home-salon-direct a:focus-visible{background:#315a43}
+.home-cinema{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1fr);
+ gap:clamp(16px,4vw,48px);align-items:center;width:min(1200px,calc(100% - 32px));
+ margin:36px auto;padding:clamp(18px,3vw,30px);border:1px solid #c4c9b4;
+ border-radius:20px;background:#f4f0e4;color:#274034}
+.home-cinema h2{font:500 clamp(26px,3.2vw,39px)/1.1 Georgia,serif;margin:9px 0}
+.home-cinema p:not(.home-kicker){font:15px/1.65 system-ui;color:#576556}
+.home-cinema a{display:inline-flex;min-height:45px;align-items:center;color:#234b38;font-weight:650}
+.home-cinema video{display:block;width:100%;max-height:420px;aspect-ratio:16/9;object-fit:contain;
+ border:1px solid #b2bba6;border-radius:12px;background:#183a2f}
+@media(max-width:740px){.home-cinema{grid-template-columns:minmax(0,1fr)}.home-salon-direct a{flex:1 1 140px;font-size:12px}}
