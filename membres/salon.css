@@ -601,3 +601,11 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
  .stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer{width:59px!important}
  .stage .studio-drawer .studio-rail.studio-labels{flex-basis:105px}
 }
+
+/* Persistent rail: a second tap on Avatar / Vêtements folds its own controls. */
+.stage:has(.studio-drawer:not([hidden])) .maison-dock{display:flex!important}
+.stage:has(.studio-drawer:not([hidden])) .maison-phone{display:none!important}
+.stage .maison-studio-peek{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;padding:0!important;border-radius:15px!important;font-size:23px!important;display:grid!important;place-items:center!important}
+.stage .studio-drawer:not([data-active-category="advanced"]) .v27-inspection-tools{display:none!important}
+.stage .studio-drawer .studio-rail::-webkit-scrollbar{display:none}
+.stage .studio-drawer .studio-rail button{touch-action:manipulation}

@@ -46,6 +46,7 @@ export function createStudioIconNav(drawer,pane,{setMode}){
  function update(){
   const active=categories.find(x=>x[0]===selected),name=active?.[1]||'Personnaliser';
   title.textContent=name;
+  drawer.dataset.activeCategory=selected;
   rail.querySelectorAll('.studio-nav-icon').forEach(b=>{
    b.setAttribute('aria-pressed',String(!collapsed&&b.dataset.category===selected));
    b.setAttribute('aria-expanded',String(!collapsed&&b.dataset.category===selected));
@@ -127,5 +128,8 @@ export function createStudioIconNav(drawer,pane,{setMode}){
    selected=category;collapsed=false;drawer.classList.remove('studio-icon-only');
    setMode(categories.find(x=>x[0]===category)[2]);update();return true;
  }
- return {update,select,get selected(){return selected;},get collapsed(){return collapsed;}};
+ function toggleSelected(){
+   collapsed=!collapsed;drawer.classList.toggle('studio-icon-only',collapsed);update();return collapsed;
+ }
+ return {update,select,toggleSelected,get selected(){return selected;},get collapsed(){return collapsed;}};
 }

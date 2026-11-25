@@ -76,7 +76,7 @@ class SalonV27 extends HTMLElement{
       this.#frame?.contentDocument?.body.classList.toggle('editing-duo',open);
       const stage=root.querySelector('.stage'),peek=root.querySelector('.maison-studio-peek');
       stage.classList.remove('maison-studio-collapsed');peek.hidden=!open;
-      peek.textContent='◉ Voir le personnage entier';
+      peek.textContent='⛶';peek.setAttribute('aria-label','Voir le personnage entier');peek.title='Voir le personnage entier';
       if(open){this.#targets();this.#syncInspectionTools();this.#chat.manual();this.#cameraKey='';this.#scene?.camera('manual');this.#scene?.focus('Corps',this.#editing);}
       else if(this.#editing){this.#editing='';void this.#select(this.#gender);}
     });
@@ -87,7 +87,7 @@ class SalonV27 extends HTMLElement{
     root.querySelector('.maison-studio-peek').onclick=()=>{
       const stage=root.querySelector('.stage'),collapsed=stage.classList.toggle('maison-studio-collapsed');
       const button=root.querySelector('.maison-studio-peek');
-      button.textContent=collapsed?'✎ Afficher les réglages':'◉ Voir le personnage entier';
+      button.textContent=collapsed?'⚙':'⛶';button.setAttribute('aria-label',collapsed?'Afficher les réglages':'Voir le personnage entier');button.title=button.getAttribute('aria-label');
       button.setAttribute('aria-pressed',String(collapsed));
       if(collapsed)this.#scene?.focus('Corps',this.#editing);
     };

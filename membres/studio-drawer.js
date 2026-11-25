@@ -225,7 +225,11 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   catch(e){if(version===revision)message.textContent=e.message||'Enregistrement interrompu.';}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };
- return {toggle,selectCategory(category){if(!drawer.hidden&&iconNav.selected===category&&!iconNav.collapsed){drawer.classList.add('studio-icon-only');iconNav.select(category);return;}if(drawer.hidden)toggle(true);iconNav.select(category);},configure(value,settings){
+ return {toggle,selectCategory(category){
+    if(drawer.hidden){toggle(true);iconNav.select(category);return;}
+    if(iconNav.selected===category){iconNav.toggleSelected();return;}
+    iconNav.select(category);
+   },configure(value,settings){
    ++revision;current=null;save.disabled=false;message.textContent='';look=value;options=settings;
    if(options.incarnationsURL!==INCARNATIONS_URL)incarnations.close();render();
  }};
