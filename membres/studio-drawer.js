@@ -1,5 +1,6 @@
-import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js?v=duo6';
-import {normaliseStudio,traitAvailable,traitOptionAvailable,slots,skinSteps} from './studio-look.js?v=inspection32';
+import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js?v=incarnations33';
+import {normaliseStudio,traitAvailable,traitOptionAvailable,slots,skinSteps} from './studio-look.js?v=incarnations33';
+import {createIncarnationsDialog,INCARNATIONS_URL} from './incarnations-dialog.js?v=incarnations33';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
@@ -8,27 +9,36 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
  drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Mon personnage</button><button type="button">Tous les vêtements</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
  const pane=drawer.querySelector('.studio-scroll'),message=drawer.querySelector('[role=status]'),save=drawer.querySelector('.save');
  const tabs=[...drawer.querySelectorAll('.switch button')];let mode=0,look,options={},current,revision=0,writing=false;
+ const incarnations=createIncarnationsDialog({mount:drawer.parentNode,allowed:()=>options.incarnationsURL===INCARNATIONS_URL});
  function toggle(open){if(drawer.hidden===!open)return;drawer.hidden=!open;toggleButton.setAttribute('aria-expanded',String(open));onToggle(open,mode);}
  toggleButton.onclick=()=>toggle(drawer.hidden);drawer.querySelector('.close').onclick=()=>toggle(false);
  function choose(next){
-  look=normaliseStudio(next,options.plus,undefined,options.gender);const version=++revision;
+  look=normaliseStudio(next,options.plus,undefined,options.gender,{owner:options.owner===true||Boolean(options.author)});const version=++revision;
   options.change(look);save.disabled=true;message.textContent='Ajustement…';
   current=Promise.resolve(apply(look)).then(applied=>{if(applied===false)throw Error('Ajustement interrompu.');if(version===revision){save.disabled=false;message.textContent='';}}).catch(()=>{if(version===revision){message.textContent='Chargement interrompu. Réessaie cette option.';save.disabled=true;}});
   sync();
  }
  const controls=[];
+ function traitChoices(select,trait){
+  let previous='';
+  const update=()=>{
+   const choices=trait.options.map((label,index)=>({label,index})).filter(({index})=>traitOptionAvailable(trait.key,index,options.gender,options.owner===true||Boolean(options.author),look));
+   const signature=choices.map(({index})=>index).join(',');
+   if(signature!==previous){select.replaceChildren(...choices.map(({label,index})=>new Option(label,String(index))));previous=signature;}
+   select.value=String(look.face[trait.key]);
+  };
+  controls.push(update);update();
+ }
  // One familiar editor: the frequently used adjustments remain visible; everything
  // else from the established V27 catalog stays available under Options avancées.
  function basicAppearance(parent){
   const quick=folder(parent,'Personnalisation rapide',true);
   quick.classList.add('studio-quick');
-  for(const [key,labelText] of [['skin','Teinte de peau'],['iris','Couleur des yeux'],['hair','Coiffure'],['hairTone','Couleur des cheveux'],['body','Silhouette']]){
-   if(!traitAvailable(key,options.gender))continue;
+  for(const [key,labelText] of [['skin','Teinte de peau'],['iris','Couleur des yeux'],['hair','Coiffure'],['beard','Barbe et moustache'],['hairTone','Couleur des cheveux et de la barbe'],['body','Silhouette']]){
+   if(!traitAvailable(key,options.gender,options.owner===true||Boolean(options.author)))continue;
    const trait=traits.find(t=>t.key===key);if(!trait)continue;
    const label=make('label',labelText),select=make('select');
-   for(const [i,name] of trait.options.entries()){
-    if(traitOptionAvailable(key,i,options.gender))select.add(new Option(name,String(i)));
-   }
+   traitChoices(select,trait);
    label.append(select);quick.append(label);
    select.onchange=()=>{
     const n=Number(select.value);
@@ -36,7 +46,6 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
       ...(key==='skin'?{skinLevel:skinSteps[n]}:{}),
       ...(key==='iris'?{iris:''}:{})});
    };
-   controls.push(()=>{select.value=String(look.face[key])});
   }
   const views=make('div');views.className='figure-tools';views.setAttribute('role','group');views.setAttribute('aria-label','Vues du modèle');
   for(const title of ['Corps','Visage','Profil','Dos']){
@@ -47,20 +56,16 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
  function sync(){for(const update of controls)update();}
  function appearance(parent){
   for(const [id,title,keys] of families){
-   const visibleKeys=keys.filter(key=>traitAvailable(key,options.gender));
+   const visibleKeys=keys.filter(key=>traitAvailable(key,options.gender,options.owner===true||Boolean(options.author)));
    let caption=title;
    if(id==='regard'&&!visibleKeys.includes('lashes'))caption='Sourcils';
    if(id==='cheveux'&&!visibleKeys.includes('beard'))caption='Cheveux';
    const f=folder(parent,caption);f.dataset.family=id;
    for(const key of visibleKeys){
     const trait=traits.find(t=>t.key===key),label=make('label',trait.label),select=make('select');
-    for(const [i,name] of trait.options.entries()){
-     if(!traitOptionAvailable(key,i,options.gender))continue;
-     select.add(new Option(name,String(i)));
-    }
+    traitChoices(select,trait);
     select.name=key;label.append(select);f.append(label);
     select.onchange=()=>{const n=Number(select.value);choose({...look,face:{...look.face,[key]:n},...(key==='skin'?{skinLevel:skinSteps[n]}:{}),...(key==='iris'?{iris:''}:{})});};
-    controls.push(()=>select.value=String(look.face[key]));
     if(key==='skin'){
      const l=make('label','Nuance de peau'),slider=make('input');slider.type='range';slider.min=0;slider.max=100;
      slider.onchange=()=>choose({...look,skinLevel:Number(slider.value)});controls.push(()=>slider.value=look.skinLevel);l.append(slider);f.append(l);
@@ -132,6 +137,13 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   // One intuitive place for appearance, outfit and saved character. Nothing
   // from the original V27 catalog is removed; full detail stays in accordions.
   if(mode===0){
+   if(options.incarnationsURL===INCARNATIONS_URL){
+    const entry=make('section');entry.className='incarnations-entry';
+    const create=make('button','L’Atelier des Incarnations');create.type='button';
+    create.onclick=()=>incarnations.open(create);
+    entry.append(create,make('p',options.privateURL?'Crée un personnage à partir d’une photo, puis télécharge le GLB ou le HTML.':'Crée ton personnage avec un selfie, puis télécharge le GLB ou le HTML.'));
+    pane.append(entry);
+   }
    basicAppearance(pane);
    const outfitQuick=folder(pane,'Ma tenue · modèles complets',true);
    outfitQuick.classList.add('studio-quick-outfits');
@@ -212,6 +224,7 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };
  return {toggle,configure(value,settings){
-   ++revision;current=null;save.disabled=false;message.textContent='';look=value;options=settings;render();
+   ++revision;current=null;save.disabled=false;message.textContent='';look=value;options=settings;
+   if(options.incarnationsURL!==INCARNATIONS_URL)incarnations.close();render();
  }};
 }

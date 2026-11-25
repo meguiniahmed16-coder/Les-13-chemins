@@ -1,13 +1,14 @@
-import {generateAppearance} from './starting-appearance.js?v=49';
-import {referenceStudio,normaliseStudio} from './studio-look.js?v=inspection32';
+import {generateAppearance} from './starting-appearance.js?v=incarnations33';
+import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
-import {createDrawer} from './studio-drawer.js?v=inspection32';
-import {createSalonChat} from './salon-chat.js?v=presence49';
-import {guestAppearance} from './salon-encounter.js?v=presence49';
-import {loadStudio} from './studio-model.js?v=inspection32';
-import {createSalonInspection} from './salon-inspection.js?v=inspection32';
+import {createDrawer} from './studio-drawer.js?v=incarnations33';
+import {createSalonChat} from './salon-chat.js?v=incarnations33';
+import {guestAppearance} from './salon-encounter.js?v=incarnations33';
+import {loadStudio} from './studio-model.js?v=incarnations33';
+import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
 import {resource} from './studio-assets.js';
 import {createPerformer} from './salon-performance.js';
+import {incarnationsURLFor} from './incarnations-dialog.js?v=incarnations33';
 
 class SalonV27 extends HTMLElement{
   #frame;#ready;#scene;#drawer;#chat;#options;#look;#guest;#gender;#drafts={};#serial={f:0,m:0,guest:0};#fallback;#listen;#cameraKey='';#ownStyle=createPerformer('joueur');#lastTalk=0;#editing='';#inspection;#drawerView;#inspectionTools;#inspectionPending=new Set();
@@ -22,7 +23,7 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=studio-simple53"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=incarnations33"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -137,7 +138,7 @@ class SalonV27 extends HTMLElement{
     return applied;
   }
   #configureDrawer(state,options,slot){
-    this.#drawerView={state,options,slot};this.#refreshDrawer();
+    this.#drawerView={state,options:{...options,owner:Boolean(this.#options?.author),incarnationsURL:this.#options?.incarnationsURL},slot};this.#refreshDrawer();
   }
   #refreshDrawer(){
     const view=this.#drawerView;if(!view)return;
@@ -178,7 +179,7 @@ class SalonV27 extends HTMLElement{
   connectedCallback(){
     if(this.#frame||this.#fallback)return;
     const frame=this.#frame=document.createElement('iframe');
-    frame.title='La Croisée des Âmes, le salon et le parc';frame.className='v27-frame';frame.allowFullscreen=true;
+    frame.title='La Croisée des Âmes, le salon et le parc';frame.className='v27-frame';frame.allow='camera; fullscreen';frame.allowFullscreen=true;
     this.#listen=new AbortController();
     const signal=this.#listen.signal;
     this.#ready=new Promise(resolve=>{
@@ -215,12 +216,12 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=inspection32'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=incarnations33'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
     if(this.#fallback)return;
-    await import('./avatar.js?v=gestes50');
+    await import('./avatar.js?v=incarnations33');
     if(!this.isConnected||this.#fallback)return;
     this.#fallback=document.createElement('chemins-avatar');this.#fallback.setAttribute('scene','salon');
     this.shadowRoot.querySelector('.stage').hidden=true;
@@ -230,6 +231,7 @@ class SalonV27 extends HTMLElement{
   }
   disconnectedCallback(){this.#listen?.abort();this.#inspection.clear();this.#inspectionPending.clear();this.#drawerView=null;this.#chat.reset();this.#scene=null;this.#frame?.remove();this.#frame=null;}
   configure(look,options){
+    options={...options,incarnationsURL:incarnationsURLFor(options)};
     const changed=this.#options?.memberKey!==options.memberKey||this.#options.gender!==options.gender||Boolean(this.#options.author)!==Boolean(options.author)||Boolean(this.#options.temporary)!==Boolean(options.temporary);
     this.#look=look;this.#options=options;
     if(this.#fallback)return this.#fallback.configure(look,options);
@@ -263,7 +265,7 @@ class SalonV27 extends HTMLElement{
     if(!state){
       let previous=null;try{previous=(options.temporary?sessionStorage:localStorage).getItem(storage);}catch{}
       const use=Boolean(saved)&&(previous==='1'||((stored||!author)&&previous!=='0'));
-      state=this.#drafts[gender]={reference,look:use?normaliseStudio(saved,options.plus,undefined,gender):reference,custom:use,saved};
+      state=this.#drafts[gender]={reference,look:use?normaliseStudio(saved,options.plus,undefined,gender,{owner:Boolean(options.author)}):reference,custom:use,saved};
     }
     const choices=this.shadowRoot.querySelector('.studio-drawer');
     let switcher=choices.querySelector('.v27-look-choice');
@@ -277,7 +279,7 @@ class SalonV27 extends HTMLElement{
     switcher.disabled=false;
     switcher.onclick=async()=>{
       const before={...state};state.custom=!state.custom;
-      state.look=state.custom?normaliseStudio(state.saved,options.plus,undefined,gender):reference;
+      state.look=state.custom?normaliseStudio(state.saved,options.plus,undefined,gender,{owner:Boolean(options.author)}):reference;
       switcher.disabled=true;
       try{
         if(state.custom){if(!await this.#dress(key,state.look,gender,{inspection:false}))return;}

@@ -1,0 +1,640 @@
+{
+  "format": "makehuman-salon-resources/1",
+  "license": "CC0-1.0",
+  "assetCount": 30,
+  "maxPackBytes": 600000,
+  "compression": "none",
+  "archive": {
+    "bytes": 17203924,
+    "sha256": "3c87ebefc6a12dc8cfa85194077c2d063ad99a4040af0dbba19005b80d294eab"
+  },
+  "packs": [
+    "grooms-000.pack",
+    "grooms-001.pack",
+    "grooms-002.pack",
+    "grooms-003.pack",
+    "grooms-004.pack",
+    "grooms-005.pack",
+    "grooms-006.pack",
+    "grooms-007.pack",
+    "grooms-008.pack",
+    "grooms-009.pack",
+    "grooms-010.pack",
+    "grooms-011.pack",
+    "grooms-012.pack",
+    "grooms-013.pack",
+    "grooms-014.pack",
+    "grooms-015.pack",
+    "grooms-016.pack",
+    "grooms-017.pack",
+    "grooms-018.pack",
+    "grooms-019.pack",
+    "grooms-020.pack",
+    "grooms-021.pack",
+    "grooms-022.pack",
+    "grooms-023.pack",
+    "grooms-024.pack",
+    "grooms-025.pack",
+    "grooms-026.pack",
+    "grooms-027.pack",
+    "grooms-028.pack"
+  ],
+  "packFiles": {
+    "grooms-000.pack": {
+      "bytes": 600000,
+      "sha256": "a6bec643806ef6b88460839599603b0b2991a8c4de822f192ca9e6638df3c2de"
+    },
+    "grooms-001.pack": {
+      "bytes": 600000,
+      "sha256": "1b973c610f3f462ae0ebb0bd61572ac238b4eced47987a1e4860a6556c76584d"
+    },
+    "grooms-002.pack": {
+      "bytes": 600000,
+      "sha256": "b704557ddb1fd57602f2ea6362366d1bfebb87ee789ffd01ca6467b6da30571d"
+    },
+    "grooms-003.pack": {
+      "bytes": 600000,
+      "sha256": "3498e35a4a8bffd86d47a90103637ca234b90b567f5f03b1f1b172fd124b809d"
+    },
+    "grooms-004.pack": {
+      "bytes": 600000,
+      "sha256": "17017d0714ecc561b7f4d0d4830ae233fa2744399c0d5c651fd30e401be822da"
+    },
+    "grooms-005.pack": {
+      "bytes": 600000,
+      "sha256": "8464a06618a4a6bdfd412d6915c55645a44871f9f388f9ad9717e91f8ed538e0"
+    },
+    "grooms-006.pack": {
+      "bytes": 600000,
+      "sha256": "998f0146ea712e756d0e4c22fe1fceabe081766d7321f921ffba0ad826f7a3db"
+    },
+    "grooms-007.pack": {
+      "bytes": 600000,
+      "sha256": "241bcf9435b848d8466fef47e81e0e42da7b4dcac64f7c2de889293afcd9bcca"
+    },
+    "grooms-008.pack": {
+      "bytes": 600000,
+      "sha256": "0d14bca50e66c425a56cd18520651ebf2ebe2962c58c6d84d15f8ed95c35a1e3"
+    },
+    "grooms-009.pack": {
+      "bytes": 600000,
+      "sha256": "e0b259e1bc0cc19eb86f18099c65ca273356765299945f9c0075ef1aeca93c20"
+    },
+    "grooms-010.pack": {
+      "bytes": 600000,
+      "sha256": "70338a866752e6ba6d161809a2a356e0ec5366952f5fd387c2c2c5425cfe58df"
+    },
+    "grooms-011.pack": {
+      "bytes": 600000,
+      "sha256": "82ace4246af3570458916fb9d4d3c3ae03d1aaa3f9a127dc952589113f858e3a"
+    },
+    "grooms-012.pack": {
+      "bytes": 600000,
+      "sha256": "1a059157cd57ce2c317cc80de393649a0d24ccda44ab887c70f626490cdaa58f"
+    },
+    "grooms-013.pack": {
+      "bytes": 600000,
+      "sha256": "156209a410b03999e6d37b8c444d4882576c454caff8068012dd88aecd002db0"
+    },
+    "grooms-014.pack": {
+      "bytes": 600000,
+      "sha256": "5d08081d78becb080d0f97f95bef3f3f6da12e261eccabc56f9b6b1e4511c6c4"
+    },
+    "grooms-015.pack": {
+      "bytes": 600000,
+      "sha256": "ce55fbf51d2eadcfef8d3284d5b229837fb722ac9d2ae0a45b4babfa5e3d34e1"
+    },
+    "grooms-016.pack": {
+      "bytes": 600000,
+      "sha256": "00925ccda61b7249a24f630d65b3aaf9a43e9a41d418eba16b0412f96029d942"
+    },
+    "grooms-017.pack": {
+      "bytes": 600000,
+      "sha256": "9551ea848ae3f14095f571efdc384b93a5a54ef4b542b5f9824204c4f35c8e2e"
+    },
+    "grooms-018.pack": {
+      "bytes": 600000,
+      "sha256": "f350af112b2a38d26c6524087202a4f72a79a0412d9eb3044eefc4fbd838d515"
+    },
+    "grooms-019.pack": {
+      "bytes": 600000,
+      "sha256": "449df066e00f7ebb0b91dcd2685d862d5433645cc91d623e8f2629604bedcd9c"
+    },
+    "grooms-020.pack": {
+      "bytes": 600000,
+      "sha256": "c38f7ac49a205c2567b6e431206819e4bc9e8af479b96b674515edbe8f8af51c"
+    },
+    "grooms-021.pack": {
+      "bytes": 600000,
+      "sha256": "d9c572b3c9d594d1c1e453ccfa7ba41f705798e76886af7f71683cb18934e0ac"
+    },
+    "grooms-022.pack": {
+      "bytes": 600000,
+      "sha256": "15e5f9b660f3075c666713ce97cfef3fc1aa950ae6b17f5e6ad27601c0d5e5a5"
+    },
+    "grooms-023.pack": {
+      "bytes": 600000,
+      "sha256": "3ddb1142bafc940ab18814379389f19073d379670f95e3bc60f068d7aa6405b7"
+    },
+    "grooms-024.pack": {
+      "bytes": 600000,
+      "sha256": "18d716be321ca072da6ab00dd69aee22849015e0eb64c46659324cd490f0ebd2"
+    },
+    "grooms-025.pack": {
+      "bytes": 600000,
+      "sha256": "2d0ddf1a343bcfd11f0d409f309020ece29283dd15647194fa7050e461f34704"
+    },
+    "grooms-026.pack": {
+      "bytes": 600000,
+      "sha256": "ababe13fcd3d66e1164f1f8ca750d28ce9ae9c9d2cd925580247388b8d594248"
+    },
+    "grooms-027.pack": {
+      "bytes": 600000,
+      "sha256": "99350b92c646fd5916b76a74c16dd5f0323fdc96a6c59757672dad4a066a2de8"
+    },
+    "grooms-028.pack": {
+      "bytes": 403924,
+      "sha256": "e1439b4de161b35040c70e0b403e1ddd923bee250871a0cc301b9a1530439608"
+    }
+  },
+  "sourceFiles": {
+    "README.md": {
+      "bytes": 1775,
+      "sha256": "99f7959c752018939a2be7489e1c09313e497fed786269df5e6473ee645ad902"
+    },
+    "binary-validation.json": {
+      "bytes": 6213,
+      "sha256": "5215d7c4c2d0b570e4ecdd1203a832ddec9bb3a9a57422507cc71601e1d1afb3"
+    },
+    "catalog.json": {
+      "bytes": 55489,
+      "sha256": "f107940771b9f12e9f54ca169ee788258d1a813e8cfa22202ab3f8646738a093"
+    },
+    "geometry-validation.json": {
+      "bytes": 37989,
+      "sha256": "a74f2c962915740a4e40bec9e7cf297a281e502fae1c2882b0cc2e550a6bf16b"
+    },
+    "licensing-evidence.json": {
+      "bytes": 9864,
+      "sha256": "4cd065d4b2c158d4749de8cdf773ca28adf605b7e72d6d564453d1b5a963b823"
+    },
+    "package.mjs": {
+      "bytes": 5945,
+      "sha256": "fe42d009a002e71d63444eab8145f0baddf0b0824989b8bf98878abb5a0ecb4c"
+    },
+    "preparation-receipt.json": {
+      "bytes": 1594,
+      "sha256": "41f260289112073f601f7b42a879eb7d16911d275ed2712884e7316e584dbc19"
+    },
+    "source-bodyparts05.json": {
+      "bytes": 2690,
+      "sha256": "ff285c64ff0ed6efcccec862e28bbdd32703e2c6a1c45213c78df4b4f176f160"
+    },
+    "source-hair01.json": {
+      "bytes": 16798,
+      "sha256": "b1f3c32a877cf7fb681ed54d28715d53a4d9660656ae063c6a50229181830de7"
+    },
+    "source-inventory.json": {
+      "bytes": 36315,
+      "sha256": "dbaba4571bcd7e6415f44c749984ffa5717ad74f99b7a57dea8ece75b0ef304b"
+    },
+    "verify.test.mjs": {
+      "bytes": 3185,
+      "sha256": "149a6b684bba58f29d4493cf2d2bf14942d845a7b02f0b7a8f0eab17955cef79"
+    }
+  },
+  "assets": [
+    {
+      "id": "mh-cortu_shaggy_green_hair",
+      "label": "Ébouriffée de Cortu",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "cortu_shaggy_green_hair",
+      "file": "mh-cortu_shaggy_green_hair.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-cortu_short_messy_hair",
+      "label": "Courte décoiffée",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "cortu_short_messy_hair",
+      "file": "mh-cortu_short_messy_hair.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-cortu_straight_bangs",
+      "label": "Frange droite",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "cortu_straight_bangs",
+      "file": "mh-cortu_straight_bangs.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-cortu_strawberry_cloud_hair",
+      "label": "Nuage bouclé",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "cortu_strawberry_cloud_hair",
+      "file": "mh-cortu_strawberry_cloud_hair.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-culturalibre_hair_01",
+      "label": "Culturalibre 01",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "culturalibre_hair_01",
+      "file": "mh-culturalibre_hair_01.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-culturalibre_hair_02",
+      "label": "Culturalibre 02",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "culturalibre_hair_02",
+      "file": "mh-culturalibre_hair_02.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-culturalibre_hair_05",
+      "label": "Culturalibre 05",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "culturalibre_hair_05",
+      "file": "mh-culturalibre_hair_05.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-culturalibre_hair_06",
+      "label": "Culturalibre 06",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "culturalibre_hair_06",
+      "file": "mh-culturalibre_hair_06.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-elvs_double_mh_braid",
+      "label": "Double tresse",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "elvs_double_mh_braid",
+      "file": "mh-elvs_double_mh_braid.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-elvs_french_braid_variation",
+      "label": "Tresse française",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "elvs_french_braid_variation",
+      "file": "mh-elvs_french_braid_variation.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-elvs_reverse_french_braid_bun",
+      "label": "Chignon tressé inversé",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "elvs_reverse_french_braid_bun",
+      "file": "mh-elvs_reverse_french_braid_bun.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-elvs_unkempt_french_braid",
+      "label": "Tresse décoiffée",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "elvs_unkempt_french_braid",
+      "file": "mh-elvs_unkempt_french_braid.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-faydaen_hair_1",
+      "label": "Coiffure Faydaen",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "faydaen_hair_1",
+      "file": "mh-faydaen_hair_1.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-learning_anime_hair",
+      "label": "Coiffure anime",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "learning_anime_hair",
+      "file": "mh-learning_anime_hair.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-littleright_bobcut_hair",
+      "label": "Carré Bobcut",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "littleright_bobcut_hair",
+      "file": "mh-littleright_bobcut_hair.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-o4saken_long01",
+      "label": "Longue O4saken",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "o4saken_long01",
+      "file": "mh-o4saken_long01.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-rehmanpolanski_hair_bun_brown",
+      "label": "Chignon bas",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "rehmanpolanski_hair_bun_brown",
+      "file": "mh-rehmanpolanski_hair_bun_brown.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-sonntag78_blond_with_headband",
+      "label": "Coiffure avec serre-tête",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "sonntag78_blond_with_headband",
+      "file": "mh-sonntag78_blond_with_headband.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-sonntag78_junglebook_hair",
+      "label": "Coupe Jungle",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "sonntag78_junglebook_hair",
+      "file": "mh-sonntag78_junglebook_hair.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-toigo_blunt_bob",
+      "label": "Carré net",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "toigo_blunt_bob",
+      "file": "mh-toigo_blunt_bob.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-toigo_blunt_bob_with_bangs",
+      "label": "Carré net à frange",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "toigo_blunt_bob_with_bangs",
+      "file": "mh-toigo_blunt_bob_with_bangs.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-toigo_curled_under_bob",
+      "label": "Carré incurvé",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "toigo_curled_under_bob",
+      "file": "mh-toigo_curled_under_bob.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-toigo_curled_under_bob_with_bangs",
+      "label": "Carré incurvé à frange",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "toigo_curled_under_bob_with_bangs",
+      "file": "mh-toigo_curled_under_bob_with_bangs.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-toigo_inverted_bob",
+      "label": "Carré plongeant",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "toigo_inverted_bob",
+      "file": "mh-toigo_inverted_bob.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-toigo_inverted_bob_with_bangs",
+      "label": "Carré plongeant à frange",
+      "kind": "hair",
+      "pack": "hair01",
+      "sourceId": "toigo_inverted_bob_with_bangs",
+      "file": "mh-toigo_inverted_bob_with_bangs.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-culturalibre_faun_beard",
+      "label": "Barbiche de faune",
+      "kind": "beard",
+      "pack": "bodyparts05",
+      "sourceId": "culturalibre_faun_beard",
+      "file": "mh-culturalibre_faun_beard.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-grinsegold_beard_sigmund_wip",
+      "label": "Barbe Sigmund",
+      "kind": "beard",
+      "pack": "bodyparts05",
+      "sourceId": "grinsegold_beard_sigmund_wip",
+      "file": "mh-grinsegold_beard_sigmund_wip.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-rehmanpolanski_beard_viking",
+      "label": "Barbe viking",
+      "kind": "beard",
+      "pack": "bodyparts05",
+      "sourceId": "rehmanpolanski_beard_viking",
+      "file": "mh-rehmanpolanski_beard_viking.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-rehmanpolanski_moustache_viking",
+      "label": "Moustache viking",
+      "kind": "beard",
+      "pack": "bodyparts05",
+      "sourceId": "rehmanpolanski_moustache_viking",
+      "file": "mh-rehmanpolanski_moustache_viking.bin",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "mh-wdg_scruffy_beard",
+      "label": "Barbe ébouriffée",
+      "kind": "beard",
+      "pack": "bodyparts05",
+      "sourceId": "wdg_scruffy_beard",
+      "file": "mh-wdg_scruffy_beard.bin",
+      "license": "CC0-1.0"
+    }
+  ],
+  "files": {
+    "mh-cortu_shaggy_green_hair.bin": [
+      0,
+      88384,
+      "43cfd451994b70811ad3504784a602b84dc2ae3e0537c7882c1731e43a4d0c85"
+    ],
+    "mh-cortu_short_messy_hair.bin": [
+      88384,
+      182187,
+      "a1e3aaeb936cf079e9a16ea6f272d6006cacffd78847159efd6e439c300eb158"
+    ],
+    "mh-cortu_straight_bangs.bin": [
+      270571,
+      119363,
+      "2021e8c67eabe143c32524bec6ee142a1a373a44da10e21450649a6174eff2a8"
+    ],
+    "mh-cortu_strawberry_cloud_hair.bin": [
+      389934,
+      179298,
+      "6ffb124fcdd0e0632c5f724d282102c38fd3809cb772e45ddbb012a971f3c156"
+    ],
+    "mh-culturalibre_hair_01.bin": [
+      569232,
+      811266,
+      "3e297ee73bd323b9710f457605692e0a26d40245f92b520748ba01ea75ba655a"
+    ],
+    "mh-culturalibre_hair_02.bin": [
+      1380498,
+      856991,
+      "bed552b682b26c6e55c934eba9cbea933f5ff01bbfdc123398e5c2690cfbadf8"
+    ],
+    "mh-culturalibre_hair_05.bin": [
+      2237489,
+      189756,
+      "252a9802183afc2827f3edf41c6774945063837e69af2da482ae4c76dd8c1543"
+    ],
+    "mh-culturalibre_hair_06.bin": [
+      2427245,
+      532559,
+      "91c192335ace1bb5b8e3e0265b52f80566561bdc360e60705ae22bc644abc727"
+    ],
+    "mh-elvs_double_mh_braid.bin": [
+      2959804,
+      493859,
+      "5d1cd359ad39ddb5e6dfbebc2f79ec0c8c3d24943ea9928b1d5538e1ccf6c294"
+    ],
+    "mh-elvs_french_braid_variation.bin": [
+      3453663,
+      475967,
+      "874cf0d8cd3280a2b61276d2f1988a9dc3120ae628bc99e08032ee2301fc9dfe"
+    ],
+    "mh-elvs_reverse_french_braid_bun.bin": [
+      3929630,
+      457147,
+      "d756d7567db4a67fd5622dde942155e41df96775fb5c38ac3310b21b840d3dda"
+    ],
+    "mh-elvs_unkempt_french_braid.bin": [
+      4386777,
+      506917,
+      "bf1f334851dbd44384b9a812d76e343ed86c5eb99e0da143df3e276e9bf82f0d"
+    ],
+    "mh-faydaen_hair_1.bin": [
+      4893694,
+      467613,
+      "cf49bf713383cd9ff4462b9f113bef4f26a68313fa05c322ae05808e8b586116"
+    ],
+    "mh-learning_anime_hair.bin": [
+      5361307,
+      2436696,
+      "0d933e50f75627e63b89cb1f9fdf6ffdf28dc080960e7f14dcac406f033e9eba"
+    ],
+    "mh-littleright_bobcut_hair.bin": [
+      7798003,
+      214162,
+      "443ccf21827098956fc355cb233c6bbeca8b9272c90d7e271966a47e4a7d7075"
+    ],
+    "mh-o4saken_long01.bin": [
+      8012165,
+      1316158,
+      "eb24cae9f86e80027e69d1e7b873dc64b876a67c516a10828ad8e63b778af7ba"
+    ],
+    "mh-rehmanpolanski_hair_bun_brown.bin": [
+      9328323,
+      559051,
+      "0a9cd2464640e9231128266c329c267dbde6e5fd2c932e0c87996201ec5f145d"
+    ],
+    "mh-sonntag78_blond_with_headband.bin": [
+      9887374,
+      937028,
+      "f696d537e7e256a4f98e57d0e9e085c1ccd4979cb6a4af3e03f31a3318bc18ed"
+    ],
+    "mh-sonntag78_junglebook_hair.bin": [
+      10824402,
+      619995,
+      "9513da33dd47c451de21724be3c40d277f5894c0dd6511b236a4bbe4198a4e3a"
+    ],
+    "mh-toigo_blunt_bob.bin": [
+      11444397,
+      771833,
+      "38ee80fc657d7cabc31538e9bccf13b52aee2e8190b45c68fd6e2f2b5e28f01e"
+    ],
+    "mh-toigo_blunt_bob_with_bangs.bin": [
+      12216230,
+      706046,
+      "1f5391d1ae829d59da4fc5bae2a28b1971f847a9c36ceb42d32558da9cfa5fee"
+    ],
+    "mh-toigo_curled_under_bob.bin": [
+      12922276,
+      742365,
+      "c9f374d40ae7300f7a58b28b7cdc2da2d1d23358402058674b0f9b5ca930e791"
+    ],
+    "mh-toigo_curled_under_bob_with_bangs.bin": [
+      13664641,
+      820718,
+      "ece6c32b9b31db68c305ac0ba43ca8e9917fdf00d381e2f471019a87cd3a38e7"
+    ],
+    "mh-toigo_inverted_bob.bin": [
+      14485359,
+      634206,
+      "b497bb3640d1421c7a11869c7208303e8e7b50ba46c7dd42946d74e262dbb4f6"
+    ],
+    "mh-toigo_inverted_bob_with_bangs.bin": [
+      15119565,
+      411966,
+      "7403dc4f393ea3ace958ba743fbb6f3927272a77745010542ee01e5ddffd5134"
+    ],
+    "mh-culturalibre_faun_beard.bin": [
+      15531531,
+      368816,
+      "3ad9ed64b5b88311fe12ae4cabe365526014169b1066bb2b688e22f69b50e71b"
+    ],
+    "mh-grinsegold_beard_sigmund_wip.bin": [
+      15900347,
+      219363,
+      "6b84609cb6c9435e3cb084c5cd00def0bca0b61da96a5e0cc9021cbde6dd4d90"
+    ],
+    "mh-rehmanpolanski_beard_viking.bin": [
+      16119710,
+      583742,
+      "5effd57f16f7416195e1c9e3306b9b37ec91e1e00496a25df21a884ac946eeb8"
+    ],
+    "mh-rehmanpolanski_moustache_viking.bin": [
+      16703452,
+      187328,
+      "e7f9e2b72f21389e5d9fc8863ebda0c6b7adec9fe40d185a663cf803c7f33b18"
+    ],
+    "mh-wdg_scruffy_beard.bin": [
+      16890780,
+      293943,
+      "7f80aa98e4c6b8a8de6f2ff64e4563d30f57646efda5ef6203802a6814e50c43"
+    ],
+    "credits.txt": [
+      17184723,
+      7407,
+      "b03dfb6cfd55dbffdf90263ef594d0cb78f380a4f9cf0032586425a5e6037350"
+    ],
+    "credits.json": [
+      17192130,
+      11794,
+      "e1fd409aceecd75d65e069a598d1fb60f638b55cf5cc54c67a2d0e8f1e5c95d3"
+    ]
+  }
+}

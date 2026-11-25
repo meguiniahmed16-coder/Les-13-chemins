@@ -25,6 +25,58 @@ function setup(){
   return {db,DB,api,env};
 }
 const account={email:'account@example.invalid',password:'passphrase-bateau',birth:'1977-06-28',gender:'homme',pseudo:'Ahmed',name:''};
+test('Les modèles privés de l’atelier exigent une session et restent hors du site public',async()=>{
+  const {api,env}=setup();
+  const manifest=JSON.parse(await readFile(new URL('../assets-source/incarnations/assets.json',import.meta.url),'utf8'));
+  const name='salon-embed.js',file=manifest.files[name],bytes=Buffer.alloc(file.bytes,32);
+  let calls=0;
+  env.STUDIO={get:async key=>{calls++;assert.equal(key,file.key);return {body:bytes,size:bytes.length};}};
+  assert.equal((await api('incarnations/'+name)).status,401);assert.equal(calls,0);
+  const signup=await api('signup',account),cookie=signup.headers.get('set-cookie').split(';')[0];
+  const asset=await api('incarnations/'+name,null,cookie);
+  assert.equal(asset.status,200);assert.equal(asset.headers.get('content-type'),file.contentType);
+  assert.match(asset.headers.get('cache-control'),/private, no-store/);
+  assert.equal((await asset.arrayBuffer()).byteLength,file.bytes);assert.equal(calls,1);
+  for(const path of ['assets/missing.js','__proto__','icons/not-declared.png'])assert.equal((await api('incarnations/'+path,null,cookie)).status,404);
+  assert.equal(calls,1,'Only the closed manifest can address R2 objects');
+  env.STUDIO.get=async()=>({body:bytes,size:bytes.length-1});
+  assert.equal((await api('incarnations/'+name,null,cookie)).status,503);
+  await api('logout',{},cookie);
+  assert.equal((await api('incarnations/'+name,null,cookie)).status,401);
+});
+test('L’Atelier des Incarnations réserve les fichiers à l’auteur et la caméra aux membres connectés',async()=>{
+  const {api,env}=setup();
+  assert.equal((await api('incarnations')).status,401);
+  assert.equal((await api('incarnations/access?role=owner')).status,401);
+  const signed=await api('signup',account),session=signed.headers.get('set-cookie').split(';')[0];
+  const member=await (await api('me',null,session)).json();
+  const readAccess=html=>JSON.parse(html.match(/<script\s+id="salon-access"\s+type="application\/json">([\s\S]*?)<\/script>/)?.[1]||'null');
+  const memberPage=await api('incarnations?role=owner&mode=standalone',null,session);
+  assert.equal(memberPage.status,200);
+  assert.match(memberPage.headers.get('content-type'),/text\/html/);
+  assert.match(memberPage.headers.get('cache-control'),/no-store/);
+  assert.equal(memberPage.headers.get('permissions-policy'),'camera=(self), microphone=()');
+  const memberHtml=await memberPage.text();
+  assert.deepEqual(readAccess(memberHtml),{role:'member',memberId:member.id});
+  assert.doesNotMatch(memberHtml,/<input\b[^>]*type=["']file["']/i);
+  assert.match(memberHtml,/Ouvrir ma caméra selfie/);
+  assert.doesNotMatch(memberHtml,/__SALON_ACCESS__/);
+  assert.equal((await api('admin/incarnations',null,session)).status,401);
+  assert.deepEqual(await (await api('incarnations/access?role=owner',null,session)).json(),{role:'member',memberId:member.id});
+  const ownerCookie='__Host-am_site_admin=incarnations-test-owner';
+  env.ADMIN.fetch=async request=>Response.json({ok:request.headers.get('cookie')===ownerCookie});
+  const owner=await (await api('me',null,ownerCookie)).json();
+  for(const path of ['incarnations','admin/incarnations']){
+    const page=await api(path,null,ownerCookie);assert.equal(page.status,200);
+    const html=await page.text();assert.deepEqual(readAccess(html),{role:'owner',memberId:owner.id});
+    assert.match(html,/<input\b[^>]*type="file"/i);
+    assert.match(html,/Choisir une photo sur mon téléphone/);
+  }
+  env.ADMIN.fetch=async()=>new Response(null,{status:401});
+  assert.equal((await api('incarnations/access',null,ownerCookie)).status,401);
+  await api('logout',{},session);
+  assert.equal((await api('incarnations',null,session)).status,401);
+});
 test('Le compte privé persiste, les accès sont séparés et la déconnexion révoque la session',async()=>{
   const {api}=setup();
   assert.equal((await api('me')).status,401);

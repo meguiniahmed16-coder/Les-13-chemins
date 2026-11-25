@@ -6,7 +6,7 @@ const looks = [
 ];
 export async function dressFriends(bridge,readSpeech){
   const [{normaliseStudio},{loadStudio},{resource}] = await Promise.all([
-    import(wardrobe+'studio-look.js'),import(wardrobe+'studio-model.js'),import(wardrobe+'studio-assets.js')
+    import(wardrobe+'studio-look.js?v=incarnations33'),import(wardrobe+'studio-model.js?v=incarnations33'),import(wardrobe+'studio-assets.js')
   ]);
   for(const [i,preset] of looks.entries()){
     const look=normaliseStudio(preset,true,{},'homme');

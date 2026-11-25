@@ -80,7 +80,7 @@ function copyPrimitive(o){
 export async function wearCompatibleReference(figure,rest){
   const template=await loadFemaleReference();figure.pose(rest);
   const native=figure.meshes.find(m=>m.name==='body'),body=bodyPart(native),group=new T.Group();
-  const parts=figure.meshes.map(m=>m===native?body:{name:m.name,obj:new T.Object3D(),base:m.name==='eyesNative'?Float32Array.from(m.v,v=>v*.0001):null});
+  const parts=figure.meshes.map(m=>m===native?body:m.groom?{...bodyPart(m),name:m.name,source:m}:{name:m.name,obj:new T.Object3D(),base:m.name==='eyesNative'?Float32Array.from(m.v,v=>v*.0001):null});
   const actor={parts,body:group,stamp:0},head=attachFemaleHead(actor,template,figure.appearance);head.follow(true);
   const cutHeight=head.cut,clipped=withCut(native,body.obj.geometry.attributes.neckRestY.array,cutHeight,false);
   const meshes=figure.meshes.filter((m,i)=>parts[i].obj.visible).map(m=>m===native?clipped.out:m);

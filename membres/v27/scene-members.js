@@ -2,6 +2,7 @@ import {perform} from './reference-performance.js';
 import {defaultMotion,wardrobeMotion} from './live-body.js';
 import {attachFemaleHead,loadFemaleReference} from './female-reference.js';
 import {attachCinemaAhmed} from './cinema-ahmed.js';
+import {addBoundVisemes} from './reference-groom.js';
 // Clothes and invited characters use the local V27 skeleton sampled in the original salon.
 // The two original dressed figures stay in memory so returning to the duo is instantaneous.
 export function createMemberBridge(scene){
@@ -42,9 +43,9 @@ export function createMemberBridge(scene){
     const texture=new T.DataTexture(new Uint8Array(m.image.data),m.image.width,m.image.height);
     texture.colorSpace=T.SRGBColorSpace;texture.flipY=false;texture.generateMipmaps=true;
     texture.minFilter=T.LinearMipmapLinearFilter;texture.magFilter=T.LinearFilter;texture.needsUpdate=true;
-    const material=new T.MeshStandardMaterial({map:texture,color:new T.Color(...m.multiplier),roughness:.89,alphaTest:.23,side:T.DoubleSide});
+    const material=new T.MeshStandardMaterial({map:texture,color:new T.Color(...m.multiplier),roughness:.89,alphaTest:m.alphaCutoff??.23,side:T.DoubleSide});
     const obj=new T.Mesh(g,material);obj.castShadow=true;obj.frustumCulled=false;parent.add(obj);
-    return {obj,base,name:m.name||'',fullIndex:m.name==='body'?new T.BufferAttribute(m.allFaces,1):null,poses:[],seated:{}};
+    return {obj,base,source:m,name:m.name||'',fullIndex:m.name==='body'?new T.BufferAttribute(m.allFaces,1):null,poses:[],seated:{}};
   }
   async function dress(actor,figure,gender,valid){
     if(actor.cinemaAhmed?.supports(figure.appearance,gender)){
@@ -81,6 +82,10 @@ export function createMemberBridge(scene){
   }
   let speech=null,readSpeech=null;
   function addVisemes(actor,part){
+    if(part.source?.groomKind==='beard'){
+      if(!part.voiceReady)addBoundVisemes(part,actor.parts.find(p=>p.name==='body'));
+      return;
+    }
     if(!speech||part.voiceReady||!speech.channels[part.name+'jaw']&&!speech.channels[part.name+'blink'])return;
     const geo=part.obj.geometry,count=geo.attributes.position.count;
     const targets=Array.from({length:4},()=>new Float32Array(count*3));
@@ -114,7 +119,7 @@ export function createMemberBridge(scene){
     for(const [slot,a] of [['member',player()],['guest',partner()]]){
       const p=poses[slot];a.conversationPose=p?.gesture?p:null;
       if(a.cinemaAhmed?.active){a.cinemaAhmed.talk(p);continue;}
-      if(a.referenceFace){perform(a.referenceFace,p);continue;}
+      if(a.referenceFace){perform(a.referenceFace,p);a.referenceFace.follow();continue;}
       for(const part of a.parts){
         addVisemes(a,part);
         if(part.voiceReady){const mix=part.obj.morphTargetInfluences;mix[0]=p.jaw;mix[1]=p.blink;mix[2]=p.round;mix[3]=p.spread;}

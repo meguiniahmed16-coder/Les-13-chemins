@@ -1,0 +1,247 @@
+{
+  "basis": "All 30 resources are explicitly catalogued as CC0 individually on the official Hair01 / Bodyparts05 pages and in the per-asset JSON files shipped inside the corresponding official CC0 archives.",
+  "retainedNotices": "Historical MHCLO headers are preserved separately in catalog.json. Some contain AGPL3 or CC-BY labels; no original notice has been rewritten or deleted. The runtime package records the official catalogue designation, rather than claiming that all original headers say CC0.",
+  "legacyExplanation": {
+    "url": "https://static.makehumancommunity.org/oldsite/documentation/big_dump_from_drupal.html",
+    "sections": [
+      "Legal / External Tools Licenses",
+      "MHBlenderTools:MakeClothes / Show Setting, Show License"
+    ],
+    "verifiedVia": "Official documentation retrieved through web search 2026-11-25",
+    "facts": [
+      "The old MakeClothes authoring tool was AGPL3 software.",
+      "The original author of clothing could choose the licence for the clothing.",
+      "The exported licence field was a free-text setting whose default value was AGPL3."
+    ],
+    "scope": "This explains a historical default; it does not assert that every differing notice was definitely generated accidentally."
+  },
+  "reuseTerms": {
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "summary": "CC0 permits copying, modifying and distributing the work, including for commercial purposes. Authors and provenance are retained voluntarily for traceability."
+  },
+  "pages": [
+    {
+      "url": "https://static.makehumancommunity.org/assets/assetpacks/hair01.html",
+      "savedFile": "source-evidence/hair01.html",
+      "sha256": "d857a67a854056bf883b2275fa6ec4be725ade0a4755763ac2dfd9db6425e562"
+    },
+    {
+      "url": "https://static.makehumancommunity.org/assets/assetpacks/bodyparts05.html",
+      "savedFile": "source-evidence/bodyparts05.html",
+      "sha256": "bb9333cfa2679d2d589120c57962dc04c0d545dad00e86d2b71bf82c31fae6bd"
+    }
+  ],
+  "attribution": "See credits below and full source records in the archives. Conversions: fit to native Salon male/female, triangulation and UV seam expansion, local surface bindings, UV repeat baking when required, WebP texture resizing, quantized binary serialization.",
+  "credits": [
+    {
+      "id": "mh-cortu_shaggy_green_hair",
+      "author": "Cortu",
+      "originalSource": "http://www.makehumancommunity.org/node/2811",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": null
+    },
+    {
+      "id": "mh-cortu_short_messy_hair",
+      "author": "Cortu",
+      "originalSource": "http://www.makehumancommunity.org/node/2809",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": null
+    },
+    {
+      "id": "mh-cortu_straight_bangs",
+      "author": "Cortu",
+      "originalSource": "http://www.makehumancommunity.org/node/2810",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": null
+    },
+    {
+      "id": "mh-cortu_strawberry_cloud_hair",
+      "author": "Cortu",
+      "originalSource": "http://www.makehumancommunity.org/node/2808",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": null
+    },
+    {
+      "id": "mh-culturalibre_hair_01",
+      "author": "culturalibre",
+      "originalSource": "http://www.makehumancommunity.org/node/2893",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/node/320)"
+    },
+    {
+      "id": "mh-culturalibre_hair_02",
+      "author": "culturalibre",
+      "originalSource": "http://www.makehumancommunity.org/node/2892",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/node/320)"
+    },
+    {
+      "id": "mh-culturalibre_hair_05",
+      "author": "culturalibre",
+      "originalSource": "http://www.makehumancommunity.org/node/2445",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC-0"
+    },
+    {
+      "id": "mh-culturalibre_hair_06",
+      "author": "culturalibre",
+      "originalSource": "http://www.makehumancommunity.org/node/2479",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC-0"
+    },
+    {
+      "id": "mh-elvs_double_mh_braid",
+      "author": "Elvaerwyn",
+      "originalSource": "http://www.makehumancommunity.org/node/1336",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-elvs_french_braid_variation",
+      "author": "Elvaerwyn",
+      "originalSource": "http://www.makehumancommunity.org/node/1335",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-elvs_reverse_french_braid_bun",
+      "author": "Elvaerwyn",
+      "originalSource": "http://www.makehumancommunity.org/node/1337",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC_by"
+    },
+    {
+      "id": "mh-elvs_unkempt_french_braid",
+      "author": "Elvaerwyn",
+      "originalSource": "http://www.makehumancommunity.org/node/1334",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-faydaen_hair_1",
+      "author": "Faydaen",
+      "originalSource": "http://www.makehumancommunity.org/node/2667",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": null
+    },
+    {
+      "id": "mh-learning_anime_hair",
+      "author": "learning",
+      "originalSource": "http://www.makehumancommunity.org/node/253",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-littleright_bobcut_hair",
+      "author": "littleright",
+      "originalSource": "http://www.makehumancommunity.org/node/936",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-o4saken_long01",
+      "author": "punkduck",
+      "originalSource": "http://www.makehumancommunity.org/node/1471",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC BY 4.0"
+    },
+    {
+      "id": "mh-rehmanpolanski_hair_bun_brown",
+      "author": "RehmanPolanski",
+      "originalSource": "http://www.makehumancommunity.org/node/2477",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-sonntag78_blond_with_headband",
+      "author": "sonntag78",
+      "originalSource": "http://www.makehumancommunity.org/node/207",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-sonntag78_junglebook_hair",
+      "author": "sonntag78",
+      "originalSource": "http://www.makehumancommunity.org/node/174",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-toigo_blunt_bob",
+      "author": "MargaretToigo",
+      "originalSource": "http://www.makehumancommunity.org/node/1669",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-toigo_blunt_bob_with_bangs",
+      "author": "MargaretToigo",
+      "originalSource": "http://www.makehumancommunity.org/node/1681",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-toigo_curled_under_bob",
+      "author": "MargaretToigo",
+      "originalSource": "http://www.makehumancommunity.org/node/1677",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-toigo_curled_under_bob_with_bangs",
+      "author": "MargaretToigo",
+      "originalSource": "http://www.makehumancommunity.org/node/1689",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-toigo_inverted_bob",
+      "author": "MargaretToigo",
+      "originalSource": "http://www.makehumancommunity.org/node/1673",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-toigo_inverted_bob_with_bangs",
+      "author": "MargaretToigo",
+      "originalSource": "http://www.makehumancommunity.org/node/1685",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-culturalibre_faun_beard",
+      "author": "culturalibre",
+      "originalSource": "http://www.makehumancommunity.org/node/2356",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC-0"
+    },
+    {
+      "id": "mh-grinsegold_beard_sigmund_wip",
+      "author": "grinsegold",
+      "originalSource": "http://www.makehumancommunity.org/node/877",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    },
+    {
+      "id": "mh-rehmanpolanski_beard_viking",
+      "author": "RehmanPolanski",
+      "originalSource": "http://www.makehumancommunity.org/node/2614",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-rehmanpolanski_moustache_viking",
+      "author": "RehmanPolanski",
+      "originalSource": "http://www.makehumancommunity.org/node/2615",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "CC0"
+    },
+    {
+      "id": "mh-wdg_scruffy_beard",
+      "author": "WDG",
+      "originalSource": "http://www.makehumancommunity.org/node/1769",
+      "catalogueLicence": "CC0",
+      "embeddedMhcloNotice": "AGPL3 (see also http://www.makehuman.org/doc/node/external_tools_license.html)"
+    }
+  ]
+}

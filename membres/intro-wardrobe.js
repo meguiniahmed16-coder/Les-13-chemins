@@ -1,8 +1,9 @@
 import * as T from 'three';
-import {loadStudio} from './studio-model.js';
-import {referenceStudio} from './studio-look.js';
+import {loadStudio} from './studio-model.js?v=incarnations33';
+import {referenceStudio} from './studio-look.js?v=incarnations33';
 import {SalonMotion} from './salon-v27-motion.js';
 import {attachFemaleHead,loadFemaleReference} from './v27/female-reference.js';
+import {attachReferenceGrooms} from './v27/reference-groom.js';
 export const introOutfits=Object.freeze({
  m:{haut:'mh1800',bas:'mh1796',souliers:'mh438'},
  f:{haut:'mh22',bas:'mh391',souliers:'mh1734'}
@@ -26,7 +27,7 @@ function partMesh(m,parent,white){
  geo.setIndex(new T.BufferAttribute(new Uint16Array(m.faces),1));
  const tex=new T.DataTexture(white?fabric(m.image):new Uint8Array(m.image.data),m.image.width,m.image.height);
  tex.colorSpace=T.SRGBColorSpace;tex.flipY=false;tex.generateMipmaps=true;tex.minFilter=T.LinearMipmapLinearFilter;tex.magFilter=T.LinearFilter;tex.needsUpdate=true;
- const mat=new T.MeshStandardMaterial({map:tex,color:0xffffff,roughness:.88,alphaTest:white?.08:.23,side:T.DoubleSide});
+ const mat=new T.MeshStandardMaterial({map:tex,color:0xffffff,roughness:.88,alphaTest:m.groom?(m.alphaCutoff??.33):white?.08:.23,side:T.DoubleSide});
  const obj=new T.Mesh(geo,mat);obj.name=white?'V27 vêtement '+m.name:m.name;obj.castShadow=true;obj.frustumCulled=false;parent.add(obj);
  return {obj,mesh:obj,name:m.name,base,reference:base,fullIndex:m.name==='body'?new T.BufferAttribute(m.allFaces,1):geo.index,source:m};
 }
@@ -42,21 +43,23 @@ function motionGesture(g,amount){
  const accent=(g.emphasis||0)*(g.energy||0),invite=g.kind==='invite',left=(g.kind==='question'?.7:.38)*accent,right=(invite?.86:.62)*accent;
  return {gesture:{left,right,reach:26,height:invite?-12:-20,forward:invite?31:21,palm:.20,pitch:.018*accent,yaw:0,nod:.035*accent,tilt:.012*Math.sin(g.time||0)},look:g.headYaw||0};
 }
-function makeController(figure,rig,parts,actor,originalRig=null,originalRest=null){
+function makeController(figure,rig,parts,actor,originalRig=null,originalRest=null,afterPose=null){
  const solver=new SalonMotion(()=>{},{angle:0},undefined,()=>.42);solver.femaleHands=actor.id==='f';
  const inv=originalRig?Array.from({length:15},(_,i)=>new T.Matrix4().fromArray(rig.rest,i*16).invert()):null;
  const old=originalRest||originalRig?.map(o=>new T.Matrix4().compose(o.position.clone(),o.quaternion.clone(),o.scale.clone()));
  const matrix=new T.Matrix4();
- let last='',time=0;
+ let last='',time=0,currentMatrices=rig.rest;
  function apply(mats){
+  currentMatrices=mats.slice();
   figure.pose(mats);for(const p of parts)updatePart(p);
   if(originalRig)for(let i=0;i<15;i++){
    matrix.fromArray(mats,i*16).multiply(inv[i]).multiply(old[i]);
    matrix.decompose(originalRig[i].position,originalRig[i].quaternion,originalRig[i].scale);
   }
-  actor.stamp=(Number(actor.stamp)||0)+1;actor.root.updateMatrixWorld(true);actor.head?.follow(true);
+  actor.stamp=(Number(actor.stamp)||0)+1;actor.root.updateMatrixWorld(true);actor.head?.follow(true);afterPose?.();
  }
  return {
+  get matrices(){return currentMatrices;},
   apply,
   invalidate(){last='';},
   pose(amount,g=null){
@@ -230,23 +233,24 @@ export async function createIntroCastActor(root,figure,{look=figure.appearance,g
 
 
 const appearanceFields=['body','parts','wardrobe','pose','walkPose','head','speak','pants'];
-function appearanceHandle(actor,fields,{skin=null,index=null,owned=false,group=null}={}){
+function appearanceHandle(actor,fields,{skin=null,index=null,owned=false,group=null,grooming=null}={}){
  const visibility=fields.parts.map(part=>part.obj.visible);
  let disposed=false;
  return {
+  updateGrooms(){grooming?.update();},
   activate(){
    if(disposed)throw Error('Cette tenue de démonstration a été libérée.');
    for(const part of actor.parts)part.obj.visible=false;
    if(actor.body!==fields.body)actor.body.visible=false;
    for(const key of appearanceFields)actor[key]=fields[key];
-   actor.body.visible=true;if(group)group.visible=true;
+   actor.body.visible=true;if(group)group.visible=true;grooming?.activate();
    fields.parts.forEach((part,i)=>part.obj.visible=visibility[i]);
    if(skin&&index)skin.geometry.setIndex(index.clone());
    actor.wardrobe.invalidate?.();actor.pose(actor.sit||0,{time:0,energy:0,emphasis:0});
   },
   dispose(){
    if(!owned||disposed)return;disposed=true;
-   fields.head?.detach?.();
+   fields.head?.detach?.();grooming?.dispose();
    for(const part of fields.parts){part.obj.removeFromParent();part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
    group?.removeFromParent();
   }
@@ -274,7 +278,7 @@ export async function prepareIntroAppearance(actor,figure,{look=figure.appearanc
  const binding=actor.introRig;if(!binding)throw Error('Les articulations originales d’Ahmed sont indisponibles.');
  figure.pose(binding.rig.rest);
  const group=new T.Group();group.name='Ahmed · tenue de démonstration';group.visible=false;binding.parent.add(group);
- const parts=[];
+ const parts=[];let grooming;
  try{
  for(const m of figure.meshes.filter(m=>m.binding))parts.push(partMesh(m,group,typeof white==='function'?white(m):white));
  if(completeBody){
@@ -302,13 +306,28 @@ export async function prepareIntroAppearance(actor,figure,{look=figure.appearanc
   const indices=Uint16Array.from(faces),legSource={...body,name:'introAhmedLegs',faces:indices,allFaces:indices};
   const legs=partMesh(legSource,group,false);legs.introSkinSupplement=true;parts.push(legs);
  }
- const wardrobe=makeController(figure,binding.rig,parts,actor,binding.bones,binding.rest);
+ if(parts.some(part=>part.source.groom)){
+  // Prepare against the live head's coordinate frame without moving its rig.
+  // The figure is independent and may be posed while the live scene stays intact.
+  figure.pose(actor.wardrobe.matrices||binding.rig.rest);for(const part of parts)updatePart(part);
+  const body=figure.meshes.find(mesh=>mesh.name==='body'),geometry=new T.BufferGeometry();
+  geometry.setAttribute('position',new T.BufferAttribute(Float32Array.from(body.v,value=>value*.0001),3));
+  geometry.setAttribute('normal',new T.BufferAttribute(body.vn.slice(),3,true));
+  const temporary=new T.Mesh(geometry);temporary.visible=false;group.add(temporary);
+  let face;
+  binding.parent.traverse(object=>{if(object.isMesh&&object.material?.name==='peau'&&/visage/i.test(object.name))face=object;});
+  try{grooming=attachReferenceGrooms({parts,body:{obj:temporary},skin:face,visible:false});}
+  finally{temporary.removeFromParent();geometry.dispose();temporary.material.dispose();}
+  figure.pose(binding.rig.rest);for(const part of parts)updatePart(part);
+ }
+ const wardrobe=makeController(figure,binding.rig,parts,actor,binding.bones,binding.rest,()=>grooming?.update());
  const fields=Object.fromEntries(appearanceFields.map(key=>[key,actor[key]]));
  Object.assign(fields,{parts,wardrobe,pose:(amount,g)=>wardrobe.pose(amount,g),pants:null});
  // Use the complete original rest-pose skin, never the preceding outfit's cut.
  const index=ahmedSkinMask(figure,binding.skin);
- return appearanceHandle(actor,fields,{skin:binding.skin,index,owned:true,group});
+ return appearanceHandle(actor,fields,{skin:binding.skin,index,owned:true,group,grooming});
  }catch(error){
+  grooming?.dispose();
   for(const part of parts){part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
   group.removeFromParent();throw error;
  }

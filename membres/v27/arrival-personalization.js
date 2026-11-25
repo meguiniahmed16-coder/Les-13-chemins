@@ -1,6 +1,7 @@
-import {createDrawer} from '../studio-drawer.js?v=inspection32';
-import {loadStudio} from '../studio-model.js?v=inspection32';
-import {normaliseStudio,referenceStudio} from '../studio-look.js?v=inspection32';
+import {createDrawer} from '../studio-drawer.js?v=incarnations33';
+import {loadStudio} from '../studio-model.js?v=incarnations33';
+import {normaliseStudio,referenceStudio} from '../studio-look.js?v=incarnations33';
+import {incarnationsURLFor} from '../incarnations-dialog.js?v=incarnations33';
 
 const slotFor=gender=>gender==='femme'?'f':'m';
 const genderFor=gender=>gender==='femme'?'femme':'homme';
@@ -24,15 +25,15 @@ export function createArrivalCharacterEditor({scene,member,load=loadStudio,reque
  function stateFor(gender){
   if(!states.has(gender)){
    const original=scene.originalLook?.(slotFor(gender))||referenceStudio(gender);
-   const look=normaliseStudio(original,true,undefined,gender);
+   const look=normaliseStudio(original,true,undefined,gender,{owner:Boolean(member.author)});
    const saved=member.salonLooks?.[gender]||(gender===(member.gender||'homme')?member.studio:null);
-   states.set(gender,{look,original:look,saved:saved?normaliseStudio(saved,true,undefined,gender):null,inspection:false,inspectionOutfit:null});
+   states.set(gender,{look,original:look,saved:saved?normaliseStudio(saved,true,undefined,gender,{owner:Boolean(member.author)}):null,inspection:false,inspectionOutfit:null});
   }
   return states.get(gender);
  }
  async function render(look,gender,inspection=false,revalidate=false){
   gender=genderFor(gender);const state=stateFor(gender),version=++serial[gender];
-  const next=normaliseStudio(look,true,undefined,gender);
+  const next=normaliseStudio(look,true,undefined,gender,{owner:Boolean(member.author)});
   if(inspection){
    if(!member.author)throw Error('L’atelier ADMIN est réservé à ton compte auteur.');
    if(next.face.age===5)throw Error('L’inspection du corps est réservée aux modèles adultes.');
@@ -44,7 +45,7 @@ export function createArrivalCharacterEditor({scene,member,load=loadStudio,reque
   }
   // Inspection is a temporary rendering mode. The editable/saved look keeps
   // its complete outfit, and the loader separately verifies the author session.
-  const visibleLook=inspection?normaliseStudio({...next,outfit:{}},true,undefined,gender,{inspection:true}):next;
+  const visibleLook=inspection?normaliseStudio({...next,outfit:{}},true,undefined,gender,{inspection:true,owner:Boolean(member.author)}):next;
   const figure=await load(visibleLook,gender,inspection?{inspection:true}:undefined);
   if(inspection&&figure.inspection!==true)throw Error('L’inspection du corps n’a pas pu être confirmée.');
   if(version!==serial[gender])return false;
@@ -55,7 +56,7 @@ export function createArrivalCharacterEditor({scene,member,load=loadStudio,reque
   return applied;
  }
  function apply(look,gender=selected){
-  gender=genderFor(gender);const state=stateFor(gender),next=normaliseStudio(look,true,undefined,gender);
+  gender=genderFor(gender);const state=stateFor(gender),next=normaliseStudio(look,true,undefined,gender,{owner:Boolean(member.author)});
   // Body adjustments remain inspectable. Choosing clothing, or a child body,
   // leaves inspection and renders a complete clothed figure before switching.
   const inspection=state.inspection&&next.face.age!==5&&outfitKey(next)===state.inspectionOutfit;
@@ -68,15 +69,16 @@ export function createArrivalCharacterEditor({scene,member,load=loadStudio,reque
  }
  function settings(gender=selected){
   const state=stateFor(gender);
-  return {gender,plus:true,savedStudio:state.saved||state.original,inspection:state.inspection,
+  return {gender,plus:true,owner:Boolean(member.author),savedStudio:state.saved||state.original,inspection:state.inspection,
+   incarnationsURL:incarnationsURLFor({authenticated:true,temporary:member.temporary,memberKey:member.id}),
    privateURL:member.author?'/membre-atelier.html?auteur='+encodeURIComponent(member.author):'',
    removeClothes:member.author?()=>inspect(undefined,gender):undefined,
    change:look=>{state.look=look;},
    save:async look=>{
-    const studio=normaliseStudio(state.inspection?state.look:look,true,undefined,gender);
+    const studio=normaliseStudio(state.inspection?state.look:look,true,undefined,gender,{owner:Boolean(member.author)});
     const result=await request('salon-appearance',{gender,studio});
     if(result.gender!==gender||!result.studio)throw Error('L’enregistrement du personnage reste à confirmer.');
-    state.saved=normaliseStudio(result.studio,true,undefined,gender);
+    state.saved=normaliseStudio(result.studio,true,undefined,gender,{owner:Boolean(member.author)});
     (member.salonLooks??={})[gender]=state.saved;
     if(gender===(member.gender||'homme'))member.studio=state.saved;
     try{storage?.setItem('salon-v27-look:'+member.id+(gender===(member.gender||'homme')?'':':'+gender),'1');}catch{}
@@ -102,7 +104,7 @@ export function mountArrivalPersonalization({doc=document,win=window,request=aut
  const controls=doc.querySelector('.top .controls');controls.prepend(button);controls.append(status);
  const host=doc.createElement('aside');host.id='arrival-personalization';host.hidden=true;host.setAttribute('aria-label','Personnaliser les personnages');
  const root=host.attachShadow({mode:'open'});
- root.innerHTML='<link rel="stylesheet" href="/membres/salon.css?v=studio-simple53"><style>:host{height:100%;min-height:0}.studio-drawer{height:100%;overflow:hidden}.studio-drawer header select{width:auto;max-width:42%;font-size:13px}.restore-original{margin:5px 10px}.portrait-note{margin:4px 10px 8px;font-size:12px;line-height:1.35;color:#52644e}.admin-inspection{margin:8px 10px;padding:10px;border:1px solid #c6c7a8;border-radius:8px;background:#f4efd9}.admin-inspection strong{display:block;font-size:13px}.admin-inspection p{margin:7px 0;font-size:12px;line-height:1.4}.admin-inspection button{margin:3px 4px 3px 0}.studio-drawer .switch,.studio-drawer header,.studio-drawer footer{flex:none}.studio-scroll{scrollbar-gutter:stable}</style><div class="studio-drawer" hidden></div>';
+ root.innerHTML='<link rel="stylesheet" href="/membres/salon.css?v=incarnations33"><style>:host{height:100%;min-height:0}.studio-drawer{height:100%;overflow:hidden}.studio-drawer header select{width:auto;max-width:42%;font-size:13px}.restore-original{margin:5px 10px}.portrait-note{margin:4px 10px 8px;font-size:12px;line-height:1.35;color:#52644e}.admin-inspection{margin:8px 10px;padding:10px;border:1px solid #c6c7a8;border-radius:8px;background:#f4efd9}.admin-inspection strong{display:block;font-size:13px}.admin-inspection p{margin:7px 0;font-size:12px;line-height:1.4}.admin-inspection button{margin:3px 4px 3px 0}.studio-drawer .switch,.studio-drawer header,.studio-drawer footer{flex:none}.studio-scroll{scrollbar-gutter:stable}</style><div class="studio-drawer" hidden></div>';
  doc.getElementById('app').append(host);
  let drawer,editor,task,characterTools,inspectionBusy=false;
  const drawerRoot={querySelector:selector=>selector==='.options-toggle'?button:root.querySelector(selector)};

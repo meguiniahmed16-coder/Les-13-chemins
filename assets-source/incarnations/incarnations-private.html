@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<!-- Third-party notices
+portraits/LICENSE-ICT-FaceKit.txt
+MIT License
+
+Copyright (c) 2020 USC Institute for Creative Technologies
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+portraits/LICENSE-MediaPipe.txt
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright [yyyy] [name of copyright owner]
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+===========================================================================
+For files under tasks/cc/text/language_detector/custom_ops/utils/utf/
+===========================================================================
+/*
+ * The authors of this software are Rob Pike and Ken Thompson.
+ *              Copyright (c) 2002 by Lucent Technologies.
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose without fee is hereby granted, provided that this entire notice
+ * is included in all copies of any software which is or includes a copy
+ * or modification of this software and in all copies of the supporting
+ * documentation for such software.
+ * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTY.  IN PARTICULAR, NEITHER THE AUTHORS NOR LUCENT TECHNOLOGIES MAKE ANY
+ * REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
+ * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+ */
+
+--><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light"><meta name="atelier-app" content="atelier-personnages"><meta name="theme-color" content="#24595c"><meta name="description" content="L’Atelier des Incarnations : une photo, un personnage 3D, deux exports GLB et HTML."><link rel="icon" href="/api/membres/incarnations/icons/icon-192.png"><title>L’Atelier des Incarnations · Création 3D</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#203c43;background:#e7eef0;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,select{cursor:pointer}button{border:1px solid #c1ced0;border-radius:10px;background:#fff;color:#24474c;min-height:43px;padding:10px 14px;font-size:14px;font-weight:650}button:hover{background:#edf3f3;border-color:#6a999b}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #3ba9b2;outline-offset:3px}button:disabled{opacity:.42;cursor:wait}button.primary{background:#24595c;border-color:#24595c;color:#fff}button.primary:hover{background:#18484c}button[aria-pressed=true]{background:#24595c;color:#fff;border-color:#24595c}header{height:77px;padding:15px 26px;display:flex;align-items:center;justify-content:space-between;background:#f8fbfb;border-bottom:1px solid #cdd9db}header small{display:block;letter-spacing:.16em;font-size:10px;font-weight:750;color:#658086;margin-bottom:4px}h1{font-size:22px;letter-spacing:-.02em;margin:0;font-weight:700}header p{margin:0;font-size:13px;color:#668187}.local-tag{border:1px solid #c9d7d9;border-radius:30px;padding:7px 12px;font-size:12px;color:#52767a}.layout{display:grid;grid-template-columns:305px 1fr;height:calc(100svh - 77px);min-height:0}aside{background:#f8fbfb;border-right:1px solid #cdd9db;padding:24px 22px;display:flex;flex-direction:column;gap:23px;overflow:auto}h2{font-size:16px;margin:0 0 12px;font-weight:750}p{line-height:1.5}.hint{font-size:13px;color:#6a8086;margin:9px 0 0}.upload{display:flex;width:100%;align-items:center;justify-content:center;gap:8px;min-height:52px}.upload svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8}.reference{display:flex;gap:12px;align-items:center;margin-top:14px;min-width:0}.reference img{width:66px;height:76px;object-fit:cover;border-radius:9px;border:1px solid #d6e0e1;background:#e9eff0}.reference .text{min-width:0}.reference strong{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.reference small{display:block;font-size:12px;color:#789095;margin-top:5px;line-height:1.35;overflow-wrap:anywhere}.fields{display:grid;gap:13px}.field{display:grid;gap:6px;font-size:13px;font-weight:650}.field input,.field select{width:100%;padding:10px 11px;border:1px solid #bacbce;border-radius:8px;background:white;color:#203c43;min-height:43px}.export{display:grid;gap:9px}.export button{width:100%;display:flex;justify-content:space-between;align-items:center}.export button span{font-size:11px;font-weight:500;opacity:.7}.status-panel{padding:13px 14px;background:#e9f1f1;border:1px solid #cedfdf;border-radius:10px;font-size:13px;line-height:1.5}.status-panel strong{display:block;margin-bottom:4px}.status-panel.error{color:#8f382a;background:#fff0eb;border-color:#e7b7aa}.progress{height:4px;background:#cfdddd;border-radius:5px;overflow:hidden;margin-top:12px}.progress>i{display:block;height:100%;background:#4e8e91;width:0;transition:width .3s}.fineprint{font-size:11px;color:#7c9094;line-height:1.55;margin-top:auto}.fineprint a{color:inherit}.workspace{display:flex;flex-direction:column;position:relative;min-width:0}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:17px 23px;flex-wrap:wrap}.views{display:flex;gap:5px;align-items:center}.views button{min-width:67px;background:transparent;border-color:transparent}.views button[aria-pressed=true]{background:#24595c;color:#fff;box-shadow:0 3px 12px #244e5420}.expression-control{display:flex;gap:8px;align-items:center;font-size:12px;color:#69838a}.expression-control select{font-size:12px;min-height:40px;border:1px solid #bfd0d2;border-radius:8px;padding:8px;background:#f8fbfb;color:#24474c}.tools{display:flex;gap:7px}.tools button{background:#f7fbfb;min-width:42px;padding:8px 12px}.tools button[aria-pressed=true]{background:#24595c;color:white;border-color:#24595c}.stage{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(ellipse at 48% 38%,#f2f6f6 0,#e7eef0 63%,#dde7e9 100%)}.stage canvas{display:block;position:absolute;inset:0;width:100%;height:100%}#view{touch-action:none;cursor:grab}#view:active{cursor:grabbing}#ground{pointer-events:none}.view-label{position:absolute;left:25px;top:16px;text-transform:uppercase;letter-spacing:.15em;font-size:11px;font-weight:750;color:#6e858c;pointer-events:none}.model-tag{position:absolute;left:25px;bottom:24px;pointer-events:none}.model-tag strong{display:block;font-size:18px;font-weight:650}.model-tag small{display:block;font-size:12px;margin-top:5px;color:#769096}.joystick-wrap{position:absolute;right:24px;bottom:24px;display:flex;flex-direction:column;align-items:center;gap:9px}.joystick-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:#6b848a}.joystick{width:124px;height:124px;border:1px solid #a5bdc1;border-radius:50%;background:#f8fcfc9e;box-shadow:inset 0 0 30px #aec5ca25,0 8px 20px #4b666914;display:grid;place-items:center;position:relative;touch-action:none;cursor:move}.joystick:before,.joystick:after{content:"";position:absolute;background:#adc1c580}.joystick:before{width:1px;height:80px}.joystick:after{width:80px;height:1px}.thumb{width:48px;height:48px;border-radius:50%;background:#3f7478;box-shadow:0 3px 9px #1b3d4a2b;border:4px solid #f4fafbd9;position:relative;z-index:1;pointer-events:none}.joystick-hint{font-size:11px;color:#81969b}.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;color:#80989e;font-size:15px;gap:12px}.empty svg{height:82px;width:82px;stroke:#95b0b5;stroke-width:1.1;fill:none}.empty[hidden]{display:none}.footer{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 24px;border-top:1px solid #cdd9db;font-size:11px;color:#69838a;background:#f4f8f9}.footer span{line-height:1.5}.spinner{display:inline-block;width:15px;height:15px;border:2px solid #bfd3d4;border-top-color:#24595c;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:7px}@keyframes spin{to{transform:rotate(360deg)}}[hidden]{display:none!important}@media(max-width:900px){.layout{grid-template-columns:260px 1fr}aside{padding:20px 16px;gap:18px}.toolbar{padding:12px;gap:8px}.views button{min-width:57px;padding:9px}.stage{min-height:0}.joystick-wrap{right:15px;bottom:17px}.model-tag{left:17px;bottom:20px}}@media(max-width:660px){header{height:69px;padding:13px 16px}header p,.local-tag{display:none}h1{font-size:20px}.layout{display:flex;flex-direction:column;height:auto}.workspace{order:0}aside{order:1;border-right:0;border-top:1px solid #cdd9db;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px}.stage{min-height:65svh}.toolbar{padding:10px;flex-wrap:nowrap;overflow-x:auto}.views button{min-width:53px;font-size:12px;padding:8px}.tools button{padding:8px;min-width:37px}.joystick{width:104px;height:104px}.thumb{width:43px;height:43px}.footer{padding:10px 16px;font-size:10px}.footer span:first-child{max-width:55%}.status-panel,.fineprint{grid-column:1/-1}.reference img{width:50px;height:62px}.reference strong{font-size:12px}.reference small{font-size:10px}.upload{font-size:13px;padding:10px;min-height:60px}.model-tag strong{font-size:16px}.model-tag small{font-size:11px}.view-label{left:17px;font-size:10px}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}.progress>i{transition:none}}
+.face-options{border-top:1px solid #d4dfe0;padding-top:13px}.face-options summary{font-size:14px;font-weight:700;cursor:pointer}.adjustment{display:grid;grid-template-columns:1fr auto;gap:5px;margin-top:14px;font-size:12px;color:#527178}.adjustment output{font-variant-numeric:tabular-nums}.adjustment input{grid-column:1/-1;width:100%;accent-color:#24595c}.adjust-actions{display:flex;gap:7px;margin-top:14px}.adjust-actions button{font-size:12px;padding:9px;flex:1}
+
+/* The photo import is the first task at every screen width. */
+body{min-width:320px}header{height:76px;padding:12px 24px;gap:14px}.brand{display:flex;align-items:center;gap:12px;min-width:0}.brand img{border-radius:12px}.brand strong{font-size:18px;display:block}.brand small{font-size:12px;letter-spacing:0;font-weight:500;margin:4px 0 0}header button{font-size:14px;min-height:44px;flex-shrink:0}h1{font-size:23px;line-height:1.18}.intro{font-size:14px;line-height:1.55;color:#526f76;margin:12px 0 17px}.layout{display:grid;grid-template-columns:350px 1fr;grid-template-rows:auto minmax(0,1fr);height:calc(100svh - 112px);min-height:660px}.import-panel{grid-column:1;grid-row:1;background:#f8fbfb;border-right:1px solid #cdd9db;padding:23px 23px 17px;min-width:0}aside{grid-column:1;grid-row:2;padding:12px 23px 24px;gap:19px;min-height:0;overflow:auto}.workspace{grid-column:2;grid-row:1 / span 2;min-height:0}.gender-choice{grid-template-columns:1fr 1fr;align-items:center;margin-bottom:12px;font-size:14px}.gender-choice select{font-size:16px}.upload{font-size:16px;line-height:1.3;min-height:62px;padding:13px 15px;text-align:left;justify-content:flex-start}.upload svg{width:23px;height:23px;flex:0 0 23px}.status-panel{margin-top:14px;padding:11px 13px;font-size:13px}.status-panel strong{font-size:14px}.status-panel .progress{margin-top:9px;height:3px}.download-panel{margin-top:18px}.download-panel h2{font-size:14px;margin-bottom:9px}.export{grid-template-columns:1fr 1fr;gap:8px}.export button{font-size:13px;min-height:57px;display:block;padding:10px 7px}.export button span{display:block;margin-top:5px;font-size:11px}button:disabled{cursor:default;opacity:.46}.reference{margin-top:14px}.reference img{width:44px;height:48px}.reference strong{font-size:13px}.reference small{font-size:11px}.hint{font-size:12px}.field{font-size:14px}.field input,.field select{font-size:16px}.fineprint{font-size:12px}.stage{min-height:320px}.empty{padding:24px;line-height:1.6}.empty span{max-width:300px}.toolbar{align-items:center;padding:12px;gap:9px}.expression-control{font-size:13px}.expression-control select{font-size:14px;max-width:210px}.toolbar .tools{margin-left:auto}.app-state{display:flex;justify-content:space-between;gap:14px;font-size:12px;color:#54767b;background:#f8fbfb;padding:8px 24px;min-height:36px;border-top:1px solid #cdd9db}.app-state span{line-height:1.5}dialog{border:1px solid #b8d0d2;border-radius:18px;max-width:430px;width:calc(100% - 32px);padding:26px;color:#203c43;background:#f8fbfb;box-shadow:0 24px 100px #133d4a40}dialog::backdrop{background:#142c3a80}dialog h2{font-size:22px}dialog p,dialog li{font-size:16px;line-height:1.6}dialog ol{padding-left:22px}dialog li{margin-bottom:12px}dialog button{width:100%;font-size:16px}.model-tag:has(strong:empty){display:none}
+@media(max-width:1000px){.layout{grid-template-columns:310px 1fr}.import-panel{padding:20px 17px 16px}aside{padding:10px 17px 22px}.toolbar{flex-wrap:wrap}.expression-control{order:2;width:100%;justify-content:space-between}.expression-control select{max-width:65%}.tools{flex-wrap:wrap}.intro{font-size:14px}h1{font-size:22px}}
+@media(max-width:700px){header{height:70px;padding:10px 16px}.brand{gap:9px}.brand img{width:36px;height:36px;border-radius:10px}.brand strong{font-size:16px}.brand small{font-size:11px}header button{font-size:12px;padding:9px 10px;max-width:128px}.layout{display:flex;flex-direction:column;height:auto;min-height:0}.import-panel{order:0;padding:21px 18px 18px;border-right:0;border-bottom:1px solid #cdd9db}.import-panel h1{font-size:25px}.intro{margin:10px 0 14px;font-size:15px;max-width:550px}.gender-choice{grid-template-columns:1fr 150px}.upload{min-height:63px;font-size:17px;justify-content:center;text-align:center}.hint{font-size:12px}.status-panel{font-size:13px;margin-top:12px}.status-panel strong{font-size:14px}.download-panel{margin-top:15px}.download-panel h2{font-size:14px}.export button{font-size:14px;min-height:56px}.export button span{font-size:11px}.workspace{order:1;min-height:0}.toolbar{padding:12px 14px;flex-wrap:wrap;overflow:visible;gap:10px}.views{width:100%;display:grid;grid-template-columns:repeat(4,1fr)}.views button{font-size:14px;min-height:42px;min-width:0;padding:9px}.toolbar .tools{margin-left:0;flex:1;justify-content:space-between}.tools button{font-size:14px;min-height:42px}.expression-control{order:3;width:100%;font-size:13px}.expression-control select{font-size:14px;max-width:71%}.stage{min-height:430px;height:59svh;flex:auto}.empty{font-size:16px}.model-tag{left:18px;bottom:22px}.joystick-wrap{right:18px;bottom:21px}.footer{font-size:11px;padding:12px 18px}.footer span:first-child{max-width:62%}aside{order:2;display:flex;padding:22px 18px 28px;gap:20px;border-top:1px solid #cdd9db;overflow:visible}.fields{grid-template-columns:1fr 1fr;gap:15px}.fields .field:last-child{grid-column:1/-1}.fineprint{margin:0}.app-state{font-size:12px;padding:12px 18px;flex-direction:column;gap:5px}.reference strong{font-size:14px}.reference small{font-size:12px}}
+@media(display-mode:standalone){header{padding-top:max(10px,env(safe-area-inset-top))}.app-state{padding-bottom:max(12px,env(safe-area-inset-bottom))}}
+.selfie-panel{margin-top:16px;padding:14px;border:1px solid #b9cfd1;border-radius:12px;background:#edf4f4}.selfie-panel h2{font-size:16px}.selfie-panel video,.selfie-panel img{display:block;width:100%;max-height:40svh;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#163a3d}.selfie-panel video{transform:scaleX(-1)}.selfie-panel p{font-size:14px;line-height:1.5}.selfie-actions{display:flex;flex-wrap:wrap;gap:8px}.selfie-actions button{flex:1 1 110px;min-height:44px;font-size:14px}
+/* The longer workshop name stays readable beside the Salon return action. */
+.brand img{flex-shrink:0}.brand strong{line-height:1.2}.brand small{line-height:1.35}header{min-height:76px;height:auto}header a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #c1ced0;border-radius:10px;color:#24474c;background:white;font-size:14px;font-weight:650;text-decoration:none;flex-shrink:0}header a:focus-visible{outline:3px solid #3ba9b2;outline-offset:3px}
+@media(max-width:700px){header{min-height:76px;padding:10px 14px;gap:10px}.brand strong{font-size:15px}.brand small{font-size:10px}.brand img{width:32px;height:32px}.brand{gap:8px}header button,header a{font-size:12px;max-width:102px;padding:9px}.layout{height:auto}}
+</style></head>
+<body data-app-mode="salon">
+<header><div class="brand"><img src="/api/membres/incarnations/icons/icon-192.png" alt="" width="42" height="42"><div><strong>L’Atelier des Incarnations</strong><small>Version 1 · Photo · Personnage 3D · Exports</small></div></div><a id="return-salon" href="/membre.html#salon">Retour au Salon</a></header>
+<main class="layout"><section class="import-panel" aria-label="Créer à partir de ta photo"><h1>Crée ton personnage 3D</h1><p class="intro">Choisis une photo de ton téléphone. L’atelier fabrique le personnage, puis tu télécharges ses fichiers.</p><label class="field gender-choice">Corps adulte<select id="gender"><option value="male">Homme</option><option value="female">Femme</option></select></label><button class="primary upload" id="upload" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>Choisir une photo sur mon téléphone</button><!--OWNER_UPLOAD_START--><input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" hidden><!--OWNER_UPLOAD_END--><p class="hint" id="intake-hint">JPEG, PNG ou WebP · Un seul visage bien visible. La création démarre après ton choix.</p>
+<section id="selfie-panel" class="selfie-panel" aria-label="Prendre un selfie" hidden><h2>Ton selfie</h2><video id="selfie-video" autoplay playsinline muted aria-label="Aperçu de la caméra avant"></video><img id="selfie-preview" alt="Ton selfie pris avec la caméra" hidden><p id="selfie-status" role="status" aria-live="polite"></p><div class="selfie-actions"><button id="selfie-capture" class="primary" type="button" disabled>Prendre mon selfie</button><button id="selfie-use" class="primary" type="button" hidden>Créer mon personnage</button><button id="selfie-retake" type="button" hidden>Reprendre</button><button id="selfie-cancel" type="button">Annuler</button></div></section><div class="reference" id="reference" hidden><img id="reference-image" alt="Photo utilisée pour le visage"><div class="text"><strong id="reference-name">Photo de référence</strong><small id="reference-file"></small></div></div><div class="status-panel" id="status-panel" role="status" aria-live="polite"><strong id="status-title">Choisis ta photo</strong><span id="status-detail">Les outils 3D se chargent. Tu peux déjà sélectionner ton image.</span><button id="retry-loading" type="button" hidden>Réessayer le chargement</button><div class="progress" id="progress"><i id="progress-bar"></i></div></div><div class="download-panel"><h2>Télécharger le personnage</h2><div class="export"><button id="export-glb" class="primary" disabled>Télécharger le GLB<span>Modèle et animations</span></button><button id="export-html" disabled>Télécharger le HTML<span>Inspection 3D</span></button></div></div></section>
+<aside>
+
+<section><h2>Personnaliser</h2><div class="fields"><label class="field">Coiffure<select id="hair"></select></label><label class="field">Couleur des cheveux<select id="hair-tone"></select></label><label class="field">Nom<input id="name" value="Mon personnage" maxlength="70" autocomplete="off"></label></div><p class="hint">Le corps reste entièrement visible pour l’inspection.</p></section>
+<details class="face-options"><summary>Ajuster le visage</summary><p class="hint">Le nez est droit par défaut. Modifie sa courbure seulement si tu le souhaites ; une valeur positive ajoute une bosse.</p><div id="adjustments"></div><div class="adjust-actions"><button id="apply-adjustments">Appliquer</button><button id="reset-adjustments">Réinitialiser</button></div></details>
+
+
+<p class="fineprint">La photo guide une nouvelle forme de visage. Le style et les expressions reprennent l’atelier Marianne et Ahmed. Le profil et les parties cachées restent estimés ; tu peux les affiner dans « Ajuster le visage ». Le corps adulte est un modèle standard.<br>Traitement local · modèles adultes</p>
+</aside>
+<section class="workspace" aria-label="Inspection 3D">
+<div class="toolbar"><div class="views" aria-label="Angles de vue"><button data-view="front" aria-pressed="true">Face</button><button data-view="profile" aria-pressed="false">Profil</button><button data-view="back" aria-pressed="false">Dos</button><button data-view="face" aria-pressed="false">Visage</button></div><label class="expression-control">Expression<select id="expression"><option value="neutral">Neutre · bouche fermée</option><option value="blink">Clignement</option><option value="smile">Sourire</option><option value="talk">Parler</option></select></label><div class="tools"><button id="zoom-out" aria-label="Dézoomer">−</button><button id="zoom-in" aria-label="Zoomer">+</button><button id="walk" aria-pressed="false">Marcher</button><button id="reset">Recentrer</button></div></div>
+<div class="stage" id="stage"><canvas id="ground" aria-hidden="true"></canvas><canvas id="view" tabindex="0" aria-label="Personnage 3D manipulable"></canvas><span class="view-label" id="view-label">Vue de face</span><div class="empty" id="empty"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="20" r="12"/><path d="M37 39Q50 33 63 39l14 24M37 39 23 63M41 38l-3 30-6 25M59 38l3 30 6 25M38 68h24"/></svg><span id="empty-text">Ton personnage apparaîtra ici après l’importation de ta photo.</span></div><div class="model-tag"><strong id="model-name">Ton personnage</strong><small id="model-info">Corps adulte · inspection 3D</small></div><div class="joystick-wrap"><span class="joystick-label">Déplacement</span><div class="joystick" id="joystick" role="group" aria-label="Joystick de déplacement"><span class="thumb" id="thumb"></span></div><span class="joystick-hint">Glisser · flèches du clavier</span></div></div>
+<div class="footer"><span>Glisser sur le modèle : rotation · Molette ou pincement : zoom</span><span id="motion-status">Position neutre</span></div>
+</section></main>
+<footer class="app-state"><span id="install-status" role="status" aria-live="polite">La Croisée des Âmes · Salon privé</span><span>Photos traitées sur cet appareil</span></footer>
+
+<script id="initial-state" type="application/json">{"format":"atelier-personnage/4","name":"Mon personnage","gender":"male","hair":"short02","hairTone":2}</script>
+<script id="app-config" type="application/json">{"mode":"salon","basePath":"/api/membres/incarnations/"}</script>
+<script id="salon-access" type="application/json">__SALON_ACCESS__</script>
+<script src="/api/membres/incarnations/salon-embed.js" defer></script>
+<script type="module" src="/api/membres/incarnations/assets/demarrer-e4131b306413.js"></script>
+</body></html>

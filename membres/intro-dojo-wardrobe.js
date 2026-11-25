@@ -1,5 +1,5 @@
-import {loadStudio} from './studio-model.js';
-import {referenceStudio} from './studio-look.js';
+import {loadStudio} from './studio-model.js?v=incarnations33';
+import {referenceStudio} from './studio-look.js?v=incarnations33';
 import * as T from 'three';
 import {introOutfits,captureIntroAppearance,prepareIntroAppearance,createIntroCastActor} from './intro-wardrobe.js';
 import {DOJO_CAST,dojoCastLook,dojoCastState,dojoCastPose,styleDojoCastFigure,styleDojoFabric} from './intro-dojo-cast.js';

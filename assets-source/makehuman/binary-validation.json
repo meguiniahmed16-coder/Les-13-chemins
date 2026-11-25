@@ -1,0 +1,248 @@
+{
+  "passed": true,
+  "resources": 30,
+  "verifiedBytes": 17184723,
+  "method": "Independent decoder; all typed arrays within byte bounds; dimensions/finite/index bounds/body barycentric constraints; SHA256 vs catalogue",
+  "cases": [
+    {
+      "id": "mh-cortu_shaggy_green_hair",
+      "vertices": 968,
+      "triangleCount": 1284,
+      "compressedBytes": 88384,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-cortu_short_messy_hair",
+      "vertices": 832,
+      "triangleCount": 1092,
+      "compressedBytes": 182187,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-cortu_straight_bangs",
+      "vertices": 848,
+      "triangleCount": 1128,
+      "compressedBytes": 119363,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-cortu_strawberry_cloud_hair",
+      "vertices": 480,
+      "triangleCount": 576,
+      "compressedBytes": 179298,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-culturalibre_hair_01",
+      "vertices": 3406,
+      "triangleCount": 4228,
+      "compressedBytes": 811266,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-culturalibre_hair_02",
+      "vertices": 2541,
+      "triangleCount": 3460,
+      "compressedBytes": 856991,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-culturalibre_hair_05",
+      "vertices": 4713,
+      "triangleCount": 4948,
+      "compressedBytes": 189756,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-culturalibre_hair_06",
+      "vertices": 12256,
+      "triangleCount": 14688,
+      "compressedBytes": 532559,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-elvs_double_mh_braid",
+      "vertices": 8491,
+      "triangleCount": 9866,
+      "compressedBytes": 493859,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-elvs_french_braid_variation",
+      "vertices": 6902,
+      "triangleCount": 8152,
+      "compressedBytes": 475967,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-elvs_reverse_french_braid_bun",
+      "vertices": 6174,
+      "triangleCount": 7622,
+      "compressedBytes": 457147,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-elvs_unkempt_french_braid",
+      "vertices": 6956,
+      "triangleCount": 8200,
+      "compressedBytes": 506917,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-faydaen_hair_1",
+      "vertices": 647,
+      "triangleCount": 836,
+      "compressedBytes": 467613,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-learning_anime_hair",
+      "vertices": 49728,
+      "triangleCount": 91392,
+      "compressedBytes": 2436696,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-littleright_bobcut_hair",
+      "vertices": 1919,
+      "triangleCount": 2692,
+      "compressedBytes": 214162,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-o4saken_long01",
+      "vertices": 15033,
+      "triangleCount": 13268,
+      "compressedBytes": 1316158,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-rehmanpolanski_hair_bun_brown",
+      "vertices": 2756,
+      "triangleCount": 4432,
+      "compressedBytes": 559051,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-sonntag78_blond_with_headband",
+      "vertices": 1486,
+      "triangleCount": 2054,
+      "compressedBytes": 937028,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-sonntag78_junglebook_hair",
+      "vertices": 4966,
+      "triangleCount": 8576,
+      "compressedBytes": 619995,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-toigo_blunt_bob",
+      "vertices": 1837,
+      "triangleCount": 2858,
+      "compressedBytes": 771833,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-toigo_blunt_bob_with_bangs",
+      "vertices": 3113,
+      "triangleCount": 4976,
+      "compressedBytes": 706046,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-toigo_curled_under_bob",
+      "vertices": 1517,
+      "triangleCount": 2852,
+      "compressedBytes": 742365,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-toigo_curled_under_bob_with_bangs",
+      "vertices": 2806,
+      "triangleCount": 4976,
+      "compressedBytes": 820718,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-toigo_inverted_bob",
+      "vertices": 1836,
+      "triangleCount": 2856,
+      "compressedBytes": 634206,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-toigo_inverted_bob_with_bangs",
+      "vertices": 3031,
+      "triangleCount": 4996,
+      "compressedBytes": 411966,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-culturalibre_faun_beard",
+      "vertices": 7107,
+      "triangleCount": 10432,
+      "compressedBytes": 368816,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-grinsegold_beard_sigmund_wip",
+      "vertices": 535,
+      "triangleCount": 878,
+      "compressedBytes": 219363,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-rehmanpolanski_beard_viking",
+      "vertices": 6564,
+      "triangleCount": 5682,
+      "compressedBytes": 583742,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-rehmanpolanski_moustache_viking",
+      "vertices": 1598,
+      "triangleCount": 1364,
+      "compressedBytes": 187328,
+      "roundTripBinary": true,
+      "hashVerified": true
+    },
+    {
+      "id": "mh-wdg_scruffy_beard",
+      "vertices": 2300,
+      "triangleCount": 2760,
+      "compressedBytes": 293943,
+      "roundTripBinary": true,
+      "hashVerified": true
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import {randomAvatar} from './avatar-catalog.js?v=salon33';
-import {traits} from './studio-catalog.js';
-import {freeTrait,normaliseStudio,traitAvailable,traitOptionAvailable} from './studio-look.js';
+import {traits} from './studio-catalog.js?v=incarnations33';
+import {freeTrait,normaliseStudio,traitAvailable,traitOptionAvailable} from './studio-look.js?v=incarnations33';
 
 export const validGender=value=>value==='homme'||value==='femme';
 export function yearsAt(birth,date=new Date()){

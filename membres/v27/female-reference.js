@@ -2,6 +2,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {headBinding,joinNeck} from './neck-binding.js';
+import {attachReferenceGrooms} from './reference-groom.js';
 
 export const referenceURL='/assets/membres/marianne-reference.glb';
 let pending;
@@ -212,9 +213,13 @@ export function attachFemaleHead(actor,template,look){
   for(const p of actor.parts){if(originalDetails.has(p.name)||hairNames.has(p.name)&&(!look||look.face.hair===10)&&!look?.outfit?.chapeau){hidden.push([p.obj,p.obj.visible]);p.obj.visible=false;}}
   actor.body.add(head.group);const bind=headBinding(body,eyes);bind.pose(head.group);
   const seam=joinNeck(actor,body,head.skin,head.group,bind.cut,.030);
+  const grooming=attachReferenceGrooms({parts:actor.parts,body,skin:head.skin,parent:head.group});
   head.group.name='Marianne · référence féminine';head.group.userData.reference='marianne-v1';
+  const applyWeights=head.weights;
   let stamp='';
-  return Object.assign(head,{cut:bind.cut,follow(force=false){const next=actor.stamp;if(!force&&stamp===next)return;stamp=next;bind.pose(head.group);seam.update();},
-    detach(){for(const [o,v]of hidden)o.visible=v;seam.dispose();head.dispose();}
+  return Object.assign(head,{cut:bind.cut,
+    weights(values){applyWeights.call(this,values);grooming?.update();},
+    follow(force=false){const next=actor.stamp;if(force||stamp!==next){stamp=next;bind.pose(head.group);seam.update();}grooming?.update();},
+    detach(){for(const [o,v]of hidden)o.visible=v;grooming?.dispose();seam.dispose();head.dispose();}
   });
 }

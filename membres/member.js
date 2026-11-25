@@ -1,6 +1,6 @@
 import {hasAuthorSession,logoutAuthor} from './author-access.js';
-import {createMemberPreview} from './free-preview.js?v=presence49';
-import {normaliseStudio} from './studio-look.js?v=presence49';
+import {createMemberPreview} from './free-preview.js?v=incarnations33';
+import {normaliseStudio} from './studio-look.js?v=incarnations33';
 import {games,scenes,videos,mergeJourney,importDeviceJourney,enableJourneyTracking,disableJourneyTracking} from './journey.js';
 
 const $=id=>document.getElementById(id);
@@ -105,7 +105,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./salon-v27.js?v=inspection32');
+  await import('./salon-v27.js?v=incarnations33');
   if(!member||$('salon').hidden)return;
   let view=$('room').querySelector('chemins-salon');
   if(!view){
@@ -114,7 +114,7 @@ async function mountRoom(){
     $('room').append(view);
   }
   const who=member.id;
-  await view.configure(appearance,{memberKey:member.id,author:member.author,salonLooks:member.salonLooks||{},saveCharacter:async(gender,studio)=>{
+  await view.configure(appearance,{memberKey:member.id,authenticated:!wantsPreview,author:member.author,salonLooks:member.salonLooks||{},saveCharacter:async(gender,studio)=>{
     if(member?.id!==who)throw Error('Ta session a changé.');
     const result=await api('salon-appearance',{gender,studio});
     if(result.gender!==gender||!result.studio)throw Error('L’enregistrement du personnage reste à confirmer.');
@@ -257,7 +257,7 @@ $('author-previews').hidden=$('preview-subscriber').hidden=!member?.author;
   if(member.author)$('plan-status').textContent='Ton accès auteur comprend toutes les options de personnalisation.';
   $('offer-price').hidden=$('renewal').hidden=Boolean(member.author);
   const keepDraft=previous?.id===member.id && previous.gender===member.gender && JSON.stringify(previous.studio||previous.avatar)===JSON.stringify(member.studio||member.avatar);
-  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar,member.gender);renderJourney();setPage(true);
+  appearance=keepDraft&&previousDraft?previousDraft:normaliseStudio(member.studio,Boolean(member.author||member.companion),member.avatar,member.gender,{owner:Boolean(member.author)});renderJourney();setPage(true);
   if(member.author){
     const expected=member;
     void loadProviderOptions().then(providers=>{

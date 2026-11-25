@@ -1,4 +1,4 @@
-import {normaliseStudio} from './studio-look.js?v=inspection32';
+import {normaliseStudio} from './studio-look.js?v=incarnations33';
 
 const outfitKey=look=>JSON.stringify([Object.entries(look.outfit).sort(([a],[b])=>a.localeCompare(b)),look.denim,look.tortoise]);
 
@@ -24,7 +24,8 @@ export function createSalonInspection({context,ready,connected,serial,load,prepa
   const id=++serial[slot],account=context().memberKey;
   const valid=()=>connected()&&serial[slot]===id&&String(context().memberKey)===String(account);
   const scene=await ready();if(!scene||!valid())return false;
-  const previous=previews.get(slot),next=normaliseStudio(look,true,undefined,gender);
+  const owner=Boolean(context().author);
+  const previous=previews.get(slot),next=normaliseStudio(look,true,undefined,gender,{owner});
   const inspecting=inspection===true||(inspection===undefined&&Boolean(previous)&&next.face.age!==5&&outfitKey(next)===previous.outfit);
   if(inspecting){
    if(!allowed(slot,gender))throw Error('L’inspection du corps est réservée à ton salon administrateur.');
@@ -37,7 +38,7 @@ export function createSalonInspection({context,ready,connected,serial,load,prepa
   }
   if(!valid())return false;
   if(!inspecting&&!previous&&scene.wearing(slot,look))return true;
-  const visible=inspecting?normaliseStudio({...next,outfit:{}},true,undefined,gender,{inspection:true}):look;
+  const visible=inspecting?normaliseStudio({...next,outfit:{}},true,undefined,gender,{inspection:true,owner}):look;
   const figure=await load(visible,gender,inspecting?{inspection:true}:undefined);
   if(!valid())return false;
   if(inspecting&&figure.inspection!==true)throw Error('L’inspection du corps n’a pas pu être confirmée.');

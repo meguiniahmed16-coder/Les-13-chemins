@@ -1,6 +1,8 @@
 import {buildDeparture} from './scripts/build-depart.mjs';
 import {buildSalonVoices} from './scripts/build-salon-voices.mjs';
 import {buildSalonAssets} from './scripts/build-salon-assets.mjs';
+import {buildIncarnations} from './scripts/build-incarnations.mjs';
+import {buildMakehuman} from './scripts/build-makehuman.mjs';
 import {buildIntroOriginalAssets} from './scripts/build-intro-original-assets.mjs';
 import { copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -22,6 +24,7 @@ const output = join(root, 'dist');
 const run = promisify(execFile);
 for (const args of [
   ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs','membres/salon-dictee.test.mjs','membres/salon-voice.test.mjs'],
+  ['--test','membres/incarnations-dialog.test.mjs','membres/v27/reference-groom.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
   ['--test', 'site-analytics.test.mjs', 'site-nav.test.mjs', 'site-origin.test.mjs', 'soutien.test.mjs'],
@@ -66,6 +69,7 @@ for (const args of [
 }
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
+  'membres/incarnations-dialog.js','membres/makehuman-catalog.js','membres/makehuman-groom.js','membres/v27/reference-groom.js',
   'assets/intro-sound/effervescence-intro.mp3','assets/intro-sound/foley.mp3','assets/intro-sound/room.mp3','assets/intro-sound/garden.mp3','assets/intro-sound/credits.txt',
   'atlas-personnages.js', 'atlas-discussion.js','atlas-chat-client.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',
@@ -78,7 +82,7 @@ const publicFiles = [
   'soutien.js',
   'soutien-config.json',
   'le-depart-a-deux.html',
-  'membre.html','membre-atelier.html','membres/intro-prive.html','membres/intro-dojo-ui.css','membres/intro-arrival.css','membres/intro-prive.js','membres/intro-cinema-bundle.js','membres/intro-cinema-croisee27.js','membres/intro-cinema-croisee28.js','membres/intro-cinema-croisee29.js','membres/intro-cinema-croisee30.js','membres/intro-cinema-croisee31.js','membres/intro-cinema-croisee32.js','membres/member.css','membres/member.js','membres/salon-v27.js','membres/v27/salon.html','membres/v27/salon-runtime.js','membres/v27/arrival-personalization.js','membres/v27/arrival-personalization.css','membres/v27/rencontre-lionel.css','membres/v27/poses.json','membres/v27/visage-indices.json','membres/v27/assises.bin','membres/v27/attaches-v27.bin','membres/seated-postures.js','membres/salon-shots.js','membres/salon-camera-stick.js','membres/conversation-reactions.js','membres/v27/marianne-voix.json','assets/membres/marianne-reference.glb','membres/v27/marianne-voix.mp3','membres/v27/marianne-credits.txt','assets/depart-duo/scene.bin','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
+  'membre.html','membre-atelier.html','membres/intro-prive.html','membres/intro-dojo-ui.css','membres/intro-arrival.css','membres/intro-prive.js','membres/intro-cinema-bundle.js','membres/intro-cinema-croisee27.js','membres/intro-cinema-croisee28.js','membres/intro-cinema-croisee29.js','membres/intro-cinema-croisee30.js','membres/intro-cinema-croisee31.js','membres/intro-cinema-croisee32.js','membres/intro-cinema-croisee33.js','membres/member.css','membres/member.js','membres/salon-v27.js','membres/v27/salon.html','membres/v27/salon-runtime.js','membres/v27/arrival-personalization.js','membres/v27/arrival-personalization.css','membres/v27/rencontre-lionel.css','membres/v27/poses.json','membres/v27/visage-indices.json','membres/v27/assises.bin','membres/v27/attaches-v27.bin','membres/seated-postures.js','membres/salon-shots.js','membres/salon-camera-stick.js','membres/conversation-reactions.js','membres/v27/marianne-voix.json','assets/membres/marianne-reference.glb','membres/v27/marianne-voix.mp3','membres/v27/marianne-credits.txt','assets/depart-duo/scene.bin','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
   'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon-v27.bin','assets/membres/salon-v27-light.bin','assets/membres/salon-v27-apercu.webp','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
   'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-inspection-geometry.js','membres/salon-inspection.js','membres/studio-assets.js','membres/salon-voice.js','membres/salon-voice-worker.js','membres/salon-voice-credits.txt','membres/salon-dictee.js','membres/salon-dictee-worker.js',
   'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-raster.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
@@ -268,6 +272,14 @@ const arrivalData = stops.map((stop, i) => {
 await mkdir(output);
 await buildDeparture(root,output);
 await buildSalonAssets(root,output);
+await buildIncarnations(root,output);
+await buildMakehuman(root,output);
+// Exercise the exact binaries that will be published, including both bodies.
+{
+  const {stdout,stderr}=await run(process.execPath,['--test','membres/makehuman-groom.test.mjs'],{cwd:root,maxBuffer:4*1024*1024});
+  if(stdout.trim())console.log(stdout.trim());
+  if(stderr.trim())console.error(stderr.trim());
+}
 await buildIntroOriginalAssets(root,output);
 await buildSalonVoices(root,output);
 const terms=await readFile(join(root,termsFile.slice(1)),'utf8');

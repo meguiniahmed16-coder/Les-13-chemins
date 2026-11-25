@@ -1,4 +1,4 @@
-import {normaliseStudio,referenceStudio} from './studio-look.js';
+import {normaliseStudio,referenceStudio} from './studio-look.js?v=incarnations33';
 
 // These are independent adult examples from the same character editor as the
 // game. They never recolour or replace the two hosts' private/reference heads.

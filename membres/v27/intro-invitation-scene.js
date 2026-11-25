@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {INTRO_INVITATION_DURATION,introInvitationCue,introInvitationLayout} from '../intro-invitation.js';
 import {INTRO_INVITATION_EXAMPLES} from '../intro-invitation-data.js';
-import {loadStudio} from '../studio-model.js';
+import {loadStudio} from '../studio-model.js?v=incarnations33';
 import {DOJO_CAST,dojoCastLook,styleDojoCastFigure} from '../intro-dojo-cast.js';
 import {createIntroCastActor} from '../intro-wardrobe.js';
 

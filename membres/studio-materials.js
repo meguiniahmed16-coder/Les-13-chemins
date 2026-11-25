@@ -1,5 +1,5 @@
 import {resource,pixels} from './studio-assets.js';
-import {traits} from './studio-catalog.js';
+import {traits} from './studio-catalog.js?v=incarnations33';
 const smoothStep=(a,b,t)=>{const x=Math.min(1,Math.max(0,(t-a)/(b-a)));return x*x*(3-2*x);};
 const clamp=(x,l,h)=>Math.max(l,Math.min(h,x));
 const hairPalettes=[
@@ -9,6 +9,7 @@ const hairPalettes=[
  [[151,139,123],[224,214,196],[254,249,231]],[[106,78,52],[187,146,91],[232,204,150]],
  [[71,46,35],[151,108,77],[196,157,119]],[[67,34,31],[128,65,51],[181,111,88]],[[70,69,67],[161,159,153],[226,224,215]]
 ];
+export const groomMidtone=(tone=0)=>(hairPalettes[tone]||hairPalettes[0])[1].map(value=>value/255);
 const makeupColors=[
  null,
  [[139,80,72,.31],[179,99,80,.12],[131,97,75,.22]],
@@ -31,23 +32,8 @@ export function material(key,look,female=false){
 }
 async function detail(key,look){
  const appearance=look.face,base=await decoded(key),raw=base.data,out=new Uint8ClampedArray(raw);
- if(key.startsWith('hair')){
-  const t={};
- if(!t.range){
-  const hist=new Uint32Array(256);let count=0;
-  for(let j=0;j<raw.length;j+=4){if(raw[j+3]<96)continue;hist[(raw[j]*.30+raw[j+1]*.50+raw[j+2]*.20+.5)|0]++;count++}
-  let sum=0;const bounds=[];for(let v=0;v<256;v++){sum+=hist[v];while(bounds.length<3&&sum>=count*[.025,.52,.975][bounds.length])bounds.push(v)}
-  t.range=bounds;
- }
- const stops=hairPalettes[appearance.hairTone],lookup=new Uint8Array(768),[lo,mid,hi]=t.range;
- for(let v=0;v<256;v++){
-  const a=v<mid?0:1,f=smoothStep(a===0?lo:mid,a===0?Math.max(lo+1,mid):Math.max(mid+1,hi),v);
-  for(let c=0;c<3;c++)lookup[3*v+c]=Math.round(stops[a][c]+f*(stops[a+1][c]-stops[a][c]))
- }
- const rgba=out;
- for(let j=0;j<rgba.length;j+=4){const h=3*((raw[j]*.30+raw[j+1]*.50+raw[j+2]*.20+.5)|0);rgba[j]=lookup[h];rgba[j+1]=lookup[h+1];rgba[j+2]=lookup[h+2];rgba[j+3]=raw[j+3]}
-
- }else if(key==='brow'||key==='lash'){
+ if(key.startsWith('hair'))return colourGroom(base,appearance.hairTone);
+ if(key==='brow'||key==='lash'){
   const style=key==='brow'?appearance.brows:appearance.lashes,t={raw};
  const shades=[[73,53,45],[51,43,42],[99,73,55],[133,103,72],[112,71,52],[143,118,89],[128,113,94],[151,137,117],[126,95,65],[106,83,66],[102,68,56],[115,110,104]],base=key==='brow'?shades[appearance.hairTone]:[62,48,46];
  const strengths=key==='brow'?[.70,.53,.87]:[.63,.46,.86],density=strengths[style]+(appearance.makeup===4?.05:0);
@@ -66,13 +52,28 @@ async function detail(key,look){
  }
  return new ImageData(out,base.width,base.height);
 }
+// One palette for the established hairstyles and the MakeHuman hair/beard
+// atlases. Alpha is retained byte-for-byte, including fine root strands.
+export function colourGroom(base,tone=0){
+ const raw=base.data,out=new Uint8ClampedArray(raw),hist=new Uint32Array(256);let count=0;
+ for(let j=0;j<raw.length;j+=4){if(raw[j+3]<96)continue;hist[(raw[j]*.30+raw[j+1]*.50+raw[j+2]*.20+.5)|0]++;count++;}
+ let sum=0;const bounds=[];
+ for(let v=0;v<256;v++){sum+=hist[v];while(bounds.length<3&&sum>=count*[.025,.52,.975][bounds.length])bounds.push(v);}
+ const [lo,mid,hi]=count?bounds:[0,128,255],stops=hairPalettes[tone]||hairPalettes[0],lookup=new Uint8Array(768);
+ for(let v=0;v<256;v++){
+  const segment=v<mid?0:1,f=smoothStep(segment===0?lo:mid,segment===0?Math.max(lo+1,mid):Math.max(mid+1,hi),v);
+  for(let c=0;c<3;c++)lookup[3*v+c]=Math.round(stops[segment][c]+f*(stops[segment+1][c]-stops[segment][c]));
+ }
+ for(let j=0;j<out.length;j+=4){const k=3*((raw[j]*.30+raw[j+1]*.50+raw[j+2]*.20+.5)|0);for(let c=0;c<3;c++)out[j+c]=lookup[k+c];}
+ return new ImageData(out,base.width,base.height);
+}
 async function skin(look,female){
  const a=look.face,hair=hairPalettes[a.hairTone][0],ages=['young','middleage','old'],[ageIndex,age]=[[0,0],[0,.45],[0,.96],[1,.52],[1,1],[0,0]][a.age];
  const maps=female?await resource('female-skin'):null;
  const skinMap=key=>maps?pixels(maps[key]):decoded('skin-'+key);
  const [la,lb,da,db,oral,makeup,pile,beard]=await Promise.all([
   ...['caucasian','african'].flatMap(tone=>[ageIndex,ageIndex+1].map(i=>skinMap(ages[i]+'_'+tone))),
-  resource('map-oral'),a.makeup?resource('map-cosmetics'):null,a.pile?resource('map-pile'):null,a.beard?resource('map-beard-'+a.beard):null]);
+  resource('map-oral'),a.makeup?resource('map-cosmetics'):null,a.pile?resource('map-pile'):null,a.beard>0&&a.beard<5?resource('map-beard-'+a.beard):null]);
  const lev=look.skinLevel/100,frac=clamp((lev-.16)/.77,0,1),light=Math.max(0,(.16-lev)/.16)*.2,dark=1-.19*Math.max(0,(lev-.93)/.07);
  const n=la.width,out=new ImageData(n,n),rgb=out.data,palette=makeupColors[a.makeup];
  for(let i=0,k=0;i<n*n;i++,k+=4){

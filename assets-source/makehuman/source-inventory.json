@@ -1,0 +1,899 @@
+{
+  "format": "source-files-sha256/1",
+  "archives": [
+    {
+      "pack": "hair01",
+      "url": "https://files.makehumancommunity.org/asset_packs/hair01/hair01_cc0.zip",
+      "catalogueUrl": "https://static.makehumancommunity.org/assets/assetpacks/hair01.html",
+      "sha256": "49445d69848a313ec41a9970f6a0fe4bcf925c9f1c6ef40a76f119c2e07940c9",
+      "bytes": 227775853,
+      "assets": 25
+    },
+    {
+      "pack": "bodyparts05",
+      "url": "https://files.makehumancommunity.org/asset_packs/bodyparts05/bodyparts05_cc0.zip",
+      "catalogueUrl": "https://static.makehumancommunity.org/assets/assetpacks/bodyparts05.html",
+      "sha256": "262bba42246f85b2a91f493dd920296b258a3b4544eb495c91c4d08e57c528fd",
+      "bytes": 6616507,
+      "assets": 5
+    }
+  ],
+  "files": [
+    {
+      "path": "source/bodyparts05/clothes/culturalibre_faun_beard/brown.png",
+      "bytes": 484952,
+      "sha256": "74e9328fc5dc5149c3cb3b0deac362a6cc15738bd81fd9a053f14debcaa28543"
+    },
+    {
+      "path": "source/bodyparts05/clothes/culturalibre_faun_beard/culturalibre_faun_beard.mhclo",
+      "bytes": 353177,
+      "sha256": "a13f5810f1dbf6c18146a1107758bb6b4fd10b9cac1c8106afea43bd384bca0a"
+    },
+    {
+      "path": "source/bodyparts05/clothes/culturalibre_faun_beard/culturalibre_faun_beard.thumb",
+      "bytes": 25287,
+      "sha256": "f8159bf042380b029748c8e80962511b01b8640b463a71ea51536b6ba7b4f00f"
+    },
+    {
+      "path": "source/bodyparts05/clothes/culturalibre_faun_beard/faun_beard.mhmat",
+      "bytes": 219,
+      "sha256": "c070de4e8bcc0bcdbdcca35d9503d1d7378bf9aeeef69b67a9c7d7878027bba4"
+    },
+    {
+      "path": "source/bodyparts05/clothes/culturalibre_faun_beard/faun_beard.obj",
+      "bytes": 433263,
+      "sha256": "a4724d225b813d31aa98846541cff8002e7c4d311ecd6abcc83ef4fcc3141084"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/Material_Diffuse_Color1_d.png",
+      "bytes": 858783,
+      "sha256": "bbcacb4f3e2e55f9a630a8bc4c7728646268f57f30a51d0cb818beb1ded3e279"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/Material_Diffuse_Color1_h.png",
+      "bytes": 447310,
+      "sha256": "618913c86ccb159e97005fd450ed568eff7a0e047716fd4371006bd0c99e12f6"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/Material_Diffuse_Color1_hn.png",
+      "bytes": 1271266,
+      "sha256": "3af187ad0842bc72c50f48537537ae1a185794b24599be4d18aa429d1e4d8fad"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/Material_Diffuse_Color1_s.png",
+      "bytes": 826815,
+      "sha256": "45ad6119465b6e7daa68429c77510b4828b8b1f506af440d3d5ac51bac6f8fec"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/beard_sigmund.mhmat",
+      "bytes": 1031,
+      "sha256": "874e75e8b3bef7028957a743f6c8ea3044a898b6bf25a083ecff756b901b5fd4"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/beard_sigmund.obj",
+      "bytes": 35167,
+      "sha256": "35b82ecf0526498128752686729fe19701fce642e4fef0fbed78a7cbfeaf9653"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/grinsegold_beard_sigmund_wip.mhclo",
+      "bytes": 34763,
+      "sha256": "2e44fc29e0f005a23addee83d1e98976cdd6b970ec07d5fe31e20594faf3c9dc"
+    },
+    {
+      "path": "source/bodyparts05/clothes/grinsegold_beard_sigmund_wip/grinsegold_beard_sigmund_wip.thumb",
+      "bytes": 44208,
+      "sha256": "f8c391d22d9bb989b70440f796c3810b7c1e6f93953ee8e2104af23bef5b6e38"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_beard_viking/BeardViking.png",
+      "bytes": 1050703,
+      "sha256": "5e2d2163cd7157a3a53fc128495f3a86c7a7c91810943d62eb18e2cfc6c0aed2"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_beard_viking/beardviking.mhmat",
+      "bytes": 729,
+      "sha256": "e1e7c48c0931d5cd17db9088258bcb670fc3483aa4173998ad995336a305cf85"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_beard_viking/beardviking.obj",
+      "bytes": 381389,
+      "sha256": "517f4005fecc8b63e05115103295d755e6eaa22e9a72f94cbe1431808e81d515"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_beard_viking/rehmanpolanski_beard_viking.mhclo",
+      "bytes": 444944,
+      "sha256": "87e313af6cb9aaa66dc99f81a1fc537bd3fb134a2df83c80e51e590dbb970344"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_beard_viking/rehmanpolanski_beard_viking.thumb",
+      "bytes": 44510,
+      "sha256": "cd4d335c505b5345d7cf8593a393cc62c311cb6a900a204c504bbfb87a02e82e"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_moustache_viking/MoustacheViking.png",
+      "bytes": 248381,
+      "sha256": "a04f14f45e2beb1fee055a87754846057fb8cd15c4f84f76d57fcb86d3f949ee"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_moustache_viking/moustacheviking.mhmat",
+      "bytes": 733,
+      "sha256": "38eaa94425e54214bad95240f92362393b63986625930f0dd2f93eae1ab17052"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_moustache_viking/moustacheviking.obj",
+      "bytes": 89790,
+      "sha256": "297c14a76a9d0796d95129afdf8e614efa0a080558b4034d56926932bc69ed3e"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_moustache_viking/rehmanpolanski_moustache_viking.mhclo",
+      "bytes": 108786,
+      "sha256": "7623518490914b5f968db07d6fd744c048bae02da4cde54003d896fc0489d6c1"
+    },
+    {
+      "path": "source/bodyparts05/clothes/rehmanpolanski_moustache_viking/rehmanpolanski_moustache_viking.thumb",
+      "bytes": 28708,
+      "sha256": "bbab13a138542ae28408d22d80b98f8c74afcce247fa9f12984cf01f74686c94"
+    },
+    {
+      "path": "source/bodyparts05/clothes/wdg_scruffy_beard/beard2_texture-SMUDGE2.png",
+      "bytes": 809372,
+      "sha256": "16b952b26327428c26c0fb6b7712af350ccbb0f93ebab9a1cf2d9a0a8f859f6f"
+    },
+    {
+      "path": "source/bodyparts05/clothes/wdg_scruffy_beard/scruffy_beard.mhmat",
+      "bytes": 494,
+      "sha256": "8d5bd8b0ba2bbfbf9322295804ac9060cffa59d153e9bdbbb93dcb8ea82d9a81"
+    },
+    {
+      "path": "source/bodyparts05/clothes/wdg_scruffy_beard/scruffy_beard.obj",
+      "bytes": 145962,
+      "sha256": "03df2bc4be18525e2e54408bdbb1b38021645c198d095dcebdad302c90a7f5fd"
+    },
+    {
+      "path": "source/bodyparts05/clothes/wdg_scruffy_beard/wdg_scruffy_beard.mhclo",
+      "bytes": 156173,
+      "sha256": "d17d455c62e79f905ed5b953c338f6ced397af142f6283ced135c3d917fe35b3"
+    },
+    {
+      "path": "source/bodyparts05/clothes/wdg_scruffy_beard/wdg_scruffy_beard.thumb",
+      "bytes": 50488,
+      "sha256": "604285e5fc95a9e741827c1143b894a530c369c24d4703c84a37645d2367bb56"
+    },
+    {
+      "path": "source/bodyparts05/packs/bodyparts05.json",
+      "bytes": 2690,
+      "sha256": "ff285c64ff0ed6efcccec862e28bbdd32703e2c6a1c45213c78df4b4f176f160"
+    },
+    {
+      "path": "source/hair01/hair/cortu_shaggy_green_hair/cortu_shaggy_green_hair.mhclo",
+      "bytes": 65636,
+      "sha256": "38c021053137d4dff2e02b5e216700f5e7162ae2a3fa0f9fa8efccd85bab899f"
+    },
+    {
+      "path": "source/hair01/hair/cortu_shaggy_green_hair/cortu_shaggy_green_hair.thumb",
+      "bytes": 47205,
+      "sha256": "60ba3d0cba4d6a3fdc45eb3ba2ffd672d7336967e2dce6ce1177e35afebf52cf"
+    },
+    {
+      "path": "source/hair01/hair/cortu_shaggy_green_hair/shaggy_green.mhmat",
+      "bytes": 857,
+      "sha256": "06b4274597e63a0813b3f96023d0093f234803e1dea43ccdc5e3e0acec035788"
+    },
+    {
+      "path": "source/hair01/hair/cortu_shaggy_green_hair/shaggy_green.obj",
+      "bytes": 60884,
+      "sha256": "0f28f6e6c02826779ab447be90ae9c03e7ba8c20e77f3b49bb91a9266662d234"
+    },
+    {
+      "path": "source/hair01/hair/cortu_shaggy_green_hair/shaggy_green_diff.png",
+      "bytes": 367935,
+      "sha256": "e685eb7ca5b432b55fa110031743b3f3a42051f1850e6595ccf74068d436b1b4"
+    },
+    {
+      "path": "source/hair01/hair/cortu_shaggy_green_hair/shaggy_green_norm.png",
+      "bytes": 367144,
+      "sha256": "b71f73416586630c3963c0afc3d630cafa4ac773b1a92b0da717f1ec0620a019"
+    },
+    {
+      "path": "source/hair01/hair/cortu_short_messy_hair/cortu_short_messy_hair.mhclo",
+      "bytes": 56368,
+      "sha256": "868ae0221ba97b23c3c5d1d1c5757e6fd01ddad4a2992affffb6fd7880e3cda7"
+    },
+    {
+      "path": "source/hair01/hair/cortu_short_messy_hair/cortu_short_messy_hair.thumb",
+      "bytes": 55988,
+      "sha256": "b83505f7464a504cd25838b56c5f4c309e5702db9158aac695cb598d359ac9dc"
+    },
+    {
+      "path": "source/hair01/hair/cortu_short_messy_hair/short_messy.mhmat",
+      "bytes": 854,
+      "sha256": "28e4ba6df3f1af7a3b68ffde131509be4add84f397409d26b8fc6f8d6efd475d"
+    },
+    {
+      "path": "source/hair01/hair/cortu_short_messy_hair/short_messy.obj",
+      "bytes": 52093,
+      "sha256": "d6dd3d11d44424e8dcd63d98b15763f1c3bb754be8eb02a527ec5f04724a54b1"
+    },
+    {
+      "path": "source/hair01/hair/cortu_short_messy_hair/short_messy_diff.png",
+      "bytes": 530185,
+      "sha256": "ddf92030eeefe80fdc12703ef44624ba4dd690f458042def549f2853b0daa0dc"
+    },
+    {
+      "path": "source/hair01/hair/cortu_short_messy_hair/short_messy_objnorm.png",
+      "bytes": 364140,
+      "sha256": "22f397b8ffd19f4a8036034650defc6c964ab9a664c96f8a2db124a956d8a212"
+    },
+    {
+      "path": "source/hair01/hair/cortu_straight_bangs/cortu_straight_bangs.mhclo",
+      "bytes": 57446,
+      "sha256": "64ad5941c9380d507a6cd7c8c8f42a348f36f116b1fc5ccebd4f72e5e279ccda"
+    },
+    {
+      "path": "source/hair01/hair/cortu_straight_bangs/cortu_straight_bangs.thumb",
+      "bytes": 47499,
+      "sha256": "66bc068c71e0167c91da9280ff019fb9a5f1153693cc95c13e5ce07ac65485d6"
+    },
+    {
+      "path": "source/hair01/hair/cortu_straight_bangs/straight_bangs.mhmat",
+      "bytes": 866,
+      "sha256": "ba267539c63fd7410e9c76a189391bb077daac6d27afadc256071839aa68aeb4"
+    },
+    {
+      "path": "source/hair01/hair/cortu_straight_bangs/straight_bangs.obj",
+      "bytes": 53419,
+      "sha256": "947428e271fa06c74bf5cb635e7779a37ac7e38c00313235473429b34d744287"
+    },
+    {
+      "path": "source/hair01/hair/cortu_straight_bangs/straight_bangs_diff.png",
+      "bytes": 385861,
+      "sha256": "a191c260f7e659560c2b03de410c4df636688575e5944c4b4b8fc336f39e47f7"
+    },
+    {
+      "path": "source/hair01/hair/cortu_straight_bangs/straight_bangs_objnorm.png",
+      "bytes": 250651,
+      "sha256": "003cd46b9c890cd20c8964e031ca83c180d6a005736902a211c87d679dc651d7"
+    },
+    {
+      "path": "source/hair01/hair/cortu_strawberry_cloud_hair/cortu_strawberry_cloud_hair.mhclo",
+      "bytes": 32727,
+      "sha256": "1e621daaa55ef9ee0f7e71561d1ac50ca88b7a2b3d61b62004af9a97813d4d55"
+    },
+    {
+      "path": "source/hair01/hair/cortu_strawberry_cloud_hair/cortu_strawberry_cloud_hair.thumb",
+      "bytes": 66788,
+      "sha256": "f25b8a753fbf94edd3764e2b67ec5a07b0b7c14ccb3f58744755ea7107242b37"
+    },
+    {
+      "path": "source/hair01/hair/cortu_strawberry_cloud_hair/strawberry_cloud.mhmat",
+      "bytes": 870,
+      "sha256": "fc2ea104095ac973228f9cc7b050722b3486cfda8aa2f098810160afa42f90b5"
+    },
+    {
+      "path": "source/hair01/hair/cortu_strawberry_cloud_hair/strawberry_cloud.obj",
+      "bytes": 29029,
+      "sha256": "f7ba38267df948580f200d0b3018bd22b37005682a1a3b69cf6cb1b238cadf33"
+    },
+    {
+      "path": "source/hair01/hair/cortu_strawberry_cloud_hair/strawberry_cloud_diff.png",
+      "bytes": 623320,
+      "sha256": "f2e518683de468eba5b9506bc3395c10db95f7f068b144a6f6199f926166c887"
+    },
+    {
+      "path": "source/hair01/hair/cortu_strawberry_cloud_hair/strawberry_cloud_norm.png",
+      "bytes": 566388,
+      "sha256": "242e07fb56ebe992c866169fc4ec60404463ae011f3d0a568b5d4bea6a483477"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_01/culturalibre_hair_01.mhclo",
+      "bytes": 212444,
+      "sha256": "2644c85c6bcf5cdcd9abbe288ad44807b791c1386f8c59614c38b18d241d34c9"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_01/culturalibre_hair_01.thumb",
+      "bytes": 57687,
+      "sha256": "809d3d430b513eea8287abf8aac9c984bf36d2aa317131c6ed1321beea73d365"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_01/diffuse_black.png",
+      "bytes": 2876277,
+      "sha256": "e3d5d88951ffb2d79bac00c67a900661666b95ce8b4a70fb867c51b14b2e31f8"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_01/fhair01.mhmat",
+      "bytes": 774,
+      "sha256": "b6f62ee549fb3f7462ba7b5140f58144de5e9ec232f36de362e1eea1c45c4e36"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_01/fhair01.obj",
+      "bytes": 214425,
+      "sha256": "81633b2ced28f3f932c3b0c37c308ffc03fab73af53e3209027602f000d4caad"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_01/normals.png",
+      "bytes": 3091840,
+      "sha256": "56ece5605b230300b6fa1e7d1bff9d2bb73a327a797c0af0ec3ea1101a97a44b"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_02/culturalibre_hair_02.mhclo",
+      "bytes": 156223,
+      "sha256": "5d24186eb4248a7bebad93c769e288605b7ab9f2f086789d91a99a9b15206118"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_02/culturalibre_hair_02.thumb",
+      "bytes": 45849,
+      "sha256": "f4e578ed22b637f6b6f58c73243c0c20e7caa42209182b561c26b2e97154af78"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_02/male02_black.mhmat",
+      "bytes": 847,
+      "sha256": "8855b7d027258c8b5c860462fb05ce34b001e534914197860158be6f7b941557"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_02/male02_diffuse_black.png",
+      "bytes": 4390775,
+      "sha256": "d3ef0f625df4d5cea6c9cd89e00b9e86c3b488d63672f9ed5b1327a17abd60dc"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_02/mhair02.obj",
+      "bytes": 163203,
+      "sha256": "d8aa9a81cd2d49134c76906a2a50efae578d36ff26883795993d326daa804725"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_05/culturalibre_hair_05.mhclo",
+      "bytes": 175979,
+      "sha256": "e3888a94ebb84bc37b73cefb3af7045bc674a8c3d92ff8e910e75c283a234078"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_05/culturalibre_hair_05.thumb",
+      "bytes": 44679,
+      "sha256": "b2f54d96b7203eb5137ca793ce57126c8a5167d88f543dfa39e0e129bd9de768"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_05/hair_05.mhmat",
+      "bytes": 221,
+      "sha256": "bd786b142ba4e2eeab426f7ea12f61bd96f3c4a5b1d6012983373be72800159a"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_05/hair_05.obj",
+      "bytes": 257893,
+      "sha256": "7f710a92a7c47a318bf83c66a381aecaccf7d992f77681fd4c287d0c3b209cf9"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_05/hair_05.png",
+      "bytes": 5754,
+      "sha256": "3e03935cd03bb8f34a72bf53810d9cdd74634c3a0e4d121f6866d118eda3ecfe"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_06/culturalibre_hair_06.mhclo",
+      "bytes": 510220,
+      "sha256": "fb5835f77df605cdaa866b9d62e22c87426eaf0116c5c70ffd3cb3263d9f0888"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_06/culturalibre_hair_06.thumb",
+      "bytes": 59323,
+      "sha256": "077954e1efb5f339f54b4a46f688b4b7bcd3831de53f8b8e4b44df6ed1196318"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_06/hair_06.mhmat",
+      "bytes": 219,
+      "sha256": "8174acc4f42532dba16bf61acaa95086365f71180c8a15bbb2a593ec80d776e4"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_06/hair_06.obj",
+      "bytes": 776535,
+      "sha256": "94625d491707002bcd16ef11111284949988f95bd2114988ca131b60deff6f9b"
+    },
+    {
+      "path": "source/hair01/hair/culturalibre_hair_06/pink.png",
+      "bytes": 241693,
+      "sha256": "bd540186299c9c3f15dc882322b1f7b9ff3420646fb84ba6431eb9b805b9c911"
+    },
+    {
+      "path": "source/hair01/hair/elvs_double_mh_braid/braid01_diffuse_black.png",
+      "bytes": 1418285,
+      "sha256": "058319440189c364116efe0b0dda4a8ee1e2330425dd34d6a9d84972c39cd533"
+    },
+    {
+      "path": "source/hair01/hair/elvs_double_mh_braid/double_mhbraid.mhmat",
+      "bytes": 756,
+      "sha256": "949b342476f5ed3d17e073793719f385b958a3ed361684603d396031bd5d438b"
+    },
+    {
+      "path": "source/hair01/hair/elvs_double_mh_braid/double_mhbraid.obj",
+      "bytes": 540640,
+      "sha256": "3abccab116e66858d6bce49dffb397f024e83ef9855100e7bd780a731c39add6"
+    },
+    {
+      "path": "source/hair01/hair/elvs_double_mh_braid/elvs_double_mh_braid.mhclo",
+      "bytes": 543904,
+      "sha256": "053db1ac6d1530c4396adb2033471d61c93f7ded65bfe75ca825150f6cec44fb"
+    },
+    {
+      "path": "source/hair01/hair/elvs_double_mh_braid/elvs_double_mh_braid.thumb",
+      "bytes": 30972,
+      "sha256": "3ab29aa682ce32c49109231609eaf102421883041d196aeec62d09cf4599e82c"
+    },
+    {
+      "path": "source/hair01/hair/elvs_french_braid_variation/braid01_diffuse_mahogany.png",
+      "bytes": 3258198,
+      "sha256": "0da05671e97c74bed8091aac68d34b30d2992e1b577ca6038667f3c1b5e86cb8"
+    },
+    {
+      "path": "source/hair01/hair/elvs_french_braid_variation/elvs_french_braid_variation.mhclo",
+      "bytes": 440039,
+      "sha256": "61ea506301f39cff5079485597aac6bf876689c1922c0ae2386d45226578d340"
+    },
+    {
+      "path": "source/hair01/hair/elvs_french_braid_variation/elvs_french_braid_variation.thumb",
+      "bytes": 28524,
+      "sha256": "88549ffb80057d2944227e384f90cbbdb7e0d4645a5a6f9d9463f9599436ffd4"
+    },
+    {
+      "path": "source/hair01/hair/elvs_french_braid_variation/frenchbraid1mh01.mhmat",
+      "bytes": 761,
+      "sha256": "a7086f921beb8509eeeb67a36f2f92edc66254a1fd4d3ca127627e0be47de815"
+    },
+    {
+      "path": "source/hair01/hair/elvs_french_braid_variation/frenchbraid1mh01.obj",
+      "bytes": 440567,
+      "sha256": "708f019f2cbcc11f883890aa6c0b5a98209e6f1fc45833851c160b9385d89a34"
+    },
+    {
+      "path": "source/hair01/hair/elvs_reverse_french_braid_bun/braid01_diffuse_grapewash.png",
+      "bytes": 3374947,
+      "sha256": "cb2f5476fb6e68dc2dfbf18ef6efb8aabf4fe981d0bde76700e690262e1fe946"
+    },
+    {
+      "path": "source/hair01/hair/elvs_reverse_french_braid_bun/elvs_reverse_french_braid_bun.mhclo",
+      "bytes": 388054,
+      "sha256": "01046e726dafbae2d9e73a07546e755985afe1c8d771a80da8ba57172f96120c"
+    },
+    {
+      "path": "source/hair01/hair/elvs_reverse_french_braid_bun/elvs_reverse_french_braid_bun.thumb",
+      "bytes": 65712,
+      "sha256": "6cdfd8b0ad262322d60a108a3c7808810a9bcf3d1246cd5acddfdbc58f6ef24d"
+    },
+    {
+      "path": "source/hair01/hair/elvs_reverse_french_braid_bun/rev_fr_braidbun1.mhmat",
+      "bytes": 762,
+      "sha256": "3391786ef5f2e33dd2e2a24e7fae26b31dde1343d1c3b7285ca36885446efff5"
+    },
+    {
+      "path": "source/hair01/hair/elvs_reverse_french_braid_bun/rev_fr_braidbun1.obj",
+      "bytes": 392939,
+      "sha256": "d5ef1b59f48da38c33d93f40a8f78b830017e40062d3f8ac7b6791aa5240bb02"
+    },
+    {
+      "path": "source/hair01/hair/elvs_unkempt_french_braid/braid01_diffuse_brightginger.png",
+      "bytes": 2023125,
+      "sha256": "693077a34ec5f53aa2d1e0a0b15ba98a2f1932190831962f14554c230d4ac4fa"
+    },
+    {
+      "path": "source/hair01/hair/elvs_unkempt_french_braid/elvs_unkempt_french_braid.mhclo",
+      "bytes": 443703,
+      "sha256": "868347915e98326679c1b764ba2e7909c7abffa31fd9ecc27735e709c66846a3"
+    },
+    {
+      "path": "source/hair01/hair/elvs_unkempt_french_braid/elvs_unkempt_french_braid.thumb",
+      "bytes": 30703,
+      "sha256": "2c6d2bf8602c669c416ef77f2b457c666c855ad564b42fd03d7fc8be61ab5a2d"
+    },
+    {
+      "path": "source/hair01/hair/elvs_unkempt_french_braid/unkempt_mhbraidfr.mhmat",
+      "bytes": 765,
+      "sha256": "66ff079db4742538fd3c62f7ace6c86743e118c5082c34c4fb902a131085469f"
+    },
+    {
+      "path": "source/hair01/hair/elvs_unkempt_french_braid/unkempt_mhbraidfr.obj",
+      "bytes": 443879,
+      "sha256": "f78c3165cf049d39ffc506eb6ba612f0a14c2f255ca5bd9d94780350785e3ff9"
+    },
+    {
+      "path": "source/hair01/hair/faydaen_hair_1/faydaen_hair_1.mhclo",
+      "bytes": 33164,
+      "sha256": "4b0739ab8cd217d90a5f6ee45954e15198ef09623278b7651fc5ea55978a61c3"
+    },
+    {
+      "path": "source/hair01/hair/faydaen_hair_1/faydaen_hair_1.thumb",
+      "bytes": 76589,
+      "sha256": "9706249a1206b3cfdf2f1dbe4ae7358000765d4e0f3d4747c93adab1d28fca1a"
+    },
+    {
+      "path": "source/hair01/hair/faydaen_hair_1/hair.png",
+      "bytes": 529047,
+      "sha256": "fab3641439f0eb519a21ee012795be32c28211a92216ef4fac2d7ffa9ab53eea"
+    },
+    {
+      "path": "source/hair01/hair/faydaen_hair_1/hair1.mhmat",
+      "bytes": 407,
+      "sha256": "74eb3f60daeb66deb271a40e7d816f0dd0c0c6d3c59cc9f5a006880fb9c6681f"
+    },
+    {
+      "path": "source/hair01/hair/faydaen_hair_1/hair1.obj",
+      "bytes": 47591,
+      "sha256": "4c04ebeb99a4414a7e25f6ef1342bab715094b7b691f6b4ddf369f7620ed25f1"
+    },
+    {
+      "path": "source/hair01/hair/learning_anime_hair/animehair.mhmat",
+      "bytes": 487,
+      "sha256": "14ce1aee56bb3fbbd88f9665cb33f08bd842a980c9d9e3d510ac25ea936ed2b9"
+    },
+    {
+      "path": "source/hair01/hair/learning_anime_hair/animehair.obj",
+      "bytes": 4085611,
+      "sha256": "66ef3379a1444ca37772ae4dccb1a7a798d7ab1612efaf02d231c1b228b0cf95"
+    },
+    {
+      "path": "source/hair01/hair/learning_anime_hair/learning_anime_hair.mhclo",
+      "bytes": 3108063,
+      "sha256": "eb59d05809b2d0c1f707f480e13a3dbd0864b068766205bc97c7bd841ae18c0b"
+    },
+    {
+      "path": "source/hair01/hair/learning_anime_hair/learning_anime_hair.thumb",
+      "bytes": 50302,
+      "sha256": "050f67c3005335e6f514a002f302138600df95bc9d8a132c4ad33c2ca737914c"
+    },
+    {
+      "path": "source/hair01/hair/learning_anime_hair/pink.png",
+      "bytes": 322909,
+      "sha256": "e283893bd9a1686bd237ee48dfd3e053b6c1205b35e32f3f5e04ffd458dc47b7"
+    },
+    {
+      "path": "source/hair01/hair/littleright_bobcut_hair/hairtex.png",
+      "bytes": 353923,
+      "sha256": "57a7924c9a7a5c6174e1bc27d6c182cd31e88cf900238dc941156dae85bf1e15"
+    },
+    {
+      "path": "source/hair01/hair/littleright_bobcut_hair/littleright_bobcut_hair.mhclo",
+      "bytes": 129746,
+      "sha256": "9fcfcb4fb308927a508df59be0c947b82673e222c87ebf879c5b7164ca3f263b"
+    },
+    {
+      "path": "source/hair01/hair/littleright_bobcut_hair/littleright_bobcut_hair.thumb",
+      "bytes": 56772,
+      "sha256": "1ead8743235cd9ba5134a7bbf0f876c9fa11d79e855babce672734d42c703c6e"
+    },
+    {
+      "path": "source/hair01/hair/littleright_bobcut_hair/littleright_hair_bobcut.mhmat",
+      "bytes": 469,
+      "sha256": "0d79096d8d9360327433d2619f595109d04ff3c621e312404c98931947321cc3"
+    },
+    {
+      "path": "source/hair01/hair/littleright_bobcut_hair/littleright_hair_bobcut.obj",
+      "bytes": 127949,
+      "sha256": "c690451eccb81328de5888e61fedd6daf020e85dd16277582c2bd563a4a220a8"
+    },
+    {
+      "path": "source/hair01/hair/o4saken_long01/o4saken_long01.mhclo",
+      "bytes": 1016141,
+      "sha256": "581d190f38086aba1c47cd4e589fee469a3cc0157f98fc74ce7bcb76a1caa646"
+    },
+    {
+      "path": "source/hair01/hair/o4saken_long01/o4saken_long01.mhmat",
+      "bytes": 884,
+      "sha256": "f954943466c9c1ff92348ee9241594ec6e1380abe557bf4316059c83f427e05c"
+    },
+    {
+      "path": "source/hair01/hair/o4saken_long01/o4saken_long01.obj",
+      "bytes": 907650,
+      "sha256": "3b58e92dae179dd6d0d9b0be07d5996827d8a8dd4158579d6bcc2e48ebd60c17"
+    },
+    {
+      "path": "source/hair01/hair/o4saken_long01/o4saken_long01.png",
+      "bytes": 4139233,
+      "sha256": "436f34ddbd3d27275ecbfb7ea3e3159dc16ff8039313c003fdea30bcbdcefb10"
+    },
+    {
+      "path": "source/hair01/hair/o4saken_long01/o4saken_long01.thumb",
+      "bytes": 56566,
+      "sha256": "85bca7a042d786ebbec7c519ac57327cc0d6a84d11775b1b5bfa5c0759c0c8f2"
+    },
+    {
+      "path": "source/hair01/hair/o4saken_long01/o4saken_long01_nrm.png",
+      "bytes": 3467551,
+      "sha256": "e529aa236fdb858e78d86476be956565d5c0bad8ac461946bf2a15be70f91d12"
+    },
+    {
+      "path": "source/hair01/hair/rehmanpolanski_hair_bun_brown/Hair_bun_brown.png",
+      "bytes": 4326322,
+      "sha256": "ebcf2d58a5f8dfe11db376e559d0308e57da00170cde1c1304871bab10d251fa"
+    },
+    {
+      "path": "source/hair01/hair/rehmanpolanski_hair_bun_brown/hair_bun_brown.mhmat",
+      "bytes": 467,
+      "sha256": "4f5c86a531b73707505632b36507c30f8759cea2f001de06d794aa1c4e1be716"
+    },
+    {
+      "path": "source/hair01/hair/rehmanpolanski_hair_bun_brown/hair_bun_brown.obj",
+      "bytes": 194911,
+      "sha256": "87620ef37e13235c103415db778ae583b4f1abab21323ac1180bce57bef64856"
+    },
+    {
+      "path": "source/hair01/hair/rehmanpolanski_hair_bun_brown/rehmanpolanski_hair_bun_brown.mhclo",
+      "bytes": 171791,
+      "sha256": "54f136555d516f940268881e75453305789ff430be85032f25864d773ebe9676"
+    },
+    {
+      "path": "source/hair01/hair/rehmanpolanski_hair_bun_brown/rehmanpolanski_hair_bun_brown.thumb",
+      "bytes": 36318,
+      "sha256": "7959c41cfe448d57062633ee33c85305b009347f5877fd4491f4a34c7cf6e5fc"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_blond_with_headband/blondbump.png",
+      "bytes": 11429826,
+      "sha256": "fc0a0c7bc3573f6e0a0982df05d68b326bfebe6414c0b0a98457e06e613198f3"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_blond_with_headband/blondwithheadband.mhmat",
+      "bytes": 683,
+      "sha256": "528f70a8ee4a0343d7a9d4d36f1754a02fecba96c9b49c1d43629380f624c73f"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_blond_with_headband/blondwithheadband.obj",
+      "bytes": 91771,
+      "sha256": "0b337c3b5f848bcc57ebef465a294d5ee2e070b189f39aca2cc6c2fcd5cf74c9"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_blond_with_headband/sonntag78_blond_with_headband.mhclo",
+      "bytes": 86444,
+      "sha256": "203bd4c2fe926caa469a0a082dbbb6c1cf20e372bf7ced189a9f66439fd8965f"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_blond_with_headband/sonntag78_blond_with_headband.thumb",
+      "bytes": 70829,
+      "sha256": "ab8045b1b93e963de134a3cb061b9d4471598aec16fdce4411568db4d8cf92a5"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_blond_with_headband/untitledv3.png",
+      "bytes": 19471815,
+      "sha256": "fa3da03a704c54ad0e73784f5d89ba5d6e46ed1889174b656fd1940c2bf06638"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_junglebook_hair/Hairblackseamless2png.png",
+      "bytes": 5189025,
+      "sha256": "0ebfaa8fc9ad9a629e31c95553b789ec2178bb449e9f41012c0d755b3d06d5cb"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_junglebook_hair/junglebookhair.mhmat",
+      "bytes": 707,
+      "sha256": "06525142aeae3f979f3891269b00548cb627940bf4c84dadc5a92f846c24c846"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_junglebook_hair/junglebookhair.obj",
+      "bytes": 372375,
+      "sha256": "78b669add65fb0e2b573bda71bc04f7b07454a9b1c965426c37e929bd7d7e02c"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_junglebook_hair/sonntag78_junglebook_hair.mhclo",
+      "bytes": 329609,
+      "sha256": "424a6a929632ade6f99cb6b802f235ebf020592dcd30df6d58d5223dc35c6ee0"
+    },
+    {
+      "path": "source/hair01/hair/sonntag78_junglebook_hair/sonntag78_junglebook_hair.thumb",
+      "bytes": 56094,
+      "sha256": "3ac543726c5dd070a51aab43cab1ec47e982f57679d13c2b71ad225a1aa96396"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/BakedHairNORMAL.png",
+      "bytes": 10260549,
+      "sha256": "f0b761f31129ef5f808394a4f71b04e902fbd5eadfcad0f3ae0c8d89f87a73cb"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/BakedHair_spec.png",
+      "bytes": 5464748,
+      "sha256": "57889d479bc327d3854c7f12689c6c53ce3ef8c445bb7da4dda0ffde9cf5f9b8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/StrawberryBlondHair.png",
+      "bytes": 10549971,
+      "sha256": "2612df792dc3f1aa919e6a07ab7107ba79ce108cefb81d02913ae577d2862f57"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/bob_blunt.mhmat",
+      "bytes": 576,
+      "sha256": "2cb32864aaa374bb45dfb0224a023b0a5993dfaafbac051aea170c2cbe6dfea1"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/bob_blunt.obj",
+      "bytes": 118207,
+      "sha256": "e77b50e03ed0957fa596cc6d388cade25629c8650f734b16b581a1b51bbf11ff"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/toigo_blunt_bob.mhclo",
+      "bytes": 102588,
+      "sha256": "252f6b2edbc9f1568b85ff7f367709f5c328110023573df35720a4c84879f4e1"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob/toigo_blunt_bob.thumb",
+      "bytes": 45693,
+      "sha256": "3cb51989c89e9eb91d389c397122a15c82cd56e3d11513cf925f3abb5f5e7e8a"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/AuburnHair.png",
+      "bytes": 8344296,
+      "sha256": "87515d144d5e6f7722bac12fcf424bce6f7ffa1045425bf8fe959ad55efe9af6"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/BakedHairNORMAL.png",
+      "bytes": 10260549,
+      "sha256": "f0b761f31129ef5f808394a4f71b04e902fbd5eadfcad0f3ae0c8d89f87a73cb"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/BakedHair_spec.png",
+      "bytes": 5464748,
+      "sha256": "57889d479bc327d3854c7f12689c6c53ce3ef8c445bb7da4dda0ffde9cf5f9b8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/bob_blunt_bangs.mhmat",
+      "bytes": 558,
+      "sha256": "1e284e295c9b87684fdf434696c6a12b29d24d858fcc411947cb6a32baa8b3bf"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/bob_blunt_bangs.obj",
+      "bytes": 211773,
+      "sha256": "88429d8919a9bf30bdf3ace3a0f18751561e02ef67c8fc839c57a610fa49dfe4"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/toigo_blunt_bob_with_bangs.mhclo",
+      "bytes": 179911,
+      "sha256": "a10c85fea05740d19fbdb378169052ed0a857281753b5d286080c7a8720fee50"
+    },
+    {
+      "path": "source/hair01/hair/toigo_blunt_bob_with_bangs/toigo_blunt_bob_with_bangs.thumb",
+      "bytes": 48497,
+      "sha256": "33151472381e7d035ef857f534b9a2a6f7fdf3312f442bf99651c21a09e06276"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/BakedHairNORMAL.png",
+      "bytes": 10260549,
+      "sha256": "f0b761f31129ef5f808394a4f71b04e902fbd5eadfcad0f3ae0c8d89f87a73cb"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/BakedHair_spec.png",
+      "bytes": 5464748,
+      "sha256": "57889d479bc327d3854c7f12689c6c53ce3ef8c445bb7da4dda0ffde9cf5f9b8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/GingerHair.png",
+      "bytes": 10620085,
+      "sha256": "d87528154919da855eb5cf05d9a9a036fc5f8510c2a0d7baea155d7890ebfdc8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/bob_curled_under.mhmat",
+      "bytes": 558,
+      "sha256": "4bce159101adc6b182366eae66eeadd2138150a12ddac5ed95feb0def995d490"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/bob_curled_under.obj",
+      "bytes": 111278,
+      "sha256": "0d57c1689f5972a405c3e251151fba9ab0ffbff7e19c2da8056c16d0929b7841"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/toigo_curled_under_bob.mhclo",
+      "bytes": 102450,
+      "sha256": "725bf6f11fbea1ec2f461a52ed73774df195180c3e113716fbbc00639d81e78a"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob/toigo_curled_under_bob.thumb",
+      "bytes": 42369,
+      "sha256": "512f0159e5d333ee46160b65ed8a05487457333d69161c16236be045d9fa524b"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/BakedHairNORMAL.png",
+      "bytes": 10260549,
+      "sha256": "f0b761f31129ef5f808394a4f71b04e902fbd5eadfcad0f3ae0c8d89f87a73cb"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/BakedHair_spec.png",
+      "bytes": 5464748,
+      "sha256": "57889d479bc327d3854c7f12689c6c53ce3ef8c445bb7da4dda0ffde9cf5f9b8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/BlondHair.png",
+      "bytes": 13659477,
+      "sha256": "bf5b6f5a8671c14cc2da31bb2b8b77bc5983b0b53329f99fe859ffd9972a3449"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/bob_curled_under_bangs.mhmat",
+      "bytes": 556,
+      "sha256": "d3a89ff38712dc767071b2094de5bc7781adbd0e5aa54d0d31e445c889560f86"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/bob_curled_under_bangs.obj",
+      "bytes": 206188,
+      "sha256": "5a94e7d3d979410ccb5df2bda9d9ccdee2dad396033ed478a41091a781994533"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/toigo_curled_under_bob_with_bangs.mhclo",
+      "bytes": 179915,
+      "sha256": "ec629512656e225686074514d806ba307fe331028960b42e093a25d77b83e523"
+    },
+    {
+      "path": "source/hair01/hair/toigo_curled_under_bob_with_bangs/toigo_curled_under_bob_with_bangs.thumb",
+      "bytes": 49057,
+      "sha256": "f21fdd706389d4cd568e2d910fc6e9bfe3dd68d3e7dbf3f83e9df0ea419fe561"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/BakedHairNORMAL.png",
+      "bytes": 10260549,
+      "sha256": "f0b761f31129ef5f808394a4f71b04e902fbd5eadfcad0f3ae0c8d89f87a73cb"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/BakedHair_spec.png",
+      "bytes": 5464748,
+      "sha256": "57889d479bc327d3854c7f12689c6c53ce3ef8c445bb7da4dda0ffde9cf5f9b8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/GoldenBlondHair.png",
+      "bytes": 7877907,
+      "sha256": "0d839379f85e757aa8d5cd92281efe830beba1e34f1ffd93954eac704d729378"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/bob_inverted.mhmat",
+      "bytes": 566,
+      "sha256": "ad2abc59a0e16f2c2ac08b5210df83b6322f85a10183f95a7b68b96b53218033"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/bob_inverted.obj",
+      "bytes": 118025,
+      "sha256": "a6b7c685b8558b9983cb8a883ebacf0272a238931ca20482671fe5da64a31c10"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/toigo_inverted_bob.mhclo",
+      "bytes": 102805,
+      "sha256": "af32890eb389dd536afcb8f6cd5cbf1f57fd42be6a7c1ab2bcb56e0b383473c5"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob/toigo_inverted_bob.thumb",
+      "bytes": 46634,
+      "sha256": "2ff925c23dca8ecd5f6792fbc4a7b1a7c041b1503d430ee029304c8e61b3002e"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/BakedHairNORMAL.png",
+      "bytes": 10260549,
+      "sha256": "f0b761f31129ef5f808394a4f71b04e902fbd5eadfcad0f3ae0c8d89f87a73cb"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/BakedHair_spec.png",
+      "bytes": 5464748,
+      "sha256": "57889d479bc327d3854c7f12689c6c53ce3ef8c445bb7da4dda0ffde9cf5f9b8"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/BlackHair.png",
+      "bytes": 2735341,
+      "sha256": "a284c2d6224bb69350c83c384121899bd0bd5b6ce7f87beca8c75c1cc91b2292"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/bob_inverted_bangs.mhmat",
+      "bytes": 556,
+      "sha256": "94a95b07070d29dd66a1d6991e3b60c36923844d92ef45c70afd8ebf9483acc7"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/bob_inverted_bangs.obj",
+      "bytes": 209719,
+      "sha256": "ed11cc0e72c5bd99525e8c90c83d09381e19315d1564eb4a1e58ab85fdef6613"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/toigo_inverted_bob_with_bangs.mhclo",
+      "bytes": 180524,
+      "sha256": "0621b98b006dd135801caff2c5abdc2fd1f7603ed4319ba75b4d6ffe164b6e83"
+    },
+    {
+      "path": "source/hair01/hair/toigo_inverted_bob_with_bangs/toigo_inverted_bob_with_bangs.thumb",
+      "bytes": 46234,
+      "sha256": "10bdfa4a0e49e00864de8f96e1ae32ed513fc02ef49b7e25bc2cc2e72717059b"
+    },
+    {
+      "path": "source/hair01/packs/hair01.json",
+      "bytes": 16798,
+      "sha256": "b1f3c32a877cf7fb681ed54d28715d53a4d9660656ae063c6a50229181830de7"
+    }
+  ],
+  "extractionChecks": [
+    "All archive entries inspected",
+    "No absolute paths or parent-directory traversal",
+    "No symbolic links admitted"
+  ],
+  "originalSourceFilesModified": false
+}

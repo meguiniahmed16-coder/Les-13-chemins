@@ -2,7 +2,7 @@ import {createShotSequence} from './salon-shots.js';
 import {createDialogue} from './salon-dialogue.js?v=salon43';
 import {createDictee} from './salon-dictee.js?v=salon41';
 import {characterReply,limit} from '../atlas-chat-client.js';
-import {searchName} from './salon-encounter.js?v=salon38';
+import {searchName} from './salon-encounter.js?v=incarnations33';
 
 const opening='Asseyons-nous et discutons.';
 let directory;

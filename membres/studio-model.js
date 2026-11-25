@@ -1,7 +1,9 @@
 import {resource,pixels} from './studio-assets.js';
-import {material} from './studio-materials.js';
+import {material} from './studio-materials.js?v=incarnations33';
 import {poseVertex} from './salon-pose.js';
 import {inspectionFemaleBodyFaces} from './studio-inspection-geometry.js';
+import {makehumanHair,makehumanBeard} from './makehuman-catalog.js?v=incarnations33';
+import {loadMakehumanGroom} from './makehuman-groom.js?v=incarnations33';
 const hairList=['hair','QueueHaute','Carre','LongOndule','TresseCote','bob02','short01','short02','short03','afro01'];
 const smoothStep=(a,b,t)=>{const x=Math.max(0,Math.min(1,(t-a)/(b-a)));return x*x*(3-2*x);};
 function normals(p,faces,weld,out,sum=new Float32Array(p.length)){
@@ -87,7 +89,7 @@ function bindToBody(m,parent){
   let nx=u*ns[a]+w*ns[b]+h*ns[c],ny=u*ns[a+1]+w*ns[b+1]+h*ns[c+1],nz=u*ns[a+2]+w*ns[b+2]+h*ns[c+2];
   const length=Math.hypot(nx,ny,nz);
   if(length<2){nx=0;ny=1;nz=0}else{nx/=length;ny/=length;nz/=length}
-  const gap=binding[j+5]+(m.clearance?.[i]||0);let dx=gap*nx,dy=gap*ny,dz=gap*nz;
+  const gap=(m.bindingSignedGap?(binding[j+5]<<16)>>16:binding[j+5])+(m.clearance?.[i]||0);let dx=gap*nx,dy=gap*ny,dz=gap*nz;
   if(wide){
    let tx=pos[b]-pos[a],ty=pos[b+1]-pos[a+1],tz=pos[b+2]-pos[a+2];
    const z=tx*nx+ty*ny+tz*nz;tx-=z*nx;ty-=z*ny;tz-=z*nz;
@@ -98,7 +100,7 @@ function bindToBody(m,parent){
   v[k]=Math.round(u*pos[a]+w*pos[b]+h*pos[c]+dx);v[k+1]=Math.round(u*pos[a+1]+w*pos[b+1]+h*pos[c+1]+dy);v[k+2]=Math.round(u*pos[a+2]+w*pos[b+2]+h*pos[c+2]+dz);
 
  }
- normals(m.v,m.allFaces,null,m.vn,m.accum);
+ normals(m.v,m.allFaces,m.groom?m.weld:null,m.vn,m.accum);
 }
 
 function morph(m,appearance,hat){
@@ -203,8 +205,10 @@ export async function loadStudio(look,gender,{inspection=false}={}){
  const outfit={...look.outfit};
  if(!inspect&&!outfit.bas&&!outfit.robe&&!outfit.culotte)outfit.culotte='mh3461';
  if(!inspect&&(female||look.face.age===5)&&!outfit.haut&&!outfit.robe)outfit.haut=female?'mh22':'mh1431';
- const names=['body','eyesNative','browNative','lashes','teethNative','tongueNative',hairList[look.face.hair]||hairList[0]];
- const [native,entries]=await Promise.all([
+ const selectedHair=look.face.hair>=12?makehumanHair(look.face.hair):null,selectedBeard=look.face.beard>=5?makehumanBeard(look.face.beard):null;
+ const names=['body','eyesNative','browNative','lashes','teethNative','tongueNative'];
+ if(!selectedHair)names.push(hairList[look.face.hair]||hairList[look.face.hair===11?7:0]);
+ const [native,entries,groomData]=await Promise.all([
   Promise.all(names.map(async name=>{
    const m=await resource('mesh-'+name),native={...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};
    if(inspect&&female&&name==='body')native.faces=inspectionFemaleBodyFaces(native);
@@ -219,7 +223,8 @@ export async function loadStudio(look,gender,{inspection=false}={}){
    m.accum=new Float32Array(m.v.length);m.tailored=true;
    if(id==='mh807'&&look.denim)m.multiplier=[.47,.54,.69];if(id==='mh153'&&look.tortoise)m.multiplier=[1.1,.76,.52];
    return [slot,m];
-  }))
+  })),
+  Promise.all([selectedHair,selectedBeard].filter(Boolean).map(record=>loadMakehumanGroom(record,look,gender)))
  ]);
  const slots=Object.fromEntries(entries),clothes=Object.values(slots);
  const skin=native.map(base=>{
@@ -229,6 +234,9 @@ export async function loadStudio(look,gender,{inspection=false}={}){
   return m;
  });
  const body=skin[0],covered=new Uint8Array(body.n);
+ const grooms=groomData.map(raw=>{
+  const mesh=displayMesh(raw,raw.position.length/3);mesh.accum=new Float32Array(mesh.v.length);mesh.tailored=true;return mesh;
+ });
  for(const m of clothes)for(const i of m.coverage)covered[i]=1;
  const visible=[];
  for(let j=0;j<body.faces.length;j+=3){const [a,b,c]=body.faces.subarray(j,j+3);if(!(covered[a]&&covered[b]&&covered[c]))visible.push(a,b,c);}
@@ -236,7 +244,7 @@ export async function loadStudio(look,gender,{inspection=false}={}){
  adjustLayers(clothes,body);
  for(const m of clothes)m.faces=layerCut(m,m.faces,slots,body.n);
  const output=new Float32Array(6);let prior=null,priorFace=null;
- return {meshes:[...skin,...clothes],appearance:look,inspection:inspect,revision:0,
+ return {meshes:[...skin,...grooms,...clothes],appearance:look,inspection:inspect,revision:0,
    enableSpeech(channels){for(const m of skin)m.speech??=facialChannels(m,channels);},
    pose(bones,face=null){
   if(prior&&priorFace===face&&bones.every((v,i)=>v===prior[i]))return;
@@ -248,6 +256,7 @@ export async function loadStudio(look,gender,{inspection=false}={}){
     for(let j=0;j<3;j++){m.v[i+j]=Math.round(output[j]*10000);m.vn[i+j]=Math.round(output[j+3]);}
    }
   }
+  for(const m of grooms)bindToBody(m,body);
   for(const m of clothes)bindToBody(m,body);
   this.revision++;
  }};

@@ -3,18 +3,18 @@ import {reactionFor} from './conversation-reactions.js';
 // source URLs are embedded in the GLB materials. The lounge is original geometry.
 import {createPerformer} from './salon-performance.js';
 import {resource} from './studio-assets.js';
-import {legacyStudio} from './studio-look.js';
-import {loadStudio} from './studio-model.js?v=salon43';
-import {createDrawer} from './studio-drawer.js?v=presence49';
+import {legacyStudio} from './studio-look.js?v=incarnations33';
+import {loadStudio} from './studio-model.js?v=incarnations33';
+import {createDrawer} from './studio-drawer.js?v=incarnations33';
 import {cameraProjection,newCamera,SalonMotion} from './salon-navigation.js?v=salon47';
 import {salonMarkup,bindSalon} from './salon-controls.js?v=gestes50';
-import {createSalonChat} from './salon-chat.js?v=presence49';
-import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=presence49';
+import {createSalonChat} from './salon-chat.js?v=incarnations33';
+import {conversationSeats,frameConversation,guestAppearance,actorHead,headSide} from './salon-encounter.js?v=incarnations33';
 
 const portraitBones=new SalonMotion(undefined,newCamera()).bones();
 async function loadActor(look,gender){
   if(gender!=='femme')return loadStudio(look,gender);
-  const [figure,{wearCompatibleReference}]=await Promise.all([loadStudio(look,gender),import('./v27/compatible-face-bundle.js?v=sourire7')]);
+  const [figure,{wearCompatibleReference}]=await Promise.all([loadStudio(look,gender),import('./v27/compatible-face-bundle.js?v=incarnations33')]);
   return wearCompatibleReference(figure,portraitBones);
 }
 const files = new URL('../assets/membres/', import.meta.url);
@@ -234,7 +234,7 @@ export class CheminsAvatar extends HTMLElement {
   constructor(){
     super();
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=gestes50',import.meta.url).href);
+    root.innerHTML=salonMarkup(posterURL,new URL('./salon.css?v=incarnations33',import.meta.url).href);
     this.#chat=createSalonChat(root,{
       invite:person=>this.#invite(person),
       change:()=>this.#schedule(),
@@ -270,7 +270,7 @@ export class CheminsAvatar extends HTMLElement {
         await this.#open(true);if(showBags)return this.#loadWorld(true);return;
       }
       if(showBags)this.#state.textContent='Ouverture du jardin…';
-      this.#worldLoad=import('./depart.js?v=presence49').then(({createDeparture})=>createDeparture({
+      this.#worldLoad=import('./depart.js?v=incarnations33').then(({createDeparture})=>createDeparture({
         canvas:this.#canvas,context,roomFrame:()=>this.#view.frame,root:this.shadowRoot,signal:life.signal,makeGait:()=>new SalonMotion(undefined,newCamera()),
         onBag:which=>this.#selectBag(which),onReturn:()=>this.#cancelDeparture(),wake:this.#schedule
       })).then(world=>{if(life.signal.aborted){world.dispose();return;}this.#world=world;});

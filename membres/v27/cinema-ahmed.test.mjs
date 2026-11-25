@@ -113,6 +113,58 @@ test('clothing-only customization keeps the portrait; explicit facial choices us
  bridge.reset('m');assert.equal(a.cinemaAhmed.active,true);assert.equal(a.parts,originalParts);assert.equal(a.salonLook,null);
 });
 
+test('MakeHuman hair and beards keep the private Ahmed face and hide all primitives of his former curls',async()=>{
+ const base=cinemaAhmedLook();
+ for(const face of [{hair:12},{hair:36,beard:9,hairTone:3},{beard:5},{hair:11},{hairTone:3}]){
+  assert.equal(sameAhmedPortrait({...base,face:{...base.face,...face}}),true);
+ }
+ assert.equal(sameAhmedPortrait({...base,face:{...base.face,hair:12,nose:2}}),false);
+ const x=fixture(),hair=new T.Group();hair.name='Boucles_|_Chevelure_intérieure';hair.add(fakePart('primitive').obj);x.bones[1].add(hair);
+ const controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,prepare:x.prepare,now:x.now});
+ const face=x.mouth,geometry=face.geometry;
+ await controller.dress({appearance:{...base,face:{...base.face,hair:12,beard:5}}});
+ assert.equal(hair.visible,false);assert.equal(face.geometry,geometry);assert.equal(controller.active,true);
+ controller.restore();assert.equal(hair.visible,true);assert.equal(face.geometry,geometry);
+});
+
+test('dyeing the original curls uses private materials and textures and restores their exact original appearance',async t=>{
+ const previousImageData=globalThis.ImageData;
+ globalThis.ImageData=class{constructor(data,width,height){this.data=data;this.width=width;this.height=height;}};
+ t.after(()=>{if(previousImageData===undefined)delete globalThis.ImageData;else globalThis.ImageData=previousImageData;});
+ const x=fixture(),hair=new T.Group();hair.name='Boucles_|_Chevelure_intérieure';
+ const shared=new T.MeshStandardMaterial({color:'#432b21',roughness:.83,opacity:.72,transparent:true});
+ const roots=new T.MeshStandardMaterial({color:'#24160e',roughness:.91});
+ const sourcePixels=new Uint8Array([26,17,16,0,67,43,33,128,125,88,66,255]),originalPixels=sourcePixels.slice(),map=new T.DataTexture(sourcePixels,3,1);map.colorSpace=T.SRGBColorSpace;
+ const texturedMaterial=new T.MeshStandardMaterial({map,alphaTest:.33});
+ const strand=fakePart('strand').obj,sections=fakePart('sections').obj,textured=fakePart('textured').obj;
+ strand.material=shared;sections.material=[shared,roots];textured.material=texturedMaterial;hair.add(strand,sections,textured);x.bones[1].add(hair);
+ // A shared source material must not tint another part of the portrait.
+ x.mouth.material=shared;
+ const originalSections=sections.material,originalColour=shared.color.clone(),rootColour=roots.color.clone(),portrait=x.mouth.geometry;
+ const controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,prepare:x.prepare,now:x.now});
+ const look=cinemaAhmedLook(),dress=tone=>controller.dress({appearance:{...look,face:{...look.face,hairTone:tone}}});
+ await dress(3);
+ assert.equal(controller.active,true);assert.equal(hair.visible,true);
+ assert.notEqual(strand.material,shared);assert.notEqual(sections.material,originalSections);
+ assert.notEqual(sections.material[0],shared);assert.notEqual(sections.material[1],roots);
+ assert.notDeepEqual(strand.material.color.toArray(),originalColour.toArray());
+ assert.notEqual(textured.material.map,map);assert.notEqual(textured.material.map.source,map.source);
+ assert.notDeepEqual(Array.from(textured.material.map.image.data),Array.from(originalPixels));
+ assert.deepEqual(map.image.data,originalPixels);assert.equal(textured.material.alphaTest,.33);
+ assert.equal(textured.material.map.colorSpace,T.SRGBColorSpace);
+ for(let i=3;i<originalPixels.length;i+=4)assert.equal(textured.material.map.image.data[i],originalPixels[i]);
+ assert.equal(strand.material.opacity,.72);assert.equal(strand.material.roughness,.83);
+ assert.equal(x.mouth.material,shared);assert.equal(x.mouth.geometry,portrait);
+ assert.deepEqual(shared.color.toArray(),originalColour.toArray());assert.deepEqual(roots.color.toArray(),rootColour.toArray());
+ const blonde=strand.material.color.toArray(),blondePixels=Array.from(textured.material.map.image.data);
+ await dress(11);await dress(3);assert.deepEqual(strand.material.color.toArray(),blonde,'Dye changes must always start from the original material');
+ assert.deepEqual(Array.from(textured.material.map.image.data),blondePixels,'Dye changes must always start from the original texture');
+ let disposed=0;const clones=[strand.material,...sections.material,textured.material,textured.material.map];for(const resource of clones)resource.addEventListener('dispose',()=>disposed++);
+ await dress(0);assert.equal(strand.material,shared);assert.equal(sections.material,originalSections);assert.equal(textured.material,texturedMaterial);assert.equal(textured.material.map,map);assert.equal(disposed,clones.length);
+ await dress(4);controller.restore();assert.equal(strand.material,shared);assert.equal(sections.material,originalSections);
+ assert.deepEqual(shared.color.toArray(),originalColour.toArray());assert.deepEqual(map.image.data,originalPixels);assert.equal(textured.material,texturedMaterial);assert.equal(x.mouth.geometry,portrait);
+});
+
 test('saved looks and added accessories preserve the cinematic white fabrics while new garments keep their colors',async()=>{
  const originalFetch=globalThis.fetch;
  globalThis.fetch=async url=>{

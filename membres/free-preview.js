@@ -1,6 +1,6 @@
 import {normaliseAvatar} from './avatar-catalog.js';
-import {normaliseStudio,exactStudio} from './studio-look.js?v=presence49';
-import {startingAppearance} from './starting-appearance.js?v=presence49';
+import {normaliseStudio,exactStudio} from './studio-look.js?v=incarnations33';
+import {startingAppearance} from './starting-appearance.js?v=incarnations33';
 import {normalizeJourney,mergeJourney} from './journey.js';
 
 // Each preview has its own settings and local-only writes. No billing session is created.

@@ -86,7 +86,7 @@ async function authorize(){
   authorized=true;author=me.author;
   $('pseudo').value=me.pseudo||'Voyageur';
   document.querySelectorAll('a[href*="auteur=atelier"]').forEach(a=>a.href=a.href.replace('auteur=atelier','auteur='+encodeURIComponent(author)));
-  frame.src='/membres/v27/salon.html?v=intro-original56&resident=marianne&intro3d=1';
+  frame.src='/membres/v27/salon.html?v=incarnations33&resident=marianne&intro3d=1';
  }catch(e){$('locked').hidden=false;$('opening').hidden=true;$('loading').textContent='L’accès auteur n’a pas été confirmé.';}
 }
 $('bug').onclick=()=>{$('report-scene').value=sceneTitle(stage);$('report-count').textContent=logs.length+' signalements sauvegardés';$('report-dialog').showModal()};

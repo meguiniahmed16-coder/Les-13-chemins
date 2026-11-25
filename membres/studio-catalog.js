@@ -1,3 +1,4 @@
+import {MAKEHUMAN_HAIR,MAKEHUMAN_BEARD} from './makehuman-catalog.js?v=incarnations33';
 // Public selections from the male V27 wardrobe.
 export const traits = [
  {
@@ -100,7 +101,8 @@ export const traits = [
    "Barbe de trois jours",
    "Moustache",
    "Bouc et moustache",
-   "Barbe courte"
+   "Barbe courte",
+   ...MAKEHUMAN_BEARD.map(item=>item.label+' · 3D')
   ]
  },
  {
@@ -227,7 +229,9 @@ export const traits = [
    "Courte texturée",
    "Courte asymétrique",
    "Afro court",
-   "Chignon de Marianne"
+   "Chignon de Marianne",
+   "Boucles d’Ahmed Marie",
+   ...MAKEHUMAN_HAIR.map(item=>item.label)
   ]
  },
  {

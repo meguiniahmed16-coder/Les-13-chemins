@@ -22,7 +22,7 @@ export default async function proxy(request){
     }
     const response=await fetch(target,{method:request.method,headers,body,redirect:'manual',signal:AbortSignal.timeout(20000)});
     const out=new Headers({'cache-control':'private, no-store','netlify-cdn-cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'});
-    for(const k of ['location','content-type','set-cookie'])if(response.headers.has(k))out.set(k,response.headers.get(k));
+    for(const k of ['location','content-type','set-cookie','vary','x-frame-options','x-robots-tag','permissions-policy','content-security-policy','cross-origin-resource-policy'])if(response.headers.has(k))out.set(k,response.headers.get(k));
     return new Response(response.body,{status:response.status,headers:out});
   }catch{return Response.json({error:'Connexion momentanément indisponible.'},{status:503,headers:{'cache-control':'no-store'}});}
 }

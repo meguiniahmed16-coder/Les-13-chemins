@@ -1,14 +1,24 @@
-import {traits,pieces} from './studio-catalog.js?v=duo6';
+import {traits,pieces} from './studio-catalog.js?v=incarnations33';
 
 export const slots={hauts:'haut',pantalons:'bas',jupes:'bas',robes:'robe',vestes:'veste',chaussures:'souliers',culottes:'culotte',collants:'collant',chaussettes:'chaussette',combinaisons:'robe',chapeaux:'chapeau',lunettes:'lunettes',gants:'gants',masques:'masque',bijoux:'bijou',accessoires:'accessoire'};
 export const byId=new Map(pieces.map(p=>[p.id,p]));
 export const skinSteps=[0,12,22,34,47,60,74,88,100];
 // Profiles created before the gender field use the original male salon model.
 const restrictedTraits={beard:'homme',pile:'homme',lashes:'femme',makeup:'femme'};
-export function traitAvailable(key,gender){
+export const residentShapes={
+  bust:['Poitrine',['D’origine','Menue','Galbée','Généreuse','Tombé naturel']],
+  seat:['Postérieur',['D’origine','Discret','Rehaussé','Rebondi','Large']]
+};
+export function traitAvailable(key,gender,owner=false){
+  if(owner&&(key==='lashes'||key==='makeup'||key==='beard'))return true;
   return !Object.hasOwn(restrictedTraits,key)||restrictedTraits[key]===(gender||'homme');
 }
-export const traitOptionAvailable=(key,index,gender)=>key!=='hair'||index!==10||gender==='femme';
+export function traitOptionAvailable(key,index,gender,owner=false,look){
+  if(key==='beard'&&gender==='femme')return owner&&(index===0||index>=5&&index<=9);
+  if(key!=='hair'||index<10||index>=12)return true;
+  if(index===10)return gender==='femme';
+  return index===11&&owner&&gender==='homme'&&Boolean(look)&&keepsAhmedPortrait({...look,face:{...look.face,hair:11}});
+}
 export function freeTrait(key,i){
   if(key==='skin'||key==='iris'||key==='age')return true;
   if(key==='hair')return [1,7,9,10].includes(i);
@@ -26,12 +36,31 @@ export function legacyStudio(avatar={},gender){
   if(avatar.accessory&&avatar.accessory!=='aucun')outfit.lunettes='mh153';
   return {face,skinLevel,iris:'',outfit,denim:avatar.bottom==='jean-nuit',tortoise:avatar.accessory==='ecaille'};
 }
-export function normaliseStudio(value,plus,legacy,gender,{inspection=false}={}){
+// The two resident hairstyles belong to their actual reference portraits.
+// Keep this comparison shared by the selector, persistence and cinema bridge.
+export function keepsAhmedPortrait(look){
+  const original=legacyStudio(undefined,'homme'),hair=look?.face?.hair,beard=look?.face?.beard;
+  const grooming=hair>=12||beard>=5||hair===11;
+  return ['skinLevel','iris'].every(key=>(look?.[key]??'')===(original[key]??''))&&
+    Object.keys(original.face).every(key=>{
+      if(grooming&&key==='hair'&&(hair>=12||hair===11||hair===original.face.hair))return true;
+      if(grooming&&key==='beard'&&(beard>=5||beard===0||beard===original.face.beard))return true;
+      if(key==='hairTone')return true;
+      return (look?.face?.[key]??0)===original.face[key];
+    });
+}
+export function normaliseStudio(value,plus,legacy,gender,settings={}){
+  // Accept the deployed worker's former owner boolean as well as the newer
+  // explicit inspection option. A stored look cannot grant either permission.
+  const {inspection=false,owner=false}=typeof settings==='boolean'?{owner:settings}:settings||{};
   if(!value||typeof value!=='object')return legacyStudio(legacy,gender);
   const base=legacyStudio(undefined,gender),face={};
   for(const t of traits){
-    if(!traitAvailable(t.key,gender)){face[t.key]=0;continue;}
-    const n=value.face?.[t.key];face[t.key]=Number.isInteger(n)&&n>=0&&n<t.options.length&&traitOptionAvailable(t.key,n,gender)?n:base.face[t.key];
+    if(!traitAvailable(t.key,gender,owner)){face[t.key]=0;continue;}
+    const n=value.face?.[t.key];face[t.key]=Number.isInteger(n)&&n>=0&&n<t.options.length&&traitOptionAvailable(t.key,n,gender,owner,value)?n:base.face[t.key];
+  }
+  if(owner)for(const key of Object.keys(residentShapes)){
+    const index=value.face?.[key];if(Number.isInteger(index)&&index>0&&index<5)face[key]=index;
   }
   const outfit={};
   for(const [slot,id] of Object.entries(value.outfit||{})){

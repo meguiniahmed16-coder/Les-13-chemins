@@ -1,7 +1,8 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dressAhmed,introOutfits,captureIntroAppearance,prepareIntroAppearance} from '../intro-wardrobe.js';
-import {referenceStudio} from '../studio-look.js';
+import {referenceStudio,keepsAhmedPortrait} from '../studio-look.js?v=incarnations33';
+import {groomMidtone,colourGroom} from '../studio-materials.js?v=incarnations33';
 import {SalonMotion} from '../salon-v27-motion.js';
 
 const whiteCinemaGarments=new Set(Object.values(introOutfits.m));
@@ -16,9 +17,7 @@ export function cinemaAhmedLook(){
  const look=referenceStudio('homme');look.outfit={...introOutfits.m};return look;
 }
 export function sameAhmedPortrait(look){
- const original=cinemaAhmedLook();
- return ['skinLevel','iris'].every(k=>(look?.[k]??'')===(original[k]??''))&&
-  Object.keys(original.face).every(k=>(look?.face?.[k]??0)===original.face[k]);
+ return keepsAhmedPortrait(look);
 }
 export async function fetchCinemaAhmed(fetcher=fetch,subtle=globalThis.crypto?.subtle){
  const {bytes,unit,sha256}=cinemaAhmedAsset,chunks=new Array(Math.ceil(bytes/unit));
@@ -71,14 +70,61 @@ async function loadModel(){
 // Only its visible geometry and deformation controller become the original Ahmed.
 export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=prepareIntroAppearance,now=()=>performance.now()/1000}={}){
  const original=model||await loadModel(),compact=actor.parts;
- const oldGarments=[],mouth=[];let skeleton;
+ const oldGarments=[],mouth=[],nativeHair=[];let skeleton;
  original.traverse(object=>{
   if(object.isMesh){object.castShadow=true;object.receiveShadow=false;object.frustumCulled=false;}
   if(object.isSkinnedMesh&&/^(Haut|Pantalon|Chaussures)[\s_]*blanc/i.test(object.name))oldGarments.push(object);
   if(!skeleton&&object.isSkinnedMesh&&object.skeleton?.bones.length===15)skeleton=object.skeleton;
   if(object.morphTargetDictionary?.Ouvrir!==undefined)mouth.push(object);
+  // A GLTF node with several hair materials is a group, whose child meshes
+  // do not necessarily retain the original node name.
+  if(/^Boucles(?:[\s_|]|$)/.test(object.name))nativeHair.push([object,object.visible]);
  });
  if(!skeleton||oldGarments.length!==3)throw Error('Le modèle original d’Ahmed n’est pas reconnu.');
+ const hairPrimitives=new Map();
+ for(const [root] of nativeHair)root.traverse(object=>{
+  if(object.isMesh&&!hairPrimitives.has(object))hairPrimitives.set(object,{original:object.material,clones:null});
+ });
+ const baseHairColour=new T.Color().fromArray(groomMidtone(0)).convertSRGBToLinear();
+ const hairPixels=new WeakMap();
+ function texturePixels(map){
+  const image=map.image;
+  if(!hairPixels.has(image)){
+   if(image.data)hairPixels.set(image,new ImageData(new Uint8ClampedArray(image.data),image.width,image.height));
+   else{
+    const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+    const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(image,0,0);
+    hairPixels.set(image,context.getImageData(0,0,canvas.width,canvas.height));
+   }
+  }
+  return hairPixels.get(image);
+ }
+ function dyeNativeHair(tone=0){
+  const colour=new T.Color().fromArray(groomMidtone(tone)).convertSRGBToLinear();
+  for(const [mesh,entry]of hairPrimitives){
+   const originals=Array.isArray(entry.original)?entry.original:[entry.original];
+   if(!tone){
+    mesh.material=entry.original;entry.clones?.forEach((material,index)=>{if(material.map!==originals[index].map)material.map?.dispose();material.dispose();});entry.clones=null;continue;
+   }
+   entry.clones??=originals.map(material=>material.clone());
+   entry.clones.forEach((material,index)=>{
+    const source=originals[index];
+    if(source.map){
+     if(material.map!==source.map)material.map?.dispose();
+     const texture=source.map.clone();
+     // Texture.clone shares its Source; give the dye its own pixels so neither
+     // the portrait nor the original curls can be altered by this selection.
+     texture.source=new T.Source(colourGroom(texturePixels(source.map),tone));texture.needsUpdate=true;material.map=texture;
+     if(material.color&&source.color)material.color.copy(source.color);
+    }else if(material.color&&source.color){
+     // Vertex-coloured strands have a white material multiplier. Values above
+     // one are needed to lighten their existing dark vertex colours.
+     for(const channel of ['r','g','b'])material.color[channel]=Math.max(0,source.color[channel]*colour[channel]/baseHairColour[channel]);
+    }
+   });
+   mesh.material=Array.isArray(entry.original)?entry.clones:entry.clones[0];
+  }
+ }
  const parent=oldGarments[0].parent,rig=skeleton.bones;
  const holder=new T.Group();holder.name='Ahmed de la cinématique';
  // The GLB itself already contains its 1.075 scale. Cancel the outer salon
@@ -103,7 +149,7 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=pr
   restore(){
    originalAppearance.activate();appearance?.dispose();appearance=null;
    for(const part of originalParts)parent.add(part.obj);
-   current=originalWardrobe;actor.parts=originalParts;activate();
+   current=originalWardrobe;actor.parts=originalParts;for(const [mesh,visible]of nativeHair)mesh.visible=visible;dyeNativeHair();activate();
   },
   async dress(figure,valid=()=>true){
    if(!valid())return false;
@@ -118,6 +164,8 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=pr
    if(!valid()){draft.dispose();return false;}
    const before=actor.parts,privateBefore=modelActor.parts,prior=appearance;
    draft.activate();appearance=draft;
+   for(const [mesh,visible]of nativeHair)mesh.visible=visible&&figure.appearance.face.hair<12;
+   dyeNativeHair(figure.appearance.face.hair<12?figure.appearance.face.hairTone:0);
    for(const part of before){
     part.obj.visible=false;
     if(before!==privateBefore&&!originalParts.includes(part)){
@@ -154,6 +202,7 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=pr
     const map=object.morphTargetDictionary,values=object.morphTargetInfluences;
     for(const [key,value] of Object.entries({Ouvrir:p.jaw||0,Decouvrir:(p.spread||0)*.18,SourireG:(p.spread||0)*.07,SourireD:(p.spread||0)*.07,Cligner:blink}))if(map[key]!==undefined)values[map[key]]=value;
    }
+   appearance?.updateGrooms?.();
   }
  };
  actor.cinemaAhmed=controller;controller.animate(0,null);return controller;

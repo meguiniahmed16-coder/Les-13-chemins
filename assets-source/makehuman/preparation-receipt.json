@@ -1,0 +1,43 @@
+{
+  "format": "salon-groom-preparation-receipt/1",
+  "createdDate": "2026-11-25",
+  "status": "prepared-and-locally-validated",
+  "gameDevCliAvailable": false,
+  "gameDevCanonicalReceipt": false,
+  "repositoryMutatedByPreparation": false,
+  "assetCount": 30,
+  "hairCount": 25,
+  "beardCount": 5,
+  "runtimeBytes": 17184723,
+  "maximumVertices": 49728,
+  "maximumBindingRoundtripErrorMetres": 0.00015935718001826592,
+  "archives": [
+    {
+      "pack": "hair01",
+      "url": "https://files.makehumancommunity.org/asset_packs/hair01/hair01_cc0.zip",
+      "catalogueUrl": "https://static.makehumancommunity.org/assets/assetpacks/hair01.html",
+      "sha256": "49445d69848a313ec41a9970f6a0fe4bcf925c9f1c6ef40a76f119c2e07940c9",
+      "bytes": 227775853,
+      "assets": 25
+    },
+    {
+      "pack": "bodyparts05",
+      "url": "https://files.makehumancommunity.org/asset_packs/bodyparts05/bodyparts05_cc0.zip",
+      "catalogueUrl": "https://static.makehumancommunity.org/assets/assetpacks/bodyparts05.html",
+      "sha256": "262bba42246f85b2a91f493dd920296b258a3b4544eb495c91c4d08e57c528fd",
+      "bytes": 6616507,
+      "assets": 5
+    }
+  ],
+  "baseReference": {
+    "file": "reference/hm08-base.obj",
+    "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c",
+    "licence": "CC0-1.0, explicitly stated in its original file header"
+  },
+  "upstreamSourceDirectory": "assets-source/salon-v27",
+  "remainingIntegrationChecks": [
+    "Real-browser selection and loading",
+    "Body expression / speech follows binding",
+    "Private Salon access and publication"
+  ]
+}

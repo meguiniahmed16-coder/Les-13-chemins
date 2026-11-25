@@ -1,5 +1,5 @@
-import {generateAppearance} from './starting-appearance.js?v=presence49';
-import {referenceStudio,skinSteps} from './studio-look.js?v=presence49';
+import {generateAppearance} from './starting-appearance.js?v=incarnations33';
+import {referenceStudio,skinSteps} from './studio-look.js?v=incarnations33';
 import {seats} from './salon-plan.js';
 import {cameraProjection} from './salon-navigation.js?v=salon35';
 

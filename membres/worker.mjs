@@ -8,6 +8,9 @@ import {site,social} from './oauth.mjs';
 import {availability,saveProvider} from './provider-settings.mjs';
 import {authorSession,authorProfile} from './author-session.mjs';
 import ownerModule from './avatar-owner.js?text';
+import incarnationsTemplate from '../assets-source/incarnations/incarnations-private.html?text';
+import {incarnationsAccess,incarnationsDocument,incarnationsHeaders} from './incarnations-access.mjs';
+import {incarnationsRuntime} from './incarnations-runtime.mjs';
 const h={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','vary':'Cookie'};
 const json=(data,status=200,extra={})=>Response.json(data,{status,headers:{...h,...extra}});
 async function read(r){const data=await r.text();if(data.length>16000)fail(413,'Demande trop longue.');try{return JSON.parse(data)||{};}catch{fail(400,'Demande invalide.');}}
@@ -19,11 +22,22 @@ async function view(db,m,author){
   const journey={games:[],videos:[],scenes:[]};for(const row of rows.results)journey[row.kind]?.push(row.item);
   const saved=JSON.parse(m.avatar),plus=Boolean(author)||billing.companion;
   const salonLooks={};
-  for(const gender of ['femme','homme'])if(saved.salonLooks?.[gender])salonLooks[gender]=normaliseStudio(saved.salonLooks[gender],plus,undefined,gender);
-  return {salonLooks,studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus),m.gender),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
+  for(const gender of ['femme','homme'])if(saved.salonLooks?.[gender])salonLooks[gender]=normaliseStudio(saved.salonLooks[gender],plus,undefined,gender,{owner:Boolean(author)});
+  return {salonLooks,studio:normaliseStudio(saved.studio,plus,normaliseAvatar(saved,plus),m.gender,{owner:Boolean(author)}),id:m.id,gender:m.gender,pseudo:m.pseudo,birth:m.birth,name:m.name,email:m.email,age:ageBand(m.birth),avatar:normaliseAvatar(saved,plus),...billing,author,journey};
 }
 async function owner(r,env,path){
   if(!await authorSession(r,env))fail(401,'Connecte-toi à l’administration.');
+  if(path==='admin/incarnations'&&r.method==='GET'){
+    const member=await authorProfile(env.DB);
+    return new Response(incarnationsDocument(incarnationsTemplate,incarnationsAccess(member,true)),{headers:incarnationsHeaders});
+  }
+  // Preserve the private owner shape library already present in production.
+  const form=/^admin\/formes-v27\/(femme|homme)$/.exec(path);
+  if(r.method==='GET'&&form){
+    const object=await env.STUDIO?.get('salon/formes-v27-v1/'+form[1]+'.json');
+    if(!object)fail(503,'Les formes du salon sont indisponibles.');
+    return new Response(object.body,{headers:{...h,'content-type':'application/json'}});
+  }
   // Original uploaded 3D environments, stored as fixed-size R2 chunks.
   // Author session has already been verified; no public route exposes these files.
   const original=path.match(/^admin\/intro-assets\/(white|dojo)\/(\d{3})$/);
@@ -95,6 +109,12 @@ export default {
     const author=await authorSession(request,env);
     if(url.searchParams.has('auteur')&&!author)fail(401,'Ta session auteur a expiré.');
     const m=author?await authorProfile(db):await current(db,request);if(!m)fail(401,'Connecte-toi pour ouvrir ton espace.');
+    if((path==='incarnations'||path==='incarnations/access')&&request.method==='GET'){
+      const access=incarnationsAccess(m,author);
+      if(path==='incarnations/access')return json(access);
+      return new Response(incarnationsDocument(incarnationsTemplate,access),{headers:incarnationsHeaders});
+    }
+    if(path.startsWith('incarnations/')&&request.method==='GET')return await incarnationsRuntime(env,path.slice('incarnations/'.length));
     if(path==='me'&&request.method==='GET')return json(await view(db,m,author));
     if(path==='logout'&&request.method==='POST'){
       if(author)fail(409,'Utilise la déconnexion de ton administration.');
@@ -121,7 +141,7 @@ export default {
       const {gender,studio}=await read(request);
       if(!validGender(gender))fail(400,'Choisis un personnage.');
       const plus=Boolean(author)||(await membership(db,m.id,now())).companion;
-      if(!exactStudio(studio,normaliseStudio(studio,plus,undefined,gender)))fail(403,'Cette personnalisation est indisponible.');
+      if(!exactStudio(studio,normaliseStudio(studio,plus,undefined,gender,{owner:Boolean(author)})))fail(403,'Cette personnalisation est indisponible.');
       const key='$.salonLooks.'+gender,value=JSON.stringify(studio);
       const update=await sql(db,"UPDATE members SET avatar=CASE WHEN gender=? THEN json_set(avatar,?,json(?),'$.studio',json(?)) ELSE json_set(avatar,?,json(?)) END WHERE id=?",gender,key,value,value,key,value,m.id).run();
       if(!update.meta.changes)fail(409,'Rouvre le salon pour retrouver ton personnage.');
@@ -130,7 +150,7 @@ export default {
     if(path==='avatar'&&request.method==='POST'){
       const data=await read(request),input=data.avatar,plan=await membership(db,m.id,now()),plus=Boolean(author)||plan.companion,avatar=normaliseAvatar(input,plus);
       if(!input||typeof input!=='object'||Object.keys(input).length!==avatarCatalog.length||Object.keys(avatar).some(k=>avatar[k]!==input[k]))fail(403,'Cette apparence n’est pas disponible avec ton abonnement.');
-      const studio=normaliseStudio(data.studio,plus,avatar,m.gender);
+      const studio=normaliseStudio(data.studio,plus,avatar,m.gender,{owner:Boolean(author)});
       if(data.studio!==undefined&&!exactStudio(data.studio,studio))fail(403,'Cette personnalisation est indisponible.');
       const update=await sql(db,"UPDATE members SET avatar=json_set(?, '$.salonLooks', coalesce(json_extract(avatar,'$.salonLooks'),json('{}'))) WHERE id=? AND gender=?",JSON.stringify({...avatar,studio}),m.id,m.gender).run();
       if(!update.meta.changes)fail(409,'Ton profil a changé. Rouvre la personnalisation.');
