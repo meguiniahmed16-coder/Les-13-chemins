@@ -114,6 +114,9 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       if(who==='guest'&&publicCallActive&&!phonePanel.hidden){
         setTimeout(()=>{if(publicCallActive&&!request)listenPublic();},170);
       }
+      if(who==='player'&&avatarVoiceDone){
+        const done=avatarVoiceDone;avatarVoiceDone=null;queueMicrotask(done);
+      }
     },
     wake:change
   });
@@ -152,6 +155,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
   const threads=new Map(),log=$('.thread-history'),threadToggle=$('.thread-toggle'),styleButton=$('.guest-style');
+  let avatarVoiceDone=null;
   voiceSession=createVoiceConversation({
     character:()=>person?{id:person.id,history:threads.get(person.id)||[],gender:gender('guest')}:null,
     onQuestion(question){showLine('player',question);appendLine('Toi',question);bubble(other,'…');status.textContent='';},
@@ -455,5 +459,17 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       node.querySelector('button').hidden=body.scrollHeight<=body.clientHeight+1;
     }
   }
-  return {playback,pauseVoice(){if(phoneBusy)voiceSession.pause();},shot(atRest=true){return mode==='reverse'?sequence.frame(now(),atRest):{size:mode,speaker};},chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
+  return {playback,
+    armAhmedVoice(){
+      if(!playback.supportsVoice)return false;
+      if(!voiceEnabled()){voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);}
+      return true;
+    },
+    narrateAhmed(text,done=()=>{}){
+      if(!text||!this.armAhmedVoice())return false;
+      avatarVoiceDone=done;playback.play('player',String(text).slice(0,1500),1);
+      return true;
+    },
+    stopAvatarVoice(){avatarVoiceDone=null;playback.clear();},
+    pauseVoice(){if(phoneBusy)voiceSession.pause();},shot(atRest=true){return mode==='reverse'?sequence.frame(now(),atRest):{size:mode,speaker};},chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
 }

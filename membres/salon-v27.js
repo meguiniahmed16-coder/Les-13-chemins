@@ -343,6 +343,9 @@ class SalonV27 extends HTMLElement{
     else{this.#inspection.reset(key);this.#scene.reset(key);}
   }
   openOptions(open=true){if(this.#fallback)this.#fallback.openOptions(open);else this.#drawer.toggle(open);}
+  armAhmedVoice(){return this.#chat?.armAhmedVoice()===true;}
+  narrateAhmed(text,done){return this.#chat?.narrateAhmed(text,done)===true;}
+  stopAhmedVoice(){this.#chat?.stopAvatarVoice();}
   invitePersonnage(){this.#nav?.invite();}
   appelerPersonnage(){this.#nav?.call();}
   snapshot(){return this.#fallback?.snapshot()||this.#scene?.snapshot()||null;}
