@@ -1,10 +1,12 @@
 // Ahmed numérique uses the original Ahmed V27 rig and the consented,
 // rate-limited text service. No private voice key is sent to visitors.
 import {referenceStudio} from './studio-look.js?v=incarnations33';
+import {beginSalonOpening} from './salon-cinema.js?v=cinema61';
 const $=id=>document.getElementById(id);
 const host=$('ahmed-3d-room'),call=$('ahmed-call'),hang=$('ahmed-hangup'),status=$('ahmed-call-status');
 const Speech=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
-let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false;
+let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=null;
+function startOpening(){if(!opening)opening=beginSalonOpening(host);void mount().then(view=>view?opening.ready():opening.fail());}
 function note(value){status.textContent=value;}
 async function mount(){
  if(actor)return actor;
@@ -91,9 +93,9 @@ async function answer(event){
 }
 call.addEventListener('click',()=>void begin());
 hang.addEventListener('click',stop);
-document.addEventListener('ahmed-3d-ready',()=>void mount());
+document.addEventListener('ahmed-3d-ready',startOpening);
 document.addEventListener('ahmed-3d-inactive',stop);
 document.addEventListener('ahmed-3d-answer',e=>void answer(e));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&active)stop();});
 window.addEventListener('pagehide',stop);
-if(!$('chatPanel').hidden)void mount();
+if(!$('chatPanel').hidden)startOpening();
