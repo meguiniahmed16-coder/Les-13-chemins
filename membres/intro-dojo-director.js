@@ -3,9 +3,9 @@ import * as T from 'three';
 // All time is supplied by the introduction's paused/resumed shot clock. Nothing
 // here starts a timer, moves a real actor, or writes a saved appearance.
 export const DOJO_DURATIONS=Object.freeze({
- 'dojo-arrivee':7000,'dojo-camera':10000,'dojo-deplacement':11000,'dojo-demi-tour':9000,
+ 'dojo-arrivee':11000,'dojo-camera':10000,'dojo-deplacement':11000,'dojo-demi-tour':9000,
  'dojo-personnaliser':12000,'dojo-apparence':10000,'dojo-vetements':12000,
- 'dojo-enregistrer':7000,'dojo-construction':9000,'dojo-appeler':11000,'dojo-bulles':11500,jardin:6000
+ 'dojo-enregistrer':7000,'dojo-construction':11000,'dojo-appeler':13000,'dojo-bulles':12500,jardin:6000
 });
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
