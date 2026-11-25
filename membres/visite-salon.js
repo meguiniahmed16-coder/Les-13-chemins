@@ -1,6 +1,6 @@
 import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {normaliseStudio} from './studio-look.js?v=incarnations33';
-import {attachSalonVideoLoading} from './salon-cinema.js?v=cinema61';
+import {attachSalonVideoLoading} from './salon-cinema.js?v=cinema67';
 
 const $=id=>document.getElementById(id);
 const video=$('tour'), stage=$('room'), offer=$('offer');
