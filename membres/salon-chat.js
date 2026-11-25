@@ -186,7 +186,18 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     }
   }
   function closePhone(){phoneLoad++;voiceSession.stop();phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';}
-  phoneToggle.onclick=()=>{if(phonePanel.hidden)void loadPhone(true);else closePhone();};
+  phoneToggle.onclick=()=>{
+    if(!phonePanel.hidden){closePhone();return;}
+    if(person&&phoneReady&&!request){
+      // The audio engine must unlock synchronously inside this actual tap.
+      // The character and backend have been preloaded at invitation time, so
+      // the user does not need to tap a second “Appeler” button.
+      phonePanel.hidden=false;
+      phoneToggle.setAttribute('aria-expanded','true');
+      phonePanel.querySelector('.voice-call-name').textContent=person.name;
+      void voiceSession.start('');
+    }else void loadPhone(true);
+  };
   $('.voice-conversation-close').onclick=closePhone;
   phoneStart.onclick=()=>{if(phoneReady&&!request)void voiceSession.start('');};
   phonePause.onclick=()=>{
