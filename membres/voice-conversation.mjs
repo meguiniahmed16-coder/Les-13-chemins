@@ -14,7 +14,7 @@ const openai='https://api.openai.com/v1';
 const eleven='https://api.elevenlabs.io';
 const privateHeaders={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','vary':'Cookie'};
 export const VOICE_LIMITS=Object.freeze({maxSeconds:45,maxBytes:2*1024*1024});
-export const VOICE_DAILY_LIMITS=Object.freeze({transcribe:60,reply:60,speech:60,voices:40,speechCharacters:6000,audioBytes:24*1024*1024});
+export const VOICE_DAILY_LIMITS=Object.freeze({transcribe:60,reply:60,speech:60,voices:40,speechCharacters:6000,audioBytes:24*1024*1024,openaiSpeechFallback:30});
 const maxJSONBytes=48*1024,maxText=1600,maxHistory=8,maxOutputTokens=320;
 const extensions=new Map([
   ['audio/webm','webm'],['video/webm','webm'],['audio/ogg','ogg'],
@@ -208,22 +208,42 @@ export async function voiceConversation(request,env,{member,author},action){
       if(!answer||answer.length>maxText||result.status==='incomplete'||result.status==='failed')failure(502,'La réponse n’a pas pu être terminée. Tu peux réessayer.');
       return json({answer});
     }
-    if(!exactKeys(data,['text','voiceId']))failure(400,'La demande de voix est invalide.');
+    if(!exactKeys(data,['text','voiceId','gender']))failure(400,'La demande de voix est invalide.');
     const spoken=text(data.text),voiceId=data.voiceId;
     if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix dans la liste du Salon.');
+    if(data.gender!==undefined&&!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
     const available=await voices(env,signal);
-    if(!available.some(voice=>voice.id===voiceId))failure(400,'Cette voix n’est pas disponible dans ton compte ElevenLabs.');
+    const chosen=available.find(voice=>voice.id===voiceId);
+    if(!chosen)failure(400,'Cette voix n’est pas disponible dans ton compte ElevenLabs.');
     await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
-    const response=await provider(eleven+'/v1/text-to-speech/'+encodeURIComponent(voiceId)+'/stream?output_format=mp3_44100_128',{
+    const result=await fetch(eleven+'/v1/text-to-speech/'+encodeURIComponent(voiceId)+'/stream?output_format=mp3_44100_128',{
       method:'POST',headers:{'xi-api-key':env.ELEVENLABS_API_KEY,'content-type':'application/json',accept:'audio/mpeg'},
-      body:JSON.stringify({text:spoken,model_id:'eleven_flash_v2_5',language_code:'fr'})
-    },signal,'ElevenLabs');
-    if(!response.body||!/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(response.headers.get('content-type')||'')){
-      await response.body?.cancel().catch(()=>{});failure(502,'La réponse audio est momentanément indisponible.');
+      body:JSON.stringify({text:spoken,model_id:'eleven_flash_v2_5',language_code:'fr'}),
+      redirect:'manual',signal
+    });
+    if(result.ok&&result.body&&/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(result.headers.get('content-type')||'')){
+      return new Response(result.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'elevenlabs'}});
     }
-    // Passing the stream through preserves backpressure and cancellation; the
-    // same abort signal remains attached to the upstream fetch while audio flows.
-    return new Response(response.body,{headers:{...privateHeaders,'content-type':'audio/mpeg'}});
+    // ElevenLabs may allow listing voices while refusing Text to Speech (401
+    // missing_permissions). Do not strand the person in a silent Salon.
+    // The secondary provider is server-only, billed under a separate daily cap.
+    await result.body?.cancel().catch(()=>{});
+    aborted(signal);
+    await reserve(env,member,'openaiSpeechFallback');
+    const openaiKey=await voiceCredential(env,'openai');
+    if(!configured(openaiKey))failure(503,'ElevenLabs refuse la voix et la voix OpenAI de secours n’est pas disponible.');
+    const feminine=(data.gender||chosen.gender)==='femme';
+    const fallback=await provider(openai+'/audio/speech',{
+      method:'POST',headers:{authorization:'Bearer '+openaiKey,'content-type':'application/json',accept:'audio/mpeg'},
+      body:JSON.stringify({
+        model:'gpt-4o-mini-tts',input:spoken,voice:feminine?'nova':'onyx',
+        response_format:'mp3',instructions:'Parle en français avec un ton humain, naturel et chaleureux. Reste fidèle au personnage et respecte la ponctuation.'
+      })
+    },signal,'OpenAI');
+    if(!fallback.body){
+      failure(502,'La voix OpenAI de secours n’a pas fourni de fichier audio.');
+    }
+    return new Response(fallback.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'openai','x-voice-fallback':'elevenlabs-refused'}});
   }catch(error){
     if(request.signal.aborted)return json({error:'Conversation interrompue.'},499);
     if(signal?.aborted)return json({error:'Le service vocal a mis trop de temps à répondre. Tu peux réessayer.'},504);
