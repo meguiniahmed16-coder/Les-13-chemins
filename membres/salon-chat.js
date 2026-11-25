@@ -79,6 +79,12 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   const phoneToggle=$('.conversation-voice-toggle'),phonePanel=$('.voice-conversation'),phoneStatus=$('.voice-conversation-status');
   const phoneStart=$('.voice-conversation-start'),phonePause=$('.voice-conversation-pause');
   let voiceSession=null,phoneBusy=false,phoneReady=false,phoneLoad=0,savingVoiceSettings=false;
+  // The account owner keeps the private OpenAI call. Fifteen-minute visitors
+  // use browser speech recognition plus the already rate-limited public
+  // character dialogue: no private provider credential is given to visitors.
+  const publicCall=!root.host.hasAttribute('salon-auteur');
+  let publicMic=null,publicCallActive=false,publicCallGeneration=0,publicMicAnswered=false;
+  if(publicCall)phonePanel.querySelector('.voice-conversation-settings').hidden=true;
   const sequence=createShotSequence(),now=()=>performance.now()/1000;
   let mode='reverse',speaker='player',reading,showSpeech=true;
   const nodeFor=who=>who==='player'?own:other,announcement=$('.speech-announcement');
@@ -102,7 +108,13 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       span.append(mark,document.createTextNode(text.slice(w.index+w.length)));
       span.scrollTop=Math.max(0,mark.offsetTop-span.offsetTop-span.clientHeight+mark.offsetHeight);
     },
-    rest(who){const node=nodeFor(who),span=node.querySelector('.line');span.textContent=node.lineText||'';span.scrollTop=0;},
+    rest(who){
+      const node=nodeFor(who),span=node.querySelector('.line');
+      span.textContent=node.lineText||'';span.scrollTop=0;
+      if(who==='guest'&&publicCallActive&&!phonePanel.hidden){
+        setTimeout(()=>{if(publicCallActive&&!request)listenPublic();},170);
+      }
+    },
     wake:change
   });
   voiceSwitch.hidden=!playback.supportsVoice;voiceSwitch.title='Écouter les répliques en français';
@@ -167,6 +179,15 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   });
   async function loadPhone(show=false){
     const ticket=++phoneLoad,current=person;
+    if(publicCall){
+      phoneReady=Boolean(current);
+      phoneToggle.hidden=!current;
+      if(show){
+        phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');
+        phoneStatus.textContent='Appuie sur Appeler pour discuter avec '+(current?.name||'le personnage')+' à voix haute.';
+      }
+      buttons();return;
+    }
     if(show){phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneStatus.textContent='Connexion au personnage…';}
     if(!current)return;
     phonePanel.querySelector('.voice-call-name').textContent=current.name;
@@ -185,8 +206,72 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       buttons();
     }
   }
-  function closePhone(){phoneLoad++;voiceSession.stop();phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';}
+  function closePhone(){
+    phoneLoad++;voiceSession.stop();stopPublicCall();
+    phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');
+    for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';
+  }
+  function stopPublicCall(){
+    publicCallActive=false;publicCallGeneration++;publicMicAnswered=false;
+    const mic=publicMic;publicMic=null;
+    if(mic){mic.onend=mic.onerror=mic.onresult=null;try{mic.abort();}catch{}}
+    phonePause.hidden=true;phoneStart.hidden=false;
+    phonePanel.dataset.state='idle';
+  }
+  function listenPublic(){
+    if(!publicCallActive||!person||phonePanel.hidden||publicMic||request||playback.busy)return;
+    const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Speech){
+      stopPublicCall();
+      phoneStatus.textContent='La reconnaissance vocale n’est pas disponible ici. Tu peux écrire au personnage avec le clavier.';
+      return;
+    }
+    const generation=publicCallGeneration;
+    const recognition=new Speech();publicMic=recognition;publicMicAnswered=false;
+    recognition.lang='fr-FR';recognition.continuous=false;recognition.interimResults=false;
+    recognition.onresult=event=>{
+      if(!publicCallActive||generation!==publicCallGeneration)return;
+      const phrase=Array.from(event.results).map(item=>item[0]?.transcript||'').join(' ').trim();
+      if(!phrase)return;
+      publicMicAnswered=true;phonePanel.dataset.state='thinking';
+      phoneStatus.textContent='Le personnage prépare sa réponse…';
+      const spoken=phrase.slice(0,limit);void say(spoken,false,undefined,true);
+    };
+    recognition.onerror=event=>{
+      if(generation!==publicCallGeneration)return;
+      if(event.error==='not-allowed'||event.error==='service-not-allowed'){
+        stopPublicCall();phoneStatus.textContent='Le micro est bloqué. Autorise-le dans le navigateur pour appeler.';
+      }else if(event.error!=='no-speech'&&event.error!=='aborted'){
+        stopPublicCall();phoneStatus.textContent='Le micro n’a pas répondu. Appuie sur Appeler pour réessayer.';
+      }
+    };
+    recognition.onend=()=>{
+      if(publicMic===recognition)publicMic=null;
+      if(!publicCallActive||generation!==publicCallGeneration||publicMicAnswered)return;
+      setTimeout(()=>{if(publicCallActive&&generation===publicCallGeneration)listenPublic();},260);
+    };
+    try{
+      recognition.start();
+      phoneStart.hidden=true;phonePause.hidden=false;phonePause.querySelector('span').textContent='Micro';
+      phonePanel.dataset.state='listening';phoneStatus.textContent='Je t’écoute…';
+    }catch{
+      stopPublicCall();phoneStatus.textContent='Le micro n’a pas pu démarrer. Réessaie depuis Chrome.';
+    }
+  }
+  function startPublicCall(){
+    if(!person)return;
+    publicCallActive=true;publicCallGeneration++;
+    // Unlock the paired local male/female voice within the user gesture.
+    if(playback.supportsVoice&&!voiceEnabled()){
+      voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);
+    }
+    listenPublic();
+  }
   phoneToggle.onclick=()=>{
+    if(publicCall){
+      if(!phonePanel.hidden){closePhone();return;}
+      void loadPhone(true);return;
+    }
     if(!phonePanel.hidden){closePhone();return;}
     if(person&&phoneReady&&!request){
       // The audio engine must unlock synchronously inside this actual tap.
@@ -199,8 +284,15 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     }else void loadPhone(true);
   };
   $('.voice-conversation-close').onclick=closePhone;
-  phoneStart.onclick=()=>{if(phoneReady&&!request)void voiceSession.start('');};
+  phoneStart.onclick=()=>{
+    if(publicCall){startPublicCall();return;}
+    if(phoneReady&&!request)void voiceSession.start('');
+  };
   phonePause.onclick=()=>{
+    if(publicCall){
+      stopPublicCall();playback.clear();phoneStatus.textContent='Micro coupé. Appuie sur Appeler pour reprendre.';
+      return;
+    }
     if(['transcribing','thinking','preparing','speaking'].includes(voiceSession.state))voiceSession.interrupt();
     else voiceSession.pause();
   };
@@ -326,11 +418,17 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     barSlot.prepend(toolbar);rail.hidden=!showSpeech;input.disabled=mic.disabled=false;
     input.setAttribute('aria-label','Ton message à '+p.name);
     const thread=threads.get(p.id)||[];threads.set(p.id,thread);
-    void loadPhone();
+    if(publicCall){phoneReady=true;phoneToggle.hidden=false;}
+    else void loadPhone();
     if(thread.length){for(const line of thread){appendLine('Toi',line.question);appendLine(p.name,line.answer);}turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
-    else void say(opening,false,p.welcome);
     try{
       if(!await invite(p))throw Error();if(ticket!==version)return;
+      // An invitation is a real user gesture. Enable both French voices before
+      // the first question, then wait for the 3D avatar to load before speaking.
+      if(playback.supportsVoice&&!voiceEnabled()){
+        voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);
+      }
+      if(!thread.length)void say(opening,false,p.welcome);
       arrival.textContent='';styleButton.hidden=!customize;change();
       const selected=onChoice;onChoice=null;selected?.();
     }catch{if(ticket===version){arrival.textContent='Son portrait 3D est indisponible. Tu peux continuer à lui écrire.';onChoice=null;}}

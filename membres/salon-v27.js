@@ -343,6 +343,8 @@ class SalonV27 extends HTMLElement{
     else{this.#inspection.reset(key);this.#scene.reset(key);}
   }
   openOptions(open=true){if(this.#fallback)this.#fallback.openOptions(open);else this.#drawer.toggle(open);}
+  invitePersonnage(){this.#nav?.invite();}
+  appelerPersonnage(){this.#nav?.call();}
   snapshot(){return this.#fallback?.snapshot()||this.#scene?.snapshot()||null;}
 }
 if(!customElements.get('chemins-salon'))customElements.define('chemins-salon',SalonV27);
