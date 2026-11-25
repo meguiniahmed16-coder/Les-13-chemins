@@ -342,3 +342,43 @@
     font-size:8.5px!important;
   }
 }
+
+/* En largeur réduite, le titre et le choix du modèle ne se chevauchent pas. */
+:host .stage .studio-drawer:not([hidden]) > header {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 36px!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:6px 7px!important;
+  min-width:0!important;
+}
+:host .stage .studio-drawer:not([hidden]) > header > strong {
+  grid-column:1;grid-row:1;
+  min-width:0!important;
+  font:650 13px/1.2 system-ui!important;
+  overflow-wrap:anywhere!important;
+}
+:host .stage .studio-drawer:not([hidden]) > header > .close {
+  grid-column:2;grid-row:1;
+  width:36px!important;min-width:36px!important;min-height:40px!important;
+  padding:0!important;font-size:19px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > header > select {
+  grid-column:1/-1;grid-row:2;
+  width:100%!important;max-width:100%!important;
+  min-width:0!important;min-height:40px!important;
+  background:rgba(255,255,249,.84)!important;
+  font-size:12px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > footer {
+  display:flex!important;
+  flex-wrap:wrap!important;
+  min-width:0!important;
+  gap:4px!important;
+  padding:6px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > footer > [role="status"] {
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+  font-size:11px!important;
+}

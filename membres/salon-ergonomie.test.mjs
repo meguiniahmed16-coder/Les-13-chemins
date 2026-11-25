@@ -26,6 +26,7 @@ test('Le rail des catégories respecte la typographie, le toucher et la transpar
   assert.match(css,/background:rgba\(248,246,237,\.80\)!important/);
   assert.match(css,/width:min\(220px,47%\)!important/);
   assert.match(css,/width:min\(195px,46%\)!important/);
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\) 36px!important/);
   assert.match(contract,/translucides/);
 });
 
