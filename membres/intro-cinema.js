@@ -12,12 +12,21 @@ import {frenchVoice,createLocalVoices} from './salon-voice.js?v=salon41';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
+const salonEntryMode=new URLSearchParams(location.search).get('salon')==='1';
+const originalIntroKey='croisee-salon-introduction-originale-v34';
+if(salonEntryMode)document.documentElement.classList.add('salon-entry-mode');
+function finishSalonEntry(){
+ if(!salonEntryMode)return;
+ try{sessionStorage.setItem(originalIntroKey,'done');}catch{}
+ location.replace('/membre.html#salon');
+}
+
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
 const introSound=createIntroSound({onProblem:message=>remember('Son de la cinématique',message)});
 const dojoDemo=mountDojoDemo(canvasHost);
 const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
 if(promotionMode)document.body.classList.add('promotion');
-const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),onComplete:()=>introSound.stop()});
+const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),onComplete:()=>{introSound.stop();finishSalonEntry();}});
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -1356,7 +1365,7 @@ function automatic(on,hold=false){
  if(!on){introSound.pause();cinematicLocalVoices?.pause();try{cinematicSynth?.pause();}catch{}}else if(cinematicVoiceEnabled){cinematicLocalVoices?.resume();try{cinematicSynth?.resume();}catch{}}
 }
 $('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
-$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden(true);};
+$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry();}else startGarden(true);};
 
 function holdIntroduction(reason){
  if(pauseReasons.has(reason))return;
