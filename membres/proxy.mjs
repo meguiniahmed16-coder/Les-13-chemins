@@ -50,7 +50,7 @@ export default async function proxy(request){
     const signal=AbortSignal.any([request.signal,AbortSignal.timeout(voice?75000:20000)]);
     const response=await fetch(target,{method:request.method,headers,body,redirect:'manual',signal});
     const out=new Headers({'cache-control':'private, no-store','netlify-cdn-cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'});
-    for(const k of ['location','content-type','set-cookie','vary','x-frame-options','x-robots-tag','permissions-policy','content-security-policy','cross-origin-resource-policy'])if(response.headers.has(k))out.set(k,response.headers.get(k));
+    for(const k of ['location','content-type','set-cookie','vary','x-frame-options','x-robots-tag','permissions-policy','content-security-policy','cross-origin-resource-policy','x-voice-provider','x-voice-fallback'])if(response.headers.has(k))out.set(k,response.headers.get(k));
     return new Response(response.body,{status:response.status,headers:out});
   }catch(error){
     if(request.signal.aborted)return Response.json({error:'Conversation interrompue.'},{status:499,headers:{'cache-control':'no-store'}});

@@ -31,7 +31,9 @@ export async function voiceRequest(path,{body,signal}={}){
       chunks.push(value);
     }
   }finally{reader.releaseLock();}
-  return new Blob(chunks,{type:response.headers.get('content-type')});
+  const clip=new Blob(chunks,{type:response.headers.get('content-type')});
+  clip.voiceProvider=response.headers.get('x-voice-provider')||'elevenlabs';
+  return clip;
 }
 
 // This mode deliberately owns its capture, separately from editable dictation.
@@ -85,9 +87,9 @@ export function createVoiceConversation({
       const answer=String(reply.answer||'').trim();
       if(!answer)throw new Error('La réponse n’a pas pu arriver.');
       onAnswer(question,answer);setState('preparing');
-      const clipReply=await request('speech',{body:{text:answer,voiceId:run.voiceId},signal:turn.abort.signal});
+      const clipReply=await request('speech',{body:{text:answer,voiceId:run.voiceId,gender:current.gender},signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      setState('speaking');onAudio(answer,speech);
+      setState('speaking',clipReply.voiceProvider==='openai'?'Le personnage te répond avec la voix OpenAI de secours.':messages.speaking);onAudio(answer,speech);
       await speech.play(clipReply,{signal:turn.abort.signal});
       if(!valid(run,turn))return;
       onIdle();await listen(run);
