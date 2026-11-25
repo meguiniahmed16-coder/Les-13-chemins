@@ -1,8 +1,6 @@
-// Shared Salon entry: the original loading portal, the existing film, then the 3D game.
-// The original controls remain the only call/invite controls.
+// The original loading portal and action icons are shared by Salon entrypoints.
+// No unrelated reel may replace the authored Ahmed/Marianne/dojo cinematic.
 import {salonActionSvg} from './salon-maison-ui.js?v=unified61';
-const SOURCE='/assets/membres/intro-montage-reel23.mp4';
-const POSTER='/assets/membres/intro-montage-reel23.webp';
 const art='<div class="salon-opening-art" aria-hidden="true"><div class="salon-opening-portal"><div class="salon-opening-horizon"></div><div class="salon-opening-path"></div><i></i><i></i><i></i></div></div>';
 function style(){
  if(document.getElementById('salon-opening-styles'))return;
@@ -16,34 +14,6 @@ function loader(){
  return node;
 }
 // A real indeterminate bar is shown while the 3D engine loads; never fabricate a percentage.
-export function beginSalonOpening(container){
- if(!container)return {ready(){},fail(){}};
- style();if(container.__salonOpening)return container.__salonOpening;
- const layer=document.createElement('div');layer.className='salon-entry-sequence';layer.setAttribute('aria-label','Ouverture du Salon');
- const loading=loader(),film=document.createElement('video');
- film.playsInline=true;film.preload='auto';film.poster=POSTER;film.setAttribute('aria-label','Cinématique originale du Salon, du plateau et du jardin');
- film.controls=true;film.hidden=true;film.src=SOURCE;
- layer.append(loading,film);
- if(getComputedStyle(container).position==='static')container.style.position='relative';
- container.append(layer);
- let state='loading';
- const finish=()=>{if(state==='finished')return;state='finished';film.pause();film.removeAttribute('src');film.load();layer.remove();};
- const showFilm=()=>{
-  if(state!=='buffering')return;
-  state='playing';loading.hidden=true;film.hidden=false;
-  film.muted=false;
-  film.play().catch(()=>{if(state!=='playing')return;film.muted=true;film.play().catch(finish);});
- };
- film.addEventListener('canplay',showFilm);
- film.addEventListener('ended',finish,{once:true});
- film.addEventListener('error',finish,{once:true});
- const api={
-  ready(){if(state!=='loading')return;state='buffering';film.load();if(film.readyState>=3)showFilm();},
-  fail(){finish();},
-  dispose:finish
- };
- container.__salonOpening=api;return api;
-}
 // The guest visit keeps its existing invitation film and its existing Skip button.
 export function attachSalonVideoLoading(video){
  if(!video||video.dataset.salonLoadingAttached)return;
@@ -70,18 +40,3 @@ function applyOriginalActionIcons(){
  }
 }
 applyOriginalActionIcons();
-// The existing film-replay controls remain unchanged.
-for(const button of document.querySelectorAll('[data-salon-film]')){
- button.addEventListener('click',()=>{
-  let dialog=document.getElementById('salon-cinema-dialog');
-  if(!dialog){
-   dialog=document.createElement('dialog');dialog.id='salon-cinema-dialog';
-   dialog.setAttribute('aria-label','Cinématique du Salon');
-   dialog.innerHTML='<div class="salon-cinema-head"><strong>La Croisée des Âmes · extrait cinématographique</strong><button type="button" aria-label="Fermer le film">✕</button></div><video playsinline controls preload="none" poster="'+POSTER+'" aria-label="Le décor original du Salon, le plateau et le jardin"><source src="'+SOURCE+'" type="video/mp4"></video><p>Le décor original du Salon, le plateau et le jardin.</p>';
-   document.body.append(dialog);
-   dialog.querySelector('button').addEventListener('click',()=>dialog.close());
-   dialog.addEventListener('close',()=>{const video=dialog.querySelector('video');video.pause();video.currentTime=0;});
-  }
-  dialog.showModal();dialog.querySelector('video').play().catch(()=>{});
- });
-}
