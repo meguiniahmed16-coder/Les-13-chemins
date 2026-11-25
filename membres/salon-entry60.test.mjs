@@ -65,3 +65,28 @@ test('Le build produit les nouveaux modules et invalide les anciens caches Andro
  assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=call61/);
  assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=call61/);
 });
+
+test('Chaque entrée suit chargement, cinématique existante, puis Salon sans nouveau pictogramme',()=>{
+ const film=src('membres/salon-cinema.js');
+ const nav=src('membres/salon-maison-ui.js');
+ const member=src('membres/member.js');
+ const guest=src('membres/visite-salon.js');
+ const ahmed=src('membres/ahmed-3d.js');
+ const home=src('index.html');
+ assert.match(film,/export function beginSalonOpening/);
+ assert.match(film,/export function attachSalonVideoLoading/);
+ assert.match(film,/film\.addEventListener\('ended',finish/);
+ assert.match(film,/import \{salonActionSvg\}/);
+ assert.match(nav,/export const salonActionSvg=svg/);
+ assert.match(nav,/standaloneAhmed=root\.host\.hasAttribute\('ahmed-numerique'\)/);
+ assert.match(nav,/phoneNode\.hidden=standaloneAhmed\?false/);
+ assert.match(nav,/salon-ahmed-call/);
+ assert.match(member,/salonOpening=beginSalonOpening/);
+ assert.match(guest,/attachSalonVideoLoading\(video\)/);
+ assert.match(ahmed,/view\.setAttribute\('ahmed-numerique',''\)/);
+ assert.match(ahmed,/view\.addEventListener\('salon-ahmed-call'/);
+ assert.match(home,/data-salon-action="invite"/);
+ assert.match(home,/data-salon-action="call"/);
+ assert.match(src('salon-invite.html'),/id="quick-call"[^>]*data-salon-action="call"/);
+ assert.match(src('ahmed-marie.html'),/id="ahmed-call"[^>]*hidden/);
+});
