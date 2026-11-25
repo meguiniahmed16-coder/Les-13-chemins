@@ -96,7 +96,7 @@ function seatEntry(s){return [s.x+s.gap*Math.sin(s.yaw),s.z+s.gap*Math.cos(s.yaw
 // The member renderer uses the authenticated wardrobe mesh with the reference bone transforms.
 export class SalonMotion {
  constructor(onStatus=()=>{}, camera, start={x:583,z:-980,yaw:2.65},random=Math.random){
-  this.camera=camera;this.femaleHands=false;
+  this.camera=camera;this.femaleHands=false;this.preferGuestArmrest=false;
   this.expression=null;
   const room={...start,mode:'idle',t:0,seat:null,sit:0,path:null,after:null};
   let neckLift=0,posture=null,postureSeat=null,avatarScale=1,authoredFootwork=null;
@@ -268,7 +268,7 @@ function roomPose(t){
  const steering=room.mode==='steer',walking=room.mode==='walk'||room.mode==='brake'||steering,u=room.sit,s=ease(u),seat=room.seat;
  const expr=self.expression, gesture=expr?.gesture, engaged=walking?0:(u>0?phase(.82,1,u):room.mode==='idle'?1:0);
  const emphasis=gesture?engaged:0;
- if(seat!==postureSeat){if(seat)posture=seat.introArms?{kind:'armrests',side:1}:choosePosture(seat,posture,random);postureSeat=seat;}
+ if(seat!==postureSeat){if(seat)posture=seat.introArms?{kind:'armrests',side:1}:self.preferGuestArmrest&&seat.support?{kind:'appui',side:seat.support.side}:choosePosture(seat,posture,random);postureSeat=seat;}
  const kind=seat?posture?.kind:'',crossSide=posture?.side||1,table=seat?tabletop(seat,avatarScale):null;
  const introArms=seat?.introArms||null;
  const sofa=seat?.id.startsWith('sofa');

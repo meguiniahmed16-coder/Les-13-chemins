@@ -54,11 +54,11 @@ test('Le corps reste cadré dans la partie libre du téléphone',()=>{
 });
 
 test('Le mode portrait et paysage recharge bien les nouveaux modules et conserve les anciens contrôles',()=>{
-  assert.match(outer,/\/membres\/v27\/salon\.html\?v=hud55/);
-  assert.match(room,/\/membres\/v27\/salon-runtime\.js\?v=hud54/);
+  assert.match(outer,/\/membres\/v27\/salon\.html\?v=call58/);
+  assert.match(room,/\/membres\/v27\/salon-runtime\.js\?v=call58/);
   const rt=get('membres/v27/salon-runtime.js');
-  assert.match(rt,/scene-bundle\.js\?v=hud54/);
-  assert.match(outer,/salon-maison-ui\.js\?v=hud56/);
+  assert.match(rt,/scene-bundle\.js\?v=call58/);
+  assert.match(outer,/salon-maison-ui\.js\?v=call58/);
   assert.match(outer,/salon-rail52\.css\?v=hud56/);
   for(const p of ['membres/salon-hud-native.js','membres/v27/unified-hud.css']){
     assert.ok(build.includes("'"+p+"'"),'Fichier absent du site publié : '+p);

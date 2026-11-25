@@ -52,7 +52,7 @@ test('Toutes les routes vocales exigent la session auteur, et status ne contacte
   }
   const status=await api('status');assert.equal(status.status,200);
   assert.match(status.headers.get('cache-control'),/private, no-store/);
-  assert.deepEqual(await status.json(),{ready:false,missing:['OpenAI','ElevenLabs'],limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'ElevenLabs'}});
+  assert.deepEqual(await status.json(),{ready:false,missing:['OpenAI'],limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'OpenAI'}});
   env.OPENAI_API_KEY=fakeOpenAI;env.ELEVENLABS_API_KEY=fakeEleven;
   assert.deepEqual((await (await api('status')).json()).missing,[]);
   assert.equal((await api('reply',{method:'POST',from:'https://other.invalid',body:reply})).status,403);
@@ -234,4 +234,46 @@ test('Une entrée chiffrée corrompue garde le formulaire de reconnexion accessi
   assert.equal(calls,1,'Status and a real call never fall back to the old environment key');
   assert.equal((await api('settings',{method:'POST',body:{provider:'openai',key:'replacement-openai-credential-0005'}})).status,200);
   assert.equal((await (await api('status')).json()).ready,true);assert.equal(calls,2);
+});
+
+
+test('La voix masculine et féminine est automatique, sans catalogue ElevenLabs',async t=>{
+  const {api,env}=await setup(t);
+  delete env.ELEVENLABS_API_KEY;
+  const status=await (await api('status')).json();
+  assert.equal(status.ready,true);
+  assert.deepEqual(status.missing,[]);
+  const calls=[];
+  t.mock.method(globalThis,'fetch',async(url,options)=>{
+    calls.push({url,options});
+    assert.equal(url,'https://api.openai.com/v1/audio/speech');
+    assert.equal(options.headers.authorization,'Bearer '+fakeOpenAI);
+    assert.equal(options.redirect,'manual');
+    const body=JSON.parse(options.body);
+    assert.equal(body.model,'gpt-4o-mini-tts');
+    assert.equal(body.response_format,'mp3');
+    assert.ok(['nova','onyx'].includes(body.voice));
+    return new Response(audio,{headers:{'content-type':'audio/mpeg'}});
+  });
+  for(const [gender,expected] of [['homme','onyx'],['femme','nova']]){
+    const response=await api('speech',{method:'POST',body:{text:'Bonjour à toi.',gender}});
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('x-voice-provider'),'openai');
+    assert.equal(response.headers.get('x-voice-auto-gender'),gender);
+    assert.equal(JSON.parse(calls.at(-1).options.body).voice,expected);
+    assert.equal((await response.arrayBuffer()).byteLength,audio.byteLength);
+  }
+  assert.equal(calls.length,2);
+});
+
+test('La voix automatique refuse les genres invalides et les paramètres injectés',async t=>{
+  const {api}=await setup(t);noNetwork(t);
+  for(const body of [
+    {text:'Bonjour.'},{text:'Bonjour.',gender:'autre'},
+    {text:'Bonjour.',gender:'homme',voice:'arbitrary'},
+    {text:'Bonjour.',gender:'femme',model:'other'},
+    null
+  ]){
+    assert.equal((await api('speech',{method:'POST',body})).status,400);
+  }
 });

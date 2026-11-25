@@ -1,7 +1,7 @@
-import {createVoiceCapture,createRemoteSpeech} from './salon-conversation-audio.js';
+import {createVoiceCapture,createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
 
 const paths=new Set(['status','voices','settings','transcribe','reply','speech']);
-const messages={starting:'Ouverture du micro…',listening:'Je t’écoute. Marque une pause pour envoyer.',transcribing:'Je reconnais tes mots…',thinking:'La réponse se prépare…',preparing:'La voix se prépare…',speaking:'Tu peux interrompre avec « Prendre la parole ».',paused:'Micro coupé.',idle:''};
+const messages={starting:'Connexion du micro…',listening:'Je t’écoute…',transcribing:'J’ai entendu ta phrase…',thinking:'Le personnage te répond…',preparing:'La voix arrive…',speaking:'Le personnage parle. Touche le micro pour intervenir.',paused:'Micro coupé.',idle:''};
 const abortError=()=>new DOMException('Conversation interrompue.','AbortError');
 
 // Same-origin, authenticated routes only. No provider key is sent to the phone.
@@ -87,9 +87,11 @@ export function createVoiceConversation({
       const answer=String(reply.answer||'').trim();
       if(!answer)throw new Error('La réponse n’a pas pu arriver.');
       onAnswer(question,answer);setState('preparing');
-      const clipReply=await request('speech',{body:{text:answer,voiceId:run.voiceId,gender:current.gender},signal:turn.abort.signal});
+      const speechBody={text:answer,gender:current.gender};
+      if(run.voiceId)speechBody.voiceId=run.voiceId;
+      const clipReply=await request('speech',{body:speechBody,signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      setState('speaking',clipReply.voiceProvider==='openai'?'Le personnage te répond avec la voix OpenAI de secours.':messages.speaking);onAudio(answer,speech);
+      setState('speaking',messages.speaking);onAudio(answer,speech);
       await speech.play(clipReply,{signal:turn.abort.signal});
       if(!valid(run,turn))return;
       onIdle();await listen(run);
@@ -113,13 +115,13 @@ export function createVoiceConversation({
       if(valid(run,turn)&&!turn.sent)setState('listening');
     }catch(error){if(valid(run,turn))problem(run,error);}
   }
-  async function refresh(){
+  async function refresh({withVoices=true}={}){
     loading?.abort();const abort=new AbortController();loading=abort;
     try{
       const next=await request('status',{signal:abort.signal});
       if(loading!==abort)throw abortError();
       status=next;voices=[];let voiceError='';
-      if(next.ready){
+      if(next.ready&&withVoices){
         try{
           const data=await request('voices',{signal:abort.signal});
           if(loading!==abort)throw abortError();
@@ -145,10 +147,11 @@ export function createVoiceConversation({
     const turn={abort:new AbortController(),capture:null};run.turn=turn;
     run.timer=setTimer(()=>{if(session===run)end('paused','Micro coupé après dix minutes. Tu peux reprendre la conversation.');},maxSessionMs);
     try{
-      const available=await request('status',{signal:turn.abort.signal});
+      const available=status?.ready?status:await request('status',{signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      if(!available.ready)throw new Error('Le raccordement d’OpenAI et d’ElevenLabs est à terminer avant de parler.');
-      if(!voiceId||!voices.some(voice=>voice.id===voiceId))throw new Error('Choisis une voix avant de commencer.');
+      if(!available.ready)throw new Error('Le raccordement du compte OpenAI est nécessaire pour parler.');
+      if(voiceId&&!voices.some(voice=>voice.id===voiceId))throw new Error('Cette voix n’est plus disponible.');
+      if(!voiceId&&!['homme','femme'].includes(current.gender))throw new Error('Le personnage n’a pas de voix masculine ou féminine identifiée.');
       await listen(run);
     }catch(error){if(valid(run,turn))problem(run,error);}
   }

@@ -45,6 +45,8 @@ export function wardrobeMotion(figure,parts){
 export function livePose(actor,seat,moving){
   const solver=actor.solver??=new SalonMotion(undefined,{angle:0});
   solver.femaleHands=actor.id==='f';
+  // Invitees prefer the calibrated armrest without changing the original cinematic poses.
+  solver.preferGuestArmrest=actor.isGuest===true;
   const seated=!!seat,express=actor.conversationPose;
   if(!actor.motion||(!seated&&(!express||moving>.015))){
     if(actor.live){actor.motion?.release();actor.live=false;actor.stamp='';solver.sampleSalonPose(null,0,0,null);}
