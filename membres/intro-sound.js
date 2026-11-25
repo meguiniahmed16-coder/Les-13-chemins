@@ -7,7 +7,7 @@ const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
 // Music is already mastered to -28 LUFS. These gains lower the approved
 // working foley/ambience by the same 4 dB requested after the first MP4.
 export const INTRO_SOUND_GAINS=Object.freeze({foley:gain(3),ambience:gain(-2)});
-export const INTRO_SOUND_TIMING=Object.freeze({dojoStartMs:149200,gardenStartMs:264700,transitionMs:1800});
+export const INTRO_SOUND_TIMING=Object.freeze({dojoStartMs:149200,gardenStartMs:273700,transitionMs:1800});
 
 export function introSoundEnvelope({sceneId='',elapsedMs=0,timeMs=0,promotion=false}={}){
  const time=number(timeMs),elapsed=number(elapsedMs),garden=sceneId==='arrival';
