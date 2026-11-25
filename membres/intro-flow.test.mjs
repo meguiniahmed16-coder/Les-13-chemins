@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createContext,runInContext} from 'node:vm';
 import * as T from 'three';
+import {introSoundEnvelope} from './intro-sound.js';
+import {arrivalFrame} from './intro-arrival.js';
+import {INTRO_INVITATION_DURATION} from './intro-invitation.js';
 
 const source=readFileSync(new URL('./intro-cinema.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('./intro-prive.html',import.meta.url),'utf8');
@@ -24,12 +27,19 @@ const production=[
 
 // Keep the real cue, animation-frame, loading and timer control flow. Only
 // external rendering/assets and the browser DOM/clock are replaced here.
+function eventTarget(){
+ const listeners=new Map();
+ return {
+  addEventListener(type,fn,options={}){const entries=listeners.get(type)||[];entries.push({fn,once:options.once});listeners.set(type,entries)},
+  dispatch(type,event={}){for(const entry of [...listeners.get(type)||[]]){entry.fn(event);if(entry.once)listeners.set(type,listeners.get(type).filter(e=>e!==entry))}},
+ };
+}
 function domFixture(){
  const nodes=new Map();
  function element(name='div'){
-  const listeners=new Map(),classes=new Set(),writes=[];
+  const classes=new Set(),writes=[];
   let hidden=false,textContent='';
-  const node={name,writes,children:[],disabled:false,value:'',open:false,
+  const node={...eventTarget(),name,writes,children:[],disabled:false,value:'',open:false,
    get hidden(){return hidden},set hidden(value){hidden=value;writes.push(['hidden',value])},
    get textContent(){return textContent},set textContent(value){textContent=value;writes.push(['text',value])},
    style:new Proxy({setProperty(k,v){writes.push(['style',k,v])}}, {set(o,k,v){writes.push(['style',k,v]);o[k]=v;return true}}),
@@ -37,8 +47,6 @@ function domFixture(){
    replaceChildren(...children){this.children=children;writes.push(['children',children.length])},
    append(...children){this.children.push(...children);writes.push(['append',children.length])},
    animate(){writes.push(['animation']);return {cancel(){}}},getAnimations(){return[]},
-   addEventListener(type,fn,options={}){const entries=listeners.get(type)||[];entries.push({fn,once:options.once});listeners.set(type,entries)},
-   dispatch(type,event={}){for(const entry of [...listeners.get(type)||[]]){entry.fn(event);if(entry.once)listeners.set(type,listeners.get(type).filter(e=>e!==entry))}},
    showModal(){this.open=true},close(){this.open=false;this.dispatch('close')},click(){this.onclick?.()},
   };
   return node;
@@ -47,7 +55,7 @@ function domFixture(){
   const node=element(match[1]);node.hidden=/\bhidden(?:\s|$|=)/.test(match[2]);node.disabled=/\bdisabled(?:\s|$|=)/.test(match[2]);node.writes.length=0;nodes.set(match[3],node);
  }
  const $=id=>{assert.ok(nodes.has(id),`Production refers to absent DOM element #${id}`);return nodes.get(id)};
- return {$,nodes,element,document:{getElementById:$,createElement:element}};
+ return {$,nodes,element,document:{...eventTarget(),hidden:false,getElementById:$,createElement:element},window:eventTarget()};
 }
 async function flush(){for(let i=0;i<10;i++)await Promise.resolve()}
 function clockFixture(){
@@ -59,13 +67,19 @@ function clockFixture(){
 }
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject}}
 function harness({dojoLoaded=true}={}){
- const dom=domFixture(),time=clockFixture(),visits=[],arrivals=[];let renders=0,filmStops=0;
+ const dom=domFixture(),time=clockFixture(),visits=[],arrivals=[],soundCalls=[],arrivalCalls=[];let renders=0,filmStops=0;
+ const soundOffsets=[];let introductionDuration=0;
+ for(const line of lines){soundOffsets.push(introductionDuration);introductionDuration+=line.ms;}
+ const introSound=Object.fromEntries(['start','pause','stop','dispose','update'].map(method=>[method,frame=>soundCalls.push({method,frame})]));
  const actors=['m','f'].map((id,i)=>({id,root:{name:i?'Marianne':'Ahmed',position:new T.Vector3(i?1:-1,0,0),rotation:{y:0}},sit:false,pose(){},speak(){}}));
- const state={T,...dom,...time,lines,dojoStart:lines.findIndex(s=>s.scene==='dojo'),
+ const state={T,...dom,...time,lines,dojoStart:lines.findIndex(s=>s.scene==='dojo'),introSound,soundOffsets,introductionDuration,arrivalFrame,INTRO_INVITATION_DURATION,pauseReasons:new Set(),resumeAfterPause:false,
   room:{},dojo:dojoLoaded?{visible:false}:null,people:actors,
   dojoWardrobe:{ready:dojoLoaded,cancelled:false,async prepare(){if(!this.cancelled)this.ready=true},restore(){this.cancelled=true;this.ready=false}},
   dojoDemo:{hidden:true,updates:[],update(line,elapsed){this.hidden=line.scene!=='dojo';this.updates.push([line.id,elapsed])},hide(){this.hidden=true}},
-  promotionMode:false,arrivalPlayer:{start(options){arrivals.push(options);dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee27'},tick(){},pause(){},resume(){}},
+  promotionMode:false,arrivalPlayer:{state:'idle',elapsed:0,paused:false,
+   start(options){arrivals.push(options);this.state=options.skip?'complete':'loading';this.paused=options.paused;dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee29'},
+   tick(){},pause(){this.paused=true;arrivalCalls.push('pause')},resume(){this.paused=false;arrivalCalls.push('resume')},
+  },
   isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
   stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
   pending:false,sceneRequest:0,seatsReady:true,initialTask:null,shotStart:0,shotPaused:false,pausedAt:0,pausedElapsed:0,
@@ -81,9 +95,11 @@ function harness({dojoLoaded=true}={}){
   prepareDojo:async()=>{state.dojo={visible:false}},prepareSeats:async()=>{state.seatsReady=true},
  };
  createContext(state);runInContext(production,state,{filename:'intro-cinema.production-fragments.js'});
- return {state,dom,time,visits,arrivals,get renders(){return renders},get filmStops(){return filmStops},
+ return {state,dom,time,visits,arrivals,soundCalls,arrivalCalls,get renders(){return renders},get filmStops(){return filmStops},
   async enter(){dom.$('enter').click();await flush()},
   frames(count){for(let i=0;i<count;i++){time.tick(16);state.frame()}},
+  setHidden(hidden){dom.document.hidden=hidden;dom.document.dispatch('visibilitychange')},
+  get soundFrame(){return soundCalls.findLast(call=>call.method==='update')?.frame},
  };
 }
 
@@ -124,8 +140,47 @@ test('one start automatically visits every white-room and dojo line, then opens 
  assert.equal(h.state.stage,'garden');assert.equal(h.state.autoplay,false);assert.equal(h.time.count(),0);
  assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.dom.$('skip').hidden,true);
- assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee27');
+ assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee29');
  assert.equal(h.arrivals.length,1);assert.equal(h.arrivals[0].skip,false);
+});
+
+test('one user gesture keeps the sound clock while music is silent for every dojo line',async()=>{
+ const h=harness();await h.enter();let elapsed=0;
+ for(let i=0;i<lines.length;i++){
+  const line=lines[i];h.state.frame();
+  assert.equal(h.soundFrame.sceneId,line.id);
+  assert.equal(h.soundFrame.timeMs,elapsed,`Continuous offset at ${line.id}`);
+  assert.equal(h.soundFrame.playing,true,`Sound cues run at ${line.id}`);
+  if(line.scene==='dojo')assert.equal(introSoundEnvelope(h.soundFrame).music,0,`No music at the start of ${line.id}`);
+  h.time.tick(400);h.state.frame();
+  assert.equal(h.soundFrame.timeMs,elapsed+400,`Clock advances during ${line.id}`);
+  assert.equal(h.soundFrame.playing,true);
+  if(line.scene==='dojo')assert.equal(introSoundEnvelope(h.soundFrame).music,0,`No music while ${line.id} plays`);
+  else assert.ok(introSoundEnvelope(h.soundFrame).music>0,`Opening music is enabled in ${line.id}`);
+  elapsed+=line.ms;if(i<lines.length-1)await h.time.advance();
+ }
+ assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1);
+ assert.equal(h.soundCalls.filter(call=>call.method==='pause'||call.method==='stop').length,0);
+ await h.time.advance();h.state.frame();
+ assert.equal(h.soundFrame.sceneId,'salon-invitation');assert.equal(h.soundFrame.timeMs,elapsed);
+ assert.equal(h.soundFrame.playing,false,'Music waits for the actual garden readiness');
+ h.state.arrivalPlayer.state='playing';h.state.arrivalPlayer.elapsed=750;h.state.frame();
+ assert.equal(h.soundFrame.sceneId,'salon-invitation');assert.equal(h.soundFrame.timeMs,elapsed);assert.equal(h.soundFrame.playing,true);
+ assert.equal(introSoundEnvelope(h.soundFrame).music,0,'The salon demonstration keeps music silent before the garden');
+ h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION-1;h.state.frame();
+ assert.equal(h.soundFrame.timeMs,elapsed,'The complete invitation does not consume the ending music asset');
+ assert.equal(introSoundEnvelope(h.soundFrame).music,0);
+ h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+750;h.state.frame();
+ assert.equal(h.soundFrame.sceneId,'arrival');assert.equal(h.soundFrame.elapsedMs,750);assert.equal(h.soundFrame.timeMs,elapsed+750);
+ assert.ok(introSoundEnvelope(h.soundFrame).music>0,'Music returns only in the actual garden arrival');
+ assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1,'Garden continues the same playback');
+ assert.equal(h.soundCalls.filter(call=>call.method==='stop').length,0);
+ h.state.promotionMode=true;h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+17000;h.state.frame();
+ assert.equal(h.soundFrame.elapsedMs,17000,'The promotional card retains the untruncated garden clock');
+ assert.equal(h.soundFrame.timeMs,elapsed+17000);
+ assert.ok(introSoundEnvelope(h.soundFrame).music>0,'The ending remains musical during the final card fade');
+ h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+20500;h.state.frame();
+ assert.equal(introSoundEnvelope(h.soundFrame).music,0,'The last music fade ends with the promotional card');
 });
 
 test('a delayed sitting animation retains its continuation until the movement is complete',async()=>{
@@ -146,6 +201,24 @@ test('closing the report dialog resumes the remaining duration without changing 
  assert.equal(h.time.now()-now,lines[0].ms-1250);assert.equal(h.state.step,1);
 });
 
+for(const first of ['report','hidden'])test(`nested ${first}-first pauses resume only when both reasons clear`,async()=>{
+ const h=harness();await h.enter();h.time.tick(1250);h.state.frame();
+ const before=h.soundFrame.timeMs,cue=[...h.dom.$('bubble').children];
+ if(first==='report'){h.dom.$('report-open').click();h.setHidden(true);}
+ else{h.setHidden(true);h.dom.$('report-open').click();}
+ assert.equal(h.state.pauseReasons.size,2);assert.equal(h.time.count(),0);
+ h.time.tick(20000);h.state.frame();assert.equal(h.soundFrame.playing,false);assert.equal(h.soundFrame.timeMs,before);
+ if(first==='report')h.dom.$('report-dialog').close();else h.setHidden(false);
+ assert.equal(h.state.pauseReasons.size,1);assert.equal(h.state.shotPaused,true);assert.equal(h.state.autoplay,false);
+ h.time.tick(15000);h.state.frame();assert.equal(h.soundFrame.playing,false);assert.equal(h.soundFrame.timeMs,before);
+ assert.equal(h.time.count(),0);assert.deepEqual(h.dom.$('bubble').children,cue);
+ if(first==='report')h.setHidden(false);else h.dom.$('report-dialog').close();
+ assert.equal(h.state.pauseReasons.size,0);assert.equal(h.state.shotPaused,false);assert.equal(h.state.autoplay,true);
+ h.frames(1);assert.equal(h.soundFrame.playing,true);assert.equal(h.soundFrame.timeMs,before+16);
+ const now=h.time.now();await h.time.advance();assert.equal(h.time.now()-now,lines[0].ms-before-16);
+ assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1);
+});
+
 test('a scene that finishes loading under the report dialog stays paused until close',async()=>{
  const h=harness({dojoLoaded:false}),load=deferred();await h.enter();
  h.state.prepareDojo=async()=>{await load.promise;h.state.dojo={visible:false}};
@@ -154,6 +227,32 @@ test('a scene that finishes loading under the report dialog stays paused until c
  assert.equal(h.state.stage,'dojo');assert.equal(h.state.shotPaused,true);assert.equal(h.time.count(),0);
  h.dom.$('report-dialog').close();assert.equal(h.state.shotPaused,false);assert.equal(h.time.count(),1);
  await h.time.advance();assert.equal(h.state.step,h.state.dojoStart+1);
+});
+
+test('dojo preparation finishing in a hidden tab keeps the scene and sound paused',async()=>{
+ const h=harness({dojoLoaded:false}),load=deferred();await h.enter();
+ h.state.prepareDojo=async()=>{await load.promise;h.state.dojo={visible:false}};
+ const pending=h.state.showScene(h.state.dojoStart);h.setHidden(true);load.resolve();await pending;
+ assert.equal(h.state.stage,'dojo');assert.equal(h.state.shotPaused,true);assert.equal(h.state.pending,false);assert.equal(h.time.count(),0);
+ h.time.tick(9000);h.state.frame();
+ const offset=lines.slice(0,h.state.dojoStart).reduce((sum,line)=>sum+line.ms,0);
+ assert.equal(h.soundFrame.sceneId,'dojo-arrivee');assert.equal(h.soundFrame.timeMs,offset);assert.equal(h.soundFrame.elapsedMs,0);assert.equal(h.soundFrame.playing,false);
+ h.setHidden(false);h.frames(1);assert.equal(h.soundFrame.playing,true);assert.equal(h.soundFrame.timeMs,offset+16);
+ assert.equal(h.time.count(),1);await h.time.advance();assert.equal(h.state.step,h.state.dojoStart+1);
+});
+
+test('garden loading and nested pauses preserve the same suspended sound clock',async()=>{
+ const h=harness();await h.enter();h.setHidden(true);h.state.startGarden();
+ assert.equal(h.arrivals[0].paused,true);h.state.frame();assert.equal(h.soundFrame.playing,false);
+ h.dom.$('report-open').click();h.state.arrivalPlayer.state='playing';h.time.tick(9000);h.state.frame();
+ assert.equal(h.soundFrame.timeMs,h.state.introductionDuration);assert.equal(h.soundFrame.playing,false);
+ h.setHidden(false);assert.equal(h.state.arrivalPlayer.paused,true);assert.equal(h.arrivalCalls.filter(call=>call==='resume').length,0);
+ h.dom.$('report-dialog').close();assert.equal(h.state.arrivalPlayer.paused,false);
+ assert.equal(h.arrivalCalls.filter(call=>call==='resume').length,1);
+ h.state.arrivalPlayer.elapsed=320;h.state.frame();assert.equal(h.soundFrame.playing,true);assert.equal(h.soundFrame.sceneId,'salon-invitation');assert.equal(h.soundFrame.timeMs,h.state.introductionDuration);
+ assert.equal(introSoundEnvelope(h.soundFrame).music,0);
+ h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+320;h.state.frame();assert.equal(h.soundFrame.sceneId,'arrival');assert.equal(h.soundFrame.elapsedMs,320);assert.equal(h.soundFrame.timeMs,h.state.introductionDuration+320);
+ assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1);
 });
 
 test('skipping a pending dojo load cannot restore the old scene or another continuation timer',async()=>{
@@ -166,6 +265,19 @@ test('skipping a pending dojo load cannot restore the old scene or another conti
  assert.equal(h.time.count(),0);assert.equal(h.dom.$('scene-wait').hidden,true);
  assert.equal(h.dom.$('welcome').hidden,true);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.filmStops,1,'Skipping a pending scene stops the shared film before leaving the introduction');
+ assert.equal(h.soundCalls.filter(call=>call.method==='stop').length,1,'Skipping stops sound before leaving the introduction');
+ h.setHidden(true);h.dom.$('report-open').click();h.setHidden(false);h.dom.$('report-dialog').close();h.frames(3);
+ assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1,'A later tab or report resume cannot restart skipped sound');
+ assert.equal(h.soundCalls.filter(call=>call.method==='stop').length,1);assert.equal(h.soundFrame.playing,false);
+ h.dom.$('skip').click();assert.equal(h.arrivals.length,1);assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1);
+});
+
+test('page lifecycle suspends a retained page and disposes sound when the page is left',async()=>{
+ const h=harness();await h.enter();h.time.tick(850);h.state.frame();
+ h.dom.window.dispatch('pagehide',{persisted:true});h.time.tick(5000);h.state.frame();
+ assert.equal(h.soundFrame.timeMs,850);assert.equal(h.soundFrame.playing,false);assert.equal(h.time.count(),0);
+ h.dom.window.dispatch('pageshow',{persisted:true});h.frames(1);assert.equal(h.soundFrame.playing,true);assert.equal(h.soundFrame.timeMs,866);
+ h.dom.window.dispatch('pagehide',{persisted:false});assert.equal(h.soundCalls.filter(call=>call.method==='dispose').length,1);
 });
 
 test('skipping during the initial room download keeps the garden visible after that download completes',async()=>{

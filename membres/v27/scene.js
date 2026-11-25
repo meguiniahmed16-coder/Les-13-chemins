@@ -9,12 +9,14 @@ import {reunionDialogue} from './rencontre-lionel.js';
 import {createMemberBridge} from './scene-members.js';
 import {loadOriginalCinemaAssets} from './intro-original.js';
 import {createIntroFinale} from './intro-finale.js';
+import {createIntroInvitationScene,prepareIntroInvitationGuests,applyIntroInvitationGuest} from './intro-invitation-scene.js';
+import {SalonMotion} from '../salon-v27-motion.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const view=$('stage'), canvas=$('scene'), clamp=T.MathUtils.clamp, mix=T.MathUtils.lerp, tau=Math.PI*2;
-let arrivalFinale=null,introDirector=null;
+let arrivalFinale=null,invitationScene=null,introDirector=null;
 window.salonArrival?.progress('decor','Ouverture de la maison et de son parc…');
 const response=await fetch('/assets/depart-duo/scene.bin');
 if(!response.ok)throw Error('Le salon ne répond pas.');
@@ -605,6 +607,7 @@ function setLocation(out){centeredOnPlayer=false;travel.reset();detail.reset();$
  $('lookHome').hidden=false;homeView=windowView=approachedWindow=false;windowCaption();keys.clear();releaseStick();hint();$('notice').textContent=out?'Le sac est sur ton dos. Tu es dans le jardin.':'De retour au salon.';
 }
 function equip(which){
+ if(invitationScene?.active||arrivalFinale?.active)return;
  if(encounter.active){if(where==='salon')walkToBay();return;}
  releaseSeatRoute();companionSeat=null;conversation=null;rising=false;
  if(where!=='salon'||!bags[which])return;const actor=player();chosen=which;setLocation(true);const o=bags[which];
@@ -652,7 +655,7 @@ document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('
 const help=$('help');$('helpButton').onclick=()=>help.showModal();$('closeHelp').onclick=()=>help.close();help.addEventListener('click',e=>{if(e.target===help)help.close()});
 function updateCam(dt){
  focusShot=null;
- if(arrivalFinale?.active)return;
+ if(arrivalFinale?.active||invitationScene?.active)return;
  if(introDirector?.active){
    const smooth=1-Math.exp(-Math.max(0,dt)*introDirector.speed);
    cam.position.lerp(introDirector.position,smooth);
@@ -721,7 +724,7 @@ function updateCam(dt){
   for(const [k,[x,y]] of Object.entries(outPins)){pins[k].style.left=clamp(x,34,w-34)+'px';pins[k].style.top=clamp(y,37,h-15)+'px'}
  }
 }
-function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();if(arrivalFinale?.active)arrivalFinale.sample(arrivalFinale.elapsedMs);else updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
+function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();if(invitationScene?.active)invitationScene.sample(invitationScene.elapsedMs);else if(arrivalFinale?.active)arrivalFinale.sample(arrivalFinale.elapsedMs);else updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
 new ResizeObserver(updateSize).observe(view);
 function move(dt){
  if(introAuthorized&&introCurrent==='sofa'){
@@ -913,7 +916,7 @@ canvas.addEventListener('wheel',e=>{
  detail.zoom(Math.exp(clamp(delta,-900,900)*.001),e.clientX,e.clientY);
 },{passive:false});
 const moveKeys=new Set(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','z','q']);
-window.addEventListener('keydown',e=>{if(e.target.closest?.('input,textarea,select,[contenteditable=true]')||document.querySelector('dialog[open]')||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(moveKeys.has(k)){e.preventDefault();keys.add(k)}else if(where==='salon'&&!e.repeat&&['1','2'].includes(k))equip(k==='1'?'pin':'ocre')});
+window.addEventListener('keydown',e=>{if(invitationScene?.active||arrivalFinale?.active||e.target.closest?.('input,textarea,select,[contenteditable=true]')||document.querySelector('dialog[open]')||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(moveKeys.has(k)){e.preventDefault();keys.add(k)}else if(where==='salon'&&!e.repeat&&['1','2'].includes(k))equip(k==='1'?'pin':'ocre')});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();releaseStick();held.clear();touch=null});help.addEventListener('close',()=>canvas.focus());
 document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden){keys.clear();releaseStick()}});
 let frameCost=35,qualityFrames=0;
@@ -931,7 +934,7 @@ let shadowTime=-1;function frame(t){
   const anchor=where==='jardin'?player().root.position:{x:-1,z:-1};sun.position.set(anchor.x-3.6,7,anchor.z+4.8);sun.target.position.set(anchor.x,0,anchor.z);
   if(t-shadowTime>145||shadowTime<0){renderer.shadowMap.needsUpdate=true;shadowTime=t;}
   adjustResolution(t-last);const dt=Math.min(.065,Math.max(0,(t-last)/1000));last=t;
-  if(!arrivalFinale?.active){if(!help.open&&!catalog.open){move(dt);flutter(dt);if(encounter.active)tickReunion(dt)}member.speechFrame();updateCam(dt);}
+  if(!arrivalFinale?.active&&!invitationScene?.active){if(!help.open&&!catalog.open){move(dt);flutter(dt);if(encounter.active)tickReunion(dt)}member.speechFrame();updateCam(dt);}
   drawScene(scene,cam,focusShot);frameHandle=requestAnimationFrame(frame);
  }catch(error){contextLost=true;window.failure(error?.message||String(error),'RENDER_ERROR');}
 }
@@ -1432,6 +1435,7 @@ heldControl($('descent'),()=>{if(skyMode())air.downPulse=.51},()=>{air.down=true
 $('tricks').onclick=()=>{const el=$('trickList');el.hidden=!el.hidden;$('tricks').setAttribute('aria-expanded',String(!el.hidden))};
 for(const btn of document.querySelectorAll('[data-trick]'))btn.onclick=()=>trick(btn.dataset.trick);
 window.addEventListener('keydown',e=>{
+ if(invitationScene?.active||arrivalFinale?.active)return;
  if(e.target.closest?.('input,textarea,select,[contenteditable=true]')||document.querySelector('dialog[open]')||e.ctrlKey||e.altKey||e.metaKey||where!=='jardin')return;
  if(e.code==='KeyG'&&!e.repeat){e.preventDefault();toggleAngel();return}
  if(!['ready','flying'].includes(air.mode))return;
@@ -1727,10 +1731,78 @@ if(introRequested){
 }
 
 if(cinemaArrival){
+ let invited=[];
+ invitationScene=createIntroInvitationScene({
+  viewport:()=>({width:view.clientWidth,height:view.clientHeight}),
+  async prepare(){
+   window.salonArrival?.progress('invitation','Préparation des deux personnages invités…');
+   invited=await prepareIntroInvitationGuests(scene);
+   for(const actor of invited){
+    actor.shadow=shade(actor.root,0,0,.78,.52,.012);
+    actor.shadow.material=shadeMat.clone();actor.root.visible=false;
+   }
+  },
+  begin(){
+   document.body.classList.add('intro-finale');
+   if(help.open)help.close();if(catalog.open)catalog.close();
+   if(encounter.active)leaveReunion();
+   if(introDirector)introDirector.active=false;
+   keys.clear();releaseStick();releaseAirInput();travel.reset();detail.reset();releaseSeatRoute();
+   conversation=null;companionSeat=null;goal=null;sitting=null;poseSeat=null;rising=false;chosen=null;
+   visiting=visitsMarianne=false;visitor.root.visible=false;
+   resetAir();setLocation(false);revealStart=null;homeView=windowView=false;
+   for(const actor of [actors.m,actors.f]){
+    unwear(actor);actor.root.visible=actor.body.visible=true;actor.body.position.y=0;
+    actor.sit=actor.speed=actor.phase=0;actor.stamp='';actor.motionSeat=null;
+   }
+   updateSize();
+  },
+  apply(frame){
+   for(const id of ['m','f']){
+    const actor=actors[id],pose=frame.actors[id];
+    actor.root.position.set(pose.x,0,pose.z);actor.root.rotation.set(0,pose.yaw,0);
+    actor.conversationPose=pose.expression;
+    if(actor.cinemaAhmed?.active){
+     actor.cinemaAhmed.animate(0,null,0,frame.time);
+     actor.cinemaAhmed.talk({jaw:0,spread:.18},frame.time);
+    }else if(actor.motion){
+     const solver=actor.solver??=new SalonMotion(undefined,{angle:0});solver.femaleHands=actor.id==='f';
+     actor.motion.apply(solver.sampleSalonPose(null,0,frame.time,pose.expression,actor.root.scale.y));
+     actor.live=true;actor.stamp='invitation/'+frame.elapsedMs;
+     actor.referenceFace?.follow(true);
+     const blink=(frame.time+(id==='f'?1.2:0))%5.3;
+     actor.referenceFace?.talk({jaw:0,spread:.16,blink:blink<.16?Math.sin(blink/.16*Math.PI):0});
+    }
+   }
+   for(const [index,actor]of invited.entries())applyIntroInvitationGuest(actor,{...frame.actors.guest,opacity:index===frame.cue.guestIndex?frame.actors.guest.opacity:0},frame.time);
+   const width=frame.viewport.width,height=frame.viewport.height;
+   cam.fov=frame.camera.fov;cam.aspect=width/height;
+   cam.setViewOffset(width,height,frame.camera.offsetX,frame.camera.offsetY,width,height);
+   cam.position.fromArray(frame.camera.position);cam.lookAt(new T.Vector3().fromArray(frame.camera.target));
+   cam.updateProjectionMatrix();cam.updateMatrixWorld(true);scene.updateMatrixWorld(true);flutter(0,frame.time);focusShot=null;
+  },
+  faces(){
+   const width=view.clientWidth,height=view.clientHeight;
+   return [['m',actors.m],['f',actors.f],...invited.map((actor,index)=>['guest'+index,actor])].filter(([,actor])=>actor.root.visible).map(([id,actor])=>{
+    const world=headCenter(actor),point=world.clone().project(cam),edge=world.clone().add(new T.Vector3(.17,0,0)).project(cam);
+    return {id,x:(point.x*.5+.5)*width,y:(-.5*point.y+.5)*height,r:Math.max(9,Math.abs(edge.x-point.x)*width*.5),visible:point.z>-1&&point.z<1};
+   });
+  },
+  finish(){
+   for(const actor of invited)actor.root.visible=false;
+   for(const actor of [actors.m,actors.f]){actor.conversationPose=null;actor.live=false;actor.stamp='';}
+   document.body.classList.remove('intro-finale');cam.clearViewOffset();
+   keys.clear();releaseStick();releaseAirInput();travel.reset();detail.reset();
+   chosen=null;revealStart=null;conversation=null;companionSeat=null;goal=null;sitting=null;poseSeat=null;
+   setLocation(false);actorHome();resetView();updateSize();last=performance.now();
+  }
+ });
+ member.introInvitation=invitationScene;
  const centerX=pathX(3.62);
  arrivalFinale=createIntroFinale({
   viewport:()=>({width:view.clientWidth,height:view.clientHeight}),
   begin(){
+   if(invitationScene?.active)invitationScene.finish();cam.clearViewOffset();
    document.body.classList.add('intro-finale');
    if(help.open)help.close();if(catalog.open)catalog.close();
    if(encounter.active)leaveReunion();
@@ -1788,6 +1860,7 @@ window.salonV27=member;
 Promise.all(ready).then(async()=>{
  window.salonArrival?.progress('characters','Préparation d’Ahmed et de Marianne…');
  await member.initialize();
+ if(invitationScene)await invitationScene.prepare();
  updateSize();updateCam(0);renderer.render(scene,cam);
  document.body.classList.add('ready');$('loading').hidden=true;
  window.dispatchEvent(new Event('salon-ready'));frameHandle=requestAnimationFrame(frame);

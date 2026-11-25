@@ -6,15 +6,17 @@ import {planSpeechBubble} from './intro-bubbles.js';
 import {dojoBlocking,dojoDirectedCamera,DOJO_DURATIONS} from './intro-dojo-director.js';
 import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
-import {mountIntroArrival} from './intro-arrival.js';
+import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
+import {createIntroSound} from './intro-sound.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
+const introSound=createIntroSound({onProblem:message=>remember('Son de la cinématique',message)});
 const dojoDemo=mountDojoDemo(canvasHost);
 const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
 if(promotionMode)document.body.classList.add('promotion');
-const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message)});
+const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),onComplete:()=>introSound.stop()});
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -349,7 +351,7 @@ const lines=[
  {
   "id": "jardin",
   "speaker": "m",
-  "text": "Les papillons et la maison t’attendent dans le jardin.",
+  "text": "Avant le parc et ses papillons, faisons une rencontre dans le salon.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 6000,
@@ -360,6 +362,10 @@ const lines=[
  }
 ];
 const dojoStart=lines.findIndex(s=>s.scene==='dojo');
+const soundOffsets=[];let introductionDuration=0;
+for(const line of lines){soundOffsets.push(introductionDuration);introductionDuration+=line.ms;}
+const pauseReasons=new Set();
+let resumeAfterPause=false;
 let shotStart=0,shotPaused=false,pausedAt=0,pausedElapsed=0,currentSpeaker=null,lastLayout='',secondCue=false;
 
 const progress={white:0,people:0,ahmed:0},weights={white:.25,people:.40,ahmed:.35};
@@ -409,7 +415,7 @@ async function decodeAhmed(buffer){
   return await loader.parseAsync(withoutOptionalMorphs(buffer),'');
  }
 }
-function setPending(on){pending=on;$('skip').disabled=!authorized||stage==='garden';$('scene-wait').hidden=!on;}
+function setPending(on){pending=on;if(on)introSound.pause();$('skip').disabled=!authorized||stage==='garden';$('scene-wait').hidden=!on;}
 const whiteFloor=new T.Group();
 const seamlessFloor=new T.Mesh(new T.PlaneGeometry(180,180),new T.MeshBasicMaterial({color:0xffffff,toneMapped:false}));
 seamlessFloor.rotation.x=-Math.PI/2;seamlessFloor.position.y=-.003;whiteFloor.add(seamlessFloor);
@@ -1186,7 +1192,7 @@ async function showScene(index){
   setPending(false);
  }
  const previous=step>=0?lines[step]:null;
- $('scene-wait').hidden=true;step=requested;shotStart=performance.now();shotPaused=$('report-dialog').open;pausedAt=shotStart;pausedElapsed=0;secondCue=false;cutCamera=true;
+ $('scene-wait').hidden=true;step=requested;shotStart=performance.now();shotPaused=$('report-dialog').open||document.hidden||pauseReasons.size>0;pausedAt=shotStart;pausedElapsed=0;secondCue=false;cutCamera=true;
  stage=isDojo?'dojo':'white';
  mountRoom(false);whiteFloor.visible=!isDojo;if(dojo)dojo.visible=isDojo;
  scene.background.set(isDojo?0xd7c4a7:0xffffff);
@@ -1204,16 +1210,17 @@ async function showScene(index){
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+line.id;
  $('joystick').hidden=!isDojo||isStagedDojo(line);
  dojoDemo.update(line,0,{wardrobe:isStagedDojo(line)?stageDojoPeople(line,0):null});
- if(autoplay)scheduleNext(line.ms);
+ if(autoplay&&!shotPaused)scheduleNext(line.ms);
 }
 
 function startGarden(skipFinale=false){
+ if(skipFinale)introSound.stop();else introSound.pause();
  ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();dojoDemo.hide();dojoWardrobe?.restore();stage='garden';$('garden').hidden=false;setPending(false);
  $('joystick').hidden=true;$('skip').hidden=true;
  $('welcome').hidden=true;$('loading').hidden=true;$('scene-wait').hidden=true;
  status.textContent='La Croisée des Âmes';
  if(gardenLoaded)return;gardenLoaded=true;
- arrivalPlayer.start({promo:promotionMode,skip:skipFinale,paused:$('report-dialog').open});
+ arrivalPlayer.start({promo:promotionMode,skip:skipFinale,paused:$('report-dialog').open||document.hidden||pauseReasons.size>0});
 }
 function next(){
  if(!started||pending||stage==='garden')return;
@@ -1228,14 +1235,28 @@ function automatic(on,hold=false){
   if(shotPaused){shotStart=now-pausedElapsed;shotPaused=false;}
   const line=lines[step];if(line)scheduleNext(Math.max(250,line.ms-shotElapsed(now)));
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
+ if(!on)introSound.pause();
 }
-$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
+$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden(true);};
 
-let resumeAfterReport=false;
-$('report-open').onclick=()=>{resumeAfterReport=autoplay;automatic(false);if(stage==='garden')arrivalPlayer.pause();$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
+function holdIntroduction(reason){
+ if(pauseReasons.has(reason))return;
+ if(!pauseReasons.size)resumeAfterPause=autoplay;
+ pauseReasons.add(reason);automatic(false);introSound.pause();
+ if(stage==='garden')arrivalPlayer.pause();
+}
+function releaseIntroduction(reason){
+ if(!pauseReasons.delete(reason)||pauseReasons.size||document.hidden||$('report-dialog').open)return;
+ if(stage==='garden')arrivalPlayer.resume();else if(resumeAfterPause)automatic(true);
+ resumeAfterPause=false;
+}
+$('report-open').onclick=()=>{holdIntroduction('report');$('report-scene').value=stage+' · '+(step+1);$('report-count').textContent=problems.length+' entrées';$('report-dialog').showModal()};
 $('report-close').onclick=()=>$('report-dialog').close();
-$('report-dialog').addEventListener('close',()=>{if(stage==='garden')arrivalPlayer.resume();else if(resumeAfterReport)automatic(true);resumeAfterReport=false;});
+$('report-dialog').addEventListener('close',()=>releaseIntroduction('report'));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)holdIntroduction('hidden');else releaseIntroduction('hidden');});
+window.addEventListener('pagehide',event=>{if(event.persisted)holdIntroduction('page');else introSound.dispose();});
+window.addEventListener('pageshow',event=>{if(event.persisted)releaseIntroduction('page');});
 $('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
 $('report-export').onclick=()=>{
  const data={created:new Date().toISOString(),experience:'La Croisée des Âmes',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
@@ -1262,7 +1283,12 @@ window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 
 function frame(){
  requestAnimationFrame(frame);const dt=Math.min(.06,clock.getDelta());
- if(stage==='garden'){arrivalPlayer.tick();return;}
+ if(stage==='garden'){
+  arrivalPlayer.tick();
+  const arrival=arrivalFrame(arrivalPlayer.elapsed,{promo:promotionMode}),inSalon=arrival.phase==='salon';
+  introSound.update({sceneId:inSalon?'salon-invitation':'arrival',elapsedMs:inSalon?arrival.invitationElapsedMs:arrival.gardenElapsedMs,timeMs:introductionDuration+(inSalon?0:arrival.gardenElapsedMs),promotion:promotionMode,playing:arrivalPlayer.state==='playing'&&!arrivalPlayer.paused&&!document.hidden&&!$('report-dialog').open});
+  return;
+ }
  if(!room)return;
  if(stage==='dojo'&&people[1]&&!isStagedDojo(lines[step])){
   const moveX=joystick.x+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('q')?1:0);
@@ -1282,6 +1308,7 @@ function frame(){
  const wardrobe=isStagedDojo(line)?stageDojoPeople(line,elapsed):null;
  if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
  updateFilm(line,elapsed);cameraShot(line,elapsed,dt);dojoDemo.update(line,elapsed,{wardrobe});anchorBubble(line,elapsed);
+ introSound.update({sceneId:line.id,elapsedMs:elapsed,timeMs:soundOffsets[step]+Math.min(elapsed,line.ms),playing:started&&!shotPaused&&!pending&&!document.hidden&&!$('report-dialog').open,actors:people.map(person=>({id:person.id,gait:person.gait})),wardrobe});
  renderer.render(scene,camera);
 }
 

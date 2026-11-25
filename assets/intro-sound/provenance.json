@@ -1,0 +1,481 @@
+{
+  "music": {
+    "title": "Effervescence",
+    "artist": "Scott Buckley",
+    "source_sha256": "215ff6ec113abbcfa3258028af322f651a40cf1102996b347dde873379b42674",
+    "source_in_s": 0,
+    "source_out_s": 264,
+    "target_lufs": -28,
+    "license": "CC BY 4.0",
+    "source": "https://www.scottbuckley.com.au/library/effervescence/",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "speed_changed": false,
+    "looped": false,
+    "fade_baked_in": false,
+    "linear_gain_db": -11.899999999999999,
+    "decoded": {
+      "duration_s": 264.0,
+      "peak_dbfs": -13.153703689575195,
+      "rms_dbfs": -30.829163091498856,
+      "finite": true,
+      "clipped_samples": 0
+    },
+    "encoded_loudness": {
+      "integrated_lufs": -28.45,
+      "true_peak_dbtp": -13.15,
+      "loudness_range_lu": 14.4
+    },
+    "scene_measurements": [
+      {
+        "stage": "white",
+        "start_s": 0,
+        "duration_s": 149.2,
+        "integrated_lufs": -30.55,
+        "true_peak_dbtp": -13.22
+      },
+      {
+        "stage": "dojo",
+        "start_s": 149.2,
+        "duration_s": 93,
+        "integrated_lufs": -27.92,
+        "true_peak_dbtp": -13.15
+      },
+      {
+        "stage": "garden_and_card",
+        "start_s": 242.2,
+        "duration_s": 20.5,
+        "integrated_lufs": -25.91,
+        "true_peak_dbtp": -13.21
+      }
+    ],
+    "dojo_one_second_rms_range_dbfs": [
+      -38.09205443495348,
+      -24.746694228497923
+    ],
+    "playback_policy": {
+      "opening": true,
+      "dojo": false,
+      "salon_invitation": false,
+      "garden": true,
+      "fade_before_dojo_s": 1.8,
+      "garden_fade_in_s": 1.8,
+      "clock_paused_for_salon_invitation": true
+    }
+  },
+  "timing": {
+    "scene_lines_s": 242.2,
+    "arrival_s": 13,
+    "promotion_card_s": 7.5,
+    "longest_playback_s": 282.7,
+    "invitation_s": 20,
+    "music_clock_end_s": 262.7
+  },
+  "sources": [
+    {
+      "key": "01_pas_feutres",
+      "title": "footsteps socks wood",
+      "author": "Yuval",
+      "id": 210770,
+      "duration_s": 38.141,
+      "page": "https://freesound.org/people/Yuval/sounds/210770/",
+      "cue": "Marche au dojo et demi-tour; découper chaque appui, ajuster à l’image.",
+      "license": "CC0",
+      "source_format": "Public MP3 preview (not original WAV)"
+    },
+    {
+      "key": "02_tissu_leger",
+      "title": "Soft Fabric Rustle",
+      "author": "IENBA",
+      "id": 850705,
+      "duration_s": 12.476,
+      "page": "https://freesound.org/people/IENBA/sounds/850705/",
+      "cue": "Changement de tenue; souffle très court, uniquement au changement visible.",
+      "license": "CC0",
+      "source_format": "Public MP3 preview (not original WAV)"
+    },
+    {
+      "key": "03_selection_douce",
+      "title": "soft button click 1",
+      "author": "FOSSarts",
+      "id": 740266,
+      "duration_s": 3.138,
+      "page": "https://freesound.org/people/FOSSarts/sounds/740266/",
+      "cue": "Validation de la silhouette, de la tenue et du mode ange; extraire un clic.",
+      "license": "CC0",
+      "source_format": "Public MP3 preview (not original WAV)"
+    },
+    {
+      "key": "04_air_interieur",
+      "title": "room tone_M24",
+      "author": "pushkin",
+      "id": 146435,
+      "duration_s": 101.656,
+      "page": "https://freesound.org/people/pushkin/sounds/146435/",
+      "cue": "Texture de fond dans le salon et le dojo, très discrète.",
+      "license": "CC0",
+      "source_format": "Public MP3 preview (not original WAV)"
+    },
+    {
+      "key": "05_air_jardin",
+      "title": "breeze.wav",
+      "author": "keweldog",
+      "id": 181801,
+      "duration_s": 64.833,
+      "page": "https://freesound.org/people/keweldog/sounds/181801/",
+      "cue": "Arrivée au jardin; fondu depuis l’air intérieur, sans imiter les papillons.",
+      "license": "CC0",
+      "source_format": "Public MP3 preview (not original WAV)"
+    },
+    {
+      "key": "06_deploiement_ailes",
+      "title": "Comforter Cloth Pass.wav",
+      "author": "RossBell",
+      "id": 389417,
+      "duration_s": 7.933,
+      "page": "https://freesound.org/people/RossBell/sounds/389417/",
+      "cue": "Matière de base pour le déploiement des ailes; un froissement ample discret, à ralentir si nécessaire.",
+      "license": "CC0",
+      "source_format": "Public MP3 preview (not original WAV)"
+    }
+  ],
+  "sample_rate": 48000,
+  "channels": 2,
+  "sprite": {
+    "step1": {
+      "offset": 0.12,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-01.wav",
+      "source_sha256": "30b2e20fb0897346c0155e2e9a6852b0e89b92f304bde6e471258fe70409b57f",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -48.0198141497543,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step2": {
+      "offset": 0.53,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-02.wav",
+      "source_sha256": "c9f9b34376aa5dac17390f231074925b799da8b7d81f24ebae15175286d287fa",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -47.28426193652802,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step3": {
+      "offset": 0.94,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-03.wav",
+      "source_sha256": "ace69fae4fe0855db38b97cc47d5e4c5d02204f68b8ca38418c5a6576f3b9dda",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -49.61627014881822,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step4": {
+      "offset": 1.35,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-04.wav",
+      "source_sha256": "20a379b7232b8603b51c22066c0814c8c09bee0ac7ed5a1c8711bbe7fb8a9feb",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -47.992212279892534,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step5": {
+      "offset": 1.76,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-05.wav",
+      "source_sha256": "2a5a112bd86c71b31e85f0abc6eeedb9ca0e4ceee601b6a3b79b37d83d59bc30",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -48.97704064131961,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step6": {
+      "offset": 2.17,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-06.wav",
+      "source_sha256": "711cca3330c816b323f3ccc5278799304d5e1c69f4e624017b2603e31803c414",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -50.52741990017893,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step7": {
+      "offset": 2.58,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-07.wav",
+      "source_sha256": "12ca731d618ffb0b89528ee8257d9e61760fe6bcb232a1b7f8b9f2e0708184c5",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -48.592747342482355,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step8": {
+      "offset": 2.99,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-08.wav",
+      "source_sha256": "5dc4a138ac83acadf991ed30d5bd40e8fee12cf8ea8ba205edd3f4b982984857",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -51.692061405393865,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "step9": {
+      "offset": 3.4,
+      "duration": 0.29,
+      "contactOffset": 0.05,
+      "source_file": "recorded-step-09.wav",
+      "source_sha256": "53c136a8a0885e41859456c6741ef8d2bd0f5b41893bdce7f55d95681d23c7eb",
+      "working_metrics": {
+        "duration_s": 0.29,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -49.78706412545209,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "pivot1": {
+      "offset": 3.81,
+      "duration": 0.305,
+      "contactOffset": 0.06,
+      "source_file": "recorded-pivot-01.wav",
+      "source_sha256": "8416514978889f694808dab0a08d7697da6984faf58f58b77c887c667e66d15d",
+      "working_metrics": {
+        "duration_s": 0.305,
+        "peak_dbfs": -29.000003814697266,
+        "rms_dbfs": -54.413416272684465,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "pivot2": {
+      "offset": 4.235,
+      "duration": 0.305,
+      "contactOffset": 0.06,
+      "source_file": "recorded-pivot-02.wav",
+      "source_sha256": "bde103acf3d280d2fbdd075b6b51583955cd389118d0813bfffb19e16210a2ee",
+      "working_metrics": {
+        "duration_s": 0.305,
+        "peak_dbfs": -29.000003814697266,
+        "rms_dbfs": -55.63424325373228,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "pivot3": {
+      "offset": 4.66,
+      "duration": 0.305,
+      "contactOffset": 0.06,
+      "source_file": "recorded-pivot-03.wav",
+      "source_sha256": "a3c1735f6a6492fcccc66041f760865553032903a7512b42250d0f8630d15402",
+      "working_metrics": {
+        "duration_s": 0.305,
+        "peak_dbfs": -29.000003814697266,
+        "rms_dbfs": -54.664289580980494,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "pivot4": {
+      "offset": 5.085,
+      "duration": 0.305,
+      "contactOffset": 0.06,
+      "source_file": "recorded-pivot-04.wav",
+      "source_sha256": "fa151363f8bb6bf40aa4bb5fce3174c340ee8907d4f00b07e3871a10b248ebdf",
+      "working_metrics": {
+        "duration_s": 0.305,
+        "peak_dbfs": -29.000003814697266,
+        "rms_dbfs": -51.91039836252674,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "pivot5": {
+      "offset": 5.51,
+      "duration": 0.305,
+      "contactOffset": 0.06,
+      "source_file": "recorded-pivot-05.wav",
+      "source_sha256": "a75ff25896da1205d74e67cc4c7ed958b6bb3f8342da484f66a7ee0c4d842a37",
+      "working_metrics": {
+        "duration_s": 0.305,
+        "peak_dbfs": -29.000003814697266,
+        "rms_dbfs": -53.282257318587305,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "selection": {
+      "offset": 5.935,
+      "duration": 0.14,
+      "contactOffset": 0.035,
+      "source_file": "recorded-selection.wav",
+      "source_sha256": "2563b3a7ea52fb7ab7e8b8e64ab2bfcd8ecee5bc72f51e5fc207042b110ab80c",
+      "working_metrics": {
+        "duration_s": 0.14,
+        "peak_dbfs": -28.000001907348633,
+        "rms_dbfs": -50.77970918429085,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "cloth1": {
+      "offset": 6.195,
+      "duration": 0.45,
+      "contactOffset": 0,
+      "source_file": "recorded-fabric-01.wav",
+      "source_sha256": "abb48f0a6534cef2c2d24899f0f1fccd874e9b38d1738dbf36a6b765bafcb684",
+      "working_metrics": {
+        "duration_s": 0.45,
+        "peak_dbfs": -37.0,
+        "rms_dbfs": -50.42432543719905,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "cloth2": {
+      "offset": 6.765,
+      "duration": 0.38,
+      "contactOffset": 0,
+      "source_file": "recorded-fabric-02.wav",
+      "source_sha256": "0acf7993644a5b0af2c914d5593421e0ff73e3a30a60eb5726636683bfa4f140",
+      "working_metrics": {
+        "duration_s": 0.38,
+        "peak_dbfs": -37.0,
+        "rms_dbfs": -50.166939947625295,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "cloth3": {
+      "offset": 7.265,
+      "duration": 0.48,
+      "contactOffset": 0,
+      "source_file": "recorded-fabric-03.wav",
+      "source_sha256": "bc424ceba13ff78ce81fb121dbf0aeb3ba86e333fbe56e623a527a05eef0c92d",
+      "working_metrics": {
+        "duration_s": 0.48,
+        "peak_dbfs": -37.0,
+        "rms_dbfs": -52.96244627039928,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    },
+    "wings": {
+      "offset": 7.865,
+      "duration": 2.1,
+      "contactOffset": 0,
+      "source_file": "recorded-wings.wav",
+      "source_sha256": "c5346782b64379b2405d54943bcf46cc4b4714036d0b719150bb874cc8a0d28c",
+      "working_metrics": {
+        "duration_s": 2.1,
+        "peak_dbfs": -24.0,
+        "rms_dbfs": -46.22743415553944,
+        "finite": true,
+        "clipped_samples": 0
+      }
+    }
+  },
+  "loops": {
+    "room": {
+      "source_sha256": "544c1d0b31a0d02cf60dbb6d21cbe7ae96aaf42431d7fdcea7f1999326a11d00",
+      "source_start_s": 8,
+      "source_duration_s": 13,
+      "duration_s": 12,
+      "circular_crossfade_s": 1,
+      "working_rms_dbfs": -48,
+      "runtime_gain_db": -2,
+      "decoded_metrics": {
+        "duration_s": 12.0,
+        "peak_dbfs": -38.52016830444336,
+        "rms_dbfs": -48.44557873204686,
+        "finite": true,
+        "clipped_samples": 0
+      },
+      "boundary_step": 0.0001868621911853552,
+      "ordinary_step_99_percentile": 0.00048240667092613876
+    },
+    "garden": {
+      "source_sha256": "c35695950ca254b268ffaa4218cc810a51689e904c24b0d03ba966b6fcca4bd3",
+      "source_start_s": 12,
+      "source_duration_s": 13,
+      "duration_s": 12,
+      "circular_crossfade_s": 1,
+      "working_rms_dbfs": -47,
+      "runtime_gain_db": -2,
+      "decoded_metrics": {
+        "duration_s": 12.0,
+        "peak_dbfs": -33.25579833984375,
+        "rms_dbfs": -47.40176649902536,
+        "finite": true,
+        "clipped_samples": 0
+      },
+      "boundary_step": 0.002209172584116459,
+      "ordinary_step_99_percentile": 0.004477913957089186
+    }
+  },
+  "outputs": {
+    "effervescence-intro.mp3": {
+      "bytes": 4225192,
+      "sha256": "6507464e82bd83d7bc02a6610838cec02a16e286b219c80aaa0d8cb43675f7eb"
+    },
+    "foley.mp3": {
+      "bytes": 243891,
+      "sha256": "4416a164eb49815f523fc3978b2126f2aca22b109c22c89cf3e9b10b761e557d"
+    },
+    "room.mp3": {
+      "bytes": 192961,
+      "sha256": "a147d69475e96dc6a21179de451f88a97bb700b01c2645cfb261653da8303bfe"
+    },
+    "garden.mp3": {
+      "bytes": 192963,
+      "sha256": "ef29cc4ccba5112c5d77b69154817b1c5af26bafc536480501876657094b84e1"
+    }
+  },
+  "sprite_verification": {
+    "gapless_decoded_frames": 484080,
+    "peak_correlation_lag_samples": 0,
+    "correlation": 0.9999999053637255,
+    "decoded_metrics": {
+      "duration_s": 10.085,
+      "peak_dbfs": -24.262157440185547,
+      "rms_dbfs": -50.26684641549509,
+      "finite": true,
+      "clipped_samples": 0
+    },
+    "runtime_gain_db": 3,
+    "gain_note": "Working levels retained in file. Runtime applies +3 dB, 4 dB below the previous promotional-film foley."
+  }
+}
