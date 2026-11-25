@@ -27,6 +27,8 @@ const icons={
  end:'<path d="M4 10V5h16v5M6 18h12m-6-8v8"/>'
 };
 const svg=key=>'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">'+icons[key]+'</svg>';
+// Single source of truth for the existing call and invite pictograms.
+export const salonActionSvg=svg;
 const main=[
  ['encounter','Rencontrer','Rencontres'],
  ['avatar','Avatar','Apparence'],
