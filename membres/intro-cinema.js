@@ -17,8 +17,14 @@ const originalIntroKey='croisee-salon-introduction-originale-v34';
 if(salonEntryMode)document.documentElement.classList.add('salon-entry-mode');
 function finishSalonEntry(){
  if(!salonEntryMode)return;
- try{sessionStorage.setItem(originalIntroKey,'done');}catch{}
- location.replace('/membre.html#salon');
+ const returnTo=new URLSearchParams(location.search).get('retour');
+ const destinations={
+  ahmed:['croisee-ahmed-introduction-originale-v34','/ahmed-marie.html#ahmed-numerique'],
+  invite:['croisee-invite-introduction-originale-v34','/salon-invite.html']
+ };
+ const chosen=destinations[returnTo]||[originalIntroKey,'/membre.html#salon'];
+ try{sessionStorage.setItem(chosen[0],'done');}catch{}
+ location.replace(chosen[1]);
 }
 
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
