@@ -87,7 +87,7 @@ const publicFiles = [
   'membre.html','membre-atelier.html','membres/intro-prive.html','membres/intro-dojo-ui.css','membres/intro-arrival.css','membres/intro-prive.js','membres/intro-cinema-bundle.js','membres/intro-cinema-croisee27.js','membres/intro-cinema-croisee28.js','membres/intro-cinema-croisee29.js','membres/intro-cinema-croisee30.js','membres/intro-cinema-croisee31.js','membres/intro-cinema-croisee32.js','membres/intro-cinema-croisee33.js','membres/member.css','membres/member.js','membres/salon-v27.js','membres/v27/salon.html','membres/v27/salon-runtime.js','membres/v27/arrival-personalization.js','membres/v27/arrival-personalization.css','membres/v27/rencontre-lionel.css','membres/v27/poses.json','membres/v27/visage-indices.json','membres/v27/assises.bin','membres/v27/attaches-v27.bin','membres/seated-postures.js','membres/salon-shots.js','membres/salon-camera-stick.js','membres/conversation-reactions.js','membres/v27/marianne-voix.json','assets/membres/marianne-reference.glb','membres/v27/marianne-voix.mp3','membres/v27/marianne-credits.txt','assets/depart-duo/scene.bin','membres/starting-appearance.js','membres/free-preview.js','membres/author-access.js','membres/owner.js',
   'assets/membres/summer-man.bin','assets/membres/summer-man.webp','assets/membres/salon-v27.bin','assets/membres/salon-v27-light.bin','assets/membres/salon-v27-apercu.webp','assets/membres/salon-rig.bin','assets/membres/salon-apercu.webp','assets/membres/salon-decor.webp',
   'membres/studio-catalog.js','membres/studio-look.js','membres/studio-drawer.js','membres/studio-materials.js','membres/studio-model.js','membres/studio-inspection-geometry.js','membres/salon-inspection.js','membres/studio-assets.js','membres/salon-voice.js','membres/salon-voice-worker.js','membres/salon-voice-credits.txt','membres/salon-dictee.js','membres/salon-dictee-worker.js',
-  'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-raster.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
+  'membres/salon-performance.js','membres/salon-dialogue.js','membres/salon-chat.js','membres/salon-maison-ui.js','membres/salon-encounter.js','membres/avatar-catalog.js','membres/avatar.js','membres/avatar-software.js','membres/salon-raster.js','membres/salon-navigation.js','membres/salon-controls.js','membres/salon-pose.js','membres/salon-v27-motion.js','membres/salon-plan.js','membres/salon.css','membres/journey.js','membres/journey-clips.js','membres/journey-recorder.js',
   'index.html',
   'accueil.css','salon-invite.html','membres/visite-salon.js','membres/visite-salon.css','membres/visite-salon.vtt','assets/membres/invitation-salon.webp','assets/membres/invitation-salon.mp4',
   'assets/membres/intro-montage-reel22.mp4','assets/membres/intro-montage-reel22.webp',
@@ -227,6 +227,19 @@ const publicFiles = [
   'voyage.js',
   'escale.js',
 ];
+
+// Fail the build if the member entrypoints import a JavaScript module that is
+// absent from the exact allowlist copied to the production site. This catches
+// silent 404s that would otherwise leave the 3D Salon completely blank.
+for (const entry of ['membres/member.js','membres/salon-v27.js','membres/salon-chat.js']) {
+  const code=await readFile(join(root,entry),'utf8');
+  for (const match of code.matchAll(/\\bfrom\\s*['"]([.][^'"]+\\.js)(?:\\?[^'"]*)?['"]/g)) {
+    const dependency=join(dirname(entry),match[1]);
+    if(!publicFiles.includes(dependency)) {
+      throw new Error('Module indispensable au Salon absent de la publication : '+dependency+' (depuis '+entry+')');
+    }
+  }
+}
 
 if (process.env.CONTEXT === 'production' && process.env.BRANCH !== 'main') {
   throw new Error('La production doit être déployée depuis la branche main.');
