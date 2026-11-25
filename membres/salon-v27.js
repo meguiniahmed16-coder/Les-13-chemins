@@ -2,9 +2,9 @@ import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=studio-rail1';
-import {createSalonChat} from './salon-chat.js?v=maison2';
-import {createSalonNavigation} from './salon-maison-ui.js?v=hud56';
-import {guestAppearance} from './salon-encounter.js?v=incarnations33';
+import {createSalonChat} from './salon-chat.js?v=call58';
+import {createSalonNavigation} from './salon-maison-ui.js?v=call58';
+import {guestAppearance} from './salon-encounter.js?v=call58';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
 import {resource} from './studio-assets.js';
@@ -45,7 +45,7 @@ class SalonV27 extends HTMLElement{
       background:rgba(34,75,57,.90)!important;color:#fff6e3!important;font-size:12px!important}
     .maison-dock button svg{display:block!important;width:23px!important;height:23px!important}
     .maison-dock button>span{position:absolute!important;width:1px!important;height:1px!important;clip-path:inset(50%)!important;overflow:hidden!important}
-    </style><link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><link rel="stylesheet" href="/membres/salon-rail52.css?v=hud56"><style>
+    </style><link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><link rel="stylesheet" href="/membres/salon-rail52.css?v=hud56"><link rel="stylesheet" href="/membres/salon-call58.css?v=call58"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -265,7 +265,7 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=hud55'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=call58'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){

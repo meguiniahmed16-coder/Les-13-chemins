@@ -140,7 +140,10 @@ export function createSalonNavigation(root){
    panelNode.hidden=false;
    panelLabel.textContent=labelMap[id]||'Options';
    for(const area of panelNode.querySelectorAll('[data-rail-room]'))area.hidden=area.dataset.railRoom!==id;
-   if(id==='encounter'&&picker.hidden)legacyInvite.click();
+   if(id==='encounter'){
+     if(picker.hidden)legacyInvite.click();
+     else picker.querySelector('.guest-search')?.focus({preventScroll:true});
+   }
    updateButtons();sync();engineBridge?.sync();
  }
  function studio(group){

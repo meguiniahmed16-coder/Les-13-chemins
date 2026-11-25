@@ -1,9 +1,9 @@
 import {createShotSequence} from './salon-shots.js';
 import {createDialogue} from './salon-dialogue.js?v=voix34';
 import {createDictee} from './salon-dictee.js?v=salon41';
-import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=voix36';
+import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=call58';
 import {characterReply,limit} from '../atlas-chat-client.js';
-import {searchName,guestAppearance} from './salon-encounter.js?v=incarnations33';
+import {searchName,guestAppearance} from './salon-encounter.js?v=call58';
 
 const opening='Asseyons-nous et discutons.';
 let directory;

@@ -1,4 +1,4 @@
-import {createVoiceCapture,createRemoteSpeech} from './salon-conversation-audio.js';
+import {createVoiceCapture,createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
 
 const paths=new Set(['status','voices','settings','transcribe','reply','speech']);
 const messages={starting:'Connexion du micro…',listening:'Je t’écoute…',transcribing:'J’ai entendu ta phrase…',thinking:'Le personnage te répond…',preparing:'La voix arrive…',speaking:'Le personnage parle. Touche le micro pour intervenir.',paused:'Micro coupé.',idle:''};
