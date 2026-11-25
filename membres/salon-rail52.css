@@ -382,3 +382,83 @@
   overflow-wrap:anywhere!important;
   font-size:11px!important;
 }
+
+/* HUD 56 — un bouton Menu initial, déroulement des fonctions sur demande.
+   Aucun flash des cinq boutons : hidden reste prioritaire sur tout l'ancien CSS. */
+:host .stage .maison-menu-toggle{
+ position:absolute!important;z-index:31!important;
+ top:8px!important;left:8px!important;right:auto!important;bottom:auto!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;
+ gap:1px!important;width:48px!important;min-width:48px!important;
+ height:48px!important;min-height:48px!important;padding:0!important;
+ border:1px solid #e4d9bc!important;border-radius:13px!important;
+ background:rgba(34,75,57,.89)!important;color:#fff6e3!important;
+ font:650 10px/1.1 system-ui!important;box-shadow:0 2px 11px #102b2457!important;
+ touch-action:manipulation!important
+}
+:host .stage .maison-menu-toggle svg{
+ width:22px!important;height:22px!important;stroke:currentColor!important;
+ stroke-width:2!important;fill:none!important
+}
+:host .stage .maison-menu-toggle span{
+ font:650 10px/1.1 system-ui!important;color:inherit!important;line-height:1.1!important
+}
+:host .stage .maison-menu-toggle[aria-expanded="true"]{
+ color:#214030!important;background:rgba(228,207,163,.94)!important
+}
+:host .stage #maison-dock[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
+:host .stage #maison-dock:not([hidden]){
+ left:61px!important;right:auto!important;top:8px!important;bottom:auto!important;
+ transform:none!important;width:max-content!important;max-width:calc(100% - 65px)!important;
+ display:flex!important;flex-direction:row!important;gap:4px!important;padding:0!important;
+ align-items:center!important;justify-content:flex-start!important
+}
+:host .stage #maison-dock:not([hidden]) button{
+ flex:0 0 44px!important;width:44px!important;min-width:44px!important;
+ height:48px!important;min-height:48px!important
+}
+:host .stage .maison-rail-panel{
+ width:min(235px,28%)!important;
+ background:rgba(249,247,239,.65)!important;
+ -webkit-backdrop-filter:blur(3px) saturate(1.06)!important;
+ backdrop-filter:blur(3px) saturate(1.06)!important
+}
+:host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{
+ width:min(265px,27%)!important;
+ background:rgba(249,247,239,.65)!important;
+ -webkit-backdrop-filter:blur(3px) saturate(1.06)!important;
+ backdrop-filter:blur(3px) saturate(1.06)!important
+}
+:host .stage .studio-drawer .studio-rail{
+ background:rgba(31,69,53,.74)!important;
+ -webkit-backdrop-filter:blur(2px)!important;
+ backdrop-filter:blur(2px)!important
+}
+:host .stage .maison-rail-panel .maison-rail-head{
+ background:rgba(255,252,242,.35)!important
+}
+:host .stage .studio-drawer .studio-scroll select{
+ background:rgba(255,254,249,.88)!important
+}
+@media(max-width:900px) and (orientation:landscape){
+ :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(232px,29%)!important}
+ :host .stage .maison-rail-panel{width:min(215px,28%)!important}
+}
+@media(max-width:760px) and (orientation:portrait){
+ :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(205px,42%)!important}
+ :host .stage .maison-rail-panel{width:min(180px,40%)!important}
+ :host .stage .studio-drawer .studio-rail.studio-labels{
+  width:52px!important;min-width:52px!important;flex-basis:52px!important
+ }
+ :host .stage .studio-drawer .studio-rail.studio-labels button span{font-size:8.5px!important}
+}
+@media(max-width:370px) and (orientation:portrait){
+ :host .stage .maison-phone:not([hidden]){top:61px!important;right:7px!important}
+}
+@media(max-width:760px),(max-height:500px) and (pointer:coarse){
+ :host .stage .maison-menu-toggle{left:6px!important;top:6px!important}
+ :host .stage #maison-dock:not([hidden]){left:57px!important;top:6px!important;gap:3px!important}
+ :host .stage #maison-dock:not([hidden]) button{
+  flex-basis:44px!important;width:44px!important;height:48px!important
+ }
+}

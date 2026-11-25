@@ -2,6 +2,7 @@ import {connectSalonEngine} from './salon-hud-native.js?v=hud54';
 // Le Salon : un seul système de navigation, discret et ancré au décor.
 // Les vrais contrôles sont déplacés dans les tiroirs ; aucun double système.
 const icons={
+ menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
  encounter:'<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M19 8v6m-3-3h6"/>',
  avatar:'<circle cx="12" cy="5" r="3"/><path d="M7 22v-7l-2-4 4-3h6l4 3-2 4v7M9 15h6"/>',
  clothes:'<path d="m8 3-5 4 3 5 3-2v11h6V10l3 2 3-5-5-4-4 2Z"/>',
@@ -47,7 +48,8 @@ export function createSalonNavigation(root){
  const $=selector=>root.querySelector(selector);
  const stage=$('.stage'),viewport=$('.scene-viewport'),footer=$('.conversation-footer');
  if(!stage||!viewport||!footer)return null;
- const dock='<nav class="maison-dock" aria-label="Fonctions du Salon">'+main.map(([id,name])=>'<button type="button" data-maison-open="'+id+'" title="'+name+'" aria-label="'+name+'" aria-expanded="false" aria-controls="maison-rail-panel">'+svg(id)+'<span>'+name+'</span></button>').join('')+'</nav>';
+ const menu='<button type="button" class="maison-menu-toggle" aria-label="Ouvrir le menu du Salon" aria-expanded="false" aria-controls="maison-dock" title="Menu du Salon">'+svg('menu')+'<span>Menu</span></button>';
+ const dock='<nav class="maison-dock" id="maison-dock" aria-label="Fonctions du Salon" hidden>'+main.map(([id,name])=>'<button type="button" data-maison-open="'+id+'" title="'+name+'" aria-label="'+name+'" aria-expanded="false" aria-controls="maison-rail-panel">'+svg(id)+'<span>'+name+'</span></button>').join('')+'</nav>';
  const panel='<section class="maison-rail-panel" id="maison-rail-panel" aria-label="Options du Salon" hidden>'+
  '<header class="maison-rail-head"><strong class="maison-rail-title">Options</strong><div>'+
  '<button type="button" data-maison-action="labels" title="Afficher les noms des icônes" aria-label="Afficher les noms des icônes" aria-pressed="false">'+svg('label')+'</button>'+
@@ -68,8 +70,8 @@ export function createSalonNavigation(root){
  '<div class="maison-slot maison-legacy-camera" data-maison-slot="camera"></div><section class="maison-native-category"><h3>Vues et commandes</h3><div class="maison-native-grid" data-native-zone="explore"></div></section></section>'+
  '</div></section>';
  const phone='<button class="maison-phone" type="button" hidden title="Conversation vocale" aria-label="Appeler le personnage" aria-expanded="false">'+svg('phone')+'</button>';
- viewport.insertAdjacentHTML('beforeend',dock+'<output class="maison-nav-current" role="status" aria-live="polite" hidden></output>'+panel+phone);
- const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),phoneNode=$('.maison-phone'),currentLabel=$('.maison-nav-current');
+ viewport.insertAdjacentHTML('beforeend',menu+dock+'<output class="maison-nav-current" role="status" aria-live="polite" hidden></output>'+panel+phone);
+ const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),menuToggle=$('.maison-menu-toggle'),phoneNode=$('.maison-phone'),currentLabel=$('.maison-nav-current');
  const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle');
  const voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
  const chat=$('.guest-message'),nativeStudio=$('.options-toggle');
@@ -83,7 +85,21 @@ export function createSalonNavigation(root){
  slots('leave').append($('.guest-leave'));
  viewport.append(voicePanel);
  let companion='',current=null,labels=false,lastFocus=null,historyOpen=false,engineBridge=null;
+ let menuExpanded=false;
  const labelMap=Object.fromEntries(main.map(([id,short,label])=>[id,label]));
+ function setMenuExpanded(expanded){
+   menuExpanded=Boolean(expanded);
+   mainDock.hidden=!menuExpanded;
+   menuToggle.setAttribute('aria-expanded',String(menuExpanded));
+   menuToggle.setAttribute('aria-label',menuExpanded?'Replier le menu du Salon':'Ouvrir le menu du Salon');
+   menuToggle.title=menuExpanded?'Replier le menu':'Ouvrir le menu';
+   if(!menuExpanded){
+     close();
+     if(nativeDrawerOpen())nativeStudio.click();
+   }
+   engineBridge?.sync();
+ }
+ menuToggle.onclick=()=>setMenuExpanded(!menuExpanded);
  function updateButtons(){
    const selected=main.find(item=>item[0]===current);
    currentLabel.textContent=selected?.[1]||'';
@@ -226,6 +242,7 @@ export function createSalonNavigation(root){
    if(!panelNode.hidden){close(true);event.preventDefault();}
    else if(!voicePanel.hidden){voicePanel.querySelector('.voice-conversation-close')?.click();event.preventDefault();}
  });
+ setMenuExpanded(false);
  sync();updateButtons();
  return {
    open,close,sync,

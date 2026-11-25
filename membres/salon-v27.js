@@ -3,7 +3,7 @@ import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=studio-rail1';
 import {createSalonChat} from './salon-chat.js?v=maison2';
-import {createSalonNavigation} from './salon-maison-ui.js?v=hud54';
+import {createSalonNavigation} from './salon-maison-ui.js?v=hud56';
 import {guestAppearance} from './salon-encounter.js?v=incarnations33';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -24,7 +24,28 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><link rel="stylesheet" href="/membres/salon-rail52.css?v=hud55"><style>
+    root.innerHTML=`<style id="salon-menu-critical">
+    /* Style chargé avant les feuilles externes : aucun clignotement de boutons géants. */
+    .scene-viewport{position:relative;min-width:0;min-height:0}
+    .v27-actions{visibility:hidden!important}
+    #maison-dock[hidden],:host .stage #maison-dock[hidden],.maison-rail-panel[hidden],.maison-phone[hidden],.studio-drawer[hidden]{display:none!important}
+    .maison-menu-toggle{box-sizing:border-box!important;position:absolute!important;z-index:30!important;top:8px!important;left:8px!important;
+      width:48px!important;min-width:48px!important;height:48px!important;min-height:48px!important;
+      padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;
+      gap:1px!important;border:1px solid #e0d3b4!important;border-radius:13px!important;background:rgba(34,75,57,.91)!important;
+      color:#fff6e3!important;box-shadow:0 2px 11px #102b2457!important;font:650 10px/1.1 system-ui!important}
+    .maison-menu-toggle svg{display:block!important;width:22px!important;height:22px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important}
+    .maison-menu-toggle span{display:block!important;font:650 10px/1.1 system-ui!important;color:inherit!important}
+    .maison-menu-toggle[aria-expanded="true"]{background:rgba(228,207,163,.94)!important;color:#214030!important}
+    .maison-dock{position:absolute!important;z-index:29!important;top:8px!important;left:61px!important;right:auto!important;bottom:auto!important;
+      display:flex!important;gap:4px!important;align-items:center!important;width:max-content!important;max-width:calc(100% - 115px)!important}
+    .maison-dock button{box-sizing:border-box!important;display:grid!important;place-items:center!important;flex:0 0 44px!important;
+      width:44px!important;min-width:44px!important;height:48px!important;min-height:48px!important;
+      padding:0!important;border-radius:12px!important;overflow:hidden!important;border:1px solid #e0d3b4!important;
+      background:rgba(34,75,57,.90)!important;color:#fff6e3!important;font-size:12px!important}
+    .maison-dock button svg{display:block!important;width:23px!important;height:23px!important}
+    .maison-dock button>span{position:absolute!important;width:1px!important;height:1px!important;clip-path:inset(50%)!important;overflow:hidden!important}
+    </style><link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><link rel="stylesheet" href="/membres/salon-rail52.css?v=hud56"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
