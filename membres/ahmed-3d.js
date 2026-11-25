@@ -10,7 +10,7 @@ async function startOpening(){
  // The author's Ahmed numérique entry shares the genuine voiced film and dojo,
  // not the unrelated short montage. Non-author visitors retain direct access.
  try{
-  if(sessionStorage.getItem('croisee-ahmed-introduction-originale-v34')!=='done'){
+  if(new URLSearchParams(location.search).get('intro')!=='terminee'&&sessionStorage.getItem('croisee-ahmed-introduction-originale-v34')!=='done'){
    const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)});
    if(response.ok&&(await response.json()).author){
     location.replace('/membres/intro-prive.html?salon=1&retour=ahmed');return;
