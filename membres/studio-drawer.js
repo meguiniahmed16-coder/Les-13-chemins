@@ -227,7 +227,7 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
  };
  return {toggle,selectCategory(category){
      const group=category==='body'?'avatar':category==='underwear'?'clothes':null;
-     if(drawer.hidden){toggle(true);if(group)iconNav.selectGroup(group);else iconNav.select(category);return;}
+     if(drawer.hidden){toggle(true);if(group)iconNav.selectGroup(group,{forceOpen:true});else iconNav.select(category);return;}
      if(group){iconNav.selectGroup(group);return;}
      if(iconNav.selected===category){iconNav.toggleSelected();return;}
      iconNav.select(category);

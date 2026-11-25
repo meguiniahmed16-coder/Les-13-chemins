@@ -141,10 +141,10 @@ export function createStudioIconNav(drawer,pane,{setMode}){
    collapsed=false;drawer.classList.remove('studio-icon-only');
    setMode(categories.find(x=>x[0]===category)[2]);update();return true;
  }
- function selectGroup(group){
+ function selectGroup(group,{forceOpen=false}={}){
    if(!Object.hasOwn(lastUsed,group))return false;
    const category=lastUsed[group];
-   if(category===selected&&!collapsed){toggleSelected();return true;}
+   if(!forceOpen&&category===selected&&!collapsed){toggleSelected();return true;}
    return select(category);
  }
  function toggleSelected(){
