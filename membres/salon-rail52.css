@@ -139,3 +139,63 @@
 /* Les commandes réservées à la conversation ne s’affichent jamais sans invité. */
 :host .stage .maison-phone[hidden]{display:none!important}
 :host .stage .maison-tool[hidden]{display:none!important}
+
+/* Coordinated HUD v54: active icon explains itself on the first tap.
+   All in-game commands are moved, not discarded. */
+:host .stage .maison-dock{z-index:28!important}
+:host .stage .maison-dock button[aria-pressed=true]{overflow:visible!important;isolation:isolate}
+:host .stage .maison-dock button[aria-pressed=true]>span{
+ position:absolute!important;clip-path:none!important;width:max-content!important;height:auto!important;
+ min-width:50px;max-width:128px!important;overflow:visible!important;
+ top:calc(100% + 5px)!important;left:50%!important;transform:translateX(-50%)!important;
+ padding:5px 8px!important;background:#e9dec5!important;color:#243d31!important;
+ border:1px solid #cbbd9d!important;border-radius:9px!important;
+ box-shadow:0 2px 7px #0a231b44!important;text-align:center;
+ font:700 11px/1.15 system-ui!important;white-space:normal!important;pointer-events:none!important;
+}
+:host .stage .maison-dock button:first-child[aria-pressed=true]>span{
+ left:0!important;transform:none!important
+}
+:host .stage .maison-nav-current{
+ position:absolute!important;width:1px!important;height:1px!important;clip-path:inset(50%)!important;
+ overflow:hidden!important;white-space:nowrap!important
+}
+:host .stage .maison-native-category{padding-top:8px;margin-top:4px;border-top:1px solid #c6d3c7}
+:host .stage .maison-native-category h3{margin:1px 0 8px;font:700 12px/1.3 system-ui;color:#405d49}
+:host .stage .maison-native-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+:host .stage .maison-native-grid .maison-native-action{min-height:56px;min-width:0}
+:host .stage .maison-native-grid .maison-native-action[aria-disabled=true]{opacity:.49}
+:host .stage .maison-native-grid .maison-native-action:focus-visible{outline:3px solid #c39a5b}
+:host .stage .maison-rail-panel{width:min(285px,42%)!important}
+:host .stage .maison-rail-room .maison-legacy-tools{display:none!important}
+:host .stage .maison-rail-room .maison-legacy-camera{display:none!important}
+:host .stage .maison-rail-room .maison-legacy-tools :is(button,input),
+:host .stage .maison-rail-room .maison-legacy-camera :is(button,input){pointer-events:none}
+:host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(340px,44%)!important}
+:host .stage .studio-drawer .studio-rail .maison-studio-peek{
+ position:sticky!important;top:0!important;left:auto!important;right:auto!important;bottom:auto!important;
+ z-index:3!important;display:grid!important;flex:0 0 auto!important;
+ width:47px!important;height:49px!important;min-width:47px!important;min-height:49px!important;
+ padding:0!important;margin:0 auto 5px!important;
+ border:1px solid #e9dabd80!important;border-radius:11px!important;
+ background:#315a49!important;color:#f6eada!important;
+ box-shadow:0 2px 10px #122a1e4c!important;font:700 22px/1 system-ui!important
+}
+:host .stage .studio-drawer.studio-icon-only .studio-rail .maison-studio-peek{display:grid!important}
+:host .stage .studio-drawer.studio-icon-only .studio-rail{flex-basis:100%!important}
+:host .stage.maison-studio-collapsed .studio-drawer{transform:none!important;opacity:1!important;pointer-events:auto!important}
+@media(max-width:760px),(max-height:500px) and (pointer:coarse){
+ :host .stage .maison-rail-panel{width:min(246px,47%)!important}
+ :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(300px,47%)!important}
+ :host .stage .maison-native-grid .maison-native-action{min-height:49px}
+}
+@media(max-width:600px) and (orientation:portrait){
+ :host .stage .maison-rail-panel{width:min(220px,55%)!important}
+ :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(250px,55%)!important}
+}
+
+/* The camera's original advanced controls remain usable within the camera room. */
+:host .stage .maison-rail-room .maison-legacy-camera{display:block!important;padding:5px 0!important}
+:host .stage .maison-rail-room .maison-legacy-camera button{pointer-events:auto!important}
+:host .stage .maison-rail-room .maison-legacy-camera .bar{position:static!important;gap:5px!important}
+:host .stage .maison-rail-room .maison-legacy-camera .bar button{min-height:45px!important;min-width:45px!important}

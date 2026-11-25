@@ -225,7 +225,7 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   catch(e){if(version===revision)message.textContent=e.message||'Enregistrement interrompu.';}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };
- return {toggle,selectCategory(category){
+ return {toggle,togglePreview(){return iconNav.toggleSelected();},selectCategory(category){
      const group=category==='body'?'avatar':category==='underwear'?'clothes':null;
      if(drawer.hidden){toggle(true);if(group)iconNav.selectGroup(group,{forceOpen:true});else iconNav.select(category);return;}
      if(group){iconNav.selectGroup(group);return;}

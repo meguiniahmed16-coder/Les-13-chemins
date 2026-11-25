@@ -518,6 +518,8 @@ for(let ring=0;ring<2;ring++){
 }
 const keys=new Set(),stick={x:0,y:0,id:null},orbit={angle:1.07,pitch:.23,radius:3.60,focus:new T.Vector3(-2.19,.78,-1.78),follow:false}, player=()=>encounter.active?encounter.friends.ahmed:actors[role], marker=new T.Vector3(),ray=new T.Raycaster(),pointer=new T.Vector2();
 let last=performance.now(),frameHandle=0,reachable=false,panTime=0,jumpLock=0,poseSeat=null,contextLost=false;
+// Projection offset keeps the full body visible in the free area beside a dock.
+let hudOcclusion={side:'left',fraction:0},hudShiftPixels=0;
 const pins={pin:$('pin'),ocre:$('ocre')},keyButtons=[...document.querySelectorAll('[data-role]')];
 const partner=()=>encounter.active?encounter.friends.lionel:visiting?visitor:actors[role==='f'?'m':'f'];
 const currentPair=()=>[player(),partner()];
@@ -708,7 +710,15 @@ function updateCam(dt){
  if(!focusShot&&cam.fov!==fieldOfView){cam.fov=fieldOfView;cam.updateProjectionMatrix()}
  if(conversation&&where==='salon'&&!shelfView)memberCamera();
  if(travel.active&&!detail.active){focusShot=null;travel.apply(dt);}
- if(detail.active){focusShot=null;detail.apply();}focusBookPrint();cam.updateMatrixWorld();
+ if(detail.active){focusShot=null;detail.apply();}
+ // Move only the framing, never resize the 3D canvas or change the avatar.
+ const enabled=document.body.classList.contains('unified-hud');
+ const desired=enabled?(hudOcclusion.side==='left'?-1:1)*Math.min(.46,hudOcclusion.fraction)*w*.5:0;
+ const gain=1-Math.exp(-Math.max(0,dt)*9);
+ hudShiftPixels+=gain*(desired-hudShiftPixels);
+ if(Math.abs(hudShiftPixels)>.4)cam.setViewOffset(w,h,hudShiftPixels,0,w,h);
+ else if(cam.view?.enabled)cam.clearViewOffset();
+ focusBookPrint();cam.updateMatrixWorld();
  const gardenEye=out?cam.position:marker.copy(cam.position).applyMatrix4(roomToGarden);
  for(const o of sprites)o.rotation.y=Math.atan2(gardenEye.x-o.position.x,gardenEye.z-o.position.z);
  const anchor=out?a.root.position:watchLead;distanceGroup.position.set(anchor.x,0,anchor.z);
@@ -1506,6 +1516,9 @@ const member=createMemberBridge({
    const image=document.createElement('canvas');image.width=image.height=128;
    const size=Math.min(canvas.width,canvas.height);image.getContext('2d').drawImage(canvas,(canvas.width-size)/2,(canvas.height-size)/2,size,size,0,0,128,128);
    renderer.render(scene,cam);return image.toDataURL('image/webp',.86);
+ },
+ setHudOcclusion({side='left',fraction=0}={}){
+   hudOcclusion={side:side==='right'?'right':'left',fraction:Math.min(.46,Math.max(0,Number(fraction)||0))};
  },
  clearCamera(){conversation=null;}
 });
