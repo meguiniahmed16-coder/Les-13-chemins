@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 parser = argparse.ArgumentParser()
 parser.add_argument("copy", type=Path)
 parser.add_argument("directory", type=Path)
+parser.add_argument("--music-credit", default="", help="Optional small credit on the closing card only.")
 args = parser.parse_args()
 copy = json.loads(args.copy.read_text())
 args.directory.mkdir(parents=True, exist_ok=True)
@@ -83,6 +84,15 @@ line(draw, 448, 355, 512, "#65765a")
 centered(draw, copy["site"], 397, SANS, 24)
 centered(draw, "ou contactez Ahmed Marie :", 435, SANS, 18, MUTED)
 centered(draw, copy["email"], 465, SANS, 20, MUTED)
+if args.music_credit:
+    centered(draw, args.music_credit, 492, SANS, 13, MUTED)
 save(closing, "closing.png")
+
+if args.music_credit:
+    # Transparent companion for an existing film: preserve its final panel and
+    # animate this line with the same entrance and exit as that panel.
+    overlay = Image.new("RGBA", (WIDTH * SCALE, HEIGHT * SCALE), (0, 0, 0, 0))
+    centered(ImageDraw.Draw(overlay), args.music_credit, 492, SANS, 13, MUTED)
+    save(overlay, "closing-music-credit.png")
 
 print(json.dumps({"opening": str(args.directory / "opening.png"), "closing": str(args.directory / "closing.png")}))

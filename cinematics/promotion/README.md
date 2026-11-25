@@ -34,6 +34,14 @@ node cinematics/promotion/compose.mjs /chemin/promotion-output --cards-only
 
 Cette commande écrit les deux cartons dans `cards/`, les sous-titres ASS/SRT et le plan de montage dans `provenance/montage.json`.
 
+Le crédit musical validé peut être préparé indépendamment du montage sonore :
+
+```sh
+node cinematics/promotion/compose.mjs /chemin/promotion-effervescence --cards-only --music-credit='Musique : Effervescence — Scott Buckley · CC BY 4.0 · scottbuckley.com.au'
+```
+
+Cette option ajoute une ligne de 13 pixels, centrée à la hauteur 492 du carton final de 960 × 540 pixels. Le site, le contact et l'appel à devenir compagnon de route gardent leur position. Elle produit aussi `cards/closing-music-credit.png`, un calque transparent pour incruster le même crédit dans un montage existant. Sans l'option, les cartons historiques restent identiques. Préparer un carton crédité ne télécharge ni n'intègre le morceau : le fichier musical doit être fourni séparément avant l'export sonore.
+
 Pendant le calcul des images Blender, préparer aussi les séquences existantes :
 
 ```sh
@@ -112,3 +120,17 @@ node cinematics/promotion/refresh.mjs /chemin/promotion-revision --source=/chemi
 ```
 
 Chaque extrait est normalisé séparément, puis placé sur une piste stéréo de 48 kHz. Le résultat est décodé intégralement et contrôlé avant d’être installé à son chemin final. Les preuves visuelles sont extraites dans `proof/`, et `provenance/revision.json` conserve les sources, coupes, timings, empreintes et crédits des vêtements. Sans manifeste vocal, la révision reste muette ; sa provenance l’indique explicitement.
+
+## Bande-son validée : Effervescence et bruitages
+
+La version de 59,50 secondes reçoit le début d’**Effervescence — Scott Buckley**, fourni localement par l’utilisateur, avec les bruitages et les ambiances enregistrés sous CC0. Les fichiers sonores restent hors du dépôt. La musique utilise CC BY 4.0 ; le crédit figure en petit dans le dernier panneau, dans les métadonnées et dans `Credits-Effervescence.txt` pour accompagner une publication.
+
+```sh
+python3 cinematics/promotion/mix-soundtrack.py --music=/chemin/Effervescence.mp3 --foley=/chemin/foley-final-real.wav --ambience=/chemin/ambience-final-real.wav --out=/chemin/bande-son
+node cinematics/promotion/compose.mjs /chemin/promotion-effervescence --cards-only --music-credit='Musique : Effervescence — Scott Buckley · CC BY 4.0 · scottbuckley.com.au'
+node cinematics/promotion/soundtrack.mjs --source=/chemin/revision/La-Croisee-des-Ames-promotion.mp4 --mix=/chemin/bande-son/La-Croisee-des-Ames-soundtrack.wav --music=/chemin/Effervescence.mp3 --credit=/chemin/promotion-effervescence/cards/closing-music-credit.png --out=/chemin/promotion-effervescence/La-Croisee-des-Ames-promotion.mp4 --sound-sources=/chemin/sources-CC0.json --audio-provenance=/chemin/bande-son/soundtrack-provenance.json
+```
+
+Le mix conserve la vitesse originale du morceau et les contacts des pieds déjà synchronisés. Il applique une entrée douce de 1,2 seconde, une sortie de 53,8 à 59,5 secondes, et de petits retraits de musique pendant la marche et le déploiement des ailes. Les bruitages et le fond restent séparés jusqu’au mix. La cible musicale est de −24 LUFS ; aucun limiteur, compresseur dynamique ni boucle musicale n’est ajouté.
+
+L’assemblage final vérifie l’empreinte de la révision visuelle, la durée du mix et les métadonnées du morceau fourni. Il refuse un film source qui contient déjà du son pour éviter d’écraser des voix ajoutées ultérieurement. Le crédit n’apparaît qu’entre 51,50 et 59,50 secondes, avec les fondus du panneau. Le MP4 final contient une piste AAC stéréo à 48 kHz et conserve les sous-titres existants ; cette version ne contient pas de voix enregistrées. Décodage intégral, témoins visuels et empreintes sont produits avant livraison.

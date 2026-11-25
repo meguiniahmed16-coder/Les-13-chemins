@@ -12,6 +12,7 @@ const here=path.dirname(fileURLToPath(import.meta.url)),repo=path.resolve(here,'
 const args=process.argv.slice(2),out=path.resolve(args.find(a=>!a.startsWith('--'))||'promotion-output');
 const archive=path.resolve(args.find(a=>a.startsWith('--archive='))?.slice('--archive='.length)||process.env.PROMOTION_ARCHIVE||'../verification');
 const cardsOnly=args.includes('--cards-only'),prepareOnly=args.includes('--prepare'),waitForRenders=args.includes('--wait'),assembleOnly=args.includes('--assemble-only');
+const musicCredit=args.find(a=>a.startsWith('--music-credit='))?.slice('--music-credit='.length)||'';
 const fps=20,width=960,height=540,transition=.25;
 const renderedFilter='nlmeans=s=3:p=5:pc=5:r=9:rc=9';
 for(const directory of ['cards','segments','provenance','proof'])fs.mkdirSync(path.join(out,directory),{recursive:true});
@@ -47,7 +48,7 @@ for(const [index,clip]of clips.entries()){
 }
 const duration=cursor,clipById=new Map(clips.map(clip=>[clip.id,clip]));
 writeJSON('promotion-copy.json',PROMOTION);
-run('python3',[path.join(here,'cards.py'),path.join(out,'promotion-copy.json'),path.join(out,'cards')]);
+run('python3',[path.join(here,'cards.py'),path.join(out,'promotion-copy.json'),path.join(out,'cards'),...(musicCredit?['--music-credit',musicCredit]:[])]);
 
 // All captions use the same scene clock as the final edit. Their boxes stay
 // above the characters, leaving their planted and lifted shoes unobstructed.
@@ -90,7 +91,7 @@ fs.writeFileSync(path.join(out,'provenance','credits.txt'),creditLines.join('\n'
 const sourceFile=path.join(out,'provenance.json');
 const source=fs.existsSync(sourceFile)?JSON.parse(fs.readFileSync(sourceFile,'utf8')):{};
 const montage={
- title:PROMOTION.title,copy:PROMOTION,width,height,fps,duration,transition:{kind:'crossfade',seconds:transition},silent:true,burnedInSubtitles:true,
+ title:PROMOTION.title,copy:PROMOTION,width,height,fps,duration,transition:{kind:'crossfade',seconds:transition},silent:true,burnedInSubtitles:true,closingMusicCredit:musicCredit||null,
  postprocess:{renderedPlansOnly:renderedFilter,cardsAndExistingVideos:'No denoising'},
  clips:clips.map(({segment,...clip})=>({...clip,segment:relative(segment)})),captions,
  attributions:{wings,garments},
