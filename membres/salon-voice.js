@@ -46,7 +46,7 @@ export function spokenSamples(samples,rate,text,last){
 const AudioEngine=globalThis.AudioContext||globalThis.webkitAudioContext;
 export function createLocalVoices(status,wake){
   if(!AudioEngine||!globalThis.Worker||!globalThis.WebAssembly)return null;
-  let ctx,worker,active=null,seq=0,workerTimeout,idleTimeout,unavailable=false;
+  let ctx,worker,active=null,seq=0,workerTimeout,idleTimeout,unavailable=false,prepared=false;
   const pending=new Set();
   function releaseLater(){
     clearTimeout(idleTimeout);
@@ -80,10 +80,11 @@ export function createLocalVoices(status,wake){
     }catch{unavailable=true;return false;}
   }
   function connectWorker(){
-    if(!worker){worker=new Worker(new URL('./salon-voice-worker.js?v=salon41',import.meta.url),{type:'module'});worker.onmessage=receive;worker.onerror=fail;}
+    if(!worker){prepared=false;worker=new Worker(new URL('./salon-voice-worker.js?v=salon65',import.meta.url),{type:'module'});worker.onmessage=receive;worker.onerror=fail;}
     return worker;
   }
   function receive({data:m}){
+    if(m.type==='ready'){prepared=true;return;}
     if(!active)return;
     if(m.type==='progress'){
       armTimeout();status(m.percentage<100?'Chargement des voix françaises · '+m.percentage+' %':'Préparation des voix françaises…');return;
@@ -112,7 +113,7 @@ export function createLocalVoices(status,wake){
     source.start(from);status('');wake();
   }
   return {
-    get available(){return !unavailable;},unlock,stop,disable,
+    get available(){return !unavailable;},get prepared(){return prepared&&!unavailable;},unlock,stop,disable,
     pause(){try{if(ctx?.state==='running')void ctx.suspend().catch(()=>{});}catch{}},
     resume(){try{if(ctx?.state==='suspended')void ctx.resume().catch(()=>{});}catch{}},
     prepare(){
