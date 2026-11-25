@@ -900,13 +900,13 @@ bubbleToggle?.addEventListener('click',()=>{
  try{localStorage.setItem(bubblePreferenceKey,String(bubblesEnabled));}catch{}
  syncIntroBubbles();
 });
-syncIntroBubbles();
+if(typeof canvasHost!=='undefined'&&canvasHost?.classList)syncIntroBubbles();
 let cinematicVoiceEnabled=false,cinematicUtterance=null,cinematicLocalVoices=null,cinematicSpeechEpoch=0,usingLocalVoice=false;
 const cinematicSynth=globalThis.speechSynthesis;
 function prepareCinematicVoices(){
  // One user gesture unlocks the existing, local two-speaker voice model.
  // The introduction gives it time to preload before the dojo.
- if(!cinematicLocalVoices)cinematicLocalVoices=createLocalVoices(()=>{},()=>{});
+ if(!cinematicLocalVoices&&typeof createLocalVoices==='function')cinematicLocalVoices=createLocalVoices(()=>{},()=>{});
  if(cinematicLocalVoices){cinematicLocalVoices.unlock();cinematicLocalVoices.prepare();}
  cinematicSynth?.getVoices?.();
 }
@@ -921,7 +921,7 @@ function browserCinematicVoice(id,text,token){
  const gender=id==='f'?'femme':'homme';
  const utterance=new SpeechSynthesisUtterance(text);
  utterance.lang='fr-FR';utterance.rate=1.05;utterance.volume=.98;
- const selected=frenchVoice(cinematicSynth,gender,true,false);
+ const selected=typeof frenchVoice==='function'?frenchVoice(cinematicSynth,gender,true,false):null;
  // When the browser has only one unnamed French voice, voice pitch remains
  // distinctive; the local Pierre/Jessica synthesis is preferred in the dojo.
  const fallback=(cinematicSynth.getVoices?.()||[]).find(v=>/^fr(?:-|_|$)/i.test(v.lang));
@@ -934,7 +934,7 @@ function browserCinematicVoice(id,text,token){
 function speakCinematicCue(id,text){
  if(!cinematicVoiceEnabled||document.hidden||!id||!text)return;
  const gender=id==='f'?'femme':'homme',token=cinematicSpeechEpoch;
- const matched=frenchVoice(cinematicSynth,gender,true,false);
+ const matched=typeof frenchVoice==='function'?frenchVoice(cinematicSynth,gender,true,false):null;
  // In the dojo use the two original local Salon voices: Pierre for Ahmed,
  // Jessica for Marianne. No network speech service or private key is required.
  if((stage==='dojo'||!matched)&&cinematicLocalVoices?.available){
@@ -1063,7 +1063,7 @@ function applyDialogueProjection(projection){
  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 }
 function anchorBubble(line,elapsed){
- const preview=dojoWardrobe?.previewActor,speaker=preview||speakerActor(currentSpeaker);if(!bubblesEnabled||!speaker||bubble.hidden)return;
+ const preview=dojoWardrobe?.previewActor,speaker=preview||speakerActor(currentSpeaker);if(canvasHost.classList?.contains?.('bubbles-off')||!speaker||bubble.hidden)return;
  bubble.classList.toggle('narration',!!preview);
  const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
  if(!bubbleLayout||bubbleLayout.w!==w||bubbleLayout.h!==h){
