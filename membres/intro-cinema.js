@@ -19,10 +19,10 @@ function finishSalonEntry(){
  if(!salonEntryMode)return;
  const returnTo=new URLSearchParams(location.search).get('retour');
  const destinations={
-  ahmed:['croisee-ahmed-introduction-originale-v34','/ahmed-marie.html#ahmed-numerique'],
-  invite:['croisee-invite-introduction-originale-v34','/salon-invite.html']
+  ahmed:['croisee-ahmed-introduction-originale-v34','/ahmed-marie.html?intro=terminee#ahmed-numerique'],
+  invite:['croisee-invite-introduction-originale-v34','/salon-invite.html?intro=terminee']
  };
- const chosen=destinations[returnTo]||[originalIntroKey,'/membre.html#salon'];
+ const chosen=destinations[returnTo]||[originalIntroKey,'/membre.html?intro=terminee#salon'];
  try{sessionStorage.setItem(chosen[0],'done');}catch{}
  const action=new URLSearchParams(location.search).get('ouvrir');
  const suffix=returnTo==='invite'&&['inviter','appeler'].includes(action)?'?ouvrir='+action:'';
