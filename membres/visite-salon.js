@@ -122,7 +122,7 @@ async function beginGuestEntry(){
  // For the author, reuse the full original film instead of showing another
  // unrelated tour. The temporary visitor session starts only after the film.
  let done=false;try{done=sessionStorage.getItem('croisee-invite-introduction-originale-v34')==='done';}catch{}
- if(done){introDone=true;check();return;}
+ if(done||new URLSearchParams(location.search).get('intro')==='terminee'){introDone=true;check();return;}
  try{
   const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)});
   if(response.ok&&(await response.json()).author){
