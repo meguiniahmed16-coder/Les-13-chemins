@@ -1,12 +1,24 @@
 // Ahmed numérique uses the original Ahmed V27 rig and the consented,
 // rate-limited text service. No private voice key is sent to visitors.
 import {referenceStudio} from './studio-look.js?v=incarnations33';
-import {beginSalonOpening} from './salon-cinema.js?v=cinema61';
 const $=id=>document.getElementById(id);
 const host=$('ahmed-3d-room'),call=$('ahmed-call'),hang=$('ahmed-hangup'),status=$('ahmed-call-status');
 const Speech=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
-let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=null;
-function startOpening(){if(!opening)opening=beginSalonOpening(host);void mount().then(view=>view?opening.ready():opening.fail());}
+let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=false;
+async function startOpening(){
+ if(opening)return;opening=true;
+ // The author's Ahmed numérique entry shares the genuine voiced film and dojo,
+ // not the unrelated short montage. Non-author visitors retain direct access.
+ try{
+  if(sessionStorage.getItem('croisee-ahmed-introduction-originale-v34')!=='done'){
+   const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)});
+   if(response.ok&&(await response.json()).author){
+    location.replace('/membres/intro-prive.html?salon=1&retour=ahmed');return;
+   }
+  }
+ }catch{/* Public visitors can still speak to Ahmed without an author session. */}
+ void mount();
+}
 function note(value){status.textContent=value;}
 async function mount(){
  if(actor)return actor;
