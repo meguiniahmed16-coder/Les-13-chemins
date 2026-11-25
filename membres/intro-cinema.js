@@ -581,7 +581,7 @@ async function loadAhmed(){
  }
  showBootStage('Assemblage du personnage d’Ahmed…');
  const asset=await decodeAhmed(all.buffer);
- const root=new T.Group(),body=asset.scene;root.add(body);root.name='Ahmed';root.position.set(-.78,.0206,.42);root.rotation.y=Math.PI;scene.add(root);
+ const root=new T.Group(),body=asset.scene;root.add(body);root.name='Ahmed Marie';root.position.set(-.78,.0206,.42);root.rotation.y=Math.PI;scene.add(root);
  const bones=new Map(),mouth=[];
  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
  let pants;
@@ -861,7 +861,7 @@ function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
  const b=document.createElement('b'),p=document.createElement('p');
- b.textContent=actor?.root.name||(id==='m'?'Ahmed':id==='f'?'Marianne':'La Croisée des Âmes');p.textContent=text.replaceAll('{pseudo}',alias);
+ b.textContent=id==='m'?'Ahmed Marie':id==='f'?'Marianne':actor?.root.name||'La Croisée des Âmes';p.textContent=text.replaceAll('{pseudo}',alias);
  bubble.replaceChildren(b,p);bubble.hidden=false;
  // Place the complete reply only after the new camera is set, then latch it.
  // No alternate footer, typewriter animation or per-frame position switching.

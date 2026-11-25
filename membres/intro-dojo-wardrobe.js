@@ -9,19 +9,20 @@ import {DOJO_CAST,dojoCastLook,dojoCastState,dojoCastPose,styleDojoCastFigure,st
 export const DOJO_LOOKS=Object.freeze([
  {id:'original',label:'Blanc',color:'#eee8da',kind:'outfit',m:introOutfits.m,f:introOutfits.f},
  {id:'elegance',label:'Élégance',color:'#723e4a',kind:'outfit',
-  description:'Ahmed : costume anthracite et cravate. Marianne : robe bordeaux.',
+  description:'Ahmed Marie : costume anthracite et cravate. Marianne : chemise bordeaux et pantalon anthracite.',
   m:{robe:'mhs-male_elegantsuit01',souliers:'mh438'},
-  f:{robe:'mh1853',souliers:'mh1734'}},
+  f:{haut:'mh1800',bas:'mh391',souliers:'mh1734'},
+  palette:{f:{mh1800:'#723e4a',mh391:'#303844'}}},
  {id:'jardin',label:'Jardin',color:'#c4b18b',kind:'outfit',
-  description:'Ahmed : chemise sable et pantalon bleu nuit. Marianne : haut sauge et jean bleu nuit.',
+  description:'Ahmed Marie : chemise sable et pantalon bleu nuit. Marianne : haut sauge et jean bleu nuit.',
   m:{haut:'mh1800',bas:'mh1796',souliers:'mh438'},
   f:{haut:'mh22',bas:'mh391',souliers:'mh1734'},
   palette:{m:{mh1800:'#dfcda8',mh1796:'#41566f'},f:{mh22:'#7c9b8e',mh391:'#2d3f59'}}},
  {id:'dessous',label:'Dessous',color:'#496078',kind:'underwear',
-  description:'Ahmed : T-shirt blanc et caleçon marine. Marianne : caraco ivoire et shorty marine.',
+  description:'Ahmed Marie : T-shirt blanc et caleçon marine. Marianne : T-shirt ivoire et shorty marine.',
   m:{haut:'mh1416',culotte:'mh3462',souliers:'mh438'},
-  f:{haut:'mh1726',culotte:'mh3461',souliers:'mh1734'},
-  palette:{f:{mh1726:'#f1e8d6',mh3461:'#41566f'}}}
+  f:{haut:'mh22',culotte:'mh3461',souliers:'mh1734'},
+  palette:{f:{mh22:'#f1e8d6',mh3461:'#41566f'}}}
 ]);
 export const DOJO_WARDROBE_CUES=Object.freeze([
  {at:0,index:0},{at:900,index:1},{at:2600,index:2},{at:4300,index:3},

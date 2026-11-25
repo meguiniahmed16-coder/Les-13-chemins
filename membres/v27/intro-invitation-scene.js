@@ -9,7 +9,7 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
 const pulse=(t,a,b)=>smooth((t-a)/600)*(1-smooth((t-b)/700));
 // The entry-side strip is free of the sofa, coffee table, armchair and dining
-// chairs. Materialization changes opacity only: all soles already touch floor.
+// chairs. Guests appear as complete opaque figures with their soles on the floor.
 export const INTRO_INVITATION_POSITIONS=Object.freeze({
  m:Object.freeze({x:-1.20,z:-1.91,yaw:.18}),
  f:Object.freeze({x:-.25,z:-1.83,yaw:-.12}),
@@ -31,7 +31,6 @@ export async function prepareIntroInvitationGuests(scene,{
    let actor;
    try{actor=await create(root,figure,{look,gender:item.gender});}catch(error){root.removeFromParent();throw error;}
    actor.invitationExample=example;
-   actor.invitationMaterials=actor.parts.map(part=>({material:part.obj.material,opacity:part.obj.material.opacity,transparent:part.obj.material.transparent,depthWrite:part.obj.material.depthWrite,alphaTest:part.obj.material.alphaTest}));
    guests.push(actor);
   }
   return guests;
@@ -39,17 +38,23 @@ export async function prepareIntroInvitationGuests(scene,{
 }
 
 export function applyIntroInvitationGuest(actor,pose,time){
- const opacity=clamp(Number(pose.opacity)||0,0,1);
- actor.root.visible=opacity>.002;
+ // The common cue is reveal progress, not skin or fabric opacity. Blending
+ // every layer exposes eyes/teeth through the face and defeats clothing masks.
+ // Only the separate floor halo fades; the complete, depth-tested actor is
+ // switched on after its pose is ready, and switched off as one unit on exit.
+ const progress=clamp(Number(pose.opacity)||0,0,1);
+ actor.root.visible=false;
  actor.root.position.set(pose.x,0,pose.z);actor.root.rotation.set(0,pose.yaw,0);
- for(const state of actor.invitationMaterials){
-  const material=state.material,transparent=state.transparent||opacity<.999;
-  if(material.transparent!==transparent){material.transparent=transparent;material.needsUpdate=true;}
-  material.opacity=state.opacity*opacity;material.depthWrite=opacity>=.999&&state.depthWrite;
-  material.alphaTest=state.alphaTest*opacity;
+ if(actor.invitationReveal){
+  const halo=actor.invitationReveal;
+  halo.position.set(pose.x,.016,pose.z);halo.scale.setScalar(.84+.20*progress);
+  halo.material.opacity=.22*Math.sin(Math.PI*progress);
+  halo.visible=halo.material.opacity>.002;
  }
- if(actor.shadow)actor.shadow.material.opacity=.85*opacity;
- if(actor.root.visible)actor.pose(0,{time,energy:.14,emphasis:0,headYaw:pose.expression.look,poseGesture:pose.expression.gesture});
+ if(progress<.5)return;
+ actor.pose(0,{time,energy:.14,emphasis:0,headYaw:pose.expression.look,poseGesture:pose.expression.gesture});
+ actor.root.updateMatrixWorld(true);
+ actor.root.visible=true;
 }
 
 function frameCamera(time,cue,viewport,layout){

@@ -184,11 +184,11 @@ export function dojoDirectedCamera({line,elapsed,aspect=16/9,actors,bounds,floor
   // The four native avatars share one exhibition mark. A common envelope
   // keeps the frame stable when their height and build change, with room
   // for the dialogue above and the small selection panel below.
-  const body=line.id==='dojo-apparence',lower=base+(body?.58:0),upper=base+2.08;
+  const lower=base,upper=base+2.08;
   const aim=previewActor.root.position.clone();aim.y=(lower+upper)*.5;
-  const eye=boundedEye(aim,Math.PI+lerp(-.16,.16,s),body?2.72:3.22,base+1.46,bounds),envelope=[];
+  const eye=boundedEye(aim,Math.PI+lerp(-.16,.16,s),3.22,base+1.46,bounds),envelope=[];
   for(const x of [-.67,.67])for(const z of [-.30,.30])for(const y of [lower,upper])envelope.push(new T.Vector3(aim.x+x,y,aim.z+z));
-  return {eye,aim,fov:fitFramingFov(eye,aim,aspect,envelope,body?34:40),roll:0,framing:body?'american':'wide',subject:'preview',cutKey:line.id};
+  return {eye,aim,fov:fitFramingFov(eye,aim,aspect,envelope,40),roll:0,framing:'wide',subject:'preview',cutKey:line.id};
  }
  const pair=actors.filter(a=>a.id==='m'||a.id==='f'),byId=new Map(pair.map(a=>[a.id,a]));
  if(pair.length!==2)throw Error('Le cadrage du dojo nécessite les deux personnages.');
@@ -206,8 +206,8 @@ export function dojoDirectedCamera({line,elapsed,aspect=16/9,actors,bounds,floor
   framing='american';lower=base+.64;distance=3.08;minimum=29;azimuth=lerp(Math.PI+.28,Math.PI-.22,s);height=base+1.45;
   if(aspect<.95){subject=line.speaker==='f'?'f':'m';targets=[byId.get(subject)];distance=2.0;azimuth=subject==='m'?2.40:3.88;}
  }else if(line.id==='dojo-apparence'){
-  // Show the actual silhouette switch first (at1.8s), holding the hips and
-  // shoulders through4.5s. Only then approach the face for the final detail.
+  // Return to Marianne after the single cast gallery. Hold the hips and
+  // shoulders through4.5s, then approach her face without changing bodies.
   subject='f';targets=[byId.get(subject)];appearancePush=segment(t,.45,.71);closeBlend=segment(t,.71,.92);
   framing=appearancePush<.28?'american':appearancePush<.94?'medium':closeBlend>.65?'detail':'close';
   halfWidth=lerp(lerp(.37,.20,appearancePush),.12,closeBlend);halfDepth=0;

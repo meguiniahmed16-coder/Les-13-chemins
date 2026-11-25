@@ -41,17 +41,20 @@ test('body and wardrobe selection match the exact live geometry-switch timeline'
   }
  }
  const body=cue('dojo-apparence');
- assert.equal(dojoDemoFrame(body,2000).label,DOJO_CAST[0].bodyLabel);
- assert.equal(dojoDemoFrame(body,7000).label,DOJO_CAST[2].bodyLabel);
+ for(let ms=800;ms<9200;ms+=83){
+  const shown=dojoDemoFrame(body,ms);
+  assert.equal(shown.castIndex,-1,'The detail shot keeps the hosts instead of restarting the gallery');
+  assert.equal(shown.pointer,-1);assert.equal(shown.context,'Marianne');
+  assert.equal(shown.label,'Visage et silhouette');
+ }
 });
 
 test('the selection shows four actual examples rather than restricting the choice to the two hosts',()=>{
- const characters=cue('dojo-personnaliser',12000),body=cue('dojo-apparence',10000);
+ const characters=cue('dojo-personnaliser',12000);
  for(let i=0;i<DOJO_CAST.length;i++){
-  const shown=dojoDemoFrame(characters,i*3000+1000),silhouette=dojoDemoFrame(body,i*2500+1000);
+  const shown=dojoDemoFrame(characters,i*3000+1000);
   assert.equal(shown.castIndex,i);assert.equal(shown.pointer,i);assert.equal(shown.label,DOJO_CAST[i].label);
   assert.equal(shown.context,`${i+1} / 4`);assert.doesNotMatch(shown.context,/Ahmed|Marianne/);
-  assert.equal(silhouette.castIndex,i);assert.equal(silhouette.label,DOJO_CAST[i].bodyLabel);
  }
  assert.equal(dojoDemoFrame(characters,2200,{wardrobe:{ready:false,castIndex:0}}).visible,false);
 });
@@ -66,7 +69,7 @@ test('a not-yet-ready real wardrobe cannot be misrepresented by the preview',()=
 test('the underwear selection is brief, complete for the pair, and followed by a return to white',()=>{
  const line=cue('dojo-vetements',12000),frame=dojoDemoFrame(line,5000);
  assert.equal(DOJO_LOOKS.length,4);assert.equal(frame.title,'Sous-vêtements');assert.equal(frame.lookIndex,3);
- assert.equal(frame.context,'Ahmed · Marianne');assert.match(frame.description,/caleçon marine/);assert.match(frame.description,/shorty marine/);
+ assert.equal(frame.context,'Ahmed Marie · Marianne');assert.match(frame.description,/caleçon marine/);assert.match(frame.description,/shorty marine/);
  assert.notEqual(dojoDemoFrame(line,4200).lookIndex,3);assert.notEqual(dojoDemoFrame(line,6000).lookIndex,3);
  assert.equal(dojoDemoFrame(line,10000).lookIndex,0);
 });

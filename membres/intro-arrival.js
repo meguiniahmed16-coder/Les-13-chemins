@@ -29,7 +29,7 @@ export function arrivalFrame(elapsed,{promo=false}={}){
 // The parent owns the clock; opening a report pauses the actors, butterflies,
 // controls and end card together. Loading has an explicit ready/error protocol.
 export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout,
- onState=()=>{},onFrame=()=>{},onProblem=()=>{},src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee29'}){
+ onState=()=>{},onFrame=()=>{},onProblem=()=>{},src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee30'}){
  let state='idle',api=null,invitation=null,gardenBegun=false,startedAt=0,elapsed=0,paused=false,promo=false,skip=false,timeout=null,generation=0,finished=false;
  const emit=(phase,detail='')=>{state=phase;onState({phase,detail});};
  const cancelTimeout=()=>{if(timeout!==null)clearTimer(timeout);timeout=null;};
@@ -117,7 +117,7 @@ export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{}
  card.querySelector('.promotion-music-credit').textContent=PROMOTION.musicCredit;
  let shown='',bubbleSize='',promo=false;
  function dialogue(on,text=PROMOTION.dialogue,salon=false){
-  if(on&&shown!==text){const b=doc.createElement('b'),p=doc.createElement('p');b.textContent='Ahmed';p.textContent=text;bubble.replaceChildren(b,p);bubble.classList.remove('above','below','left','right');bubble.classList.add('above');bubble.hidden=false;bubble.style.visibility='visible';shown=text;bubbleSize='';}
+  if(on&&shown!==text){const b=doc.createElement('b'),p=doc.createElement('p');b.textContent='Ahmed Marie';p.textContent=text;bubble.replaceChildren(b,p);bubble.classList.remove('above','below','left','right');bubble.classList.add('above');bubble.hidden=false;bubble.style.visibility='visible';shown=text;bubbleSize='';}
   if(!on&&shown){bubble.hidden=true;shown='';}
   if(on){const w=host.clientWidth,h=host.clientHeight,key=w+'x'+h+':'+salon;if(key!==bubbleSize){bubbleSize=key;const width=salon?Math.min(w-28,740):Math.min(w-28,w<560?330:h<350?Math.min(300,w*.42):420);bubble.style.width=width+'px';bubble.style.left=(w-width)/2+'px';bubble.style.top=salon?'8px':'14px';bubble.style.setProperty('--tail-x','35%');}}
  }

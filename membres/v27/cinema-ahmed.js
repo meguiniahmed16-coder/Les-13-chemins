@@ -95,7 +95,7 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>pe
  let active=true,last='',current=modelActor.wardrobe;
  const activeMotion={apply(matrices){current.apply(matrices);},release(){}};
  for(const part of compact)part.obj.visible=false;
- actor.parts=originalParts;actor.root.name='Ahmed';actor.id='m';actor.motion=activeMotion;
+ actor.parts=originalParts;actor.root.name='Ahmed Marie';actor.id='m';actor.motion=activeMotion;
  function resetRig(){for(const [i,bone] of rig.entries()){bone.position.copy(rest[i].p);bone.quaternion.copy(rest[i].q);bone.scale.copy(rest[i].s);}}
  function activate(){active=true;holder.visible=true;actor.id='m';actor.root.scale.setScalar(1.075);actor.motion=activeMotion;last='';}
  const controller={

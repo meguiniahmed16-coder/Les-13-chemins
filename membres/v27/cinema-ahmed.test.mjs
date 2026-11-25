@@ -61,7 +61,7 @@ test('legacy fragments are a compatible-host fallback; authorization failure is 
 
 test('the original source transform is preserved once, and navigation/seat/flight matrices reach its rig',async()=>{
  const x=fixture(),controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,now:x.now});
- assert.equal(controller.active,true);assert.equal(x.actor.root.name,'Ahmed');assert.equal(x.compact.obj.visible,false);
+ assert.equal(controller.active,true);assert.equal(x.actor.root.name,'Ahmed Marie');assert.equal(x.compact.obj.visible,false);
  assert.equal(x.calls.length,1);assert.ok(x.calls[0].rig.every((bone,i)=>bone===x.bones[i]));
  x.actor.root.updateMatrixWorld(true);
  const head=x.bones[1].getWorldPosition(new T.Vector3());

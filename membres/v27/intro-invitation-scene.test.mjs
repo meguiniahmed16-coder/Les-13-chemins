@@ -94,15 +94,81 @@ test('a failed second guest preparation removes the first instead of exposing a 
  assert.equal(disposed,1);assert.equal(scene.children.length,0);
 });
 
-test('guest materialization changes opacity while the native rig keeps its fixed ground origin',()=>{
- const material=new T.MeshStandardMaterial({alphaTest:.23}),calls=[];
- const actor={root:new T.Group(),invitationMaterials:[{material,opacity:1,transparent:false,depthWrite:true,alphaTest:.23}],pose:(n,g)=>calls.push(g)};
- const frame=introInvitationFrame(4200),pose=frame.actors.guest;
+function guestFixture(){
+ const root=new T.Group(),body=new T.Group(),calls=[];root.visible=false;root.scale.setScalar(1.075);root.add(body);
+ const parts=['body','eyesNative','teethNative','tongueNative','lashes','shirt','trousers','shoes'].map(name=>{
+  const material=new T.MeshStandardMaterial({alphaTest:name==='lashes'?.08:.23});
+  const obj=new T.Mesh(new T.BoxGeometry(.2,.3,.1),material);obj.name=name;body.add(obj);
+  return {obj,index:obj.geometry.index.array.slice(),alphaTest:material.alphaTest};
+ });
+ const invitationReveal=new T.Mesh(new T.RingGeometry(.43,.48,48),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+ invitationReveal.visible=false;
+ return {root,body,parts,invitationReveal,calls,pose(amount,gesture){
+  assert.equal(root.visible,false,'Complete pose and feet placement must finish before the figure is exposed');
+  calls.push({amount,gesture});body.position.y=.002/root.scale.y;
+ }};
+}
+
+test('both complete guests keep opaque skin, facial occlusion, clothing cutouts and legs throughout entry and exit',()=>{
+ const guests=[guestFixture(),guestFixture()],seen=new Set();
+ for(let elapsed=0;elapsed<=INTRO_INVITATION_DURATION;elapsed+=25){
+  const frame=introInvitationFrame(elapsed);
+  for(const [index,actor]of guests.entries()){
+   const selected=index===frame.cue.guestIndex;
+   const progress=selected?frame.actors.guest.opacity:0;
+   applyIntroInvitationGuest(actor,{...frame.actors.guest,opacity:progress},frame.time);
+   assert.equal(actor.root.visible,progress>=.5,`Guest ${index} at ${elapsed}ms`);
+   if(actor.root.visible)seen.add(index);
+   assert.equal(actor.root.position.y,0);assert.equal(actor.root.scale.y,1.075);
+   assert.deepEqual([actor.root.position.x,actor.root.position.z],[.8,-1.82]);
+   for(const part of actor.parts){
+    const material=part.obj.material;
+    assert.equal(material.opacity,1,`${part.obj.name} must never become translucent at ${elapsed}ms`);
+    assert.equal(material.transparent,false,`${part.obj.name} must remain in the opaque draw pass`);
+    assert.equal(material.depthWrite,true,`${part.obj.name} must occlude inner face and body surfaces`);
+    assert.equal(material.depthTest,true);
+    assert.equal(material.alphaTest,part.alphaTest,'Fabric and hair cutouts must not change during transitions');
+    assert.equal(part.obj.visible,true,'No individual limb or garment is revealed ahead of the complete figure');
+    assert.deepEqual(part.obj.geometry.index.array,part.index,'The reveal must not cut away body or clothing triangles');
+   }
+   assert.equal(actor.invitationReveal.material.depthWrite,false,'Only the decorative floor light may fade');
+   assert.ok(actor.invitationReveal.material.opacity>=0&&actor.invitationReveal.material.opacity<=.22);
+   if(!selected)assert.equal(actor.invitationReveal.visible,false,'The previous guest leaves no residual halo');
+  }
+  assert.ok(guests.filter(actor=>actor.root.visible).length<=1,'Two guests never occupy the same place together');
+ }
+ assert.deepEqual([...seen],[0,1]);
+ // The first figure leaves as a whole; the second is also fully dressed at
+ // its first visible frame. Their native body materials never receive a fade.
+ for(const [elapsed,index,visible]of [[4199,0,false],[4200,0,true],[8700,0,true],[8701,0,false],[11799,1,false],[11800,1,true]]){
+  const frame=introInvitationFrame(elapsed),actor=guests[index];
+  applyIntroInvitationGuest(actor,frame.actors.guest,frame.time);
+  assert.equal(actor.root.visible,visible,`${elapsed}ms`);
+ }
+});
+
+test('the first visible guest frame has a finished pose and world matrices, with only a floor halo fading',()=>{
+ const actor=guestFixture(),frame=introInvitationFrame(4200),pose=frame.actors.guest;
  applyIntroInvitationGuest(actor,pose,frame.time);
- assert.equal(actor.root.position.y,0);assert.equal(actor.root.visible,true);assert.equal(material.opacity,.5);assert.equal(material.depthWrite,false);
- assert.equal(calls[0].time,4.2);assert.deepEqual(calls[0].poseGesture,pose.expression.gesture);
- applyIntroInvitationGuest(actor,{...pose,opacity:0},4.2);assert.equal(actor.root.visible,false);assert.equal(actor.root.position.y,0);
- applyIntroInvitationGuest(actor,{...pose,opacity:1},4.8);assert.equal(material.transparent,false);assert.equal(material.depthWrite,true);assert.equal(material.alphaTest,.23);
+ assert.equal(actor.root.visible,true);assert.equal(actor.calls.length,1);
+ assert.equal(actor.calls[0].gesture.time,4.2);assert.deepEqual(actor.calls[0].gesture.poseGesture,pose.expression.gesture);
+ assert.ok(Math.abs(actor.body.getWorldPosition(new T.Vector3()).y-.002)<1e-9,'Foot placement is reflected in world space before exposure');
+ assert.equal(actor.invitationReveal.visible,true);assert.equal(actor.invitationReveal.material.opacity,.22);
+ assert.deepEqual(actor.invitationReveal.position.toArray(),[.8,.016,-1.82]);
+ applyIntroInvitationGuest(actor,pose,frame.time);
+ assert.equal(actor.root.visible,true);assert.equal(actor.invitationReveal.material.opacity,.22,'Repeated timestamps are stable');
+ applyIntroInvitationGuest(actor,{...pose,opacity:0},4.2);
+ assert.equal(actor.root.visible,false);assert.equal(actor.invitationReveal.visible,false);
+ applyIntroInvitationGuest(actor,{...pose,opacity:1},4.8);
+ assert.equal(actor.root.visible,true);assert.equal(actor.invitationReveal.visible,false);
+});
+
+test('a failed pose cannot expose a partly updated face or outfit',()=>{
+ const actor=guestFixture(),frame=introInvitationFrame(6500);
+ actor.root.visible=true;
+ actor.pose=()=>{throw Error('pose incomplete');};
+ assert.throws(()=>applyIntroInvitationGuest(actor,frame.actors.guest,frame.time),/pose incomplete/);
+ assert.equal(actor.root.visible,false);
 });
 
 test('production gates the scene to cinema mode and preloads guests before salon-ready',()=>{

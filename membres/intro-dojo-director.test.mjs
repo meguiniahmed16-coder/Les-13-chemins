@@ -186,18 +186,18 @@ test('portrait close-ups leave the lower control strip clear of Marianne’s com
  }
 });
 
-test('the body transformation stays visible before the camera approaches Marianne’s face',()=>{
+test('Marianne’s silhouette stays visible before the camera approaches her face',()=>{
  const line=lines.find(l=>l.id==='dojo-apparence');
  for(const aspect of [16/9,390/690,320/600,640/240]){
   for(const at of [1600,1800,2200,4400]){
    const {frame,actors}=sample(line,at,aspect),actor=actors.find(a=>a.id==='f');
    const camera=new T.PerspectiveCamera(frame.fov,aspect,.07,120);camera.position.copy(frame.eye);camera.lookAt(frame.aim);camera.updateMatrixWorld(true);
-   // Both sides of the hips and shoulders are present before and after the
-   // real body variant switches; a face-only shot cannot satisfy this.
+   // Both sides of the hips and shoulders remain present before the
+   // camera approaches the face; the gallery has already finished.
    const right=new T.Vector3().setFromMatrixColumn(camera.matrixWorld,0);
    for(const y of [.84,1.30])for(const side of [-.27,.27]){
     const p=actor.root.position.clone();p.y+=y;p.addScaledVector(right,side).project(camera);
-    assert.ok(Math.abs(p.x)<.86&&Math.abs(p.y)<.86,'The changing body is visible at '+at+'ms, aspect '+aspect);
+    assert.ok(Math.abs(p.x)<.86&&Math.abs(p.y)<.86,'Marianne’s silhouette is visible at '+at+'ms, aspect '+aspect);
    }
    assert.equal(frame.framing,'american');
   }

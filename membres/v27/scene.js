@@ -1580,7 +1580,7 @@ function tickReunion(dt){
  else if(underRoof(p.x,p.z))label='Avancer dans le jardin';
  else if(air.mode==='off')label='Déployer mes ailes';
  else if(air.mode==='ready')label='Décoller';
- else if(exchange.active)label='Ahmed et Lionel';
+ else if(exchange.active)label='Ahmed Marie et Lionel';
  else if(canTalk)label=exchange.finished?'Relire l’échange':'Parler à Lionel';
  else if(air.mode==='flying')label='Rejoindre Lionel · '+Math.round(distance)+' m';
  else label='Retour au jardin';
@@ -1739,7 +1739,10 @@ if(cinemaArrival){
    invited=await prepareIntroInvitationGuests(scene);
    for(const actor of invited){
     actor.shadow=shade(actor.root,0,0,.78,.52,.012);
-    actor.shadow.material=shadeMat.clone();actor.root.visible=false;
+    actor.shadow.material=shadeMat.clone();actor.shadow.material.opacity=.85;actor.root.visible=false;
+    const halo=new T.Mesh(new T.RingGeometry(.43,.48,48),new T.MeshBasicMaterial({color:0xe6d3a6,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));
+    halo.name='Invitation · halo au sol';halo.rotation.x=-Math.PI/2;halo.visible=false;halo.userData.ignorePick=true;
+    scene.add(halo);actor.invitationReveal=halo;
    }
   },
   begin(){
@@ -1789,7 +1792,7 @@ if(cinemaArrival){
    });
   },
   finish(){
-   for(const actor of invited)actor.root.visible=false;
+   for(const actor of invited){actor.root.visible=false;actor.invitationReveal.visible=false;}
    for(const actor of [actors.m,actors.f]){actor.conversationPose=null;actor.live=false;actor.stamp='';}
    document.body.classList.remove('intro-finale');cam.clearViewOffset();
    keys.clear();releaseStick();releaseAirInput();travel.reset();detail.reset();
@@ -1858,7 +1861,7 @@ if(cinemaArrival){
 }
 window.salonV27=member;
 Promise.all(ready).then(async()=>{
- window.salonArrival?.progress('characters','Préparation d’Ahmed et de Marianne…');
+ window.salonArrival?.progress('characters','Préparation d’Ahmed Marie et de Marianne…');
  await member.initialize();
  if(invitationScene)await invitationScene.prepare();
  updateSize();updateCam(0);renderer.render(scene,cam);

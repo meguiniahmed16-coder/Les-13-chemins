@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import * as T from 'three';
-import {DOJO_LOOKS,DOJO_WARDROBE_CUES,dojoLook,dojoWardrobeState,createDojoWardrobe} from './intro-dojo-wardrobe.js';
+import {DOJO_LOOKS,DOJO_WARDROBE_CUES,dojoLook,dojoWardrobeState,createDojoWardrobe,styleDojoFigure} from './intro-dojo-wardrobe.js';
 import {captureIntroAppearance,prepareIntroAppearance,dressAhmed,createIntroCastActor} from './intro-wardrobe.js';
-import {DOJO_CAST,dojoCastLook,dojoCastState,dojoCastPose} from './intro-dojo-cast.js';
+import {DOJO_CAST,dojoCastLook,dojoCastState,dojoCastPose,styleDojoCastFigure} from './intro-dojo-cast.js';
 import {poseVertex} from './salon-pose.js';
 import {SalonMotion} from './salon-v27-motion.js';
 import {dojoBlocking} from './intro-dojo-director.js';
@@ -40,8 +40,9 @@ test('the demo uses complete real wardrobe looks and the existing body setting',
   assert.ok(outfit.haut&&outfit.culotte,'Underwear changes upper and lower pieces together');
  }
  assert.equal(dojoWardrobeState('dojo-vetements',12000).lookIndex,0,'Both return to white before the cut');
- assert.equal(dojoWardrobeState('dojo-apparence',1800).bodyIndex,3);
- assert.equal(dojoWardrobeState('dojo-apparence',6500).bodyIndex,2);
+ assert.equal(dojoWardrobeState('dojo-personnaliser',1800).bodyIndex,3);
+ assert.equal(dojoWardrobeState('dojo-personnaliser',6500).bodyIndex,2);
+ assert.equal(dojoWardrobeState('dojo-apparence',6500).castIndex,-1);
  assert.equal(dojoWardrobeState('dojo-enregistrer',0).bodyIndex,0);
  assert.ok(!Object.values(dojoLook('f',2).outfit).includes('mh1640'),'The broken floral dress is no longer demonstrated');
 });
@@ -56,7 +57,7 @@ test('preloading leaves both actors untouched, then switches cached outfits sync
  const actual=h.cache.apply({id:'dojo-vetements'},1800);
  assert.equal(actual.ready,true);assert.equal(actual.lookIndex,1);assert.equal(typeof actual.then,'undefined');
  assert.equal(h.events.length,2);h.cache.apply({id:'dojo-vetements'},1900);assert.equal(h.events.length,2);
- h.cache.apply({id:'dojo-apparence'},2000);assert.equal(h.cache.state.bodyIndex,3);
+ h.cache.apply({id:'dojo-personnaliser'},2000);assert.equal(h.cache.state.bodyIndex,3);
  h.cache.apply({id:'dojo-enregistrer'},0);assert.ok(h.people.every(p=>p.parts[0]==='original-'+p.id));
  assert.deepEqual(h.people.map(p=>p.root),roots,'No outfit/body choice moves either actor');
  h.cache.dispose();assert.equal(h.cache.ready,false);assert.equal(h.events.filter(e=>e.startsWith('dispose')).length,6);
@@ -110,7 +111,7 @@ test('the gallery offers four different complete adult characters and never labe
  }
  assert.equal(shapes.size,4);assert.equal(tones.size,4);assert.equal(faces.size,4);
  assert.deepEqual([0,3000,6000,9000].map(t=>dojoCastState('dojo-personnaliser',t).castIndex),[0,1,2,3]);
- assert.deepEqual([0,2500,5000,7500].map(t=>dojoCastState('dojo-apparence',t).castIndex),[0,1,2,3]);
+ assert.deepEqual([0,2500,5000,7500,10000].map(t=>dojoCastState('dojo-apparence',t).castIndex),[-1,-1,-1,-1,-1]);
  assert.equal(dojoCastState('dojo-vetements',0).castIndex,-1);
 });
 
@@ -142,6 +143,60 @@ const pixels=async()=>({width:1,height:1,data:new Uint8ClampedArray([42,91,137,2
 const code=read('membres/studio-model.js').toString().replace(/^import .*;\n/gm,'').replace('export async function loadStudio','async function loadStudio');
 const loadReal=new Function('resource','pixels','material','poseVertex',code+';return loadStudio;')(resource,pixels,pixels,poseVertex);
 const poses=JSON.parse(read('membres/v27/poses.json'));
+
+test('browser ImageData keeps its full texture dimensions through every recoloured outfit and the actual Three meshes',async()=>{
+ // Match the Web IDL shape returned by canvas.getImageData: none of these
+ // dimensions are own enumerable properties. A plain object mock hid the
+ // regression in which a complete pair of trousers became one alpha texel.
+ class CanvasPixels{
+  #data;#width;#height;
+  constructor(data,width,height){this.#data=data;this.#width=width;this.#height=height;}
+  get data(){return this.#data;}
+  get width(){return this.#width;}
+  get height(){return this.#height;}
+ }
+ const raw=new Uint8ClampedArray(8*8*4);
+ for(let i=0;i<raw.length;i+=4)raw.set([90,125,160,255],i);
+ raw[3]=0; // The real jeans and the former camisole have a transparent first pixel.
+ const source=new CanvasPixels(raw,8,8),before=raw.slice();
+ assert.deepEqual(Object.keys(source),[]);
+ const decode=async()=>source;
+ const loadBrowser=new Function('resource','pixels','material','poseVertex',code+';return loadStudio;')(resource,decode,decode,poseVertex);
+ const originalFetch=globalThis.fetch;globalThis.fetch=async url=>{
+  assert.equal(url,'/membres/v27/poses.json');return new Response(JSON.stringify(poses));
+ };
+ try{
+  const examples=DOJO_CAST.map((item,index)=>({look:dojoCastLook(index),gender:item.gender,style:figure=>styleDojoCastFigure(figure,index),label:item.id}));
+  for(const id of ['m','f'])for(let index=1;index<DOJO_LOOKS.length;index++){
+   examples.push({look:dojoLook(id,index),gender:id==='f'?'femme':'homme',style:figure=>styleDojoFigure(figure,index,id),label:id+' '+DOJO_LOOKS[index].id});
+  }
+  for(const example of examples){
+   const figure=await loadBrowser(example.look,example.gender);example.style(figure);
+   const actor=await createIntroCastActor(new T.Group(),figure,example);
+   try{
+    for(const part of actor.parts.filter(part=>part.source.binding)){
+     const texture=part.obj.material.map,image=texture.image;
+     assert.equal(image.width,8,example.label+' '+part.source.id+' keeps its browser width');
+     assert.equal(image.height,8,example.label+' '+part.source.id+' keeps its browser height');
+     assert.equal(image.data.length,image.width*image.height*4,'The GPU upload dimensions match the RGBA buffer');
+     assert.equal(image.data[3],0,'Transparent padding is preserved, not painted over');
+     const uv=part.obj.geometry.attributes.uv,index=part.obj.geometry.index;
+     let opaque=0,samples=0;
+     for(let k=0;k<index.count;k+=3){
+      const a=index.getX(k),b=index.getX(k+1),c=index.getX(k+2);
+      const u=(uv.getX(a)+uv.getX(b)+uv.getX(c))/3,v=(uv.getY(a)+uv.getY(b)+uv.getY(c))/3;
+      const x=Math.max(0,Math.min(image.width-1,Math.floor(u*image.width))),y=Math.max(0,Math.min(image.height-1,Math.floor(v*image.height)));
+      if(image.data[4*(y*image.width+x)+3]/255>=part.obj.material.alphaTest)opaque++;
+      samples++;
+     }
+     assert.ok(opaque/samples>.85,example.label+' '+part.source.id+' retains visible fabric across its actual UVs');
+     assert.equal(part.obj.material.opacity,1);assert.equal(part.obj.material.transparent,false);assert.equal(part.obj.material.depthWrite,true);
+    }
+   }finally{actor.dispose();}
+  }
+  assert.deepEqual(raw,before,'Recolouring never mutates the shared decoded ImageData');
+ }finally{globalThis.fetch=originalFetch;}
+});
 
 test('the real gallery preserves the hosts, switches one whole avatar, and keeps all four pairs of shoes on the floor',async t=>{
  const originalFetch=globalThis.fetch;globalThis.fetch=async url=>{
@@ -179,6 +234,10 @@ test('the real gallery preserves the hosts, switches one whole avatar, and keeps
    t.diagnostic(`${DOJO_CAST[index].label}: full figure ${actor.height.toFixed(3)} m, sole +2 mm`);
   }
   assert.ok(Math.max(...widths)-Math.min(...widths)>.035,'Selected shapes visibly change the full silhouette');
+  for(const elapsed of [0,2500,5000,7500,10000]){
+   cache.apply('dojo-apparence',elapsed);assert.equal(cache.previewActor,null);
+   assert.ok(people.every(p=>p.root.visible),'The appearance shot keeps both hosts and never repeats a gallery avatar');
+  }
   cache.apply('dojo-vetements',0);assert.equal(cache.previewActor,null);assert.ok(people.every(p=>p.root.visible));
   cache.restore();cache.restore();assert.equal(scene.children.length,2,'Skipping/removing the introduction leaves only the original hosts');
   assert.ok(people.every((p,i)=>p.head===identities[i]&&p.root.visible));

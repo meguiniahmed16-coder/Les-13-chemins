@@ -73,7 +73,7 @@ async function gallerySamples(){
    root.position.set(-.148,-.003,.642);root.scale.setScalar(entry.gender==='femme'?1.04:1.075);
    actors.push(await createIntroCastActor(root,figure,{look,gender:entry.gender}));
   }
-  return lines.filter(line=>['dojo-personnaliser','dojo-apparence'].includes(line.id)).map(line=>({line,frames:Array.from({length:49},(_,i)=>{
+  return lines.filter(line=>dojoCastState(line,0).castIndex>=0).map(line=>({line,frames:Array.from({length:49},(_,i)=>{
    const elapsed=line.ms*i/48,castIndex=dojoCastState(line,elapsed).castIndex,actor=actors[castIndex];
    actor.root.rotation.y=Math.PI+.11*Math.sin(elapsed/1900+castIndex);actor.pose(0,dojoCastPose(castIndex,elapsed));
    const root=new T.Group(),previewHead=new T.Object3D();root.position.copy(actor.root.position);previewHead.position.copy(actor.previewHead.getWorldPosition(new T.Vector3()));
@@ -84,6 +84,7 @@ async function gallerySamples(){
 
 test('the four real gallery heads remain clear of a stationary narration bubble and the selection panel',async()=>{
  const samples=await gallerySamples(),seen=new Set();
+ assert.deepEqual(samples.map(sample=>sample.line.id),['dojo-personnaliser'],'The gallery appears once; the next shot follows Marianne');
  for(const {line,frames}of samples)for(const [width,height]of [[1280,660],[768,820],[390,690],[320,600],[844,285],[640,240]]){
   const h=fixture(width,height,line),panel=dojoDemoReservedRect(width,height,line);let layout;
   // The longer inclusive replies wrap to five lines in the 211px short-

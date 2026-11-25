@@ -24,7 +24,9 @@ export function dojoCastLook(index=0){
 }
 export function dojoCastState(line,elapsed=0){
  const id=typeof line==='string'?line:line?.id;
- const duration=id==='dojo-personnaliser'?12000:id==='dojo-apparence'?10000:0;
+ // Show the full-body gallery once. The following appearance shot returns
+ // to Marianne and Ahmed Marie for the face and detail controls.
+ const duration=id==='dojo-personnaliser'?12000:0;
  if(!duration)return {castIndex:-1,castLabel:'',bodyLabel:''};
  const castIndex=Math.min(DOJO_CAST.length-1,Math.floor(Math.max(0,elapsed)/(duration/DOJO_CAST.length))),item=DOJO_CAST[castIndex];
  return {castIndex,castLabel:item.label,bodyLabel:item.bodyLabel};
@@ -49,7 +51,10 @@ export function styleDojoFabric(figure,palette){
    const shade=.62+.38*Math.pow(luminance,.65);
    for(let channel=0;channel<3;channel++)data[k+channel]=Math.round(rgb[channel]*shade);
   }
-  part.image={...source,data};
+  // Canvas ImageData exposes width/height through inherited getters. Object
+  // spread drops them, making Three upload a 1 × 1 texture whose first pixel
+  // may be transparent while the clothing's skin mask is already applied.
+  part.image={width:source.width,height:source.height,data};
  }
  return figure;
 }
