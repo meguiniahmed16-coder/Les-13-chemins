@@ -25,7 +25,7 @@ test('Caméra : les sept commandes possèdent une icône, et Profil ne déplace 
 });
 
 test('Le module et la feuille de style des icônes sont publiés et mis en cache séparément',()=>{
- assert.match(salon,/salon-maison-ui\.js\?v=call60/);
+ assert.match(salon,/salon-maison-ui\.js\?v=call61/);
  assert.match(salon,/salon-rail52\.css\?v=hud56/);
  for(const path of ['membres/salon-maison-ui.js','membres/salon-rail52.css']){
    assert.ok(build.includes("'"+path+"'"));
