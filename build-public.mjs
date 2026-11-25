@@ -23,7 +23,7 @@ const output = join(root, 'dist');
 // Regenerate, verify grip geometry, and bundle the playable scene before copying it to dist/.
 const run = promisify(execFile);
 for (const args of [
-  ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs','membres/salon-dictee.test.mjs','membres/salon-voice.test.mjs'],
+  ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs','membres/salon-dictee.test.mjs','membres/salon-voice.test.mjs','membres/studio-icon-nav.test.mjs'],
   ['--test','membres/salon-conversation.test.mjs','membres/salon-conversation-audio.test.mjs','membres/voice-conversation.test.mjs','membres/voice-proxy.test.mjs'],
   ['--test','membres/incarnations-dialog.test.mjs','membres/v27/reference-groom.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
