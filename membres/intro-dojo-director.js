@@ -5,7 +5,7 @@ import * as T from 'three';
 export const DOJO_DURATIONS=Object.freeze({
  'dojo-arrivee':7000,'dojo-camera':10000,'dojo-deplacement':11000,'dojo-demi-tour':9000,
  'dojo-personnaliser':12000,'dojo-apparence':10000,'dojo-vetements':12000,
- 'dojo-enregistrer':7000,'dojo-construction':9000,jardin:6000
+ 'dojo-enregistrer':7000,'dojo-construction':9000,'dojo-appeler':11000,'dojo-bulles':11500,jardin:6000
 });
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
@@ -136,6 +136,14 @@ export function dojoBlocking(line,elapsed,{center=new T.Vector3(),floorY=0}={}){
   m.yaw=openYaw.m-.12*response;f.yaw=openYaw.f+.12*response;
   m.poseGesture=poseGesture({left:.26*pulse(t,.04,.78),right:.35*pulse(t,.04,.78),height:-12,forward:25});
   f.poseGesture=poseGesture({left:.19*response,right:.14*response,nod:.075*pulse(t,.55,.28)});
+ }else if(line.id==='dojo-appeler'){
+  phase='calling';f.gesture='explain';
+  f.poseGesture=poseGesture({left:.24*pulse(t,.08,.62),right:.18*pulse(t,.26,.50),nod:.09*pulse(t,.55,.22),height:-14,forward:23});
+  m.poseGesture=poseGesture({nod:.07*pulse(t,.49,.25)});
+ }else if(line.id==='dojo-bulles'){
+  phase='subtitles';m.gesture='explain';
+  m.poseGesture=poseGesture({right:.36*pulse(t,.05,.60),height:-12,forward:27});
+  f.poseGesture=poseGesture({nod:.08*pulse(t,.60,.22)});
  }else if(line.id==='jardin'){
   phase='departure';m.gesture='invite';
   m.poseGesture=poseGesture({right:.55*pulse(t,.10,.76),height:-9,forward:31});
@@ -225,6 +233,12 @@ export function dojoDirectedCamera({line,elapsed,aspect=16/9,actors,bounds,floor
   framing=t<.52?'american':'wide';lower=base+.64*(1-s);distance=lerp(2.95,3.62,s);
   azimuth=lerp(Math.PI-.59,Math.PI+.60,s);height=base+lerp(1.43,1.69,s);minimum=lerp(29,42,s);
   if(aspect<.95){lower=base;framing='wide';}
+ }else if(line.id==='dojo-appeler'){
+  framing='american';lower=base+.64;distance=3.18;minimum=32;
+  azimuth=lerp(Math.PI-.25,Math.PI+.22,s);height=base+1.56;
+ }else if(line.id==='dojo-bulles'){
+  framing='wide';distance=3.48;minimum=40;
+  azimuth=lerp(Math.PI+.24,Math.PI-.28,s);height=base+1.61;
  }else if(line.id==='jardin'){
   azimuth=lerp(Math.PI+.33,Math.PI-.27,s);distance=lerp(3.1,3.8,s);height=base+lerp(1.48,1.84,s);
  }
