@@ -4,7 +4,7 @@ import * as T from 'three';
 // here starts a timer, moves a real actor, or writes a saved appearance.
 export const DOJO_DURATIONS=Object.freeze({
  'dojo-arrivee':7000,'dojo-camera':10000,'dojo-deplacement':11000,'dojo-demi-tour':9000,
- 'dojo-personnaliser':8000,'dojo-apparence':10000,'dojo-vetements':12000,
+ 'dojo-personnaliser':12000,'dojo-apparence':10000,'dojo-vetements':12000,
  'dojo-enregistrer':7000,'dojo-construction':9000,jardin:6000
 });
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -178,8 +178,18 @@ function fitFramingFov(eye,aim,aspect,envelope,minimum){
 
 /** Camera authored inside the original building; only the intended shot's
  * subject envelope is fitted, so close-ups never become full-body shots. */
-export function dojoDirectedCamera({line,elapsed,aspect=16/9,actors,bounds,floor,headPosition}){
+export function dojoDirectedCamera({line,elapsed,aspect=16/9,actors,bounds,floor,headPosition,previewActor=null}){
  const {t}=seconds(line,elapsed),s=smooth(t),base=floor?.max?.y??0;
+ if(previewActor){
+  // The four native avatars share one exhibition mark. A common envelope
+  // keeps the frame stable when their height and build change, with room
+  // for the dialogue above and the small selection panel below.
+  const body=line.id==='dojo-apparence',lower=base+(body?.58:0),upper=base+2.08;
+  const aim=previewActor.root.position.clone();aim.y=(lower+upper)*.5;
+  const eye=boundedEye(aim,Math.PI+lerp(-.16,.16,s),body?2.72:3.22,base+1.46,bounds),envelope=[];
+  for(const x of [-.67,.67])for(const z of [-.30,.30])for(const y of [lower,upper])envelope.push(new T.Vector3(aim.x+x,y,aim.z+z));
+  return {eye,aim,fov:fitFramingFov(eye,aim,aspect,envelope,body?34:40),roll:0,framing:body?'american':'wide',subject:'preview',cutKey:line.id};
+ }
  const pair=actors.filter(a=>a.id==='m'||a.id==='f'),byId=new Map(pair.map(a=>[a.id,a]));
  if(pair.length!==2)throw Error('Le cadrage du dojo nécessite les deux personnages.');
  let targets=pair,framing='wide',subject=['m','f'],azimuth=Math.PI,distance=3.55,height=base+1.60,minimum=44,lower=base,halfWidth=.35,halfDepth=.22;

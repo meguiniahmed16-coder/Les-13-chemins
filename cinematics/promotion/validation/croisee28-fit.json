@@ -1,0 +1,1006 @@
+{
+  "created_utc": "2026-11-25T03:49:47.390357+00:00",
+  "method": "Blender 4.3.2 mathutils.bvhtree.BVHTree overlap with zero epsilon on the real visible body and garment triangles, after production morphology, outfit fitting and SalonMotion sampling. No replacement geometry or stub pose solver. Texture decoding is omitted because it cannot change triangle intersections.",
+  "scope": "Four curated complete character examples, thirteen sampled instants per example from 0 to 12000 ms. Checks cover visible body versus every garment and each garment versus every other garment. These results do not generalize to arbitrary outfits or animations.",
+  "source_sha256": {
+    "membres/intro-dojo-cast.js": "3234dcead13ae33402f18b2c35056fd1c0e88bc49e97de753003b82e033ce6a5",
+    "membres/intro-dojo-wardrobe.js": "20696f5978be0214b4107e90a315dc29f1aca0748be6f742d229c7a9f157362c",
+    "membres/intro-wardrobe.js": "90f56e024919d0df1fd2b26517009b24f4b321df46e08611beffdc579ebe29eb",
+    "membres/studio-model.js": "b27aef88549e866cc3ad9ca7d135d80d89032102c80db70350a7c9abd19a921a",
+    "membres/salon-v27-motion.js": "45372e64eeaa9277921f1bd6ad759ea4cd4a81a51e83956c68633c8e37c8ad92"
+  },
+  "sample_count": 52,
+  "body_garment_intersections": 0,
+  "garment_garment_intersections": 0,
+  "all_samples_clear": true,
+  "samples": [
+    {
+      "cast_index": 0,
+      "elapsed_ms": 0,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 1000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 2000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 3000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 4000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 5000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 6000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 7000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 8000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 9000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 10000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 11000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 0,
+      "elapsed_ms": 12000,
+      "outfit": {
+        "haut": "mh22",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 0,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 1000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 2000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 3000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 4000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 5000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 6000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 7000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 8000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 9000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 10000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 11000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 1,
+      "elapsed_ms": 12000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1796",
+        "souliers": "mh620"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 0,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 1000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 2000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 3000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 4000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 5000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 6000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 7000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 8000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 9000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 10000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 11000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 2,
+      "elapsed_ms": 12000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh391",
+        "souliers": "mh1734"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 0,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 1000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 2000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 3000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 4000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 5000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 6000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 7000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 8000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 9000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 10000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 11000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cast_index": 3,
+      "elapsed_ms": 12000,
+      "outfit": {
+        "haut": "mh1800",
+        "bas": "mh1655",
+        "souliers": "mh1732"
+      },
+      "body_garment_intersections": [
+        0,
+        0,
+        0
+      ],
+      "garment_pairs_intersections": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dojoDemoFrame,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {DOJO_LOOKS,dojoWardrobeState} from './intro-dojo-wardrobe.js';
+import {DOJO_CAST} from './intro-dojo-cast.js';
 
 const cue=(id,ms=10000)=>({id,ms,scene:'dojo'});
 
@@ -29,18 +30,30 @@ test('camera and walking controls visibly move on the scene clock, and pause at 
 
 test('body and wardrobe selection match the exact live geometry-switch timeline',()=>{
  for(const id of ['dojo-personnaliser','dojo-apparence','dojo-vetements']){
-  const line=cue(id,id==='dojo-vetements'?12000:10000);
+  const line=cue(id,id==='dojo-vetements'||id==='dojo-personnaliser'?12000:10000);
   for(let ms=800;ms<line.ms-800;ms+=83){
    const actual=dojoWardrobeState(line,ms),ui=dojoDemoFrame(line,ms);
    assert.equal(ui.lookIndex,actual.lookIndex);
    assert.equal(ui.bodyIndex,actual.bodyIndex);
    assert.equal(ui.actor,actual.actor);
+   if(id!=='dojo-vetements')assert.equal(ui.castIndex,actual.castIndex);
    if(id==='dojo-vetements')assert.equal(ui.label,DOJO_LOOKS[actual.lookIndex].label);
   }
  }
  const body=cue('dojo-apparence');
- assert.equal(dojoDemoFrame(body,2000).label,'Athlétique');
- assert.equal(dojoDemoFrame(body,7000).label,'Équilibré');
+ assert.equal(dojoDemoFrame(body,2000).label,DOJO_CAST[0].bodyLabel);
+ assert.equal(dojoDemoFrame(body,7000).label,DOJO_CAST[2].bodyLabel);
+});
+
+test('the selection shows four actual examples rather than restricting the choice to the two hosts',()=>{
+ const characters=cue('dojo-personnaliser',12000),body=cue('dojo-apparence',10000);
+ for(let i=0;i<DOJO_CAST.length;i++){
+  const shown=dojoDemoFrame(characters,i*3000+1000),silhouette=dojoDemoFrame(body,i*2500+1000);
+  assert.equal(shown.castIndex,i);assert.equal(shown.pointer,i);assert.equal(shown.label,DOJO_CAST[i].label);
+  assert.equal(shown.context,`${i+1} / 4`);assert.doesNotMatch(shown.context,/Ahmed|Marianne/);
+  assert.equal(silhouette.castIndex,i);assert.equal(silhouette.label,DOJO_CAST[i].bodyLabel);
+ }
+ assert.equal(dojoDemoFrame(characters,2200,{wardrobe:{ready:false,castIndex:0}}).visible,false);
 });
 
 test('a not-yet-ready real wardrobe cannot be misrepresented by the preview',()=>{

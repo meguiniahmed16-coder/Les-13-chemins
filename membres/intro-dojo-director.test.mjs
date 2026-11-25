@@ -18,6 +18,19 @@ function sample(line,elapsed,aspect=16/9){
  return {blocking,actors,frame,headPosition};
 }
 
+test('the inclusive gallery keeps one stable full-body exhibition frame inside the dojo',()=>{
+ const line={id:'dojo-personnaliser',ms:12000},origin=center.clone().setY(floor.max.y);origin.z+=.35;
+ for(const aspect of [16/9,4/3,1,390/690,640/240])for(const at of [0,3000,6000,9000,12000]){
+  const frame=dojoDirectedCamera({line,elapsed:at,aspect,actors:[],bounds,floor,previewActor:{root:{position:origin}}});
+  assert.equal(frame.subject,'preview');assert.equal(frame.framing,'wide');assert.ok(bounds.containsPoint(frame.eye));
+  const camera=new T.PerspectiveCamera(frame.fov,aspect,.07,120);camera.position.copy(frame.eye);camera.lookAt(frame.aim);camera.updateMatrixWorld(true);
+  for(const x of [-.6,.6])for(const y of [floor.max.y,floor.max.y+2.03]){
+   const point=new T.Vector3(origin.x+x,y,origin.z).project(camera);
+   assert.ok(Math.abs(point.x)<.91&&Math.abs(point.y)<.91,'Widest silhouette, head and feet remain fully in view');
+  }
+ }
+});
+
 test('Marianne really walks a closed path; gait follows distance and stops with her feet',()=>{
  const line=lines.find(l=>l.id==='dojo-deplacement');let distance=0,prior=null,maxGait=0,maxSpeed=0,maxLift=0;
  for(let i=0;i<=660;i++){

@@ -11,4 +11,5 @@ await build({
   define:{'process.env.NODE_ENV':'"production"'}
 });
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee27.js'));
-console.log('Cinématique 3D privée construite : croisee27.');
+await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee28.js'));
+console.log('Cinématique 3D privée construite : croisee28.');

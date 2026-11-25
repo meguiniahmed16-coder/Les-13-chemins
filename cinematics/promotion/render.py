@@ -17,7 +17,8 @@ p.add_argument('--garden-directory',type=Path,help='Prepared original garden sce
 p.add_argument('--resume',action='store_true')
 a=p.parse_args(sys.argv[sys.argv.index('--')+1:])
 root=a.directory.resolve();data=json.loads((root/'manifest.json').read_text())
-if a.shot in ['all','finale'] and not a.garden_directory:p.error('--garden-directory is required for the finale')
+needs_garden=any(s['environment']=='garden' and (a.shot=='all' or s['id']==a.shot) for s in data['shots'])
+if needs_garden and not a.garden_directory:p.error('--garden-directory is required for the finale')
 garden=a.garden_directory.resolve() if a.garden_directory else Path('.')
 def cv(v):return (v[0],-v[2],v[1])
 def converted(v):
@@ -98,7 +99,7 @@ if any(s['environment']=='dojo' and (a.shot=='all' or s['id']==a.shot) for s in 
  binary=(root/data['dojo']['file']).read_bytes()
  for entry in data['dojo']['meshes']:update(entry,binary,'dojo')
 billboards=[];update_butterflies=None
-if a.shot in ['all','finale']:
+if needs_garden:
  for d in json.loads((garden/'scene.json').read_text())['objects']:
   ob=mesh(d,d['v'],'garden',garden/'textures')
   if d.get('billboard'):billboards.append((ob,d['billboard']))

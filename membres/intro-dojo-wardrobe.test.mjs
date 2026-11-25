@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import * as T from 'three';
 import {DOJO_LOOKS,DOJO_WARDROBE_CUES,dojoLook,dojoWardrobeState,createDojoWardrobe} from './intro-dojo-wardrobe.js';
-import {captureIntroAppearance,prepareIntroAppearance,dressAhmed} from './intro-wardrobe.js';
+import {captureIntroAppearance,prepareIntroAppearance,dressAhmed,createIntroCastActor} from './intro-wardrobe.js';
+import {DOJO_CAST,dojoCastLook,dojoCastState,dojoCastPose} from './intro-dojo-cast.js';
 import {poseVertex} from './salon-pose.js';
 import {SalonMotion} from './salon-v27-motion.js';
 import {dojoBlocking} from './intro-dojo-director.js';
@@ -40,7 +41,9 @@ test('the demo uses complete real wardrobe looks and the existing body setting',
  }
  assert.equal(dojoWardrobeState('dojo-vetements',12000).lookIndex,0,'Both return to white before the cut');
  assert.equal(dojoWardrobeState('dojo-apparence',1800).bodyIndex,3);
- assert.equal(dojoWardrobeState('dojo-apparence',6500).bodyIndex,0);
+ assert.equal(dojoWardrobeState('dojo-apparence',6500).bodyIndex,2);
+ assert.equal(dojoWardrobeState('dojo-enregistrer',0).bodyIndex,0);
+ assert.ok(!Object.values(dojoLook('f',2).outfit).includes('mh1640'),'The broken floral dress is no longer demonstrated');
 });
 
 test('preloading leaves both actors untouched, then switches cached outfits synchronously and only once',async()=>{
@@ -48,7 +51,7 @@ test('preloading leaves both actors untouched, then switches cached outfits sync
  const h=fixture(async look=>{active++;maxActive=Math.max(active,maxActive);loads++;await Promise.resolve();active--;return {appearance:look};});
  const roots=structuredClone(h.people.map(p=>p.root)),parts=h.people.map(p=>p.parts);
  assert.equal(h.cache.ready,false);const pending=h.cache.prepare();await h.cache.prepare();assert.equal(await pending,true);
- assert.equal(loads,7);assert.equal(maxActive,1);assert.deepEqual(h.events,[]);
+ assert.equal(loads,6);assert.equal(maxActive,1);assert.deepEqual(h.events,[]);
  assert.ok(h.people.every((p,i)=>p.parts===parts[i]));assert.deepEqual(h.people.map(p=>p.root),roots);
  const actual=h.cache.apply({id:'dojo-vetements'},1800);
  assert.equal(actual.ready,true);assert.equal(actual.lookIndex,1);assert.equal(typeof actual.then,'undefined');
@@ -56,7 +59,7 @@ test('preloading leaves both actors untouched, then switches cached outfits sync
  h.cache.apply({id:'dojo-apparence'},2000);assert.equal(h.cache.state.bodyIndex,3);
  h.cache.apply({id:'dojo-enregistrer'},0);assert.ok(h.people.every(p=>p.parts[0]==='original-'+p.id));
  assert.deepEqual(h.people.map(p=>p.root),roots,'No outfit/body choice moves either actor');
- h.cache.dispose();assert.equal(h.cache.ready,false);assert.equal(h.events.filter(e=>e.startsWith('dispose')).length,7);
+ h.cache.dispose();assert.equal(h.cache.ready,false);assert.equal(h.events.filter(e=>e.startsWith('dispose')).length,6);
 });
 
 test('a failed underwear load leaves both complete original outfits visible',async()=>{
@@ -93,6 +96,36 @@ test('skipping during a wardrobe download cannot attach or activate a late appea
  assert.equal(await h.cache.prepare(),false);
 });
 
+test('the gallery offers four different complete adult characters and never labels an inferred origin',()=>{
+ assert.equal(DOJO_CAST.length,4);
+ const shapes=new Set(),tones=new Set(),faces=new Set();
+ for(let i=0;i<DOJO_CAST.length;i++){
+  const item=DOJO_CAST[i],look=dojoCastLook(i);shapes.add(look.face.body);tones.add(look.skinLevel);faces.add(JSON.stringify(look.face));
+  assert.equal(exactStudio(look,normaliseStudio(look,true,undefined,item.gender)),true);
+  assert.ok(look.face.age<5,'Examples are adults');
+  assert.ok(look.outfit.haut&&look.outfit.bas&&look.outfit.souliers,'Every example has a complete fitted outfit');
+  assert.ok(!look.outfit.robe&&!look.outfit.veste,'Examples avoid overlapping loose layers');
+  for(const id of Object.values(look.outfit))assert.ok(byId.has(id));
+  assert.ok(item.label&&item.bodyLabel&&item.color);
+ }
+ assert.equal(shapes.size,4);assert.equal(tones.size,4);assert.equal(faces.size,4);
+ assert.deepEqual([0,3000,6000,9000].map(t=>dojoCastState('dojo-personnaliser',t).castIndex),[0,1,2,3]);
+ assert.deepEqual([0,2500,5000,7500].map(t=>dojoCastState('dojo-apparence',t).castIndex),[0,1,2,3]);
+ assert.equal(dojoCastState('dojo-vetements',0).castIndex,-1);
+});
+
+test('skipping while an example is being prepared never reveals a late cast or leaves its root behind',async()=>{
+ const scene=new T.Scene(),people=['m','f'].map(id=>{const root=new T.Group();scene.add(root);return {id,root};});
+ const gate=deferred(),started=deferred();let released=0;
+ const cache=createDojoWardrobe(people,{scene,load:async look=>({appearance:look}),
+  capture:()=>({activate(){}}),prepareAppearance:async()=>({activate(){},dispose(){}}),
+  prepareCast:async(root)=>{started.resolve();await gate.promise;return {root,dispose(){released++;root.removeFromParent();}};}
+ });
+ const pending=cache.prepare();await started.promise;cache.restore();gate.resolve();
+ assert.equal(await pending,false);assert.equal(cache.previewActor,null);assert.equal(released,1);
+ assert.equal(scene.children.length,2);assert.ok(people.every(p=>p.root.visible));
+});
+
 // Use the actual meshes and fit/deformation code. Replacing image decoding
 // does not change outfit coverage, morphology, skeletal pose or root stability.
 const index=JSON.parse(read('assets-source/salon-v27/assets.json'));
@@ -109,6 +142,48 @@ const pixels=async()=>({width:1,height:1,data:new Uint8ClampedArray([42,91,137,2
 const code=read('membres/studio-model.js').toString().replace(/^import .*;\n/gm,'').replace('export async function loadStudio','async function loadStudio');
 const loadReal=new Function('resource','pixels','material','poseVertex',code+';return loadStudio;')(resource,pixels,pixels,poseVertex);
 const poses=JSON.parse(read('membres/v27/poses.json'));
+
+test('the real gallery preserves the hosts, switches one whole avatar, and keeps all four pairs of shoes on the floor',async t=>{
+ const originalFetch=globalThis.fetch;globalThis.fetch=async url=>{
+  assert.equal(url,'/membres/v27/poses.json');return new Response(JSON.stringify(poses));
+ };
+ try{
+  const scene=new T.Scene(),people=['m','f'].map(id=>{
+   const root=new T.Group();scene.add(root);return {id,root,head:{identity:id},parts:['original-'+id]};
+  });
+  const identities=people.map(p=>p.head),floorY=-.003,center=new T.Vector3(1,floorY,2);
+  const cache=createDojoWardrobe(people,{scene,center,floorY,load:loadReal,
+   capture:actor=>({activate(){actor.parts=['original-'+actor.id];}}),
+   prepareAppearance:async(actor,figure)=>({activate(){actor.parts=[figure.appearance.outfit];},dispose(){}})
+  });
+  await cache.prepare();assert.equal(cache.previewActor,null);assert.ok(people.every(p=>p.root.visible));
+  const widths=[];
+  for(let index=0;index<DOJO_CAST.length;index++){
+   const elapsed=index*3000+1250,state=cache.apply('dojo-personnaliser',elapsed),actor=cache.previewActor;
+   assert.equal(state.castIndex,index);assert.ok(actor);assert.equal(actor.id,'preview');
+   assert.ok(people.every((p,i)=>!p.root.visible&&p.head===identities[i]),'Both original portraits remain untouched behind the independent preview');
+   assert.equal(scene.children.filter(o=>o.visible).length,1,'Only one complete example is visible');
+   assert.deepEqual(actor.root.position.toArray(),[1,floorY,2.35]);
+   assert.equal(actor.root.rotation.y,Math.PI,'The example does not spin its planted feet');
+   const worldHead=actor.previewHead.getWorldPosition(new T.Vector3());
+   assert.ok(worldHead.y>1.35&&worldHead.y<1.90,'The dedicated camera target follows the real head');
+   assert.ok(actor.height>1.5&&actor.height<2.1);widths.push(actor.bounds.max.x-actor.bounds.min.x);
+   for(const local of [0,625,1250,1875,2500]){
+    actor.pose(0,dojoCastPose(index,local));
+    let bottom=Infinity;const point=new T.Vector3();
+    for(const part of actor.parts.filter(p=>p.source.group==='chaussures'))for(const vertex of new Set(part.source.faces)){
+     point.fromBufferAttribute(part.obj.geometry.attributes.position,vertex).applyMatrix4(part.obj.matrixWorld);bottom=Math.min(bottom,point.y);
+    }
+    assert.ok(Math.abs(bottom-floorY-.002)<.00001,'The real soles stay two millimetres above the tatami');
+   }
+   t.diagnostic(`${DOJO_CAST[index].label}: full figure ${actor.height.toFixed(3)} m, sole +2 mm`);
+  }
+  assert.ok(Math.max(...widths)-Math.min(...widths)>.035,'Selected shapes visibly change the full silhouette');
+  cache.apply('dojo-vetements',0);assert.equal(cache.previewActor,null);assert.ok(people.every(p=>p.root.visible));
+  cache.restore();cache.restore();assert.equal(scene.children.length,2,'Skipping/removing the introduction leaves only the original hosts');
+  assert.ok(people.every((p,i)=>p.head===identities[i]&&p.root.visible));
+ }finally{globalThis.fetch=originalFetch;}
+});
 
 test('all alternate clothes load real fitted geometry and the body demonstration changes the actual silhouette',async()=>{
  for(const id of ['m','f'])for(const lookIndex of [1,2,3]){

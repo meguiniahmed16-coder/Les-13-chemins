@@ -81,3 +81,34 @@ La vérification finale contrôle dimensions, durée et absence de piste audio, 
 ## Dépendances
 
 Node avec les dépendances du dépôt, Python 3 avec Pillow et NumPy, FFmpeg avec `libx264` et `libass`, et les polices système P052/DejaVu Sans. Le dossier de rendu est fourni comme argument ; `PROMOTION_ARCHIVE` peut remplacer l’option `--archive=`.
+
+## Révision ciblée : tenue, variété des personnages et voix
+
+`prepare-refresh.mjs` exporte cinq témoins de production : Marianne dans sa tenue jardin corrigée, puis les quatre personnages natifs définis par `DOJO_CAST`. Il utilise leurs vraies morphologies, textures, masques et articulations. Aucun modèle privé d’Ahmed n’est nécessaire : ses prises existantes restent conservées dans le film source.
+
+```sh
+node cinematics/promotion/prepare-refresh.mjs /chemin/promotion-revision
+blender -b -t 8 --python cinematics/promotion/render.py -- /chemin/promotion-revision --shot all --samples 16
+node cinematics/promotion/refresh.mjs /chemin/promotion-revision --source=/chemin/La-Croisee-des-Ames-promotion.mp4
+```
+
+La révision remplace les secondes 23,00–24,50 (robe fleurie) par Marianne en haut sauge et pantalon bleu nuit. Elle insère ensuite une galerie de 9 secondes : quatre silhouettes complètes avec un léger mouvement de cadre. Le vieux fondu de 250 ms entre les tenues et le jardin est retiré afin d’éviter le retour d’une image ancienne après la galerie. Le reste du film est repris du MP4 original, dont l’empreinte est vérifiée. La durée obtenue est 59,50 secondes.
+
+La nouvelle galerie occupe 28,25–37,25 secondes. Les plans suivants sont décalés de 8,75 secondes. Le début du dialogue final d’Ahmed est donc 41,55 secondes, et le carton final apparaît à 51,50 secondes.
+
+Pour ajouter des voix, fournir un manifeste local. Les chemins sont relatifs au manifeste, `at` est le début de lecture en secondes ; aucun enregistrement n’est coupé pour entrer dans sa plage.
+
+```json
+{
+  "clips": [
+    {"file": "ahmed-choix.mp3", "at": 28.45, "speaker": "Ahmed", "text": "Tu peux choisir parmi une grande variété de personnages, de toutes les origines et de toutes les corpulences."},
+    {"file": "ahmed-ange.mp3", "at": 41.55, "speaker": "Ahmed", "text": "Ah, j’oubliais aussi… il y a des options sympas."}
+  ]
+}
+```
+
+```sh
+node cinematics/promotion/refresh.mjs /chemin/promotion-revision --source=/chemin/La-Croisee-des-Ames-promotion.mp4 --voice-manifest=/chemin/voix.json
+```
+
+Chaque extrait est normalisé séparément, puis placé sur une piste stéréo de 48 kHz. Le résultat est décodé intégralement et contrôlé avant d’être installé à son chemin final. Les preuves visuelles sont extraites dans `proof/`, et `provenance/revision.json` conserve les sources, coupes, timings, empreintes et crédits des vêtements. Sans manifeste vocal, la révision reste muette ; sa provenance l’indique explicitement.

@@ -137,6 +137,39 @@ export async function createMarianne(root,body,options={}){
  return actor;
 }
 
+// Independent native editor example. This deliberately does not attach the
+// reference Marianne head or the private Ahmed portrait. All skin and clothes
+// are fitted together by loadStudio before the preview can become visible.
+export async function createIntroCastActor(root,figure,{look=figure.appearance,gender='femme'}={}){
+ const id=gender==='femme'?'f':'m',data=await poses(),body=new T.Group();root.add(body);
+ figure.pose(data[id].rest);
+ const parts=figure.meshes.map(m=>partMesh(m,body,false));
+ const head=new T.Object3D();head.name='Aperçu · point de regard';body.add(head);
+ const actor={id:'preview',root,body,parts,figure,look,gender,sit:0,stamp:0,previewHead:head,height:1.8,bounds:new T.Box3()};
+ const driver={...actor,id,head:null};
+ const controller=makeController(figure,data[id],parts,driver),shoes=parts.filter(part=>part.source.group==='chaussures');
+ const soleVertices=shoes.map(part=>[part,[...new Set(part.source.faces)]]),headVertices=[];
+ const skin=figure.meshes.find(m=>m.name==='body');
+ for(let i=0;i<skin.n;i++)if(skin.position[i*3+1]>14000&&skin.position[i*3+1]<15800)headVertices.push(i);
+ actor.pose=(amount,g)=>{
+  controller.pose(0,g);
+  let sole=Infinity;
+  for(const [part,indices]of soleVertices)for(const i of indices)sole=Math.min(sole,part.source.v[3*i+1]*.0001);
+  body.position.y=Number.isFinite(sole)?.002/root.scale.y-sole:0;
+  let x=0,y=0,z=0;for(const i of headVertices){x+=skin.v[3*i];y+=skin.v[3*i+1];z+=skin.v[3*i+2];}
+  const n=headVertices.length||1;head.position.set(x*.0001/n,y*.0001/n,z*.0001/n);
+  root.updateMatrixWorld(true);
+  for(const part of parts)part.obj.geometry.computeBoundingBox();
+  actor.bounds.setFromObject(root);actor.height=actor.bounds.max.y-root.position.y;actor.stamp=driver.stamp;
+ };
+ let disposed=false;actor.dispose=()=>{
+  if(disposed)return;disposed=true;
+  for(const part of parts){part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
+  root.removeFromParent();
+ };
+ actor.pose(0,{time:0,energy:0,emphasis:0});return actor;
+}
+
 
 const appearanceFields=['body','parts','wardrobe','pose','walkPose','head','speak','pants'];
 function appearanceHandle(actor,fields,{skin=null,index=null,owned=false,group=null}={}){

@@ -27,10 +27,12 @@
 .dojo-demo-choice{display:flex;align-items:center;justify-content:center;gap:5px;flex:1;min-width:0;height:29px;border:1px solid #b4bea980;border-radius:8px;background:#f7f5eb;color:#52634b;white-space:nowrap;font-size:10.5px}
 .dojo-demo-choice.selected{color:#fdf9eb;background:#3a5a45;border-color:#3a5a45;box-shadow:0 1px 3px #2b493522}
 .dojo-demo-characters .dojo-demo-choice svg{width:16px!important;height:16px!important}
+.dojo-demo-characters .dojo-demo-choice svg{fill:var(--cast-color);stroke:#405548;stroke-width:1.2}
+.dojo-demo-characters .dojo-demo-choice.selected svg{stroke:#fff6df}
 .dojo-demo-body{align-items:stretch!important;gap:3px!important;flex-direction:column}
 .dojo-demo-field{font-size:9px;color:#738066;line-height:10px}
-.dojo-demo-body-options{display:flex;gap:6px;min-height:0}
-.dojo-demo-body .dojo-demo-choice{height:25px;font-size:10px}
+.dojo-demo-body-options{display:flex;gap:3px;min-height:0}
+.dojo-demo-body .dojo-demo-choice{height:25px;font-size:8.5px;overflow:hidden;text-overflow:ellipsis}
 .dojo-demo-wardrobe{gap:4px}
 .dojo-demo-look{flex-direction:column;gap:2px;height:39px;font-size:9px}
 .dojo-demo-look svg{width:17px!important;height:17px!important;fill:var(--look-color);stroke:#3c5144;stroke-width:1.2!important}

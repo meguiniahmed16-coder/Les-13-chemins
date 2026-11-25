@@ -92,5 +92,6 @@ test('the direct arrival loads the editor and the dojo explains its actual contr
  const tutorial=shots.filter(s=>['dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer'].includes(s.id));
  assert.equal(tutorial.length,4);assert.ok(tutorial.every(s=>s.scene==='dojo'&&s.ms>=6000&&s.speaker));
  const text=tutorial.map(s=>s.text).join(' ');
- for(const label of ['Personnaliser','Ahmed','Marianne','Mon personnage','Tous les vêtements','Enregistrer'])assert.ok(text.includes(label),label);
+ for(const label of ['grande variété de personnages','origines','corpulences','Visages','silhouettes','Tous les vêtements','Enregistrer'])assert.ok(text.includes(label),label);
+ assert.doesNotMatch(text,/choisis Ahmed ou Marianne|choisir Ahmed ou Marianne/i,'The introduction must not restrict the actual character editor to its two guides');
 });

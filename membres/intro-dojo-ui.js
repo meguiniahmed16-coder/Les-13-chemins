@@ -1,4 +1,5 @@
 import {DOJO_LOOKS,dojoWardrobeState} from './intro-dojo-wardrobe.js';
+import {DOJO_CAST} from './intro-dojo-cast.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,n)=>{const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -17,22 +18,23 @@ export function dojoDemoFrame(line,elapsed,{wardrobe}={}){
  const duration=Math.max(1500,Number(line.ms)||8000),at=clamp(Number(elapsed)||0,0,duration);
  const selected=wardrobe||dojoWardrobeState(line,at);
  const opacity=smooth(350,750,at)*(1-smooth(duration-800,duration-250,at));
- const unavailable=(mode==='wardrobe'||mode==='body')&&selected?.ready===false;
+ const unavailable=['wardrobe','body','characters'].includes(mode)&&selected?.ready===false;
  const actor=selected?.actor==='m'?'m':'f';
  const bodyIndex=Number(selected?.bodyIndex)||0,lookIndex=clamp(Number(selected?.lookIndex)||0,0,DOJO_LOOKS.length-1);
  const look=DOJO_LOOKS[lookIndex];
+ const castIndex=clamp(Number(selected?.castIndex)||0,0,DOJO_CAST.length-1),example=DOJO_CAST[castIndex];
  const drag=smooth(1000,1900,at)*(1-smooth(duration-2300,duration-1200,at));
  const stride=Math.sin(clamp((at-1100)/(duration-2500),0,1)*Math.PI*2);
  return {
   visible:!unavailable&&opacity>.001,mode,opacity:unavailable?0:opacity,
-  title:mode==='wardrobe'&&look.kind==='underwear'?'Sous-vêtements':titles[mode],actor,bodyIndex,lookIndex,
-  context:mode==='wardrobe'?'Ahmed · Marianne':mode==='body'?'Marianne':mode==='camera'?'Glisser':mode==='walk'?'Joystick':'',
+  title:mode==='wardrobe'&&look.kind==='underwear'?'Sous-vêtements':titles[mode],actor,bodyIndex,lookIndex,castIndex,
+  context:mode==='wardrobe'?'Ahmed · Marianne':mode==='body'||mode==='characters'?`${castIndex+1} / ${DOJO_CAST.length}`:mode==='camera'?'Glisser':mode==='walk'?'Joystick':'',
   dragX:mode==='camera'?13*drag:mode==='walk'?6*drag:0,
   dragY:mode==='camera'?-3*drag:mode==='walk'?(-12+2*stride)*drag:0,
-  pointer:mode==='characters'?actor==='m'?0:1:mode==='body'?bodyIndex===3?1:0:mode==='wardrobe'?lookIndex:0,
+  pointer:mode==='characters'||mode==='body'?castIndex:mode==='wardrobe'?lookIndex:0,
   pressed:mode==='save'&&at>=2200&&at<duration-1200,
-  label:mode==='body'?bodyIndex===3?'Athlétique':'Équilibré':mode==='wardrobe'?look.label:'',
-  description:mode==='wardrobe'?look.description||'Ahmed et Marianne en blanc.':'',
+  label:mode==='body'?example.bodyLabel:mode==='characters'?example.label:mode==='wardrobe'?look.label:'',
+  description:mode==='wardrobe'?look.description||'Ahmed et Marianne en blanc.':mode==='characters'||mode==='body'?'Un exemple parmi les visages, les teints et les corpulences disponibles.':'',
  };
 }
 
@@ -58,8 +60,8 @@ export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
  panel.setAttribute('role','img');panel.setAttribute('aria-label','Démonstration des commandes du salon');
  panel.innerHTML=`<div class="dojo-demo-heading"><span class="dojo-demo-heading-icon">${cameraIcon}</span><strong class="dojo-demo-title"></strong><span class="dojo-demo-context"></span></div>
  <div class="dojo-demo-control dojo-demo-motion"><span class="dojo-demo-pad"><i class="dojo-demo-axis axis-x"></i><i class="dojo-demo-axis axis-y"></i><span class="dojo-demo-thumb">${cameraIcon}</span><span class="dojo-demo-touch"></span></span><span class="dojo-demo-motion-copy"><b></b><span class="dojo-demo-drag"><i></i></span></span></div>
- <div class="dojo-demo-control dojo-demo-characters"><span class="dojo-demo-choice" data-character="m">${personIcon}<span>Ahmed</span></span><span class="dojo-demo-choice" data-character="f">${personIcon}<span>Marianne</span></span></div>
- <div class="dojo-demo-control dojo-demo-body"><span class="dojo-demo-field">Silhouette</span><span class="dojo-demo-body-options"><span class="dojo-demo-choice" data-body="0">Équilibré</span><span class="dojo-demo-choice" data-body="3">Athlétique</span></span></div>
+ <div class="dojo-demo-control dojo-demo-characters">${DOJO_CAST.map((item,i)=>`<span class="dojo-demo-choice" data-character="${i}" style="--cast-color:${item.color}" aria-label="${item.label}">${personIcon}<span>${String(i+1).padStart(2,'0')}</span></span>`).join('')}</div>
+ <div class="dojo-demo-control dojo-demo-body"><span class="dojo-demo-field">Silhouette</span><span class="dojo-demo-body-options">${DOJO_CAST.map((item,i)=>`<span class="dojo-demo-choice" data-body="${i}">${item.label.replace('Silhouette ','')}</span>`).join('')}</span></div>
  <div class="dojo-demo-control dojo-demo-wardrobe">${DOJO_LOOKS.map((look,i)=>`<span class="dojo-demo-look dojo-demo-choice" data-look="${i}" style="--look-color:${look.color}">${look.kind==='underwear'?underwearIcon:shirtIcon}<span>${look.label}</span></span>`).join('')}</div>
  <div class="dojo-demo-control dojo-demo-save"><span class="dojo-demo-save-label">Enregistrer</span><span class="dojo-demo-confirm">${tickIcon}</span><span class="dojo-demo-save-touch"></span></div>`;
  stage.append(panel);
@@ -100,7 +102,7 @@ export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
   write(thumb.style,'transform',`translate(${frame.dragX.toFixed(2)}px,${frame.dragY.toFixed(2)}px)`);
   write(pad.style,'--demo-drag',frame.mode==='camera'?frame.dragX.toFixed(2)+'px':frame.dragY.toFixed(2)+'px');
   write(dragDot.style,'transform',`translateX(${((frame.dragX||-frame.dragY)*2).toFixed(2)}px)`);
-  select(characters,'data-character',frame.actor);select(bodies,'data-body',frame.bodyIndex===3?3:0);select(looks,'data-look',frame.lookIndex);
+  select(characters,'data-character',frame.castIndex);select(bodies,'data-body',frame.castIndex);select(looks,'data-look',frame.lookIndex);
   panel.classList.toggle('pressed',frame.pressed);
   const label='Démonstration : '+frame.title+(frame.context?', '+frame.context:'')+(frame.label?', '+frame.label:'')+(frame.description?'. '+frame.description:'');
   if(label!==lastLabel){lastLabel=label;panel.setAttribute('aria-label',label);}

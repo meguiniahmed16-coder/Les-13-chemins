@@ -1,10 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {gunzipSync} from 'node:zlib';
 import * as T from 'three';
 import {planSpeechBubble,rectanglesOverlap,transformFace} from './intro-bubbles.js';
 import {dojoBlocking,dojoDirectedCamera} from './intro-dojo-director.js';
 import {dojoDemoReservedRect,dojoDemoFrame} from './intro-dojo-ui.js';
+import {DOJO_CAST,dojoCastLook,dojoCastState,dojoCastPose,styleDojoCastFigure} from './intro-dojo-cast.js';
+import {createIntroCastActor} from './intro-wardrobe.js';
+import {poseVertex} from './salon-pose.js';
 
 const source=readFileSync(new URL('./intro-cinema.js',import.meta.url),'utf8');
 const extract=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b,source.indexOf(a)+a.length));
@@ -17,13 +21,14 @@ function fixture(width,height,line){
   return {id,root,sit,previewHead:head};
  });
  const writes=[],classes=new Set(),style=new Proxy({setProperty(k,v){this[k]=v}}, {set(o,k,v){writes.push([k,v]);o[k]=v;return true}});
- const bubble={hidden:false,offsetHeight:height<350?112:Math.max(100,36+Math.ceil(line.text.length*9/Math.min(width-54,356))*27),get offsetWidth(){return Number.parseFloat(style.width)||330},style,classList:{remove(...v){v.forEach(x=>classes.delete(x))},add(...v){v.forEach(x=>classes.add(x))}}};
+ const bubble={hidden:false,offsetHeight:height<350?112:Math.max(100,36+Math.ceil(line.text.length*9/Math.min(width-54,356))*27),get offsetWidth(){return Number.parseFloat(style.width)||330},style,classList:{remove(...v){v.forEach(x=>classes.delete(x))},add(...v){v.forEach(x=>classes.add(x))},toggle(v,on){if(on)classes.add(v);else classes.delete(v)}}};
  const canvasHost={clientWidth:width,clientHeight:height},camera=new T.PerspectiveCamera(46,width/height,.07,120);
  const floor=new T.Box3(new T.Vector3(-4.489,-.061,-3.333),new T.Vector3(4.193,-.003,3.917));
  const limits=new T.Box3(new T.Vector3(floor.min.x+.8,.347,floor.min.z+.45),new T.Vector3(floor.max.x-.8,2.447,floor.max.z-.45));
  const dojo={userData:{introFloorBounds:floor,introCameraBounds:limits}};
  const api=new Function('T','people','bubble','canvasHost','camera','dojo','planSpeechBubble','dojoBlocking','dojoDirectedCamera','dojoDemoReservedRect',`
  let bubbleLayout=null,currentSpeaker=${JSON.stringify(line.speaker)},secondCue=false,invitationMotion=null;
+ const dojoWardrobe={previewActor:null};
  let angle=Math.PI,targetAngle=Math.PI,radius=3.7,cutCamera=true;
  const smoothEye=new T.Vector3(),smoothAim=new T.Vector3();
  function speakerActor(id){return people.find(p=>p.id===id)}
@@ -32,12 +37,73 @@ function fixture(width,height,line){
  return {cameraShot,anchorBubble,faceRect,cameraFrame,
   stage(line,elapsed){if(!isStagedDojo(line))return;const state=dojoPoseAt(line,elapsed);for(const p of people){const before=p.root.position.clone();p.root.position.copy(state[p.id].position);p.root.rotation.y=state[p.id].yaw;p.previewHead.add(p.root.position.clone().sub(before));}},
   get layout(){return bubbleLayout},
+  setPreview(actor){dojoWardrobe.previewActor=actor},
   speaker(id){currentSpeaker=id;bubbleLayout=null},
   orbit(v){targetAngle=v},
  };
  `)(T,people,bubble,canvasHost,camera,dojo,planSpeechBubble,dojoBlocking,dojoDirectedCamera,dojoDemoReservedRect);
- return {api,bubble,writes,people,camera,canvasHost,classes};
+ return {api,bubble,writes,people,camera,canvasHost,classes,dojo};
 }
+
+// Decode the production body/morph/garment data, replacing image decoding only.
+// This measures the actual moving heads rather than assuming one host's height
+// for all four body types. The resulting Object3D targets follow the live API.
+async function gallerySamples(){
+ const read=p=>readFileSync(new URL('../'+p,import.meta.url));
+ const index=JSON.parse(read('assets-source/salon-v27/assets.json'));
+ const archive=Buffer.concat(index.packs.map(p=>read('assets-source/salon-v27/'+p))),cache=new Map();
+ const types={Uint8Array,Uint16Array,Int8Array,Int16Array};
+ const resource=async name=>{
+  if(cache.has(name))return cache.get(name);
+  const [offset,length]=index.files[name+'.bin'],zipped=gunzipSync(archive.subarray(offset,offset+length));
+  const data=zipped.buffer.slice(zipped.byteOffset,zipped.byteOffset+zipped.byteLength),size=new DataView(data).getUint32(0,true),start=4+size;
+  const result=JSON.parse(new TextDecoder().decode(new Uint8Array(data,4,size)),(_,v)=>v&&types[v.type]?new types[v.type](data,start+v.offset,v.bytes/types[v.type].BYTES_PER_ELEMENT):v);
+  cache.set(name,result);return result;
+ };
+ const pixels=async()=>({width:1,height:1,data:new Uint8ClampedArray([42,91,137,255])});
+ const code=read('membres/studio-model.js').toString().replace(/^import .*;\n/gm,'').replace('export async function loadStudio','async function loadStudio');
+ const load=new Function('resource','pixels','material','poseVertex',code+';return loadStudio;')(resource,pixels,pixels,poseVertex);
+ const originalFetch=globalThis.fetch,actors=[];
+ globalThis.fetch=async url=>{
+  assert.equal(url,'/membres/v27/poses.json');return new Response(read('membres/v27/poses.json'));
+ };
+ try{
+  for(let i=0;i<DOJO_CAST.length;i++){
+   const entry=DOJO_CAST[i],look=dojoCastLook(i),figure=styleDojoCastFigure(await load(look,entry.gender),i),root=new T.Group();
+   root.position.set(-.148,-.003,.642);root.scale.setScalar(entry.gender==='femme'?1.04:1.075);
+   actors.push(await createIntroCastActor(root,figure,{look,gender:entry.gender}));
+  }
+  return lines.filter(line=>['dojo-personnaliser','dojo-apparence'].includes(line.id)).map(line=>({line,frames:Array.from({length:49},(_,i)=>{
+   const elapsed=line.ms*i/48,castIndex=dojoCastState(line,elapsed).castIndex,actor=actors[castIndex];
+   actor.root.rotation.y=Math.PI+.11*Math.sin(elapsed/1900+castIndex);actor.pose(0,dojoCastPose(castIndex,elapsed));
+   const root=new T.Group(),previewHead=new T.Object3D();root.position.copy(actor.root.position);previewHead.position.copy(actor.previewHead.getWorldPosition(new T.Vector3()));
+   return {elapsed,castIndex,actor:{id:'preview',root,previewHead,height:actor.height,bounds:actor.bounds.clone()}};
+  })}));
+ }finally{globalThis.fetch=originalFetch;for(const actor of actors)actor.dispose();}
+}
+
+test('the four real gallery heads remain clear of a stationary narration bubble and the selection panel',async()=>{
+ const samples=await gallerySamples(),seen=new Set();
+ for(const {line,frames}of samples)for(const [width,height]of [[1280,660],[768,820],[390,690],[320,600],[844,285],[640,240]]){
+  const h=fixture(width,height,line),panel=dojoDemoReservedRect(width,height,line);let layout;
+  // The longer inclusive replies wrap to five lines in the 211px short-
+  // landscape bubble. Keep a conservative height above that actual text fit.
+  if(height<350)h.bubble.offsetHeight=140;
+  for(const frame of frames){
+   seen.add(frame.castIndex);h.api.setPreview(frame.actor);h.api.cameraShot(line,frame.elapsed,1/60);h.api.anchorBubble(line,frame.elapsed);
+   if(!layout){layout=h.api.layout;h.writes.length=0;}
+   assert.equal(h.api.layout,layout,'A new avatar must not move or relatch the dialogue');
+   assert.ok(h.classes.has('narration'),'The guide speaks off camera, with no tail pointing to the example');
+   const face=h.api.faceRect(frame.actor,h.camera,width,height),label=`${line.id}, example ${frame.castIndex}, ${width}×${height}, ${frame.elapsed} ms`;
+   assert.ok(face&&face.l>=0&&face.r<=width&&face.t>=0&&face.b<=height,'The actual head stays fully visible: '+label);
+   assert.equal(rectanglesOverlap(layout,face),false,'Narration covers the actual head: '+label);
+   assert.equal(rectanglesOverlap(layout,panel),false,'Narration covers the selection panel: '+label);
+   assert.equal(rectanglesOverlap(face,panel),false,'Selection panel covers the actual head: '+label);
+  }
+  assert.equal(h.writes.some(([key])=>['left','top','width','visibility'].includes(key)),false,'No narration flicker at gallery cuts');
+ }
+ assert.equal(seen.size,4);
+});
 
 test('speech bubble planner avoids the complete swept face area, not only the first frame',()=>{
  const face={l:210,r:270,t:180,b:270};

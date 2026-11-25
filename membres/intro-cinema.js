@@ -38,7 +38,7 @@ function remember(type,message){
 }
 window.addEventListener('error',e=>remember('Erreur JavaScript',e.message||'Erreur'));
 window.addEventListener('unhandledrejection',e=>remember('Erreur asynchrone',e.reason?.message||String(e.reason)));
-// Approved silent storyboard. Durations are measured from the first shot, not from the variable loading screen.
+// Durations are measured from the first shot, not from the variable loading screen.
 const lines=[
  {
   "id": "ouverture",
@@ -289,10 +289,10 @@ const lines=[
  {
   "id": "dojo-personnaliser",
   "speaker": "m",
-  "text": "« Personnaliser » : choisis Ahmed ou Marianne.",
+  "text": "Tu peux choisir parmi une grande variété de personnages, de toutes les origines et de toutes les corpulences.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 8000,
+  "ms": 12000,
   "move": "drift",
   "gesture": "explain",
   "seated": false,
@@ -301,7 +301,7 @@ const lines=[
  {
   "id": "dojo-apparence",
   "speaker": "f",
-  "text": "Dans « Mon personnage », la silhouette se transforme.",
+  "text": "Visages, silhouettes, tenues… compose un personnage qui te ressemble, ou imagine quelqu’un d’autre.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 10000,
@@ -676,12 +676,16 @@ async function loadPeople(){
  if(!assetAhmed)assetAhmed=await loadAhmed();
  if(!assetMarianne){showBootStage('Assemblage du personnage de Marianne…');assetMarianne=await loadMarianne();}
  people=[assetAhmed,assetMarianne];downloadCache.clear();
- dojoWardrobe??=createDojoWardrobe(people);
 }
 
 let seatsReady=false;
 function prepareSeats(){seatsReady=people.length===2&&people.every(p=>p.wardrobe&&seatAnchors.has(p.id));return seatsReady?Promise.resolve():Promise.reject(Error('Articulations des fauteuils indisponibles'));}
-async function prepareDojoPerformance(){await prepareDojo();dojoWardrobe??=createDojoWardrobe(people);await dojoWardrobe.prepare();}
+async function prepareDojoPerformance(){
+ await prepareDojo();
+ if(stage==='garden')return;
+ dojoWardrobe??=createDojoWardrobe(people,{scene,center:dojo.userData.introFloorBounds.getCenter(new T.Vector3()),floorY:dojo.userData.introFloorBounds.max.y});
+ await dojoWardrobe.prepare();
+}
 async function preloadNext(){try{await prepareSeats();prepareFilm();}catch(e){remember('Préchargement assises',e.message);}try{await prepareDojoPerformance();}catch(e){remember('Préchargement dojo',e.message);}}
 // Every character is authored with local +Z pointing forward.
 function facingYaw(from,to){return Math.atan2(to.x-from.x,to.z-from.z);}
@@ -846,7 +850,7 @@ function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?paused
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
 let speech=null,lastMotion=0,bubbleLayout=null;
-function stopSpeech(){speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
+function stopSpeech(){speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
@@ -891,6 +895,7 @@ function updateActing(now){
 }
 const headPoint=new T.Vector3();
 function actorHead(person,out=new T.Vector3()){
+ if(person?.previewHead?.isObject3D)return person.previewHead.getWorldPosition(out);
  if(person?.previewHead)return out.copy(person.previewHead);
  if(person?.headBone){person.headBone.getWorldPosition(out);out.y+=.135;return out;}
  if(person?.head?.group){person.head.group.updateWorldMatrix(true,false);return person.head.group.localToWorld(out.set(0,.145,.035));}
@@ -918,6 +923,13 @@ function stageDojoPeople(line,elapsed){
  return dojoWardrobe?.apply(line,elapsed);
 }
 function previewPeople(elapsed,line=lines[step]){
+ const preview=dojoWardrobe?.previewActor;
+ if(preview){
+  // Reserve one stable dialogue position for the whole gallery, including
+  // the heads of its shorter and taller silhouettes at subsequent cuts.
+  const base=dojo.userData.introFloorBounds.max.y;
+  return [1.42,1.62,1.82,2.02].map(height=>({id:'preview',root:{position:preview.root.position.clone()},previewHead:preview.root.position.clone().setY(base+height),sit:0}));
+ }
  return people.map(person=>{
   const root={position:person.root.position.clone()},head=actorHead(person);
   if(isStagedDojo(line)){const pose=dojoPoseAt(line,elapsed)[person.id];head.add(pose.position.clone().sub(root.position));root.position.copy(pose.position);return {id:person.id,root,previewHead:head,sit:0};}
@@ -951,7 +963,8 @@ function applyDialogueProjection(projection){
  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 }
 function anchorBubble(line,elapsed){
- const speaker=speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
+ const preview=dojoWardrobe?.previewActor,speaker=preview||speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
+ bubble.classList.toggle('narration',!!preview);
  const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
  if(!bubbleLayout||bubbleLayout.w!==w||bubbleLayout.h!==h){
   bubble.style.width=Math.min(w-28,w<560?330:h<350&&isStagedDojo(line)?Math.min(300,w*.33):h<350?320:390)+'px';
@@ -1104,7 +1117,7 @@ function cameraFrame(line,elapsed,aspect,actors=people,azimuth=angle){
  }else if(line.shot==='approach'){
   const v=guideApproachFrame(actors[1],actors[0],push,htan);shotAim.copy(v.aim);shotEye.copy(v.eye);
  }else if(isStagedDojo(line)){
-  return dojoDirectedCamera({line,elapsed,aspect,actors,bounds:dojo.userData.introCameraBounds,floor:dojo.userData.introFloorBounds,headPosition:actorHead});
+  return dojoDirectedCamera({line,elapsed,aspect,actors,bounds:dojo.userData.introCameraBounds,floor:dojo.userData.introFloorBounds,headPosition:actorHead,previewActor:dojoWardrobe?.previewActor});
  }else if(line.shot==='dojo'){
   const frame=dojoCameraFrame(azimuth,radius,actors);shotAim.copy(frame.aim);shotEye.copy(frame.eye);
  }else if(line.shot==='arrival'){

@@ -35,6 +35,7 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 #bubble.below:after{top:0;transform:translate(-50%,-9px) rotate(225deg)}
 #bubble.left:after{left:100%;top:var(--tail-y,50%);transform:translate(-8px,-50%) rotate(-45deg)}
 #bubble.right:after{left:0;top:var(--tail-y,50%);transform:translate(-9px,-50%) rotate(135deg)}
+#bubble.narration:after{display:none}
 @media(max-width:650px){#bubble{padding:10px 13px;border-radius:20px}#bubble p{font-size:16px}}
 @media(max-height:350px){#bubble{padding:8px 12px}#bubble p{font-size:15px;line-height:1.25}}
 
@@ -42,7 +43,7 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 #film-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#142b27}
 #cinema-fade{position:absolute;inset:0;background:white;z-index:10;opacity:0;pointer-events:none}
 
-</style><link rel="stylesheet" href="/membres/intro-dojo-ui.css?v=croisee27"><link rel="stylesheet" href="/membres/intro-arrival.css?v=croisee27"></head>
+</style><link rel="stylesheet" href="/membres/intro-dojo-ui.css?v=croisee28"><link rel="stylesheet" href="/membres/intro-arrival.css?v=croisee27"></head>
 <body><div id="app"><header><div><strong>La Croisée des Âmes</strong></div><a href="/admin-blog.html?view=dashboard">Administration</a></header>
 <main id="stage"><canvas id="scene" aria-label="Scène cinématographique 3D et dojo original"></canvas><div id="bubble" hidden aria-live="polite" aria-atomic="true"></div><div id="status" hidden></div><div id="scene-wait" hidden role="status"></div><div id="film-montage" hidden><video id="film-video" playsinline muted preload="auto" disablepictureinpicture aria-label="Le salon, les dés roulant sur le plateau et le jardin avec ses papillons"></video></div><div id="cinema-fade" aria-hidden="true"></div>
 <div id="joystick" hidden aria-label="Joystick pour se déplacer dans le dojo"><div id="nub"></div></div>
@@ -53,4 +54,4 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 </main>
 <footer><button type="button" id="report-open">Signaler une erreur</button><button type="button" id="skip" disabled>Passer l’introduction</button></footer>
 <dialog id="report-dialog"><h2>Rapport de test</h2><label>Type<select id="report-type"><option value="bug">Signaler un problème</option><option value="amelioration">Demander une amélioration</option></select></label><label>Scène<input id="report-scene" readonly></label><label>Observation<textarea id="report-note" placeholder="Décris le problème ou la modification souhaitée."></textarea></label><small id="report-count"></small><div class="actions"><button id="report-add">Ajouter</button><button id="report-export" class="primary">Télécharger le rapport JSON</button><button id="report-close">Fermer</button></div></dialog>
-</div><script type="module" src="/membres/intro-cinema-croisee27.js"></script></body></html>
+</div><script type="module" src="/membres/intro-cinema-croisee28.js"></script></body></html>
