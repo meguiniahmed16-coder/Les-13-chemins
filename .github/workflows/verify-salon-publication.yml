@@ -1,0 +1,32 @@
+name: Vérifier la publication du Salon
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'membres/**'
+      - 'membre.html'
+      - 'salon-invite.html'
+      - 'ahmed-marie.html'
+      - 'build-public.mjs'
+      - 'scripts/build-intro-cinema.mjs'
+      - '.github/workflows/verify-salon-publication.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Construire exactement comme Netlify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Installer les dépendances verrouillées
+        run: npm ci --no-audit --no-fund
+      - name: Exécuter le véritable build Netlify et ses tests
+        run: npm run build
