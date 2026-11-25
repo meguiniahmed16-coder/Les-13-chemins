@@ -118,4 +118,18 @@ async function resume(){
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void resume();});
 window.addEventListener('pageshow',e=>{if(e.persisted)void resume();});
-check();
+async function beginGuestEntry(){
+ // For the author, reuse the full original film instead of showing another
+ // unrelated tour. The temporary visitor session starts only after the film.
+ let done=false;try{done=sessionStorage.getItem('croisee-invite-introduction-originale-v34')==='done';}catch{}
+ if(done){introDone=true;check();return;}
+ try{
+  const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)});
+  if(response.ok&&(await response.json()).author){
+   const goal=new URLSearchParams(location.search).get('ouvrir');
+   location.replace('/membres/intro-prive.html?salon=1&retour=invite'+(['inviter','appeler'].includes(goal)?'&ouvrir='+goal:''));return;
+  }
+ }catch{/* Anonymous visitors retain their existing limited tour. */}
+ check();
+}
+void beginGuestEntry();
