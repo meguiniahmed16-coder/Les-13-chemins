@@ -1,5 +1,5 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js?v=duo6';
-import {normaliseStudio,traitAvailable,traitOptionAvailable,slots,skinSteps} from './studio-look.js?v=presence49';
+import {normaliseStudio,traitAvailable,traitOptionAvailable,slots,skinSteps} from './studio-look.js?v=inspection32';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
@@ -122,7 +122,8 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
    const l=make('label',label),box=make('input');box.type='checkbox';l.append(box);parent.append(l);
    controls.push(()=>{l.hidden=look.outfit[slot]!==id;box.checked=look[field];});box.onchange=()=>choose({...look,[field]:box.checked});
   }
-  const clear=make('button','Retirer la tenue');clear.type='button';clear.onclick=()=>choose({...look,outfit:{},denim:false,tortoise:false});parent.append(clear);
+  const clear=make('button',options.removeClothes?(options.inspection?'Remettre les vêtements':'Retirer les vêtements'):'Retirer la tenue');clear.type='button';
+  clear.onclick=()=>{if(options.removeClothes)void options.removeClothes();else choose({...look,outfit:{},denim:false,tortoise:false});};parent.append(clear);
 
  }
  function render(){

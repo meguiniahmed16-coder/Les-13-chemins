@@ -29,7 +29,7 @@ export function arrivalFrame(elapsed,{promo=false}={}){
 // The parent owns the clock; opening a report pauses the actors, butterflies,
 // controls and end card together. Loading has an explicit ready/error protocol.
 export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout,
- onState=()=>{},onFrame=()=>{},onProblem=()=>{},src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee30'}){
+ onState=()=>{},onFrame=()=>{},onProblem=()=>{},src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee32'}){
  let state='idle',api=null,invitation=null,gardenBegun=false,startedAt=0,elapsed=0,paused=false,promo=false,skip=false,timeout=null,generation=0,finished=false;
  const emit=(phase,detail='')=>{state=phase;onState({phase,detail});};
  const cancelTimeout=()=>{if(timeout!==null)clearTimer(timeout);timeout=null;};

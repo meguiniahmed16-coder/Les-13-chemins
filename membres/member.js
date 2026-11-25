@@ -105,7 +105,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./salon-v27.js?v=unifie56');
+  await import('./salon-v27.js?v=inspection32');
   if(!member||$('salon').hidden)return;
   let view=$('room').querySelector('chemins-salon');
   if(!view){
@@ -114,7 +114,7 @@ async function mountRoom(){
     $('room').append(view);
   }
   const who=member.id;
-  await view.configure(appearance,{memberKey:member.id,salonLooks:member.salonLooks||{},saveCharacter:async(gender,studio)=>{
+  await view.configure(appearance,{memberKey:member.id,author:member.author,salonLooks:member.salonLooks||{},saveCharacter:async(gender,studio)=>{
     if(member?.id!==who)throw Error('Ta session a changé.');
     const result=await api('salon-appearance',{gender,studio});
     if(result.gender!==gender||!result.studio)throw Error('L’enregistrement du personnage reste à confirmer.');

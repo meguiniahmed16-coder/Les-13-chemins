@@ -77,7 +77,7 @@ function harness({dojoLoaded=true}={}){
   dojoWardrobe:{ready:dojoLoaded,cancelled:false,async prepare(){if(!this.cancelled)this.ready=true},restore(){this.cancelled=true;this.ready=false}},
   dojoDemo:{hidden:true,updates:[],update(line,elapsed){this.hidden=line.scene!=='dojo';this.updates.push([line.id,elapsed])},hide(){this.hidden=true}},
   promotionMode:false,arrivalPlayer:{state:'idle',elapsed:0,paused:false,
-   start(options){arrivals.push(options);this.state=options.skip?'complete':'loading';this.paused=options.paused;dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee30'},
+   start(options){arrivals.push(options);this.state=options.skip?'complete':'loading';this.paused=options.paused;dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee32'},
    tick(){},pause(){this.paused=true;arrivalCalls.push('pause')},resume(){this.paused=false;arrivalCalls.push('resume')},
   },
   isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
@@ -140,7 +140,7 @@ test('one start automatically visits every white-room and dojo line, then opens 
  assert.equal(h.state.stage,'garden');assert.equal(h.state.autoplay,false);assert.equal(h.time.count(),0);
  assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.dom.$('skip').hidden,true);
- assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee30');
+ assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=croisee32');
  assert.equal(h.arrivals.length,1);assert.equal(h.arrivals[0].skip,false);
 });
 

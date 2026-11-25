@@ -36,6 +36,8 @@ test('Le compte privé persiste, les accès sont séparés et la déconnexion r�
   assert.equal((await api('login',{...account,password:'incorrect'})).status,401);
   assert.equal((await api('login',account)).status,200);
   assert.equal((await api('admin/module',null,cookie)).status,401);
+  assert.equal((await api('admin/settings',null,cookie)).status,401);
+  assert.equal((await api('admin/settings?auteur=1',null,cookie)).status,401,'An author URL cannot authorize body inspection');
   assert.equal((await api('avatar',{avatar:{...m.avatar,bottom:'laine'}},cookie)).status,403);
   assert.equal((await api('journey',{memberId:'another',games:['sarajevo']},cookie)).status,403);
   assert.equal((await api('journey',{memberId:m.id,games:['sarajevo','unknown'],videos:['https://example.org']},cookie)).status,200);
@@ -49,7 +51,7 @@ test('La garde-robe V27 persiste y compris les pièces du catalogue complet',asy
   delete choice.outfit.robe;choice.outfit.bas='mh1194';choice.denim=false;
   assert.equal((await api('avatar',{avatar,studio:choice},c)).status,200);
   assert.deepEqual((await (await api('me',null,c)).json()).studio,choice);
-  for(const invalid of [{...choice,face:{...choice.face,seat:2}},{...choice,outfit:{...choice.outfit,bas:'inconnu'}}]){
+  for(const invalid of [{...choice,face:{...choice.face,seat:2}},{...choice,outfit:{...choice.outfit,bas:'inconnu'}},{...choice,inspection:true},{...choice,outfit:{}}]){
     assert.equal((await api('avatar',{avatar,studio:invalid},c)).status,403);
   }
   assert.deepEqual((await (await api('me',null,c)).json()).studio,choice);

@@ -100,6 +100,64 @@ function ahmedSkinMask(figure,originalSkin){
   return new T.BufferAttribute(new Uint32Array(kept),1);
 }
 
+// The private portrait was exported with the torso and legs hidden beneath
+// its original clothes. Its saved index cannot restore triangles that were
+// never exported. Complete those regions from the same fitted V27 body while
+// retaining the private head, neck, hands and their existing articulation.
+function completeAhmedSkin(figure,originalSkin,parent){
+ const body=figure.meshes.find(m=>m.name==='body');
+ if(!body?.rig||!body.faces?.length)throw Error('Le corps articulé complet d’Ahmed Marie est indisponible.');
+ const original=originalSkin?.geometry,p=original?.attributes.position;
+ const sourceIndex=original?.userData.ahmedOriginalIndex||original?.index?.array;
+ const cell=.025,buckets=new Map(),key=(x,y,z)=>x+','+y+','+z;
+ const point=new T.Vector3(),nearest=new T.Vector3();
+ if(p&&sourceIndex){
+  originalSkin.updateMatrix();
+  const vertices=Array.from({length:p.count},(_,i)=>new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(originalSkin.matrix));
+  for(let i=0;i<sourceIndex.length;i+=3){
+   const a=vertices[sourceIndex[i]],b=vertices[sourceIndex[i+1]],c=vertices[sourceIndex[i+2]];
+   // The native head is never added. Avoid indexing the private face's much
+   // denser topology while comparing the lower neck and existing hand skin.
+   if(Math.min(a.y,b.y,c.y)>1.44)continue;
+   const triangle=new T.Triangle(a,b,c);
+   for(let x=Math.floor(Math.min(a.x,b.x,c.x)/cell);x<=Math.floor(Math.max(a.x,b.x,c.x)/cell);x++)
+    for(let y=Math.floor(Math.min(a.y,b.y,c.y)/cell);y<=Math.floor(Math.max(a.y,b.y,c.y)/cell);y++)
+     for(let z=Math.floor(Math.min(a.z,b.z,c.z)/cell);z<=Math.floor(Math.max(a.z,b.z,c.z)/cell);z++){
+      const id=key(x,y,z);if(!buckets.has(id))buckets.set(id,[]);buckets.get(id).push(triangle);
+     }
+  }
+ }
+ function covered(x,y,z){
+  point.set(x,y,z);const a=Math.floor(x/cell),b=Math.floor(y/cell),c=Math.floor(z/cell);
+  for(let u=-1;u<=1;u++)for(let v=-1;v<=1;v++)for(let w=-1;w<=1;w++)for(const triangle of buckets.get(key(a+u,b+v,c+w))||[]){
+   triangle.closestPointToPoint(point,nearest);if(nearest.distanceToSquared(point)<.000001)return true;
+  }
+  return false;
+ }
+ const kept=[],privatePart=new Uint8Array(body.n),present=new Uint8Array(body.n);
+ for(let i=0;i<body.n;i++){
+  let head=0,hand=0;
+  for(let k=0;k<4;k++){
+   const bone=body.rig[i*8+k],weight=body.rig[i*8+4+k];
+   if(bone===1)head+=weight;if(bone===4||bone===7)hand+=weight;
+  }
+  privatePart[i]=head>128||hand>128?1:0;
+  if(!privatePart[i])present[i]=covered(body.v[3*i]*.0001,body.v[3*i+1]*.0001,body.v[3*i+2]*.0001)?1:0;
+ }
+ for(let i=0;i<body.faces.length;i+=3){
+  const a=body.faces[i],b=body.faces[i+1],c=body.faces[i+2];
+  if(privatePart[a]&&privatePart[b]&&privatePart[c])continue;
+  if(present[a]&&present[b]&&present[c]){
+   const x=(body.v[3*a]+body.v[3*b]+body.v[3*c])/30000,y=(body.v[3*a+1]+body.v[3*b+1]+body.v[3*c+1])/30000,z=(body.v[3*a+2]+body.v[3*b+2]+body.v[3*c+2])/30000;
+   if(covered(x,y,z))continue;
+  }
+  kept.push(a,b,c);
+ }
+ if(!kept.length)return null;
+ const indices=Uint16Array.from(kept),source={...body,name:'introAhmedSkin',faces:indices,allFaces:indices};
+ const part=partMesh(source,parent,false);part.introSkinSupplement=true;return part;
+}
+
 // Keep the original Ahmed portrait and rig. Remove only the three improvised
 // garment meshes; actual library garments follow the same V27 deformation matrices.
 export async function dressAhmed(actor,originalRig,parent,oldGarments,options={}){
@@ -201,7 +259,7 @@ export function captureIntroAppearance(actor){
 }
 // Build only hidden geometry. Activation is synchronous and never moves a
 // root, replaces the private Ahmed portrait, or writes the saved appearance.
-export async function prepareIntroAppearance(actor,figure,{look=figure.appearance,white=false}={}){
+export async function prepareIntroAppearance(actor,figure,{look=figure.appearance,white=false,completeBody=false}={}){
  if(actor.id==='f'){
   const group=new T.Group();group.name='Marianne · tenue de démonstration';group.visible=false;actor.root.add(group);
   let variant;
@@ -216,8 +274,15 @@ export async function prepareIntroAppearance(actor,figure,{look=figure.appearanc
  const binding=actor.introRig;if(!binding)throw Error('Les articulations originales d’Ahmed sont indisponibles.');
  figure.pose(binding.rig.rest);
  const group=new T.Group();group.name='Ahmed · tenue de démonstration';group.visible=false;binding.parent.add(group);
- const parts=figure.meshes.filter(m=>m.binding).map(m=>partMesh(m,group,white));
- if(look?.outfit?.culotte&&!look.outfit.bas&&!look.outfit.robe){
+ const parts=[];
+ try{
+ for(const m of figure.meshes.filter(m=>m.binding))parts.push(partMesh(m,group,typeof white==='function'?white(m):white));
+ if(completeBody){
+  // Only an explicitly authorized inspection figure can contain no lower
+  // garment. Ordinary outfit edits use the loader's existing clothing masks.
+  if(figure.inspection!==true&&!parts.some(part=>['pantalons','jupes','robes','combinaisons','culottes','maillots'].includes(part.source.group)))throw Error('L’inspection du corps est réservée à l’atelier auteur.');
+  const skin=completeAhmedSkin(figure,binding.skin,group);if(skin)parts.push(skin);
+ }else if(look?.outfit?.culotte&&!look.outfit.bas&&!look.outfit.robe){
   // The private portrait's source skin omits the legs hidden by its original
   // trousers. Complete only the lower body for the opaque underwear preview;
   // its covered waistband conceals the join. Keep the private hands, neck,
@@ -243,4 +308,8 @@ export async function prepareIntroAppearance(actor,figure,{look=figure.appearanc
  // Use the complete original rest-pose skin, never the preceding outfit's cut.
  const index=ahmedSkinMask(figure,binding.skin);
  return appearanceHandle(actor,fields,{skin:binding.skin,index,owned:true,group});
+ }catch(error){
+  for(const part of parts){part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
+  group.removeFromParent();throw error;
+ }
 }

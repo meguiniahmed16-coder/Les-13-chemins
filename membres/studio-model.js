@@ -1,6 +1,7 @@
 import {resource,pixels} from './studio-assets.js';
 import {material} from './studio-materials.js';
 import {poseVertex} from './salon-pose.js';
+import {inspectionFemaleBodyFaces} from './studio-inspection-geometry.js';
 const hairList=['hair','QueueHaute','Carre','LongOndule','TresseCote','bob02','short01','short02','short03','afro01'];
 const smoothStep=(a,b,t)=>{const x=Math.max(0,Math.min(1,(t-a)/(b-a)));return x*x*(3-2*x);};
 function normals(p,faces,weld,out,sum=new Float32Array(p.length)){
@@ -185,14 +186,30 @@ function clericalFabric(image,teal,collar){
  }
  return dyed;
 }
-export async function loadStudio(look,gender){
+async function authorizeBodyInspection(look){
+ if(look.face?.age===5)throw Error('L’inspection du corps est réservée aux personnages adultes.');
+ // The URL or a paid subscription cannot grant this permission. The existing
+ // admin route checks the owner's current server session before returning.
+ const response=await fetch('/api/membres/admin/settings',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw Error('Reconnecte-toi à ton administration pour inspecter le corps.');
+ const settings=await response.json();
+ if(typeof settings?.label!=='string'||typeof settings?.reference!=='string')throw Error('L’accès administrateur à l’inspection n’a pas pu être confirmé.');
+ return true;
+}
+export async function loadStudio(look,gender,{inspection=false}={}){
+ const inspect=inspection===true?await authorizeBodyInspection(look):false;
  const female=gender==='femme';
  const baseShape=female?await resource('female-base'):null;
  const outfit={...look.outfit};
- if((female||look.face.age===5)&&!outfit.haut&&!outfit.robe)outfit.haut=female?'mh22':'mh1431';
+ if(!inspect&&!outfit.bas&&!outfit.robe&&!outfit.culotte)outfit.culotte='mh3461';
+ if(!inspect&&(female||look.face.age===5)&&!outfit.haut&&!outfit.robe)outfit.haut=female?'mh22':'mh1431';
  const names=['body','eyesNative','browNative','lashes','teethNative','tongueNative',hairList[look.face.hair]||hairList[0]];
  const [native,entries]=await Promise.all([
-  Promise.all(names.map(async name=>{const m=await resource('mesh-'+name);return {...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};})),
+  Promise.all(names.map(async name=>{
+   const m=await resource('mesh-'+name),native={...m,position:baseShape?.[name]??m.position,faces:name==='body'&&baseShape?baseShape.faces:m.faces,image:await material(m.texture,look,female)};
+   if(inspect&&female&&name==='body')native.faces=inspectionFemaleBodyFaces(native);
+   return native;
+  })),
   Promise.all(Object.entries(outfit).map(async ([slot,id])=>{
    const raw=await resource('wear-'+id),m=displayMesh(raw,raw.binding.length/8);m.image=await pixels(raw.image);
    if(look.clerical&&['robe','bas','col'].includes(slot)){
@@ -219,7 +236,7 @@ export async function loadStudio(look,gender){
  adjustLayers(clothes,body);
  for(const m of clothes)m.faces=layerCut(m,m.faces,slots,body.n);
  const output=new Float32Array(6);let prior=null,priorFace=null;
- return {meshes:[...skin,...clothes],appearance:look,revision:0,
+ return {meshes:[...skin,...clothes],appearance:look,inspection:inspect,revision:0,
    enableSpeech(channels){for(const m of skin)m.speech??=facialChannels(m,channels);},
    pose(bones,face=null){
   if(prior&&priorFace===face&&bones.every((v,i)=>v===prior[i]))return;

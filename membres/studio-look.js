@@ -26,7 +26,7 @@ export function legacyStudio(avatar={},gender){
   if(avatar.accessory&&avatar.accessory!=='aucun')outfit.lunettes='mh153';
   return {face,skinLevel,iris:'',outfit,denim:avatar.bottom==='jean-nuit',tortoise:avatar.accessory==='ecaille'};
 }
-export function normaliseStudio(value,plus,legacy,gender){
+export function normaliseStudio(value,plus,legacy,gender,{inspection=false}={}){
   if(!value||typeof value!=='object')return legacyStudio(legacy,gender);
   const base=legacyStudio(undefined,gender),face={};
   for(const t of traits){
@@ -38,7 +38,9 @@ export function normaliseStudio(value,plus,legacy,gender){
     const p=byId.get(id);if(p&&slots[p.group]===slot)outfit[slot]=id;
   }
   if(outfit.robe){delete outfit.haut;delete outfit.bas;}
-  if(!outfit.bas&&!outfit.robe&&!outfit.culotte)outfit.culotte='mh3461';
+  // Inspection is a transient caller option, never a field accepted from a
+  // saved appearance. The model loader checks the actual author session.
+  if(!(inspection===true&&face.age!==5)&&!outfit.bas&&!outfit.robe&&!outfit.culotte)outfit.culotte='mh3461';
   const skinLevel=Number.isInteger(value.skinLevel)?Math.max(0,Math.min(100,value.skinLevel)):22;
   face.skin=skinSteps.reduce((a,b,i)=>Math.abs(b-skinLevel)<Math.abs(skinSteps[a]-skinLevel)?i:a,0);
   return {face,skinLevel,iris:/^#[0-9a-f]{6}$/i.test(value.iris)?value.iris.toLowerCase():'',outfit,denim:Boolean(value.denim)&&outfit.bas==='mh807',tortoise:Boolean(value.tortoise)&&outfit.lunettes==='mh153'};

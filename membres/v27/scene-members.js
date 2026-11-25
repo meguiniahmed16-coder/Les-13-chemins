@@ -131,7 +131,7 @@ export function createMemberBridge(scene){
       template=reference;const weights=scene.unzip(new Uint8Array(bytes));
       for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}
       if(scene.cinemaArrival){
-        globalThis.window?.salonArrival?.progress('ahmed','Retrouvons Ahmed dans La Croisée des Âmes…');
+        globalThis.window?.salonArrival?.progress('ahmed','Retrouvons Ahmed Marie dans La Croisée des Âmes…');
         const original=await attachCinemaAhmed(actors.m);
         originals.set(actors.m,original.parts);originalMotion.set(actors.m,original.motion);
       }},
@@ -142,6 +142,7 @@ export function createMemberBridge(scene){
     endDialogue(){readSpeech=null;for(const a of Object.values(actors))a.conversationPose=null;for(const a of Object.values(actors))if(a.referenceFace&&!a.referenceFace.demo)a.referenceFace.reset();for(const a of Object.values(actors))for(const part of a.parts)if(part.voiceReady)part.obj.morphTargetInfluences.fill(0);},
     speechFrame,
     originalLook(slot){const look=actors[slot]?.cinemaAhmed?.look;return look?{...look,face:{...look.face},outfit:{...look.outfit}}:null;},
+    prepareInspection:slot=>scene.prepareInspection?.(actors[slot])===true,
     setGender:gender=>scene.setRole(gender==='femme'?'f':'m'),
     dress:(slot,figure,gender,valid)=>dress(actors[slot]||(slot==='guest'?partner():player()),figure,gender,valid),
     wearing:(key,look)=>actors[key]?.salonLook===look,reset,focus:scene.focus,meet:scene.meet,clearMeeting:scene.clearMeeting,camera:scene.camera,

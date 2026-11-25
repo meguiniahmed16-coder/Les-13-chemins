@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {gunzipSync} from 'node:zlib';
 import * as T from 'three';
 import {seats} from '../salon-plan.js';
-import {dressAhmed} from '../intro-wardrobe.js';
+import {dressAhmed,prepareIntroAppearance} from '../intro-wardrobe.js';
+import {poseVertex} from '../salon-pose.js';
 import {attachCinemaAhmed,cinemaAhmedAsset,cinemaAhmedLook,fetchCinemaAhmed,sameAhmedPortrait} from './cinema-ahmed.js';
 
 const digest=Uint8Array.from(cinemaAhmedAsset.sha256.match(/../g),value=>parseInt(value,16));
@@ -25,8 +27,15 @@ function fixture(){
   calls.push({a,rig,parent,options});for(const object of old)object.removeFromParent();
   a.parts=['top','trousers','shoes'].map(name=>{const p=fakePart(name);p.source={multiplier:[1,1,1]};parent.add(p.obj);return p;});
   a.wardrobe={apply:mats=>applied.push(Array.from(mats))};
+  a.pose=()=>{};
  };
- return {actor,model,source,bones,mouth,compact,applied,calls,dress,now:()=>time,tick:()=>time+=.1};
+ const prepare=async(a,figure,options)=>{
+  const group=new T.Group();group.visible=false;source.add(group);
+  const parts=['top','trousers','shoes'].map(name=>{const part=fakePart(name);part.source={multiplier:[1,1,1]};group.add(part.obj);return part;});
+  return {activate(){for(const part of a.parts)part.obj.visible=false;a.parts=parts;a.wardrobe={apply:mats=>applied.push(Array.from(mats))};group.visible=true;},
+   dispose(){for(const part of parts){part.obj.geometry.dispose();part.obj.material.map.dispose();part.obj.material.dispose();}group.removeFromParent();}};
+ };
+ return {actor,model,source,skin,bones,mouth,compact,applied,calls,dress,prepare,now:()=>time,tick:()=>time+=.1};
 }
 
 test('the salon requests the exact private prologue model in bounded groups and verifies its digest',async()=>{
@@ -60,7 +69,7 @@ test('legacy fragments are a compatible-host fallback; authorization failure is 
 });
 
 test('the original source transform is preserved once, and navigation/seat/flight matrices reach its rig',async()=>{
- const x=fixture(),controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,now:x.now});
+ const x=fixture(),controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,prepare:x.prepare,now:x.now});
  assert.equal(controller.active,true);assert.equal(x.actor.root.name,'Ahmed Marie');assert.equal(x.compact.obj.visible,false);
  assert.equal(x.calls.length,1);assert.ok(x.calls[0].rig.every((bone,i)=>bone===x.bones[i]));
  x.actor.root.updateMatrixWorld(true);
@@ -83,7 +92,7 @@ test('clothing-only customization keeps the portrait; explicit facial choices us
  for(const key of ['hair','body','face'])assert.equal(sameAhmedPortrait({...baseline,face:{...baseline.face,[key]:baseline.face[key]+1}}),false);
  assert.equal(sameAhmedPortrait({...baseline,skinLevel:74}),false);assert.equal(sameAhmedPortrait({...baseline,iris:'#445566'}),false);
 
- const x=fixture(),controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,now:x.now});
+ const x=fixture(),controller=await attachCinemaAhmed(x.actor,{model:x.model,dress:x.dress,prepare:x.prepare,now:x.now});
  const originalParts=controller.parts;
  assert.equal(await controller.dress({appearance:clothes}),true);assert.equal(controller.active,true);
  assert.notEqual(x.actor.parts,originalParts);assert.ok(originalParts.every(part=>!part.obj.visible));
@@ -119,7 +128,9 @@ test('saved looks and added accessories preserve the cinematic white fabrics whi
  }
  function figure(look){
   const body=piece('body');delete body.binding;
-  return {appearance:look,pose(){},meshes:[body,...Object.values(look.outfit).map(piece)]};
+  body.rig=new Uint8Array(24);for(let i=0;i<3;i++)body.rig[i*8+4]=255;
+  const groups={haut:'hauts',bas:'pantalons',souliers:'chaussures',culotte:'culottes',lunettes:'lunettes'};
+  return {appearance:look,pose(){},meshes:[body,...Object.entries(look.outfit).map(([slot,id])=>Object.assign(piece(id),{group:groups[slot]}))]};
  }
  try{
   const x=fixture(),look=cinemaAhmedLook();
@@ -143,5 +154,85 @@ test('saved looks and added accessories preserve the cinematic white fabrics whi
   assert.deepEqual(textures().get('mh2909'),dye,'A newly chosen top keeps its intended color');
   for(const id of [look.outfit.bas,look.outfit.souliers])assert.deepEqual(textures().get(id),original.get(id));
   assert.equal(controller.active,true,'Clothing changes retain the original portrait');
+ }finally{globalThis.fetch=originalFetch;}
+});
+
+test('authorized inspection completes Ahmed’s torso and legs, removes every garment, and restores his exact portrait and outfit',async()=>{
+ const read=path=>readFileSync(new URL('../../'+path,import.meta.url));
+ const index=JSON.parse(read('assets-source/salon-v27/assets.json'));
+ const archive=Buffer.concat(index.packs.map(p=>read('assets-source/salon-v27/'+p)));
+ const resources=new Map(),types={Uint8Array,Uint16Array,Int8Array,Int16Array};
+ async function resource(name){
+  if(resources.has(name))return resources.get(name);
+  const [offset,length]=index.files[name+'.bin'],zipped=gunzipSync(archive.subarray(offset,offset+length));
+  const data=zipped.buffer.slice(zipped.byteOffset,zipped.byteOffset+zipped.byteLength),size=new DataView(data).getUint32(0,true),start=4+size;
+  const value=JSON.parse(new TextDecoder().decode(new Uint8Array(data,4,size)),(_,v)=>v&&types[v.type]?new types[v.type](data,start+v.offset,v.bytes/types[v.type].BYTES_PER_ELEMENT):v);
+  resources.set(name,value);return value;
+ }
+ const pixels=async()=>({width:1,height:1,data:new Uint8ClampedArray([180,135,110,255])});
+ const code=read('membres/studio-model.js').toString().replace(/^import .*;\n/gm,'').replace('export async function loadStudio','async function loadStudio');
+ const loadReal=new Function('resource','pixels','material','poseVertex',code+';return loadStudio;')(resource,pixels,pixels,poseVertex);
+ const poses=JSON.parse(read('membres/v27/poses.json')),originalFetch=globalThis.fetch;
+ globalThis.fetch=async url=>{
+  if(url==='/membres/v27/poses.json')return Response.json(poses);
+  assert.equal(url,'/api/membres/admin/settings');return Response.json({label:'Atelier auteur',reference:'/private/reference'});
+ };
+ try{
+  const look=cinemaAhmedLook(),empty={...look,outfit:{}},bare=await loadReal(empty,'homme',{inspection:true});bare.pose(poses.m.rest);
+  assert.equal(bare.inspection,true);assert.equal(bare.meshes.filter(m=>m.binding).length,0);
+  const x=fixture(),body=bare.meshes.find(m=>m.name==='body'),geometry=new T.BufferGeometry(),privateFaces=[];
+  geometry.setAttribute('position',new T.Float32BufferAttribute(Float32Array.from(body.v,v=>v*.0001),3));
+  const skinIndices=new Uint16Array(body.n*4),skinWeights=new Float32Array(body.n*4);
+  for(let i=0;i<body.n;i++)for(let k=0;k<4;k++){skinIndices[i*4+k]=body.rig[i*8+k];skinWeights[i*4+k]=body.rig[i*8+4+k]/255;}
+  geometry.setAttribute('skinIndex',new T.Uint16BufferAttribute(skinIndices,4));geometry.setAttribute('skinWeight',new T.Float32BufferAttribute(skinWeights,4));
+  const privateVertex=i=>body.v[i*3+1]>13200||Math.abs(body.v[i*3])>3750;
+  for(let i=0;i<body.faces.length;i+=3){
+   const ids=Array.from(body.faces.subarray(i,i+3)),y=ids.reduce((sum,id)=>sum+body.v[id*3+1],0)/3;
+   if(ids.every(privateVertex)||(y>11000&&y<11300))privateFaces.push(...ids);
+  }
+  geometry.setIndex(privateFaces);x.skin.geometry.dispose();x.skin.geometry=geometry;
+  const portraitGeometry=x.skin.geometry,portraitMaterial=x.skin.material,mouth=x.mouth;
+  const initial=await loadReal(look,'homme');let hold=false,release,prepared;
+  const preparedPromise=new Promise(resolve=>prepared=resolve),gate=new Promise(resolve=>release=resolve);
+  const controller=await attachCinemaAhmed(x.actor,{model:x.model,now:x.now,
+   dress:(a,rig,parent,old,options={})=>dressAhmed(a,rig,parent,old,{...options,figure:options.figure||initial}),
+   prepare:async(...args)=>{const draft=await prepareIntroAppearance(...args);if(hold){prepared();await gate;}return draft;}
+  });
+  const originalParts=x.actor.parts,originalIndex=x.skin.geometry.index.array.slice(),originalChildren=x.source.children.length;
+  const boneMatrices=x.bones.map(bone=>bone.matrix.clone());
+  let valid=true;hold=true;const cancelled=controller.dress(bare,()=>valid);await preparedPromise;
+  assert.equal(x.actor.parts,originalParts);assert.ok(originalParts.every(part=>part.obj.visible));
+  assert.deepEqual(x.skin.geometry.index.array,originalIndex,'Preparing inspection never unmasks the live portrait early');
+  x.bones.forEach((bone,i)=>assert.deepEqual(bone.matrix.elements,boneMatrices[i].elements,'Preparation never resets a moving private rig'));
+  valid=false;release();assert.equal(await cancelled,false);assert.equal(x.source.children.length,originalChildren);
+  hold=false;assert.equal(await controller.dress(bare),true);
+  const patch=x.actor.parts.find(part=>part.introSkinSupplement);
+  assert.ok(patch&&patch.obj.geometry.index.count>10000,'The missing torso and both legs are real skinned geometry');
+  assert.equal(x.actor.parts.filter(part=>part.source.binding).length,0,'No clothing or automatic underwear remains in authorized inspection');
+  assert.ok(originalParts.every(part=>!part.obj.visible));
+  assert.deepEqual(Array.from(x.skin.geometry.index.array),privateFaces,'All original exposed skin indices are restored independently of the prior shirt mask');
+  assert.equal(x.skin.geometry,portraitGeometry);assert.equal(x.skin.material,portraitMaterial);assert.equal(x.mouth,mouth);
+  const faceKeys=new Set();for(let i=0;i<patch.source.faces.length;i+=3)faceKeys.add(Array.from(patch.source.faces.subarray(i,i+3)).join(','));
+  const regions={torso:0,leftLeg:0,rightLeg:0};
+  for(let i=0;i<body.faces.length;i+=3){
+   // Classify anatomy in its authored rest shape: a relaxed hand can pass
+   // beside a thigh in the live pose and must remain the private hand.
+   const ids=Array.from(body.faces.subarray(i,i+3)),x=ids.reduce((s,id)=>s+body.rest[id*3],0)/30000,y=ids.reduce((s,id)=>s+body.rest[id*3+1],0)/30000;
+   const region=y>1.15&&y<1.28&&Math.abs(x)<.13?'torso':y>.20&&y<.70&&Math.abs(x)>.03&&Math.abs(x)<.25?(x<0?'leftLeg':'rightLeg'):null;
+   if(!region)continue;assert.ok(faceKeys.has(ids.join(',')),region+' has no hole left by the exported clothing mask: '+ids.join(','));regions[region]++;
+  }
+  assert.ok(Object.values(regions).every(count=>count>100));
+  const before=patch.obj.geometry.attributes.position.array.slice();controller.animate(.8,null,.2,3);
+  assert.notDeepEqual(patch.obj.geometry.attributes.position.array,before,'The restored torso and legs follow the existing walking controller');
+  controller.talk({jaw:.22,blink:.3});assert.equal(mouth.morphTargetInfluences[0],.22);
+  const partial=await loadReal({...look,outfit:{culotte:'mh3461'}},'homme');
+  assert.equal(partial.inspection,false);assert.equal(await controller.dress(partial),true);
+  assert.ok(x.actor.parts.some(part=>part.introSkinSupplement),'Removing only the top also restores the torso outside inspection');
+  assert.equal(x.actor.parts.filter(part=>part.source.binding).length,1,'An ordinary outfit retains its covering underwear');
+  const allowed=new Set();for(let i=0;i<partial.meshes[0].faces.length;i+=3)allowed.add(Array.from(partial.meshes[0].faces.subarray(i,i+3)).join(','));
+  const coveredPatch=x.actor.parts.find(part=>part.introSkinSupplement);for(let i=0;i<coveredPatch.source.faces.length;i+=3)assert.ok(allowed.has(Array.from(coveredPatch.source.faces.subarray(i,i+3)).join(',')),'Normal clothing coverage remains intact');
+  controller.restore();assert.equal(x.actor.parts,originalParts);assert.ok(originalParts.every(part=>part.obj.visible));
+  assert.deepEqual(x.skin.geometry.index.array,originalIndex);assert.equal(x.source.children.length,originalChildren);
+  assert.equal(x.skin.geometry,portraitGeometry);assert.equal(x.skin.material,portraitMaterial);assert.ok(x.bones.every(bone=>bone.parent===x.source));
  }finally{globalThis.fetch=originalFetch;}
 });

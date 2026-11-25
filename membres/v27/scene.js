@@ -9,7 +9,7 @@ import {reunionDialogue} from './rencontre-lionel.js';
 import {createMemberBridge} from './scene-members.js';
 import {loadOriginalCinemaAssets} from './intro-original.js';
 import {createIntroFinale} from './intro-finale.js';
-import {createIntroInvitationScene,prepareIntroInvitationGuests,applyIntroInvitationGuest} from './intro-invitation-scene.js';
+import {createIntroInvitationScene,prepareIntroInvitationGuests,applyIntroInvitationGuest,INTRO_INVITATION_POSITIONS} from './intro-invitation-scene.js';
 import {SalonMotion} from '../salon-v27-motion.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unzipSync, strFromU8 } from 'three/examples/jsm/libs/fflate.module.js';
@@ -1466,8 +1466,25 @@ catalog.addEventListener('click',e=>{if(e.target===catalog)catalog.close()});cat
 shelvesButton.onclick=()=>setShelfView(!shelfView);
 
 $('lookHome').onclick=lookAtHome;setLocation(false);resetView();updateSize();
+function prepareBodyInspection(actor){
+ if(!Object.values(actors).includes(actor)||invitationScene?.active||arrivalFinale?.active)return false;
+ if(where!=='salon')returnHome();
+ member.clearMeeting();setRole(actor===actors.f?'f':'m');
+ keys.clear();releaseStick();releaseAirInput();releaseSeatRoute();
+ goal=null;sitting=null;poseSeat=null;companionSeat=null;rising=false;
+ const pair=[actor,...Object.values(actors).filter(a=>a!==actor)],spots=[INTRO_INVITATION_POSITIONS.m,INTRO_INVITATION_POSITIONS.f];
+ if(spots.some(p=>!canWalk(p.x,p.z)))return false;
+ // Reuse the clear floor positions already fitted for the invitation. The
+ // inspected actor stands nearest the body camera, never inside its old chair.
+ for(const [index,a]of pair.entries()){
+  const p=spots[index];a.root.position.set(p.x,0,p.z);a.root.rotation.set(0,p.yaw,0);a.body.position.y=0;a.body.visible=true;
+  a.sit=a.speed=a.phase=0;a.motionSeat=null;a.conversationPose=null;a.live=false;a.stamp='';animateBody(a,0,null);
+ }
+ $('rise').hidden=true;return true;
+}
 const member=createMemberBridge({
  T,actors:{...actors,guest:visitor},player:()=>actors[role],partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,cinemaArrival,
+ prepareInspection:prepareBodyInspection,
  unzip:unzipSync,get settled(){return !seatRoute&&player().speed<=.08;},get place(){return where},get role(){return role},setRole,freeCamera,
  focus(view,target=''){freeCamera();orbit.follow=false;const a=target==='m'||target==='f'?actors[target]:target==='guest'&&visiting?visitor:target==='resident'&&authorRoom?actors.f:player(),p=a.root.position;
  orbit.angle=a.root.rotation.y+(view==='Profil'?1.35:view==='Dos'?Math.PI:0);

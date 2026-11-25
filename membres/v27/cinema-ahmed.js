@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {dressAhmed,introOutfits} from '../intro-wardrobe.js';
+import {dressAhmed,introOutfits,captureIntroAppearance,prepareIntroAppearance} from '../intro-wardrobe.js';
 import {referenceStudio} from '../studio-look.js';
 import {SalonMotion} from '../salon-v27-motion.js';
 
@@ -69,7 +69,7 @@ async function loadModel(){
 
 // Keep the salon's actor object, navigation, backpack, wings and seat targets.
 // Only its visible geometry and deformation controller become the original Ahmed.
-export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>performance.now()/1000}={}){
+export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=prepareIntroAppearance,now=()=>performance.now()/1000}={}){
  const original=model||await loadModel(),compact=actor.parts;
  const oldGarments=[],mouth=[];let skeleton;
  original.traverse(object=>{
@@ -80,7 +80,6 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>pe
  });
  if(!skeleton||oldGarments.length!==3)throw Error('Le modèle original d’Ahmed n’est pas reconnu.');
  const parent=oldGarments[0].parent,rig=skeleton.bones;
- const rest=rig.map(bone=>({p:bone.position.clone(),q:bone.quaternion.clone(),s:bone.scale.clone()}));
  const holder=new T.Group();holder.name='Ahmed de la cinématique';
  // The GLB itself already contains its 1.075 scale. Cancel the outer salon
  // scale once; preserve the source scale, portrait transforms and floor lift.
@@ -89,14 +88,12 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>pe
  const modelActor={id:'m',root:actor.root,body:holder,parts:[],sit:0};
  try{await dress(modelActor,rig,parent,oldGarments);}catch(error){holder.removeFromParent();throw error;}
  const originalParts=modelActor.parts,originalWardrobe=modelActor.wardrobe;
- const skin=parent.children.find(object=>object.isSkinnedMesh&&!oldGarments.includes(object));
- const originalSkinIndex=skin?.geometry.index.clone();
+ const originalAppearance=captureIntroAppearance(modelActor);
  const solver=new SalonMotion(()=>{},{angle:0});
- let active=true,last='',current=modelActor.wardrobe;
+ let active=true,last='',current=modelActor.wardrobe,appearance=null;
  const activeMotion={apply(matrices){current.apply(matrices);},release(){}};
  for(const part of compact)part.obj.visible=false;
  actor.parts=originalParts;actor.root.name='Ahmed Marie';actor.id='m';actor.motion=activeMotion;
- function resetRig(){for(const [i,bone] of rig.entries()){bone.position.copy(rest[i].p);bone.quaternion.copy(rest[i].q);bone.scale.copy(rest[i].s);}}
  function activate(){active=true;holder.visible=true;actor.id='m';actor.root.scale.setScalar(1.075);actor.motion=activeMotion;last='';}
  const controller={
   get active(){return active;},get parts(){return originalParts;},motion:activeMotion,
@@ -104,35 +101,33 @@ export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,now=()=>pe
   supports(look,gender){return gender==='homme'&&sameAhmedPortrait(look);},
   hide(){active=false;holder.visible=false;last='';},
   restore(){
-   for(const part of originalParts){parent.add(part.obj);part.obj.visible=true;}
-   if(skin&&originalSkinIndex)skin.geometry.setIndex(originalSkinIndex.clone());
+   originalAppearance.activate();appearance?.dispose();appearance=null;
+   for(const part of originalParts)parent.add(part.obj);
    current=originalWardrobe;actor.parts=originalParts;activate();
   },
   async dress(figure,valid=()=>true){
-   // Loaders finish before this call. Prepare hidden garments, then switch
-   // only if this is still the requested wardrobe choice.
-   const before=actor.parts,beforeWardrobe=current,beforeIndex=skin?.geometry.index.clone();
-   const draft={id:'m',root:actor.root,body:holder,parts:[],sit:0};
-   resetRig();
-   try{
-    // The stored look identifies each garment, while the prologue lightens its
-    // fabric. Keep that finish on unchanged pieces when adding an accessory or
-    // reloading a saved look; newly selected garments retain their own colors.
-    await dress(draft,rig,parent,[],{figure,white:part=>whiteCinemaGarments.has(part.id)});
-    if(!valid()){
-     for(const part of draft.parts){part.obj.removeFromParent();part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
-     if(skin&&beforeIndex)skin.geometry.setIndex(beforeIndex);current=beforeWardrobe;last='';return false;
+   if(!valid())return false;
+   const originalClothes=Object.entries(introOutfits.m).every(([slot,id])=>figure.appearance?.outfit?.[slot]===id);
+   // Preparation touches neither the private rig nor its live skin index.
+   // Inspection and exposed-body outfits get the missing fitted skin; the
+   // normal prologue outfit keeps its exact original geometry and finish.
+   const draft=await prepare(modelActor,figure,{
+    look:figure.appearance,white:part=>whiteCinemaGarments.has(part.id),
+    completeBody:figure.inspection===true||!originalClothes
+   });
+   if(!valid()){draft.dispose();return false;}
+   const before=actor.parts,privateBefore=modelActor.parts,prior=appearance;
+   draft.activate();appearance=draft;
+   for(const part of before){
+    part.obj.visible=false;
+    if(before!==privateBefore&&!originalParts.includes(part)){
+     part.obj.removeFromParent();part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();
     }
-    for(const part of before){
-     part.obj.visible=false;
-     if(!originalParts.includes(part)){part.obj.removeFromParent();part.obj.geometry.dispose();part.obj.material.map?.dispose();part.obj.material.dispose();}
-    }
-    actor.parts=draft.parts;current=draft.wardrobe;
-    for(const part of actor.parts)if(part.source.multiplier)part.obj.material.color.fromArray(part.source.multiplier);
-    actor.salonLook=figure.appearance;activate();return true;
-   }catch(error){
-    if(skin&&beforeIndex)skin.geometry.setIndex(beforeIndex);current=beforeWardrobe;last='';throw error;
    }
+   actor.parts=modelActor.parts;current=modelActor.wardrobe;
+   prior?.dispose();
+   for(const part of actor.parts)if(part.source.multiplier)part.obj.material.color.fromArray(part.source.multiplier);
+   actor.salonLook=figure.appearance;activate();return true;
   },
   animate(blend,seat,dt=0,sampleTime){
    if(!active)return false;

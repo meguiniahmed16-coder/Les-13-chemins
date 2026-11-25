@@ -15,4 +15,5 @@ await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'memb
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee29.js'));
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee30.js'));
 await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee31.js'));
-console.log('Cinématique 3D privée construite : croisee31.');
+await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'membres/intro-cinema-croisee32.js'));
+console.log('Cinématique 3D privée construite : croisee32.');
