@@ -375,3 +375,21 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 }
 .stage:has(.studio-drawer:not([hidden])) .maison-dock,
 .stage:has(.studio-drawer:not([hidden])) .maison-phone{display:none!important}
+
+/* Le Salon et ses commandes cohabitent réellement en paysage. */
+@media (orientation:landscape) and (max-height:540px) and (pointer:coarse){
+  .maison-hub{
+    position:fixed;inset:5px auto 5px 5px;width:min(420px,48vw);
+    max-height:calc(100dvh - 10px);border-radius:15px
+  }
+  .maison-scrim{
+    position:fixed;inset:0;background:linear-gradient(90deg,#081e1860,transparent 65%);
+    backdrop-filter:none;pointer-events:none
+  }
+  .maison-hub-head{padding:8px 12px 7px}
+  .maison-hub-head h2{font-size:17px}
+  .maison-tabs{padding:4px 6px}
+  .maison-tabs button{min-height:48px;font-size:10px}
+  .maison-scroll{padding:0 13px 16px}
+  .maison-room h3{font-size:24px}
+}
