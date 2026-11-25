@@ -137,14 +137,18 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   for(const button of shots)button.onclick=()=>{setMode(button.dataset.shot);change();};
   function turn(who){speaker=who;sequence.turn(who);change();}
+  const bubblePreferenceKey='salon-bulles-visibles-v1';
   function showBubbles(show){
     reader.hidden=true;showSpeech=show;rail.hidden=!person||!show;
     bubbleSwitch.setAttribute('aria-pressed',String(show));
     bubbleSwitch.title=show?'Masquer les bulles':'Afficher les bulles';
+    try{localStorage.setItem(bubblePreferenceKey,String(show));}catch{}
     change();
   }
-  bubbleSwitch.title='Masquer les bulles';
-  bubbleSwitch.onclick=()=>showBubbles(rail.hidden);
+  let rememberedBubbles=true;
+  try{rememberedBubbles=localStorage.getItem(bubblePreferenceKey)!=='false';}catch{}
+  showBubbles(rememberedBubbles);
+  bubbleSwitch.onclick=()=>showBubbles(!showSpeech);
   for(const node of [own,other])node.querySelector('button').onclick=()=>{
     reading=node;reader.querySelector('strong').textContent=node.querySelector('strong').textContent;
     reader.querySelector('p').textContent=node.querySelector('span').textContent;reader.hidden=false;reader.querySelector('p').scrollTop=0;
