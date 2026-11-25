@@ -24,6 +24,7 @@ const output = join(root, 'dist');
 const run = promisify(execFile);
 for (const args of [
   ['--test','membres/member.test.mjs','membres/journey.test.mjs','membres/salon.test.mjs','membres/salon-dictee.test.mjs','membres/salon-voice.test.mjs'],
+  ['--test','membres/salon-conversation.test.mjs','membres/salon-conversation-audio.test.mjs','membres/voice-conversation.test.mjs','membres/voice-proxy.test.mjs'],
   ['--test','membres/incarnations-dialog.test.mjs','membres/v27/reference-groom.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
@@ -70,6 +71,7 @@ for (const args of [
 // Liste fermée : aucun autre document du dépôt n'est copié sur le site.
 const publicFiles = [
   'membres/incarnations-dialog.js','membres/makehuman-catalog.js','membres/makehuman-groom.js','membres/v27/reference-groom.js',
+  'membres/salon-conversation.js','membres/salon-conversation-audio.js',
   'assets/intro-sound/effervescence-intro.mp3','assets/intro-sound/foley.mp3','assets/intro-sound/room.mp3','assets/intro-sound/garden.mp3','assets/intro-sound/credits.txt',
   'atlas-personnages.js', 'atlas-discussion.js','atlas-chat-client.js', 'atlas-personnages.css', 'atlas-carte.js', 'atlas-rencontre.js', 'atlas-rencontre.css',
   'atlas-repertoire.json', 'atlas-continuites.json', 'atlas-territoires.svg',

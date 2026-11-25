@@ -71,6 +71,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
   function readAloud(){
     if(!voiced||!active)return;
     const current=active;
+    if(current.external)return;
     current.triedNative=false;current.triedLocal=false;
     if(current.clip&&!current.recordFailed){
       current.waitRecording=true;
@@ -84,9 +85,9 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
   }
   function begin(record){
     active={...record,gender:gender(record.who),score:scoreLine(record.text,record.rate),origin:now(),waitUntil:0,started:false};
-    active.clip=active.gender==='femme'?recordedPhrase(record.text):null;lastWord=-1;start(record.who,record.text);readAloud();wake();
+    active.clip=!record.external&&active.gender==='femme'?recordedPhrase(record.text):null;lastWord=-1;start(record.who,record.text);readAloud();wake();
   }
-  function clear(){reaction=null;studio.stop();next=null;stopVoice();if(active)rest(active.who);active=null;lastWord=-1;}
+  function clear(){reaction=null;studio.stop();next=null;stopVoice();const previous=active;active=null;if(previous){previous.external?.stop?.();rest(previous.who);}lastWord=-1;}
   return {
     clear,
     dispose(){clear();micOpen=false;local?.disable();},
@@ -96,6 +97,9 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
       const record={who,text,rate};
       if((micOpen&&voiced)||(queue&&(active||reaction?.clip))){next=record;return;}
       clear();begin(record);
+    },
+    playExternal(who,text,external){
+      clear();begin({who,text,rate:1,external});
     },
     microphone(open){
       micOpen=open;
@@ -128,6 +132,16 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
       const mood=reaction?{who:reaction.who,name:reaction.name,age:Math.max(0,t-reaction.origin),recordingTime:reaction.clip?reaction.clip[0]+Math.max(0,t-reaction.origin):null}:null;
       const pause=mood?{who:null,line:null,jaw:0,round:0,spread:0,reaction:mood}:null;
       if(!active||active.waitRecording)return pause;
+      if(active.external){
+        const position=active.external.position();
+        if(!position)return {who:active.who,line:active.score,jaw:0,round:0,spread:0,reaction:null};
+        const elapsed=Math.min(.99999,Math.max(0,position.fraction))*active.score.duration;
+        const pose=articulation(active.score,elapsed);
+        if(pose.word!==lastWord){lastWord=pose.word;word(active.who,active.score.words[lastWord]);}
+        const energy=Math.max(0,Math.min(1,position.energy*45));
+        pose.jaw*=energy;pose.round*=energy;pose.spread*=energy;
+        return {...pose,who:active.who,line:active.score,reaction:null};
+      }
       const audio=local?.position();
       if(active.recording||active.clip&&!voiced){
         const clip=active.clip,elapsed=Math.max(0,t-active.origin),duration=clip[1]-clip[0];

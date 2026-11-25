@@ -11,6 +11,7 @@ import ownerModule from './avatar-owner.js?text';
 import incarnationsTemplate from '../assets-source/incarnations/incarnations-private.html?text';
 import {incarnationsAccess,incarnationsDocument,incarnationsHeaders} from './incarnations-access.mjs';
 import {incarnationsRuntime} from './incarnations-runtime.mjs';
+import {voiceConversation} from './voice-conversation.mjs';
 const h={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','vary':'Cookie'};
 const json=(data,status=200,extra={})=>Response.json(data,{status,headers:{...h,...extra}});
 async function read(r){const data=await r.text();if(data.length>16000)fail(413,'Demande trop longue.');try{return JSON.parse(data)||{};}catch{fail(400,'Demande invalide.');}}
@@ -109,6 +110,7 @@ export default {
     const author=await authorSession(request,env);
     if(url.searchParams.has('auteur')&&!author)fail(401,'Ta session auteur a expiré.');
     const m=author?await authorProfile(db):await current(db,request);if(!m)fail(401,'Connecte-toi pour ouvrir ton espace.');
+    if(path.startsWith('voice/'))return await voiceConversation(request,env,{member:m,author},path.slice('voice/'.length));
     if((path==='incarnations'||path==='incarnations/access')&&request.method==='GET'){
       const access=incarnationsAccess(m,author);
       if(path==='incarnations/access')return json(access);

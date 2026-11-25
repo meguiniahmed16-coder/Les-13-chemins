@@ -1,6 +1,7 @@
 import {createShotSequence} from './salon-shots.js';
-import {createDialogue} from './salon-dialogue.js?v=salon43';
+import {createDialogue} from './salon-dialogue.js?v=voix34';
 import {createDictee} from './salon-dictee.js?v=salon41';
+import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=voix34';
 import {characterReply,limit} from '../atlas-chat-client.js';
 import {searchName} from './salon-encounter.js?v=incarnations33';
 
@@ -39,9 +40,29 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
         <button type="button" data-shot="wide" aria-pressed="false">Vue large</button>
         <button type="button" data-shot="reverse" aria-pressed="true" title="Plans larges, moyens et gros plans en champ et contrechamp">Plans alternés</button>
         <button type="button" class="voice-toggle" aria-pressed="false" hidden>Voix</button>
+        <button type="button" class="conversation-voice-toggle" aria-expanded="false" aria-controls="salon-voice-conversation" hidden>Conversation vocale</button>
         <button type="button" class="bubbles-toggle" aria-controls="salon-bulles" aria-pressed="true">Bulles</button>
       </div>
       <div class="camera-slot"><button class="guest-leave" type="button" aria-label="Terminer la conversation">Terminer</button></div>
+      <section class="voice-conversation" id="salon-voice-conversation" aria-label="Conversation vocale" hidden>
+        <header><strong>Parler ensemble</strong><button class="voice-conversation-close" type="button" aria-label="Fermer la conversation vocale">×</button></header>
+        <p class="voice-conversation-help">Tu parles, tu marques une pause, le personnage te répond. Ta parole est transcrite par OpenAI ; ElevenLabs donne sa voix à la réponse.</p>
+        <label>Voix du personnage<select class="voice-conversation-select" aria-label="Choisir la voix du personnage" disabled><option value="">Vérification des voix…</option></select></label>
+        <p class="voice-conversation-status" role="status" aria-live="polite">Vérification des connexions…</p>
+        <div class="voice-conversation-actions">
+          <button class="voice-conversation-start" type="button" disabled>Commencer</button>
+          <button class="voice-conversation-finish" type="button" hidden>J’ai terminé</button>
+          <button class="voice-conversation-interrupt" type="button" hidden>Prendre la parole</button>
+          <button class="voice-conversation-pause" type="button" hidden>Couper le micro</button>
+        </div>
+        <small>Utilise tes crédits OpenAI et ElevenLabs. Le micro se coupe quand tu quittes cet écran. L’échange reste dans ce dialogue.</small>
+        <details class="voice-conversation-settings"><summary>Relier mes comptes</summary>
+          <p>Ces réglages sont réservés à ton compte administrateur. Les clés sont conservées chiffrées sur le serveur et ne sont jamais affichées après l’enregistrement.</p>
+          <form data-voice-provider="openai"><label>Clé du compte OpenAI qui possède tes crédits<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier OpenAI</button></form>
+          <form data-voice-provider="elevenlabs"><label>Clé de ton compte ElevenLabs<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier ElevenLabs</button></form>
+          <p class="voice-settings-status" role="status"></p>
+        </details>
+      </section>
       <form class="guest-compose"><input class="guest-message" type="text" inputmode="text" autocapitalize="sentences" spellcheck="true" placeholder="Écris ton message…" aria-label="Ton message" maxlength="${limit}" autocomplete="off" enterkeyhint="send">
         <button class="guest-mic" aria-label="Dicter un message" title="Dicter un message" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/></svg></button>
         <button class="guest-send" type="submit">Envoyer</button></form>
@@ -54,6 +75,9 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   const own=$('.own-speech'),other=$('.guest-speech'),reader=$('.speech-reader');
   const rail=$('.speech-rail'),bubbleSwitch=$('.bubbles-toggle'),shots=[...root.querySelectorAll('[data-shot]')];
   const toolbar=$('.bar'),barSlot=$('.camera-slot'),voiceSwitch=$('.voice-toggle');
+  const phoneToggle=$('.conversation-voice-toggle'),phonePanel=$('.voice-conversation'),phoneStatus=$('.voice-conversation-status');
+  const phoneSelect=$('.voice-conversation-select'),phoneStart=$('.voice-conversation-start'),phonePause=$('.voice-conversation-pause'),phoneInterrupt=$('.voice-conversation-interrupt'),phoneFinish=$('.voice-conversation-finish');
+  let voiceSession=null,phoneBusy=false,phoneReady=false,phoneLoad=0,savingVoiceSettings=false;
   const sequence=createShotSequence(),now=()=>performance.now()/1000;
   let mode='reverse',speaker='player',reading,showSpeech=true;
   const nodeFor=who=>who==='player'?own:other,announcement=$('.speech-announcement');
@@ -115,8 +139,82 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
   const threads=new Map(),log=$('.thread-history'),threadToggle=$('.thread-toggle'),styleButton=$('.guest-style');
+  voiceSession=createVoiceConversation({
+    character:()=>person?{id:person.id,history:threads.get(person.id)||[],gender:gender('guest')}:null,
+    onQuestion(question){showLine('player',question);appendLine('Toi',question);bubble(other,'…');status.textContent='';},
+    onAnswer(question,answer){
+      if(!person)return;
+      appendLine(person.name,answer);bubble(other,answer);
+      const thread=threads.get(person.id);thread.push({question,answer});if(thread.length>40)thread.shift();
+    },
+    onAudio:(answer,audio)=>playback.playExternal('guest',answer,audio),
+    onIdle:()=>playback.clear(),
+    onStatus:message=>{phoneStatus.textContent=message;},
+    onState(state){
+      const wasBusy=phoneBusy;phoneBusy=!['idle','paused'].includes(state);
+      phonePanel.dataset.state=state;
+      phoneStart.textContent=state==='paused'?'Reprendre':'Commencer';
+      phoneStart.hidden=phoneBusy;phonePause.hidden=!phoneBusy;
+      phoneInterrupt.hidden=!['thinking','preparing','speaking'].includes(state);
+      phoneFinish.hidden=state!=='listening';phoneSelect.disabled=phoneBusy||!phoneReady;
+      if(phoneBusy&&!wasBusy){dictee.cancel();playback.clear();playback.voice(false);}
+      if(!phoneBusy&&wasBusy)playback.voice(voiceEnabled());
+      buttons();
+    }
+  });
+  async function loadPhone(show=false){
+    const ticket=++phoneLoad,current=person;
+    if(show){phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneStatus.textContent='Vérification des connexions…';}
+    try{
+      const {status:available,voices,voiceError}=await voiceSession.refresh();
+      if(ticket!==phoneLoad||person!==current)return;
+      phoneToggle.hidden=false;phoneReady=Boolean(available.ready&&voices.length);
+      const previous=phoneSelect.value;
+      phoneSelect.replaceChildren();
+      if(voices.length){
+        for(const voice of voices){const option=document.createElement('option');option.value=voice.id;option.textContent=voice.name;phoneSelect.append(option);}
+        phoneSelect.value=voices.some(v=>v.id===previous)?previous:(voices.find(v=>v.gender===gender('guest'))||voices[0]).id;
+      }else{
+        const option=document.createElement('option');option.value='';option.textContent=available.ready?'Aucune voix disponible':'Voix à raccorder';phoneSelect.append(option);
+      }
+      phoneSelect.disabled=!phoneReady;
+      if(show&&(!available.ready||voiceError))$('.voice-conversation-settings').open=true;
+      phoneStatus.textContent=phoneReady?'Choisis une voix, puis touche « Commencer ».':voiceError||(available.ready?'Ajoute une voix française à ton compte ElevenLabs, puis rouvre ce panneau.':'Le raccordement d’OpenAI et d’ElevenLabs reste à terminer. Le micro est coupé.');
+      buttons();
+    }catch(error){
+      if(ticket!==phoneLoad||person!==current||error.name==='AbortError')return;
+      phoneReady=false;
+      if(error.status===401||error.status===403){phoneToggle.hidden=true;phonePanel.hidden=true;}
+      else if(show)phoneStatus.textContent='Impossible de vérifier les connexions. Ferme et rouvre ce panneau pour réessayer.';
+      buttons();
+    }
+  }
+  function closePhone(){phoneLoad++;voiceSession.stop();phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';}
+  phoneToggle.onclick=()=>{if(phonePanel.hidden)void loadPhone(true);else closePhone();};
+  $('.voice-conversation-close').onclick=closePhone;
+  phoneStart.onclick=()=>{if(phoneReady&&!request)void voiceSession.start(phoneSelect.value);};
+  phonePause.onclick=()=>voiceSession.pause();
+  phoneInterrupt.onclick=()=>voiceSession.interrupt();
+  phoneFinish.onclick=()=>voiceSession.finishTurn();
+  for(const form of root.querySelectorAll('[data-voice-provider]'))form.onsubmit=async event=>{
+    event.preventDefault();voiceSession.stop();
+    const field=form.querySelector('input'),button=form.querySelector('button'),feedback=$('.voice-settings-status');
+    if(!field.value.trim()||savingVoiceSettings)return;
+    const ticket=phoneLoad,current=person;
+    savingVoiceSettings=true;
+    for(const control of phonePanel.querySelectorAll('[data-voice-provider] input,[data-voice-provider] button'))control.disabled=true;
+    feedback.textContent='Vérification du compte…';
+    try{
+      await voiceRequest('settings',{body:{provider:form.dataset.voiceProvider,key:field.value.trim()}});
+      if(ticket!==phoneLoad||person!==current||phonePanel.hidden)return;
+      feedback.textContent='Compte relié. Aucune conversation n’a été générée pendant cette vérification.';
+      await loadPhone(true);
+    }catch(error){if(ticket===phoneLoad&&person===current&&!phonePanel.hidden)feedback.textContent=error.message||'La connexion n’a pas pu être enregistrée.';}
+    finally{field.value='';savingVoiceSettings=false;for(const control of phonePanel.querySelectorAll('[data-voice-provider] input,[data-voice-provider] button'))control.disabled=false;}
+  };
   styleButton.onclick=()=>customize?.();
   function expand(open){
+    if(!open&&phoneBusy)voiceSession.pause();
     footer.classList.toggle('thread-folded',!open);threadToggle.setAttribute('aria-expanded',String(open));
     threadToggle.textContent=open?'Réduire':'Ouvrir le dialogue';
   }
@@ -171,6 +269,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   };
   function cancelRequest(){request?.abort();request=null;dictee.cancel();}
   function finish(clear=false){
+    closePhone();phoneToggle.hidden=true;phoneReady=false;
     onChoice=null;
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
     closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';dictatedDraft=false;status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
@@ -182,10 +281,12 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     node.querySelector('span').scrollTop=0;change();
   }
   function buttons(){
-    send.disabled=Boolean(request)||micState!=='idle'||!input.value.trim();
+    send.disabled=phoneBusy||Boolean(request)||micState!=='idle'||!input.value.trim();
+    mic.disabled=phoneBusy;input.disabled=phoneBusy;voiceSwitch.disabled=phoneBusy;retry.disabled=phoneBusy;
+    phoneStart.disabled=!phoneReady||Boolean(request)||phoneBusy;
   }
   async function say(question,fromDraft=false,welcome,spoken=fromDraft&&dictatedDraft){
-    if(!person||request||!question||(fromDraft&&micState!=='idle'))return;
+    if(!person||phoneBusy||request||!question||(fromDraft&&micState!=='idle'))return;
     if(dictee.state!=='idle')dictee.cancel();
     const current=person,thread=threads.get(current.id),abort=new AbortController();
     request=abort;const timer=setTimeout(()=>abort.abort(),60000);
@@ -207,6 +308,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   async function choose(p){
     if(loading||!p)return;
+    closePhone();phoneToggle.hidden=true;phoneReady=false;
     const ticket=++version;
     loading=true;random.disabled=true;list.inert=true;
     closePicker();toggle.hidden=true;footer.hidden=false;expand(true);log.replaceChildren();styleButton.hidden=true;
@@ -215,6 +317,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     barSlot.prepend(toolbar);rail.hidden=!showSpeech;input.disabled=mic.disabled=false;
     input.setAttribute('aria-label','Ton message à '+p.name);
     const thread=threads.get(p.id)||[];threads.set(p.id,thread);
+    void loadPhone();
     if(thread.length){for(const line of thread){appendLine('Toi',line.question);appendLine(p.name,line.answer);}turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
     else void say(opening,false,p.welcome);
     try{
@@ -245,5 +348,5 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       node.querySelector('button').hidden=body.scrollHeight<=body.clientHeight+1;
     }
   }
-  return {playback,shot(atRest=true){return mode==='reverse'?sequence.frame(now(),atRest):{size:mode,speaker};},chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
+  return {playback,pauseVoice(){if(phoneBusy)voiceSession.pause();},shot(atRest=true){return mode==='reverse'?sequence.frame(now(),atRest):{size:mode,speaker};},chooseCompanion(fn){onChoice=fn;if(picker.hidden)toggle.click()}, get inset(){return rail.hidden?0:rail.offsetHeight+10;}, get mode(){return mode;},get speaker(){return speaker;},manual:()=>setMode('manual'),position,reset:()=>finish(true)};
 }
