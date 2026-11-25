@@ -147,7 +147,6 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   let rememberedBubbles=true;
   try{rememberedBubbles=localStorage.getItem(bubblePreferenceKey)!=='false';}catch{}
-  showBubbles(rememberedBubbles);
   bubbleSwitch.onclick=()=>showBubbles(!showSpeech);
   for(const node of [own,other])node.querySelector('button').onclick=()=>{
     reading=node;reader.querySelector('strong').textContent=node.querySelector('strong').textContent;
@@ -161,6 +160,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   reader.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();closeReader();}};
   let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
+  showBubbles(rememberedBubbles);
   const threads=new Map(),log=$('.thread-history'),threadToggle=$('.thread-toggle'),styleButton=$('.guest-style');
   let avatarVoiceDone=null;
   voiceSession=createVoiceConversation({
