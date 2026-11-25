@@ -210,7 +210,7 @@ export async function voiceConversation(request,env,{member,author},action){
     }
     // Gender-matched French TTS is automatic. Avoid ElevenLabs listing and
     // repeated 401 failure before the fallback on every audible answer.
-    if(!Object.hasOwn(data,'voiceId')){
+    if(!object(data)||!Object.hasOwn(data,'voiceId')){
       if(!exactKeys(data,['text','gender'])||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
       const spoken=text(data.text);
       await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);

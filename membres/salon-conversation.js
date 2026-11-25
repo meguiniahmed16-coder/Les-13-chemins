@@ -91,7 +91,7 @@ export function createVoiceConversation({
       if(run.voiceId)speechBody.voiceId=run.voiceId;
       const clipReply=await request('speech',{body:speechBody,signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      setState('speaking',clipReply.voiceProvider==='openai'?'Le personnage te répond avec la voix OpenAI de secours.':messages.speaking);onAudio(answer,speech);
+      setState('speaking',messages.speaking);onAudio(answer,speech);
       await speech.play(clipReply,{signal:turn.abort.signal});
       if(!valid(run,turn))return;
       onIdle();await listen(run);

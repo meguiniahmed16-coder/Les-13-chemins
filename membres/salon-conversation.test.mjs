@@ -136,3 +136,19 @@ test('La voix distante entraîne les lèvres depuis son horloge et les ferme pen
   assert.ok(poses.some(x=>x>0),'Les lèvres réagissent à la parole.');
   dialogue.clear();assert.equal(stopped,1);assert.equal(dialogue.frame(),null);
 });
+
+
+test('La voix automatique envoie le genre sans choisir de voix ElevenLabs',async()=>{
+  const h=harness();h.setCharacter({id:'1',gender:'homme',history:[]});
+  const refreshed=await h.controller.refresh({withVoices:false});
+  assert.equal(refreshed.status.ready,true);
+  assert.equal(h.requests.filter(r=>r.path==='voices').length,0);
+  await h.controller.start('');
+  assert.equal(h.controller.state,'listening');
+  h.captures[0].finish();await settle();
+  const speech=h.requests.find(r=>r.path==='speech');
+  assert.ok(speech);
+  assert.deepEqual(speech.body,{text:'Bonjour, Ahmed.',gender:'homme'});
+  assert.equal(h.controller.state,'speaking');
+  h.controller.stop();
+});
