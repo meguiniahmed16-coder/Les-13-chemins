@@ -26,6 +26,8 @@ const icon=key=>'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke=
 export function createStudioIconNav(drawer,pane,{setMode}){
  const rail=drawer.querySelector('.studio-rail');
  let selected='body',collapsed=false,labelsShown=false;
+ const lastUsed={avatar:'body',clothes:'underwear'};
+ const groupOf=key=>categories.find(item=>item[0]===key)?.[2]===1?'clothes':'avatar';
  const title=drawer.querySelector('header strong');
  const buttons=new Map();
  const labels=()=>{rail.classList.toggle('studio-labels',labelsShown);drawer.classList.toggle('studio-labels-shown',labelsShown);};
@@ -39,7 +41,7 @@ export function createStudioIconNav(drawer,pane,{setMode}){
    b.setAttribute('aria-label',name);b.title=name;b.innerHTML=icon(key)+'<span>'+name+'</span>';
    b.onclick=()=>{
      if(selected===key&&!collapsed){collapsed=true;drawer.classList.add('studio-icon-only');update();return;}
-     selected=key;collapsed=false;drawer.classList.remove('studio-icon-only');
+     selected=key;lastUsed[groupOf(key)]=key;collapsed=false;drawer.classList.remove('studio-icon-only');
      setMode(categories.find(x=>x[0]===key)[2]);update();
    };rail.append(b);buttons.set(key,b);
  }
@@ -78,8 +80,18 @@ export function createStudioIconNav(drawer,pane,{setMode}){
       face.hidden=!ids.length;face.open=true;
       for(const family of face.querySelectorAll('[data-family]')){
        family.hidden=!ids.includes(family.dataset.family);family.open=!family.hidden;
-       if(selected==='eyes'&&family.dataset.family==='visage'){
-        for(const label of family.querySelectorAll('label'))label.hidden=!/yeux|regard|iris/i.test(label.textContent);
+       // Reset visibility first: switching Eyes → Face must restore every detail.
+       // Filter by the label's caption, not by option text in its nested select.
+       for(const label of family.querySelectorAll('label')){
+         const caption=label.firstChild?.textContent?.trim()||'';
+         const filters={
+           body:/^(Corpulence|Pilosité)/i,
+           skin:/^(Teinte de peau|Nuance de peau|Tranche d’âge)/i,
+           eyes:/^(Couleur des yeux|Regard|Sourcils|Cils)/i,
+           hair:/^(Coiffure|Couleur des cheveux)/i,
+           beard:/^(Barbe et moustache)/i
+         };
+         label.hidden=Boolean(filters[selected]&&!filters[selected].test(caption));
        }
       }
       for(const child of face.children){
@@ -125,11 +137,18 @@ export function createStudioIconNav(drawer,pane,{setMode}){
  }
  function select(category){
    if(!buttons.has(category))return false;
-   selected=category;collapsed=false;drawer.classList.remove('studio-icon-only');
+   selected=category;lastUsed[groupOf(category)]=category;
+   collapsed=false;drawer.classList.remove('studio-icon-only');
    setMode(categories.find(x=>x[0]===category)[2]);update();return true;
+ }
+ function selectGroup(group){
+   if(!Object.hasOwn(lastUsed,group))return false;
+   const category=lastUsed[group];
+   if(category===selected&&!collapsed){toggleSelected();return true;}
+   return select(category);
  }
  function toggleSelected(){
    collapsed=!collapsed;drawer.classList.toggle('studio-icon-only',collapsed);update();return collapsed;
  }
- return {update,select,toggleSelected,get selected(){return selected;},get collapsed(){return collapsed;}};
+ return {update,select,selectGroup,toggleSelected,get selected(){return selected;},get collapsed(){return collapsed;}};
 }

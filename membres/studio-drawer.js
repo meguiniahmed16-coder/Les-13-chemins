@@ -226,9 +226,11 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };
  return {toggle,selectCategory(category){
-    if(drawer.hidden){toggle(true);iconNav.select(category);return;}
-    if(iconNav.selected===category){iconNav.toggleSelected();return;}
-    iconNav.select(category);
+     const group=category==='body'?'avatar':category==='underwear'?'clothes':null;
+     if(drawer.hidden){toggle(true);if(group)iconNav.selectGroup(group);else iconNav.select(category);return;}
+     if(group){iconNav.selectGroup(group);return;}
+     if(iconNav.selected===category){iconNav.toggleSelected();return;}
+     iconNav.select(category);
    },configure(value,settings){
    ++revision;current=null;save.disabled=false;message.textContent='';look=value;options=settings;
    if(options.incarnationsURL!==INCARNATIONS_URL)incarnations.close();render();

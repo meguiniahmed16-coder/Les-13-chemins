@@ -609,3 +609,11 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 .stage .studio-drawer:not([data-active-category="advanced"]) .v27-inspection-tools{display:none!important}
 .stage .studio-drawer .studio-rail::-webkit-scrollbar{display:none}
 .stage .studio-drawer .studio-rail button{touch-action:manipulation}
+
+/* Keep compact icon rail actually compact even against older high-specificity studio rules. */
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer{
+ width:67px!important;max-width:67px!important;min-width:0!important;
+}
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer .studio-rail{flex-basis:100%!important}
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer .studio-rail.studio-labels button span{display:none!important}
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-rail-labels{display:flex!important}
