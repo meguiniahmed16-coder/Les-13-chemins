@@ -249,6 +249,9 @@ export function createSalonNavigation(root){
  sync();updateButtons();
  return {
    open,close,sync,
+   expandMenu(open=true){setMenuExpanded(open);},
+   invite(){setMenuExpanded(true);open('encounter');},
+   call(){if(phoneNode.hidden)this.invite();else phoneNode.click();},
    linkScene(doc,scene){
      engineBridge?.dispose();
      engineBridge=connectSalonEngine({doc,scene,stage,root});

@@ -2,8 +2,8 @@ import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=studio-rail1';
-import {createSalonChat} from './salon-chat.js?v=call59';
-import {createSalonNavigation} from './salon-maison-ui.js?v=call58';
+import {createSalonChat} from './salon-chat.js?v=call60';
+import {createSalonNavigation} from './salon-maison-ui.js?v=call60';
 import {guestAppearance} from './salon-encounter.js?v=call58';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -343,6 +343,11 @@ class SalonV27 extends HTMLElement{
     else{this.#inspection.reset(key);this.#scene.reset(key);}
   }
   openOptions(open=true){if(this.#fallback)this.#fallback.openOptions(open);else this.#drawer.toggle(open);}
+  armAhmedVoice(){return this.#chat?.armAhmedVoice()===true;}
+  narrateAhmed(text,done){return this.#chat?.narrateAhmed(text,done)===true;}
+  stopAhmedVoice(){this.#chat?.stopAvatarVoice();}
+  invitePersonnage(){this.#nav?.invite();}
+  appelerPersonnage(){this.#nav?.call();}
   snapshot(){return this.#fallback?.snapshot()||this.#scene?.snapshot()||null;}
 }
 if(!customElements.get('chemins-salon'))customElements.define('chemins-salon',SalonV27);

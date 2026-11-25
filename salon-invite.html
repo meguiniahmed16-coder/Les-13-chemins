@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Une invitation au salon · La tectonique des âmes</title>
 <meta name="description" content="Prends place dans le salon d’Ahmed Marie. Quinze minutes pour explorer, créer ton avatar et rencontrer les personnages du livre.">
-<link rel="stylesheet" href="/membres/visite-salon.css?v=49"><script type="module" src="/membres/visite-salon.js?v=incarnations33"></script>
+<link rel="stylesheet" href="/membres/visite-salon.css?v=49"><script type="module" src="/membres/visite-salon.js?v=call60"></script>
 </head><body>
 <header class="mast"><a href="/" aria-label="La tectonique des âmes, accueil">✦ <span>La tectonique des âmes</span></a><a class="personal" href="/membre.html#salon">Mon espace</a></header>
 <main>
@@ -11,9 +11,17 @@
   <div class="intro-text"><p class="eyebrow">Une invitation d’Ahmed Marie</p><h1>Entre dans le salon.</h1><p>Choisis ton visage, installe-toi où tu veux et invite quelqu’un du livre à te rejoindre.</p></div>
   <div class="film"><video id="tour" autoplay muted playsinline controls preload="metadata" poster="/assets/membres/invitation-salon.webp?visite=49" aria-label="Dans le salon, déplacer Marianne, choisir un fauteuil et déplacer la caméra"><source src="/assets/membres/invitation-salon.mp4?visite=49" type="video/mp4"><track kind="captions" srclang="fr" label="Français" src="/membres/visite-salon.vtt"></video></div>
   <p id="tour-hint">Pousse le joystick de gauche pour avancer.</p>
+  <button type="button" class="button secondary-cinema" data-salon-film>Voir aussi la cinématique du Salon original</button>
   <div class="intro-actions"><p><strong>15 minutes en invité</strong><small>Sans compte. Le temps commence à ton entrée.</small></p><button id="skip" class="button" type="button">Passer la vidéo et entrer</button></div>
 </section>
-<section id="live-room" aria-label="Le salon en invité" hidden><div class="room-head"><h1>Le salon</h1><p>Visite invitée <time id="remaining" aria-label="Temps restant">15:00</time></p></div><div id="room"></div></section>
+<section id="live-room" aria-label="Le salon en invité" hidden>
+ <div class="room-head"><h1>Le salon</h1><p>Visite invitée <time id="remaining" aria-label="Temps restant">15:00</time></p></div>
+ <nav class="guest-shortcuts" aria-label="Accès direct aux rencontres">
+  <button id="quick-invite" type="button" class="button">♙ Inviter un personnage</button>
+  <button id="quick-call" type="button" class="button">☎ Appeler</button>
+  <button data-salon-film type="button" class="button secondary-cinema">◉ Cinématique</button>
+ </nav>
+ <div id="room"></div></section>
 <p id="status" role="status"></p><button id="retry" type="button" class="button" hidden>Réessayer</button>
 <div id="goodbye" hidden aria-hidden="true"></div>
 <dialog id="offer" aria-labelledby="offer-title" aria-describedby="offer-copy">
@@ -27,4 +35,4 @@
 <noscript>Active JavaScript pour entrer dans le salon interactif. <a href="/">Revenir à l’accueil</a></noscript>
 </main>
 <footer><a href="/membres/v27/marianne-credits.txt">Crédits du visage</a><a href="/membres/salon-voice-credits.txt">Voix</a><a href="/membre.html#salon">Mon salon</a><a href="/confidentialite.html#membres">Confidentialité</a><details><summary>Modèles 3D</summary><p>Ailes de culturalibre et jean de punkduck adaptés pour le salon. <a href="https://files.makehumancommunity.org/sites/default/files/clothes/4881/1276915208/the_wasp_wings.mhclo">The wasp wings</a> · <a href="https://files.makehumancommunity.org/sites/default/files/clothes/1665/2097948445/tightjeans.mhclo">Tight jeans (female)</a> · <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a></p></details></footer>
-</body></html>
+<script type="module" src="/membres/salon-cinema.js?v=cinema1"></script></body></html>

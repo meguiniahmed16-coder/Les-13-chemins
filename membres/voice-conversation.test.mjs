@@ -89,7 +89,7 @@ test('Le dialogue OpenAI réutilise la fiche serveur, huit échanges maximum et 
     if(url===origin+'/atlas-dialogues.json')return Response.json(catalogue);
     assert.equal(url,'https://api.openai.com/v1/responses');assert.equal(options.headers.authorization,'Bearer '+fakeOpenAI);
     const body=JSON.parse(options.body);
-    assert.equal(body.model,'gpt-6-luna');assert.equal(body.store,false);assert.equal(body.max_output_tokens,320);assert.deepEqual(body.reasoning,{effort:'none'});
+    assert.equal(body.model,'gpt-6-luna');assert.equal(body.store,false);assert.equal(body.max_output_tokens,160);assert.deepEqual(body.reasoning,{effort:'none'});
     assert.ok(body.instructions.includes(JSON.stringify(catalogue['267'])));assert.ok(!body.instructions.includes('Autre continuité.'));
     assert.deepEqual(body.input,[{role:'user',content:'Tu viens ?'},{role:'assistant',content:'Oui.'},{role:'user',content:'Bonjour.'}]);
     return responseText('Bonjour, je suis là.');

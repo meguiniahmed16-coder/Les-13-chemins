@@ -8,6 +8,7 @@ import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
 import {createIntroSound} from './intro-sound.js';
+import {frenchVoice} from './salon-voice.js?v=salon41';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -243,7 +244,7 @@ const lines=[
  {
   "id": "dojo-arrivee",
   "speaker": "m",
-  "text": "Ici, on apprend en essayant. Regarde.",
+  "text": "Dans le Salon, commence par le bouton Menu. Un appui affiche les icônes des fonctions.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 7000,
@@ -255,7 +256,7 @@ const lines=[
  {
   "id": "dojo-camera",
   "speaker": "f",
-  "text": "La caméra tourne, se rapproche… et te laisse choisir ton regard.",
+  "text": "L'icône Caméra permet de tourner, zoomer et recentrer le personnage.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 10000,
@@ -267,7 +268,7 @@ const lines=[
  {
   "id": "dojo-deplacement",
   "speaker": "m",
-  "text": "Quelques pas suffisent. Le corps suit le mouvement.",
+  "text": "Le joystick te permet de marcher, en gardant les pieds au sol près des fauteuils.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 11000,
@@ -279,7 +280,7 @@ const lines=[
  {
   "id": "dojo-demi-tour",
   "speaker": "m",
-  "text": "Pour se retourner, les pieds accompagnent le mouvement.",
+  "text": "Le bouton Recentrer retrouve ton personnage, même après un changement de caméra.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 9000,
@@ -291,7 +292,7 @@ const lines=[
  {
   "id": "dojo-personnaliser",
   "speaker": "m",
-  "text": "Tu peux choisir parmi une grande variété de personnages, de toutes les origines et de toutes les corpulences.",
+  "text": "Ouvre Menu, puis Avatar. Chaque petite icône mène à une partie du corps.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12000,
@@ -303,7 +304,7 @@ const lines=[
  {
   "id": "dojo-apparence",
   "speaker": "f",
-  "text": "Visages, silhouettes, tenues… compose un personnage qui te ressemble, ou imagine quelqu’un d’autre.",
+  "text": "Le volet reste translucide. Appuie à nouveau sur une icône pour le replier.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 10000,
@@ -315,7 +316,7 @@ const lines=[
  {
   "id": "dojo-vetements",
   "speaker": "m",
-  "text": "« Tous les vêtements » : une autre tenue, et c’est toujours nous.",
+  "text": "Pour une chemise, un pantalon ou des chaussures, choisis leur icône.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12000,
@@ -327,7 +328,7 @@ const lines=[
  {
   "id": "dojo-enregistrer",
   "speaker": "f",
-  "text": "« Enregistrer » garde ton choix. La croix ferme l’atelier.",
+  "text": "Enregistrer garde ta création. Pour parler, invite un personnage puis touche le téléphone.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 7000,
@@ -339,7 +340,7 @@ const lines=[
  {
   "id": "dojo-construction",
   "speaker": "m",
-  "text": "Ce monde est encore en construction. Et toi aussi, tu participeras à sa construction.",
+  "text": "Les voix accompagnent désormais les rencontres. Tu peux appeler et discuter à voix haute.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 9000,
@@ -856,7 +857,24 @@ function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?paused
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
 let speech=null,lastMotion=0,bubbleLayout=null;
-function stopSpeech(){speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
+let cinematicVoiceEnabled=false,cinematicUtterance=null;
+const cinematicSynth=globalThis.speechSynthesis;
+function stopCinematicVoice(){
+ if(!cinematicUtterance)return;
+ cinematicUtterance=null;try{cinematicSynth?.cancel();}catch{}
+}
+function speakCinematicCue(id,text){
+ if(!cinematicVoiceEnabled||!cinematicSynth||!globalThis.SpeechSynthesisUtterance||document.hidden)return;
+ const utterance=new SpeechSynthesisUtterance(text);
+ utterance.lang='fr-FR';utterance.rate=1.08;utterance.volume=.94;
+ const gender=id==='f'?'femme':'homme';
+ const selected=frenchVoice(cinematicSynth,gender,true,false)||frenchVoice(cinematicSynth,gender,false,false);
+ if(selected)utterance.voice=selected;
+ cinematicUtterance=utterance;
+ utterance.onend=utterance.onerror=()=>{if(cinematicUtterance===utterance)cinematicUtterance=null;};
+ try{cinematicSynth.speak(utterance);}catch{cinematicUtterance=null;}
+}
+function stopSpeech(){stopCinematicVoice();speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
@@ -866,6 +884,7 @@ function setCue(id,text,offset=0){
  // Place the complete reply only after the new camera is set, then latch it.
  // No alternate footer, typewriter animation or per-frame position switching.
  speech={id,text:p.textContent,start:offset,duration:Math.max(1400,text.length*58)};
+ speakCinematicCue(id,p.textContent);
 }
 function updateActing(now){
  const line=lines[step];if(!line||!started||!ready||stage==='garden')return;
@@ -1208,6 +1227,21 @@ async function showScene(index){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
  }
  status.textContent=isDojo?'Dojo · apprentissage':'Salle blanche · '+line.id;
+ const dojoHelp=$('dojo-help');
+ if(dojoHelp){
+  dojoHelp.hidden=!isDojo;
+  if(isDojo)dojoHelp.textContent={
+    'dojo-arrivee':'☰ Menu · Ouvrir et replier les fonctions',
+    'dojo-camera':'⌖ Caméra · Tourner, zoomer et recentrer',
+    'dojo-deplacement':'◯ Joystick · Marcher dans le Salon',
+    'dojo-demi-tour':'◎ Recentrer · Retrouver le personnage',
+    'dojo-personnaliser':'♙ Avatar · Silhouette, visage, yeux et cheveux',
+    'dojo-apparence':'✦ Volet translucide · Une seconde pression le replie',
+    'dojo-vetements':'♧ Vêtements · Chemises, pantalons et chaussures',
+    'dojo-enregistrer':'✓ Enregistrer · ☎ Appeler un invité',
+    'dojo-construction':'✦ Inviter · Écouter · Discuter'
+  }[line.id]||'Le Salon s’ouvre depuis le bouton Menu.';
+ }
  $('joystick').hidden=!isDojo||isStagedDojo(line);
  dojoDemo.update(line,0,{wardrobe:isStagedDojo(line)?stageDojoPeople(line,0):null});
  if(autoplay&&!shotPaused)scheduleNext(line.ms);
@@ -1235,9 +1269,9 @@ function automatic(on,hold=false){
   if(shotPaused){shotStart=now-pausedElapsed;shotPaused=false;}
   const line=lines[step];if(line)scheduleNext(Math.max(250,line.ms-shotElapsed(now)));
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
- if(!on)introSound.pause();
+ if(!on){introSound.pause();try{cinematicSynth?.pause();}catch{}}else if(cinematicVoiceEnabled){try{cinematicSynth?.resume();}catch{}}
 }
-$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
+$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;cinematicSynth?.getVoices?.();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden(true);};
 
 function holdIntroduction(reason){
