@@ -59,11 +59,19 @@ test('Appel simple : voix selon le genre, sans menu Marianne ni fin manuelle',()
 });
 
 test('Le navigateur récupère bien les nouveaux modules et les poses V27',()=>{
- assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=call58/);
+ assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=call59/);
  assert.match(src('membres/salon-v27.js'),/salon-encounter\.js\?v=call58/);
  assert.match(src('membres/salon-v27.js'),/salon-call58\.css\?v=call58/);
  assert.match(src('membres/v27/salon-runtime.js'),/scene-bundle\.js\?v=call58/);
- assert.match(src('membres/member.js'),/salon-v27\.js\?v=call58/);
- assert.match(src('membre.html'),/member\.js\?v=call58/);
+ assert.match(src('membres/member.js'),/salon-v27\.js\?v=call59/);
+ assert.match(src('membre.html'),/member\.js\?v=call59/);
  assert.match(src('build-public.mjs'),/membres\/salon-call58\.css/);
+});
+
+test('Un appui unique sur le téléphone commence l’appel lorsque le service est prêt',()=>{
+  assert.match(panel,/if\(person&&phoneReady&&!request\)/);
+  assert.match(panel,/phonePanel\.hidden=false/);
+  assert.match(panel,/void voiceSession\.start\(''\)/);
+  assert.match(panel,/else void loadPhone\(true\)/);
+  assert.match(panel,/phoneToggle\.onclick/);
 });
