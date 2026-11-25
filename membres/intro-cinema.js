@@ -954,7 +954,7 @@ function speakCinematicCue(id,text){
  const matched=typeof frenchVoice==='function'?frenchVoice(cinematicSynth,gender,true,false):null;
  // In the dojo use the two original local Salon voices: Pierre for Ahmed,
  // Jessica for Marianne. No network speech service or private key is required.
- if((stage==='dojo'||!matched)&&cinematicLocalVoices?.available){
+ if((stage==='dojo'||!matched)&&cinematicLocalVoices?.prepared){
   usingLocalVoice=true;
   cinematicLocalVoices.speak({
    line:{text,words:[{index:0,length:text.length,start:0}],duration:Math.max(1800,text.length*85)},
