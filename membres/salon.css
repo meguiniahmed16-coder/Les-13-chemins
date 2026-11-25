@@ -393,3 +393,128 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
   .maison-scroll{padding:0 13px 16px}
   .maison-room h3{font-size:24px}
 }
+
+/* Salon scène continue V3 : jamais de réduction de la zone 3D par un outil. */
+.stage:not(.immersive):not(:fullscreen),
+.stage:has(.studio-drawer:not([hidden])):not(.immersive):not(:fullscreen){
+  position:relative!important;inset:auto!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr) auto!important;
+  width:100%!important;
+  height:var(--room-height,max(420px,calc(100dvh - 112px)))!important;
+  min-height:0!important;
+}
+.stage .scene-viewport{grid-column:1!important;grid-row:1!important;min-width:0;min-height:0;overflow:hidden}
+.stage .v27-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;grid-area:auto!important}
+.stage .hud{pointer-events:none}
+.stage .conversation-footer:not([hidden]){grid-column:1!important;grid-row:2!important;position:relative!important;z-index:4}
+.stage .maison-dock{position:absolute!important;z-index:12!important;
+  left:10px!important;right:auto!important;top:50%!important;bottom:auto!important;
+  transform:translateY(-50%)!important;display:flex!important;flex-direction:column!important;
+  width:auto!important;max-width:68px!important;gap:10px!important;padding:0!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+  pointer-events:none;
+}
+.stage .maison-dock button{pointer-events:auto;flex:none!important;width:54px!important;
+ min-width:54px!important;min-height:54px!important;padding:5px 3px!important;
+ display:flex;justify-content:center;align-items:center;gap:0!important;
+ border:1px solid #f7e9d5aa!important;border-radius:17px!important;
+ background:#203e36d9!important;color:#fffaed!important;
+ box-shadow:0 3px 15px #071f196e!important;font:600 10px/1.2 system-ui!important;
+}
+.stage .maison-dock button[aria-expanded=true]{background:#e8d6ad!important;color:#273b2f!important}
+.stage .maison-dock button[aria-expanded=true] .maison-glyph{color:#243e32!important}
+.stage .maison-dock .maison-glyph{font-size:21px}
+.stage .maison-phone{left:auto;right:11px;top:12px;bottom:auto}
+.stage .maison-hub{position:absolute!important;z-index:21!important;
+ top:8px!important;bottom:8px!important;left:72px!important;right:auto!important;
+ width:min(410px,calc(48% - 38px))!important;max-height:none!important;
+ border-radius:18px!important;grid-template-rows:auto auto minmax(0,1fr)!important;
+ box-shadow:0 6px 28px #0a211b59!important}
+.stage .maison-hub[hidden]{display:none!important}
+.stage.maison-panel-right .maison-hub{left:auto!important;right:74px!important}
+.stage .maison-scrim{display:none!important;pointer-events:none!important}
+.stage .maison-hub-head{padding:10px 13px 8px}
+.stage .maison-hub-head h2{font-size:19px}
+.stage .maison-hub-head small{font-size:9px}
+.stage .maison-hub-controls{display:flex;gap:4px;align-items:center}
+.stage .maison-hub-controls button{min-height:44px;min-width:44px;padding:5px;border:1px solid #c2cbbb;border-radius:11px;background:#fffdf4;color:#244536;font:700 18px system-ui}
+.stage .maison-hub-controls .maison-close span{display:none}
+.stage .maison-tabs{grid-template-columns:repeat(4,minmax(0,1fr));padding:6px}
+.stage .maison-tabs button{min-height:46px;font-size:11px}
+.stage .maison-scroll{min-height:0;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;padding:0 14px 14px}
+.stage .maison-room h3{font-size:26px;margin:6px 0 10px}
+.stage .maison-room p{font-size:13px}
+.stage .maison-room .maison-action{min-height:48px;padding:10px 12px;font-size:14px}
+.stage .maison-room .guest-list{max-height:28dvh;overflow-y:auto}
+.stage .maison-room .conversation-tools{grid-template-columns:1fr 1fr;max-height:30dvh;overflow-y:auto}
+.stage:has(.studio-drawer:not([hidden])) .scene-viewport{display:block!important;grid-area:1/1!important;height:100%!important}
+.stage:has(.studio-drawer:not([hidden])) .v27-frame{grid-area:auto!important}
+.stage:has(.studio-drawer:not([hidden])) .studio-drawer{
+  display:flex!important;position:absolute!important;z-index:15!important;
+  top:8px!important;bottom:8px!important;right:8px!important;left:auto!important;
+  width:min(390px,38%)!important;height:auto!important;min-height:0!important;
+  grid-area:auto!important;overflow:hidden!important;
+  background:#faf7efed!important;border:1px solid #bccabb!important;border-radius:16px!important;
+  box-shadow:0 6px 28px #062b2057!important;
+  transition:transform .24s ease,opacity .24s ease!important;
+}
+.stage:has(.studio-drawer:not([hidden])) .studio-scroll{flex:1!important;min-height:0!important;overflow-y:auto!important;touch-action:pan-y}
+.stage:has(.studio-drawer:not([hidden])) .studio-drawer header,
+.stage:has(.studio-drawer:not([hidden])) .studio-drawer .switch,
+.stage:has(.studio-drawer:not([hidden])) .studio-drawer footer{flex:0 0 auto!important}
+.stage:has(.studio-drawer:not([hidden])) .maison-dock{display:none!important}
+.stage:has(.studio-drawer:not([hidden])) .maison-phone{display:none!important}
+.stage .maison-studio-peek{position:absolute;z-index:17;left:75px;bottom:14px;
+  min-height:48px;padding:10px 14px;border:1px solid #e0d0ae;
+  border-radius:26px;background:#254a3ae8;color:white;font:650 13px system-ui;box-shadow:0 3px 12px #112c256d}
+.stage:has(.studio-drawer:not([hidden])).maison-studio-collapsed .studio-drawer{
+ transform:translateX(calc(100% + 22px))!important;opacity:0!important;pointer-events:none!important}
+.stage:has(.studio-drawer:not([hidden])) .conversation-footer{display:none!important}
+.stage .scene-viewport>.voice-conversation:not([hidden]){
+ position:absolute!important;z-index:19!important;inset:8px 8px 8px auto!important;
+ width:min(385px,44%)!important;max-height:none!important;
+ overflow-y:auto!important;touch-action:pan-y!important
+}
+.stage:has(.studio-drawer:not([hidden])) .maison-hub{display:none!important}
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+ .stage:not(.immersive):not(:fullscreen),
+ .stage:has(.studio-drawer:not([hidden])):not(.immersive):not(:fullscreen){
+  position:relative!important;inset:auto!important;height:var(--room-height,max(320px,calc(100dvh - 80px)))!important;
+ }
+ .stage .scene-viewport{display:block!important;height:100%!important}
+ .stage .hud{position:absolute!important;inset:0!important;display:block!important}
+ .stage .maison-dock{left:5px!important;gap:6px!important}
+ .stage .maison-dock button{width:45px!important;min-width:45px!important;min-height:47px!important;border-radius:12px!important;font-size:9px!important}
+ .stage .maison-dock .maison-glyph{font-size:19px}
+ .stage .maison-hub{left:54px!important;width:min(360px,calc(49% - 25px))!important;top:5px!important;bottom:5px!important}
+ .stage.maison-panel-right .maison-hub{left:auto!important;right:54px!important}
+ .stage .maison-hub-head{padding:5px 7px}
+ .stage .maison-hub-head h2{font-size:15px}
+ .stage .maison-hub-head small{font-size:8px}
+ .stage .maison-hub-controls button{min-height:40px;min-width:40px}
+ .stage .maison-tabs{padding:3px}
+ .stage .maison-tabs button{min-height:40px;font-size:9px}
+ .stage .maison-scroll{padding:0 9px 10px}
+ .stage .maison-room h3{font-size:20px}
+ .stage .maison-room p{font-size:12px}
+ .stage:has(.studio-drawer:not([hidden])) .studio-drawer{
+  top:4px!important;bottom:4px!important;right:4px!important;
+  width:min(320px,40%)!important;border-radius:12px!important
+ }
+ .stage .maison-studio-peek{bottom:8px;left:55px;font-size:12px;padding:7px 9px;min-height:44px}
+ .stage .scene-viewport>.voice-conversation:not([hidden]){
+  position:absolute!important;inset:4px 4px 4px auto!important;width:min(360px,43%)!important;
+ }
+}
+@media(max-width:600px) and (orientation:portrait){
+ .stage .maison-dock{top:auto!important;bottom:9px!important;left:50%!important;transform:translateX(-50%)!important;flex-direction:row!important;gap:6px!important}
+ .stage .maison-dock button{width:55px!important;min-width:55px!important;min-height:50px!important}
+ .stage .maison-hub{top:5px!important;bottom:67px!important;left:6px!important;width:calc(100% - 12px)!important}
+ .stage.maison-panel-right .maison-hub{left:6px!important;right:6px!important}
+ .stage:has(.studio-drawer:not([hidden])) .studio-drawer{right:4px!important;width:min(340px,78%)!important}
+ .stage .maison-studio-peek{left:8px;bottom:8px}
+ .stage .scene-viewport>.voice-conversation:not([hidden]){left:8px!important;right:8px!important;width:auto!important;bottom:8px!important;top:8px!important}
+}
+@media(prefers-reduced-motion:reduce){.stage .studio-drawer{transition:none!important}}

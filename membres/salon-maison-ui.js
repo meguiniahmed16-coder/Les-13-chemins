@@ -6,7 +6,6 @@ export function createSalonNavigation(root){
   // Keep existing controllers, media and state intact: move their actual DOM
   // nodes instead of creating parallel controls with conflicting state.
   stage.insertAdjacentHTML('beforeend',`
-    <div class="maison-scrim" hidden></div>
     <nav class="maison-dock" aria-label="Pièces du Salon">
       <button type="button" data-maison-open="rencontrer" aria-label="Rencontrer un personnage"><span class="maison-glyph">✦</span><span>Rencontrer</span></button>
       <button type="button" data-maison-open="dialogue" aria-label="Ouvrir la conversation"><span class="maison-glyph">◉</span><span>Dialoguer</span></button>
@@ -14,8 +13,8 @@ export function createSalonNavigation(root){
       <button type="button" data-maison-open="atelier" aria-label="Ouvrir l’atelier des apparences"><span class="maison-glyph">✧</span><span>Atelier</span></button>
     </nav>
     <button type="button" class="maison-phone" hidden aria-label="Appeler le personnage"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h3l2 5-2 2a16 16 0 0 0 5 5l2-2 5 2v3a3 3 0 0 1-3 3C9 21 3 15 3 6a3 3 0 0 1 3-3Z" /></svg><span>Appeler</span></button>
-    <section class="maison-hub" role="dialog" aria-modal="true" aria-label="Les pièces de la maison" hidden>
-      <header class="maison-hub-head"><div><small>LA CROISÉE DES ÂMES</small><h2>Les pièces de la maison</h2></div><button class="maison-close" type="button" aria-label="Revenir au Salon">✕ <span>Retour au Salon</span></button></header>
+    <section class="maison-hub" role="region" aria-label="Les pièces de la maison" hidden>
+      <header class="maison-hub-head"><div><small>LA CROISÉE DES ÂMES</small><h2>Les pièces de la maison</h2></div><div class="maison-hub-controls"><button class="maison-side" type="button" title="Déplacer le panneau de l’autre côté" aria-label="Changer le côté du panneau">⇄</button><button class="maison-close" type="button" aria-label="Masquer les options et voir tout le Salon">✕ <span>Voir le Salon</span></button></div></header>
       <nav class="maison-tabs" aria-label="Choisir une pièce">
         <button data-maison-tab="rencontrer" type="button">Rencontres</button>
         <button data-maison-tab="dialogue" type="button">Conversation</button>
@@ -57,8 +56,8 @@ export function createSalonNavigation(root){
       </div>
     </section>
   `);
-  const hub=$('.maison-hub'),scrim=$('.maison-scrim'),dock=$('.maison-dock'),phone=$('.maison-phone');
-  // The dock belongs to the 3D view, never over the text composer.
+  const hub=$('.maison-hub'),dock=$('.maison-dock'),phone=$('.maison-phone');
+  // Edge controls float over the full-resolution 3D viewport, never replace it.
   scene.append(dock);
   const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle'),voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
   const studio=$('.options-toggle'),chat=$('.guest-message');
@@ -87,14 +86,14 @@ export function createSalonNavigation(root){
   }
   function close(restore=true){
     if(hub.hidden)return;
-    hub.hidden=true;scrim.hidden=true;
+    hub.hidden=true;
     dock.querySelectorAll('[aria-expanded]').forEach(b=>b.setAttribute('aria-expanded','false'));
     stage.classList.remove('maison-hub-open');
     if(restore&&originFocus?.isConnected)originFocus.focus({preventScroll:true});
   }
   function open(room,source){
     originFocus=source||root.activeElement;
-    hub.hidden=false;scrim.hidden=false;stage.classList.add('maison-hub-open');
+    hub.hidden=false;stage.classList.add('maison-hub-open');
     for(const section of sections)section.hidden=section.dataset.maisonRoom!==room;
     for(const tab of tabs)tab.setAttribute('aria-current',String(tab.dataset.maisonTab===room));
     for(const button of dock.querySelectorAll('[data-maison-open]'))button.setAttribute('aria-expanded',String(button.dataset.maisonOpen===room));
@@ -116,7 +115,26 @@ export function createSalonNavigation(root){
   dock.addEventListener('click',event=>{const b=event.target.closest('[data-maison-open]');if(b)open(b.dataset.maisonOpen,b);});
   tabs.forEach(button=>button.onclick=()=>open(button.dataset.maisonTab,originFocus));
   $('.maison-close').onclick=()=>close();
-  scrim.onclick=()=>close();
+  $('.maison-side').onclick=()=>{
+    const right=stage.classList.toggle('maison-panel-right');
+    $('.maison-side').setAttribute('aria-label',right?'Déplacer les options à gauche':'Déplacer les options à droite');
+  };
+  // Swipe horizontally on the empty panel surface to browse its four spaces,
+  // without hijacking scrolling or gestures inside lists and form controls.
+  let startTouch=null;
+  $('.maison-scroll').addEventListener('touchstart',event=>{
+    if(event.touches.length!==1||event.target.closest('input,select,textarea,button,.guest-list,.thread-history'))return;
+    startTouch={x:event.touches[0].clientX,y:event.touches[0].clientY};
+  },{passive:true});
+  $('.maison-scroll').addEventListener('touchend',event=>{
+    if(!startTouch)return;
+    const dx=event.changedTouches[0].clientX-startTouch.x;
+    const dy=event.changedTouches[0].clientY-startTouch.y;startTouch=null;
+    if(Math.abs(dx)<75||Math.abs(dx)<Math.abs(dy)*1.7)return;
+    const current=sections.findIndex(item=>!item.hidden);
+    const next=Math.max(0,Math.min(sections.length-1,current+(dx<0?1:-1)));
+    if(next!==current)open(sections[next].dataset.maisonRoom,originFocus);
+  },{passive:true});
   phone.onclick=openPhone;
   hub.addEventListener('click',event=>{
     const button=event.target.closest('[data-maison-action]');if(!button)return;

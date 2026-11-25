@@ -3,7 +3,7 @@ import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=incarnations33';
 import {createSalonChat} from './salon-chat.js?v=maison2';
-import {createSalonNavigation} from './salon-maison-ui.js?v=maison2';
+import {createSalonNavigation} from './salon-maison-ui.js?v=salon-scene-continue3';
 import {guestAppearance} from './salon-encounter.js?v=incarnations33';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -24,7 +24,7 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=maison2"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon-scene-continue3"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -50,7 +50,7 @@ class SalonV27 extends HTMLElement{
     }
     </style><div class="stage"><div class="scene-viewport">
       <div class="hud"><div class="v27-actions"><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser</button></div><div class="bar"></div></div>
-    </div><aside class="studio-drawer" id="studio-drawer" hidden></aside></div>`;
+    </div><aside class="studio-drawer" id="studio-drawer" hidden></aside><button class="maison-studio-peek" type="button" hidden>◉ Voir le personnage entier</button></div>`;
     this.#chat=createSalonChat(root,{
       invite:async person=>{
         let {studio,gender}=guestAppearance(person);
@@ -74,9 +74,19 @@ class SalonV27 extends HTMLElement{
     this.#drawer=createDrawer(root,look=>this.#applyLook(look),mode=>this.#scene?.focus(mode,this.#editing),()=>this.#scene?.departure(),(open,mode)=>{
       if(open)this.#chat.pauseVoice();
       this.#frame?.contentDocument?.body.classList.toggle('editing-duo',open);
-      if(open){this.#targets();this.#syncInspectionTools();this.#chat.manual();this.#cameraKey='';this.#scene?.camera('manual');this.#scene?.focus(mode?'Corps':'Visage',this.#editing);}
+      const stage=root.querySelector('.stage'),peek=root.querySelector('.maison-studio-peek');
+      stage.classList.remove('maison-studio-collapsed');peek.hidden=!open;
+      peek.textContent='◉ Voir le personnage entier';
+      if(open){this.#targets();this.#syncInspectionTools();this.#chat.manual();this.#cameraKey='';this.#scene?.camera('manual');this.#scene?.focus('Corps',this.#editing);}
       else if(this.#editing){this.#editing='';void this.#select(this.#gender);}
     });
+    root.querySelector('.maison-studio-peek').onclick=()=>{
+      const stage=root.querySelector('.stage'),collapsed=stage.classList.toggle('maison-studio-collapsed');
+      const button=root.querySelector('.maison-studio-peek');
+      button.textContent=collapsed?'✎ Afficher les réglages':'◉ Voir le personnage entier';
+      button.setAttribute('aria-pressed',String(collapsed));
+      if(collapsed)this.#scene?.focus('Corps',this.#editing);
+    };
   }
   #targets(){
     const header=this.shadowRoot.querySelector('.studio-drawer header');
@@ -99,7 +109,7 @@ class SalonV27 extends HTMLElement{
           save:async look=>{await options.saveCharacter('femme',look);state.saved=look;
             try{localStorage.setItem('salon-v27-look:'+options.memberKey+(options.gender==='femme'?'':':femme'),'1');}catch{}}},'f');
       }else void this.#select(this.#gender);
-      this.#scene?.focus('Visage',this.#editing);
+      this.#scene?.focus('Corps',this.#editing);
     };
   }
   #visitorKey(person){return 'salon-invite-apparence:'+this.#options.memberKey+':'+person.id;}
