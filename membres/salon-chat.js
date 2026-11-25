@@ -21,10 +21,12 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   scene.insertAdjacentHTML('beforeend',`
     <section class="guest-picker" id="guest-picker" aria-label="Inviter un personnage du livre" hidden>
       <header><strong>Inviter un personnage</strong><button class="picker-close" type="button" aria-label="Fermer les invitations">×</button></header>
-      <label>Nom du personnage<input type="search" class="guest-search" placeholder="Rechercher un nom…" autocomplete="off"></label>
-      <button type="button" class="guest-random">Inviter au hasard</button>
+      <div class="guest-picker-search">
+        <label>Rechercher un personnage<input type="search" class="guest-search" placeholder="Rechercher un nom…" autocomplete="off"></label>
+        <button type="button" class="guest-random">Inviter au hasard <span aria-hidden="true">✦</span></button>
+      </div>
+      <div class="guest-list" role="group" aria-label="Personnages proposés"></div><p class="picker-state" role="status"></p>
       <small>Dialogue imaginé d’après le livre. Les traits non décrits sont interprétés.</small>
-      <div class="guest-list"></div><p class="picker-state" role="status"></p>
     </section>
       <div class="speech-rail" id="salon-bulles" hidden>
         <div class="speech own-speech" role="group" hidden><strong>Toi</strong><span class="line" aria-hidden="true"></span><button type="button" hidden>Lire la suite</button></div>
@@ -45,17 +47,16 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       </div>
       <div class="camera-slot"><button class="guest-leave" type="button" aria-label="Terminer la conversation">Terminer</button></div>
       <section class="voice-conversation" id="salon-voice-conversation" aria-label="Conversation vocale" hidden>
-        <header><strong>Parler ensemble</strong><button class="voice-conversation-close" type="button" aria-label="Fermer la conversation vocale">×</button></header>
-        <p class="voice-conversation-help">Tu parles, tu marques une pause, le personnage te répond. Ta parole est transcrite par OpenAI ; ElevenLabs donne sa voix à la réponse.</p>
-        <label>Voix du personnage<select class="voice-conversation-select" aria-label="Choisir la voix du personnage" disabled><option value="">Vérification des voix…</option></select></label>
-        <p class="voice-conversation-status" role="status" aria-live="polite">Vérification des connexions…</p>
-        <div class="voice-conversation-actions">
-          <button class="voice-conversation-start" type="button" disabled>Commencer</button>
-          <button class="voice-conversation-finish" type="button" hidden>J’ai terminé</button>
-          <button class="voice-conversation-interrupt" type="button" hidden>Prendre la parole</button>
-          <button class="voice-conversation-pause" type="button" hidden>Couper le micro</button>
+        <header class="voice-call-header">
+          <div class="voice-call-title"><strong>Appel avec <span class="voice-call-name">le personnage</span></strong><span class="voice-call-presence">Conversation privée</span></div>
+          <button class="voice-conversation-close" type="button" aria-label="Raccrocher" title="Raccrocher"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13c5-4 13-4 18 0l-2.5 5-4-2v-3h-5v3l-4 2Z"/></svg></button>
+        </header>
+        <p class="voice-conversation-status" role="status" aria-live="polite">Connexion au personnage…</p>
+        <div class="voice-conversation-actions" role="group" aria-label="Commandes de l’appel">
+          <button class="voice-conversation-start" type="button" disabled>Appeler</button>
+          <button class="voice-conversation-pause" type="button" hidden aria-label="Couper le micro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 10v3a7 7 0 0 0 14 0v-3m-7 10v2m-4 0h8"/></svg><span>Micro</span></button>
         </div>
-        <small>Utilise tes crédits OpenAI et ElevenLabs. Le micro se coupe quand tu quittes cet écran. L’échange reste dans ce dialogue.</small>
+        <small class="voice-call-hint">Tu parles, le personnage te répond. Un appui sur le micro permet de l’interrompre ou de mettre l’appel en pause.</small>
         <details class="voice-conversation-settings"><summary>Relier mes comptes</summary>
           <p>Ces réglages sont réservés à ton compte administrateur. Les clés sont conservées chiffrées sur le serveur et ne sont jamais affichées après l’enregistrement.</p>
           <form data-voice-provider="openai"><label>Clé du compte OpenAI qui possède tes crédits<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier OpenAI</button></form>
@@ -76,9 +77,8 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   const rail=$('.speech-rail'),bubbleSwitch=$('.bubbles-toggle'),shots=[...root.querySelectorAll('[data-shot]')];
   const toolbar=$('.bar'),barSlot=$('.camera-slot'),voiceSwitch=$('.voice-toggle');
   const phoneToggle=$('.conversation-voice-toggle'),phonePanel=$('.voice-conversation'),phoneStatus=$('.voice-conversation-status');
-  const phoneSelect=$('.voice-conversation-select'),phoneStart=$('.voice-conversation-start'),phonePause=$('.voice-conversation-pause'),phoneInterrupt=$('.voice-conversation-interrupt'),phoneFinish=$('.voice-conversation-finish');
+  const phoneStart=$('.voice-conversation-start'),phonePause=$('.voice-conversation-pause');
   let voiceSession=null,phoneBusy=false,phoneReady=false,phoneLoad=0,savingVoiceSettings=false;
-  const phoneChoices=new Map();
   const sequence=createShotSequence(),now=()=>performance.now()/1000;
   let mode='reverse',speaker='player',reading,showSpeech=true;
   const nodeFor=who=>who==='player'?own:other,announcement=$('.speech-announcement');
@@ -154,10 +154,12 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     onState(state){
       const wasBusy=phoneBusy;phoneBusy=!['idle','paused'].includes(state);
       phonePanel.dataset.state=state;
-      phoneStart.textContent=state==='paused'?'Reprendre':'Commencer';
+      phoneStart.textContent=state==='paused'?'Réactiver le micro':'Appeler';
       phoneStart.hidden=phoneBusy;phonePause.hidden=!phoneBusy;
-      phoneInterrupt.hidden=!['thinking','preparing','speaking'].includes(state);
-      phoneFinish.hidden=state!=='listening';phoneSelect.disabled=phoneBusy||!phoneReady;
+      const interruption=['transcribing','thinking','preparing','speaking'].includes(state);
+      phonePause.setAttribute('aria-label',interruption?'Prendre la parole':'Couper le micro');
+      phonePause.title=phonePause.getAttribute('aria-label');
+      phonePause.querySelector('span').textContent=interruption?'Parler':'Micro';
       if(phoneBusy&&!wasBusy){dictee.cancel();playback.clear();playback.voice(false);}
       if(!phoneBusy&&wasBusy)playback.voice(voiceEnabled());
       buttons();
@@ -165,43 +167,32 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   });
   async function loadPhone(show=false){
     const ticket=++phoneLoad,current=person;
-    if(show){phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneStatus.textContent='Vérification des connexions…';}
+    if(show){phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneStatus.textContent='Connexion au personnage…';}
+    if(!current)return;
+    phonePanel.querySelector('.voice-call-name').textContent=current.name;
     try{
-      const {status:available,voices,voiceError}=await voiceSession.refresh();
+      const {status:available}=await voiceSession.refresh({withVoices:false});
       if(ticket!==phoneLoad||person!==current)return;
-      phoneToggle.hidden=false;phoneReady=Boolean(available.ready&&voices.length);
-      const characterId=String(current.id),voiceGender=guestAppearance(current).gender;
-      const preferred=phoneChoices.get(characterId);
-      phoneSelect.replaceChildren();
-      if(voices.length){
-        const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choisis une voix pour ce personnage';placeholder.disabled=true;phoneSelect.append(placeholder);
-        for(const voice of voices){const option=document.createElement('option');option.value=voice.id;option.textContent=voice.name+(voice.gender==='femme'?' · féminine':voice.gender==='homme'?' · masculine':'');phoneSelect.append(option);}
-        const selected=voices.find(v=>v.id===preferred)||voices.find(v=>v.gender===voiceGender);
-        phoneSelect.value=selected?.id||'';
-        if(selected)phoneChoices.set(characterId,selected.id);
-      }else{
-        const option=document.createElement('option');option.value='';option.textContent=available.ready?'Aucune voix disponible':'Voix à raccorder';phoneSelect.append(option);
-      }
-      phoneSelect.disabled=!phoneReady;
-      if(show&&(!available.ready||voiceError))$('.voice-conversation-settings').open=true;
-      phoneStatus.textContent=phoneReady?(phoneSelect.value?'Choisis une voix, puis touche « Commencer ».':`Aucune voix ${voiceGender==='femme'?'féminine':'masculine'} n’est identifiée. Choisis une voix ou ajoute-en une dans ElevenLabs.`):voiceError||(available.ready?'Ajoute une voix française à ton compte ElevenLabs, puis rouvre ce panneau.':'Le raccordement d’OpenAI et d’ElevenLabs reste à terminer. Le micro est coupé.');
+      phoneToggle.hidden=false;phoneReady=Boolean(available.ready);
+      if(show&&!phoneReady)$('.voice-conversation-settings').open=true;
+      phoneStatus.textContent=phoneReady?'Appuie sur Appeler. La voix sera choisie automatiquement pour '+current.name+'.':'Relie ton compte OpenAI dans les réglages pour appeler.';
       buttons();
     }catch(error){
       if(ticket!==phoneLoad||person!==current||error.name==='AbortError')return;
       phoneReady=false;
       if(error.status===401||error.status===403){phoneToggle.hidden=true;phonePanel.hidden=true;}
-      else if(show)phoneStatus.textContent='Impossible de vérifier les connexions. Ferme et rouvre ce panneau pour réessayer.';
+      else if(show)phoneStatus.textContent='La connexion n’a pas pu être vérifiée. Rouvre l’appel pour réessayer.';
       buttons();
     }
   }
   function closePhone(){phoneLoad++;voiceSession.stop();phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';}
   phoneToggle.onclick=()=>{if(phonePanel.hidden)void loadPhone(true);else closePhone();};
   $('.voice-conversation-close').onclick=closePhone;
-  phoneSelect.onchange=()=>{if(person&&phoneSelect.value){phoneChoices.set(String(person.id),phoneSelect.value);phoneStatus.textContent='Touche « Commencer » pour parler.';}buttons();};
-  phoneStart.onclick=()=>{if(phoneReady&&!request)void voiceSession.start(phoneSelect.value);};
-  phonePause.onclick=()=>voiceSession.pause();
-  phoneInterrupt.onclick=()=>voiceSession.interrupt();
-  phoneFinish.onclick=()=>voiceSession.finishTurn();
+  phoneStart.onclick=()=>{if(phoneReady&&!request)void voiceSession.start('');};
+  phonePause.onclick=()=>{
+    if(['transcribing','thinking','preparing','speaking'].includes(voiceSession.state))voiceSession.interrupt();
+    else voiceSession.pause();
+  };
   for(const form of root.querySelectorAll('[data-voice-provider]'))form.onsubmit=async event=>{
     event.preventDefault();voiceSession.stop();
     const field=form.querySelector('input'),button=form.querySelector('button'),feedback=$('.voice-settings-status');
@@ -263,6 +254,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       name.textContent=p.name;role.textContent=p.role;b.append(name,role);return b;
     });
     list.replaceChildren(...rows);
+    list.scrollTop=0;
     pickerState.textContent=matches.length?'':'Aucun personnage ne porte ce nom.';
   }
   toggle.onclick=async()=>{
@@ -280,7 +272,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
     closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';dictatedDraft=false;status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
     own.hidden=other.hidden=footer.hidden=true;toggle.hidden=false;root.host.dispatchEvent(new CustomEvent('salon-companion-change',{detail:{name:''}}));leave();
-    if(clear){threads.clear();phoneChoices.clear();}
+    if(clear)threads.clear();
   }
   function bubble(node,text){
     node.lineText=text;node.querySelector('.line').textContent=text;node.setAttribute('aria-label',node.querySelector('strong').textContent+' · '+text);node.hidden=!text;
@@ -289,7 +281,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   function buttons(){
     send.disabled=phoneBusy||Boolean(request)||micState!=='idle'||!input.value.trim();
     mic.disabled=phoneBusy;input.disabled=phoneBusy;voiceSwitch.disabled=phoneBusy;retry.disabled=phoneBusy;
-    phoneStart.disabled=!phoneReady||!phoneSelect.value||Boolean(request)||phoneBusy;
+    phoneStart.disabled=!phoneReady||Boolean(request)||phoneBusy;
   }
   async function say(question,fromDraft=false,welcome,spoken=fromDraft&&dictatedDraft){
     if(!person||phoneBusy||request||!question||(fromDraft&&micState!=='idle'))return;
