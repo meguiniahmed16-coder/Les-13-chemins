@@ -48,7 +48,7 @@ export function createSalonNavigation(root){
  const panel='<section class="maison-rail-panel" id="maison-rail-panel" aria-label="Options du Salon" hidden>'+
  '<header class="maison-rail-head"><strong class="maison-rail-title">Options</strong><div>'+
  '<button type="button" data-maison-action="labels" title="Afficher les noms des icônes" aria-label="Afficher les noms des icônes" aria-pressed="false">'+svg('label')+'</button>'+
- '<button type="button" data-maison-action="side" title="Changer de côté" aria-label="Changer de côté">'+svg('side')+'</button>'+
+ '<button type="button" data-maison-action="swap-side" title="Changer de côté" aria-label="Changer de côté">'+svg('side')+'</button>'+
  '<button type="button" data-maison-action="close" title="Replier le menu" aria-label="Replier le menu">'+svg('close')+'</button></div></header>'+
  '<div class="maison-rail-scroll">'+
  '<section class="maison-rail-room" data-rail-room="encounter" hidden>'+
@@ -158,7 +158,7 @@ export function createSalonNavigation(root){
    const command=b.dataset.maisonAction||b.dataset.tool;
    if(!command)return;
    if(command==='close'){close(true);return;}
-   if(command==='side'){stage.classList.toggle('maison-panel-right');return;}
+   if(command==='swap-side'){stage.classList.toggle('maison-panel-right');return;}
    if(command==='labels'){
      labels=!labels;
      panelNode.classList.toggle('maison-show-labels',labels);
