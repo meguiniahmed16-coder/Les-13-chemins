@@ -309,7 +309,7 @@ const lines=[
  {
   "id": "dojo-personnaliser",
   "speaker": "m",
-  "text": "Pour modifier ton personnage, ouvre Menu, puis Avatar. Tu retrouves ici les vrais outils de personnalisation.",
+  "text": "Pour modifier ton personnage, ouvre Menu, puis Avatar. Les icônes permettent de régler le corps, le visage et la silhouette.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12000,
@@ -333,7 +333,7 @@ const lines=[
  {
   "id": "dojo-vetements",
   "speaker": "m",
-  "text": "Les vêtements se choisissent dans leur catégorie, sans quitter le Salon. Tu peux changer la tenue et continuer à regarder le personnage.",
+  "text": "Pour changer de tenue, sélectionne Vêtements. Choisis une chemise, un pantalon ou des chaussures sans quitter le Salon.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 12000,
@@ -345,7 +345,7 @@ const lines=[
  {
   "id": "dojo-enregistrer",
   "speaker": "f",
-  "text": "Le bouton Enregistrer conserve tes choix. Nous allons maintenant te montrer comment rencontrer quelqu’un.",
+  "text": "Enregistrer garde tes choix. Invite un personnage, puis touche le petit téléphone pour parler.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 7000,
