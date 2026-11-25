@@ -1,4 +1,5 @@
 import {hasAuthorSession,logoutAuthor} from './author-access.js';
+import {beginSalonOpening} from './salon-cinema.js?v=cinema61';
 import {createMemberPreview} from './free-preview.js?v=incarnations33';
 import {normaliseStudio} from './studio-look.js?v=incarnations33';
 import {games,scenes,videos,mergeJourney,importDeviceJourney,enableJourneyTracking,disableJourneyTracking} from './journey.js';
@@ -19,6 +20,7 @@ const authorEntry=params.get('auteur')||(wantsPreview?'atelier':'');
 let preview;
 const adminURL=kind=>kind==='edition'?'/admin.html':'/admin-blog.html';
 let member,signup=false,appearance,playing='',recorded=false;
+let salonOpening=null,roomConfigured=false;
 const base='/api/membres/';
 async function api(path,data){
   if(wantsPreview){
@@ -83,7 +85,9 @@ function setPage(refreshRoom=false){
   $('salon-layout').classList.toggle('has-panel',showRoom&&!roomOnly);
   const view=$('room').querySelector('chemins-salon');
   if(showRoom){
+    if(roomOnly&&!salonOpening){salonOpening=beginSalonOpening($('room'));if(roomConfigured)salonOpening.ready();}
     if(!view||refreshRoom)void mountRoom().catch(()=>{
+      salonOpening?.fail();
       if(!$('salon').hidden)note('Le salon n’a pas pu se charger. Recharge la page pour réessayer.');
     });
     if(view)view.openOptions(key==='avatar');
@@ -126,6 +130,7 @@ async function mountRoom(){
     if(member?.id===who){member.avatar=result.avatar;member.studio=result.studio;updatePhoto(view);}
   }});
   if(member?.id!==who||$('salon').hidden)return;
+  roomConfigured=true;salonOpening?.ready();
   updatePhoto(view);
   if(location.hash==='#avatar')view.openOptions();
 }
