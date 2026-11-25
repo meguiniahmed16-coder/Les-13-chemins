@@ -297,3 +297,15 @@ test('garden entry delegates once to the explicit arrival sequence instead of ra
  assert.equal(h.arrivals.length,1);assert.equal(h.time.count(),0);assert.equal(h.arrivals[0].skip,false);
  const skipped=harness();skipped.dom.$('skip').click();assert.equal(skipped.arrivals.length,1);assert.equal(skipped.arrivals[0].skip,true);
 });
+
+test('the dojo assigns distinct local voices and bubble visibility never controls speech',()=>{
+ const worker=readFileSync(new URL('./salon-voice-worker.js',import.meta.url),'utf8');
+ assert.match(source,/const gender=id==='f'\?'femme':'homme'/);
+ assert.match(source,/stage==='dojo'\|\|!matched/);
+ assert.match(source,/cinematicLocalVoices\.speak\(\{/);
+ assert.match(worker,/gender==='femme'\?'jessica':'pierre'/);
+ assert.match(source,/cinematicLocalVoices\?\.pause\(\)/);
+ assert.match(source,/cinematicLocalVoices\?\.resume\(\)/);
+ assert.match(source,/if\(canvasHost\.classList\?\.contains\?\.\('bubbles-off'\)\|\|!speaker/);
+ assert.match(html,/#stage\.bubbles-off #bubble\{display:none!important\}/);
+});
