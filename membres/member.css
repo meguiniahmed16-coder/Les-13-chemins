@@ -65,3 +65,13 @@
   body:has(#member:not([hidden])) .tda-legal-footer :is(a,button){font-size:.72rem;line-height:1.4;padding-block:4px}
   #salon-layout:not(.has-panel) #room{--room-height:max(280px,calc(100dvh - 116px))}
 }
+
+/* Donner réellement la largeur de la page au Salon, sans réduire le plateau 3D. */
+#salon-layout.has-panel{grid-template-columns:minmax(0,1fr)}
+#salon-layout.has-panel #salon{position:static;top:auto}
+#salon-layout.has-panel #salon-panels{max-width:1100px;width:100%;margin-inline:auto}
+#room{width:100%;min-height:0}
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+ #salon-layout,#salon-layout.has-panel{grid-template-columns:minmax(0,1fr)}
+ #salon-layout:not(.has-panel) #room,#salon-layout.has-panel #room{--room-height:max(290px,calc(100dvh - 115px))}
+}

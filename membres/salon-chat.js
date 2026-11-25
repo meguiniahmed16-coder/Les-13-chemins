@@ -34,20 +34,22 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     `);
   $('.stage').insertAdjacentHTML('beforeend',`
     <section class="conversation-footer" aria-label="Conversation" hidden>
-      <header class="thread-heading"><strong class="thread-name"></strong><button class="guest-style" type="button" hidden>Personnaliser l’invité</button><button class="thread-toggle" type="button" aria-expanded="true" aria-controls="salon-thread">Réduire</button></header>
-      <div id="salon-thread" class="thread-history" role="log" aria-label="Historique de la conversation"></div>
+      <header class="thread-heading"><strong class="thread-name"></strong><button class="guest-leave" type="button" aria-label="Terminer la conversation">Terminer</button></header>
+      <details class="salon-conversation-options"><summary>☰ Options</summary>
       <div class="conversation-tools" role="group" aria-label="Vues de la conversation">
         <button type="button" data-shot="wide" aria-pressed="false">Vue large</button>
         <button type="button" data-shot="reverse" aria-pressed="true" title="Plans larges, moyens et gros plans en champ et contrechamp">Plans alternés</button>
         <button type="button" class="voice-toggle" aria-pressed="false" hidden>Voix</button>
-        <button type="button" class="conversation-voice-toggle" aria-expanded="false" aria-controls="salon-voice-conversation" hidden>Conversation vocale</button>
         <button type="button" class="bubbles-toggle" aria-controls="salon-bulles" aria-pressed="true">Bulles</button>
       </div>
-      <div class="camera-slot"><button class="guest-leave" type="button" aria-label="Terminer la conversation">Terminer</button></div>
+      <button type="button" class="guest-style" hidden>Personnaliser l’invité</button>
+      <div class="camera-slot"></div>
+      <details class="salon-history"><summary>Historique des messages</summary><div id="salon-thread" class="thread-history" role="log" aria-label="Historique de la conversation"></div></details>
+      </details>
       <section class="voice-conversation" id="salon-voice-conversation" aria-label="Conversation vocale" hidden>
         <header><strong>Parler ensemble</strong><button class="voice-conversation-close" type="button" aria-label="Fermer la conversation vocale">×</button></header>
-        <p class="voice-conversation-help">Tu parles, tu marques une pause, le personnage te répond. Ta parole est transcrite par OpenAI ; ElevenLabs donne sa voix à la réponse.</p>
-        <label>Voix du personnage<select class="voice-conversation-select" aria-label="Choisir la voix du personnage" disabled><option value="">Vérification des voix…</option></select></label>
+        <p class="voice-conversation-help">Parle naturellement. Le personnage te répond à voix haute.</p>
+        <details class="voice-conversation-choices"><summary>Changer la voix</summary><label>Voix du personnage<select class="voice-conversation-select" aria-label="Choisir la voix du personnage" disabled><option value="">Vérification des voix…</option></select></label></details>
         <p class="voice-conversation-status" role="status" aria-live="polite">Vérification des connexions…</p>
         <div class="voice-conversation-actions">
           <button class="voice-conversation-start" type="button" disabled>Commencer</button>
@@ -75,7 +77,17 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   const own=$('.own-speech'),other=$('.guest-speech'),reader=$('.speech-reader');
   const rail=$('.speech-rail'),bubbleSwitch=$('.bubbles-toggle'),shots=[...root.querySelectorAll('[data-shot]')];
   const toolbar=$('.bar'),barSlot=$('.camera-slot'),voiceSwitch=$('.voice-toggle');
-  const phoneToggle=$('.conversation-voice-toggle'),phonePanel=$('.voice-conversation'),phoneStatus=$('.voice-conversation-status');
+  const options=$('.salon-conversation-options');
+  const phoneToggle=document.createElement('button');
+  phoneToggle.type='button';phoneToggle.className='salon-call';phoneToggle.hidden=true;
+  phoneToggle.setAttribute('aria-label','Appeler le personnage');
+  phoneToggle.setAttribute('title','Conversation vocale');
+  phoneToggle.setAttribute('aria-expanded','false');
+  phoneToggle.setAttribute('aria-controls','salon-voice-conversation');
+  phoneToggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h3l1.5 5-2.2 2.2a15 15 0 0 0 4.5 4.5L16 12.5l5 1.5v3c0 2-2 4-4 4C9.5 21 3 14.5 3 7c0-2 2-4 4-4Z" /></svg><span>Appeler</span>';
+  scene.append(phoneToggle);
+  const phonePanel=$('.voice-conversation'),phoneStatus=$('.voice-conversation-status');
+  scene.append(phonePanel);
   const phoneSelect=$('.voice-conversation-select'),phoneStart=$('.voice-conversation-start'),phonePause=$('.voice-conversation-pause'),phoneInterrupt=$('.voice-conversation-interrupt'),phoneFinish=$('.voice-conversation-finish');
   let voiceSession=null,phoneBusy=false,phoneReady=false,phoneLoad=0,savingVoiceSettings=false;
   const phoneChoices=new Map();
@@ -139,7 +151,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   reader.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();closeReader();}};
   let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
-  const threads=new Map(),log=$('.thread-history'),threadToggle=$('.thread-toggle'),styleButton=$('.guest-style');
+  const threads=new Map(),log=$('.thread-history'),styleButton=$('.guest-style');
   voiceSession=createVoiceConversation({
     character:()=>person?{id:person.id,history:threads.get(person.id)||[],gender:gender('guest')}:null,
     onQuestion(question){showLine('player',question);appendLine('Toi',question);bubble(other,'…');status.textContent='';},
@@ -165,7 +177,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   });
   async function loadPhone(show=false){
     const ticket=++phoneLoad,current=person;
-    if(show){phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneStatus.textContent='Vérification des connexions…';}
+    if(show){options.open=false;phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneToggle.setAttribute('aria-label','Fermer le téléphone');phoneStatus.textContent='Vérification des connexions…';}
     try{
       const {status:available,voices,voiceError}=await voiceSession.refresh();
       if(ticket!==phoneLoad||person!==current)return;
@@ -194,7 +206,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       buttons();
     }
   }
-  function closePhone(){phoneLoad++;voiceSession.stop();phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';}
+  function closePhone(){phoneLoad++;voiceSession.stop();phonePanel.hidden=true;phoneToggle.setAttribute('aria-expanded','false');phoneToggle.setAttribute('aria-label','Appeler le personnage');for(const field of phonePanel.querySelectorAll('input[type=password]'))field.value='';}
   phoneToggle.onclick=()=>{if(phonePanel.hidden)void loadPhone(true);else closePhone();};
   $('.voice-conversation-close').onclick=closePhone;
   phoneSelect.onchange=()=>{if(person&&phoneSelect.value){phoneChoices.set(String(person.id),phoneSelect.value);phoneStatus.textContent='Touche « Commencer » pour parler.';}buttons();};
@@ -219,12 +231,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     finally{field.value='';savingVoiceSettings=false;for(const control of phonePanel.querySelectorAll('[data-voice-provider] input,[data-voice-provider] button'))control.disabled=false;}
   };
   styleButton.onclick=()=>customize?.();
-  function expand(open){
-    if(!open&&phoneBusy)voiceSession.pause();
-    footer.classList.toggle('thread-folded',!open);threadToggle.setAttribute('aria-expanded',String(open));
-    threadToggle.textContent=open?'Réduire':'Ouvrir le dialogue';
-  }
-  threadToggle.onclick=()=>expand(footer.classList.contains('thread-folded'));
+  options.addEventListener('click',event=>{if(event.target.closest('button'))options.open=false;});
   function appendLine(name,text){const row=document.createElement('p'),label=document.createElement('strong');
     label.textContent=name+' · ';row.append(label,document.createTextNode(text));log.append(row);log.scrollTop=log.scrollHeight;return row;
   }
@@ -275,7 +282,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   };
   function cancelRequest(){request?.abort();request=null;dictee.cancel();}
   function finish(clear=false){
-    closePhone();phoneToggle.hidden=true;phoneReady=false;
+    closePhone();phoneToggle.hidden=true;phoneReady=false;options.open=false;
     onChoice=null;
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
     closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';dictatedDraft=false;status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
@@ -317,7 +324,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     closePhone();phoneToggle.hidden=true;phoneReady=false;
     const ticket=++version;
     loading=true;random.disabled=true;list.inert=true;
-    closePicker();toggle.hidden=true;footer.hidden=false;expand(true);log.replaceChildren();styleButton.hidden=true;
+    closePicker();toggle.hidden=true;footer.hidden=false;options.open=false;log.replaceChildren();styleButton.hidden=true;
     $('.thread-name').textContent='Avec '+p.name;const arrival=$('.arrival-status');arrival.textContent=p.name+' rejoint le salon…';
     setMode('reverse');person=p;other.querySelector('strong').textContent=p.name;
     barSlot.prepend(toolbar);rail.hidden=!showSpeech;input.disabled=mic.disabled=false;
