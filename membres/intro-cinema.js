@@ -24,7 +24,9 @@ function finishSalonEntry(){
  };
  const chosen=destinations[returnTo]||[originalIntroKey,'/membre.html#salon'];
  try{sessionStorage.setItem(chosen[0],'done');}catch{}
- location.replace(chosen[1]);
+ const action=new URLSearchParams(location.search).get('ouvrir');
+ const suffix=returnTo==='invite'&&['inviter','appeler'].includes(action)?'?ouvrir='+action:'';
+ location.replace(chosen[1]+suffix);
 }
 
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
