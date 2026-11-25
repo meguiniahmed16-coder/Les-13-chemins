@@ -36,24 +36,28 @@ test('Ahmed numérique utilise le modèle V27 original et les échanges réellem
  assert.match(v27,/narrateAhmed\(text,done\)/);
  assert.match(v27,/armAhmedVoice\(\)/);
 });
-test('L’accueil et les deux types de Salon offrent des accès clairs et un extrait authentique',()=>{
- const home=src('index.html');
- const invite=src('salon-invite.html');
- assert.match(home,/salon-invite\.html\?ouvrir=inviter/);
- assert.match(home,/salon-invite\.html\?ouvrir=appeler/);
- assert.match(home,/intro-montage-reel23\.mp4/);
- for(const id of ['quick-invite','quick-call'])assert.ok(invite.includes('id="'+id+'"'));
- assert.match(invite,/data-salon-film/);
- assert.match(src('membre.html'),/data-salon-film/);
- assert.match(src('ahmed-marie.html'),/data-salon-film/);
+test('Les deux anciens boutons de cinéma sont retirés et l’auteur ouvre le vrai film',()=>{
+ const member=src('membre.html'),code=src('membres/member.js');
+ assert.doesNotMatch(member,/data-salon-film|cinématique originale complète/);
+ assert.match(code,/\/membres\/intro-prive\.html\?salon=1/);
+ assert.match(code,/originalIntroKey/);
+ const cinema=src('membres/intro-cinema.js');
+ assert.match(cinema,/finishSalonEntry/);
+ assert.match(cinema,/onComplete:\(\)=>\{introSound\.stop\(\);finishSalonEntry\(\);\}/);
+ assert.match(cinema,/croisee-salon-introduction-originale-v34/);
+ const intro=src('membres/intro-prive.html');
+ assert.match(intro,/dojo-voix64/);
+ for(const file of ['salon-invite.html','ahmed-marie.html'])
+  assert.doesNotMatch(src(file),/data-salon-film/);
 });
+
 test('Le dojo original enseigne les nouvelles icônes et utilise des voix masculines et féminines',()=>{
  const intro=src('membres/intro-cinema.js');
  const html=src('membres/intro-prive.html');
  assert.match(intro,/frenchVoice\(cinematicSynth,gender/);
  assert.match(intro,/speakCinematicCue\(id,p\.textContent\)/);
  assert.match(intro,/dojoHelp\.hidden=!isDojo/);
- assert.match(intro,/bouton Menu/);
+ assert.match(intro,/Appuie sur Menu/);
  assert.match(html,/id="dojo-help"/);
 });
 test('Le build produit les nouveaux modules et invalide les anciens caches Android',()=>{
@@ -66,27 +70,19 @@ test('Le build produit les nouveaux modules et invalide les anciens caches Andro
  assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=call61/);
 });
 
-test('Chaque entrée suit chargement, cinématique existante, puis Salon sans nouveau pictogramme',()=>{
- const film=src('membres/salon-cinema.js');
- const nav=src('membres/salon-maison-ui.js');
+test('Les pictogrammes du Salon sont conservés, sans nouvelle vidéo à la place de l’originale',()=>{
+ const icon=src('membres/salon-maison-ui.js');
  const member=src('membres/member.js');
- const guest=src('membres/visite-salon.js');
  const ahmed=src('membres/ahmed-3d.js');
- const home=src('index.html');
- assert.match(film,/export function beginSalonOpening/);
- assert.match(film,/export function attachSalonVideoLoading/);
- assert.match(film,/film\.addEventListener\('ended',finish/);
- assert.match(film,/import \{salonActionSvg\}/);
- assert.match(nav,/export const salonActionSvg=svg/);
- assert.match(nav,/standaloneAhmed=root\.host\.hasAttribute\('ahmed-numerique'\)/);
- assert.match(nav,/phoneNode\.hidden=standaloneAhmed\?false/);
- assert.match(nav,/salon-ahmed-call/);
- assert.match(member,/salonOpening=beginSalonOpening/);
- assert.match(guest,/attachSalonVideoLoading\(video\)/);
- assert.match(ahmed,/view\.setAttribute\('ahmed-numerique',''\)/);
+ const guest=src('membres/visite-salon.js');
+ assert.match(icon,/export const salonActionSvg=svg/);
+ assert.match(icon,/phoneNode\.hidden=standaloneAhmed\?false/);
+ assert.match(icon,/salon-ahmed-call/);
  assert.match(ahmed,/view\.addEventListener\('salon-ahmed-call'/);
- assert.match(home,/data-salon-action="invite"/);
- assert.match(home,/data-salon-action="call"/);
- assert.match(src('salon-invite.html'),/id="quick-call"[^>]*data-salon-action="call"/);
- assert.match(src('ahmed-marie.html'),/id="ahmed-call"[^>]*hidden/);
+ assert.match(ahmed,/\/membres\/intro-prive\.html\?salon=1&retour=ahmed/);
+ assert.match(guest,/\/membres\/intro-prive\.html\?salon=1&retour=invite/);
+ assert.match(member,/member\.author&&!wantsPreview/);
+ assert.match(src('index.html'),/data-salon-action="invite"/);
+ assert.match(src('index.html'),/data-salon-action="call"/);
+ assert.doesNotMatch(src('index.html'),/intro-montage-reel23\.mp4/);
 });
