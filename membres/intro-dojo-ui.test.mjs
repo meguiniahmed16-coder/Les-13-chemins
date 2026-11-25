@@ -7,12 +7,12 @@ import {DOJO_CAST} from './intro-dojo-cast.js';
 const cue=(id,ms=10000)=>({id,ms,scene:'dojo'});
 
 test('the interface demonstration appears only for the action being taught and clears between scenes',()=>{
- for(const id of ['dojo-arrivee','dojo-construction','jardin']){
+ for(const id of ['jardin']){
   assert.equal(dojoDemoFrame(cue(id),2500).visible,false);
   assert.equal(dojoDemoReservedRect(390,690,cue(id)),null);
  }
  assert.equal(dojoDemoFrame({id:'dojo-camera',scene:'white',ms:10000},4000).visible,false);
- for(const id of ['dojo-camera','dojo-deplacement','dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer']){
+ for(const id of ['dojo-arrivee','dojo-camera','dojo-deplacement','dojo-demi-tour','dojo-personnaliser','dojo-apparence','dojo-vetements','dojo-enregistrer','dojo-construction','dojo-appeler','dojo-bulles']){
   assert.equal(dojoDemoFrame(cue(id),0).visible,false,id+' does not pop in at the cut');
   assert.equal(dojoDemoFrame(cue(id),2000).visible,true,id+' is demonstrated');
   assert.equal(dojoDemoFrame(cue(id),10000).visible,false,id+' clears before the next shot');
@@ -83,4 +83,27 @@ test('the reserved panel stays small and leaves the existing left joystick clear
   if(height<350)assert.equal(rect.b-rect.t,70,'Short landscape view gets the compact panel');
   assert.ok((rect.r-rect.l)*(rect.b-rect.t)<width*height*.15,'The preview occupies a small part of the scene');
  }
+});
+
+
+test('the original Menu, Invite, Phone and Bulles are staged on the shot clock',()=>{
+ const cases={
+  'dojo-arrivee':'menu',
+  'dojo-demi-tour':'recenter',
+  'dojo-construction':'invite',
+  'dojo-appeler':'call',
+  'dojo-bulles':'bubbles'
+ };
+ for(const [id,mode] of Object.entries(cases)){
+  const line=cue(id,id==='dojo-bulles'?11500:id==='dojo-appeler'?11000:10000);
+  const first=dojoDemoFrame(line,2200),again=dojoDemoFrame(line,2200);
+  assert.equal(first.mode,mode);assert.equal(first.visible,true);
+  assert.deepEqual(first,again,'The actual cinematic clock owns the action');
+  assert.ok(dojoDemoReservedRect(390,690,line));
+ }
+ assert.equal(dojoDemoFrame(cue('dojo-arrivee'),2500).menuExpanded,true);
+ assert.equal(dojoDemoFrame(cue('dojo-bulles',11500),900).bubblesOn,true);
+ assert.equal(dojoDemoFrame(cue('dojo-bulles',11500),6000).bubblesOn,false);
+ assert.equal(dojoDemoFrame(cue('dojo-bulles',11500),10200).bubblesOn,true);
+ assert.equal(dojoDemoFrame(cue('dojo-appeler',11000),2500).label,'Le téléphone du Salon');
 });
