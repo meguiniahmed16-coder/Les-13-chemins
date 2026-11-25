@@ -27,6 +27,7 @@ for (const args of [
   ['--test','membres/salon-conversation.test.mjs','membres/salon-conversation-audio.test.mjs','membres/voice-conversation.test.mjs','membres/voice-proxy.test.mjs'],
   ['--test','membres/salon-rail.test.mjs'],
   ['--test','membres/salon-unified-hud.test.mjs'],
+  ['--test','membres/salon-ergonomie.test.mjs'],
   ['--test','membres/incarnations-dialog.test.mjs','membres/v27/reference-groom.test.mjs'],
   ['--test','double-admin.test.mjs','double-voice.test.mjs','double-notifications.test.mjs','rich-blog.test.mjs','double-archives.test.mjs'],
   ['build-double-admin.mjs'],
