@@ -62,6 +62,6 @@ test('Le build produit les nouveaux modules et invalide les anciens caches Andro
   assert.ok(build.includes("'"+path+"'"),path);
  }
  assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=call60/);
- assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=call60/);
- assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=call60/);
+ assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=call61/);
+ assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=call61/);
 });
