@@ -518,3 +518,32 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
  .stage .scene-viewport>.voice-conversation:not([hidden]){left:8px!important;right:8px!important;width:auto!important;bottom:8px!important;top:8px!important}
 }
 @media(prefers-reduced-motion:reduce){.stage .studio-drawer{transition:none!important}}
+
+/* Floating compass: four individual edge buttons, clear of the movement stick. */
+.stage .maison-dock{
+ top:66px!important;bottom:auto!important;left:10px!important;right:auto!important;
+ transform:none!important;flex-direction:row!important;gap:8px!important;
+ max-width:calc(100% - 125px)!important
+}
+.stage .maison-dock button{width:52px!important;min-width:52px!important;height:52px!important;min-height:52px!important}
+.stage .maison-hub{top:124px!important;bottom:8px!important;left:10px!important;width:min(400px,48%)!important}
+.stage.maison-panel-right .maison-hub{left:auto!important;right:10px!important}
+.stage .maison-phone{top:66px!important}
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+ .stage .maison-dock{left:7px!important;top:53px!important;gap:5px!important;max-width:calc(100% - 105px)!important}
+ .stage .maison-dock button{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important}
+ .stage .maison-phone{top:53px!important}
+ .stage .maison-hub{top:101px!important;bottom:5px!important;left:7px!important;width:min(360px,49%)!important}
+ .stage.maison-panel-right .maison-hub{left:auto!important;right:7px!important}
+}
+@media(max-width:600px) and (orientation:portrait){
+ .stage .maison-dock{left:8px!important;top:58px!important;bottom:auto!important;transform:none!important;gap:5px!important}
+ .stage .maison-dock button{width:45px!important;min-width:45px!important}
+ .stage .maison-hub{top:112px!important;bottom:6px!important;left:6px!important;width:min(300px,78%)!important}
+ .stage.maison-panel-right .maison-hub{left:auto!important;right:6px!important}
+ .stage .maison-phone{top:58px!important}
+}
+@media(max-height:390px) and (orientation:landscape){
+ .stage .maison-hub-head h2{font-size:16px}
+ .stage .maison-hub{top:100px!important}
+}
