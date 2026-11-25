@@ -176,7 +176,7 @@ export async function voiceConversation(request,env,{member,author},action){
     const useEleven=action==='voices';
     const credential=await voiceCredential(env,useEleven?'elevenlabs':'openai');
     env={...env,[useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY']:credential};
-    need(env,action==='voices'||action==='speech'?'ELEVENLABS_API_KEY':'OPENAI_API_KEY',action==='voices'||action==='speech'?'ElevenLabs':'OpenAI');
+    need(env,useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY',useEleven?'ElevenLabs':'OpenAI');
     try{await rate(env.DB,'salon-voice:'+member.id,100);}catch(error){if(error.status===429)failure(429,'Trop de demandes vocales rapprochées. Réessaie dans quelques minutes.');throw error;}
     if(action==='voices'){
       await reserve(env,member,'voices');
