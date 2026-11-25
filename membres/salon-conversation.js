@@ -149,7 +149,7 @@ export function createVoiceConversation({
     try{
       const available=status?.ready?status:await request('status',{signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      if(!available.ready)throw new Error('Le compte OpenAI doit être relié pour parler.');
+      if(!available.ready)throw new Error('Le raccordement du compte OpenAI est nécessaire pour parler.');
       if(voiceId&&!voices.some(voice=>voice.id===voiceId))throw new Error('Cette voix n’est plus disponible.');
       if(!voiceId&&!['homme','femme'].includes(current.gender))throw new Error('Le personnage n’a pas de voix masculine ou féminine identifiée.');
       await listen(run);
