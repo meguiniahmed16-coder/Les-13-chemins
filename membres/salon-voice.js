@@ -48,9 +48,9 @@ export function createLocalVoices(status,wake){
   if(!AudioEngine||!globalThis.Worker||!globalThis.WebAssembly)return null;
   let ctx,worker,active=null,seq=0,workerTimeout,idleTimeout,unavailable=false,prepared=false;
   const pending=new Set();
-  function releaseLater(){
+  function releaseLater(ms=120000){
     clearTimeout(idleTimeout);
-    if(worker)idleTimeout=setTimeout(()=>{if(!active){worker.terminate();worker=null;}},120000);
+    if(worker)idleTimeout=setTimeout(()=>{if(!active){worker.terminate();worker=null;prepared=false;}},ms);
   }
   function disable(){
     stop();clearTimeout(idleTimeout);worker?.terminate();worker=null;
@@ -118,7 +118,7 @@ export function createLocalVoices(status,wake){
     resume(){try{if(ctx?.state==='suspended')void ctx.resume().catch(()=>{});}catch{}},
     prepare(){
       if(unavailable||active)return;
-      try{connectWorker().postMessage({type:'prepare'});releaseLater();}catch{/* speak() retries or falls back to the system voice. */}
+      try{connectWorker().postMessage({type:'prepare'});releaseLater(360000);}catch{/* speak() retries or falls back to the system voice. */}
     },
     speak({line,firstWord,gender,rate,end,error}){
       stop();clearTimeout(idleTimeout);
