@@ -193,3 +193,9 @@
  :host .stage .maison-rail-panel{width:min(220px,55%)!important}
  :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(250px,55%)!important}
 }
+
+/* The camera's original advanced controls remain usable within the camera room. */
+:host .stage .maison-rail-room .maison-legacy-camera{display:block!important;padding:5px 0!important}
+:host .stage .maison-rail-room .maison-legacy-camera button{pointer-events:auto!important}
+:host .stage .maison-rail-room .maison-legacy-camera .bar{position:static!important;gap:5px!important}
+:host .stage .maison-rail-room .maison-legacy-camera .bar button{min-height:45px!important;min-width:45px!important}

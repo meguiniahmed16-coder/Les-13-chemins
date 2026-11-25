@@ -17,6 +17,8 @@ const icons={
  fullscreen:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
  type:'<path d="M4 6h16M4 12h16M4 18h16"/>',
  history:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>',
+ audio:'<path d="M3 10v4m4-7v10m4-14v18m4-15v12m4-10v8"/>',
+ bubbles:'<path d="M3 4h14v12H8l-5 4Z"/><path d="M9 7h12v12h-5l-3 3v-3"/>',
  close:'<path d="M5 5l14 14M19 5 5 19"/>',
  label:'<path d="M4 19 11 5l7 14M7 14h9M21 7v12"/>',
  left:'<path d="M19 12H5m6-6-6 6 6 6"/>',
@@ -56,7 +58,7 @@ export function createSalonNavigation(root){
  '<div class="maison-mini-actions">'+tool('choose','encounter','Choisir un personnage')+'</div><div class="maison-slot" data-maison-slot="picker"></div><section class="maison-native-category"><h3>Visiter le lieu</h3><div class="maison-native-grid" data-native-zone="encounter"></div></section></section>'+
  '<section class="maison-rail-room" data-rail-room="dialogue" hidden>'+
  '<p class="maison-companion-label">Invite un personnage.</p>'+
- '<div class="maison-mini-actions">'+tool('call','phone','Appeler')+tool('write','write','Écrire')+tool('history','history','Historique')+'</div>'+
+ '<div class="maison-mini-actions">'+tool('call','phone','Appeler')+tool('write','write','Écrire')+tool('history','history','Historique')+tool('speech-on','audio','Voix française')+tool('bubble-on','bubbles','Bulles')+'</div>'+
  '<div class="maison-slot" data-maison-slot="history" hidden></div>'+
  '<div class="maison-slot" data-maison-slot="gueststyle"></div>'+
  '<div class="maison-slot" data-maison-slot="leave"></div><section class="maison-native-category"><h3>Dialoguer dans le jeu</h3><div class="maison-native-grid" data-native-zone="dialogue"></div></section></section>'+
@@ -175,6 +177,13 @@ export function createSalonNavigation(root){
    }
    if(command==='call'){call();return;}
    if(command==='write'){close();chat.focus({preventScroll:true});return;}
+   if(command==='speech-on'||command==='bubble-on'){
+     const original=$(command==='speech-on'?'.voice-toggle':'.bubbles-toggle');
+     if(original&&!original.hidden&&!original.disabled){
+       original.click();b.setAttribute('aria-pressed',original.getAttribute('aria-pressed')||'false');
+     }
+     return;
+   }
    if(command==='history'){
      historyOpen=!historyOpen;
      slots('history').hidden=!historyOpen;
