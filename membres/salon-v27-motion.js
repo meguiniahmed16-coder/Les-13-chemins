@@ -268,7 +268,7 @@ function roomPose(t){
  const steering=room.mode==='steer',walking=room.mode==='walk'||room.mode==='brake'||steering,u=room.sit,s=ease(u),seat=room.seat;
  const expr=self.expression, gesture=expr?.gesture, engaged=walking?0:(u>0?phase(.82,1,u):room.mode==='idle'?1:0);
  const emphasis=gesture?engaged:0;
- if(seat!==postureSeat){if(seat)posture=seat.introArms?{kind:'armrests',side:1}:this.preferGuestArmrest&&seat.support?{kind:'appui',side:seat.support.side}:choosePosture(seat,posture,random);postureSeat=seat;}
+ if(seat!==postureSeat){if(seat)posture=seat.introArms?{kind:'armrests',side:1}:self.preferGuestArmrest&&seat.support?{kind:'appui',side:seat.support.side}:choosePosture(seat,posture,random);postureSeat=seat;}
  const kind=seat?posture?.kind:'',crossSide=posture?.side||1,table=seat?tabletop(seat,avatarScale):null;
  const introArms=seat?.introArms||null;
  const sofa=seat?.id.startsWith('sofa');
