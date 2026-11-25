@@ -113,6 +113,8 @@ export function createLocalVoices(status,wake){
   }
   return {
     get available(){return !unavailable;},unlock,stop,disable,
+    pause(){try{if(ctx?.state==='running')void ctx.suspend().catch(()=>{});}catch{}},
+    resume(){try{if(ctx?.state==='suspended')void ctx.resume().catch(()=>{});}catch{}},
     prepare(){
       if(unavailable||active)return;
       try{connectWorker().postMessage({type:'prepare'});releaseLater();}catch{/* speak() retries or falls back to the system voice. */}
