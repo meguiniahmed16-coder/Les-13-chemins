@@ -77,7 +77,7 @@ function setPage(refreshRoom=false){
   if(member.author&&!wantsPreview&&!invitation&&(key==='salon'||key==='avatar')){
     let completed=false;
     try{completed=sessionStorage.getItem(originalIntroKey)==='done';}catch{}
-    if(!completed){location.replace('/membres/intro-prive.html?salon=1');return;}
+    if(!completed&&params.get('intro')!=='terminee'){location.replace('/membres/intro-prive.html?salon=1');return;}
   }
   for(const name of pages){
     if(name!=='salon'&&name!=='avatar')$(name).hidden=name!==key;
