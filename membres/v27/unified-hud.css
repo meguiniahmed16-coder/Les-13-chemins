@@ -59,3 +59,56 @@ body.unified-hud #altitude:not([hidden]){top:76px;right:10px;z-index:5}
  body.unified-hud #stage>.where{top:5px}
  body.unified-hud #stage>#hint{top:40px}
 }
+
+/* Three.js controls form the two finger-friendly zones surrounding the body.
+   Shift input pads when a pane occupies their usual side. */
+body.unified-hud.hud-panel-right #cameraPad:not([hidden]){
+ right:calc(var(--hud-panel-width,0px) + 10px)!important;left:auto!important
+}
+body.unified-hud.hud-panel-right .camera-height{
+ flex-direction:column!important;left:auto!important;
+ right:calc(var(--hud-panel-width,0px) + 19px)!important;
+ bottom:calc(max(12px,env(safe-area-inset-bottom)) + var(--camera-pad-size) + 10px)!important
+}
+body.unified-hud.hud-panel-left #pad:not([hidden]){
+ left:auto!important;right:10px!important
+}
+body.unified-hud.hud-panel-left #recenter{
+ left:auto!important;right:10px!important
+}
+body.unified-hud.hud-panel-left #cameraPad:not([hidden]){
+ left:auto!important;right:calc(max(12px,env(safe-area-inset-right)) + 84px)!important
+}
+body.unified-hud.hud-panel-left .camera-height{
+ flex-direction:column!important;
+ right:calc(max(12px,env(safe-area-inset-right)) + 91px)!important;
+ bottom:calc(max(12px,env(safe-area-inset-bottom)) + var(--camera-pad-size) + 12px)!important
+}
+body.unified-hud.hud-panel-right #stage>.where{
+ right:auto;left:9px;top:70px;max-width:45%
+}
+body.unified-hud.hud-panel-right #stage>#hint{
+ right:auto;left:9px;top:104px;max-width:45%
+}
+body.unified-hud.hud-panel-left #stage>.where{top:68px}
+body.unified-hud.hud-panel-left #stage>#hint{top:101px}
+@media(max-width:620px){
+ body.unified-hud.hud-panel-right #pad{left:10px!important;right:auto!important}
+ body.unified-hud.hud-panel-right #recenter{left:10px!important;right:auto!important;
+  width:51px!important;min-width:51px!important;font-size:0!important;justify-content:center}
+ body.unified-hud.hud-panel-right #recenter span{font-size:22px!important}
+ body.unified-hud.hud-panel-left #recenter{width:51px!important;min-width:51px!important;
+  font-size:0!important;justify-content:center}
+ body.unified-hud.hud-panel-left #recenter span{font-size:22px!important}
+ body.unified-hud.hud-panel-left #cameraPad:not([hidden]){right:92px!important}
+ body.unified-hud.hud-panel-left .camera-height{right:105px!important}
+ body.unified-hud.hud-panel-right .camera-height{right:calc(var(--hud-panel-width,0px) + 15px)!important}
+ body.unified-hud.hud-panel-right #stage>.where,
+ body.unified-hud.hud-panel-left #stage>.where{top:74px}
+ body.unified-hud.hud-panel-right #stage>#hint,
+ body.unified-hud.hud-panel-left #stage>#hint{top:104px}
+}
+@media(max-height:450px){
+ body.unified-hud.hud-panel-right .camera-height,
+ body.unified-hud.hud-panel-left .camera-height{bottom:calc(8px + var(--camera-pad-size) + 4px)!important}
+}
