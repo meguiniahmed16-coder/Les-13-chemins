@@ -199,3 +199,186 @@
 :host .stage .maison-rail-room .maison-legacy-camera button{pointer-events:auto!important}
 :host .stage .maison-rail-room .maison-legacy-camera .bar{position:static!important;gap:5px!important}
 :host .stage .maison-rail-room .maison-legacy-camera .bar button{min-height:45px!important;min-width:45px!important}
+
+/* HUD v55 — règles figées après validation sur capture réelle Android.
+   1. La scène 3D demeure à sa taille d'origine.
+   2. Les deux rails sont compacts et tous leurs libellés respirent.
+   3. Le volet translucide n'occupe plus la moitié de la scène.
+   4. Les commandes restent accessibles dans leurs catégories. */
+:host .stage:has(.studio-drawer:not([hidden])) .studio-drawer {
+  width:min(295px,31%)!important;
+  min-width:0!important;
+  background:rgba(248,246,237,.80)!important;
+  color:#263b31!important;
+  border:1px solid rgba(204,204,188,.75)!important;
+  -webkit-backdrop-filter:blur(4px) saturate(1.08);
+  backdrop-filter:blur(4px) saturate(1.08);
+}
+:host .stage .studio-drawer > header,
+:host .stage .studio-drawer > footer {
+  background:rgba(248,246,237,.10)!important;
+}
+:host .stage .studio-drawer .studio-body,
+:host .stage .studio-drawer .studio-scroll {
+  background:transparent!important;
+}
+:host .stage .studio-drawer .studio-scroll > details,
+:host .stage .studio-drawer .studio-scroll > section,
+:host .stage .studio-drawer .studio-quick {
+  background:rgba(239,247,236,.10)!important;
+}
+:host .stage .studio-drawer .studio-rail {
+  flex:0 0 45px!important;
+  width:45px!important;
+  min-width:45px!important;
+  padding:5px 2px!important;
+  gap:5px!important;
+  background:rgba(31,69,53,.88)!important;
+  color:#fff9ec!important;
+  -webkit-backdrop-filter:blur(3px);
+  backdrop-filter:blur(3px);
+}
+:host .stage .studio-drawer .studio-rail button {
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:48px!important;
+  padding:5px 2px!important;
+  border-radius:9px!important;
+  overflow:hidden!important;
+  flex-shrink:0!important;
+}
+:host .stage .studio-drawer .studio-rail button svg {
+  width:21px!important;
+  height:21px!important;
+  flex:none!important;
+}
+:host .stage .studio-drawer .studio-rail button span {
+  display:none!important;
+}
+:host .stage .studio-drawer .studio-rail.studio-labels button span {
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  padding:0 1px!important;
+  margin:0!important;
+  text-align:center!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  font:650 8.7px/1.14 system-ui!important;
+  letter-spacing:-.015em!important;
+}
+:host .stage .studio-drawer .studio-rail-labels {
+  font-size:inherit!important;
+}
+:host .stage .studio-drawer .studio-rail.studio-labels {
+  flex:0 0 64px!important;
+  width:64px!important;
+  min-width:64px!important;
+}
+:host .stage .studio-drawer .studio-scroll {
+  flex:1 1 0!important;
+  min-width:0!important;
+  padding:6px 6px!important;
+}
+:host .stage .studio-drawer .studio-scroll label,
+:host .stage .studio-drawer .studio-scroll summary {
+  font-size:12px!important;
+  line-height:1.28!important;
+  overflow-wrap:anywhere!important;
+}
+:host .stage .studio-drawer .studio-scroll select,
+:host .stage .studio-drawer .studio-scroll button {
+  max-width:100%!important;
+  min-width:0!important;
+  font-size:12px!important;
+}
+:host .stage .studio-drawer .studio-scroll select {
+  background:rgba(255,254,248,.90)!important;
+  min-height:43px!important;
+}
+:host .stage .studio-drawer .studio-scroll .studio-quick {
+  padding:4px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > footer .save {
+  min-height:43px!important;
+  font-size:13px!important;
+}
+:host .stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer {
+  width:53px!important;
+  min-width:53px!important;
+}
+:host .stage .studio-drawer.studio-icon-only .studio-rail {
+  flex:0 0 100%!important;
+  width:100%!important;
+}
+:host .stage .studio-drawer.studio-icon-only .studio-rail button span {
+  display:none!important;
+}
+:host .stage .maison-rail-panel {
+  width:min(270px,32%)!important;
+  background:rgba(248,246,237,.82)!important;
+  -webkit-backdrop-filter:blur(4px);
+  backdrop-filter:blur(4px);
+}
+@media(max-width:900px) and (orientation:landscape){
+  :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer {
+    width:min(255px,34%)!important;
+  }
+  :host .stage .maison-rail-panel {width:min(240px,32%)!important}
+}
+@media(max-width:760px) and (orientation:portrait){
+  :host .stage:has(.studio-drawer:not([hidden])) .studio-drawer {
+    width:min(220px,47%)!important;
+  }
+  :host .stage .maison-rail-panel {width:min(195px,46%)!important}
+  :host .stage .studio-drawer .studio-rail.studio-labels {
+    flex-basis:56px!important;
+    width:56px!important;
+    min-width:56px!important;
+  }
+  :host .stage .studio-drawer .studio-rail.studio-labels button span {
+    font-size:8.5px!important;
+  }
+}
+
+/* En largeur réduite, le titre et le choix du modèle ne se chevauchent pas. */
+:host .stage .studio-drawer:not([hidden]) > header {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 36px!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:6px 7px!important;
+  min-width:0!important;
+}
+:host .stage .studio-drawer:not([hidden]) > header > strong {
+  grid-column:1;grid-row:1;
+  min-width:0!important;
+  font:650 13px/1.2 system-ui!important;
+  overflow-wrap:anywhere!important;
+}
+:host .stage .studio-drawer:not([hidden]) > header > .close {
+  grid-column:2;grid-row:1;
+  width:36px!important;min-width:36px!important;min-height:40px!important;
+  padding:0!important;font-size:19px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > header > select {
+  grid-column:1/-1;grid-row:2;
+  width:100%!important;max-width:100%!important;
+  min-width:0!important;min-height:40px!important;
+  background:rgba(255,255,249,.84)!important;
+  font-size:12px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > footer {
+  display:flex!important;
+  flex-wrap:wrap!important;
+  min-width:0!important;
+  gap:4px!important;
+  padding:6px!important;
+}
+:host .stage .studio-drawer:not([hidden]) > footer > [role="status"] {
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+  font-size:11px!important;
+}

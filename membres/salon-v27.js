@@ -24,7 +24,7 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><link rel="stylesheet" href="/membres/salon-rail52.css?v=hud54"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><link rel="stylesheet" href="/membres/salon-rail52.css?v=hud55"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -244,7 +244,7 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=hud54'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=hud55'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
