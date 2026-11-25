@@ -3,7 +3,7 @@
 .ahmed-avatar-v27{display:block;width:100%;height:100%;--room-height:100%;overflow:hidden}
 .ahmed-3d-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 14px;background:#1b3c2f}
 .ahmed-3d-controls button{min-height:48px;border-radius:24px;padding:9px 16px;font:700 14px/1.2 system-ui}
-#ahmed-call{background:#e8d6a8;color:#233e31;border-color:#e8d6a8}
+#ahmed-call{display:none!important;background:#e8d6a8;color:#233e31;border-color:#e8d6a8}
 #ahmed-hangup{background:#934b40;color:white;border:1px solid #934b40}
 #ahmed-call-status{font:12px/1.35 system-ui;flex:1;min-width:150px;color:#f1f4eb;margin:0}
 .ahmed-written{background:#fbfaf4;border-top:1px solid #dce4d6}
