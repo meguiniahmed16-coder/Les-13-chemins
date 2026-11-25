@@ -58,6 +58,8 @@ export function createSalonNavigation(root){
     </section>
   `);
   const hub=$('.maison-hub'),scrim=$('.maison-scrim'),dock=$('.maison-dock'),phone=$('.maison-phone');
+  // The dock belongs to the 3D view, never over the text composer.
+  scene.append(dock);
   const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle'),voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
   const studio=$('.options-toggle'),chat=$('.guest-message');
   const sections=[...root.querySelectorAll('[data-maison-room]')];
