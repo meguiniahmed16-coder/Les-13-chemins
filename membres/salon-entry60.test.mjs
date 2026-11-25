@@ -45,6 +45,7 @@ test('L’accueil et les deux types de Salon offrent des accès clairs et un ext
  for(const id of ['quick-invite','quick-call'])assert.ok(invite.includes('id="'+id+'"'));
  assert.match(invite,/data-salon-film/);
  assert.match(src('membre.html'),/data-salon-film/);
+ assert.match(src('ahmed-marie.html'),/data-salon-film/);
 });
 test('Le dojo original enseigne les nouvelles icônes et utilise des voix masculines et féminines',()=>{
  const intro=src('membres/intro-cinema.js');

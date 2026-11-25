@@ -13,3 +13,25 @@
 .secondary-cinema{background:transparent!important;color:#28513e!important;border-color:#8ba393!important}
 #intro>.secondary-cinema{margin:4px auto 13px;display:flex}
 @media(max-width:430px){.guest-shortcuts .button{flex:1 1 32%;padding:7px 5px;font-size:11px}}
+
+/* Shortcuts belong to the game canvas, yet remain independent from its HUD.
+   Keep them in the central-right margin, away from top/menu and bottom pads. */
+#live-room{position:relative;isolation:isolate}
+#live-room .guest-shortcuts{
+ position:absolute;z-index:7;right:8px;top:clamp(115px,38%,440px);
+ display:flex;flex-direction:column;align-items:stretch;gap:5px;
+ width:min(142px,29%);padding:6px;border-radius:14px;
+ background:rgba(38,76,56,.73);border:1px solid rgba(240,226,187,.62);
+ box-shadow:0 4px 16px rgba(14,40,27,.35);
+ -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)
+}
+#live-room .guest-shortcuts .button{
+ display:flex;justify-content:center;align-items:center;gap:5px;
+ min-height:46px;flex:0 0 auto;font-size:11px;line-height:1.15;
+ padding:6px 7px;white-space:normal;word-break:normal;text-align:center
+}
+#live-room .guest-shortcuts .secondary-cinema{background:rgba(249,247,231,.86)!important;color:#28513e!important}
+@media(max-width:530px){
+ #live-room .guest-shortcuts{right:5px;top:clamp(110px,36%,370px);width:min(114px,26%);padding:4px}
+ #live-room .guest-shortcuts .button{font-size:10px;min-height:45px;padding:5px 3px}
+}
