@@ -63,8 +63,8 @@ test('Le navigateur récupère bien les nouveaux modules et les poses V27',()=>{
  assert.match(src('membres/salon-v27.js'),/salon-encounter\.js\?v=call58/);
  assert.match(src('membres/salon-v27.js'),/salon-call58\.css\?v=call58/);
  assert.match(src('membres/v27/salon-runtime.js'),/scene-bundle\.js\?v=call58/);
- assert.match(src('membres/member.js'),/salon-v27\.js\?v=call60/);
- assert.match(src('membre.html'),/member\.js\?v=call60/);
+ assert.match(src('membres/member.js'),/salon-v27\.js\?v=call61/);
+ assert.match(src('membre.html'),/member\.js\?v=call67/);
  assert.match(src('build-public.mjs'),/membres\/salon-call58\.css/);
 });
 
