@@ -103,16 +103,19 @@ function harness({dojoLoaded=true}={}){
  };
 }
 
-test('dialogue uses one in-scene speech bubble and exactly the two requested footer buttons',()=>{
+test('one scene bubble has a persistent display option while report and skip stay available',()=>{
  const footer=html.match(/<footer>([\s\S]*?)<\/footer>/)?.[1];assert.ok(footer);
  const stage=html.match(/<main id="stage">([\s\S]*?)<\/main>/)?.[1];assert.ok(stage);
  assert.equal([...html.matchAll(/id="bubble"/g)].length,1);
  assert.match(stage,/<div id="bubble" hidden aria-live="polite" aria-atomic="true"><\/div>/);
- assert.doesNotMatch(footer,/bubble|dialogue-rail/);
- const controls=[...footer.matchAll(/<button\b[^>]*id="([^"]+)"[^>]*>([^<]+)<\/button>/g)].map(m=>[m[1],m[2]]);
- assert.deepEqual(controls,[['report-open','Signaler une erreur'],['skip','Passer l’introduction']]);
- assert.match(html,/#bubble\{position:absolute/);
+ const ids=[...footer.matchAll(/<button\b[^>]*id="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(ids,['report-open','intro-bubbles-toggle','skip']);
+ assert.match(footer,/id="intro-bubbles-toggle" aria-pressed="true"/);
+ assert.match(html,/#stage\.bubbles-off #bubble\{display:none!important\}/);
  assert.match(html,/#bubble:after\{content:''/);
+ assert.match(source,/const bubblePreferenceKey='salon-bulles-visibles-v1'/);
+ assert.match(source,/bubblesEnabled=!bubblesEnabled/);
+ assert.match(source,/if\(!cinematicVoiceEnabled\|\|document.hidden/);
 });
 
 test('camera and lip animation keep the entire reply intact until the next speaker',async()=>{
