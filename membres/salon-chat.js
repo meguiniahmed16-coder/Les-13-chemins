@@ -279,7 +279,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     onChoice=null;
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
     closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';dictatedDraft=false;status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
-    own.hidden=other.hidden=footer.hidden=true;toggle.hidden=false;leave();
+    own.hidden=other.hidden=footer.hidden=true;toggle.hidden=false;root.host.dispatchEvent(new CustomEvent('salon-companion-change',{detail:{name:''}}));leave();
     if(clear){threads.clear();phoneChoices.clear();}
   }
   function bubble(node,text){
@@ -319,7 +319,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     loading=true;random.disabled=true;list.inert=true;
     closePicker();toggle.hidden=true;footer.hidden=false;expand(true);log.replaceChildren();styleButton.hidden=true;
     $('.thread-name').textContent='Avec '+p.name;const arrival=$('.arrival-status');arrival.textContent=p.name+' rejoint le salon…';
-    setMode('reverse');person=p;other.querySelector('strong').textContent=p.name;
+    setMode('reverse');person=p;other.querySelector('strong').textContent=p.name;root.host.dispatchEvent(new CustomEvent('salon-companion-change',{detail:{name:p.name}}));
     barSlot.prepend(toolbar);rail.hidden=!showSpeech;input.disabled=mic.disabled=false;
     input.setAttribute('aria-label','Ton message à '+p.name);
     const thread=threads.get(p.id)||[];threads.set(p.id,thread);

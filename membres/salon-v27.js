@@ -2,7 +2,8 @@ import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=incarnations33';
-import {createSalonChat} from './salon-chat.js?v=voix36';
+import {createSalonChat} from './salon-chat.js?v=maison2';
+import {createSalonNavigation} from './salon-navigation.js?v=maison2';
 import {guestAppearance} from './salon-encounter.js?v=incarnations33';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -23,7 +24,7 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=voix34"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=maison2"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -69,6 +70,7 @@ class SalonV27 extends HTMLElement{
       gender:who=>(who==='guest'?this.#guest?.gender:this.#gender)||'homme'
     });
     root.querySelector('.v27-actions').append(root.querySelector('.invite-toggle'));
+    createSalonNavigation(root);
     this.#drawer=createDrawer(root,look=>this.#applyLook(look),mode=>this.#scene?.focus(mode,this.#editing),()=>this.#scene?.departure(),(open,mode)=>{
       if(open)this.#chat.pauseVoice();
       this.#frame?.contentDocument?.body.classList.toggle('editing-duo',open);
