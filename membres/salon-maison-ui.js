@@ -31,13 +31,13 @@ const main=[
  ['explore','Caméra','Caméra']
 ];
 const modes=[
- ['body','Corps entier','Corps'],
- ['face','Visage','Visage'],
- ['side','Profil','Profil'],
- ['back','Dos','Dos'],
- ['wideshot','Vue large','large'],
- ['movie','Plans alternés','alternes'],
- ['fullscreen','Plein écran','fullscreen']
+ ['body','body','Corps entier'],
+ ['face','face','Visage'],
+ ['side','side','Profil'],
+ ['back','back','Dos'],
+ ['wideshot','wideshot','Vue large'],
+ ['movie','movie','Plans alternés'],
+ ['fullscreen','fullscreen','Plein écran']
 ];
 const tool=(id,icon,name)=>'<button type="button" class="maison-tool" data-tool="'+id+'" title="'+name+'" aria-label="'+name+'">'+svg(icon)+'<span>'+name+'</span></button>';
 export function createSalonNavigation(root){
