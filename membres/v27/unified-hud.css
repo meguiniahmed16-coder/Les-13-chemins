@@ -1,0 +1,61 @@
+/* Coordinate the in-game HUD with the surrounding Salon.
+   Applied only by the authenticated parent after the scene is ready.
+   Original controls remain live and are triggered by real proxies in the main UI. */
+body.unified-hud #app{position:relative;grid-template-rows:minmax(0,1fr)!important;grid-template-columns:minmax(0,1fr)}
+body.unified-hud .top,body.unified-hud .bottom{display:none!important}
+body.unified-hud #stage{grid-row:1!important;grid-column:1;position:relative;min-height:0;min-width:0;height:100%!important}
+body.unified-hud #scene{width:100%;height:100%;display:block}
+body.unified-hud #recenter{
+ left:max(11px,env(safe-area-inset-left))!important;
+ bottom:calc(max(12px,env(safe-area-inset-bottom)) + 91px)!important;
+ display:inline-flex!important;min-width:48px!important;min-height:47px!important;
+ gap:4px!important;padding:5px 9px!important;border-radius:12px!important;
+ font:650 12px/1.1 system-ui!important;white-space:nowrap!important;z-index:5!important;
+ box-shadow:0 3px 11px #14282155!important}
+body.unified-hud #recenter span{font-size:20px!important}
+body.unified-hud #pad{left:max(12px,env(safe-area-inset-left))!important;bottom:max(12px,env(safe-area-inset-bottom))!important;z-index:5!important}
+body.unified-hud #cameraPad{right:max(12px,env(safe-area-inset-right))!important;bottom:max(13px,env(safe-area-inset-bottom))!important;z-index:5!important}
+body.unified-hud .camera-height{right:calc(max(12px,env(safe-area-inset-right)) + var(--camera-pad-size) + 8px)!important;
+ bottom:calc(max(13px,env(safe-area-inset-bottom)) + (var(--camera-pad-size) - 46px)/2)!important;z-index:5!important}
+body.unified-hud .pin{z-index:4}
+body.unified-hud #rise,body.unified-hud #flightControls,body.unified-hud #shelfActions,
+body.unified-hud #flightFace{display:none!important}
+body.unified-hud #reunionAction:not([hidden]){position:absolute;z-index:5;right:10px;top:64px;max-width:40%;
+ border-radius:12px;background:#254c3e;color:white;border:1px solid #d7c9a8;padding:7px 10px}
+body.unified-hud #stage>.where{position:absolute;z-index:4;top:11px;right:10px;
+ display:flex;gap:4px;align-items:center;max-width:38%;padding:5px 8px;
+ border:1px solid #d8d3bf8c;border-radius:19px;background:#254334b8;
+ color:#fbf6e8;pointer-events:none}
+body.unified-hud #stage>.where strong{font:600 12px/1.2 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
+body.unified-hud #stage>.where svg{width:15px;height:15px;stroke:#eee3c7;flex:none}
+body.unified-hud #stage>#hint{position:absolute;z-index:3;top:52px;right:10px;
+ font:500 11px/1.25 system-ui;color:#fdf5e6;max-width:min(210px,36%);
+ background:#1d382b9c;border-radius:9px;padding:5px 7px;pointer-events:none}
+body.unified-hud #chatPanel:not([hidden]){display:block!important;position:absolute;z-index:8;
+ inset:auto 9px 9px auto;width:min(410px,46%);max-height:65dvh;overflow-y:auto;
+ border:1px solid #c5c6b8;border-radius:13px;box-shadow:0 6px 28px #0c261b85;
+ background:#f8f5ea}
+body.unified-hud .top :is(#actors,#fullscreen,#helpButton,#lookHome,#return),
+body.unified-hud .bottom :is(#talk,#shelves,#angelMode){pointer-events:auto}
+body.unified-hud.editing-duo #pad:not([hidden]){display:grid!important}
+body.unified-hud.editing-duo #cameraPad:not([hidden]){display:grid!important}
+body.unified-hud.editing-duo #recenter:not([hidden]){display:inline-flex!important}
+body.unified-hud.editing-duo .camera-height:has(button:not([hidden])){display:flex!important}
+body.unified-hud.editing-duo .pin:not([hidden]){display:flex!important}
+body.unified-hud #altitude:not([hidden]){top:76px;right:10px;z-index:5}
+@media(max-width:620px){
+ body.unified-hud #pad{width:70px;height:70px}
+ body.unified-hud #recenter{bottom:calc(max(11px,env(safe-area-inset-bottom)) + 76px)!important;padding:5px 7px!important;font-size:11px!important}
+ body.unified-hud #recenter span{font-size:18px!important}
+ body.unified-hud #stage>.where{top:10px;right:7px;max-width:40%}
+ body.unified-hud #stage>#hint{top:45px;right:7px;max-width:43%;font-size:10px}
+ body.unified-hud #chatPanel:not([hidden]){width:min(300px,76%);max-height:58dvh;right:6px;bottom:6px}
+}
+@media(max-height:500px){
+ body.unified-hud #pad{width:62px;height:62px;bottom:8px!important}
+ body.unified-hud #recenter{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 68px)!important}
+ body.unified-hud .camera-height{bottom:calc(8px + (var(--camera-pad-size) - 46px)/2)!important}
+ body.unified-hud #cameraPad{bottom:8px!important}
+ body.unified-hud #stage>.where{top:5px}
+ body.unified-hud #stage>#hint{top:40px}
+}
