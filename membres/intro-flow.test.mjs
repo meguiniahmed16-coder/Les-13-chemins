@@ -81,7 +81,7 @@ function harness({dojoLoaded=true}={}){
    tick(){},pause(){this.paused=true;arrivalCalls.push('pause')},resume(){this.paused=false;arrivalCalls.push('resume')},
   },
   isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
-  stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
+  salonEntryMode:false,stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
   pending:false,sceneRequest:0,seatsReady:true,initialTask:null,shotStart:0,shotPaused:false,pausedAt:0,pausedElapsed:0,
   currentSpeaker:null,lastLayout:'',secondCue:false,cutCamera:false,invitationMotion:null,targetAngle:Math.PI,radius:3.7,
   bubble:dom.$('bubble'),status:dom.$('status'),scene:{background:{set(){}}},problems:[],bootStage:'Test',
