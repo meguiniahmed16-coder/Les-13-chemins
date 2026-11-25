@@ -2,7 +2,7 @@ import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=incarnations33';
-import {createSalonChat} from './salon-chat.js?v=salon-ergonomie1';
+import {createSalonChat} from './salon-chat.js?v=voix36';
 import {guestAppearance} from './salon-encounter.js?v=incarnations33';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -23,36 +23,32 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon-ergonomie1"><style>
-    .scene-viewport{padding-top:0;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
-    .v27-actions{position:absolute;top:56px;left:8px;display:flex;align-items:center;gap:5px;z-index:5;pointer-events:none}
-    .v27-actions>button,.v27-actions>details{position:relative;min-height:40px;pointer-events:auto;padding:5px 9px}
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=voix34"><style>
+    .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
+    .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
+    .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
     .hud{position:static;pointer-events:none}.hud .options-toggle,.hud .invite-toggle,.hud .bar{pointer-events:auto}
     .hud .bar:empty{display:none}.v27-actions .invite-toggle{font-size:13px}
     .v27-actions .options-toggle{font-size:13px}.guest-picker{z-index:7}
     .stage.immersive{position:fixed;inset:0;height:100dvh!important;z-index:2147483646}
-    .stage:fullscreen{height:100dvh}.stage{min-height:0}
-    .salon-main-menu{padding:0!important;border:0;border-radius:9px;background:#fffdf5f5;box-shadow:0 2px 8px #12281d55;font:600 13px/1.3 system-ui}
-    .salon-main-menu>summary{cursor:pointer;list-style:none;min-height:42px;padding:11px 9px}.salon-main-menu>summary::-webkit-details-marker{display:none}
-    .salon-main-options{position:absolute;top:46px;left:0;z-index:12;width:170px;background:#fdfbf4;border:1px solid #abb8ac;border-radius:8px;padding:8px;box-shadow:0 5px 14px #102f2950}
-    .salon-main-options .options-toggle{position:static;width:100%;min-height:44px;font-size:14px!important}
-    .salon-enlarge{border:1px solid #b5c2b3;background:#fffdf5f5;border-radius:9px;font:600 13px/1.2 system-ui;color:#244636}
+    .stage:fullscreen{height:100dvh}.stage{min-height:min(420px,65dvh)}
     .v27-inspection-tools{margin:8px 10px;padding:10px;border:1px solid #c6c7a8;border-radius:8px;background:#f4efd9}
     .v27-inspection-tools strong{display:block;font-size:14px;margin-bottom:6px}
-    @media(max-width:600px){.stage{height:var(--room-height,calc(100dvh - 105px))}.v27-actions{gap:4px;left:6px}.v27-actions>button{font-size:13px!important;min-height:40px}}
+    @media(max-width:600px){.stage{height:var(--room-height,min(76dvh,750px))}.v27-actions{gap:2px;left:3px}.v27-actions>button{font-size:12px!important;min-height:34px}}
     @media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
-      .scene-viewport{display:block;padding:0;}
-      .v27-frame{min-width:0;min-height:0;}
-      .stage:has(.studio-drawer:not([hidden])) .scene-viewport{min-height:0}
-      .stage:has(.studio-drawer:not([hidden])) .v27-frame{height:100%}
+      .scene-viewport{display:grid;grid-template: auto minmax(0,1fr) / minmax(0,1fr);padding:0;}
+      .v27-frame{grid-area:2/1;min-width:0;min-height:0;}
+      .stage:has(.studio-drawer:not([hidden])) .scene-viewport{grid-template-rows:minmax(0,1fr)}
+      .stage:has(.studio-drawer:not([hidden])) .v27-frame{grid-area:1/1}
       .stage:has(.studio-drawer:not([hidden])) .hud{display:none}
-      .hud{position:static;inset:auto;}
-      .v27-actions{position:absolute;top:54px;left:6px;display:flex;flex-wrap:nowrap;align-items:center;gap:4px;padding:0;}
-      .v27-actions>button{flex:0 1 auto;min-height:40px;min-width:0;font-size:13px!important;}
-      .speech-rail{inset-block-start:calc(var(--scene-toolbar-height,46px) + 65px);}
+      .hud{grid-area:1/1;position:relative;inset:auto;}
+      .v27-actions{position:static;display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;
+        padding:4px max(4px,env(safe-area-inset-right)) 0 max(4px,env(safe-area-inset-left));}
+      .v27-actions>button{flex:1 1 auto;min-height:38px;min-width:0;font-size:13px!important;}
+      .speech-rail{grid-area:2/1;inset-block-start:calc(var(--scene-toolbar-height,46px) + 3px);}
     }
     </style><div class="stage"><div class="scene-viewport">
-      <div class="hud"><div class="v27-actions"><details class="salon-main-menu"><summary aria-label="Ouvrir les réglages du Salon">☰ Réglages</summary><div class="salon-main-options"><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser</button></div></details><button class="salon-enlarge" type="button" aria-label="Agrandir le Salon">⛶ <span>Plein écran</span></button></div><div class="bar"></div></div>
+      <div class="hud"><div class="v27-actions"><button class="options-toggle" type="button" aria-expanded="false" aria-controls="studio-drawer">Personnaliser</button></div><div class="bar"></div></div>
     </div><aside class="studio-drawer" id="studio-drawer" hidden></aside></div>`;
     this.#chat=createSalonChat(root,{
       invite:async person=>{
@@ -72,13 +68,7 @@ class SalonV27 extends HTMLElement{
       rate:who=>who==='guest'?this.#guest?.performer?.rate||1:1,
       gender:who=>(who==='guest'?this.#guest?.gender:this.#gender)||'homme'
     });
-    root.querySelector('.v27-actions').prepend(root.querySelector('.invite-toggle'));
-    root.querySelector('.salon-main-options .options-toggle').addEventListener('click',()=>{root.querySelector('.salon-main-menu').open=false;});
-    root.querySelector('.salon-enlarge').addEventListener('click',async()=>{
-      const stage=root.querySelector('.stage');
-      try{if(document.fullscreenElement)await document.exitFullscreen();else if(stage.requestFullscreen)await stage.requestFullscreen();else stage.classList.toggle('immersive');}
-      catch{stage.classList.toggle('immersive');}
-    });
+    root.querySelector('.v27-actions').append(root.querySelector('.invite-toggle'));
     this.#drawer=createDrawer(root,look=>this.#applyLook(look),mode=>this.#scene?.focus(mode,this.#editing),()=>this.#scene?.departure(),(open,mode)=>{
       if(open)this.#chat.pauseVoice();
       this.#frame?.contentDocument?.body.classList.toggle('editing-duo',open);

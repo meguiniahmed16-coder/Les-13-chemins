@@ -270,3 +270,12 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
  .voice-conversation{inset:49px 7px 7px auto;max-height:calc(100% - 56px);width:min(310px,52%)}
  .salon-call{top:55px}
 }
+
+/* Conversation vocale comme tiroir visuel : pas une troisième barre sous la scène. */
+@media(max-width:760px) and (orientation:portrait){
+ .voice-conversation{position:fixed;inset:auto 6px max(6px,env(safe-area-inset-bottom)) 6px;width:auto;max-height:min(56dvh,510px);border-radius:17px;box-shadow:0 7px 35px #0e302580}
+}
+@media(max-width:960px) and (max-height:500px) and (orientation:landscape) and (pointer:coarse){
+ .voice-conversation{position:fixed;inset:6px max(6px,env(safe-area-inset-right)) 6px auto;width:min(370px,47vw);max-height:calc(100dvh - 12px);border-radius:15px;box-shadow:0 7px 30px #0e302590}
+ .voice-conversation .voice-conversation-actions button{flex:1 1 105px}
+}
