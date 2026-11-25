@@ -25,7 +25,7 @@ function finishSalonEntry(){
  const chosen=destinations[returnTo]||[originalIntroKey,'/membre.html?intro=terminee#salon'];
  try{sessionStorage.setItem(chosen[0],'done');}catch{}
  const action=new URLSearchParams(location.search).get('ouvrir');
- const suffix=returnTo==='invite'&&['inviter','appeler'].includes(action)?'?ouvrir='+action:'';
+ const suffix=returnTo==='invite'&&['inviter','appeler'].includes(action)?'&ouvrir='+action:'';
  location.replace(chosen[1]+suffix);
 }
 
