@@ -127,6 +127,8 @@ export function createSalonNavigation(root){
    slots('history').hidden=!historyOpen||!hasGuest;
    slots('leave').hidden=!hasGuest;
    slots('gueststyle').hidden=!hasGuest;
+   const bubbleOption=$('[data-tool="bubble-on"]'),originalBubbles=$('.bubbles-toggle');
+   if(bubbleOption&&originalBubbles)bubbleOption.setAttribute('aria-pressed',originalBubbles.getAttribute('aria-pressed')||'true');
    updateButtons();
  }
  function close(restore=false){
