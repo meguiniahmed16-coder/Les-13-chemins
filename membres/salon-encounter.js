@@ -30,7 +30,7 @@ export function guestAppearance(person){
   if(String(person.id)==='1'){
     studio.face.hair=1;
     studio.face.beard=0;
-    studio.face.age=Math.max(3,age);
+    studio.face.age=age; // Preserve the documented age at the time of the scene.
     studio.outfit={haut:'mh1800',bas:'mh1796',souliers:'mh438'};
   }
   if(person.skinLevel!=null){

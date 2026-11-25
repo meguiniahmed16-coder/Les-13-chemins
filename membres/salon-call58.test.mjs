@@ -16,7 +16,7 @@ test('Le père d’Ahmed garde un portrait sobre sans lunettes fantaisistes',()=
  const father=guestAppearance({id:'1',name:'Abdelouahab',gender:'homme',role:'Le père d’Ahmed',age:2,face:{}});
  assert.equal(father.gender,'homme');
  assert.equal(father.studio.face.hair,1);
- assert.ok(father.studio.face.age>=3);
+ assert.equal(father.studio.face.age,2,'Ne pas vieillir un personnage hors de sa scène');
  assert.equal(father.studio.outfit.lunettes,undefined);
  assert.equal(father.studio.outfit.haut,'mh1800');
  const guest=guestAppearance({id:'327',name:'Visiteur',gender:'homme',age:2,face:{}});
