@@ -1,6 +1,7 @@
 import {DOJO_LOOKS,dojoWardrobeState} from './intro-dojo-wardrobe.js';
 import {DOJO_CAST} from './intro-dojo-cast.js';
 import {salonActionSvg} from './salon-maison-ui.js?v=call61';
+import {nativeSalonIcon} from './salon-hud-native.js?v=hud54';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,n)=>{const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -59,14 +60,14 @@ const personIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy
 const shirtIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3-6 4 3 5 3-2v11h8V10l3 2 3-5-6-4c-1 3-7 3-8 0Z"/></svg>';
 const underwearIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l1 14h-7l-2-6-2 6H3zM4 8h16"/></svg>';
 const tickIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
-const originalMenu=salonActionSvg('menu'),originalInvite=salonActionSvg('encounter'),originalPhone=salonActionSvg('phone'),originalCamera=salonActionSvg('explore'),originalBubbles=salonActionSvg('bubbles');
+const originalMenu=salonActionSvg('menu'),originalInvite=salonActionSvg('encounter'),originalPhone=salonActionSvg('phone'),originalCamera=salonActionSvg('explore'),originalRecenter=nativeSalonIcon('focus'),originalBubbles=salonActionSvg('bubbles');
 
 export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
  const panel=doc.createElement('div');panel.id='dojo-demo';panel.className='dojo-demo';panel.hidden=true;
  panel.setAttribute('role','img');panel.setAttribute('aria-label','Démonstration des commandes du salon');
  panel.innerHTML=`<div class="dojo-demo-heading"><span class="dojo-demo-heading-icon">${cameraIcon}</span><strong class="dojo-demo-title"></strong><span class="dojo-demo-context"></span></div>
  <div class="dojo-demo-control dojo-demo-menu"><span class="dojo-demo-original">${originalMenu}</span><span class="dojo-demo-menu-rail"><span>${originalInvite}</span><span>${salonActionSvg('avatar')}</span><span>${salonActionSvg('clothes')}</span><span>${salonActionSvg('dialogue')}</span><span>${originalCamera}</span></span></div>
- <div class="dojo-demo-control dojo-demo-recenter"><span class="dojo-demo-original">${originalCamera}</span><span>Retrouver mon personnage</span><span class="dojo-demo-touch-point"></span></div>
+ <div class="dojo-demo-control dojo-demo-recenter"><span class="dojo-demo-original">${originalRecenter}</span><span>Retrouver mon personnage</span><span class="dojo-demo-touch-point"></span></div>
  <div class="dojo-demo-control dojo-demo-invite"><span class="dojo-demo-original">${originalInvite}</span><span>Choisir un personnage</span><span class="dojo-demo-touch-point"></span></div>
  <div class="dojo-demo-control dojo-demo-call"><span class="dojo-demo-original">${originalPhone}</span><span>Parler de vive voix</span><span class="dojo-demo-touch-point"></span></div>
  <div class="dojo-demo-control dojo-demo-bubbles"><span class="dojo-demo-original">${originalBubbles}</span><span>Bulles</span><span class="dojo-demo-mock-switch"><i></i></span></div>
@@ -103,7 +104,7 @@ export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
   }
   if(lastMode!==frame.mode){
    lastMode=frame.mode;panel.dataset.mode=frame.mode;
-   icon.innerHTML=frame.mode==='camera'?cameraIcon:frame.mode==='wardrobe'?shirtIcon:frame.mode==='menu'?originalMenu:frame.mode==='recenter'?originalCamera:frame.mode==='invite'?originalInvite:frame.mode==='call'?originalPhone:frame.mode==='bubbles'?originalBubbles:personIcon;
+   icon.innerHTML=frame.mode==='camera'?cameraIcon:frame.mode==='wardrobe'?shirtIcon:frame.mode==='menu'?originalMenu:frame.mode==='recenter'?originalRecenter:frame.mode==='invite'?originalInvite:frame.mode==='call'?originalPhone:frame.mode==='bubbles'?originalBubbles:personIcon;
    thumb.innerHTML=frame.mode==='camera'?cameraIcon:'<span class="dojo-demo-walk-dot"></span>';
    text(copy,frame.mode==='camera'?'Tourner autour':'Quelques pas');
   }
