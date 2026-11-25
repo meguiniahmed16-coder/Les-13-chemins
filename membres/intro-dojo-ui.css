@@ -9,6 +9,7 @@
 .dojo-demo-context{margin-left:auto;font-size:9px;color:#677860;white-space:nowrap}
 .dojo-demo-control{display:none;height:40px;margin-top:7px;align-items:center;gap:7px}
 #dojo-demo[data-mode=camera] .dojo-demo-motion,#dojo-demo[data-mode=walk] .dojo-demo-motion,#dojo-demo[data-mode=characters] .dojo-demo-characters,#dojo-demo[data-mode=body] .dojo-demo-body,#dojo-demo[data-mode=wardrobe] .dojo-demo-wardrobe,#dojo-demo[data-mode=save] .dojo-demo-save{display:flex}
+#dojo-demo[data-mode=menu] .dojo-demo-menu,#dojo-demo[data-mode=recenter] .dojo-demo-recenter,#dojo-demo[data-mode=invite] .dojo-demo-invite,#dojo-demo[data-mode=call] .dojo-demo-call,#dojo-demo[data-mode=bubbles] .dojo-demo-bubbles{display:flex}
 .dojo-demo-pad{position:relative;flex:none;width:40px;height:40px;display:grid;place-items:center;border:1px solid #6e806a80;border-radius:50%;background:#e4e9dba8;color:#2b493b}
 .dojo-demo-pad:before{content:'';position:absolute;inset:5px;border:1px solid #8d9d8040;border-radius:50%}
 .dojo-demo-axis{position:absolute;background:#7a8e7160;left:7px;right:7px;height:1px;top:19px}
@@ -58,3 +59,22 @@
 #dojo-demo.compact .dojo-demo-body{gap:2px!important}
 #dojo-demo.compact .dojo-demo-save{height:28px;margin-top:8px}
 @media(max-width:350px){.dojo-demo-heading{gap:4px}.dojo-demo-context{font-size:8px}.dojo-demo-title{font-size:10.5px}.dojo-demo-choice{gap:3px}.dojo-demo-wardrobe{gap:3px}.dojo-demo-look{font-size:8.2px}#dojo-demo[data-mode=wardrobe] .dojo-demo-context{display:none}}
+
+/* The menu, invitation, phone and bubble illustrations reuse the exact Salon SVG icons. */
+.dojo-demo-original{display:grid;place-items:center;flex:none;width:37px;height:37px;border-radius:11px;background:#315846;color:#fff8e7;border:1px solid #78927d}
+#dojo-demo .dojo-demo-original svg{width:23px;height:23px}
+.dojo-demo-menu-rail{display:flex;align-items:center;justify-content:space-evenly;gap:3px;flex:1;min-width:0;opacity:.30;transform:translateX(-5px);transition:none}
+.dojo-demo-menu-rail>span{width:28px;height:29px;flex:none;display:grid;place-items:center;border-radius:7px;background:#315846;color:#fdf8e8}
+#dojo-demo .dojo-demo-menu-rail svg{width:17px;height:17px}
+#dojo-demo.menu-expanded .dojo-demo-menu-rail{opacity:1;transform:none}
+.dojo-demo-recenter,.dojo-demo-invite,.dojo-demo-call,.dojo-demo-bubbles{position:relative;font-weight:620;justify-content:flex-start}
+.dojo-demo-touch-point{position:absolute;left:34px;bottom:-2px;width:12px;height:12px;border:1px solid #af8a49;background:#efcea4c7;border-radius:50%;opacity:.25}
+#dojo-demo.pressed .dojo-demo-touch-point{opacity:1;transform:translate(-11px,-14px)}
+.dojo-demo-mock-switch{display:flex;align-items:center;width:46px;height:24px;padding:3px;border-radius:22px;border:1px solid #839781;background:#ccd4c6;margin-left:auto}
+.dojo-demo-mock-switch i{display:block;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #253b3444;transform:translateX(0)}
+#dojo-demo.demo-bubbles-on .dojo-demo-mock-switch{background:#315846}
+#dojo-demo.demo-bubbles-on .dojo-demo-mock-switch i{transform:translateX(20px)}
+#dojo-demo.compact .dojo-demo-original{width:31px;height:31px}
+#dojo-demo.compact .dojo-demo-original svg{width:18px;height:18px}
+#dojo-demo.compact .dojo-demo-menu-rail>span{width:24px;height:25px}
+#dojo-demo.compact .dojo-demo-menu-rail svg{width:14px;height:14px}
