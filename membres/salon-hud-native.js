@@ -59,7 +59,7 @@ export function connectSalonEngine({doc,scene,stage,root,groupSelector='[data-na
  const links=[],win=doc.defaultView;
  for(const action of NATIVE_HUD_ACTIONS){
    const source=doc.querySelector(action.selector);
-   const zone=root.querySelector(groupSelector+'="'+action.zone+'"]');
+   const zone=root.querySelector('[data-native-zone="'+action.zone+'"]');
    if(!source||!zone)continue;
    const button=root.ownerDocument.createElement('button');
    button.type='button';button.className='maison-tool maison-native-action';
@@ -102,6 +102,10 @@ export function connectSalonEngine({doc,scene,stage,root,groupSelector='[data-na
    const fraction=candidate?Math.min(.46,Math.max(0,area/box.width)):0;
    const side=candidate&&candidate.left+candidate.width*.5>box.left+box.width*.5?'right':'left';
    scene?.setHudOcclusion?.({side,fraction});
+   // Keep both 3D joysticks in the unobstructed side of the screen.
+   doc.body.classList.toggle('hud-panel-right',fraction>.15&&side==='right');
+   doc.body.classList.toggle('hud-panel-left',fraction>.15&&side==='left');
+   doc.body.style.setProperty('--hud-panel-width',Math.round(area)+'px');
  }
  let raf=0;
  function requestMeasure(){
@@ -120,7 +124,8 @@ export function connectSalonEngine({doc,scene,stage,root,groupSelector='[data-na
     if(raf)win?.cancelAnimationFrame?.(raf);
     nativeObserver.disconnect();hostObserver.disconnect();resize?.disconnect();
     scene?.setHudOcclusion?.({side:'left',fraction:0});
-    doc.body.classList.remove('unified-hud');
+    doc.body.classList.remove('unified-hud','hud-panel-right','hud-panel-left');
+    doc.body.style.removeProperty('--hud-panel-width');
     if(originalWhere&&bottom)bottom.prepend(originalWhere);
     if(originalHint&&bottom)bottom.append(originalHint);
     for(const {button} of links)button.remove();
