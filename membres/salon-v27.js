@@ -28,7 +28,7 @@ class SalonV27 extends HTMLElement{
     /* Style chargé avant les feuilles externes : aucun clignotement de boutons géants. */
     .scene-viewport{position:relative;min-width:0;min-height:0}
     .v27-actions{visibility:hidden!important}
-    .maison-dock[hidden],.maison-rail-panel[hidden],.maison-phone[hidden],.studio-drawer[hidden]{display:none!important}
+    #maison-dock[hidden],:host .stage #maison-dock[hidden],.maison-rail-panel[hidden],.maison-phone[hidden],.studio-drawer[hidden]{display:none!important}
     .maison-menu-toggle{box-sizing:border-box!important;position:absolute!important;z-index:30!important;top:8px!important;left:8px!important;
       width:48px!important;min-width:48px!important;height:48px!important;min-height:48px!important;
       padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;
