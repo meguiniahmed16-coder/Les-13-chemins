@@ -16,7 +16,7 @@ test('Le vieux panneau Maison encombrant n’existe plus dans la navigation',()=
 
 test('Caméra : les sept commandes possèdent une icône, et Profil ne déplace pas le panneau',()=>{
  for(const id of ['body','face','side','back','wideshot','movie','fullscreen']){
-   assert.match(nav,new RegExp("\\\\['"+id+"','"+id+"'"));
+   assert.ok(nav.includes("['"+id+"','"+id+"',"), 'Icône absente : '+id);
    assert.match(nav,new RegExp(id+":'"));
  }
  assert.match(nav,/data-maison-action="swap-side"/);
