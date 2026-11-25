@@ -47,6 +47,7 @@ const iconPaths={
  history:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>'
 };
 const picture=name=>'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+iconPaths[name]+'</svg>';
+export const nativeSalonIcon=picture;
 
 export function connectSalonEngine({doc,scene,stage,root,groupSelector='[data-native-zone]'}) {
  if(!doc?.body||!doc.getElementById('stage'))return {sync(){},dispose(){}};
