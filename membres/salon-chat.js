@@ -138,12 +138,12 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   for(const button of shots)button.onclick=()=>{setMode(button.dataset.shot);change();};
   function turn(who){speaker=who;sequence.turn(who);change();}
   const bubblePreferenceKey='salon-bulles-visibles-v1';
-  function showBubbles(show){
+  function showBubbles(show,initial=false){
     reader.hidden=true;showSpeech=show;rail.hidden=!person||!show;
     bubbleSwitch.setAttribute('aria-pressed',String(show));
     bubbleSwitch.title=show?'Masquer les bulles':'Afficher les bulles';
     try{localStorage.setItem(bubblePreferenceKey,String(show));}catch{}
-    change();
+    if(!initial)change();
   }
   let rememberedBubbles=true;
   try{rememberedBubbles=localStorage.getItem(bubblePreferenceKey)!=='false';}catch{}
@@ -160,7 +160,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   reader.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();closeReader();}};
   let onChoice=null;
   let people=[],person=null,version=0,request=null,loading=false;
-  showBubbles(rememberedBubbles);
+  showBubbles(rememberedBubbles,true);
   const threads=new Map(),log=$('.thread-history'),threadToggle=$('.thread-toggle'),styleButton=$('.guest-style');
   let avatarVoiceDone=null;
   voiceSession=createVoiceConversation({
