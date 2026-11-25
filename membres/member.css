@@ -75,3 +75,5 @@
  #salon-layout,#salon-layout.has-panel{grid-template-columns:minmax(0,1fr)}
  #salon-layout:not(.has-panel) #room,#salon-layout.has-panel #room{--room-height:max(290px,calc(100dvh - 115px))}
 }
+
+@media(min-width:980px){body:has(#member:not([hidden]) #salon:not([hidden])) .member-page{width:min(1500px,100%)}body:has(#member:not([hidden]) #salon:not([hidden])) #room{--room-height:clamp(560px,80dvh,1000px)}}
