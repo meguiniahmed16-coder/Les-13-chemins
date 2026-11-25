@@ -1,14 +1,16 @@
 import {traits,families,sections,pieces,looks,thumbRows} from './studio-catalog.js?v=incarnations33';
 import {normaliseStudio,traitAvailable,traitOptionAvailable,slots,skinSteps} from './studio-look.js?v=incarnations33';
 import {createIncarnationsDialog,INCARNATIONS_URL} from './incarnations-dialog.js?v=incarnations33';
+import {createStudioIconNav} from './studio-icon-nav.js?v=studio-rail1';
 
 const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;return e;};
 const folder=(parent,title,open=false)=>{const d=make('details');d.open=open;d.append(make('summary',title));parent.append(d);return d;};
 export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}){
  const drawer=root.querySelector('.studio-drawer'),toggleButton=root.querySelector('.options-toggle');
- drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Mon personnage</button><button type="button">Tous les vêtements</button></div><div class="studio-scroll"></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
+ drawer.innerHTML='<header><strong>Personnaliser</strong><button type="button" class="close" aria-label="Fermer les options">×</button></header><div class="switch"><button type="button">Mon personnage</button><button type="button">Tous les vêtements</button></div><div class="studio-body"><nav class="studio-rail" aria-label="Personnalisation par icônes"></nav><div class="studio-scroll"></div></div><footer><button type="button" class="save">Enregistrer</button><span role="status"></span></footer>';
  const pane=drawer.querySelector('.studio-scroll'),message=drawer.querySelector('[role=status]'),save=drawer.querySelector('.save');
  const tabs=[...drawer.querySelectorAll('.switch button')];let mode=0,look,options={},current,revision=0,writing=false;
+ const iconNav=createStudioIconNav(drawer,pane,{setMode(next){if(mode!==next){mode=next;render();}else iconNav.update();}});
  const incarnations=createIncarnationsDialog({mount:drawer.parentNode,allowed:()=>options.incarnationsURL===INCARNATIONS_URL});
  function toggle(open){if(drawer.hidden===!open)return;drawer.hidden=!open;toggleButton.setAttribute('aria-expanded',String(open));onToggle(open,mode);}
  toggleButton.onclick=()=>toggle(drawer.hidden);drawer.querySelector('.close').onclick=()=>toggle(false);
@@ -214,7 +216,7 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
    link.href=options.privateURL;link.target='_blank';link.rel='noopener';
    advancedSoftware.append(link);
   }
-  sync();
+  sync();iconNav.update();
  }
  tabs.forEach((b,i)=>b.onclick=()=>{mode=i;render();onToggle(true,mode);});
  save.onclick=async()=>{
@@ -223,7 +225,13 @@ export function createDrawer(root,apply,frameModel,openDeparture,onToggle=()=>{}
   catch(e){if(version===revision)message.textContent=e.message||'Enregistrement interrompu.';}
   finally{writing=false;if(version===revision)save.disabled=false;}
  };
- return {toggle,configure(value,settings){
+ return {toggle,selectCategory(category){
+     const group=category==='body'?'avatar':category==='underwear'?'clothes':null;
+     if(drawer.hidden){toggle(true);if(group)iconNav.selectGroup(group,{forceOpen:true});else iconNav.select(category);return;}
+     if(group){iconNav.selectGroup(group);return;}
+     if(iconNav.selected===category){iconNav.toggleSelected();return;}
+     iconNav.select(category);
+   },configure(value,settings){
    ++revision;current=null;save.disabled=false;message.textContent='';look=value;options=settings;
    if(options.incarnationsURL!==INCARNATIONS_URL)incarnations.close();render();
  }};

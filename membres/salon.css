@@ -557,3 +557,63 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 @media(max-width:600px) and (orientation:portrait){
  .stage .maison-hub{top:6px!important;bottom:6px!important}
 }
+
+/* V4 icon rail: thin accordion navigation; keep the 3D scene stable. */
+.stage .maison-dock{left:9px!important;top:60px!important;max-width:calc(100% - 100px)!important;gap:4px!important;padding:0!important}
+.stage .maison-dock button{border-radius:13px!important;width:49px!important;min-width:49px!important;height:49px!important;min-height:49px!important;background:#234438cc!important;overflow:hidden!important;white-space:nowrap!important}
+.stage .maison-dock button>span:last-child{position:absolute!important;clip-path:inset(50%)!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.stage .maison-dock .maison-glyph{font-size:22px!important;line-height:1!important}
+.stage .studio-drawer:not([hidden]){width:min(370px,41%)!important;overflow:hidden!important}
+.stage .studio-drawer .studio-body{display:flex!important;flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+.stage .studio-drawer .studio-rail{flex:0 0 56px;display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:6px 4px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none;background:#244639;color:#fff8e6}
+.stage .studio-drawer .studio-rail button{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:47px;padding:5px 2px;border:1px solid transparent;border-radius:10px;background:transparent;color:#f9f0df;cursor:pointer}
+.stage .studio-drawer .studio-rail button:focus-visible,.stage .studio-drawer .studio-rail button[aria-pressed=true]{background:#ebd9b6;color:#253b2e}
+.stage .studio-drawer .studio-rail svg{width:25px;height:25px;stroke-width:1.7}
+.stage .studio-drawer .studio-rail button span{display:none;font:600 11px/1.15 system-ui;text-align:center}
+.stage .studio-drawer .studio-rail.studio-labels{flex-basis:116px}
+.stage .studio-drawer .studio-rail.studio-labels button span{display:block}
+.stage .studio-drawer .studio-scroll{flex:1 1 0;min-width:0;padding:9px 10px!important;overflow-y:auto!important}
+.stage .studio-drawer .studio-scroll>details[hidden],.stage .studio-drawer .studio-scroll>section[hidden],.stage .studio-drawer .studio-scroll label[hidden],.stage .studio-drawer .studio-scroll details[hidden]{display:none!important}
+.stage .studio-drawer .studio-scroll>.studio-quick>summary,.stage .studio-drawer .studio-scroll>details.studio-advanced>summary{display:none}
+.stage .studio-drawer .studio-scroll>details>summary{font-size:13px}
+.stage .studio-drawer .studio-scroll .studio-quick{border:0;background:transparent;padding:0}
+.stage .studio-drawer .studio-scroll .studio-quick select{min-height:46px}
+.stage .studio-drawer .studio-scroll .studio-advanced{border:0;padding:0;margin:0}
+.stage .studio-drawer .studio-scroll .studio-advanced details{border-bottom:1px solid #dde2d6}
+.stage .studio-drawer .studio-scroll .piece{min-height:82px}
+.stage .studio-drawer .switch{display:none!important}
+.stage .studio-drawer.studio-icon-only{width:67px!important}
+.stage .studio-drawer.studio-icon-only>.studio-body>.studio-scroll,.stage .studio-drawer.studio-icon-only>header,.stage .studio-drawer.studio-icon-only>footer{display:none!important}
+.stage .studio-drawer.studio-icon-only .studio-rail{flex-basis:100%;width:100%}
+.stage .studio-drawer .studio-rail-labels{border-bottom:1px solid #ffffff52!important;border-radius:0!important;margin-bottom:3px}
+.stage .studio-drawer .studio-rail-labels svg{width:21px;height:21px}
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+ .stage .maison-dock{top:53px!important;left:6px!important;gap:4px!important;max-width:calc(100% - 96px)!important}
+ .stage .maison-dock button{width:46px!important;min-width:46px!important;height:46px!important;min-height:46px!important}
+ .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(310px,44%)!important}
+ .stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer{width:59px!important}
+ .stage .studio-drawer .studio-rail{flex-basis:52px;padding:4px 2px}
+ .stage .studio-drawer .studio-rail svg{width:23px;height:23px}
+ .stage .studio-drawer .studio-scroll{padding:5px 7px!important}
+}
+@media(max-width:600px) and (orientation:portrait){
+ .stage:has(.studio-drawer:not([hidden])) .studio-drawer{width:min(300px,72%)!important}
+ .stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer{width:59px!important}
+ .stage .studio-drawer .studio-rail.studio-labels{flex-basis:105px}
+}
+
+/* Persistent rail: a second tap on Avatar / Vêtements folds its own controls. */
+.stage:has(.studio-drawer:not([hidden])) .maison-dock{display:flex!important}
+.stage:has(.studio-drawer:not([hidden])) .maison-phone{display:none!important}
+.stage .maison-studio-peek{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;padding:0!important;border-radius:15px!important;font-size:23px!important;display:grid!important;place-items:center!important}
+.stage .studio-drawer:not([data-active-category="advanced"]) .v27-inspection-tools{display:none!important}
+.stage .studio-drawer .studio-rail::-webkit-scrollbar{display:none}
+.stage .studio-drawer .studio-rail button{touch-action:manipulation}
+
+/* Keep compact icon rail actually compact even against older high-specificity studio rules. */
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer{
+ width:67px!important;max-width:67px!important;min-width:0!important;
+}
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer .studio-rail{flex-basis:100%!important}
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-drawer .studio-rail.studio-labels button span{display:none!important}
+.stage:has(.studio-drawer.studio-icon-only:not([hidden])) .studio-rail-labels{display:flex!important}
