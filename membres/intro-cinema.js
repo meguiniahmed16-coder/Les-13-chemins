@@ -881,6 +881,26 @@ function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?paused
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
 let speech=null,lastMotion=0,bubbleLayout=null;
+const bubblePreferenceKey='salon-bulles-visibles-v1';
+let bubblesEnabled=true;
+try{bubblesEnabled=localStorage.getItem(bubblePreferenceKey)!=='false';}catch{}
+const bubbleToggle=$('intro-bubbles-toggle');
+function syncIntroBubbles(){
+ canvasHost.classList.toggle('bubbles-off',!bubblesEnabled);
+ if(bubbleToggle){
+  bubbleToggle.setAttribute('aria-pressed',String(bubblesEnabled));
+  bubbleToggle.setAttribute('aria-label',bubblesEnabled?'Masquer les bulles':'Afficher les bulles');
+  bubbleToggle.title=bubblesEnabled?'Masquer les bulles':'Afficher les bulles';
+ }
+ if(bubblesEnabled&&bubble.textContent&&stage!=='garden'){bubble.hidden=false;bubbleLayout=null;}
+ if(!bubblesEnabled)bubble.style.visibility='hidden';
+}
+bubbleToggle?.addEventListener('click',()=>{
+ bubblesEnabled=!bubblesEnabled;
+ try{localStorage.setItem(bubblePreferenceKey,String(bubblesEnabled));}catch{}
+ syncIntroBubbles();
+});
+syncIntroBubbles();
 let cinematicVoiceEnabled=false,cinematicUtterance=null,cinematicLocalVoices=null,cinematicSpeechEpoch=0,usingLocalVoice=false;
 const cinematicSynth=globalThis.speechSynthesis;
 function prepareCinematicVoices(){
@@ -934,7 +954,7 @@ function setCue(id,text,offset=0){
  const actor=speakerActor(id);currentSpeaker=id;
  const b=document.createElement('b'),p=document.createElement('p');
  b.textContent=id==='m'?'Ahmed Marie':id==='f'?'Marianne':actor?.root.name||'La Croisée des Âmes';p.textContent=text.replaceAll('{pseudo}',alias);
- bubble.replaceChildren(b,p);bubble.hidden=false;
+ bubble.replaceChildren(b,p);bubble.hidden=!bubblesEnabled;
  // Place the complete reply only after the new camera is set, then latch it.
  // No alternate footer, typewriter animation or per-frame position switching.
  speech={id,text:p.textContent,start:offset,duration:Math.max(1400,text.length*58)};
@@ -1043,7 +1063,7 @@ function applyDialogueProjection(projection){
  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 }
 function anchorBubble(line,elapsed){
- const preview=dojoWardrobe?.previewActor,speaker=preview||speakerActor(currentSpeaker);if(!speaker||bubble.hidden)return;
+ const preview=dojoWardrobe?.previewActor,speaker=preview||speakerActor(currentSpeaker);if(!bubblesEnabled||!speaker||bubble.hidden)return;
  bubble.classList.toggle('narration',!!preview);
  const w=canvasHost.clientWidth,h=canvasHost.clientHeight;
  if(!bubbleLayout||bubbleLayout.w!==w||bubbleLayout.h!==h){
@@ -1294,7 +1314,9 @@ async function showScene(index){
     'dojo-apparence':'✦ Volet translucide · Une seconde pression le replie',
     'dojo-vetements':'♧ Vêtements · Chemises, pantalons et chaussures',
     'dojo-enregistrer':'✓ Enregistrer · ☎ Appeler un invité',
-    'dojo-construction':'✦ Inviter · Écouter · Discuter'
+    'dojo-construction':'♙ Inviter · Le pictogramme existant ouvre les personnages',
+    'dojo-appeler':'☎ Appeler · Le téléphone existant ouvre la conversation vocale',
+    'dojo-bulles':'▢ Bulles · Afficher ou masquer sans couper les voix'
   }[line.id]||'Le Salon s’ouvre depuis le bouton Menu.';
  }
  $('joystick').hidden=!isDojo||isStagedDojo(line);
