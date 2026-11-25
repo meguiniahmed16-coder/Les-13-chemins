@@ -881,22 +881,52 @@ function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?paused
 function speakerActor(id){return people.find(p=>p.id===id);}
 function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
 let speech=null,lastMotion=0,bubbleLayout=null;
-let cinematicVoiceEnabled=false,cinematicUtterance=null;
+let cinematicVoiceEnabled=false,cinematicUtterance=null,cinematicLocalVoices=null,cinematicSpeechEpoch=0,usingLocalVoice=false;
 const cinematicSynth=globalThis.speechSynthesis;
+function prepareCinematicVoices(){
+ // One user gesture unlocks the existing, local two-speaker voice model.
+ // The introduction gives it time to preload before the dojo.
+ if(!cinematicLocalVoices)cinematicLocalVoices=createLocalVoices(()=>{},()=>{});
+ if(cinematicLocalVoices){cinematicLocalVoices.unlock();cinematicLocalVoices.prepare();}
+ cinematicSynth?.getVoices?.();
+}
 function stopCinematicVoice(){
+ ++cinematicSpeechEpoch;usingLocalVoice=false;
+ cinematicLocalVoices?.stop();
  if(!cinematicUtterance)return;
  cinematicUtterance=null;try{cinematicSynth?.cancel();}catch{}
 }
-function speakCinematicCue(id,text){
- if(!cinematicVoiceEnabled||!cinematicSynth||!globalThis.SpeechSynthesisUtterance||document.hidden)return;
- const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang='fr-FR';utterance.rate=1.08;utterance.volume=.94;
+function browserCinematicVoice(id,text,token){
+ if(token!==cinematicSpeechEpoch||!cinematicSynth||!globalThis.SpeechSynthesisUtterance)return;
  const gender=id==='f'?'femme':'homme';
- const selected=frenchVoice(cinematicSynth,gender,true,false)||frenchVoice(cinematicSynth,gender,false,false);
- if(selected)utterance.voice=selected;
+ const utterance=new SpeechSynthesisUtterance(text);
+ utterance.lang='fr-FR';utterance.rate=1.05;utterance.volume=.98;
+ const selected=frenchVoice(cinematicSynth,gender,true,false);
+ // When the browser has only one unnamed French voice, voice pitch remains
+ // distinctive; the local Pierre/Jessica synthesis is preferred in the dojo.
+ const fallback=(cinematicSynth.getVoices?.()||[]).find(v=>/^fr(?:-|_|$)/i.test(v.lang));
+ if(selected||fallback)utterance.voice=selected||fallback;
+ utterance.pitch=selected?1:(id==='f'?1.23:.78);
  cinematicUtterance=utterance;
  utterance.onend=utterance.onerror=()=>{if(cinematicUtterance===utterance)cinematicUtterance=null;};
  try{cinematicSynth.speak(utterance);}catch{cinematicUtterance=null;}
+}
+function speakCinematicCue(id,text){
+ if(!cinematicVoiceEnabled||document.hidden||!id||!text)return;
+ const gender=id==='f'?'femme':'homme',token=cinematicSpeechEpoch;
+ const matched=frenchVoice(cinematicSynth,gender,true,false);
+ // In the dojo use the two original local Salon voices: Pierre for Ahmed,
+ // Jessica for Marianne. No network speech service or private key is required.
+ if((stage==='dojo'||!matched)&&cinematicLocalVoices?.available){
+  usingLocalVoice=true;
+  cinematicLocalVoices.speak({
+   line:{text,words:[{index:0,length:text.length,start:0}],duration:Math.max(1800,text.length*85)},
+   firstWord:0,gender,rate:1.06,end:()=>{if(token===cinematicSpeechEpoch)usingLocalVoice=false;},
+   error:()=>{if(token!==cinematicSpeechEpoch)return;usingLocalVoice=false;browserCinematicVoice(id,text,token);}
+  });
+  return;
+ }
+ browserCinematicVoice(id,text,token);
 }
 function stopSpeech(){stopCinematicVoice();speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
@@ -937,6 +967,7 @@ function updateActing(now){
     const char=speech.text[Math.min(speech.text.length-1,Math.floor(st/58))]?.toLowerCase()||' ';
     const vowel=/[aeiouyàâéèêëîïôùûüœ]/.test(char),closed=/[bmpfvw\s.,;:!?]/.test(char),phase=(Math.sin(st*.022)+1)*.5;
     jaw=closed?.014:(vowel?.07+.16*phase:.04+.07*phase);wide=vowel?.35:.08;
+    if(usingLocalVoice){const sound=cinematicLocalVoices?.position();jaw=sound?.energy?Math.min(.25,.025+.21*sound.energy):0;wide=sound?.energy?Math.min(.48,.1+.3*sound.energy):0;}
    }
   }
   p.speak?.(jaw,wide,blink);
@@ -1295,7 +1326,7 @@ function automatic(on,hold=false){
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
  if(!on){introSound.pause();try{cinematicSynth?.pause();}catch{}}else if(cinematicVoiceEnabled){try{cinematicSynth?.resume();}catch{}}
 }
-$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;cinematicSynth?.getVoices?.();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
+$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;startGarden(true);};
 
 function holdIntroduction(reason){
