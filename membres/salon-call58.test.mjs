@@ -23,11 +23,10 @@ test('Le père d’Ahmed garde un portrait sobre sans lunettes fantaisistes',()=
  assert.equal(guest.studio.outfit.lunettes,undefined);
 });
 
-test('Le fauteuil donne aux invités les appuis des deux poignets du squelette V27',()=>{
+test('Le fauteuil donne aux invités un appui crédible avec le rig V27 partagé',()=>{
  const chair=seats.find(s=>s.id==='chair');
- assert.ok(chair?.introArms&&chair.introArms.length===2);
- assert.equal(chair.introArms[0][0],-chair.introArms[1][0]);
- assert.equal(choosePosture(chair,null,()=>.95).kind,'armrests');
+ assert.deepEqual(chair?.support,{x:30,z:-55,height:56.9,side:1});
+ assert.equal(choosePosture(chair,null,()=>.95).kind,'appui');
 });
 
 test('Recherche et hasard restent visibles hors du défilement des personnages',()=>{

@@ -372,7 +372,7 @@ function roomPose(t){
    // On a measured armrest the palm rests flat while the wrist bends. The
    // general salon's small gesture limit would leave the fingers pointing
    // into the upholstery even when the wrist target is on its upper surface.
-   const wristLimit=.35; // shared V27 rig: prevent exaggerated wrist flexion on armrests
+   const wristLimit=.35+(introArms?.65*s*(1-handLift):0);
    const aim=normal(mix3(axis,desired,Math.min(1,wristLimit/Math.max(.001,angle))));
    const palmBlend=introArms?.34+.66*s*(1-handLift):.34;
    end=mapHand(finger,palm,aim,s||handLift?normal(mix3(rotated,palmDown,palmBlend)):rotated);

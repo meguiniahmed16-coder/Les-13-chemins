@@ -2,7 +2,8 @@
 export const seatedPostures=['cuisses','chevilles','genou','penchee','mains-jointes','appui'];
 export function choosePosture(seat,previous,random=Math.random){
   const dining=/^(east|west|end)/.test(seat.id);
-  if(seat.introArms)return {kind:'armrests',side:1};
+  // A consistent natural posture instead of random crossed hands or exaggerated lean.
+  if(seat.support)return {kind:'appui',side:seat.support.side};
   // Keep ordinary seated guests dignified. More expressive poses can still be
   // authored explicitly; they should not be selected at random.
   const choices=seatedPostures.filter(p=>p!==previous?.kind&&
