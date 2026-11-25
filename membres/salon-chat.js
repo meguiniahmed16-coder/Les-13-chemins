@@ -421,6 +421,11 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     if(loading||!p)return;
     closePhone();phoneToggle.hidden=true;phoneReady=false;
     const ticket=++version;
+    // Unlock the browser voices immediately inside the visitor's tap; an async
+    // 3D avatar download must never cost us the first spoken exchange.
+    if(playback.supportsVoice&&!voiceEnabled()){
+      voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);
+    }
     loading=true;random.disabled=true;list.inert=true;
     closePicker();toggle.hidden=true;footer.hidden=false;expand(true);log.replaceChildren();styleButton.hidden=true;
     $('.thread-name').textContent='Avec '+p.name;const arrival=$('.arrival-status');arrival.textContent=p.name+' rejoint le salon…';
