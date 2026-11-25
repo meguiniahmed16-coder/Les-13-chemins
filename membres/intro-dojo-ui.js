@@ -1,14 +1,16 @@
 import {DOJO_LOOKS,dojoWardrobeState} from './intro-dojo-wardrobe.js';
 import {DOJO_CAST} from './intro-dojo-cast.js';
+import {salonActionSvg} from './salon-maison-ui.js?v=call61';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,n)=>{const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
 const modes=Object.freeze({
- 'dojo-camera':'camera','dojo-deplacement':'walk',
+ 'dojo-arrivee':'menu','dojo-camera':'camera','dojo-deplacement':'walk','dojo-demi-tour':'recenter',
  'dojo-personnaliser':'characters','dojo-apparence':'body',
- 'dojo-vetements':'wardrobe','dojo-enregistrer':'save'
+ 'dojo-vetements':'wardrobe','dojo-enregistrer':'save','dojo-construction':'invite',
+ 'dojo-appeler':'call','dojo-bulles':'bubbles'
 });
-const titles=Object.freeze({camera:'Caméra',walk:'Marcher',characters:'Personnaliser',body:'Mon personnage',wardrobe:'Garde-robe',save:'Personnaliser'});
+const titles=Object.freeze({menu:'Menu',camera:'Caméra',walk:'Marcher',recenter:'Recentrer',characters:'Personnaliser',body:'Mon personnage',wardrobe:'Garde-robe',save:'Enregistrer',invite:'Rencontrer',call:'Appeler',bubbles:'Bulles'});
 
 // One clock drives the filmed action and its small interface demonstration.
 // There are no timers or CSS animations that could continue during a report.
@@ -29,12 +31,14 @@ export function dojoDemoFrame(line,elapsed,{wardrobe}={}){
  return {
   visible:!unavailable&&opacity>.001,mode,opacity:unavailable?0:opacity,
   title:mode==='wardrobe'&&look.kind==='underwear'?'Sous-vêtements':titles[mode],actor,bodyIndex,lookIndex,castIndex,
-  context:mode==='wardrobe'?'Ahmed Marie · Marianne':mode==='body'?'Marianne':mode==='characters'&&example?`${castIndex+1} / ${DOJO_CAST.length}`:mode==='camera'?'Glisser':mode==='walk'?'Joystick':'',
+  context:mode==='wardrobe'?'Ahmed Marie · Marianne':mode==='body'?'Marianne':mode==='characters'&&example?`${castIndex+1} / ${DOJO_CAST.length}`:mode==='camera'?'Glisser':mode==='walk'?'Joystick':mode==='menu'?'Ouvrir et replier':mode==='recenter'?'Retrouver la vue':mode==='invite'?'Choisir un invité':mode==='call'?'Conversation vocale':mode==='bubbles'?'Activer ou masquer':'',
   dragX:mode==='camera'?13*drag:mode==='walk'?6*drag:0,
   dragY:mode==='camera'?-3*drag:mode==='walk'?(-12+2*stride)*drag:0,
   pointer:mode==='characters'?castIndex:mode==='body'?-1:mode==='wardrobe'?lookIndex:0,
-  pressed:mode==='save'&&at>=2200&&at<duration-1200,
-  label:mode==='body'?'Visage et silhouette':mode==='characters'?example?.label||'':mode==='wardrobe'?look.label:'',
+  pressed:(mode==='save'&&at>=2200&&at<duration-1200)||(mode==='menu'&&at>=1100&&at<duration-1200)||(mode==='invite'&&at>=1800&&at<duration-1000)||(mode==='call'&&at>=1700&&at<duration-1300),
+  menuExpanded:mode==='menu'&&at>=1500&&at<duration-1100,
+  bubblesOn:mode==='bubbles'&&(at<duration*.40||at>=duration*.75),
+  label:mode==='body'?'Visage et silhouette':mode==='characters'?example?.label||'':mode==='wardrobe'?look.label:mode==='call'?'Le téléphone du Salon':mode==='invite'?'Ajouter un personnage':'',
   description:mode==='wardrobe'?look.description||'Ahmed Marie et Marianne en blanc.':mode==='characters'?'Un exemple parmi les visages, les teints et les corpulences disponibles.':mode==='body'?'Marianne reste à l’écran tandis que la caméra approche de son visage.':'',
  };
 }
@@ -55,11 +59,17 @@ const personIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy
 const shirtIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3-6 4 3 5 3-2v11h8V10l3 2 3-5-6-4c-1 3-7 3-8 0Z"/></svg>';
 const underwearIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l1 14h-7l-2-6-2 6H3zM4 8h16"/></svg>';
 const tickIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
+const originalMenu=salonActionSvg('menu'),originalInvite=salonActionSvg('encounter'),originalPhone=salonActionSvg('phone'),originalCamera=salonActionSvg('explore'),originalBubbles=salonActionSvg('bubbles');
 
 export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
  const panel=doc.createElement('div');panel.id='dojo-demo';panel.className='dojo-demo';panel.hidden=true;
  panel.setAttribute('role','img');panel.setAttribute('aria-label','Démonstration des commandes du salon');
  panel.innerHTML=`<div class="dojo-demo-heading"><span class="dojo-demo-heading-icon">${cameraIcon}</span><strong class="dojo-demo-title"></strong><span class="dojo-demo-context"></span></div>
+ <div class="dojo-demo-control dojo-demo-menu"><span class="dojo-demo-original">${originalMenu}</span><span class="dojo-demo-menu-rail"><span>${originalInvite}</span><span>${salonActionSvg('avatar')}</span><span>${salonActionSvg('clothes')}</span><span>${salonActionSvg('dialogue')}</span><span>${originalCamera}</span></span></div>
+ <div class="dojo-demo-control dojo-demo-recenter"><span class="dojo-demo-original">${originalCamera}</span><span>Retrouver mon personnage</span><span class="dojo-demo-touch-point"></span></div>
+ <div class="dojo-demo-control dojo-demo-invite"><span class="dojo-demo-original">${originalInvite}</span><span>Choisir un personnage</span><span class="dojo-demo-touch-point"></span></div>
+ <div class="dojo-demo-control dojo-demo-call"><span class="dojo-demo-original">${originalPhone}</span><span>Parler de vive voix</span><span class="dojo-demo-touch-point"></span></div>
+ <div class="dojo-demo-control dojo-demo-bubbles"><span class="dojo-demo-original">${originalBubbles}</span><span>Bulles</span><span class="dojo-demo-mock-switch"><i></i></span></div>
  <div class="dojo-demo-control dojo-demo-motion"><span class="dojo-demo-pad"><i class="dojo-demo-axis axis-x"></i><i class="dojo-demo-axis axis-y"></i><span class="dojo-demo-thumb">${cameraIcon}</span><span class="dojo-demo-touch"></span></span><span class="dojo-demo-motion-copy"><b></b><span class="dojo-demo-drag"><i></i></span></span></div>
  <div class="dojo-demo-control dojo-demo-characters">${DOJO_CAST.map((item,i)=>`<span class="dojo-demo-choice" data-character="${i}" style="--cast-color:${item.color}" aria-label="${item.label}">${personIcon}<span>${String(i+1).padStart(2,'0')}</span></span>`).join('')}</div>
  <div class="dojo-demo-control dojo-demo-body"><span class="dojo-demo-field">Détails de l’apparence</span><span class="dojo-demo-body-options"><span class="dojo-demo-choice">Silhouette</span><span class="dojo-demo-choice">Visage</span><span class="dojo-demo-choice">Regard</span></span></div>
@@ -93,7 +103,7 @@ export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
   }
   if(lastMode!==frame.mode){
    lastMode=frame.mode;panel.dataset.mode=frame.mode;
-   icon.innerHTML=frame.mode==='camera'?cameraIcon:frame.mode==='wardrobe'?shirtIcon:personIcon;
+   icon.innerHTML=frame.mode==='camera'?cameraIcon:frame.mode==='wardrobe'?shirtIcon:frame.mode==='menu'?originalMenu:frame.mode==='recenter'?originalCamera:frame.mode==='invite'?originalInvite:frame.mode==='call'?originalPhone:frame.mode==='bubbles'?originalBubbles:personIcon;
    thumb.innerHTML=frame.mode==='camera'?cameraIcon:'<span class="dojo-demo-walk-dot"></span>';
    text(copy,frame.mode==='camera'?'Tourner autour':'Quelques pas');
   }
@@ -104,6 +114,8 @@ export function mountDojoDemo(stage,{document:doc=stage.ownerDocument}={}){
   write(dragDot.style,'transform',`translateX(${((frame.dragX||-frame.dragY)*2).toFixed(2)}px)`);
   select(characters,'data-character',frame.castIndex);select(looks,'data-look',frame.lookIndex);
   panel.classList.toggle('pressed',frame.pressed);
+  panel.classList.toggle('menu-expanded',Boolean(frame.menuExpanded));
+  panel.classList.toggle('demo-bubbles-on',Boolean(frame.bubblesOn));
   const label='Démonstration : '+frame.title+(frame.context?', '+frame.context:'')+(frame.label?', '+frame.label:'')+(frame.description?'. '+frame.description:'');
   if(label!==lastLabel){lastLabel=label;panel.setAttribute('aria-label',label);}
   return frame;
