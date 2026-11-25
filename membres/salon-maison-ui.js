@@ -7,10 +7,11 @@ export function createSalonNavigation(root){
   // nodes instead of creating parallel controls with conflicting state.
   stage.insertAdjacentHTML('beforeend',`
     <nav class="maison-dock" aria-label="Pièces du Salon">
-      <button type="button" data-maison-open="rencontrer" aria-label="Rencontrer un personnage"><span class="maison-glyph">✦</span><span>Rencontrer</span></button>
-      <button type="button" data-maison-open="dialogue" aria-label="Ouvrir la conversation"><span class="maison-glyph">◉</span><span>Dialoguer</span></button>
-      <button type="button" data-maison-open="explorer" aria-label="Explorer le Salon"><span class="maison-glyph">⌖</span><span>Explorer</span></button>
-      <button type="button" data-maison-open="atelier" aria-label="Ouvrir l’atelier des apparences"><span class="maison-glyph">✧</span><span>Atelier</span></button>
+      <button type="button" data-maison-open="rencontrer" aria-label="Rencontrer un personnage" title="Rencontrer"><span class="maison-glyph">✦</span><span>Rencontrer</span></button>
+      <button type="button" data-maison-open="avatar" aria-label="Personnaliser le corps et le visage" title="Avatar"><span class="maison-glyph">♙</span><span>Avatar</span></button>
+      <button type="button" data-maison-open="clothes" aria-label="Choisir les vêtements" title="Vêtements"><span class="maison-glyph">♧</span><span>Vêtements</span></button>
+      <button type="button" data-maison-open="dialogue" aria-label="Dialoguer avec le personnage" title="Dialogue"><span class="maison-glyph">◉</span><span>Dialogue</span></button>
+      <button type="button" data-maison-open="explorer" aria-label="Caméra et déplacements" title="Caméra"><span class="maison-glyph">⌖</span><span>Caméra</span></button>
     </nav>
     <button type="button" class="maison-phone" hidden aria-label="Appeler le personnage"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h3l2 5-2 2a16 16 0 0 0 5 5l2-2 5 2v3a3 3 0 0 1-3 3C9 21 3 15 3 6a3 3 0 0 1 3-3Z" /></svg><span>Appeler</span></button>
     <section class="maison-hub" role="region" aria-label="Les pièces de la maison" hidden>
@@ -112,7 +113,19 @@ export function createSalonNavigation(root){
     phone.setAttribute('aria-expanded',String(!voicePanel.hidden));
     phone.querySelector('span').textContent=voicePanel.hidden?'Appeler':'Raccrocher';
   }
-  dock.addEventListener('click',event=>{const b=event.target.closest('[data-maison-open]');if(b)open(b.dataset.maisonOpen,b);});
+  dock.addEventListener('click',event=>{
+    const b=event.target.closest('[data-maison-open]');if(!b)return;
+    const room=b.dataset.maisonOpen,drawer=$('.studio-drawer');
+    if(room==='avatar'||room==='clothes'){
+      close(false);
+      const category=room==='avatar'?'body':'underwear';
+      root.host.dispatchEvent(new CustomEvent('salon-open-studio',{detail:{category}}));
+      return;
+    }
+    if(!drawer.hidden)$('.options-toggle').click();
+    if(!hub.hidden&&sections.find(item=>item.dataset.maisonRoom===room&&!item.hidden)){close(false);return;}
+    open(room,b);
+  });
   tabs.forEach(button=>button.onclick=()=>open(button.dataset.maisonTab,originFocus));
   $('.maison-close').onclick=()=>close();
   $('.maison-side').onclick=()=>{

@@ -1,9 +1,9 @@
 import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
-import {createDrawer} from './studio-drawer.js?v=incarnations33';
+import {createDrawer} from './studio-drawer.js?v=studio-rail1';
 import {createSalonChat} from './salon-chat.js?v=maison2';
-import {createSalonNavigation} from './salon-maison-ui.js?v=salon-scene-continue3';
+import {createSalonNavigation} from './salon-maison-ui.js?v=studio-rail1';
 import {guestAppearance} from './salon-encounter.js?v=incarnations33';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -24,7 +24,7 @@ class SalonV27 extends HTMLElement{
       }
     });
     const root=this.attachShadow({mode:'open'});
-    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=salon-scene-continue3"><style>
+    root.innerHTML=`<link rel="stylesheet" href="/membres/salon.css?v=studio-rail1"><style>
     .scene-viewport{padding-top:42px;background:#233a30}.v27-frame{width:100%;height:100%;border:0;display:block}
     .v27-actions{position:absolute;top:5px;left:8px;display:flex;align-items:center;gap:4px;z-index:3;pointer-events:none}
     .v27-actions>button{position:static;min-height:37px;pointer-events:auto;padding:4px 8px}
@@ -79,6 +79,10 @@ class SalonV27 extends HTMLElement{
       peek.textContent='◉ Voir le personnage entier';
       if(open){this.#targets();this.#syncInspectionTools();this.#chat.manual();this.#cameraKey='';this.#scene?.camera('manual');this.#scene?.focus('Corps',this.#editing);}
       else if(this.#editing){this.#editing='';void this.#select(this.#gender);}
+    });
+    root.host.addEventListener('salon-open-studio',event=>{
+      const category=event.detail?.category==='underwear'?'underwear':'body';
+      this.#drawer.selectCategory(category);
     });
     root.querySelector('.maison-studio-peek').onclick=()=>{
       const stage=root.querySelector('.stage'),collapsed=stage.classList.toggle('maison-studio-collapsed');
