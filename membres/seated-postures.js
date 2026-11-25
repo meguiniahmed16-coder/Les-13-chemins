@@ -4,11 +4,9 @@ export function choosePosture(seat,previous,random=Math.random){
   const dining=/^(east|west|end)/.test(seat.id);
   // A consistent natural posture instead of random crossed hands or exaggerated lean.
   if(seat.support)return {kind:'appui',side:seat.support.side};
-  // Keep ordinary seated guests dignified. More expressive poses can still be
-  // authored explicitly; they should not be selected at random.
-  const choices=seatedPostures.filter(p=>p!==previous?.kind&&
-    !['penchee','mains-jointes'].includes(p)&&
-    (p!=='appui'||(dining&&tabletop(seat).forward<29)||seat.support));
+  // Other original V27 seats retain their complete authored posture palette.
+  // Only the measured armchair uses its calibrated armrest instead of random gestures.
+  const choices=seatedPostures.filter(p=>p!==previous?.kind&&(p!=='appui'||(dining&&tabletop(seat).forward<29)||seat.support));
   return {kind:choices[Math.floor(random()*choices.length)],side:random()<.5?-1:1};
 }
 export function tabletop(seat,scale=1){
