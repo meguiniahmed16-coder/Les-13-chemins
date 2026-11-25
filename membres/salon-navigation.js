@@ -77,10 +77,10 @@ export function createSalonNavigation(root){
   function sync(){
     const present=Boolean(companion);
     stage.classList.toggle('maison-with-guest',present);
-    phone.hidden=!present;
+    phone.hidden=!present||legacyPhone.hidden;
     const state=$('.maison-guest-state');
     if(state)state.textContent=present?'Tu discutes avec '+companion+'.':'Invite d’abord quelqu’un pour commencer.';
-    $('[data-maison-action="call"]').disabled=!present;
+    $('[data-maison-action="call"]').disabled=!present||legacyPhone.hidden;
     $('[data-maison-action="write"]').disabled=!present;
     const messageArea=slot('messages');messageArea.hidden=!present;
     slot('leave').hidden=!present;
@@ -144,6 +144,9 @@ export function createSalonNavigation(root){
   });
   const voiceObserver=new MutationObserver(syncVoice);
   voiceObserver.observe(voicePanel,{attributes:true,attributeFilter:['hidden']});
+  // Owner-only telephony must not be advertised to an ordinary visitor.
+  const availabilityObserver=new MutationObserver(sync);
+  availabilityObserver.observe(legacyPhone,{attributes:true,attributeFilter:['hidden']});
   root.host.addEventListener('keydown',event=>{
     if(event.key!=='Escape')return;
     if(!hub.hidden){event.preventDefault();close();}

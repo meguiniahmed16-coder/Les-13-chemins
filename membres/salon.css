@@ -367,3 +367,11 @@ svg{display:block;width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fi
 }
 @media(max-width:370px){.maison-dock button{min-width:66px;padding:5px}.maison-tabs button{font-size:10px}}
 @media(max-height:430px) and (orientation:landscape){.maison-hub-head{padding:6px 14px}.maison-hub-head h2{font-size:18px}.maison-tabs{padding:4px 7px}.maison-room{padding-top:8px}}
+
+/* Narrow phones and studio mode: no overlaps or inaccessible controls. */
+@media(max-width:760px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
+ .maison-dock{width:min(420px,calc(100% - 16px));justify-content:space-between}
+ .maison-dock button{flex:1 1 0;min-width:0}
+}
+.stage:has(.studio-drawer:not([hidden])) .maison-dock,
+.stage:has(.studio-drawer:not([hidden])) .maison-phone{display:none!important}
