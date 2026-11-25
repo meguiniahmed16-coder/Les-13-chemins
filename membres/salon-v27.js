@@ -244,7 +244,7 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=incarnations33'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=hud54'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
