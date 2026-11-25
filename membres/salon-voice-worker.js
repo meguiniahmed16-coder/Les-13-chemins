@@ -83,7 +83,7 @@ async function generate({id,chunks,gender,rate}){
   }
 }
 self.onmessage=({data})=>{
-  if(data.type==='prepare'){void ready().catch(()=>{});return;}
+  if(data.type==='prepare'){void ready().then(()=>postMessage({type:'ready'})).catch(()=>postMessage({type:'prepare-error'}));return;}
   latest=data.id;
   if(data.type==='cancel')return;
   queue=queue.then(()=>latest===data.id&&generate(data)).catch(()=>{
