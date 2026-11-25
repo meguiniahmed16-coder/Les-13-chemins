@@ -926,6 +926,9 @@ function prepareCinematicVoices(){
  if(!cinematicLocalVoices&&typeof createLocalVoices==='function')cinematicLocalVoices=createLocalVoices(()=>{},()=>{});
  if(cinematicLocalVoices){cinematicLocalVoices.unlock();cinematicLocalVoices.prepare();}
  cinematicSynth?.getVoices?.();
+ // Unlock Android browser speech during the actual Commencer tap; the first
+ // voiced shot follows several seconds later and must still be audible.
+ if(cinematicSynth&&globalThis.SpeechSynthesisUtterance){try{const wake=new SpeechSynthesisUtterance(' ');wake.lang='fr-FR';wake.volume=0;cinematicSynth.speak(wake);}catch{}}
 }
 function stopCinematicVoice(){
  ++cinematicSpeechEpoch;usingLocalVoice=false;
