@@ -2,7 +2,7 @@ import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=studio-rail1';
-import {createSalonChat} from './salon-chat.js?v=eleven70&rev=ahmeddirect3';
+import {createSalonChat} from './salon-chat.js?v=eleven70&rev=ahmedlatence4';
 import {createSalonNavigation} from './salon-maison-ui.js?v=call61&rev=ahmedphone1';
 import {guestAppearance} from './salon-encounter.js?v=call58';
 import {loadStudio} from './studio-model.js?v=incarnations33';
