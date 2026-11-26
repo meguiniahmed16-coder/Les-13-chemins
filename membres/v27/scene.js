@@ -1793,18 +1793,19 @@ if(cinemaArrival){
   apply(frame){
    for(const id of ['m','f']){
     const actor=actors[id],pose=frame.actors[id];
+    const level=frame.voice?.speaker===id?Math.min(1,frame.voice.energy*45):0,jaw=level>.025?Math.min(.28,.02+.23*level):0,spread=level>.025?Math.min(.48,.06+.36*level):.16;
     actor.root.position.set(pose.x,0,pose.z);actor.root.rotation.set(0,pose.yaw,0);
     actor.conversationPose=pose.expression;
     if(actor.cinemaAhmed?.active){
      actor.cinemaAhmed.animate(0,null,0,frame.time);
-     actor.cinemaAhmed.talk({jaw:0,spread:.18},frame.time);
+     actor.cinemaAhmed.talk({jaw,spread},frame.time);
     }else if(actor.motion){
      const solver=actor.solver??=new SalonMotion(undefined,{angle:0});solver.femaleHands=actor.id==='f';
      actor.motion.apply(solver.sampleSalonPose(null,0,frame.time,pose.expression,actor.root.scale.y));
      actor.live=true;actor.stamp='invitation/'+frame.elapsedMs;
      actor.referenceFace?.follow(true);
      const blink=(frame.time+(id==='f'?1.2:0))%5.3;
-     actor.referenceFace?.talk({jaw:0,spread:.16,blink:blink<.16?Math.sin(blink/.16*Math.PI):0});
+     actor.referenceFace?.talk({jaw,spread,blink:blink<.16?Math.sin(blink/.16*Math.PI):0});
     }
    }
    for(const [index,actor]of invited.entries())applyIntroInvitationGuest(actor,{...frame.actors.guest,opacity:index===frame.cue.guestIndex?frame.actors.guest.opacity:0},frame.time);
