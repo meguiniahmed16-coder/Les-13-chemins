@@ -51,7 +51,7 @@ export function createIntroElevenLabs({
   const task=(async()=>{
    const selected=await prepare(),gender=id==='f'?'femme':'homme';
    const clip=await request('speech',{body:{text,gender,voiceId:selected[id],strict:true,purpose:'cinema'}});
-   if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure')throw Error('Le service vocal a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
+   if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure'&&clip?.voiceProvider!=='cartesia')throw Error('Le service vocal a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
    if(!clip?.size)throw Error('Le service vocal a renvoyé un enregistrement vide.');
    recordings.set(key,clip);return clip;
   })().catch(error=>{
