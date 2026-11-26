@@ -61,7 +61,7 @@ test('a report pauses the invitation even when opened before scene readiness',()
  const h=harness();h.player.start({paused:true});h.tick(9000);h.state('ready');h.tick(20000);
  assert.equal(h.invitationSamples.at(-1),0);assert.equal(h.samples.length,0);
  h.player.resume();h.tick(5000);assert.equal(h.invitationSamples.at(-1),5000*5/3);
- h.player.pause();h.tick(30000);assert.equal(h.invitationSamples.at(-1),5000);assert.equal(h.samples.length,0);
+ h.player.pause();h.tick(30000);assert.equal(h.invitationSamples.at(-1),5000*5/3);assert.equal(h.samples.length,0);
  h.player.resume();h.tick(500);assert.equal(h.invitationSamples.at(-1),5500*5/3);
 });
 
