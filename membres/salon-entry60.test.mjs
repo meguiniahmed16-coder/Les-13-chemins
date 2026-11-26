@@ -43,7 +43,7 @@ test('Les deux anciens boutons de cinéma sont retirés et l’auteur ouvre le v
  assert.match(code,/originalIntroKey/);
  const cinema=src('membres/intro-cinema.js');
  assert.match(cinema,/finishSalonEntry/);
- assert.match(cinema,/onComplete:\(\)=>\{introSound\.stop\(\);finishSalonEntry\(\);\}/);
+ assert.match(cinema,/onComplete:\(\)=>\{stopCinematicVoice\(\);introSound\.stop\(\);finishSalonEntry\(\);\}/);
  assert.match(cinema,/croisee-salon-introduction-originale-v34/);
  const intro=src('membres/intro-prive.html');
  assert.match(intro,/dojo-eleven72/);
@@ -97,4 +97,11 @@ test('Le Salon ne charge plus de voix Android : tous les dialogues vocaux passen
  assert.match(dialogue,/voiceProvider!=='elevenlabs'/);
  assert.match(dialogue,/requestVoice\('speech',\{body:\{text:current.text,gender:kind,strict:true\}/);
  assert.match(chat,/salon-dialogue\.js\?v=eleven70/);
+});
+
+
+test('Le parcours court suit les véritables boutons et peut être passé',()=>{
+ const nav=src('membres/salon-maison-ui.js'),guide=src('membres/salon-guide.js'),intro=src('membres/intro-cinema.js');
+ assert.match(nav,/mountSalonGuide\(root/);assert.doesNotMatch(nav,/tool\('choose','encounter'/);
+ assert.match(guide,/data-maison-open="encounter"/);assert.match(guide,/\.guest-random/);assert.match(guide,/\.maison-phone/);assert.match(guide,/data-guide="skip"/);assert.match(intro,/finishSalonEntry\(true\)/);
 });
