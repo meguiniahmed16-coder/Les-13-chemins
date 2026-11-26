@@ -83,6 +83,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   // use browser speech recognition plus the already rate-limited public
   // character dialogue: no private provider credential is given to visitors.
   const publicCall=!root.host.hasAttribute('salon-auteur');
+  if(!publicCall)phoneToggle.hidden=false;
   let publicMic=null,publicCallActive=false,publicCallGeneration=0,publicMicAnswered=false;
   if(publicCall){
     phonePanel.querySelector('.voice-conversation-settings').hidden=true;
@@ -201,20 +202,20 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       buttons();return;
     }
     if(show){phonePanel.hidden=false;phoneToggle.setAttribute('aria-expanded','true');phoneStatus.textContent='Connexion au personnage…';}
-    if(!current)return;
-    phonePanel.querySelector('.voice-call-name').textContent=current.name;
+    phonePanel.querySelector('.voice-call-name').textContent=current?.name||'les réglages vocaux';
+    if(!current&&show)$('.voice-conversation-settings').open=true;
     try{
       const {status:available}=await voiceSession.refresh({withVoices:false});
       if(ticket!==phoneLoad||person!==current)return;
-      phoneToggle.hidden=false;phoneReady=Boolean(available.ready);
+      phoneToggle.hidden=false;phoneReady=Boolean(current&&available.ready&&available.providers?.voice==='Cartesia');
       if(show&&!phoneReady)$('.voice-conversation-settings').open=true;
       phoneStatus.textContent=phoneReady?'Appuie sur Appeler. La voix sera choisie automatiquement pour '+current.name+'.':'Relie OpenAI et Cartesia dans les réglages pour appeler.';
       buttons();
     }catch(error){
       if(ticket!==phoneLoad||person!==current||error.name==='AbortError')return;
       phoneReady=false;
-      if(error.status===401||error.status===403){phoneToggle.hidden=true;phonePanel.hidden=true;}
-      else if(show)phoneStatus.textContent='La connexion n’a pas pu être vérifiée. Rouvre l’appel pour réessayer.';
+      if(error.status===401||error.status===403){phoneToggle.hidden=false;phoneReady=false;if(show){phoneStatus.textContent='Session auteur requise. Reconnecte-toi à ton espace personnel.';$('.voice-conversation-settings').open=true;}}
+      else if(show){phoneStatus.textContent='La connexion n’a pas pu être vérifiée. Tu peux quand même ouvrir les réglages.';$('.voice-conversation-settings').open=true;}
       buttons();
     }
   }
@@ -385,7 +386,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   };
   function cancelRequest(){request?.abort();request=null;dictee.cancel();}
   function finish(clear=false){
-    closePhone();phoneToggle.hidden=true;phoneReady=false;
+    closePhone();phoneToggle.hidden=publicCall;phoneReady=false;
     onChoice=null;
     version++;if(clear)playback.dispose();else playback.clear();cancelRequest();rail.hidden=true;if(toolbar.parentNode===barSlot)hud.prepend(toolbar);loading=false;random.disabled=false;list.inert=false;
     closePicker();reader.hidden=true;announcement.textContent='';person=null;input.value='';dictatedDraft=false;status.textContent=micStatus.textContent=voiceStatus.textContent='';failedQuestion='';retry.hidden=true;
@@ -399,7 +400,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   function buttons(){
     send.disabled=phoneBusy||Boolean(request)||micState!=='idle'||!input.value.trim();
     mic.disabled=phoneBusy;input.disabled=phoneBusy;voiceSwitch.disabled=phoneBusy;retry.disabled=phoneBusy;
-    phoneStart.disabled=!phoneReady||Boolean(request)||phoneBusy;
+    phoneStart.disabled=!person||!phoneReady||Boolean(request)||phoneBusy;
   }
   async function say(question,fromDraft=false,welcome,spoken=fromDraft&&dictatedDraft){
     if(!person||phoneBusy||request||!question||(fromDraft&&micState!=='idle'))return;
@@ -424,7 +425,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   async function choose(p){
     if(loading||!p)return;
-    closePhone();phoneToggle.hidden=true;phoneReady=false;
+    closePhone();phoneToggle.hidden=publicCall;phoneReady=false;
     const ticket=++version;
     // Unlock the ElevenLabs player inside the user's tap; an async
     // 3D avatar download must never cost us the first spoken exchange.
