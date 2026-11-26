@@ -117,13 +117,13 @@ test('Ahmed Numérique réutilise le téléphone existant après création dynam
  assert.match(ahmed,/querySelector\('\.maison-phone'\)/);
  assert.match(ahmed,/if\(active\)stop\(\);else void begin\(\)/);
  assert.match(ahmed,/syncAhmedPhone\(\)/);
- assert.match(src('ahmed-marie.html'),/rev=ahmedsolo2/);
+ assert.match(src('ahmed-marie.html'),/rev=ahmeddirect3/);
 });
 
 
 test('Ahmed seul : modèle privé exact pour auteur, aucune commande native ou invité dans la scène',()=>{
  const ahmed=src('membres/ahmed-3d.js'),salon=src('membres/salon-v27.js'),scene=src('membres/v27/scene.js'),members=src('membres/v27/scene-members.js'),html=src('membres/v27/salon.html');
- assert.match(ahmed,/originalAhmed=await checkOwner\(\)/);
+ assert.match(ahmed,/const info=await checkOwner\(\);const originalAhmed=true/);
  assert.match(ahmed,/view.setAttribute\('ahmed-original',''\)/);
  assert.match(salon,/ahmed=solo/);assert.match(salon,/portrait=original/);
  assert.match(salon,/if\(!scene.originalLook\('m'\)\)throw/);

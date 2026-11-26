@@ -137,7 +137,7 @@ export function createMemberBridge(scene){
       for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}
       if(scene.cinemaArrival||scene.originalAhmed){
         globalThis.window?.salonArrival?.progress('ahmed','Retrouvons Ahmed Marie dans La Croisée des Âmes…');
-        const original=await attachCinemaAhmed(actors.m);
+        const original=await attachCinemaAhmed(actors.m,scene.originalAhmed?{fetcher:(url,options)=>fetch(url.replace('/api/intro-private/','/api/membres/portrait-ahmed/'),options)}:undefined);
         originals.set(actors.m,original.parts);originalMotion.set(actors.m,original.motion);
       }},
     async enableDialogue(channels,read,valid=()=>true){

@@ -2,7 +2,7 @@ import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33';
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=studio-rail1';
-import {createSalonChat} from './salon-chat.js?v=eleven70&rev=rencontres1';
+import {createSalonChat} from './salon-chat.js?v=eleven70&rev=ahmeddirect3';
 import {createSalonNavigation} from './salon-maison-ui.js?v=call61&rev=ahmedphone1';
 import {guestAppearance} from './salon-encounter.js?v=call58';
 import {loadStudio} from './studio-model.js?v=incarnations33';
@@ -266,7 +266,7 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=call58'+(this.hasAttribute('ahmed-numerique')?'&ahmed=solo&rev=ahmedsolo2'+(this.hasAttribute('ahmed-original')?'&portrait=original':''):(this.hasAttribute('salon-auteur')?'&resident=marianne':''));
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=call58'+(this.hasAttribute('ahmed-numerique')?'&ahmed=solo&rev=ahmeddirect3'+(this.hasAttribute('ahmed-original')?'&portrait=original':''):(this.hasAttribute('salon-auteur')?'&resident=marianne':''));
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
@@ -288,12 +288,13 @@ class SalonV27 extends HTMLElement{
     if(!changed){return;}
     this.#inspection.clear();this.#inspectionPending.clear();this.#drafts={};this.#drawerView=null;
     return this.#ready.then(async scene=>{
-      if(!scene||this.#options?.memberKey!==options.memberKey)return;
+      if(!scene){if(this.hasAttribute('ahmed-numerique'))throw Error('Le modèle original ne peut pas être chargé.');return;}
+      if(this.#options?.memberKey!==options.memberKey)return;
       try{scene.setGender(options.gender);
         if(this.hasAttribute('ahmed-numerique')){
           this.#gender='homme';
           if(options.originalAhmed){if(!scene.originalLook('m'))throw Error('Le véritable Ahmed Marie n’a pas été chargé.');}
-          else await this.#select('homme');
+          else throw Error('Session auteur requise pour afficher le modèle original.');
           resource('conversation-face').then(channels=>scene.enableDialogue(channels,()=>this.#speechFrame(),()=>this.isConnected)).catch(()=>{});
           return;
         }
