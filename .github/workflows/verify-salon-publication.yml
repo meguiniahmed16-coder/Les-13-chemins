@@ -85,7 +85,7 @@ jobs:
             curl -fsSL --max-time 20 "https://tectonique-des-ames.com/membre.html?verify=${COMMIT}" -o /tmp/live-member.html
             curl -fsSL --max-time 20 "https://tectonique-des-ames.com/membres/intro-prive.html?verify=${COMMIT}" -o /tmp/live-intro.html
             curl -fsSL --max-time 20 "https://tectonique-des-ames.com/membres/salon-dialogue.js?verify=${COMMIT}" -o /tmp/live-dialogue.js
-            if grep -q 'member.js?v=eleven70' /tmp/live-member.html && ! grep -q 'data-salon-film' /tmp/live-member.html && grep -q 'dojo-eleven69' /tmp/live-intro.html && grep -q 'voiceRequest' /tmp/live-dialogue.js && ! grep -Eq 'SpeechSynthesisUtterance|speechSynthesis|createLocalVoices|frenchVoice' /tmp/live-dialogue.js; then
+            if grep -q 'member.js?v=eleven70' /tmp/live-member.html && ! grep -q 'data-salon-film' /tmp/live-member.html && grep -q 'dojo-eleven72' /tmp/live-intro.html && grep -q 'voiceRequest' /tmp/live-dialogue.js && ! grep -Eq 'SpeechSynthesisUtterance|speechSynthesis|createLocalVoices|frenchVoice' /tmp/live-dialogue.js; then
               result='verified'
             else
               result='unexpected-public-content'
