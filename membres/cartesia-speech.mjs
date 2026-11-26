@@ -12,9 +12,9 @@ async function checked(response){
  fail(503,'Cartesia est indisponible (HTTP '+response.status+').');
 }
 const voiceCache=new Map();
-export async function cartesiaVoices(key,signal){
+export async function cartesiaVoices(key,signal,{force=false}={}){
  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));const cacheId=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
- const cached=voiceCache.get(cacheId);if(cached&&cached.expires>Date.now())return cached.voices;
+ const cached=voiceCache.get(cacheId);if(!force&&cached&&cached.expires>Date.now())return cached.voices;
  if(signal?.aborted)throw new DOMException('Cancelled','AbortError');
  const lists=await Promise.all([['masculine','homme'],['feminine','femme']].map(async([gender,label])=>{
   const url=new URL(base+'/voices');url.searchParams.set('language','fr-FR');url.searchParams.set('gender',gender);url.searchParams.set('limit','100');
