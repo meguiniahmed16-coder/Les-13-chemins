@@ -1,6 +1,7 @@
 import {conversationPrompt} from '../double-backend/character-chat.js';
 import {digest,rate} from './identity.mjs';
 import {voiceCredential,saveVoiceCredential,validateVoiceCredential} from './voice-settings.mjs';
+import {chooseElevenVoice} from './elevenlabs-voices.js';
 
 // Server-only integration. Credentials and provider URLs never come from the client.
 // Verified 2026-11-25:
@@ -173,7 +174,7 @@ export async function voiceConversation(request,env,{member,author},action){
       });
       aborted(signal);return json({ok:true});
     }
-    const useEleven=action==='voices';
+    const useEleven=action==='voices'||action==='speech';
     const credential=await voiceCredential(env,useEleven?'elevenlabs':'openai');
     env={...env,[useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY']:credential};
     need(env,useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY',useEleven?'ElevenLabs':'OpenAI');
@@ -208,37 +209,25 @@ export async function voiceConversation(request,env,{member,author},action){
       if(!answer||answer.length>maxText||result.status==='incomplete'||result.status==='failed')failure(502,'La réponse n’a pas pu être terminée. Tu peux réessayer.');
       return json({answer});
     }
-    // Gender-matched French TTS is automatic. Avoid ElevenLabs listing and
-    // repeated 401 failure before the fallback on every audible answer.
+    // The same encrypted ElevenLabs credential serves old chat clients,
+    // the voice call and the original voiced cinematic. No OpenAI TTS fallback.
+    let spoken,voiceId,gender;
+    const allVoices=await voices(env,signal);
     if(!object(data)||!Object.hasOwn(data,'voiceId')){
       if(!exactKeys(data,['text','gender'])||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
-      const spoken=text(data.text);
-      await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
-      await reserve(env,member,'openaiSpeechAuto');
-      const generated=await provider(openai+'/audio/speech',{
-        method:'POST',
-        headers:{authorization:'Bearer '+env.OPENAI_API_KEY,'content-type':'application/json',accept:'audio/mpeg'},
-        body:JSON.stringify({
-          model:'gpt-4o-mini-tts',input:spoken,voice:data.gender==='femme'?'nova':'onyx',
-          response_format:'mp3',
-          instructions:'Parle en français avec un ton naturel et une cadence conversationnelle. Respecte la ponctuation.'
-        })
-      },signal,'OpenAI');
-      if(!generated.body||!/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(generated.headers.get('content-type')||'')){
-        await generated.body?.cancel().catch(()=>{});failure(502,'La voix automatique n’a pas fourni de fichier audio.');
-      }
-      return new Response(generated.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'openai','x-voice-auto-gender':data.gender}});
+      spoken=text(data.text);gender=data.gender;
+      const chosen=chooseElevenVoice(allVoices,gender);
+      if(!chosen)failure(503,'Aucune voix ElevenLabs de ce genre n’est disponible. Vérifie les voix associées à ton compte.');
+      voiceId=chosen.id;
+    }else{
+      if(!exactKeys(data,['text','voiceId','gender','strict'])||(data.strict!==undefined&&data.strict!==true))failure(400,'La demande de voix est invalide.');
+      spoken=text(data.text);voiceId=data.voiceId;gender=data.gender;
+      if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix ElevenLabs valide.');
+      if(gender!==undefined&&!['homme','femme'].includes(gender))failure(400,'Le personnage vocal est invalide.');
+      const chosen=allVoices.find(voice=>voice.id===voiceId);
+      if(!chosen)failure(400,'Cette voix n’est pas disponible dans ton compte ElevenLabs.');
+      if(gender&&chosen.gender&&gender!==chosen.gender)failure(400,'Le genre de la voix ElevenLabs ne correspond pas au personnage.');
     }
-    // Legacy explicitly selected ElevenLabs voices remain supported for backward compatibility.
-    env={...env,ELEVENLABS_API_KEY:await voiceCredential(env,'elevenlabs')};
-    need(env,'ELEVENLABS_API_KEY','ElevenLabs');
-    if(!exactKeys(data,['text','voiceId','gender','strict'])||(data.strict!==undefined&&data.strict!==true))failure(400,'La demande de voix est invalide.');
-    const spoken=text(data.text),voiceId=data.voiceId;
-    if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix dans la liste du Salon.');
-    if(data.gender!==undefined&&!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
-    const available=await voices(env,signal);
-    const chosen=available.find(voice=>voice.id===voiceId);
-    if(!chosen)failure(400,'Cette voix n’est pas disponible dans ton compte ElevenLabs.');
     await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
     const result=await fetch(eleven+'/v1/text-to-speech/'+encodeURIComponent(voiceId)+'/stream?output_format=mp3_44100_128',{
       method:'POST',headers:{'xi-api-key':env.ELEVENLABS_API_KEY,'content-type':'application/json',accept:'audio/mpeg'},
@@ -248,34 +237,10 @@ export async function voiceConversation(request,env,{member,author},action){
     if(result.ok&&result.body&&/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(result.headers.get('content-type')||'')){
       return new Response(result.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'elevenlabs'}});
     }
-    // A cinematic or explicit ElevenLabs-only call must never silently switch
-    // to OpenAI. This is a permission or quota failure, not a voice selection.
-    if(data.strict===true){
-      await result.body?.cancel().catch(()=>{});
-      if([401,403].includes(result.status))failure(503,'ElevenLabs refuse la synthèse vocale. Vérifie que ta clé autorise Text to Speech dans ElevenLabs.');
-      if([402,429].includes(result.status))failure(429,'Les crédits ElevenLabs ou leur quota sont insuffisants pour cette voix.');
-      failure(503,'ElevenLabs ne peut pas produire cette réplique. Vérifie la voix, le modèle et les autorisations de ton compte.');
-    }
-    // Legacy non-strict callers may still use the previously configured fallback.
-    // The original cinematic and the new Salon calls always request strict mode.
-    // The secondary provider is server-only, billed under a separate daily cap.
     await result.body?.cancel().catch(()=>{});
-    aborted(signal);
-    await reserve(env,member,'openaiSpeechFallback');
-    const openaiKey=await voiceCredential(env,'openai');
-    if(!configured(openaiKey))failure(503,'ElevenLabs refuse la voix et la voix OpenAI de secours n’est pas disponible.');
-    const feminine=(data.gender||chosen.gender)==='femme';
-    const fallback=await provider(openai+'/audio/speech',{
-      method:'POST',headers:{authorization:'Bearer '+openaiKey,'content-type':'application/json',accept:'audio/mpeg'},
-      body:JSON.stringify({
-        model:'gpt-4o-mini-tts',input:spoken,voice:feminine?'nova':'onyx',
-        response_format:'mp3',instructions:'Parle en français avec un ton humain, naturel et chaleureux. Reste fidèle au personnage et respecte la ponctuation.'
-      })
-    },signal,'OpenAI');
-    if(!fallback.body){
-      failure(502,'La voix OpenAI de secours n’a pas fourni de fichier audio.');
-    }
-    return new Response(fallback.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'openai','x-voice-fallback':'elevenlabs-refused'}});
+    if([401,403].includes(result.status))failure(503,'ElevenLabs refuse la synthèse vocale : vérifie les autorisations Text to Speech de la clé déjà enregistrée.');
+    if([402,429].includes(result.status))failure(429,'Les crédits ou le quota ElevenLabs ne permettent pas cette réplique.');
+    failure(503,'ElevenLabs ne peut pas produire cette réplique. Vérifie la voix ou le modèle disponible sur ton compte.');
   }catch(error){
     if(request.signal.aborted)return json({error:'Conversation interrompue.'},499);
     if(signal?.aborted)return json({error:'Le service vocal a mis trop de temps à répondre. Tu peux réessayer.'},504);
