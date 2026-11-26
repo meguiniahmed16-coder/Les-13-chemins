@@ -312,7 +312,7 @@ function roomPose(t){
  for(const i of [2,3,0,1]){
   const l=limbs[i],side=l.side,arm=l.arm,start=place(arm?upper:torso,l.a);
   const foot=feet[side<0?0:1],other=feet[side<0?1:0];
-  let dest,pole,handLift=0;
+  let dest,pole,handLift=0,handTarget=gesture;
   if(arm){
    const armSwing=9.4*Math.tanh((other.point[2]-foot.point[2])*.026);
    const rest=[side*(21.8+.32*Math.sin(clock*1.13)+.42*drive),88.5+.8*drive*Math.abs(beat)+.24*breath+Math.max(0,armSwing)*.09,3.8+armSwing];
@@ -334,8 +334,9 @@ function roomPose(t){
    dest=mix3(rest,lap,s);dest[1]+=3.3*bend;dest[2]+=9.8*bend;
    pole=[side*(measured?1.0:onArm?.88:.51),-.20-.78*s,-1];
    if(gesture&&emphasis){
-    handLift=(side<0?gesture.left:gesture.right)*emphasis*(measured?.18:1);
-    const target=place(upper,[side*gesture.reach,l.a[1]+gesture.height,l.a[2]+gesture.forward]);
+    handTarget=(side<0?gesture.leftTarget:gesture.rightTarget)||gesture;
+    handLift=clamp((side<0?gesture.left:gesture.right)*emphasis*(measured?(gesture.cinematic?.78:.18):1),0,1);
+    const target=place(upper,[side*handTarget.reach,l.a[1]+handTarget.height,l.a[2]+handTarget.forward]);
     dest=mix3(dest,target,handLift);
     pole=mix3(pole,[side*.9,-.85,-.55],handLift);
    }
@@ -356,7 +357,7 @@ function roomPose(t){
    const finger=normal([side*.27,-.96,-.01]),palm=normal([-side*.86,-.27,-.42]);
    const axis=normal(minus(tip,joint)),restAxis=normal(minus(l.c,l.b));
    let palmDown=mix3(rotateV(b,palm),[0,-1,-.13],s);
-   if(handLift)palmDown=mix3(palmDown,[-side*.68,gesture.palm,.26],handLift);
+   if(handLift)palmDown=mix3(palmDown,[-side*.68,handTarget.palm,.26],handLift);
    // Roll follows the forearm; flexion and side deviation pivot at the wrist.
    const projected=normal(reject(rotateV(b,palm),axis)),wanted=normal(reject(palmDown,axis));
    const twist=clamp(Math.atan2(dot(cross(projected,wanted),axis),dot(projected,wanted)),-1.15,1.15);
