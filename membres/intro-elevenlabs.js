@@ -10,7 +10,7 @@ export function createIntroElevenLabs({
  onState=()=>{},
  onError=()=>{}
 }={}){
- let player=null,ready=null,voices=null,generation=0,playing=false,active=null,disposed=false;
+ let player=null,ready=null,voices=null,generation=0,playing=false,active=null,disposed=false,unavailable=null;
  let energy=0,controller=null;
  const recordings=new Map(),pending=new Map();
  function ensurePlayer(){
@@ -18,13 +18,15 @@ export function createIntroElevenLabs({
  }
  function unlock(){return ensurePlayer().unlock();}
  function prepare(){
+  if(unavailable)throw Error(unavailable);
   if(!ready)ready=Promise.resolve().then(()=>request('voices')).then(data=>{
    voices=selectIntroVoices(data?.voices);return voices;
-  }).catch(error=>{ready=null;throw error;});
+  }).catch(error=>{ready=null;unavailable=error?.message||'ElevenLabs est indisponible.';throw error;});
   return ready;
  }
  function clipKey(id,text){return id+'|'+text;}
  async function getClip(id,text){
+  if(unavailable)throw Error(unavailable);
   const key=clipKey(id,text);
   if(recordings.has(key))return recordings.get(key);
   if(pending.has(key))return pending.get(key);
@@ -34,7 +36,10 @@ export function createIntroElevenLabs({
    if(clip?.voiceProvider!=='elevenlabs')throw Error('ElevenLabs a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
    if(!clip?.size)throw Error('ElevenLabs a renvoyé un enregistrement vide.');
    recordings.set(key,clip);return clip;
-  })().finally(()=>pending.delete(key));
+  })().catch(error=>{
+   if([429,503].includes(error?.status))unavailable=error.message||'ElevenLabs est indisponible.';
+   throw error;
+  }).finally(()=>pending.delete(key));
   pending.set(key,task);return task;
  }
  function prefetch(id,text){
