@@ -33,7 +33,7 @@ export async function voiceRequest(path,{body,signal}={}){
     }
   }finally{reader.releaseLock();}
   const clip=new Blob(chunks,{type:response.headers.get('content-type')});
-  clip.voiceProvider=response.headers.get('x-voice-provider')||'elevenlabs';
+  clip.voiceProvider=response.headers.get('x-voice-provider')||'unknown';
   return clip;
 }
 
@@ -150,7 +150,7 @@ export function createVoiceConversation({
     try{
       const available=status?.ready?status:await request('status',{signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      if(!available.ready)throw new Error('Le raccordement du compte OpenAI est nécessaire pour parler.');
+      if(!available.ready)throw new Error('Vérifie les connexions OpenAI et ElevenLabs dans les réglages de ton Salon.');
       if(!voices.length){const data=await request('voices',{signal:turn.abort.signal});voices=Array.isArray(data.voices)?data.voices:[];}
       if(!voiceId){
         const selected=chooseElevenVoice(voices,current.gender);
