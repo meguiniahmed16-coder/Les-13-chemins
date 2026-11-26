@@ -2,27 +2,45 @@
 // The server keeps its API key. No synthesized speech is cached outside this tab.
 import {voiceRequest} from './salon-conversation.js?v=eleven68';
 import {createRemoteSpeech} from './salon-conversation-audio.js?v=eleven68';
-import {selectIntroVoices} from './elevenlabs-voices.js?v=eleven69';
+import {selectIntroVoices} from './elevenlabs-voices.js?v=eleven72';
 
 export function createIntroElevenLabs({
  request=voiceRequest,
  playerFactory=createRemoteSpeech,
  onState=()=>{},
- onError=()=>{}
+ onError=()=>{},
+ onNeedsSelection=()=>{}
 }={}){
- let player=null,ready=null,voices=null,generation=0,playing=false,active=null,disposed=false,unavailable=null;
+ let player=null,ready=null,voices=null,availableVoices=[],generation=0,playing=false,active=null,disposed=false,unavailable=null;
  let energy=0,controller=null;
  const recordings=new Map(),pending=new Map();
  function ensurePlayer(){
   return player??=playerFactory({onEnergy:value=>{energy=value;onState({playing,energy});}});
  }
  function unlock(){return ensurePlayer().unlock();}
+ const preferenceKey='croisee-elevenlabs-voix-v1';
+ function preferred(){
+  try{const value=JSON.parse(localStorage.getItem(preferenceKey)||'null');return value&&typeof value==='object'?value:null;}catch{return null;}
+ }
  function prepare(){
   if(unavailable)throw Error(unavailable);
   if(!ready)ready=Promise.resolve().then(()=>request('voices')).then(data=>{
-   voices=selectIntroVoices(data?.voices);return voices;
-  }).catch(error=>{ready=null;unavailable=error?.message||'ElevenLabs est indisponible.';throw error;});
+   availableVoices=Array.isArray(data?.voices)?data.voices:[];
+   voices=selectIntroVoices(availableVoices,preferred());return voices;
+  }).catch(error=>{
+   ready=null;
+   if(error?.code==='VOICE_SELECTION_REQUIRED')onNeedsSelection(availableVoices);
+   else unavailable=error?.message||'ElevenLabs est indisponible.';
+   throw error;
+  });
   return ready;
+ }
+ function assign(m,f){
+  const chosen=selectIntroVoices(availableVoices,{m,f});
+  if(chosen.m!==m||chosen.f!==f)throw Error('Choisis deux voix différentes, compatibles avec Ahmed et Marianne.');
+  try{localStorage.setItem(preferenceKey,JSON.stringify(chosen));}catch{}
+  unavailable=null;voices=chosen;ready=Promise.resolve(chosen);
+  return chosen;
  }
  function clipKey(id,text){return id+'|'+text;}
  async function getClip(id,text){
@@ -68,6 +86,6 @@ export function createIntroElevenLabs({
  function pause(){if(active){player?.stop();playing=false;energy=0;onState({playing:false,energy:0});}}
  function resume(){if(active&&!playing)void speak(active.id,active.text);}
  function dispose(){stop();disposed=true;player?.dispose();recordings.clear();pending.clear();}
- return {unlock,prepare,prefetch,speak,stop,pause,resume,dispose,
+ return {unlock,prepare,assign,prefetch,speak,stop,pause,resume,dispose,
   get energy(){return energy;},get playing(){return playing;},get voices(){return voices;}};
 }
