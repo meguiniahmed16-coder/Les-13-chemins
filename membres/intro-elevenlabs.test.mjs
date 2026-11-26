@@ -32,7 +32,7 @@ test('one male and one female account voice are selected without gender switchin
  assert.deepEqual(selectIntroVoices(voices),{m:'voice-ahmed',f:'voice-marianne'});
  assert.equal(chooseElevenVoice(voices,'homme').id,'voice-ahmed');
  assert.equal(chooseElevenVoice(voices,'femme').id,'voice-marianne');
- assert.throws(()=>selectIntroVoices([{id:'voice-a',name:'Unknown',gender:''}]),/ne peut pas déterminer leur genre/);
+ assert.throws(()=>selectIntroVoices([{id:'voice-a',name:'Unknown',gender:''}]),/qu’une seule voix/);
 });
 
 test('untagged multilingual voices can be selected once, without adding another ElevenLabs key',()=>{
