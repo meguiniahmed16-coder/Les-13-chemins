@@ -3,6 +3,7 @@ import {digest,rate} from './identity.mjs';
 import {voiceCredential,saveVoiceCredential,validateVoiceCredential} from './voice-settings.mjs';
 import {chooseElevenVoice} from './elevenlabs-voices.js';
 import {azureConfig,azureVoices,azureSpeech} from './azure-speech.mjs';
+import {cartesiaVoices,cartesiaSpeech} from './cartesia-speech.mjs';
 
 // Server-only integration. Credentials and provider URLs never come from the client.
 // Verified 2026-11-25:
@@ -195,8 +196,9 @@ export async function voiceConversation(request,env,{member,author},action){
     if(request.method!==methods[action])failure(405,'Méthode indisponible.');
     aborted(request.signal);
     if(action==='status'){
-      let azure=false;try{azure=configured(await voiceCredential(env,'azure'));}catch{azure=true;}
-      const connections=await Promise.all([['openai','OpenAI'],azure?['azure','Azure Speech']:['elevenlabs','ElevenLabs']].map(async([provider,label])=>{
+      let cartesia=false;try{cartesia=configured(await voiceCredential(env,'cartesia'));}catch{cartesia=true;}
+      let azure=false;if(!cartesia){try{azure=configured(await voiceCredential(env,'azure'));}catch{azure=true;}}
+      const connections=await Promise.all([['openai','OpenAI'],cartesia?['cartesia','Cartesia']:azure?['azure','Azure Speech']:['elevenlabs','ElevenLabs']].map(async([provider,label])=>{
         try{return {label,ready:configured(await voiceCredential(env,provider))};}
         catch(error){
           // Keep the owner's reconnection form reachable after a damaged vault
@@ -207,7 +209,7 @@ export async function voiceConversation(request,env,{member,author},action){
       }));
       const missing=connections.filter(connection=>!connection.ready).map(connection=>connection.label);
       const reconnectNeeded=connections.filter(connection=>connection.reconnect).map(connection=>connection.label);
-      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:azure?'Azure Speech':'ElevenLabs'}});
+      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:cartesia?'Cartesia':azure?'Azure Speech':'ElevenLabs'}});
     }
     signal=AbortSignal.any([request.signal,AbortSignal.timeout(65000)]);
     if(action==='settings'){
@@ -217,6 +219,7 @@ export async function voiceConversation(request,env,{member,author},action){
       if(data.provider==='azure')azureConfig(data.key);
       try{await rate(env.DB,'salon-voice-settings:'+member.id,8);}catch(error){if(error.status===429)failure(429,'Trop de vérifications rapprochées. Réessaie dans quelques minutes.');throw error;}
       await saveVoiceCredential(env,data.provider,data.key,async()=>{
+        if(data.provider==='cartesia'){await cartesiaVoices(data.key,signal);return;}
         if(data.provider==='azure'){await azureVoices(data.key,signal);return;}
         const isOpenAI=data.provider==='openai',label=isOpenAI?'OpenAI':'ElevenLabs';
         const response=await provider(isOpenAI?openai+'/models':eleven+'/v1/user/subscription',{
@@ -228,6 +231,23 @@ export async function voiceConversation(request,env,{member,author},action){
       aborted(signal);return json({ok:true});
     }
     const useEleven=action==='voices'||action==='speech';
+    const cartesiaCredential=useEleven?await voiceCredential(env,'cartesia'):'';
+    if(useEleven&&configured(cartesiaCredential)){
+      try{await rate(env.DB,'salon-voice:'+member.id,100);}catch(error){if(error.status===429)failure(429,'Trop de demandes vocales rapprochées.');throw error;}
+      if(action==='voices'){await reserve(env,member,'voices');return json({voices:await cartesiaVoices(cartesiaCredential,signal)});}
+      const data=await readJSON(request,maxJSONBytes,signal);
+      if(!exactKeys(data,['text','voiceId','gender','strict','purpose'])||(data.strict!==undefined&&data.strict!==true)||(data.purpose!==undefined&&data.purpose!=='cinema'))failure(400,'La demande de voix est invalide.');
+      const spoken=text(data.text),gender=data.gender;
+      if(gender!==undefined&&!['homme','femme'].includes(gender))failure(400,'Le personnage vocal est invalide.');
+      if(data.voiceId!==undefined&&(typeof data.voiceId!=='string'||!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(data.voiceId)))failure(400,'Choisis une voix Cartesia française valide.');
+      if(!data.voiceId&&!gender)failure(400,'Choisis le genre de la voix.');
+      const all=await cartesiaVoices(cartesiaCredential,signal);
+      const chosen=data.voiceId?all.find(v=>v.id===data.voiceId):chooseElevenVoice(all,gender);
+      if(!chosen||(gender&&chosen.gender!==gender))failure(400,'Cette voix Cartesia ne correspond pas au personnage.');
+      await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
+      const audio=await cartesiaSpeech(cartesiaCredential,chosen.id,spoken,signal);
+      return new Response(audio,{headers:{...privateHeaders,'content-type':'audio/wav','x-voice-provider':'cartesia','x-voice-model':chosen.id}});
+    }
     const azureCredential=useEleven?await voiceCredential(env,'azure'):'';
     if(useEleven&&configured(azureCredential)){
       azureConfig(azureCredential);
