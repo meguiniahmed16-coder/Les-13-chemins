@@ -105,7 +105,7 @@ export function createIntroSound({
   // and resume callbacks. Muting does not disturb the shared music clock.
   music.muted=envelope===0;
   if(musicGain)setGain(musicGain.gain,envelope);else music.volume=envelope;
-  const time=number(frame.timeMs);const at=Math.max(0,(time<INTRO_SOUND_TIMING.dojoStartMs?time*149200/INTRO_SOUND_TIMING.dojoStartMs:time-52500)/1000);
+  const time=number(frame.timeMs);music.playbackRate=time<INTRO_SOUND_TIMING.dojoStartMs?149200/INTRO_SOUND_TIMING.dojoStartMs:1;music.preservesPitch=true;const at=Math.max(0,(time<INTRO_SOUND_TIMING.dojoStartMs?time*149200/INTRO_SOUND_TIMING.dojoStartMs:time-52500)/1000);
   // Keep the same element and clock while the dojo music is muted.
   // Seeking only corrects genuine drift or an explicit jump.
   if(Number.isFinite(music.currentTime)&&Math.abs(music.currentTime-at)>.65){try{music.currentTime=at;}catch{}}
