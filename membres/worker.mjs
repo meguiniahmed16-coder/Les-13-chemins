@@ -110,6 +110,20 @@ export default {
     const author=await authorSession(request,env);
     if(url.searchParams.has('auteur')&&!author)fail(401,'Ta session auteur a expiré.');
     const m=author?await authorProfile(db):await current(db,request);if(!m)fail(401,'Connecte-toi pour ouvrir ton espace.');
+    if(path.startsWith('portrait-ahmed/')){
+      if(!author)fail(403,'Le portrait original est réservé à la session auteur.');
+      if(request.method!=='GET')fail(405,'Méthode indisponible.');
+      const match=/^portrait-ahmed\/(ahmedfast|ahmedv3)\/(\d{3})$/.exec(path);
+      if(!match)fail(404,'Fragment introuvable.');
+      const group=match[1]==='ahmedfast'?3:1,first=Number(match[2])*group,total=10671740,unit=1048576;
+      if(first>=11)fail(404,'Fragment introuvable.');
+      const count=Math.min(group,11-first),expected=Math.min(count*unit,total-first*unit);
+      const chunks=await Promise.all(Array.from({length:count},(_,i)=>env.STUDIO.get('maison-v3/ahmed-atelier-blanc-bras.glb.part'+String(first+i).padStart(3,'0'))));
+      if(chunks.some(c=>!c)||chunks.reduce((n,c)=>n+c.size,0)!==expected)fail(502,'Fragment du portrait original manquant ou incomplet.');
+      const bytes=new Uint8Array(expected);let offset=0;
+      for(const chunk of chunks){const part=new Uint8Array(await chunk.arrayBuffer());bytes.set(part,offset);offset+=part.length;}
+      return new Response(bytes,{headers:{'content-type':'application/octet-stream','content-length':String(expected),'cache-control':'private, no-store','x-content-type-options':'nosniff'}});
+    }
     if(path.startsWith('voice/'))return await voiceConversation(request,env,{member:m,author},path.slice('voice/'.length));
     if((path==='incarnations'||path==='incarnations/access')&&request.method==='GET'){
       const access=incarnationsAccess(m,author);

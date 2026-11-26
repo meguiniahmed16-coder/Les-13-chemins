@@ -60,16 +60,16 @@ function withoutOptionalMorphs(buffer){
  header.setUint32(12,pad,true);header.setUint32(16,0x4e4f534a,true);
  out.fill(32,20,20+pad);out.set(json,20);out.set(tail,20+pad);return out.buffer;
 }
-async function loadModel(){
- const bytes=await fetchCinemaAhmed(),loader=new GLTFLoader();
+async function loadModel(fetcher=fetch){
+ const bytes=await fetchCinemaAhmed(fetcher),loader=new GLTFLoader();
  try{return (await loader.parseAsync(bytes,'')).scene;}
  catch{return (await loader.parseAsync(withoutOptionalMorphs(bytes),'')).scene;}
 }
 
 // Keep the salon's actor object, navigation, backpack, wings and seat targets.
 // Only its visible geometry and deformation controller become the original Ahmed.
-export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=prepareIntroAppearance,now=()=>performance.now()/1000}={}){
- const original=model||await loadModel(),compact=actor.parts;
+export async function attachCinemaAhmed(actor,{model,dress=dressAhmed,prepare=prepareIntroAppearance,now=()=>performance.now()/1000,fetcher=fetch}={}){
+ const original=model||await loadModel(fetcher),compact=actor.parts;
  const oldGarments=[],mouth=[],nativeHair=[];let skeleton;
  original.traverse(object=>{
   if(object.isMesh){object.castShadow=true;object.receiveShadow=false;object.frustumCulled=false;}

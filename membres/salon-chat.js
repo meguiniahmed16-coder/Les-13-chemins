@@ -102,7 +102,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   const playback=createDialogue({
     gender,
     allowRemote:()=>root.host.hasAttribute('salon-auteur')||root.host.hasAttribute('ahmed-numerique'),
-    voiceStatus:message=>{voiceStatus.textContent=message;},
+    voiceStatus:message=>{voiceStatus.textContent=message;if(root.host.hasAttribute('ahmed-numerique')&&/^Voix :|^Le son n’est pas disponible/.test(message))root.host.dispatchEvent(new CustomEvent('salon-ahmed-voice-error',{detail:{message}}));},
     start:showLine,
     word(who,w){
       if(!w)return;

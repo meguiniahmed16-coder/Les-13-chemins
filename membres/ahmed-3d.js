@@ -7,33 +7,34 @@ const $=id=>document.getElementById(id);
 const host=$('ahmed-3d-room'),call=$('ahmed-call'),hang=$('ahmed-hangup'),status=$('ahmed-call-status');
 const Speech=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
 let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=false,ownerSpeech=false,ownerCheck=null,inputLease=null,remoteCapture=null,transcribeAbort=null;
-function checkOwner(){return ownerCheck??=fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)}).then(async r=>ownerSpeech=Boolean(r.ok&&(await r.json()).author)).catch(()=>false);}
+function checkOwner(){return ownerCheck??=voiceRequest('status').then(info=>{ownerSpeech=true;return info;}).catch(error=>{ownerCheck=null;ownerSpeech=false;throw error;});}
 async function startOpening(){
- if(opening)return;opening=true;void checkOwner();
+ if(opening)return;opening=true;
  // The author's Ahmed numérique entry shares the genuine voiced film and dojo,
  // not the unrelated short montage. Non-author visitors retain direct access.
  try{
   if(new URLSearchParams(location.search).get('intro')!=='terminee'&&sessionStorage.getItem('croisee-ahmed-introduction-originale-v34')!=='done'){
-   const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)});
-   if(response.ok&&(await response.json()).author){
+   const info=await checkOwner();
+   if(info){
     location.replace('/membres/intro-prive.html?salon=1&retour=ahmed');return;
    }
   }
- }catch{/* Public visitors can still speak to Ahmed without an author session. */}
+ }catch{/* mount reports the authorization error rather than selecting a generic character. */}
  void mount();
 }
-function note(value){status.textContent=value;}
+function note(value,error=false){status.textContent=value;status.classList.toggle('ahmed-call-error',error);}
 function syncAhmedPhone(){const phone=host.querySelector('chemins-salon')?.shadowRoot?.querySelector('.maison-phone');if(!phone)return;phone.hidden=false;phone.setAttribute('aria-pressed',String(active));phone.setAttribute('aria-expanded',String(active));phone.title=active?'Raccrocher':'Appeler Ahmed numérique';phone.setAttribute('aria-label',phone.title);}
 async function mount(){
  if(actor)return actor;
  if(mounting)return mounting;
  mounting=(async()=>{
-  await import('./salon-v27.js?v=eleven70&rev=ahmedsolo2');
+  await import('./salon-v27.js?v=eleven70&rev=ahmeddirect3');
   if($('ahmed-3d').hidden)return null;
-  const originalAhmed=await checkOwner();
+  const info=await checkOwner();const originalAhmed=true;
   const view=document.createElement('chemins-salon');
-  view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');if(originalAhmed)view.setAttribute('ahmed-original','');view.className='ahmed-avatar-v27';
+  view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');view.setAttribute('ahmed-original','');view.className='ahmed-avatar-v27';
   view.addEventListener('salon-ahmed-call',()=>{if(active)stop();else void begin();});
+  view.addEventListener('salon-ahmed-voice-error',e=>{if(active){stop();note(e.detail.message,true);}});
   view.style.setProperty('--room-height','100%');
   host.append(view);
   const phone=view.shadowRoot?.querySelector('.maison-phone');if(phone){phone.hidden=false;phone.title='Appeler Ahmed numérique';phone.setAttribute('aria-label',phone.title);phone.setAttribute('aria-pressed','false');}
@@ -46,8 +47,8 @@ async function mount(){
    author:false,plus:false,originalAhmed,savedStudio:original,salonLooks:{homme:original},
    change(){},async saveCharacter(){},async save(){}
   });
-  actor=view;syncAhmedPhone();return view;
- })().catch(()=>{mounting=null;note('Le modèle 3D ne répond pas. Le dialogue écrit reste accessible.');return null;});
+  actor=view;syncAhmedPhone();if(!info.ready)note('Connexion vocale à vérifier : '+info.missing.join(', '),true);else note('');return view;
+ })().catch(error=>{mounting=null;host.querySelector('chemins-salon')?.remove();note(error.status===401||error.status===403?'Le véritable Ahmed nécessite ta session auteur. Ouvre le Salon depuis ton administration.':(error.message||'Le modèle original n’a pas pu être chargé.'),true);return null;});
  return mounting;
 }
 function stopMic(){
@@ -92,7 +93,7 @@ function submitSpoken(spoken){
 }
 function listenOwner(){
  const turn=epoch;remoteCapture?.stop();inputLease??=createCallInputLease();
- remoteCapture=createVoiceCapture({inputLease,onStatus:note,onError:error=>{if(active&&turn===epoch){stop();note(error.message);}},
+ remoteCapture=createVoiceCapture({inputLease,onStatus:note,onError:error=>{if(active&&turn===epoch){stop();note(error.message,true);}},
  onClip:async clip=>{if(!active||turn!==epoch)return;awaiting=true;const abort=new AbortController();transcribeAbort=abort;note('Ahmed a entendu ta question…');
  try{const result=await voiceRequest('transcribe',{body:clip,signal:abort.signal});if(!active||turn!==epoch)return;const spoken=String(result.text||'').trim();if(spoken)submitSpoken(spoken);else{awaiting=false;listen();}}
  catch(error){if(active&&turn===epoch){stop();note(error.message);}}finally{if(transcribeAbort===abort)transcribeAbort=null;}
@@ -104,11 +105,12 @@ async function begin(){
  actor?.armAhmedVoice();
  active=true;epoch++;awaiting=false;call.hidden=true;hang.hidden=true;syncAhmedPhone();
  note('Connexion avec Ahmed…');
- const [view]=await Promise.all([mount(),checkOwner()]);if(!active)return;
- if(!view){stop();return;}
+ const view=await mount();if(!active)return;
+ if(!view){active=false;syncAhmedPhone();return;}
+ try{const info=await checkOwner();if(!info.ready)throw Error('Connexion vocale à vérifier : '+info.missing.join(', '));}catch(error){stop();note(error.message,true);return;}
  if(!ownerSpeech&&!Speech){stop();note('La reconnaissance vocale est indisponible dans ce navigateur. Le clavier reste disponible.');$('ahmed-written').open=true;return;}
  view.armAhmedVoice();
- if(!view.narrateAhmed('Salut. Je t’écoute.',()=>listen()))listen();
+ listen();
 }
 async function answer(event){
  if(!active||!awaiting)return;
@@ -127,6 +129,7 @@ hang.addEventListener('click',stop);
 document.addEventListener('ahmed-3d-ready',startOpening);
 document.addEventListener('ahmed-3d-inactive',stop);
 document.addEventListener('ahmed-3d-answer',e=>void answer(e));
+document.addEventListener('ahmed-3d-error',e=>{if(active){stop();note(e.detail.message,true);}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&active)stop();});
 window.addEventListener('pagehide',stop);
 if(!$('chatPanel').hidden)startOpening();
