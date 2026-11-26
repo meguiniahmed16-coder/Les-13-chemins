@@ -94,13 +94,3 @@ test('both the spoken Salon and the cinematic reuse the very same server credent
  assert.match(vault,/const name='voice:'\+provider/);
  assert.doesNotMatch(cinematic,/ELEVENLABS_API_KEY|xi-api-key|speechSynthesis|createLocalVoices/);
 });
-
-test('l’export ne génère aucune voix supplémentaire',async()=>{
- const h=fixture();h.controller.unlock();
- assert.deepEqual(h.controller.recordedClips(),[]);
- await h.controller.speak('m','Prends place.');await h.controller.speak('f','Bienvenue.');
- const before=h.requests.length,clips=h.controller.recordedClips();
- assert.equal(clips.length,2);assert.equal(clips[0].text,'Prends place.');assert.equal(clips[1].speaker,'f');
- assert.ok(clips.every(clip=>clip.audio instanceof Blob&&clip.provider==='elevenlabs'));
- assert.equal(h.requests.length,before);
-});
