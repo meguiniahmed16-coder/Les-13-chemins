@@ -17,7 +17,7 @@ const openai='https://api.openai.com/v1';
 const eleven='https://api.elevenlabs.io';
 const privateHeaders={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','vary':'Cookie'};
 export const VOICE_LIMITS=Object.freeze({maxSeconds:45,maxBytes:2*1024*1024});
-export const VOICE_DAILY_LIMITS=Object.freeze({transcribe:60,reply:60,speech:60,voices:40,speechCharacters:6000,audioBytes:24*1024*1024,openaiSpeechFallback:30,openaiSpeechAuto:60});
+export const VOICE_DAILY_LIMITS=Object.freeze({transcribe:60,reply:60,speech:300,voices:40,speechCharacters:30000,audioBytes:24*1024*1024,openaiSpeechFallback:30,openaiSpeechAuto:60});
 const maxJSONBytes=48*1024,maxText=1600,maxHistory=8,maxOutputTokens=160;
 const extensions=new Map([
   ['audio/webm','webm'],['video/webm','webm'],['audio/ogg','ogg'],

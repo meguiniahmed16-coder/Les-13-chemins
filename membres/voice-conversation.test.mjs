@@ -173,8 +173,8 @@ test('Les réservations de caractères sont atomiques et bloquent le paiement ap
     if(new URL(url).pathname==='/v2/voices')return Response.json({voices:[voice]});
     speechCalls++;return new Response(new Uint8Array([1]),{headers:{'content-type':'audio/mpeg'}});
   });
-  const responses=await Promise.all(Array.from({length:5},()=>api('speech',{method:'POST',body:{text:'a'.repeat(1500),voiceId:voice.voice_id}})));
-  assert.equal(VOICE_DAILY_LIMITS.speechCharacters,6000);assert.equal(responses.filter(r=>r.status===200).length,4);assert.equal(responses.filter(r=>r.status===429).length,1);assert.equal(speechCalls,4);
+  const responses=await Promise.all(Array.from({length:21},()=>api('speech',{method:'POST',body:{text:'a'.repeat(1500),voiceId:voice.voice_id}})));
+  assert.equal(VOICE_DAILY_LIMITS.speechCharacters,30000);assert.equal(responses.filter(r=>r.status===200).length,20);assert.equal(responses.filter(r=>r.status===429).length,1);assert.equal(speechCalls,20);
 });
 
 test('Les quotas fournisseurs restent propres et ne provoquent aucune répétition automatique',async t=>{
@@ -417,4 +417,21 @@ test('Production: sans clé Cartesia, aucune requête ElevenLabs ni Azure même 
  const res=await api(action,{method,body});assert.equal(res.status,503);assert.match((await res.json()).error,/Cartesia/);
  }
  assert.equal((await api('settings',{method:'POST',body:{provider:'elevenlabs',key:fakeEleven}})).status,400);
+});
+
+
+test('Le plafond auteur accepte la 61e synthèse et bloque la 301e',async t=>{
+ const {api,db}=await setup(t);let calls=0;
+ t.mock.method(globalThis,'fetch',async url=>{if(new URL(url).pathname==='/v2/voices')return Response.json({voices:[voice]});calls++;return new Response(audio,{headers:{'content-type':'audio/mpeg'}});});
+ await api('status');
+ const id=db.prepare("SELECT id FROM members WHERE provider='author' AND subject='site-owner'").get().id;
+ const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const key=await digest('salon-voice:'+id+':'+day+':speech');
+ db.prepare('INSERT INTO member_limits(key,attempts,expires) VALUES(?,?,?)').run(key,60,Math.floor(Date.now()/1000)+86400);
+ const body={text:'Bonjour.',voiceId:voice.voice_id};
+ assert.equal((await api('speech',{method:'POST',body})).status,200);
+ db.prepare('UPDATE member_limits SET attempts=299 WHERE key=?').run(key);
+ assert.equal((await api('speech',{method:'POST',body})).status,200);
+ assert.equal((await api('speech',{method:'POST',body})).status,429);
+ assert.equal(VOICE_DAILY_LIMITS.speech,300);assert.equal(calls,2);
 });
