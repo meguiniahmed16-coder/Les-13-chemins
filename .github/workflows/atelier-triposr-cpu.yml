@@ -31,8 +31,8 @@ jobs:
           git clone --depth 1 https://github.com/VAST-AI-Research/TripoSR.git "$RUNNER_TEMP/TripoSR"
           cd "$RUNNER_TEMP/TripoSR"
           git rev-parse HEAD
-          python -m pip install "numpy<2" "cmake" "ninja" "pybind11" "rembg[cpu]==2.0.59"
-          python -m pip install --no-build-isolation -r requirements.txt "numpy<2" "rembg[cpu]==2.0.59" "scikit-image==0.24.0" "gradio<5"
+          python -m pip install "numpy<2" "cmake<4" "ninja" "pybind11" "scikit-build-core>=0.10,<0.12" "rembg==2.0.59" "onnxruntime"
+          python -m pip install --no-build-isolation -r requirements.txt "numpy<2" "rembg==2.0.59" "scikit-image==0.24.0" "gradio<5"
       - name: Reconstruct a public-domain NASA portrait, not a chair
         run: |
           cd "$RUNNER_TEMP/TripoSR"
