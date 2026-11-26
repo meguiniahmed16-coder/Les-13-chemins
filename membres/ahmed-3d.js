@@ -1,6 +1,6 @@
 // Ahmed numérique uses the original Ahmed V27 rig and the consented,
 // rate-limited text service. No private voice key is sent to visitors.
-import {createVoiceCapture,createCallInputLease} from './salon-conversation-audio.js?v=rencontres1';
+import {createVoiceCapture,createCallInputLease} from './salon-conversation-audio.js?v=rencontres1&rev=ahmedstream5';
 import {voiceRequest} from './salon-conversation.js?v=rencontres1';
 import {referenceStudio} from './studio-look.js?v=incarnations33';
 const $=id=>document.getElementById(id);
@@ -28,7 +28,7 @@ async function mount(){
  if(actor)return actor;
  if(mounting)return mounting;
  mounting=(async()=>{
-  await import('./salon-v27.js?v=eleven70&rev=ahmedlatence4');
+  await import('./salon-v27.js?v=eleven70&rev=ahmedstream5');
   if($('ahmed-3d').hidden)return null;
   const info=await checkOwner();const originalAhmed=true;
   const view=document.createElement('chemins-salon');
@@ -94,7 +94,7 @@ function submitSpoken(spoken){
 }
 function listenOwner(){
  const turn=epoch;remoteCapture?.stop();inputLease??=createCallInputLease();let heard=false,voiceSamples=0;
- remoteCapture=createVoiceCapture({inputLease,onStatus:note,onEnergy:energy=>{if(!active||turn!==epoch||awaiting||heard)return;voiceSamples=energy>=.012?voiceSamples+1:0;if(voiceSamples>=3){heard=true;note('Je t’entends…');}},onError:error=>{if(active&&turn===epoch){stop();note(error.message,true);}},
+ remoteCapture=createVoiceCapture({inputLease,endSilenceMs:440,onStatus:note,onEnergy:energy=>{if(!active||turn!==epoch||awaiting||heard)return;voiceSamples=energy>=.012?voiceSamples+1:0;if(voiceSamples>=3){heard=true;note('Je t’entends…');}},onError:error=>{if(active&&turn===epoch){stop();note(error.message,true);}},
  onClip:async clip=>{if(!active||turn!==epoch)return;awaiting=true;const abort=new AbortController();transcribeAbort=abort;note('Phrase enregistrée · transcription…');
  try{const result=await voiceRequest('transcribe',{body:clip,signal:abort.signal});if(!active||turn!==epoch)return;const spoken=String(result.text||'').trim();if(spoken)submitSpoken(spoken);else{awaiting=false;listen();}}
  catch(error){if(active&&turn===epoch){stop();note(error.message);}}finally{if(transcribeAbort===abort)transcribeAbort=null;}

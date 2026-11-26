@@ -357,3 +357,14 @@ test('Un appel garde un seul accès microphone et le coupe hors parole puis au r
  let opened=0,stopped=0;const track={enabled:true,stop(){stopped++;}},stream={getTracks:()=>[track]};const lease=createCallInputLease(async()=>{opened++;return stream;});
  assert.equal(await lease.acquire({audio:true}),stream);lease.mute();assert.equal(track.enabled,false);assert.equal(stopped,0);assert.equal(await lease.acquire({audio:true}),stream);assert.equal(track.enabled,true);assert.equal(opened,1);lease.close();assert.equal(stopped,1);await assert.rejects(()=>lease.acquire({audio:true}));
 });
+
+
+test('WAV Cartesia : les fragments PCM sont décodés avant la fin du téléchargement',async()=>{
+ const {createWavStreamDecoder}=await import('./salon-conversation-audio.js');
+ const pcm=new Int16Array([0,16384,-16384,32767]);const bytes=new Uint8Array(44+pcm.byteLength),v=new DataView(bytes.buffer);
+ for(const [at,tag] of [[0,'RIFF'],[8,'WAVE'],[12,'fmt '],[36,'data']])bytes.set(new TextEncoder().encode(tag),at);
+ v.setUint32(4,bytes.length-8,true);v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,24000,true);v.setUint32(28,48000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);v.setUint32(40,pcm.byteLength,true);pcm.forEach((x,i)=>v.setInt16(44+i*2,x,true));
+ const d=createWavStreamDecoder();assert.equal(d.push(bytes.slice(0,17)),null);assert.equal(d.push(bytes.slice(17,45)),null);
+ const first=d.push(bytes.slice(45,48));assert.deepEqual([...first.samples],[0,.5]);assert.equal(first.rate,24000);
+ const last=d.push(bytes.slice(48),true);assert.equal(last.samples[0],-.5);assert.equal(last.samples.length,2);
+});

@@ -1,10 +1,10 @@
 import {conversationAudio,recordedPhrase,reactionAfter} from './conversation-reactions.js';
 import {scoreLine,articulation} from './salon-performance.js';
-import {voiceRequest} from './salon-conversation.js?v=eleven70&rev=rencontres1';
-import {createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
+import {voiceRequest} from './salon-conversation.js?v=eleven70&rev=ahmedstream5';
+import {createRemoteSpeech} from './salon-conversation-audio.js?v=call58&rev=ahmedstream5';
 
 // One clock drives articulation, word emphasis, conversational gestures and camera cuts.
-export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus=()=>{},now=()=>performance.now()/1000,allowRemote=()=>true,requestVoice=voiceRequest,remoteFactory=createRemoteSpeech}){
+export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus=()=>{},now=()=>performance.now()/1000,allowRemote=()=>true,fastStream=()=>false,requestVoice=voiceRequest,remoteFactory=createRemoteSpeech}){
   const remote=remoteFactory({onEnergy:()=>wake(),onStatus:voiceStatus});
   const studio=conversationAudio();let reaction=null,lastReaction=-Infinity;
   let active=null,next=null,voiced=false,micOpen=false,lastWord=-1,readingAbort=null;
@@ -30,12 +30,12 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     }
     const abort=new AbortController();readingAbort=abort;current.waitRecording=true;
     try{
-      const clip=await requestVoice('speech',{body:{text:current.text,gender:kind,strict:true},signal:abort.signal});
+      const clip=await requestVoice('speech',{body:{text:current.text,gender:kind,strict:true},signal:abort.signal,streamAudio:fastStream()});
       if(active!==current||abort.signal.aborted||!voiced)return;
       if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure'&&clip?.voiceProvider!=='cartesia')throw Error('Le fournisseur vocal a renvoyé un son non reconnu.');
       current.external=remote;current.waitRecording=false;current.started=true;current.origin=now();
       voiceStatus('');wake();
-      await remote.play(clip,{signal:abort.signal});
+      await remote.play(clip,{signal:abort.signal,expectedDuration:current.score.duration});
       if(active===current&&!abort.signal.aborted)finish();
     }catch(error){
       if(active!==current||abort.signal.aborted)return;
