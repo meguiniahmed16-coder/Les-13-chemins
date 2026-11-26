@@ -145,6 +145,28 @@ test('Le flux ElevenLabs et son annulation sont transmis sans charger le MP3 en 
   await reader.cancel();assert.equal(cancelled,1);abort.abort();assert.equal(providerSignal.aborted,true);
 });
 
+test('La cinématique utilise ElevenLabs Multilingual v2, les appels gardent Flash et le diagnostic ne conserve aucun secret',async t=>{
+ const {api,db}=await setup(t);
+ const sends=[];
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  if(new URL(url).pathname==='/v2/voices')return Response.json({voices:[voice],has_more:false});
+  sends.push({url:String(url),body:JSON.parse(options.body)});
+  return new Response(audio,{headers:{'content-type':'audio/mpeg'}});
+ });
+ const cinema=await api('speech',{method:'POST',body:{text:'Bienvenue.',voiceId:voice.voice_id,gender:'femme',strict:true,purpose:'cinema'}});
+ assert.equal(cinema.status,200);
+ assert.equal(cinema.headers.get('x-voice-model'),'eleven_multilingual_v2');
+ assert.deepEqual(sends[0].body,{text:'Bienvenue.',model_id:'eleven_multilingual_v2'});
+ const live=await api('speech',{method:'POST',body:{text:'Bonjour.',voiceId:voice.voice_id,gender:'femme',strict:true}});
+ assert.equal(live.status,200);
+ assert.deepEqual(sends[1].body,{text:'Bonjour.',model_id:'eleven_flash_v2_5',language_code:'fr'});
+ const stored=JSON.parse(db.prepare("SELECT value FROM member_admin_settings WHERE key='voice:last-elevenlabs-tts'").get().value);
+ assert.equal(stored.http,200);assert.equal(stored.code,'ok');assert.equal(stored.model,'eleven_flash_v2_5');
+ assert.doesNotMatch(JSON.stringify(stored),/Bienvenue|Bonjour|test-eleven-credential|voice_french/);
+ const invalid=await api('speech',{method:'POST',body:{text:'Bonjour.',voiceId:voice.voice_id,purpose:'unauthorized'}});
+ assert.equal(invalid.status,400);assert.equal(sends.length,2);
+});
+
 test('Les réservations de caractères sont atomiques et bloquent le paiement après la limite quotidienne',async t=>{
   const {api}=await setup(t);let speechCalls=0;
   t.mock.method(globalThis,'fetch',async url=>{
