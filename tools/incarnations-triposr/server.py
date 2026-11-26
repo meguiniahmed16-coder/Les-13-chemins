@@ -15,6 +15,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from PIL import Image, ImageOps
+from normalise_mesh import normalise_mesh
 
 def main():
     parser = argparse.ArgumentParser()
@@ -23,6 +24,7 @@ def main():
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--model", default="stabilityai/TripoSR")
     parser.add_argument("--resolution", default=192, type=int, choices=(128, 192, 256))
+    parser.add_argument('--atelier', type=Path, required=True, help='Original Atelier HTML with external mesh integration')
     args = parser.parse_args()
     engine = args.engine.resolve()
     if not (engine / "run.py").is_file():
@@ -30,6 +32,10 @@ def main():
     token = os.environ.get("ATELIER_TRIPOSR_TOKEN")
     if not token or len(token) < 24:
         raise SystemExit("ATELIER_TRIPOSR_TOKEN doit contenir au moins 24 caractères")
+    atelier = args.atelier.resolve()
+    if not atelier.is_file():
+        raise SystemExit('Atelier HTML introuvable')
+    origin = f'http://127.0.0.1:{args.port}'
     limit = 12 * 1024 * 1024
     lock = threading.Lock()
     Image.MAX_IMAGE_PIXELS = 25_000_000
@@ -50,13 +56,19 @@ def main():
         def authorised(self):
             return hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + token)
         def do_GET(self):
+            if self.headers.get('Host') != f'127.0.0.1:{args.port}':
+                return self.reply(403, {'error': 'Origine refusée'})
+            if self.path == '/':
+                return self.reply(200, atelier.read_bytes(), 'text/html; charset=utf-8')
             if not self.authorised():
-                return self.reply(401, {"error": "Accès refusé"})
-            if self.path == "/health":
+                return self.reply(401, {'error': 'Accès refusé'})
+            if self.path == '/health':
                 return self.reply(200, {"engine": "TripoSR", "device": args.device, "ready": True,
                     "note": "Processus disponible; première inférence non garantie"})
             return self.reply(404, {"error": "Route inconnue"})
         def do_POST(self):
+            if self.headers.get('Host') != f'127.0.0.1:{args.port}' or self.headers.get('Origin') != origin:
+                return self.reply(403, {'error': 'Origine refusée'})
             if not self.authorised():
                 return self.reply(401, {"error": "Accès refusé"})
             if self.path != "/reconstruct":
@@ -92,7 +104,8 @@ def main():
                     mesh = root / "output" / "0" / "mesh.glb"
                     if result.returncode or not mesh.is_file():
                         return self.reply(502, {"error": "TripoSR n’a pas produit de maillage"})
-                    data = mesh.read_bytes()
+                    oriented = normalise_mesh(mesh, root / 'portrait-v27.glb')
+                    data = oriented.read_bytes()
                     if len(data) < 20 or data[:4] != b"glTF" or int.from_bytes(data[8:12], "little") != len(data):
                         return self.reply(502, {"error": "GLB invalide"})
                     return self.reply(200, data, "model/gltf-binary")
