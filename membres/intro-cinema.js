@@ -1013,7 +1013,7 @@ function updateFilm(line,elapsed){
  if(filmShot!==line.id||now-lastFilmDraw>=45){drawFilm();lastFilmDraw=now;}
  filmShot=line.id;
  overlay.hidden=line.shot!=='montage'||elapsed<900;
- overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,900,1450)):'1';
+ overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,0,250)):'1';
 }
 let cutCamera=true;
 const shotAim=new T.Vector3(),shotEye=new T.Vector3(),smoothAim=new T.Vector3(),smoothEye=new T.Vector3();
