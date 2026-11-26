@@ -11,18 +11,11 @@ function showRoomLoading(){const el=$('ahmed-room-loading');if(!el)return;el.hid
 function hideRoomLoading(){clearTimeout(loadingTimer);const el=$('ahmed-room-loading');if(el)el.hidden=true;host.removeAttribute('aria-busy');}
 let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=false,ownerSpeech=false,ownerCheck=null,inputLease=null,remoteCapture=null,transcribeAbort=null;
 function checkOwner(){return ownerCheck??=voiceRequest('status').then(info=>{ownerSpeech=true;return info;}).catch(error=>{ownerCheck=null;ownerSpeech=false;throw error;});}
-async function startOpening(){
- if(opening)return;opening=true;showRoomLoading();
- // The author's Ahmed numérique entry shares the genuine voiced film and dojo,
- // not the unrelated short montage. Non-author visitors retain direct access.
- try{
-  if(new URLSearchParams(location.search).get('intro')!=='terminee'&&sessionStorage.getItem('croisee-ahmed-introduction-originale-v34')!=='done'){
-   const info=await checkOwner();
-   if(info){
-    location.replace('/membres/intro-prive.html?salon=1&retour=ahmed');return;
-   }
-  }
- }catch{/* mount reports the authorization error rather than selecting a generic character. */}
+function startOpening(){
+ if(opening)return;opening=true;
+ // Ahmed numérique opens its own original solo salon directly.
+ // The loading screen never changes the page or launches a cinematic.
+ if(!actor)showRoomLoading();
  void mount();
 }
 function note(value,error=false){const natural={'Ouverture du micro…':'Un instant, je prépare le micro…','Je t’écoute.':'Je t’écoute…','Préparation de la voix…':'Je vais te répondre…','La voix arrive…':'Encore un instant…','Le personnage te répond.':'Je te réponds…'};status.textContent=error?value:(natural[value]||value);status.classList.toggle('ahmed-call-error',error);status.classList.toggle('ahmed-call-live',Boolean(value)&&!error);}
