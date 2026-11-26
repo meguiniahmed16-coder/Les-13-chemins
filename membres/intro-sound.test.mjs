@@ -39,7 +39,7 @@ test('all dojo shots, including jardin, have zero music throughout while retaini
   assert.equal(envelope.room,1);assert.equal(envelope.garden,0);
  }
  // A delayed scene identifier must not leak the preceding white-room music.
- assert.equal(introSoundEnvelope({sceneId:'bienvenue',timeMs:150000}).music,0);
+ assert.equal(introSoundEnvelope({sceneId:'bienvenue',timeMs:INTRO_SOUND_TIMING.dojoStartMs+800}).music,0);
 });
 
 test('music fades before the dojo, remains silent at both boundaries, then returns in the actual garden',()=>{
