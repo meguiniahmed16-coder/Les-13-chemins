@@ -19,3 +19,7 @@
 
 .ahmed-3d-controls:has(.ahmed-call-error){position:relative;width:auto;height:auto;overflow:visible;clip-path:none;padding:8px 14px!important}
 #ahmed-call-status.ahmed-call-error{color:#fff6df;font-size:13px;min-width:0}
+
+/* Un retour discret, sans ajouter de bouton au salon. */
+.ahmed-3d-controls:has(.ahmed-call-live){position:relative;width:auto;height:auto;overflow:visible;clip-path:none;padding:6px 14px!important;min-height:28px}
+#ahmed-call-status.ahmed-call-live{text-align:center;font-size:12px;min-width:0}

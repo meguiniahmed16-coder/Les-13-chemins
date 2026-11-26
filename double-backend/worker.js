@@ -3,7 +3,7 @@ import {quotedPrompt} from './quotes.js';
 import {handleVoicePreference,voicePreferenceContext} from './preferences.js';
 import {isArchiveStatusRequest,archiveStatus,isArchiveRequest,archiveChat,readArchives,cleanupConversations,publishArchive,publicDialogues} from './archives.js';
 import {readImage} from './media.js';
-import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
+import {VOICE, VOICE_VERSION, MAX_REPLY_TOKENS, SPOKEN_REPLY_TOKENS, FINAL_STYLE, cleanAhmedAnswer, addressPreference, turnVoiceContext, repeatedGreetingContext} from './voice.js';
 import BANK from './bank.js';
 import {blogGet,blogPost} from './blog.js';
 import {recordVisit,sendVisitMail,visitStats,notificationSettings,updateNotificationSettings,mailConfigured} from './visits.js';
@@ -97,6 +97,7 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  if(u.pathname!=='/chat')return reply({error:'Route introuvable.'},404);
  if(!validString(p.message,3000)||!validString(p.request_id,100))return reply({error:'Écris un message de moins de 3 000 caractères.'},400);
  const ownMessage=p.message;
+ const spoken=p.spoken===true;const replyTokens=spoken?SPOKEN_REPLY_TOKENS:MAX_REPLY_TOKENS;
  const hasQuote=p.quote_turn_id!==undefined&&p.quote_turn_id!==null;
  if(hasQuote){const quote=await quotedPrompt(db,s.id,p.quote_turn_id,p.message);if(quote.error)return reply({error:quote.error},quote.status);p.message=quote.prompt;}
  const existing=await db.prepare('SELECT * FROM turns WHERE session_id=? AND request_id=?').bind(s.id,p.request_id).first();
@@ -105,23 +106,22 @@ export default {async fetch(request,env,ctx){const origin=request.headers.get('o
  if(!hasQuote&&isArchiveRequest(p.message)){const r=await archiveChat(db,s,p,now,existing);return reply(r.data,r.status);}
  const num=await db.prepare('SELECT count(*) AS n FROM turns WHERE session_id=?').bind(s.id).first();if(Number(num.n)>=120)return reply({error:'Cette conversation est complète. Tu peux en ouvrir une nouvelle.'},429);
  if(!hasQuote){const preference=await handleVoicePreference(db,s,p,now,isAdmin);if(preference)return reply(preference.data,preference.status);}else await db.prepare('DELETE FROM voice_preference_proposals WHERE session_id=?').bind(s.id).run();
- const [recent,memories]=await Promise.all([db.prepare("SELECT * FROM turns WHERE session_id=? AND state='complete' ORDER BY created_at DESC LIMIT 20").bind(s.id).all(),db.prepare('SELECT * FROM memory ORDER BY updated_at DESC LIMIT 2000').all()]);
- const pastTurns=recent.results.reverse();const history=pastTurns.slice(-8);const retrieval=match(p.message+' '+history.slice(-1).map(t=>t.prompt).join(' '),memories.results);
- const selected=retrieval.found.map(({q})=>({id:q.id,question:q.question,answers:q.answers.map(a=>{const m=memories.results.find(m=>m.id===a.id);return m?.state==='refused'?null:{id:a.id,text:m?.answer||a.text,status:m?.state||a.status};}).filter(Boolean)}));
+ const [recent,memories,blogContext,voicePreferences]=await Promise.all([db.prepare("SELECT * FROM turns WHERE session_id=? AND state='complete' ORDER BY created_at DESC LIMIT 20").bind(s.id).all(),db.prepare('SELECT * FROM memory ORDER BY updated_at DESC LIMIT 2000').all(),s.post_id?db.prepare("SELECT title,body FROM posts WHERE id=? AND status='published'").bind(s.post_id).first():null,voicePreferenceContext(db)]);
+ const pastTurns=recent.results.reverse();const history=pastTurns.slice(spoken?-4:-8);const retrieval=match(p.message+' '+history.slice(-1).map(t=>t.prompt).join(' '),memories.results);
+ const selected=retrieval.found.slice(0,spoken?3:5).map(({q})=>({id:q.id,question:q.question,answers:q.answers.map(a=>{const m=memories.results.find(m=>m.id===a.id);return m?.state==='refused'?null:{id:a.id,text:m?.answer||a.text,status:m?.state||a.status};}).filter(Boolean)}));
  const positives=retrieval.mem.filter(m=>m.state!=='refused'),negatives=retrieval.mem.filter(m=>m.state==='refused');
  const addressMode=addressPreference(ownMessage,s.address_mode||'tu');
  if(addressMode!==(s.address_mode||'tu'))await db.prepare('UPDATE sessions SET address_mode=? WHERE id=?').bind(addressMode,s.id).run();
  const emojiAllowed=p.emojis!==false&&Number(num.n)%6===3;
- const blogContext=s.post_id?await db.prepare("SELECT title,body FROM posts WHERE id=? AND status='published'").bind(s.post_id).first():null;
- const system=VOICE+(blogContext?'\nBILLET DISCUTÉ (texte de l’auteur)\n'+JSON.stringify(blogContext).slice(0,7000):'')+'\nBIOGRAPHIE DATÉE\n'+FACTS+'\nRÉPONSES POSSIBLES DU CORPUS\n'+JSON.stringify(selected).slice(0,10000)+'\nCORRECTIONS ET VALIDATIONS D’AUTEUR PRIORITAIRES\n'+JSON.stringify(positives).slice(0,7000)+'\nFORMULATIONS REFUSÉES, À NE PAS REPRENDRE\n'+JSON.stringify(negatives.map(m=>({question:m.question,answer:m.answer}))).slice(0,3000)+'\nÉMOJIS : '+(emojiAllowed?'Tu peux ajouter UN émoji discret si cela vient naturellement (humour ou chaleur), jamais pour une peine, un deuil ou une confidence grave.':'Aucun émoji dans cette réponse.')+turnVoiceContext(addressMode,now)+repeatedGreetingContext(p.message,pastTurns,now,addressMode)+await voicePreferenceContext(db);
+ const system=VOICE+(blogContext?'\nBILLET DISCUTÉ (texte de l’auteur)\n'+JSON.stringify(blogContext).slice(0,spoken?3000:7000):'')+'\nBIOGRAPHIE DATÉE\n'+FACTS+'\nRÉPONSES POSSIBLES DU CORPUS\n'+JSON.stringify(selected).slice(0,spoken?4000:10000)+'\nCORRECTIONS ET VALIDATIONS D’AUTEUR PRIORITAIRES\n'+JSON.stringify(positives).slice(0,spoken?4000:7000)+'\nFORMULATIONS REFUSÉES, À NE PAS REPRENDRE\n'+JSON.stringify(negatives.map(m=>({question:m.question,answer:m.answer}))).slice(0,spoken?1500:3000)+'\nÉMOJIS : '+(emojiAllowed?'Tu peux ajouter UN émoji discret si cela vient naturellement (humour ou chaleur), jamais pour une peine, un deuil ou une confidence grave.':'Aucun émoji dans cette réponse.')+turnVoiceContext(addressMode,now)+repeatedGreetingContext(p.message,pastTurns,now,addressMode)+voicePreferences+FINAL_STYLE+(spoken?'\nÉCHANGE ORAL : une réponse directe, une à deux phrases le plus souvent, sans préambule. Réponds précisément, développe seulement si la question le demande.':'');
  const messages=[{role:'system',content:system},...history.flatMap(t=>[{role:'user',content:t.prompt.slice(0,1000)},{role:'assistant',content:(t.review==='refused'?'[Cette ancienne réponse a été refusée par l’auteur ; ne pas la réutiliser.]':t.correction||t.response).slice(0,1200)}]),{role:'user',content:p.message.trim()}];
  // Conservative byte upper bound for tokens; no automatic paid-plan upgrade.
- const reserve=Math.ceil(encoder.encode(JSON.stringify(messages)).byteLength*.009091+MAX_REPLY_TOKENS*.027273+10);
+ const reserve=Math.ceil(encoder.encode(JSON.stringify(messages)).byteLength*.009091+replyTokens*.027273+10);
  const budget=await db.prepare('INSERT INTO daily_budget(day,reserved,calls) VALUES(?,?,1) ON CONFLICT(day) DO UPDATE SET reserved=reserved+excluded.reserved,calls=calls+1 WHERE reserved+excluded.reserved<=9000 RETURNING reserved').bind(day,reserve).first();if(!budget)return reply({error:'Le quota de conversation de cette alpha est atteint pour aujourd’hui. Reviens demain ; les échanges déjà enregistrés restent disponibles.'},429);
  const id=existing?.id||crypto.randomUUID();const inserted=existing?await db.prepare("UPDATE turns SET state='pending' WHERE id=? AND state='error'").bind(id).run():await db.prepare('INSERT OR IGNORE INTO turns(id,session_id,request_id,prompt,created_at,source_ids) VALUES(?,?,?,?,?,?)').bind(id,s.id,p.request_id,p.message.trim(),now,JSON.stringify(selected.map(x=>x.id))).run();if(!inserted.meta.changes)return reply({error:'Cette réponse est déjà en préparation.'},409);
  try{
-  const result=await env.AI.run(MODEL,{messages,max_completion_tokens:MAX_REPLY_TOKENS,chat_template_kwargs:{enable_thinking:false},temperature:.85,top_p:.92,stream:false});
-  const answer=(result.choices?.[0]?.message?.content||result.response||'').trim();if(!answer)throw new Error('empty_answer');
+  const result=await env.AI.run(MODEL,{messages,max_completion_tokens:replyTokens,chat_template_kwargs:{enable_thinking:false},temperature:.85,top_p:.92,stream:false});
+  const answer=cleanAhmedAnswer(result.choices?.[0]?.message?.content||result.response||'');if(!answer)throw new Error('empty_answer');
   await db.batch([db.prepare("UPDATE turns SET response=?,state='complete' WHERE id=?").bind(answer,id),db.prepare('UPDATE sessions SET last_at=? WHERE id=?').bind(now,s.id)]);
   return reply({turn:{id,prompt:p.message.trim(),response:answer,created_at:now,state:'complete',status:'unreviewed',correction:''},sources:selected.map(x=>x.id)});
  }catch(e){console.error(JSON.stringify({event:'inference_error',turn_id:id,type:e?.name||'Error'}));await db.prepare("UPDATE turns SET state='error' WHERE id=?").bind(id).run();return reply({error:'Le moteur n’a pas pu répondre à cet essai. Ton message est conservé ; tu peux le renvoyer.'},503);}

@@ -22,18 +22,19 @@ async function startOpening(){
  }catch{/* mount reports the authorization error rather than selecting a generic character. */}
  void mount();
 }
-function note(value,error=false){status.textContent=value;status.classList.toggle('ahmed-call-error',error);}
+function note(value,error=false){status.textContent=value;status.classList.toggle('ahmed-call-error',error);status.classList.toggle('ahmed-call-live',active&&Boolean(value));}
 function syncAhmedPhone(){const phone=host.querySelector('chemins-salon')?.shadowRoot?.querySelector('.maison-phone');if(!phone)return;phone.hidden=false;phone.setAttribute('aria-pressed',String(active));phone.setAttribute('aria-expanded',String(active));phone.title=active?'Raccrocher':'Appeler Ahmed numérique';phone.setAttribute('aria-label',phone.title);}
 async function mount(){
  if(actor)return actor;
  if(mounting)return mounting;
  mounting=(async()=>{
-  await import('./salon-v27.js?v=eleven70&rev=ahmeddirect3');
+  await import('./salon-v27.js?v=eleven70&rev=ahmedlatence4');
   if($('ahmed-3d').hidden)return null;
   const info=await checkOwner();const originalAhmed=true;
   const view=document.createElement('chemins-salon');
   view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');view.setAttribute('ahmed-original','');view.className='ahmed-avatar-v27';
   view.addEventListener('salon-ahmed-call',()=>{if(active)stop();else void begin();});
+  view.addEventListener('salon-ahmed-voice-status',e=>{if(active&&e.detail.message)note(e.detail.message);});
   view.addEventListener('salon-ahmed-voice-error',e=>{if(active){stop();note(e.detail.message,true);}});
   view.style.setProperty('--room-height','100%');
   host.append(view);
@@ -89,12 +90,12 @@ function listen(){
 function submitSpoken(spoken){
  awaiting=true;const field=$('messageInput');field.value=spoken;field.dispatchEvent(new Event('input',{bubbles:true}));
  if($('sendButton').disabled){stop();note('La session écrite n’est plus disponible.');return;}
- note('Ahmed prépare sa réponse…');$('composer').requestSubmit();
+ note('Question reçue · Ahmed réfléchit…');$('composer').dataset.ahmedSpoken='1';try{$('composer').requestSubmit();}finally{delete $('composer').dataset.ahmedSpoken;}
 }
 function listenOwner(){
- const turn=epoch;remoteCapture?.stop();inputLease??=createCallInputLease();
- remoteCapture=createVoiceCapture({inputLease,onStatus:note,onError:error=>{if(active&&turn===epoch){stop();note(error.message,true);}},
- onClip:async clip=>{if(!active||turn!==epoch)return;awaiting=true;const abort=new AbortController();transcribeAbort=abort;note('Ahmed a entendu ta question…');
+ const turn=epoch;remoteCapture?.stop();inputLease??=createCallInputLease();let heard=false,voiceSamples=0;
+ remoteCapture=createVoiceCapture({inputLease,onStatus:note,onEnergy:energy=>{if(!active||turn!==epoch||awaiting||heard)return;voiceSamples=energy>=.012?voiceSamples+1:0;if(voiceSamples>=3){heard=true;note('Je t’entends…');}},onError:error=>{if(active&&turn===epoch){stop();note(error.message,true);}},
+ onClip:async clip=>{if(!active||turn!==epoch)return;awaiting=true;const abort=new AbortController();transcribeAbort=abort;note('Phrase enregistrée · transcription…');
  try{const result=await voiceRequest('transcribe',{body:clip,signal:abort.signal});if(!active||turn!==epoch)return;const spoken=String(result.text||'').trim();if(spoken)submitSpoken(spoken);else{awaiting=false;listen();}}
  catch(error){if(active&&turn===epoch){stop();note(error.message);}}finally{if(transcribeAbort===abort)transcribeAbort=null;}
  }});
@@ -117,7 +118,7 @@ async function answer(event){
  awaiting=false;
  const text=String(event.detail?.text||'').trim();
  if(!text){note('Réponse absente.');listen();return;}
- note('Ahmed te répond…');
+ note('Réponse reçue · voix en préparation…');
  const view=await mount();if(!active)return;
  if(!view?.narrateAhmed(text,()=>{if(active)listen();})){
   note('Voix non disponible. Tu peux lire sa réponse écrite.');

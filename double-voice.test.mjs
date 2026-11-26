@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {addressPreference,turnVoiceContext,isGreeting,repeatedGreetingContext} from './double-backend/voice.js';
+import {VOICE,FINAL_STYLE,cleanAhmedAnswer,SPOKEN_REPLY_TOKENS,addressPreference,turnVoiceContext,isGreeting,repeatedGreetingContext} from './double-backend/voice.js';
 test('tutoiement default, explicit vouvoiement persists, explicit tutoiement restores it',()=>{
  assert.equal(addressPreference('Bonjour'),'tu');
  for(const request of ['Vouvoie-moi, s’il te plaît.','Je préfère le vouvoiement.','Ne me tutoie pas.','Peux-tu me vouvoyer ?','Le tutoiement me gêne.'])assert.equal(addressPreference(request),'vous',request);
@@ -23,4 +23,12 @@ test('repeated greetings use this recent conversation, without confusing a new q
  assert.equal(repeatedGreetingContext('Peux-tu expliquer ce passage ?',turns,now),'');
  assert.equal(repeatedGreetingContext('Salut, ça va ?',turns,'2026-11-15T18:00:00Z'),'');
  assert.equal(repeatedGreetingContext('Salut, ça va ?',[],now),'');
+});
+
+test('La continuité supprime les tics et la définition comme miroir',()=>{
+ assert.match(VOICE,/Supprime les tics de langage/);assert.match(FINAL_STYLE,/une expérience ou une tentative/);
+ assert.equal(cleanAhmedAnswer('Écoute, euh… je suis un miroir numérique.'),'Je suis une expérience.');
+ assert.equal(cleanAhmedAnswer('Bon, tu vois, je pense à ce livre.'),'Je pense à ce livre.');
+ assert.equal(cleanAhmedAnswer('Écoute cette chanson.'),'Écoute cette chanson.');
+ assert.equal(SPOKEN_REPLY_TOKENS,160);
 });
