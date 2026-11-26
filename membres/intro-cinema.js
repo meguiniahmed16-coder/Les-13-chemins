@@ -8,7 +8,7 @@ import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
 import {createIntroSound} from './intro-sound.js';
-import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven69';
+import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven72';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -918,8 +918,30 @@ bubbleToggle?.addEventListener('click',()=>{
  syncIntroBubbles();
 });
 if(typeof canvasHost!=='undefined'&&canvasHost?.classList)syncIntroBubbles();
-let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0;
+let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0,selectionPaused=false;
+function showVoiceSelection(list){
+ const panel=$('intro-voice-choice'),male=$('intro-voice-man'),female=$('intro-voice-woman');
+ const entries=Array.isArray(list)?list.filter(v=>v?.id&&v?.name):[];
+ if(entries.length<2)return;
+ const setOptions=(select,preferred)=>{
+  select.replaceChildren();
+  for(const voice of entries){
+   const option=document.createElement('option');
+   option.value=voice.id;option.textContent=voice.name+(voice.gender?' · '+voice.gender:'');
+   select.append(option);
+  }
+  if(entries.some(v=>v.gender===preferred))select.value=entries.find(v=>v.gender===preferred).id;
+ };
+ setOptions(male,'homme');setOptions(female,'femme');
+ if(female.value===male.value){const another=entries.find(v=>v.id!==male.value);if(another)female.value=another.id;}
+ panel.hidden=false;
+ $('intro-voice-alert').hidden=true;
+ $('intro-voice-choice-error').hidden=true;
+ selectionPaused=autoplay&&!shotPaused;
+ if(selectionPaused)automatic(false);
+}
 const cinematicVoices=createIntroElevenLabs({
+ onNeedsSelection:showVoiceSelection,
  onState:({energy=0,playing=false}={})=>{
   cinematicVoiceEnergy=energy;
   if(playing&&$('intro-voice-alert'))$('intro-voice-alert').hidden=true;
@@ -929,6 +951,20 @@ const cinematicVoices=createIntroElevenLabs({
   if(alert){alert.textContent=String(message||'La synthèse ElevenLabs est indisponible.');alert.hidden=false;}
  }
 });
+$('intro-voice-confirm').onclick=()=>{
+ const panel=$('intro-voice-choice'),message=$('intro-voice-choice-error');
+ try{
+  cinematicVoices.unlock();
+  cinematicVoices.assign($('intro-voice-man').value,$('intro-voice-woman').value);
+  panel.hidden=true;$('intro-voice-alert').hidden=true;message.hidden=true;
+  if(selectionPaused){selectionPaused=false;automatic(true);}
+  if(cinematicVoiceEnabled&&currentSpeaker&&speech?.text)void cinematicVoices.speak(currentSpeaker,speech.text);
+ }catch(error){message.textContent=error?.message||'Sélectionne deux voix différentes.';message.hidden=false;}
+};
+$('intro-voice-silent').onclick=()=>{
+ $('intro-voice-choice').hidden=true;$('intro-voice-alert').hidden=true;
+ if(selectionPaused){selectionPaused=false;automatic(true);}
+};
 function prepareCinematicVoices(){
  if(!cinematicVoices.unlock()){
   const alert=$('intro-voice-alert');
@@ -936,6 +972,7 @@ function prepareCinematicVoices(){
   return;
  }
  void cinematicVoices.prepare().catch(error=>{
+  if(error?.code==='VOICE_SELECTION_REQUIRED')return;
   const alert=$('intro-voice-alert');
   if(alert){alert.textContent=error?.message||'Les voix ElevenLabs sont indisponibles.';alert.hidden=false;}
  });
