@@ -90,3 +90,27 @@ test('seating uses the live wardrobe solver, not the old sofa mesh deltas',()=>{
  assert.match(wardrobe,/loadStudio\(look,'femme'\)/);
  assert.match(wardrobe,/old\.removeFromParent\(\)/);
 });
+
+test('cinematic co-speech: independent listening, unilateral strokes and return to rest',()=>{
+ const body=source.slice(source.indexOf('function conversationGesture('),source.indexOf('let speech=null'));
+ const gesture=new Function(body+'\nreturn conversationGesture;')();
+ const settings={text:'Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?',kind:'question',duration:7.8,seed:'question-initiale'};
+ let peak=0,acknowledgment=0;
+ for(let t=0;t<7.8;t+=.02){
+  const a=gesture({...settings,id:'m',speaking:true,time:t});
+  const b=gesture({...settings,id:'f',speaking:false,listenerTime:t});
+  assert.equal(b.left+b.right,0);
+  assert.ok(Math.min(a.left,a.right)<.0001,'no symmetric flapping');
+  peak=Math.max(peak,a.right,a.left);acknowledgment=Math.max(acknowledgment,b.nod);
+ }
+ assert.ok(peak>.25);assert.ok(acknowledgment>.02);
+ for(const t of [0,7.8,9]){
+  const a=gesture({...settings,id:'m',speaking:true,time:t});
+  assert.equal(a.left+a.right,0);
+ }
+ const quiet=gesture({...settings,id:'f',speaking:true,time:1,enabled:false});
+ assert.equal(quiet.left+quiet.right,0);
+ const female=gesture({...settings,id:'f',speaking:true,time:.9});
+ const male=gesture({...settings,id:'m',speaking:true,time:.9});
+ assert.ok(female.left>=female.right&&male.right>=male.left);
+});
