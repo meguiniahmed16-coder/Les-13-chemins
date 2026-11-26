@@ -2,7 +2,7 @@ const MAX_CAPTURE_BYTES = 2 * 1024 * 1024;
 const MAX_SPEECH_BYTES = 4 * 1024 * 1024;
 const MAX_CAPTURE_MS = 45_000;
 const INITIAL_SILENCE_MS = 15_000;
-const END_SILENCE_MS = 740; // a shorter natural pause avoids unnecessary latency
+const END_SILENCE_MS = 560; // a shorter natural pause avoids unnecessary latency
 const MIN_VOICE_MS = 240;
 const VOICE_THRESHOLD = 0.012;
 const SAMPLE_INTERVAL_MS = 40;
@@ -67,8 +67,24 @@ function recorderType(Recorder) {
   });
 }
 
+/** Keep a single microphone permission for one active call. No recording during playback;
+ * end() releases every track, including a permission request still pending. */
+export function createCallInputLease(getUserMedia=globalThis.navigator?.mediaDevices?.getUserMedia?.bind(globalThis.navigator.mediaDevices)){
+ let stream=null,pending=null,closed=false;
+ return {
+  async acquire(constraints){
+   if(closed||!getUserMedia)throw audioError('Micro indisponible.','VOICE_UNSUPPORTED');
+   if(!stream){pending??=Promise.resolve(getUserMedia(constraints)).then(s=>{if(closed){stopTracks(s);throw audioError('Appel terminé.','VOICE_INTERRUPTED');}stream=s;return s;}).finally(()=>pending=null);await pending;}
+   if(closed||!stream)throw audioError('Appel terminé.','VOICE_INTERRUPTED');
+   for(const track of stream.getTracks())track.enabled=true;return stream;
+  },
+  mute(s=stream){for(const track of s?.getTracks?.()||[])track.enabled=false;},
+  close(){closed=true;stopTracks(stream);stream=null;}
+ };
+}
+
 /** One utterance at a time. stop() is silent cancellation; errors never restart it. */
-export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioContext, dependencies} = {}) {
+export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioContext, inputLease, dependencies} = {}) {
   const env = runtime(dependencies);
   const supported = Boolean(env.getUserMedia && env.MediaRecorder && (audioContext || env.AudioContext));
   let current = null;
@@ -86,7 +102,7 @@ export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioCo
     try { session.analyser?.disconnect(); } catch {}
     session.source = null;
     session.analyser = null;
-    stopTracks(session.stream);
+    if(inputLease)inputLease.mute(session.stream);else stopTracks(session.stream);
     session.stream = null;
     if (session.ownsContext) closeContext(session.context);
     session.context = null;
@@ -193,10 +209,11 @@ export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioCo
       session.ownsContext = !audioContext;
       session.context = audioContext || new env.AudioContext();
       const resume = Promise.resolve(session.context.state === 'running' ? undefined : session.context.resume?.()).then(() => null, error => error);
-      const stream = await env.getUserMedia({audio: {
+      const acquire=inputLease?inputLease.acquire:env.getUserMedia;
+      const stream = await acquire({audio: {
         echoCancellation: true, noiseSuppression: true, channelCount: 1,
       }});
-      if (current !== session) { stopTracks(stream); return false; }
+      if (current !== session) { if(inputLease)inputLease.mute(stream);else stopTracks(stream); return false; }
       session.stream = stream;
       const resumeError = await resume;
       if (current !== session) return false;
