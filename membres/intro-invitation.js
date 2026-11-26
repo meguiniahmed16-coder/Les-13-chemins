@@ -1,6 +1,7 @@
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
-export const INTRO_INVITATION_DURATION=12000;
+export const INTRO_INVITATION_DURATION=20000;
+export const INTRO_INVITATION_PLAY_DURATION=12000;
 export const INTRO_INVITATION_DIALOGUE=Object.freeze([
  'Invitons un personnage du livre.',
  'Et maintenant, un autre.',
@@ -9,7 +10,7 @@ export const INTRO_INVITATION_DIALOGUE=Object.freeze([
 
 // One clock controls the real salon, its selector and the subsequent garden.
 export function introInvitationCue(elapsedMs=0){
- const elapsed=clamp(Number(elapsedMs)||0,0,INTRO_INVITATION_DURATION)*5/3;
+ const elapsed=clamp(Number(elapsedMs)||0,0,INTRO_INVITATION_DURATION);
  const second=elapsed>=10500;
  const phase=elapsed<1200?'establish':elapsed<2500?'choose':elapsed<8200?'first':elapsed<10500?'random':elapsed<17500?'second':'farewell';
  const appearing=smooth((elapsed-(second?11200:3600))/1200);
