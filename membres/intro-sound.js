@@ -216,6 +216,7 @@ export function createIntroSound({
    loops.clear();if(musicGain)setGain(musicGain.gain,0);else if(music)music.volume=0;
   },
   dispose(){this.stop();disposed=true;++generation;try{music?.removeAttribute?.('src');music?.load?.();}catch{}if(context?.close)void Promise.resolve(context.close()).catch(()=>{});buffers.clear();},
+  musicReady(){return new Promise((resolve,reject)=>{if(!music||!musicGain){reject(Error('Le mix musical n’est pas disponible.'));return;}if(music.readyState>=2){resolve();return;}const timer=setTimeout(()=>complete(Error('La musique n’a pas fini de charger.')),25000);const complete=error=>{clearTimeout(timer);music.removeEventListener('canplay',loaded);music.removeEventListener('error',failed);error?reject(error):resolve();};const loaded=()=>complete();const failed=()=>complete(Error('La musique est indisponible.'));music.addEventListener('canplay',loaded,{once:true});music.addEventListener('error',failed,{once:true});});},
   get ready(){return loading||Promise.resolve();},
   snapshot(){const musicPlaying=!!music&&!music.paused&&wanted(),musicLevel=wanted()?introSoundEnvelope(frame).music:0;return {active,paused,blocked,stopped,disposed,sceneId:frame.sceneId,timeMs:frame.timeMs,musicTime:music?.currentTime||0,musicPlaying,musicGain:musicLevel,musicMuted:music?.muted??true,musicAudible:musicPlaying&&!music?.muted&&musicLevel>0,contextState:context?.state||'unavailable',buffers:[...buffers.keys()],playedCues:played,activeOneShots:oneShots.size};}
  };
