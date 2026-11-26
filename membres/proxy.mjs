@@ -1,3 +1,74 @@
+import {createHash} from 'node:crypto';
+import {getStore} from '@netlify/blobs';
+
+// Only the fixed authored cinematic is stored. Live calls and personalised text
+// always use the existing service and are never included in this archive.
+const fixedCinemaLines=new Set([
+ "homme|Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?",
+ "homme|Est-ce simplement quelqu’un qui me ressemble ?",
+ "femme|Une rencontre n’est pas un miroir… C’est un espace où l’on se dépose, sans masque, ou presque.",
+ "homme|Prends place.",
+ "femme|Ici, on laisse dehors le bruit, les rôles, les étiquettes…",
+ "homme|Un monde de masques. Un monde d’illusions.",
+ "femme|Et pourtant… c’est aussi un lieu de vérité, de jeux, de désir, de création…",
+ "homme|Ici, on peut être tour à tour lecteur, acteur, voyageur… ou simplement soi.",
+ "femme|Tu es libre d’explorer, de construire, de rencontrer, d’imaginer…",
+ "homme|Tout a commencé par l’aventure d’Ahmed Marie, l’auteur de ce site et du manuscrit La Tectonique des âmes.",
+ "femme|Plus de cinq cents pages, et le récit continue de s’écrire. Comme ce site, le manuscrit est une œuvre qui se construit jour après jour.",
+ "homme|Ici, nous te proposons de vivre une expérience immersive et de rencontrer, aussi fidèlement que possible, les personnes qu’Ahmed a croisées sur son chemin.",
+ "femme|Plus de quatre cents personnages habitent déjà cet univers. Leurs histoires, leurs liens et leur continuité s’affinent et s’enrichissent au fil du travail sur le texte.",
+ "homme|Alors…",
+ "femme|…on commence ?",
+ "femme|La Croisée des Âmes, c’est un espace en construction… Un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
+ "homme|Bienvenue.",
+ "homme|Voici l’interface du Salon. Appuie sur Menu : les icônes apparaissent. Appuie encore : elles se replient.",
+ "femme|L’icône Caméra te permet de tourner autour de nous, de zoomer et de changer de point de vue.",
+ "homme|Avec le joystick, tu peux avancer, reculer et marcher dans la pièce. Regarde, Marianne te montre.",
+ "homme|Si tu perds ton personnage de vue, touche Recentrer. Tu le retrouves sans devoir tout recommencer.",
+ "homme|Pour modifier ton personnage, ouvre Menu, puis Avatar. Les icônes permettent de régler le corps, le visage et la silhouette.",
+ "femme|Le volet est translucide : tu continues de voir mon visage et les personnages pendant les changements. Une seconde pression le replie.",
+ "homme|Pour changer de tenue, sélectionne Vêtements. Choisis une chemise, un pantalon ou des chaussures sans quitter le Salon.",
+ "femme|Enregistrer garde tes choix. Invite un personnage, puis touche le petit téléphone pour parler.",
+ "homme|Avec ce pictogramme, tu ajoutes un personnage du livre. Choisis-le dans le répertoire : il viendra nous rejoindre ici.",
+ "femme|Une fois ton invité arrivé, touche le petit téléphone du Salon. Tu lui parles directement, et il te répond à voix haute.",
+ "homme|Les bulles de dialogue sont facultatives. Cette icône les affiche ou les masque. Les voix continuent, même si tu retires les bulles.",
+ "homme|Avant le parc et ses papillons, faisons une rencontre dans le salon.",
+ "homme|Invitons un personnage du texte d’Ahmed Marie. Le voici !",
+ "femme|Regarde, on peut changer de personnage. En voici un autre.",
+ "homme|Touche le petit téléphone pour lui parler de vive voix.",
+ "homme|Ah, j’oubliais aussi… il y a des options sympas."
+]);
+const maxCinemaAudio=4*1024*1024;
+const providers=new Set(['cartesia','elevenlabs','azure']);
+const audioTypes=new Set(['audio/wav','audio/x-wav','audio/wave','audio/mpeg','audio/mp3']);
+export function cinematicAudioKey(body){
+ let cue;try{cue=JSON.parse(body);}catch{return null;}
+ if(!cue||cue.purpose!=='cinema'||cue.strict!==true||typeof cue.voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(cue.voiceId)||Object.keys(cue).some(k=>!['purpose','strict','voiceId','gender','text'].includes(k))||!fixedCinemaLines.has(cue.gender+'|'+cue.text))return null;
+ return createHash('sha256').update(JSON.stringify(['cinema-audio-v1',cue.gender,cue.voiceId,cue.text])).digest('hex');
+}
+export async function serveCinemaAudio({key,upstream,authorize,storeFactory=()=>getStore('cinema-audio-v1')}){
+ let store=null,entry=null;
+ try{store=storeFactory();entry=await store.getWithMetadata(key,{type:'arrayBuffer'});}catch{}
+ if(entry?.data?.byteLength>0&&entry.data.byteLength<=maxCinemaAudio&&providers.has(entry.metadata?.provider)&&audioTypes.has(entry.metadata?.type)){
+  // Blob reads must never bypass the original author-only access.
+  let permitted=false;try{permitted=await authorize();}catch{}
+  if(permitted)return new Response(entry.data,{headers:{'content-type':entry.metadata.type,'x-voice-provider':entry.metadata.provider,'x-cinema-audio-cache':'hit'}});
+  return upstream();
+ }
+ const response=await upstream();
+ const provider=response.headers.get('x-voice-provider'),type=(response.headers.get('content-type')||'').split(';')[0].toLowerCase();
+ if(!store||!response.ok||!providers.has(provider)||!audioTypes.has(type))return response;
+ try{
+  const data=await response.clone().arrayBuffer();
+  if(data.byteLength>0&&data.byteLength<=maxCinemaAudio){
+   await store.set(key,data,{metadata:{provider,type},onlyIfNew:true});
+   const headers=new Headers(response.headers);headers.set('x-cinema-audio-cache','stored');
+   return new Response(data,{status:response.status,headers});
+  }
+ }catch{}
+ return response;
+}
+
 const origin='https://tectonique-des-ames.com';
 const backend='https://treize-chemins-membres.meguiniahmed16.workers.dev';
 async function voiceBody(request,max){
@@ -48,9 +119,14 @@ export default async function proxy(request){
       }
     }
     const signal=AbortSignal.any([request.signal,AbortSignal.timeout(voice?75000:20000)]);
-    const response=await fetch(target,{method:request.method,headers,body,redirect:'manual',signal});
+    const upstream=()=>fetch(target,{method:request.method,headers,body,redirect:'manual',signal});
+    const key=request.method==='POST'&&url.pathname==='/api/membres/voice/speech'?cinematicAudioKey(body):null;
+    const response=key?await serveCinemaAudio({key,upstream,authorize:async()=>{
+      const check=await fetch(backend+'/api/membres/me?auteur=1',{method:'GET',headers,redirect:'manual',signal});
+      if(!check.ok)return false;return (await check.json()).author===true;
+    }}):await upstream();
     const out=new Headers({'cache-control':'private, no-store','netlify-cdn-cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'});
-    for(const k of ['location','content-type','set-cookie','vary','x-frame-options','x-robots-tag','permissions-policy','content-security-policy','cross-origin-resource-policy','x-voice-provider','x-voice-fallback'])if(response.headers.has(k))out.set(k,response.headers.get(k));
+    for(const k of ['location','content-type','set-cookie','vary','x-frame-options','x-robots-tag','permissions-policy','content-security-policy','cross-origin-resource-policy','x-voice-provider','x-voice-fallback','x-cinema-audio-cache'])if(response.headers.has(k))out.set(k,response.headers.get(k));
     return new Response(response.body,{status:response.status,headers:out});
   }catch(error){
     if(request.signal.aborted)return Response.json({error:'Conversation interrompue.'},{status:499,headers:{'cache-control':'no-store'}});
