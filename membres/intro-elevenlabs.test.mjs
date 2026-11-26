@@ -51,8 +51,8 @@ test('cinematic requests real ElevenLabs with voiceId and strict provider for bo
  await h.controller.speak('f','Bonjour, je suis Marianne.');
  const calls=h.requests.filter(x=>x.path==='speech').map(x=>x.options.body);
  assert.deepEqual(calls,[
-  {text:'Bonjour, je suis Ahmed.',gender:'homme',voiceId:'voice-ahmed',strict:true},
-  {text:'Bonjour, je suis Marianne.',gender:'femme',voiceId:'voice-marianne',strict:true}
+  {text:'Bonjour, je suis Ahmed.',gender:'homme',voiceId:'voice-ahmed',strict:true,purpose:'cinema'},
+  {text:'Bonjour, je suis Marianne.',gender:'femme',voiceId:'voice-marianne',strict:true,purpose:'cinema'}
  ]);
  assert.deepEqual(h.played,['elevenlabs','elevenlabs']);assert.deepEqual(h.errors,[]);
 });
@@ -86,7 +86,7 @@ test('both the spoken Salon and the cinematic reuse the very same server credent
  const worker=readFileSync(new URL('./voice-conversation.mjs',import.meta.url),'utf8');
  const vault=readFileSync(new URL('./voice-settings.mjs',import.meta.url),'utf8');
  assert.match(cinematic,/import \{voiceRequest\} from '\.\/salon-conversation\.js/);
- assert.match(cinematic,/request\('speech',\{body:\{text,gender,voiceId:selected\[id\],strict:true\}\}\)/);
+ assert.match(cinematic,/request\('speech',\{body:\{text,gender,voiceId:selected\[id\],strict:true,purpose:'cinema'\}\}\)/);
  assert.match(salon,/fetch\('\/api\/membres\/voice\/'\+path/);
  assert.match(salon,/voiceId:run\.voiceId,strict:true/);
  assert.match(worker,/const useEleven=action==='voices'\|\|action==='speech'/);
