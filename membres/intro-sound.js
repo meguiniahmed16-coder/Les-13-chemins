@@ -17,8 +17,8 @@ export function introSoundEnvelope({sceneId='',elapsedMs=0,timeMs=0,promotion=fa
  // shot is music-free, including its final invitation to enter the garden.
  // The selected music returns only once the actual garden arrival is ready.
  const beforeDojo=1-smooth((time-(INTRO_SOUND_TIMING.dojoStartMs-INTRO_SOUND_TIMING.transitionMs))/INTRO_SOUND_TIMING.transitionMs);
- const end=20000;
- const fade=2800;
+ const end=promotion?27500:20000;
+ const fade=promotion?5500:2800;
  const ending=garden?1-smooth((elapsed-(end-fade))/fade):1;
  const outside=garden?smooth(elapsed/INTRO_SOUND_TIMING.transitionMs):0;
  return {music:dojo?0:(garden?outside*ending:opening*beforeDojo),room:(1-outside)*ending,garden:outside*ending};
@@ -105,7 +105,7 @@ export function createIntroSound({
   // and resume callbacks. Muting does not disturb the shared music clock.
   music.muted=envelope===0;
   if(musicGain)setGain(musicGain.gain,envelope*(frame.sceneId==='arrival'?2.5:1));else music.volume=Math.min(1,envelope);
-  const time=number(frame.timeMs);const garden=frame.sceneId==='arrival';music.playbackRate=garden?1.12:1;music.preservesPitch=true;const at=garden?Math.min(263.8,241+number(frame.elapsedMs)/1000*1.12):Math.min(31.9,time/1000);
+  const time=number(frame.timeMs);const garden=frame.sceneId==='arrival';music.playbackRate=garden?1.12:1;music.preservesPitch=true;const at=garden?Math.min(263.8,241+Math.min(20000,number(frame.elapsedMs))/1000*1.12):Math.min(31.9,time/1000);
   // Keep the same element and clock while the dojo music is muted.
   // Seeking only corrects genuine drift or an explicit jump.
   if(Number.isFinite(music.currentTime)&&Math.abs(music.currentTime-at)>.65){try{music.currentTime=at;}catch{}}
