@@ -220,7 +220,7 @@ export async function voiceConversation(request,env,{member,author},action){
       if(data.provider==='azure')azureConfig(data.key);
       try{await rate(env.DB,'salon-voice-settings:'+member.id,8);}catch(error){if(error.status===429)failure(429,'Trop de vérifications rapprochées. Réessaie dans quelques minutes.');throw error;}
       await saveVoiceCredential(env,data.provider,data.key,async()=>{
-        if(data.provider==='cartesia'){await cartesiaVoices(data.key,signal);return;}
+        if(data.provider==='cartesia'){await cartesiaVoices(data.key,signal,{force:true});return;}
         if(data.provider==='azure'){await azureVoices(data.key,signal);return;}
         const isOpenAI=data.provider==='openai',label=isOpenAI?'OpenAI':'ElevenLabs';
         const response=await provider(isOpenAI?openai+'/models':eleven+'/v1/user/subscription',{
