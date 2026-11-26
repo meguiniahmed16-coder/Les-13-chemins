@@ -9,7 +9,7 @@ export function socialCardAt(ms){
  return null;
 }
 export function preferredVideoType(MediaRecorderClass=globalThis.MediaRecorder){
- return ['video/mp4;codecs=avc1.42001E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(t=>MediaRecorderClass?.isTypeSupported?.(t))||'';
+ return ['video/mp4;codecs=avc1.42001F,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(t=>MediaRecorderClass?.isTypeSupported?.(t))||'';
 }
 function wrap(ctx,value,x,y,maxWidth,lineHeight){
  let line='';for(const word of String(value).split(/\s+/)){
