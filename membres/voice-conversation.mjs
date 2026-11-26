@@ -100,7 +100,8 @@ async function voices(env,signal){
   // Starter accounts are small; bounded pagination prevents an unbounded upstream
   // response. Only these account-visible IDs are eligible for synthesis.
   for(let page=0;page<3&&found.size<200;page++){
-    const url=new URL(eleven+'/v2/voices');url.searchParams.set('page_size','100');url.searchParams.set('language','fr');
+    // Do not filter by the 'fr' label: ElevenLabs multilingual voices may speak French without that label.
+    const url=new URL(eleven+'/v2/voices');url.searchParams.set('page_size','100');
     if(token)url.searchParams.set('next_page_token',token);
     const response=await provider(url.href,{headers:{'xi-api-key':env.ELEVENLABS_API_KEY,accept:'application/json'}},signal,'ElevenLabs');
     const data=await readJSON(response,1024*1024,signal,true);
