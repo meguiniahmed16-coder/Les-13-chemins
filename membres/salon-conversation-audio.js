@@ -84,7 +84,7 @@ export function createCallInputLease(getUserMedia=globalThis.navigator?.mediaDev
 }
 
 /** One utterance at a time. stop() is silent cancellation; errors never restart it. */
-export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioContext, inputLease, dependencies} = {}) {
+export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioContext, inputLease, endSilenceMs=END_SILENCE_MS, dependencies} = {}) {
   const env = runtime(dependencies);
   const supported = Boolean(env.getUserMedia && env.MediaRecorder && (audioContext || env.AudioContext));
   let current = null;
@@ -190,7 +190,7 @@ export function createVoiceCapture({onClip, onStatus, onError, onEnergy, audioCo
     if (energy >= VOICE_THRESHOLD) {
       session.voicedMs += elapsed;
       session.lastVoice = now;
-    } else if (session.voicedMs >= MIN_VOICE_MS && now - session.lastVoice >= END_SILENCE_MS) {
+    } else if (session.voicedMs >= MIN_VOICE_MS && now - session.lastVoice >= Math.max(350,Math.min(900,endSilenceMs))) {
       finish();
     }
   }
@@ -283,6 +283,44 @@ function decodeAudio(context, bytes) {
 }
 
 /** Decoded audio is the clock for both completion and avatar lip movement. */
+// Incremental PCM16 WAV decoder, including a header split across network chunks.
+// Cartesia sends a mono PCM16 WAV; no need to buffer the complete reply.
+export function createWavStreamDecoder(){
+ let pending=new Uint8Array(0),format=null,remaining=null,header=true;
+ const append=chunk=>{const data=new Uint8Array(pending.length+chunk.length);data.set(pending);data.set(chunk,pending.length);pending=data;};
+ const code=(bytes,i)=>String.fromCharCode(...bytes.subarray(i,i+4));
+ return {push(chunk,final=false){
+   append(chunk);
+   if(header){
+     if(pending.length<12){if(final)throw Error('En-tête WAV incomplet.');return null;}
+     if(code(pending,0)!=='RIFF'||code(pending,8)!=='WAVE')throw Error('Format audio inattendu.');
+     const v=new DataView(pending.buffer,pending.byteOffset,pending.byteLength);let i=12,found=false;
+     while(i+8<=pending.length){
+       const tag=code(pending,i),size=v.getUint32(i+4,true),start=i+8;
+       if(tag==='data'){
+         if(!format)throw Error('Format PCM absent.');
+         remaining=size===0||size>=0x7fff0000?Infinity:size;pending=pending.slice(start);header=false;found=true;break;
+       }
+       if(size>65536||start+size>65536)throw Error('En-tête WAV trop volumineux.');
+       if(start+size>pending.length)break;
+       if(tag==='fmt '){
+         if(size<16||v.getUint16(start,true)!==1||v.getUint16(start+2,true)!==1||v.getUint16(start+14,true)!==16)throw Error('Audio Cartesia non PCM16 mono.');
+         const rate=v.getUint32(start+4,true);if(rate<8000||rate>48000)throw Error('Fréquence audio invalide.');format={rate};
+       }
+       i=start+size+(size&1);
+     }
+     if(!found){if(final||pending.length>65536)throw Error('En-tête WAV incomplet.');return null;}
+   }
+   const n=Math.min(pending.length,remaining)&~1;
+   if(!n){if(final&&remaining!==Infinity&&remaining>0)throw Error('Audio incomplet.');return null;}
+   const samples=new Float32Array(n/2),view=new DataView(pending.buffer,pending.byteOffset,n);
+   for(let i=0;i<samples.length;i++)samples[i]=view.getInt16(i*2,true)/32768;
+   pending=pending.slice(n);remaining-=n;
+   if(final&&remaining!==Infinity&&remaining>0)throw Error('Audio incomplet.');
+   return {samples,rate:format.rate};
+ }};
+}
+
 export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
   const env = runtime(dependencies);
   let context = null, resumePromise = Promise.resolve(), current = null, disposed = false;
@@ -299,6 +337,9 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
       if (error) { try { job.source.stop(); } catch {} }
       try { job.source.disconnect(); } catch {}
     }
+    job.reader?.cancel().catch(()=>{});
+    for(const item of job.parts||[]){item.source.onended=null;try{item.source.stop();}catch{}try{item.source.disconnect();}catch{}}
+    job.parts=[];
     job.buffer = null;
     job.channels = null;
     onEnergy?.(0);
@@ -328,7 +369,15 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
 
   function position() {
     const job = current;
-    if (!job?.playing || job.settled || !job.buffer || !context) return null;
+    if (!job?.playing || job.settled || !context) return null;
+    if(job.streaming){
+      const t=context.currentTime,part=job.parts.find(p=>p.start<=t&&t<p.end);
+      if(!part)return {fraction:Math.min(.999,Math.max(0,(t-job.startedAt)/Math.max(.1,job.duration))),energy:0};
+      const samples=part.samples,from=Math.max(0,Math.floor((t-part.start)*part.rate)),to=Math.min(samples.length,from+Math.round(part.rate*.02));let sum=0;
+      for(let i=from;i<to;i++)sum+=samples[i]**2;
+      return {fraction:Math.min(.999,Math.max(0,(t-job.startedAt)/Math.max(job.duration,job.expectedDuration||0,.1))),energy:to>from?Math.sqrt(sum/(to-from)):0};
+    }
+    if(!job.buffer)return null;
     const elapsed = Math.max(0, context.currentTime - job.startedAt);
     const fraction = Math.min(1, elapsed / job.buffer.duration);
     const from = Math.min(job.buffer.length, Math.floor(elapsed * job.buffer.sampleRate));
@@ -343,7 +392,55 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
 
   function stop() { if (current) settle(current, abortError()); }
 
-  function play(blob, {signal} = {}) {
+  function playStream(clip,{signal,expectedDuration}={}){
+    stop();
+    return new Promise((resolve,reject)=>{
+      const job={resolve,reject,signal,settled:false,playing:false,streaming:true,parts:[],duration:0,expectedDuration,nextAt:0,done:false};
+      current=job;job.abort=()=>settle(job,abortError());
+      if(signal?.aborted){job.abort();return;}
+      signal?.addEventListener('abort',job.abort,{once:true});
+      const decoder=createWavStreamDecoder();
+      let buffered=new Float32Array(0),rate=24000,total=0;
+      function schedule(samples){
+        if(!samples.length||job.settled)return;
+        const buffer=context.createBuffer(1,samples.length,rate);buffer.getChannelData(0).set(samples);
+        const source=context.createBufferSource();source.buffer=buffer;source.connect(context.destination);
+        const start=Math.max(job.nextAt,context.currentTime+(job.playing?.025:.075)),end=start+buffer.duration;
+        const part={source,start,end,samples,rate};job.parts.push(part);job.nextAt=end;job.duration+=buffer.duration;
+        source.onended=()=>{try{source.disconnect();}catch{}job.parts=job.parts.filter(p=>p!==part);if(job.done&&!job.parts.length)settle(job);};
+        if(!job.playing){job.playing=true;job.startedAt=start;onStatus?.('Le personnage te répond.');job.monitor=env.setInterval(()=>onEnergy?.(position()?.energy||0),20);}
+        source.start(start);
+      }
+      function consume(decoded,final=false){
+        if(decoded){rate=decoded.rate;const joined=new Float32Array(buffered.length+decoded.samples.length);joined.set(buffered);joined.set(decoded.samples,buffered.length);buffered=joined;}
+        const minimum=Math.round(rate*.14);
+        while(buffered.length>=minimum||final&&buffered.length){
+          const length=Math.min(buffered.length,Math.round(rate*.40)),part=buffered.slice(0,length);buffered=buffered.slice(length);schedule(part);
+        }
+      }
+      async function receive(){
+        if(disposed||!unlock())throw Error('Le son est indisponible.');
+        const resumeError=await resumePromise;if(job.settled)return;
+        if(resumeError||context.state!=='running')throw Error('Le son est suspendu.');
+        job.reader=clip.stream.getReader();onStatus?.('La voix arrive…');
+        for(;;){
+          const {done,value}=await job.reader.read();if(job.settled)return;
+          if(done)break;
+          total+=value.byteLength;if(total>MAX_SPEECH_BYTES)throw Error('Réponse audio trop longue.');
+          consume(decoder.push(value));
+        }
+        consume(decoder.push(new Uint8Array(0),true),true);
+        job.done=true;
+        if(!job.playing)throw Error('Réponse audio vide.');
+        if(!job.parts.length)settle(job);
+        else job.endTimer=env.setTimeout(()=>settle(job,audioError('La lecture audio a été interrompue.','VOICE_PLAYBACK_INTERRUPTED')),Math.max(0,job.nextAt-context.currentTime)*1000+5000);
+      }
+      receive().catch(error=>{if(!job.settled)settle(job,audioError(error.message||'Le flux vocal est indisponible.','VOICE_PLAYBACK_DECODE'));});
+    });
+  }
+
+  function play(blob, {signal,expectedDuration} = {}) {
+    if(blob?.stream?.getReader)return playStream(blob,{signal,expectedDuration});
     stop();
     return new Promise((resolve, reject) => {
       const job = {resolve, reject, signal, settled: false, playing: false};

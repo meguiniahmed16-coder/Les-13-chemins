@@ -117,7 +117,7 @@ test('Ahmed Numérique réutilise le téléphone existant après création dynam
  assert.match(ahmed,/querySelector\('\.maison-phone'\)/);
  assert.match(ahmed,/if\(active\)stop\(\);else void begin\(\)/);
  assert.match(ahmed,/syncAhmedPhone\(\)/);
- assert.match(src('ahmed-marie.html'),/rev=ahmedlatence4/);
+ assert.match(src('ahmed-marie.html'),/rev=ahmedstream5/);
 });
 
 

@@ -1,5 +1,5 @@
 import {createShotSequence} from './salon-shots.js';
-import {createDialogue} from './salon-dialogue.js?v=eleven70&rev=rencontres1';
+import {createDialogue} from './salon-dialogue.js?v=eleven70&rev=ahmedstream5&rev=rencontres1';
 import {createDictee} from './salon-dictee.js?v=salon41';
 import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=eleven69&rev=rencontres1';
 import {characterReply,limit} from '../atlas-chat-client.js';
@@ -101,6 +101,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   const playback=createDialogue({
     gender,
+    fastStream:()=>root.host.hasAttribute('ahmed-numerique'),
     allowRemote:()=>root.host.hasAttribute('salon-auteur')||root.host.hasAttribute('ahmed-numerique'),
     voiceStatus:message=>{voiceStatus.textContent=message;if(root.host.hasAttribute('ahmed-numerique')&&message)root.host.dispatchEvent(new CustomEvent('salon-ahmed-voice-status',{detail:{message:message==='Le personnage te répond.'?'Ahmed te répond…':message}}));if(root.host.hasAttribute('ahmed-numerique')&&/^Voix :|^Le son n’est pas disponible/.test(message))root.host.dispatchEvent(new CustomEvent('salon-ahmed-voice-error',{detail:{message}}));},
     start:showLine,

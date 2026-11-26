@@ -6,7 +6,7 @@ const messages={starting:'Connexion du micro…',listening:'Je t’écoute…',t
 const abortError=()=>new DOMException('Conversation interrompue.','AbortError');
 
 // Same-origin, authenticated routes only. No provider key is sent to the phone.
-export async function voiceRequest(path,{body,signal}={}){
+export async function voiceRequest(path,{body,signal,streamAudio=false}={}){
   if(!paths.has(path))throw new Error('Demande vocale invalide.');
   const binary=body instanceof Blob;
   const headers=body===undefined?{}:{'content-type':binary?body.type:'application/json'};
@@ -23,6 +23,8 @@ export async function voiceRequest(path,{body,signal}={}){
   }
   if(path!=='speech')return response.json();
   if(!/^audio\//i.test(response.headers.get('content-type')||''))throw new Error('La réponse vocale est indisponible.');
+  const voiceProvider=response.headers.get('x-voice-provider')||'unknown';
+  if(streamAudio&&voiceProvider==='cartesia'&&/^audio\/(?:wav|x-wav|wave)\b/i.test(response.headers.get('content-type')||'')&&response.body)return {stream:response.body,voiceProvider};
   const reader=response.body.getReader(),chunks=[];let length=0;
   try{
     for(;;){
@@ -33,7 +35,7 @@ export async function voiceRequest(path,{body,signal}={}){
     }
   }finally{reader.releaseLock();}
   const clip=new Blob(chunks,{type:response.headers.get('content-type')});
-  clip.voiceProvider=response.headers.get('x-voice-provider')||'unknown';
+  clip.voiceProvider=voiceProvider;
   return clip;
 }
 
