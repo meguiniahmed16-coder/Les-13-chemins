@@ -67,11 +67,13 @@ export function installSalonRuntime({win=window,doc=document,timeoutMs=100000,ti
 
 export async function bootSalon({win=window,doc=document,load=path=>import(path),runtime=installSalonRuntime({win,doc})}={}){
  const arrival=new URLSearchParams(win.location.search).get('arrival')==='cinema';
+ const solo=new URLSearchParams(win.location.search).get('ahmed')==='solo';
+ if(solo){doc.body.classList.add('ahmed-solo');doc.title='Ahmed numérique';}
  if(arrival){
   doc.title=SALON_NAME;doc.body.classList.add('cinema-arrival');
   if(new URLSearchParams(win.location.search).get('finale')==='1')doc.body.classList.add('intro-finale');
  }
- try{await load(new URL('./scene-bundle.js?v=call58',import.meta.url).href);}
+ try{await load(new URL(solo?'./scene-bundle.js?v=call58&rev=ahmedsolo2':'./scene-bundle.js?v=call58',import.meta.url).href);}
  catch(error){runtime.fail(error,'SCENE_MODULE');return false;}
  // The editor is optional to rendering. Its own failure must never replace a
  // successfully rendered garden with the full-screen 3D error panel.

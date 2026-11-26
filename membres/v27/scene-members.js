@@ -135,7 +135,7 @@ export function createMemberBridge(scene){
       const [reference,rig,bytes]=await Promise.all([loadFemaleReference(),getPoses(),fetch('/membres/v27/attaches-v27.bin?v=appui2').then(r=>{if(!r.ok)throw Error('Attaches du duo indisponibles.');return r.arrayBuffer();})]);
       template=reference;const weights=scene.unzip(new Uint8Array(bytes));
       for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}
-      if(scene.cinemaArrival){
+      if(scene.cinemaArrival||scene.originalAhmed){
         globalThis.window?.salonArrival?.progress('ahmed','Retrouvons Ahmed Marie dans La Croisée des Âmes…');
         const original=await attachCinemaAhmed(actors.m);
         originals.set(actors.m,original.parts);originalMotion.set(actors.m,original.motion);
