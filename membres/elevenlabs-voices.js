@@ -35,6 +35,7 @@ export function selectIntroVoices(list,preferred=null){
  const homme=chooseElevenVoice(valid,'homme'),femme=chooseElevenVoice(valid,'femme',homme?[homme.id]:[]);
  if(homme&&femme)return {m:homme.id,f:femme.id};
  if(!valid.length)throw Error('ElevenLabs ne renvoie aucune voix disponible. Le logiciel ne te demande pas de créer de clé ou de voix : vérifie simplement que ton compte possède des voix utilisables.');
+ if(valid.length===1)throw Error('ElevenLabs ne renvoie qu’une seule voix disponible sur cette clé. Pour avoir Ahmed et Marianne avec deux voix différentes, ton compte doit en rendre deux accessibles.');
  const error=Error('Le site voit les voix ElevenLabs, mais ne peut pas déterminer leur genre. Choisis ci-dessous une voix pour Ahmed et une pour Marianne.');
  error.code='VOICE_SELECTION_REQUIRED';
  throw error;
