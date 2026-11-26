@@ -105,3 +105,17 @@ test('Le parcours court suit les véritables boutons et peut être passé',()=>{
  assert.match(nav,/mountSalonGuide\(root/);assert.doesNotMatch(nav,/tool\('choose','encounter'/);
  assert.match(guide,/data-maison-open="encounter"/);assert.match(guide,/\.guest-random/);assert.match(guide,/\.maison-phone/);assert.match(guide,/data-guide="skip"/);assert.match(intro,/finishSalonEntry\(true\)/);
 });
+
+
+test('Ahmed Numérique réutilise le téléphone existant après création dynamique du salon',()=>{
+ const nav=src('membres/salon-maison-ui.js'),v27=src('membres/salon-v27.js'),ahmed=src('membres/ahmed-3d.js');
+ const sync=nav.slice(nav.indexOf('function sync(){'),nav.indexOf('function close(restore'));
+ assert.match(sync,/standaloneAhmed=root\.host\.hasAttribute\('ahmed-numerique'\)/);
+ assert.match(sync,/phoneNode\.hidden=standaloneAhmed\?false/);
+ assert.match(nav,/ahmedObserver\.observe\(root\.host/);
+ assert.match(v27,/if\(this\.hasAttribute\('ahmed-numerique'\)\)this\.#nav\?\.sync\(\)/);
+ assert.match(ahmed,/querySelector\('\.maison-phone'\)/);
+ assert.match(ahmed,/if\(active\)stop\(\);else void begin\(\)/);
+ assert.match(ahmed,/syncAhmedPhone\(\)/);
+ assert.match(src('ahmed-marie.html'),/rev=ahmedphone1/);
+});
