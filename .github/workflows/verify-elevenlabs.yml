@@ -1,0 +1,28 @@
+name: Vérifier les voix ElevenLabs du Salon
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'membres/voice-conversation.mjs'
+      - 'membres/salon-conversation.js'
+      - 'membres/intro-elevenlabs.js'
+      - 'membres/intro-cinema.js'
+      - 'membres/elevenlabs-voices.js'
+      - 'membres/*elevenlabs*.test.mjs'
+      - '.github/workflows/verify-elevenlabs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Tests ciblés de synthèse, sécurité et lecture du dojo
+        run: node --test membres/intro-elevenlabs.test.mjs membres/voice-conversation.test.mjs membres/salon-conversation.test.mjs membres/intro-flow.test.mjs
