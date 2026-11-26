@@ -211,19 +211,24 @@ export async function voiceConversation(request,env,{member,author},action){
     }
     // The same encrypted ElevenLabs credential serves old chat clients,
     // the voice call and the original voiced cinematic. No OpenAI TTS fallback.
+    // Validate every untrusted client field before any ElevenLabs network request.
     let spoken,voiceId,gender;
-    const allVoices=await voices(env,signal);
-    if(!object(data)||!Object.hasOwn(data,'voiceId')){
+    const automatic=!object(data)||!Object.hasOwn(data,'voiceId');
+    if(automatic){
       if(!exactKeys(data,['text','gender'])||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
       spoken=text(data.text);gender=data.gender;
-      const chosen=chooseElevenVoice(allVoices,gender);
-      if(!chosen)failure(503,'Aucune voix ElevenLabs de ce genre n’est disponible. Vérifie les voix associées à ton compte.');
-      voiceId=chosen.id;
     }else{
       if(!exactKeys(data,['text','voiceId','gender','strict'])||(data.strict!==undefined&&data.strict!==true))failure(400,'La demande de voix est invalide.');
       spoken=text(data.text);voiceId=data.voiceId;gender=data.gender;
       if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix ElevenLabs valide.');
       if(gender!==undefined&&!['homme','femme'].includes(gender))failure(400,'Le personnage vocal est invalide.');
+    }
+    const allVoices=await voices(env,signal);
+    if(automatic){
+      const chosen=chooseElevenVoice(allVoices,gender);
+      if(!chosen)failure(503,'Aucune voix ElevenLabs de ce genre n’est disponible. Vérifie les voix associées à ton compte.');
+      voiceId=chosen.id;
+    }else{
       const chosen=allVoices.find(voice=>voice.id===voiceId);
       if(!chosen)failure(400,'Cette voix n’est pas disponible dans ton compte ElevenLabs.');
       if(gender&&chosen.gender&&gender!==chosen.gender)failure(400,'Le genre de la voix ElevenLabs ne correspond pas au personnage.');
