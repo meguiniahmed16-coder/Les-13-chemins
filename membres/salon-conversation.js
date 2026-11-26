@@ -1,4 +1,5 @@
 import {createVoiceCapture,createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
+import {chooseElevenVoice} from './elevenlabs-voices.js?v=eleven69';
 
 const paths=new Set(['status','voices','settings','transcribe','reply','speech']);
 const messages={starting:'Connexion du micro…',listening:'Je t’écoute…',transcribing:'J’ai entendu ta phrase…',thinking:'Le personnage te répond…',preparing:'La voix arrive…',speaking:'Le personnage parle. Touche le micro pour intervenir.',paused:'Micro coupé.',idle:''};
@@ -87,10 +88,10 @@ export function createVoiceConversation({
       const answer=String(reply.answer||'').trim();
       if(!answer)throw new Error('La réponse n’a pas pu arriver.');
       onAnswer(question,answer);setState('preparing');
-      const speechBody={text:answer,gender:current.gender};
-      if(run.voiceId)speechBody.voiceId=run.voiceId;
+      const speechBody={text:answer,gender:current.gender,voiceId:run.voiceId,strict:true};
       const clipReply=await request('speech',{body:speechBody,signal:turn.abort.signal});
       if(!valid(run,turn))return;
+      if(clipReply?.voiceProvider&&clipReply.voiceProvider!=='elevenlabs')throw new Error('ElevenLabs refuse cette voix. Aucun remplacement automatique ne sera utilisé.');
       setState('speaking',messages.speaking);onAudio(answer,speech);
       await speech.play(clipReply,{signal:turn.abort.signal});
       if(!valid(run,turn))return;
@@ -150,8 +151,14 @@ export function createVoiceConversation({
       const available=status?.ready?status:await request('status',{signal:turn.abort.signal});
       if(!valid(run,turn))return;
       if(!available.ready)throw new Error('Le raccordement du compte OpenAI est nécessaire pour parler.');
-      if(voiceId&&!voices.some(voice=>voice.id===voiceId))throw new Error('Cette voix n’est plus disponible.');
-      if(!voiceId&&!['homme','femme'].includes(current.gender))throw new Error('Le personnage n’a pas de voix masculine ou féminine identifiée.');
+      if(!voices.length){const data=await request('voices',{signal:turn.abort.signal});voices=Array.isArray(data.voices)?data.voices:[];}
+      if(!voiceId){
+        const selected=chooseElevenVoice(voices,current.gender);
+        if(!selected)throw new Error('Aucune voix ElevenLabs correspondante pour ce personnage. Ajoute une voix de ce genre dans ton compte ElevenLabs.');
+        voiceId=selected.id;
+      }
+      if(!voices.some(voice=>voice.id===voiceId))throw new Error('Cette voix ElevenLabs n’est plus disponible.');
+      run.voiceId=voiceId;lastVoice=voiceId;
       await listen(run);
     }catch(error){if(valid(run,turn))problem(run,error);}
   }
