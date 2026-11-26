@@ -57,7 +57,7 @@ async function enter(state){
   $('retry').hidden=$('intro').hidden=true;video.pause();
   document.body.classList.add('visiting');$('live-room').hidden=false;$('status').textContent='Ton avatar rejoint le salon…';
   if(state.state==='active')setTime(state.remaining);
-  await import('./salon-v27.js?v=eleven70');
+  await import('./salon-v27.js?v=eleven70&rev=rencontres1');
   if(ticket!==epoch)return;
   draft=profile();remember();
   const save=async(gender,look)=>{if(ticket!==epoch)throw Error('La visite est terminée.');draft.looks[gender]=normaliseStudio(look,true,undefined,gender);remember();};
