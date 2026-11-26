@@ -49,6 +49,6 @@ test('Les deux volets sont encore plus fins et translucides en portrait et paysa
 test('Les modules mis à jour échappent aux anciennes copies Android',()=>{
  assert.match(salon,/salon-maison-ui\.js\?v=call61/);
  assert.match(salon,/salon-rail52\.css\?v=hud56/);
- assert.match(source('membres/member.js'),/salon-v27\.js\?v=call61/);
- assert.match(source('membre.html'),/member\.js\?v=call67/);
+ assert.match(source('membres/member.js'),/salon-v27\.js\?v=eleven69/);
+ assert.match(source('membre.html'),/member\.js\?v=eleven69/);
 });
