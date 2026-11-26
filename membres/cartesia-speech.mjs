@@ -11,7 +11,11 @@ async function checked(response){
  if([401,403].includes(response.status))fail(503,'Cartesia refuse la clé ou les droits de synthèse.');
  fail(503,'Cartesia est indisponible (HTTP '+response.status+').');
 }
+const voiceCache=new Map();
 export async function cartesiaVoices(key,signal){
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));const cacheId=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+ const cached=voiceCache.get(cacheId);if(cached&&cached.expires>Date.now())return cached.voices;
+ if(signal?.aborted)throw new DOMException('Cancelled','AbortError');
  const lists=await Promise.all([['masculine','homme'],['feminine','femme']].map(async([gender,label])=>{
   const url=new URL(base+'/voices');url.searchParams.set('language','fr-FR');url.searchParams.set('gender',gender);url.searchParams.set('limit','100');
   const response=await checked(await fetch(url.href,{headers:{...headers(key),accept:'application/json'},redirect:'manual',signal}));
@@ -23,6 +27,8 @@ export async function cartesiaVoices(key,signal){
  }));
  const voices=[...new Map(lists.flat().map(v=>[v.id,v])).values()];
  if(!voices.some(v=>v.gender==='homme')||!voices.some(v=>v.gender==='femme'))fail(503,'Cartesia ne renvoie pas de voix françaises des deux genres.');
+ if(voiceCache.size>=8)voiceCache.delete(voiceCache.keys().next().value);
+ voiceCache.set(cacheId,{expires:Date.now()+300000,voices});
  return voices;
 }
 export async function cartesiaSpeech(key,voiceId,spoken,signal){
