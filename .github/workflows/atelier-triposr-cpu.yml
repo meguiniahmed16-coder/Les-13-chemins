@@ -1,10 +1,5 @@
 name: Atelier - TripoSR CPU
 on:
-  push:
-    branches: [atelier-triposr-cpu]
-    paths:
-      - '.github/workflows/atelier-triposr-cpu.yml'
-      - 'tools/incarnations-triposr/**'
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -31,8 +26,10 @@ jobs:
           git clone --depth 1 https://github.com/VAST-AI-Research/TripoSR.git "$RUNNER_TEMP/TripoSR"
           cd "$RUNNER_TEMP/TripoSR"
           git rev-parse HEAD
-          python -m pip install "numpy<2" "cmake<4" "ninja" "pybind11" "scikit-build-core>=0.10,<0.12" "rembg==2.0.59" "onnxruntime"
-          python -m pip install --no-build-isolation -r requirements.txt "numpy<2" "rembg==2.0.59" "scikit-image==0.24.0" "gradio<5"
+          python -m pip install "numpy<2" "rembg==2.0.59" "onnxruntime"
+          grep -vE "torchmcubes|^gradio$" requirements.txt > requirements-cpu.txt
+          python -m pip install -r requirements-cpu.txt "numpy<2" "rembg==2.0.59" "scikit-image==0.24.0" "huggingface-hub<1" "opencv-python-headless<4.12"
+          cp "$GITHUB_WORKSPACE/tools/incarnations-triposr/torchmcubes.py" ./torchmcubes.py
       - name: Reconstruct a public-domain NASA portrait, not a chair
         run: |
           cd "$RUNNER_TEMP/TripoSR"
