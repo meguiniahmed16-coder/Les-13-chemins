@@ -24,7 +24,7 @@ async function mount(){
  if(actor)return actor;
  if(mounting)return mounting;
  mounting=(async()=>{
-  await import('./salon-v27.js?v=call61');
+  await import('./salon-v27.js?v=eleven69');
   if($('ahmed-3d').hidden)return null;
   const view=document.createElement('chemins-salon');
   view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');view.className='ahmed-avatar-v27';
