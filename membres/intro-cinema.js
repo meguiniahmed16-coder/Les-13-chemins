@@ -184,7 +184,7 @@ const lines=[
  {
    "id": "origine-auteur",
    "speaker": "m",
-   "text": "Tout a commencé par l’aventure d’Ahmed Meguini, l’auteur de ce site et du manuscrit La Tectonique des âmes.",
+   "text": "Tout a commencé par l’aventure d’Ahmed Marie, l’auteur de ce site et du manuscrit La Tectonique des âmes.",
    "scene": "white",
    "shot": "medium",
    "ms": 11500,
@@ -1199,7 +1199,6 @@ function drawFilm(active=true){
   const image=video.readyState>=2?video:poster.complete&&poster.naturalWidth?poster:null;
   if(image){const iw=image.videoWidth||image.naturalWidth,ih=image.videoHeight||image.naturalHeight,s=Math.max(w/iw,h/ih);ctx.drawImage(image,(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s);}
  }
- if(active){const title=video.currentTime<7?'LA CROISÉE DES ÂMES':'LA TECTONIQUE DES ÂMES';ctx.fillStyle='#162c26';ctx.fillRect(0,h- Math.max(56,h*.19),w,Math.max(56,h*.19));ctx.fillStyle='#f4e9cf';ctx.font='600 '+Math.round(w*.043)+'px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(title,w/2,h-Math.max(56,h*.19)/2,w*.92);}
  tex.needsUpdate=true;
 }
 function stopFilm(){televisionFilm?.playback.stop();filmShot='';$('film-montage').hidden=true;}
@@ -1211,7 +1210,6 @@ function updateFilm(line,elapsed){
  if(filmShot!==line.id||now-lastFilmDraw>=45){drawFilm();lastFilmDraw=now;}
  filmShot=line.id;
  overlay.hidden=line.shot!=='montage'||elapsed<900;
- const title=overlay.querySelector('.film-universe-title');if(title)title.textContent=seconds<15?'La Tectonique des âmes':'La Croisée des Âmes';
  overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,900,1450)):'1';
 }
 let cutCamera=true;
