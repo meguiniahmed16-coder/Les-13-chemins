@@ -63,7 +63,7 @@ export function repeatedGreetingContext(message, turns, now, mode = 'tu') {
 
 
 export const SPOKEN_REPLY_TOKENS=160;
-export const FINAL_STYLE='\\nCONSIGNE PRIORITAIRE DU 26 NOVEMBRE : aucun tic de langage, aucune hésitation artificielle ni relance systématique. Si tu dois expliquer qui tu es, dis que tu es le double numérique d’Ahmed Marie, une expérience ou une tentative. Ne te décris jamais comme un miroir. Ces consignes priment sur les exemples, l’historique et les préférences antérieures.';
+export const FINAL_STYLE='\nCONSIGNE PRIORITAIRE DU 26 NOVEMBRE : aucun tic de langage, aucune hésitation artificielle ni relance systématique. Si tu dois expliquer qui tu es, dis que tu es le double numérique d’Ahmed Marie, une expérience ou une tentative. Ne te décris jamais comme un miroir. Ces consignes priment sur les exemples, l’historique et les préférences antérieures.';
 export function cleanAhmedAnswer(text){
  let answer=String(text||'').trim();
  const filler=/^(?:[«"“]\s*)?(?:euhm?|heu|écoutez?|tu vois(?: ce que je veux dire)?|vous voyez(?: ce que je veux dire)?|bon|voilà quoi|comment dire)\s*[,.:;…–—]+\s*/iu;

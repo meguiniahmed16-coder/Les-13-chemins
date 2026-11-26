@@ -117,7 +117,7 @@ test('Ahmed Numérique réutilise le téléphone existant après création dynam
  assert.match(ahmed,/querySelector\('\.maison-phone'\)/);
  assert.match(ahmed,/if\(active\)stop\(\);else void begin\(\)/);
  assert.match(ahmed,/syncAhmedPhone\(\)/);
- assert.match(src('ahmed-marie.html'),/rev=ahmeddirect3/);
+ assert.match(src('ahmed-marie.html'),/rev=ahmedlatence4/);
 });
 
 
@@ -132,4 +132,11 @@ test('Ahmed seul : modèle privé exact pour auteur, aucune commande native ou i
  assert.match(scene,/if\(soloAhmed\)\{animateBody\(actors.m/);
  assert.match(html,/body\.ahmed-solo #stage>:not\(#scene\):not\(#loading\)/);
  assert.match(ahmed,/:not\(.v27-frame\):not\(.maison-phone\)/);
+});
+
+
+test('Retour micro réel et circuit oral direct sans contrôle auteur redondant',()=>{
+ const ahmed=src('membres/ahmed-3d.js'),page=src('ahmed-marie.html');
+ assert.match(ahmed,/voiceSamples>=3/);assert.match(ahmed,/Question reçue/);assert.match(ahmed,/dataset\.ahmedSpoken='1'/);
+ assert.match(page,/payload.spoken===true/);assert.match(page,/request.spoken\?\{spoken:true\}/);
 });
