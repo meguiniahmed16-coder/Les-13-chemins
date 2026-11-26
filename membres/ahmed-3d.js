@@ -23,19 +23,21 @@ async function startOpening(){
  void mount();
 }
 function note(value){status.textContent=value;}
+function syncAhmedPhone(){const phone=host.querySelector('chemins-salon')?.shadowRoot?.querySelector('.maison-phone');if(!phone)return;phone.hidden=false;phone.setAttribute('aria-pressed',String(active));phone.setAttribute('aria-expanded',String(active));phone.title=active?'Raccrocher':'Appeler Ahmed numérique';phone.setAttribute('aria-label',phone.title);}
 async function mount(){
  if(actor)return actor;
  if(mounting)return mounting;
  mounting=(async()=>{
-  await import('./salon-v27.js?v=eleven70&rev=rencontres1');
+  await import('./salon-v27.js?v=eleven70&rev=ahmedphone1');
   if($('ahmed-3d').hidden)return null;
   const view=document.createElement('chemins-salon');
   view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');view.className='ahmed-avatar-v27';
-  view.addEventListener('salon-ahmed-call',()=>void begin());
+  view.addEventListener('salon-ahmed-call',()=>{if(active)stop();else void begin();});
   view.style.setProperty('--room-height','100%');
   host.append(view);
+  const phone=view.shadowRoot?.querySelector('.maison-phone');if(phone){phone.hidden=false;phone.title='Appeler Ahmed numérique';phone.setAttribute('aria-label',phone.title);phone.setAttribute('aria-pressed','false');}
   const style=document.createElement('style');
-  style.textContent='.stage{height:100%!important;min-height:0!important}.scene-viewport{height:100%!important;min-height:0!important}.conversation-footer,.maison-menu-toggle,.maison-dock,.maison-rail-panel,.studio-drawer,.maison-studio-peek,.v27-actions{display:none!important}';
+  style.textContent='.stage{height:100%!important;min-height:0!important}.scene-viewport{height:100%!important;min-height:0!important}.conversation-footer,.maison-menu-toggle,.maison-dock,.maison-rail-panel,.studio-drawer,.maison-studio-peek,.v27-actions{display:none!important}:host([ahmed-numerique]) .stage .maison-phone:not([hidden]){display:grid!important;position:absolute!important;top:10px!important;right:10px!important;left:auto!important;bottom:auto!important;z-index:45!important;pointer-events:auto!important}:host([ahmed-numerique]) .stage .maison-phone[aria-pressed=true]{background:#934b40!important;color:white!important}';
   view.shadowRoot?.append(style);
   const original=referenceStudio('homme');
   await view.configure(original,{
@@ -43,7 +45,7 @@ async function mount(){
    author:false,plus:false,savedStudio:original,salonLooks:{homme:original},
    change(){},async saveCharacter(){},async save(){}
   });
-  actor=view;return view;
+  actor=view;syncAhmedPhone();return view;
  })().catch(()=>{mounting=null;note('Le modèle 3D ne répond pas. Le dialogue écrit reste accessible.');return null;});
  return mounting;
 }
@@ -53,7 +55,7 @@ function stopMic(){
 }
 function stop(){
  active=false;epoch++;awaiting=false;stopMic();transcribeAbort?.abort();transcribeAbort=null;remoteCapture?.stop();remoteCapture=null;inputLease?.close();inputLease=null;actor?.stopAhmedVoice();
- call.hidden=false;hang.hidden=true;
+ call.hidden=false;hang.hidden=true;syncAhmedPhone();
  note('Appel terminé. Le dialogue écrit reste disponible.');
 }
 function listen(){
@@ -99,7 +101,7 @@ function listenOwner(){
 async function begin(){
  if(active)return;
  actor?.armAhmedVoice();
- active=true;epoch++;awaiting=false;call.hidden=true;hang.hidden=false;
+ active=true;epoch++;awaiting=false;call.hidden=true;hang.hidden=false;syncAhmedPhone();
  note('Connexion avec Ahmed…');
  const [view]=await Promise.all([mount(),checkOwner()]);if(!active)return;
  if(!view){stop();return;}

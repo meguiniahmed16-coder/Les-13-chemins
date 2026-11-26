@@ -3,7 +3,7 @@ import {referenceStudio,normaliseStudio} from './studio-look.js?v=incarnations33
 import {reactionFor} from './conversation-reactions.js';
 import {createDrawer} from './studio-drawer.js?v=studio-rail1';
 import {createSalonChat} from './salon-chat.js?v=eleven70&rev=rencontres1';
-import {createSalonNavigation} from './salon-maison-ui.js?v=call61&rev=rencontres1';
+import {createSalonNavigation} from './salon-maison-ui.js?v=call61&rev=ahmedphone1';
 import {guestAppearance} from './salon-encounter.js?v=call58';
 import {loadStudio} from './studio-model.js?v=incarnations33';
 import {createSalonInspection} from './salon-inspection.js?v=incarnations33';
@@ -225,6 +225,7 @@ class SalonV27 extends HTMLElement{
     finally{this.#inspectionPending.delete(slot);this.#syncInspectionTools();}
   }
   connectedCallback(){
+    if(this.hasAttribute('ahmed-numerique'))this.#nav?.sync();
     if(this.#frame||this.#fallback)return;
     const frame=this.#frame=document.createElement('iframe');
     frame.title='La Croisée des Âmes, le salon et le parc';frame.className='v27-frame';frame.allow='camera; fullscreen';frame.allowFullscreen=true;

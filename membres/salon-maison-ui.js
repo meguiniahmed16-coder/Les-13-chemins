@@ -76,7 +76,7 @@ export function createSalonNavigation(root){
  viewport.insertAdjacentHTML('beforeend',menu+dock+'<output class="maison-nav-current" role="status" aria-live="polite" hidden></output>'+panel+phone);
  const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),menuToggle=$('.maison-menu-toggle'),phoneNode=$('.maison-phone'),currentLabel=$('.maison-nav-current');
  const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle');
- const standaloneAhmed=root.host.hasAttribute('ahmed-numerique');
+ let standaloneAhmed=root.host.hasAttribute('ahmed-numerique');
  const ownerRoom=root.host.hasAttribute('salon-auteur');
  const voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
  const chat=$('.guest-message'),nativeStudio=$('.options-toggle');
@@ -119,6 +119,8 @@ export function createSalonNavigation(root){
    const d=$('.studio-drawer');return Boolean(d&&!d.hidden);
  }
  function sync(){
+   // A dynamically created custom element receives its attributes after its constructor.
+   standaloneAhmed=root.host.hasAttribute('ahmed-numerique');
    const hasGuest=Boolean(companion);
    phoneNode.hidden=standaloneAhmed?false:ownerRoom?false:!hasGuest||legacyPhone.hidden;
    phoneNode.disabled=false;
@@ -175,7 +177,7 @@ export function createSalonNavigation(root){
    legacyPhone.click();
  }
  phoneNode.onclick=()=>{
-   if(standaloneAhmed){root.host.dispatchEvent(new CustomEvent('salon-ahmed-call'));return;}
+   if(root.host.hasAttribute('ahmed-numerique')){root.host.dispatchEvent(new CustomEvent('salon-ahmed-call'));return;}
    call();
  };
  function fullscreen(){
@@ -238,9 +240,12 @@ export function createSalonNavigation(root){
    sync();
  });
  const voiceObserver=new MutationObserver(()=>{
+   if(root.host.hasAttribute('ahmed-numerique'))return;
    phoneNode.setAttribute('aria-expanded',String(!voicePanel.hidden));
  });
  voiceObserver.observe(voicePanel,{attributes:true,attributeFilter:['hidden']});
+ const ahmedObserver=new MutationObserver(sync);
+ ahmedObserver.observe(root.host,{attributes:true,attributeFilter:['ahmed-numerique']});
  const ownerObserver=new MutationObserver(sync);
  ownerObserver.observe(legacyPhone,{attributes:true,attributeFilter:['hidden']});
  const studioDrawer=$('.studio-drawer');
@@ -269,6 +274,6 @@ export function createSalonNavigation(root){
      engineBridge=connectSalonEngine({doc,scene,stage,root});
      engineBridge.sync();
    },
-   dispose(){engineBridge?.dispose();engineBridge=null;}
+   dispose(){ahmedObserver.disconnect();engineBridge?.dispose();engineBridge=null;}
  };
 }
