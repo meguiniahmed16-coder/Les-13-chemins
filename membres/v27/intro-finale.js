@@ -17,7 +17,7 @@ export function introFinaleFrame(elapsedMs,{width=1280,height=720}={}){
  const centerZ=3.62-9*fly;
  const orbit=clamp((elapsed-ORBIT_START_MS)/(ORBIT_END_MS-ORBIT_START_MS),0,1);
  const angle=Math.PI-.12+2*Math.PI*ease(orbit);
- const top=Math.min(122,height*.30),bottom=Math.min(24,height*.10),usable=(height-top-bottom)/height;
+ const top=Math.min(122,height*.32),bottom=Math.min(24,height*.10),usable=(height-top-bottom)/height;
  const span=3.4+3.5*wings;
  const fov=clamp(Math.max(49,Math.atan(span/(2*5.8*aspect*.80))*360/Math.PI),49,98);
  const tangent=Math.tan(fov*Math.PI/360);
