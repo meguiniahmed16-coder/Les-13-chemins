@@ -64,7 +64,7 @@ test('La liste ElevenLabs est bornée, paginée et ne divulgue que les métadonn
   const {api}=await setup(t);const calls=[];
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     calls.push(url);assert.equal(options.headers['xi-api-key'],fakeEleven);assert.equal(options.redirect,'manual');
-    const u=new URL(url);assert.equal(u.origin,'https://api.elevenlabs.io');assert.equal(u.pathname,'/v2/voices');assert.equal(u.searchParams.get('page_size'),'100');assert.equal(u.searchParams.get('language'),'fr');
+    const u=new URL(url);assert.equal(u.origin,'https://api.elevenlabs.io');assert.equal(u.pathname,'/v2/voices');assert.equal(u.searchParams.get('page_size'),'100');assert.equal(u.searchParams.get('language'),null,'Multilingual voices must not be excluded by an optional fr label');
     return Response.json(calls.length===1?{voices:[voice,{voice_id:'../bad',name:'Bad'}],has_more:true,next_page_token:'page-two'}:{voices:[{...voice,voice_id:'voice_male_2',labels:{gender:'male'}}],has_more:false});
   });
   const response=await api('voices');const data=await response.json();
