@@ -81,7 +81,7 @@ function harness({dojoLoaded=true}={}){
    tick(){},pause(){this.paused=true;arrivalCalls.push('pause')},resume(){this.paused=false;arrivalCalls.push('resume')},
   },
   isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
-  salonEntryMode:false,stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
+  createIntroElevenLabs:()=>({unlock:()=>true,prepare:async()=>{},speak:()=>{},prefetch:()=>{},stop:()=>{},pause:()=>{},resume:()=>{},dispose:()=>{}}),salonEntryMode:false,stage:'white',step:-1,autoplay:false,autoTimer:0,alias:'Camille',authorized:true,ready:true,started:false,gardenLoaded:false,
   pending:false,sceneRequest:0,seatsReady:true,initialTask:null,shotStart:0,shotPaused:false,pausedAt:0,pausedElapsed:0,
   currentSpeaker:null,lastLayout:'',secondCue:false,cutCamera:false,invitationMotion:null,targetAngle:Math.PI,radius:3.7,
   bubble:dom.$('bubble'),status:dom.$('status'),scene:{background:{set(){}}},problems:[],bootStage:'Test',
@@ -298,14 +298,12 @@ test('garden entry delegates once to the explicit arrival sequence instead of ra
  const skipped=harness();skipped.dom.$('skip').click();assert.equal(skipped.arrivals.length,1);assert.equal(skipped.arrivals[0].skip,true);
 });
 
-test('the dojo assigns distinct local voices and bubble visibility never controls speech',()=>{
- const worker=readFileSync(new URL('./salon-voice-worker.js',import.meta.url),'utf8');
- assert.match(source,/const gender=id==='f'\?'femme':'homme'/);
- assert.match(source,/stage==='dojo'\|\|!matched/);
- assert.match(source,/cinematicLocalVoices\.speak\(\{/);
- assert.match(worker,/gender==='femme'\?'jessica':'pierre'/);
- assert.match(source,/cinematicLocalVoices\?\.pause\(\)/);
- assert.match(source,/cinematicLocalVoices\?\.resume\(\)/);
+test('the dojo uses ElevenLabs-only voices, independent of the optional dialogue bubbles',()=>{
+ assert.match(source,/createIntroElevenLabs\(\{/);
+ assert.match(source,/cinematicVoices\.speak\(id,text\)/);
+ assert.match(source,/cinematicVoices\.pause\(\)/);
+ assert.match(source,/cinematicVoices\.resume\(\)/);
+ assert.doesNotMatch(source,/browserCinematicVoice|cinematicSynth|cinematicLocalVoices/);
  assert.match(source,/if\(canvasHost\.classList\?\.contains\?\.\('bubbles-off'\)\|\|!speaker/);
  assert.match(html,/#stage\.bubbles-off #bubble\{display:none!important\}/);
 });
