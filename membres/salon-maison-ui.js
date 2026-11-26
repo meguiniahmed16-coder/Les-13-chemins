@@ -119,7 +119,7 @@ export function createSalonNavigation(root){
  }
  function sync(){
    const hasGuest=Boolean(companion);
-   phoneNode.hidden=standaloneAhmed||ownerRoom?false:!hasGuest||legacyPhone.hidden;
+   phoneNode.hidden=standaloneAhmed?false:ownerRoom?false:!hasGuest||legacyPhone.hidden;
    phoneNode.disabled=false;
    const status=$('.maison-companion-label');
    if(status)status.textContent=hasGuest?'Avec '+companion:'Invite un personnage pour dialoguer.';
