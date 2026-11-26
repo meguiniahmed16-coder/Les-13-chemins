@@ -7,7 +7,6 @@ import {selectIntroVoices} from './elevenlabs-voices.js?v=eleven72';
 export function createIntroElevenLabs({
  request=voiceRequest,
  playerFactory=createRemoteSpeech,
- audioTap, clipCache,
  onState=()=>{},
  onError=()=>{},
  onNeedsSelection=()=>{}
@@ -16,7 +15,7 @@ export function createIntroElevenLabs({
  let energy=0,controller=null;
  const recordings=new Map(),pending=new Map();
  function ensurePlayer(){
-  return player??=playerFactory({audioTap,onEnergy:value=>{energy=value;onState({playing,energy});}});
+  return player??=playerFactory({onEnergy:value=>{energy=value;onState({playing,energy});}});
  }
  function unlock(){return ensurePlayer().unlock();}
  const preferenceKey='croisee-cartesia-voix-v1';
@@ -40,7 +39,7 @@ export function createIntroElevenLabs({
   const chosen=selectIntroVoices(availableVoices,{m,f});
   if(chosen.m!==m||chosen.f!==f)throw Error('Choisis deux voix différentes, compatibles avec Ahmed et Marianne.');
   try{localStorage.setItem(preferenceKey,JSON.stringify(chosen));}catch{}
-  unavailable=null;recordings.clear();voices=chosen;ready=Promise.resolve(chosen);
+  unavailable=null;voices=chosen;ready=Promise.resolve(chosen);
   return chosen;
  }
  function clipKey(id,text){return id+'|'+text;}
@@ -50,12 +49,11 @@ export function createIntroElevenLabs({
   if(recordings.has(key))return recordings.get(key);
   if(pending.has(key))return pending.get(key);
   const task=(async()=>{
-   const selected=await prepare(),gender=id==='f'?'femme':'homme',cacheKey='cartesia|'+selected[id]+'|'+text;
-   const saved=await clipCache?.read(cacheKey);if(saved){recordings.set(key,saved);return saved;}
+   const selected=await prepare(),gender=id==='f'?'femme':'homme';
    const clip=await request('speech',{body:{text,gender,voiceId:selected[id],strict:true,purpose:'cinema'}});
    if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure'&&clip?.voiceProvider!=='cartesia')throw Error('Le service vocal a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
    if(!clip?.size)throw Error('Le service vocal a renvoyé un enregistrement vide.');
-   recordings.set(key,clip);await clipCache?.write(cacheKey,clip);return clip;
+   recordings.set(key,clip);return clip;
   })().catch(error=>{
    if([429,503].includes(error?.status))unavailable=error.message||'Le service vocal est indisponible.';
    throw error;
@@ -70,15 +68,15 @@ export function createIntroElevenLabs({
   generation++;active=null;playing=false;energy=0;
   player?.stop();onState({playing:false,energy:0});
  }
- async function speak(id,text,maxDurationMs){
+ async function speak(id,text){
   stop();
   if(disposed||!['m','f'].includes(id)||!text)return;
-  const token=generation;active={id,text,maxDurationMs};onState({playing:false,energy:0,loading:true});
+  const token=generation;active={id,text};onState({playing:false,energy:0,loading:true});
   try{
    const clip=await getClip(id,text);
    if(token!==generation||disposed)return;
    playing=true;onState({playing:true,energy:0,loading:false});
-   await ensurePlayer().play(clip,{maxDurationMs});
+   await ensurePlayer().play(clip);
   }catch(error){
    if(token===generation&&!disposed&&error?.name!=='AbortError')onError(error?.message||'Le service vocal est indisponible.');
   }finally{
@@ -86,9 +84,8 @@ export function createIntroElevenLabs({
   }
  }
  function pause(){if(active){player?.stop();playing=false;energy=0;onState({playing:false,energy:0});}}
- function resume(){if(active&&!playing)void speak(active.id,active.text,active.maxDurationMs);}
+ function resume(){if(active&&!playing)void speak(active.id,active.text);}
  function dispose(){stop();disposed=true;player?.dispose();recordings.clear();pending.clear();}
- async function prepareClips(cues,progress=()=>{}){await prepare();for(let i=0;i<cues.length;i++){await getClip(cues[i].id,cues[i].text);progress(i+1,cues.length);}return true;}
- return {unlock,prepare,assign,prefetch,prepareClips,speak,stop,pause,resume,dispose,
+ return {unlock,prepare,assign,prefetch,speak,stop,pause,resume,dispose,
   get energy(){return energy;},get playing(){return playing;},get voices(){return voices;}};
 }

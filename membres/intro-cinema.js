@@ -8,18 +8,14 @@ import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
 import {createIntroSound} from './intro-sound.js';
-import {createSocialExport,createSocialVoiceCache} from './intro-social-export.js';
-import {INTRO_INVITATION_DIALOGUE} from './intro-invitation.js';
 import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven72';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
-const socialMode=new URLSearchParams(location.search).get('export')==='social';
-const salonEntryMode=new URLSearchParams(location.search).get('salon')==='1'&&!socialMode;
+const salonEntryMode=new URLSearchParams(location.search).get('salon')==='1';
 const originalIntroKey='croisee-salon-introduction-originale-v34';
 if(salonEntryMode)document.documentElement.classList.add('salon-entry-mode');
 function finishSalonEntry(shortGuide=false){
- if(typeof socialExport!=='undefined'&&socialExport){socialExport.finish();return;}
  if(!salonEntryMode)return;
  const returnTo=new URLSearchParams(location.search).get('retour');
  const destinations={
@@ -34,28 +30,13 @@ function finishSalonEntry(shortGuide=false){
 }
 
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
-const exportStatus=$('social-export-status'),exportResult=$('social-export-result');
-function socialNote(message){if(exportStatus)exportStatus.textContent=message;}
-function socialFile(blob,ext,ms){
- const url=URL.createObjectURL(blob),name='La-Croisee-des-Ames-1m20-9x16.'+ext;
- exportResult.hidden=false;const a=exportResult.querySelector('a');a.href=url;a.download=name;a.textContent='Télécharger '+name;
- const preview=document.createElement('video');preview.controls=true;preview.playsInline=true;preview.preload='metadata';preview.src=url;$('social-export-preview').replaceChildren(preview);
- socialNote('Vidéo enregistrée · '+(blob.size/1048576).toFixed(1)+' Mo · '+ext.toUpperCase());
-}
-const socialExport=socialMode?createSocialExport({stage:canvasHost,frame:$('garden-frame'),mainCanvas:()=>renderer.domElement,onStatus:socialNote,onFile:socialFile}):null;
-if(socialMode){
- document.documentElement.classList.add('social-export-mode');exportStatus.hidden=false;
- $('enter').textContent='Créer la vidéo 9:16';
- const fit=()=>document.documentElement.style.setProperty('--social-scale',String(Math.min(innerWidth/360,(innerHeight-44)/640)));
- window.addEventListener('resize',fit);fit();socialNote('Chargement des scènes originales…');
-}
-const introSound=createIntroSound({audioTap:socialExport?.tap,onProblem:message=>remember('Son de la cinématique',message)});
+const introSound=createIntroSound({onProblem:message=>remember('Son de la cinématique',message)});
 const dojoDemo=mountDojoDemo(canvasHost);
 const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
 if(promotionMode)document.body.classList.add('promotion');
 const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),voiceEnergy:()=>cinematicVoiceEnergy,onDialogue:(id,text)=>{if(id&&text)speakCinematicCue(id,text);else stopCinematicVoice();},onComplete:()=>{stopCinematicVoice();introSound.stop();finishSalonEntry();}});
-const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:socialMode});
-renderer.setPixelRatio(socialMode?2:Math.min(devicePixelRatio||1,1.35));
+const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
 renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
@@ -811,14 +792,12 @@ function showVoiceSelection(list){
  if(selectionPaused)automatic(false);
 }
 const cinematicVoices=createIntroElevenLabs({
- audioTap:typeof socialExport!=='undefined'?socialExport?.tap:undefined,clipCache:typeof createSocialVoiceCache==='function'?createSocialVoiceCache():undefined,
  onNeedsSelection:showVoiceSelection,
  onState:({energy=0,playing=false}={})=>{
   cinematicVoiceEnergy=energy;
   if(playing&&$('intro-voice-alert'))$('intro-voice-alert').hidden=true;
  },
  onError:message=>{
-  if(typeof socialExport!=='undefined'&&socialExport?.started&&!socialExport.done)socialExport.cancel('Voix interrompue : '+message);
   const alert=$('intro-voice-alert');
   if(alert){alert.textContent=String(message||'La synthèse vocale est indisponible.');alert.hidden=false;}
  }
@@ -852,7 +831,7 @@ function prepareCinematicVoices(){
 function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;}
 function speakCinematicCue(id,text){
  if(!cinematicVoiceEnabled||document.hidden||!['m','f'].includes(id)||!text)return;
- if(typeof socialExport!=='undefined'&&socialExport){const line=lines[step];let budget=line?.ms||3000;if(stage==='garden'){const cue=arrivalFrame(arrivalPlayer.elapsed);budget=cue.phase==='garden'?1500:(cue.invitation.dialogueIndex===0?4600:cue.invitation.dialogueIndex===1?3500:2400);}void cinematicVoices.speak(id,text,budget);}else void cinematicVoices.speak(id,text);
+ void cinematicVoices.speak(id,text);
 }
 function stopSpeech(){stopCinematicVoice();speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
@@ -1256,21 +1235,7 @@ function automatic(on,hold=false){
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
  if(!on){introSound.pause();cinematicVoices.pause();}else if(cinematicVoiceEnabled)cinematicVoices.resume();
 }
-$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;if(typeof socialExport!=='undefined'&&socialExport){void startSocialExport();return;}cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
-async function startSocialExport(){
- if(socialExport.started||$('enter').disabled)return;
- $('enter').disabled=true;try{
-  const unlocked=socialExport.unlock();cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();introSound.pause();await unlocked;
-  alias=$('pseudo').value.trim().slice(0,40)||alias;
-  const cues=lines.flatMap(line=>[...(line.speaker&&line.text?[{id:line.speaker,text:line.text.replaceAll('{pseudo}',alias)}]:[]),...(line.secondary?[{id:line.secondary.speaker,text:line.secondary.text}]:[])]);
-  cues.push(...INTRO_INVITATION_DIALOGUE.map((text,i)=>({id:i===1?'f':'m',text})),{id:'f',text:'C’est parti !'});
-  await Promise.all([prepareSeats().then(()=>prepareFilm()),prepareDojoPerformance(),introSound.ready,introSound.musicReady(),cinematicVoices.prepareClips(cues,(n,total)=>socialNote('Préparation des voix Cartesia · '+n+' / '+total))]);
-  if(!['foley','room','garden'].every(name=>introSound.snapshot().buffers.includes(name)))throw Error('La bande-son n’a pas pu être chargée intégralement.');
-  $('welcome').hidden=true;$('loading').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;
-  await showScene(0);socialExport.start();introSound.resume();
-  document.addEventListener('visibilitychange',()=>{if(document.hidden&&socialExport.started&&!socialExport.done)socialExport.cancel('Export interrompu : garde cette page au premier plan. Les voix restent en mémoire.');});
- }catch(error){socialNote('Export impossible : '+(error?.message||error));$('enter').disabled=false;}
-}
+$('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry(true);}else startGarden(true);};
 
 function holdIntroduction(reason){
@@ -1320,7 +1285,6 @@ function frame(){
   arrivalPlayer.tick();
   const arrival=arrivalFrame(arrivalPlayer.elapsed,{promo:promotionMode}),inSalon=arrival.phase==='salon';
   introSound.update({sceneId:inSalon?'salon-invitation':'arrival',elapsedMs:inSalon?arrival.invitationElapsedMs:arrival.gardenElapsedMs,timeMs:introductionDuration+(inSalon?0:arrival.gardenElapsedMs),promotion:promotionMode,playing:arrivalPlayer.state==='playing'&&!arrivalPlayer.paused&&!document.hidden&&!$('report-dialog').open});
-  if(typeof socialExport!=='undefined'&&socialExport?.started)socialExport.tick(introductionDuration+arrivalPlayer.elapsed,{garden:true,playing:arrivalPlayer.state==='playing'&&!arrivalPlayer.paused&&!document.hidden});
   return;
  }
  if(!room)return;
@@ -1344,7 +1308,6 @@ function frame(){
  updateFilm(line,elapsed);cameraShot(line,elapsed,dt);dojoDemo.update(line,elapsed,{wardrobe});anchorBubble(line,elapsed);
  introSound.update({sceneId:line.id,elapsedMs:elapsed,timeMs:soundOffsets[step]+Math.min(elapsed,line.ms),playing:started&&!shotPaused&&!pending&&!document.hidden&&!$('report-dialog').open,actors:people.map(person=>({id:person.id,gait:person.gait})),wardrobe});
  renderer.render(scene,camera);
- if(typeof socialExport!=='undefined'&&socialExport?.started)socialExport.tick(soundOffsets[step]+Math.min(elapsed,line.ms),{playing:!shotPaused&&!pending&&!document.hidden});
 }
 
 async function authorize(){
@@ -1365,7 +1328,6 @@ async function initialize(){
   if(people.length!==2)await loadPeople();
   if(stage==='garden')return;
   showBootStage('La rencontre est prête.');
-  if(typeof socialExport!=='undefined'&&socialExport)socialNote('Prêt · prépare la vidéo et les voix en un seul appui.');
   ready=true;$('enter').disabled=false;$('welcome').hidden=false;$('loading').hidden=true;
   // The opening scene can now be played, independently of the rest.
   setPending(false);
