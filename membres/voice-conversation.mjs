@@ -196,7 +196,7 @@ export async function voiceConversation(request,env,{member,author},action){
     if(request.method!==methods[action])failure(405,'Méthode indisponible.');
     aborted(request.signal);
     if(action==='status'){
-      let cartesia=false;try{cartesia=configured(await voiceCredential(env,'cartesia'));}catch{cartesia=true;}
+      let cartesia=env.VOICE_PROVIDER!=='elevenlabs';if(!cartesia){try{cartesia=configured(await voiceCredential(env,'cartesia'));}catch{cartesia=true;}}
       let azure=false;if(!cartesia){try{azure=configured(await voiceCredential(env,'azure'));}catch{azure=true;}}
       const connections=await Promise.all([['openai','OpenAI'],cartesia?['cartesia','Cartesia']:azure?['azure','Azure Speech']:['elevenlabs','ElevenLabs']].map(async([provider,label])=>{
         try{return {label,ready:configured(await voiceCredential(env,provider))};}
@@ -216,6 +216,7 @@ export async function voiceConversation(request,env,{member,author},action){
       const data=await readJSON(request,4096,signal);
       if(!exactKeys(data,['provider','key']))failure(400,'La demande de connexion est invalide.');
       validateVoiceCredential(data.provider,data.key);
+      if(!['openai','cartesia'].includes(data.provider)&&env.VOICE_PROVIDER!=='elevenlabs')failure(400,'Cartesia est le seul service de synthèse actif.');
       if(data.provider==='azure')azureConfig(data.key);
       try{await rate(env.DB,'salon-voice-settings:'+member.id,8);}catch(error){if(error.status===429)failure(429,'Trop de vérifications rapprochées. Réessaie dans quelques minutes.');throw error;}
       await saveVoiceCredential(env,data.provider,data.key,async()=>{
@@ -248,6 +249,7 @@ export async function voiceConversation(request,env,{member,author},action){
       const audio=await cartesiaSpeech(cartesiaCredential,chosen.id,spoken,signal);
       return new Response(audio,{headers:{...privateHeaders,'content-type':'audio/wav','x-voice-provider':'cartesia','x-voice-model':chosen.id}});
     }
+    if(useEleven&&env.VOICE_PROVIDER!=='elevenlabs')failure(503,'Cartesia n’est pas encore relié. Enregistre ta clé dans les réglages vocaux du Salon.');
     const azureCredential=useEleven?await voiceCredential(env,'azure'):'';
     if(useEleven&&configured(azureCredential)){
       azureConfig(azureCredential);
