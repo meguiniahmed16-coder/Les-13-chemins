@@ -215,28 +215,41 @@ test('Les mouvements varient entre personnages et conservent les appuis assis',a
   assert.ok(speaking.some(p=>Math.max(p.left,p.right)>.4));
 });
 
-test('La voix cale les mots et libère la réponse suivante seulement en fin de réplique',async t=>{
-  const {createDialogue}=await import('./salon-dialogue.js');
-  const Original=globalThis.SpeechSynthesisUtterance;
-  globalThis.SpeechSynthesisUtterance=class {constructor(text){this.text=text;}};
-  t.after(()=>{if(Original)globalThis.SpeechSynthesisUtterance=Original;else delete globalThis.SpeechSynthesisUtterance;});
-  let now=0,utterance,cancelled=0;
-  const starts=[],words=[],rests=[];
-  const synth={speaking:false,getVoices:()=>[],speak(v){utterance=v;},cancel(){cancelled++;this.speaking=false;}};
-  const d=createDialogue({now:()=>now,synth,start:id=>starts.push(id),word:(_,w)=>words.push(w.index),rest:id=>rests.push(id),wake(){}});
-  d.voice(true);d.play('player','Oui, bonjour.',1);d.play('guest','Merci.',1,true);
-  assert.equal(d.frame(),null);assert.deepEqual(starts,['player']);
-  synth.speaking=true;utterance.onstart();d.frame();now=.16;
-  utterance.onboundary({charIndex:5,name:'word'});d.frame();assert.deepEqual(words,[0,5]);
-  now=8;d.frame();assert.deepEqual(starts,['player']);assert.equal(cancelled,0);
-  synth.speaking=false;utterance.onend();assert.deepEqual(starts,['player','guest']);assert.deepEqual(rests,['player']);
-  utterance.onerror();now+=4;d.frame();assert.equal(d.busy,false);
-  d.play('guest','Encore.',1);const stale=utterance.onend;d.clear();stale();
-  assert.equal(cancelled,1);assert.equal(d.busy,false);assert.equal(d.frame(),null);
-  d.play('guest','Une première réponse.',1);d.microphone(true);
-  assert.equal(d.busy,false);d.microphone(false);assert.equal(d.busy,false);
-  d.microphone(true);d.play('guest','Une autre réponse.',1,true);assert.equal(d.busy,false);
-  d.microphone(false);assert.equal(utterance.text,'Une autre réponse.');d.dispose();
+test('ElevenLabs synchronise les lèvres et libère la réplique suivante uniquement après la fin du vrai son',async()=>{
+ const {createDialogue}=await import('./salon-dialogue.js');
+ const original=globalThis.SpeechSynthesisUtterance;
+ globalThis.SpeechSynthesisUtterance=class {constructor(){throw Error('La voix Android ne doit pas être utilisée.')}};
+ try{
+  let fraction=.4,energy=.08,resolveAudio,requests=[],started=[],rested=[],unlocks=0,stopCount=0;
+  const remote={unlock(){unlocks++;return true;},stop(){stopCount++;},dispose(){},position(){return {fraction,energy}},play(){return new Promise(resolve=>{resolveAudio=resolve;})}};
+  const requestVoice=async(path,{body})=>{
+   assert.equal(path,'speech');assert.equal(body.strict,true);requests.push(body);
+   const blob=new Blob(['test'],{type:'audio/mpeg'});blob.voiceProvider='elevenlabs';return blob;
+  };
+  const d=createDialogue({now:()=>0,gender:()=> 'homme',start:who=>started.push(who),
+   word(){},rest:who=>rested.push(who),wake(){},requestVoice,remoteFactory:()=>remote});
+  d.voice(true);d.play('player','Bonjour.',1);d.play('guest','Merci.',1,true);
+  for(let i=0;i<8;i++)await Promise.resolve();
+  assert.deepEqual(started,['player']);assert.equal(requests.length,1);
+  assert.equal(requests[0].gender,'homme');assert.ok(d.frame().jaw>0);
+  energy=0;assert.equal(d.frame().jaw,0,'La bouche se ferme pendant le silence');
+  resolveAudio();for(let i=0;i<12;i++)await Promise.resolve();
+  assert.deepEqual(started,['player','guest']);assert.deepEqual(rested,['player']);assert.equal(requests.length,2);
+  d.clear();assert.equal(d.busy,false);d.dispose();assert.equal(unlocks,1);assert.ok(stopCount>=1);
+ }finally{if(original)globalThis.SpeechSynthesisUtterance=original;else delete globalThis.SpeechSynthesisUtterance;}
+});
+
+test('Une erreur ElevenLabs conserve le texte mais aucune voix Android ni fausse animation des lèvres',async()=>{
+ const {createDialogue}=await import('./salon-dialogue.js');
+ const notes=[],starts=[];
+ const d=createDialogue({now:()=>0,gender:()=> 'femme',start:id=>starts.push(id),
+  word(){},rest(){},wake(){},voiceStatus:msg=>notes.push(msg),
+  requestVoice:async()=>{throw Error('Synthèse refusée par ElevenLabs.');},
+  remoteFactory:()=>({unlock:()=>true,stop(){},dispose(){},play(){throw Error('Audio non autorisé');}})});
+ d.voice(true);d.play('guest','Bonjour.',1);
+ for(let i=0;i<8;i++)await Promise.resolve();
+ assert.deepEqual(starts,['guest']);assert.match(notes.at(-1),/ElevenLabs/);
+ assert.equal(d.frame().jaw,0);d.dispose();
 });
 
 test('Les prêtres du livre ont une tenue et un col romain, y compris en cas de genre absent',async()=>{
