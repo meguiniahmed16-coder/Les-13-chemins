@@ -1489,7 +1489,7 @@ function next(){
  // A throttled animation frame must not consume the only continuation timer.
  if(invitationMotion&&!invitationMotion.complete){scheduleNext(200);return;}
  const line=lines[step];if(stage==='white'&&line?.speaker&&!line.invitation&&voicePending&&shotElapsed()<line.ms+30000){scheduleNext(200);return;}
- if(stage==='white'&&line?.secondary&&!secondCue&&shotElapsed()<line.ms+30000){scheduleNext(200);return;}
+ if(stage==='white'&&line?.secondary&&!secondCue&&voiceEndedAt!==null&&shotElapsed()<line.ms+30000){scheduleNext(200);return;}
  if(step>=lines.length-1)startGarden();else void showScene(step+1);
 }
 
