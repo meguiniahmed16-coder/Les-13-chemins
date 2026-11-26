@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: salon-build-${{ github.ref }}
@@ -32,5 +33,38 @@ jobs:
           cache: npm
       - name: Installer les dépendances verrouillées
         run: npm ci --no-audit --no-fund
-      - name: Exécuter le véritable build Netlify et ses tests
-        run: npm run build
+      - name: Construction complète et capture des erreurs
+        id: build
+        shell: bash
+        run: |
+          set +e
+          npm run build > /tmp/salon-build.log 2>&1
+          code=$?
+          echo "result=$code" >> "$GITHUB_OUTPUT"
+          echo "Résultat build: $code"
+          grep -nE 'not ok [0-9]+|Error: Contrôle du build|Error \[|FAILED|Build failed|[Ee]rror:' /tmp/salon-build.log | tail -n 45 || true
+          tail -n 35 /tmp/salon-build.log
+          exit 0
+      - name: Enregistrer le diagnostic sans secrets
+        if: always() && steps.build.outputs.result != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.build.outputs.result }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          {
+            echo "### Construction du Salon — \`$COMMIT\`"
+            if [ "$RESULT" = '0' ]; then
+              echo "✅ Construction complète réussie."
+            else
+              echo "❌ Construction échouée (code $RESULT)."
+              echo '~~~text'
+              grep -E 'not ok [0-9]+|Error: Contrôle du build|Error \[|FAILED|Build failed|[Ee]rror:' /tmp/salon-build.log | tail -n 45 | cut -c1-250
+              echo '~~~'
+            fi
+          } > /tmp/salon-diagnostic.txt
+          gh issue comment 59 --body-file /tmp/salon-diagnostic.txt || true
+      - name: Signaler un échec réel
+        if: steps.build.outputs.result != '0'
+        run: exit 1
