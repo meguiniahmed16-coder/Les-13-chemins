@@ -1,0 +1,19 @@
+name: Verify Cartesia live
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  live:
+    if: github.head_ref == 'verify-cartesia-live'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify actual page and script
+        run: |
+          set -e
+          curl -fsSL --max-time 20 -w '\nHTML HTTP %{http_code}\n' 'https://tectonique-des-ames.com/membres/voix.html?rev=f89015ae' -o /tmp/voice.html
+          grep -q 'Clé API Cartesia' /tmp/voice.html
+          curl -fsSL --max-time 20 -w '\nJS HTTP %{http_code}\n' 'https://tectonique-des-ames.com/membres/voix.js?v=cartesia3' -o /tmp/voice.js
+          grep -q "provider:'cartesia'" /tmp/voice.js
+          echo 'CARTESIA_LIVE_VERIFIED'
