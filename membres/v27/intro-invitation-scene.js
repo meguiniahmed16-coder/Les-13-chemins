@@ -113,9 +113,10 @@ export function createIntroInvitationScene(adapter){
    active=true;
    try{adapter.begin();return api.sample(0);}catch(error){active=false;throw error;}
   },
-  sample(elapsedMs){
+  sample(elapsedMs,voice={}){
    if(!active)return {active:false,finished,...(last||{})};
    const frame=introInvitationFrame(elapsedMs,adapter.viewport());
+   frame.voice={speaker:['m','f'].includes(voice.speaker)?voice.speaker:null,energy:Math.max(0,Math.min(1,Number(voice.energy)||0))};
    adapter.apply(frame);last={...frame,faces:adapter.faces?.()||[]};
    return {active:true,finished:false,...last};
   },
