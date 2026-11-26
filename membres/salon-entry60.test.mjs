@@ -66,9 +66,9 @@ test('Le build produit les nouveaux modules et invalide les anciens caches Andro
  for(const path of ['membres/salon-cinema.js','membres/ahmed-3d.js','membres/ahmed-3d.css','membres/salon-call58.css']){
   assert.ok(build.includes("'"+path+"'"),path);
  }
- assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=call60/);
- assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=call61/);
- assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=call61/);
+ assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=eleven69/);
+ assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=eleven69/);
+ assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=eleven69/);
 });
 
 test('Les pictogrammes du Salon sont conservés, sans nouvelle vidéo à la place de l’originale',()=>{
