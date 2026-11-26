@@ -150,7 +150,7 @@ export function createVoiceConversation({
     try{
       const available=status?.ready?status:await request('status',{signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      if(!available.ready)throw new Error('Vérifie les connexions OpenAI et ElevenLabs dans les réglages de ton Salon.');
+      if(!available.ready)throw new Error('Le raccordement OpenAI et ElevenLabs est nécessaire pour parler. Vérifie les connexions dans les réglages du Salon.');
       if(!voices.length){const data=await request('voices',{signal:turn.abort.signal});voices=Array.isArray(data.voices)?data.voices:[];}
       if(!voiceId){
         const selected=chooseElevenVoice(voices,current.gender);
