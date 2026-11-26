@@ -65,6 +65,43 @@ jobs:
             fi
           } > /tmp/salon-diagnostic.txt
           gh issue comment 59 --body-file /tmp/salon-diagnostic.txt || true
+      - name: Vérifier le déploiement Netlify et les fichiers publics réels
+        if: steps.build.outputs.result == '0'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set +e
+          result='inconnu'
+          for attempt in $(seq 1 28); do
+            info=$(curl -fsSL --max-time 12 'https://api.netlify.com/api/v1/sites/63282ec6-caf7-47f4-922c-99d3a869861d/deploys?per_page=15' 2>/dev/null)
+            published=$(printf '%s' "$info" | jq -r --arg sha "$COMMIT" '[.[] | select(.commit_ref==$sha)] | first | .state // empty' 2>/dev/null)
+            if [ "$published" = 'ready' ]; then result='ready'; break; fi
+            if [ "$published" = 'error' ]; then result='error'; break; fi
+            sleep 8
+          done
+          if [ "$result" = 'ready' ]; then
+            curl -fsSL --max-time 20 "https://tectonique-des-ames.com/membre.html?verify=${COMMIT}" -o /tmp/live-member.html
+            curl -fsSL --max-time 20 "https://tectonique-des-ames.com/membres/intro-prive.html?verify=${COMMIT}" -o /tmp/live-intro.html
+            curl -fsSL --max-time 20 "https://tectonique-des-ames.com/membres/salon-dialogue.js?verify=${COMMIT}" -o /tmp/live-dialogue.js
+            if grep -q 'member.js?v=eleven70' /tmp/live-member.html && ! grep -q 'data-salon-film' /tmp/live-member.html && grep -q 'dojo-eleven69' /tmp/live-intro.html && grep -q 'voiceRequest' /tmp/live-dialogue.js && ! grep -Eq 'SpeechSynthesisUtterance|speechSynthesis|createLocalVoices|frenchVoice' /tmp/live-dialogue.js; then
+              result='verified'
+            else
+              result='unexpected-public-content'
+            fi
+          fi
+          {
+            echo "### Vérification réelle Netlify — \`$COMMIT\`"
+            case "$result" in
+              verified) echo '✅ Netlify a publié ce commit et les trois pages publiques chargent bien le code ElevenLabs sans voix Android.' ;;
+              ready) echo '❌ Commit prêt sur Netlify, mais les fichiers publics ne correspondent pas encore.' ;;
+              error) echo '❌ Netlify a rejeté le déploiement de ce commit.' ;;
+              *) echo "❌ Déploiement non vérifié : $result." ;;
+            esac
+          } > /tmp/live-report.txt
+          gh issue comment 59 --body-file /tmp/live-report.txt || true
+          if [ "$result" != 'verified' ]; then exit 1; fi
       - name: Signaler un échec réel
         if: steps.build.outputs.result != '0'
         run: exit 1
