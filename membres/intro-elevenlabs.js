@@ -1,6 +1,6 @@
 // Original cinematic: use the authenticated ElevenLabs account, never Android TTS.
 // The server keeps its API key. No synthesized speech is cached outside this tab.
-import {voiceRequest} from './salon-conversation.js?v=eleven68';
+import {voiceRequest} from './salon-conversation.js?v=eleven68&rev=rencontres1';
 import {createRemoteSpeech} from './salon-conversation-audio.js?v=eleven68';
 import {selectIntroVoices} from './elevenlabs-voices.js?v=eleven72';
 
