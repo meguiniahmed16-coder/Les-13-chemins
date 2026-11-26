@@ -5,11 +5,14 @@ on:
     paths:
       - '.github/workflows/atelier-triposr-cpu.yml'
       - 'tools/incarnations-triposr/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   real-inference:
+    if: github.event_name != 'pull_request' || github.head_ref == 'atelier-triposr-cpu'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     env:
@@ -29,11 +32,12 @@ jobs:
           cd "$RUNNER_TEMP/TripoSR"
           git rev-parse HEAD
           python -m pip install "numpy<2" "cmake" "ninja" "pybind11" "rembg[cpu]==2.0.59"
-          python -m pip install --no-build-isolation -r requirements.txt
-      - name: Run original inference on public upstream example
+          python -m pip install --no-build-isolation -r requirements.txt "numpy<2" "rembg[cpu]==2.0.59" "scikit-image==0.24.0" "gradio<5"
+      - name: Reconstruct a public-domain NASA portrait, not a chair
         run: |
           cd "$RUNNER_TEMP/TripoSR"
-          python run.py examples/chair.png --device cpu --chunk-size 2048 --mc-resolution 128 --output-dir "$RUNNER_TEMP/atelier-output" --model-save-format glb
+          python -c "from skimage import data; from PIL import Image; Image.fromarray(data.astronaut()).crop((155,30,300,220)).save('portrait-public.png')"
+          python run.py portrait-public.png --device cpu --chunk-size 2048 --mc-resolution 128 --output-dir "$RUNNER_TEMP/atelier-output" --model-save-format glb
           python -c "import pathlib,struct; b=pathlib.Path('$RUNNER_TEMP/atelier-output/0/mesh.glb').read_bytes(); assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b); print('Real GLB:',len(b),'bytes')"
       - uses: actions/upload-artifact@v4
         with:
