@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import proxy from './proxy.mjs';
+import proxy,{cinematicAudioKey,serveCinemaAudio} from './proxy.mjs';
 
 const origin='https://tectonique-des-ames.com';
 function request(path,{body,method='POST',type='application/json',signal,headers={}}={}){
@@ -59,4 +59,28 @@ test('La réponse audio reste un flux annulable au travers du proxy',async t=>{
   let cancelled=0;t.mock.method(globalThis,'fetch',async()=>new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array([7]));},cancel(){cancelled++;}}),{headers:{'content-type':'audio/mpeg'}}));
   const response=await proxy(request('voice/speech',{body:'{}'}));assert.equal(response.headers.get('content-type'),'audio/mpeg');
   const reader=response.body.getReader();assert.deepEqual((await reader.read()).value,new Uint8Array([7]));await reader.cancel();assert.equal(cancelled,1);
+});
+
+test('Les répliques fixes seulement sont identifiées par texte, personnage et voix',()=>{
+ const cue={text:'Prends place.',gender:'homme',voiceId:'voice-originale',strict:true,purpose:'cinema'};
+ const key=cinematicAudioKey(JSON.stringify(cue));assert.match(key,/^[a-f0-9]{64}$/);
+ assert.notEqual(key,cinematicAudioKey(JSON.stringify({...cue,voiceId:'autre-voix'})));
+ for(const body of [{...cue,purpose:undefined},{...cue,text:'Un dialogue privé.'},{...cue,gender:'femme'},{...cue,strict:false},{...cue,extra:1}])assert.equal(cinematicAudioKey(JSON.stringify(body)),null);
+});
+test('Le son enregistré survit à un nouvel appel et exige toujours une session auteur',async()=>{
+ const entries=new Map();let syntheses=0,authorizations=0;
+ const storeFactory=()=>({getWithMetadata:async key=>entries.get(key)||null,set:async(key,data,{metadata})=>{entries.set(key,{data,metadata});}});
+ const upstream=async()=>{syntheses++;return new Response(new Uint8Array([1,2,3]),{headers:{'content-type':'audio/wav','x-voice-provider':'cartesia'}});};
+ const opts={key:'fixed',storeFactory,upstream,authorize:async()=>{authorizations++;return true;}};
+ const first=await serveCinemaAudio(opts);assert.equal(first.headers.get('x-cinema-audio-cache'),'stored');
+ assert.deepEqual([...new Uint8Array(await first.arrayBuffer())],[1,2,3]);
+ const next=await serveCinemaAudio({...opts});assert.equal(next.headers.get('x-cinema-audio-cache'),'hit');
+ assert.equal(next.headers.get('x-voice-provider'),'cartesia');assert.equal(syntheses,1);assert.equal(authorizations,1);
+ assert.deepEqual([...new Uint8Array(await next.arrayBuffer())],[1,2,3]);
+ const denied=await serveCinemaAudio({...opts,authorize:async()=>false,upstream:async()=>new Response(null,{status:403})});
+ assert.equal(denied.status,403);assert.equal(denied.headers.get('x-cinema-audio-cache'),null);
+});
+test('Une panne du stockage ne coupe pas la voix habituelle',async()=>{
+ const response=await serveCinemaAudio({key:'fixed',storeFactory:()=>{throw Error('storage unavailable');},authorize:async()=>true,upstream:async()=>new Response('sound',{headers:{'content-type':'audio/wav','x-voice-provider':'cartesia'}})});
+ assert.equal(await response.text(),'sound');assert.equal(response.headers.get('x-cinema-audio-cache'),null);
 });
