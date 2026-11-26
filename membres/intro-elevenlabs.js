@@ -72,15 +72,17 @@ export function createIntroElevenLabs({
   stop();
   if(disposed||!['m','f'].includes(id)||!text)return;
   const token=generation;active={id,text};onState({playing:false,energy:0,loading:true});
+  let finished=false;
   try{
    const clip=await getClip(id,text);
    if(token!==generation||disposed)return;
    playing=true;onState({playing:true,energy:0,loading:false});
    await ensurePlayer().play(clip);
+   finished=token===generation&&playing;
   }catch(error){
    if(token===generation&&!disposed&&error?.name!=='AbortError')onError(error?.message||'Le service vocal est indisponible.');
   }finally{
-   if(token===generation){playing=false;energy=0;onState({playing:false,energy:0,loading:false});}
+   if(token===generation){playing=false;energy=0;onState({playing:false,energy:0,loading:false,finished});}
   }
  }
  function pause(){if(active){player?.stop();playing=false;energy=0;onState({playing:false,energy:0});}}
