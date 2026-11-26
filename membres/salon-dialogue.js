@@ -26,13 +26,13 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     if(!voiced||!active||active.external||!allowRemote())return;
     const current=active,kind=current.gender;
     if(!['homme','femme'].includes(kind)){
-      voiceStatus('La voix ElevenLabs du personnage n’est pas définie.');return;
+      voiceStatus('La voix du personnage n’est pas définie.');return;
     }
     const abort=new AbortController();readingAbort=abort;current.waitRecording=true;
     try{
       const clip=await requestVoice('speech',{body:{text:current.text,gender:kind,strict:true},signal:abort.signal});
       if(active!==current||abort.signal.aborted||!voiced)return;
-      if(clip?.voiceProvider!=='elevenlabs')throw Error('La voix reçue ne provient pas d’ElevenLabs.');
+      if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure')throw Error('Le fournisseur vocal a renvoyé un son non reconnu.');
       current.external=remote;current.waitRecording=false;current.started=true;current.origin=now();
       voiceStatus('');wake();
       await remote.play(clip,{signal:abort.signal});
@@ -40,7 +40,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     }catch(error){
       if(active!==current||abort.signal.aborted)return;
       current.waitRecording=false;current.external=null;voiced=false;
-      voiceStatus('ElevenLabs : '+(error?.message||'synthèse indisponible.')+' Les bulles restent accessibles.');
+      voiceStatus('Voix : '+(error?.message||'synthèse indisponible.')+' Les bulles restent accessibles.');
       wake();
     }finally{if(readingAbort===abort)readingAbort=null;}
   }
@@ -74,7 +74,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     },
     voice(enabled){
       voiced=Boolean(enabled&&allowRemote());studio.stop();stopVoice();voiceStatus('');
-      if(voiced&&!remote.unlock()){voiced=false;voiceStatus('Le son ElevenLabs n’est pas disponible sur ce navigateur.');}
+      if(voiced&&!remote.unlock()){voiced=false;voiceStatus('Le son n’est pas disponible sur ce navigateur.');}
       if(active){active.waitRecording=false;active.started=false;
         if(active.external===remote)active.external=null;
         if(voiced)void readAloud();
