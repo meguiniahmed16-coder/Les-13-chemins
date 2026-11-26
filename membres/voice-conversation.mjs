@@ -80,6 +80,46 @@ async function provider(url,init,signal,label){
   if(response.status===401||response.status===403)failure(503,'La connexion '+label+' doit être vérifiée dans la configuration du Salon.');
   failure(503,label+' est momentanément indisponible. Tu peux réessayer.');
 }
+// ElevenLabs returns a structured detail.status. Never discard that status and
+// then claim without evidence that the administrator changed a permission.
+const elevenSpeechReasons=Object.freeze({
+  missing_permissions:[503,'La clé API utilisée par ce site ne dispose pas du droit Text to Speech.'],
+  invalid_api_key:[503,'ElevenLabs considère la clé API utilisée par le site comme invalide.'],
+  missing_api_key:[503,'La requête du serveur ne transmet pas de clé API valide à ElevenLabs.'],
+  voice_not_found:[400,'La voix sélectionnée n’est plus accessible à cette clé ElevenLabs.'],
+  invalid_voice_id:[400,'La voix sélectionnée n’est pas reconnue par ElevenLabs.'],
+  model_not_found:[502,'Le modèle de synthèse demandé par le site est indisponible.'],
+  model_access_denied:[503,'Le modèle demandé n’est pas accessible à ce compte ElevenLabs.'],
+  feature_not_available:[503,'Cette fonction de synthèse n’est pas accessible à ce compte ElevenLabs.'],
+  quota_exceeded:[429,'Le quota de synthèse ElevenLabs est atteint.'],
+  insufficient_credits:[429,'ElevenLabs indique que les crédits de synthèse sont insuffisants.'],
+  concurrent_limit_exceeded:[429,'La limite de synthèses simultanées ElevenLabs est atteinte.'],
+  rate_limit_exceeded:[429,'La limite temporaire de requêtes ElevenLabs est atteinte.'],
+  subscription_required:[503,'ElevenLabs demande un accès spécifique pour le modèle de synthèse.']
+});
+export function explainElevenSpeechError(httpStatus,reason=''){
+ const code=typeof reason==='string'&&/^[a-z][a-z0-9_]{0,70}$/.test(reason)?reason:'';
+ const known=elevenSpeechReasons[code];
+ if(known)return {status:known[0],message:known[1]+' (code ElevenLabs : '+code+')'};
+ const status=[402,429].includes(httpStatus)?429:503;
+ return {status,message:'La synthèse a été refusée par ElevenLabs (HTTP '+String(httpStatus)+
+   (code?', code '+code:'')+'). Le motif exact n’est pas encore identifiable ; les réglages du compte ne sont pas nécessairement en cause.'};
+}
+async function rejectElevenSpeech(response,signal){
+ let code='';
+ try{
+  if(/^application\/(?:[a-z0-9.+-]*\+)?json(?:;|$)/i.test(response.headers.get('content-type')||'')){
+   const payload=await readJSON(response,8192,signal,true);
+   const detail=payload?.detail;
+   const value=(object(detail)?detail.status:null)||payload?.status;
+   if(typeof value==='string')code=value;
+  }
+ }catch{/* Malformed provider errors must never leak credentials or override the HTTP status. */}
+ await response.body?.cancel().catch(()=>{});
+ aborted(signal);
+ const explanation=explainElevenSpeechError(response.status,code);
+ failure(explanation.status,explanation.message);
+}
 async function reserve(env,member,kind,amount=1){
   const max=VOICE_DAILY_LIMITS[kind];
   if(!Number.isInteger(amount)||amount<1||amount>max)failure(429,'La limite de conversation vocale du jour est atteinte.');
@@ -243,10 +283,7 @@ export async function voiceConversation(request,env,{member,author},action){
     if(result.ok&&result.body&&/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(result.headers.get('content-type')||'')){
       return new Response(result.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'elevenlabs'}});
     }
-    await result.body?.cancel().catch(()=>{});
-    if([401,403].includes(result.status))failure(503,'ElevenLabs refuse la synthèse vocale : vérifie les autorisations Text to Speech de la clé déjà enregistrée.');
-    if([402,429].includes(result.status))failure(429,'Les crédits ou le quota ElevenLabs ne permettent pas cette réplique.');
-    failure(503,'ElevenLabs ne peut pas produire cette réplique. Vérifie la voix ou le modèle disponible sur ton compte.');
+    await rejectElevenSpeech(result,signal);
   }catch(error){
     if(request.signal.aborted)return json({error:'Conversation interrompue.'},499);
     if(signal?.aborted)return json({error:'Le service vocal a mis trop de temps à répondre. Tu peux réessayer.'},504);
