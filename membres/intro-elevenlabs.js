@@ -3,8 +3,8 @@
 import {voiceRequest} from './salon-conversation.js?v=eleven68';
 import {createRemoteSpeech} from './salon-conversation-audio.js?v=eleven68';
 
-const maleNames=/\\b(?:george|adam|brian|daniel|henry|charlie|thomas|antoine|pierre|mathieu|nicolas|alexandre|oliver|arthur|liam|paul)\\b/i;
-const femaleNames=/\\b(?:rachel|alice|jessica|sarah|bella|charlotte|matilda|lily|clara|marianne|amelie|julie|lea|louise|marie|emma|sophie)\\b/i;
+const maleNames=/\b(?:george|adam|brian|daniel|henry|charlie|thomas|antoine|pierre|mathieu|nicolas|alexandre|oliver|arthur|liam|paul)\b/i;
+const femaleNames=/\b(?:rachel|alice|jessica|sarah|bella|charlotte|matilda|lily|clara|marianne|amelie|julie|lea|louise|marie|emma|sophie)\b/i;
 export function selectIntroVoices(list){
  if(!Array.isArray(list))throw Error('La liste des voix ElevenLabs est indisponible.');
  const records=list.filter(v=>v&&typeof v.id==='string'&&/^[-A-Za-z0-9_]{1,80}$/.test(v.id));
