@@ -39,7 +39,7 @@ function socialNote(message){if(exportStatus)exportStatus.textContent=message;}
 function socialFile(blob,ext,ms){
  const url=URL.createObjectURL(blob),name='La-Croisee-des-Ames-1m20-9x16.'+ext;
  exportResult.hidden=false;const a=exportResult.querySelector('a');a.href=url;a.download=name;a.textContent='Télécharger '+name;
- exportResult.querySelector('video').src=url;
+ const preview=document.createElement('video');preview.controls=true;preview.playsInline=true;preview.preload='metadata';preview.src=url;$('social-export-preview').replaceChildren(preview);
  socialNote('Vidéo enregistrée · '+(blob.size/1048576).toFixed(1)+' Mo · '+ext.toUpperCase());
 }
 const socialExport=socialMode?createSocialExport({stage:canvasHost,frame:$('garden-frame'),mainCanvas:()=>renderer.domElement,onStatus:socialNote,onFile:socialFile}):null;
@@ -818,6 +818,7 @@ const cinematicVoices=createIntroElevenLabs({
   if(playing&&$('intro-voice-alert'))$('intro-voice-alert').hidden=true;
  },
  onError:message=>{
+  if(typeof socialExport!=='undefined'&&socialExport?.started&&!socialExport.done)socialExport.cancel('Voix interrompue : '+message);
   const alert=$('intro-voice-alert');
   if(alert){alert.textContent=String(message||'La synthèse vocale est indisponible.');alert.hidden=false;}
  }
@@ -1264,8 +1265,10 @@ async function startSocialExport(){
   const cues=lines.flatMap(line=>[...(line.speaker&&line.text?[{id:line.speaker,text:line.text.replaceAll('{pseudo}',alias)}]:[]),...(line.secondary?[{id:line.secondary.speaker,text:line.secondary.text}]:[])]);
   cues.push(...INTRO_INVITATION_DIALOGUE.map((text,i)=>({id:i===1?'f':'m',text})),{id:'f',text:'C’est parti !'});
   await Promise.all([prepareSeats().then(()=>prepareFilm()),prepareDojoPerformance(),introSound.ready,cinematicVoices.prepareClips(cues,(n,total)=>socialNote('Préparation des voix Cartesia · '+n+' / '+total))]);
+  if(!['foley','room','garden'].every(name=>introSound.snapshot().buffers.includes(name)))throw Error('La bande-son n’a pas pu être chargée intégralement.');
   $('welcome').hidden=true;$('loading').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;
   await showScene(0);socialExport.start();introSound.resume();
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&socialExport.started&&!socialExport.done)socialExport.cancel('Export interrompu : garde cette page au premier plan. Les voix restent en mémoire.');});
  }catch(error){socialNote('Export impossible : '+(error?.message||error));$('enter').disabled=false;}
 }
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry(true);}else startGarden(true);};
