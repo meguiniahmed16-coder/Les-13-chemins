@@ -321,7 +321,7 @@ test('Le nom d’auteur de la cinématique est exactement Ahmed Marie, sans band
  assert.doesNotMatch(source,/Ahmed Meguini|Ahmed Mari\b/);
  assert.doesNotMatch(html,/film-universe-title/);
  assert.doesNotMatch(source,/ctx\.fillText\(title,w\/2/);
- const invitation=readFileSync(new URL('./intro-invitation.js',import.meta.url),'utf8');assert.match(invitation,/Ahmed Marie/);assert.doesNotMatch(invitation,/Ahmed Meguini|Ahmed Mari\b/);
+ const invitation=readFileSync(new URL('./intro-invitation.js',import.meta.url),'utf8');assert.match(invitation,/personnage du livre/);assert.doesNotMatch(invitation,/Ahmed Meguini|Ahmed Mari\b/);
 });
 
 
