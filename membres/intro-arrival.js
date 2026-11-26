@@ -29,7 +29,7 @@ export function arrivalFrame(elapsed,{promo=false}={}){
 // The parent owns the clock; opening a report pauses the actors, butterflies,
 // controls and end card together. Loading has an explicit ready/error protocol.
 export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout,
- onState=()=>{},onFrame=()=>{},onProblem=()=>{},src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33'}){
+ onState=()=>{},onFrame=()=>{},onProblem=()=>{},voiceEnergy=()=>0,src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33'}){
  let state='idle',api=null,invitation=null,gardenBegun=false,startedAt=0,elapsed=0,paused=false,promo=false,skip=false,timeout=null,generation=0,finished=false;
  const emit=(phase,detail='')=>{state=phase;onState({phase,detail});};
  const cancelTimeout=()=>{if(timeout!==null)clearTimer(timeout);timeout=null;};
@@ -82,7 +82,7 @@ export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTime
   const cue=arrivalFrame(elapsed,{promo});
   try{
    let sampled;
-   if(cue.phase==='salon')sampled=invitation.sample(cue.invitationElapsedMs);
+   if(cue.phase==='salon')sampled=invitation.sample(cue.invitationElapsedMs,{speaker:cue.invitation.dialogueIndex===1?'f':'m',energy:paused||!cue.invitation.dialogueVisible?0:voiceEnergy()});
    else{
     if(!gardenBegun){invitation.sample(INTRO_INVITATION_DURATION);invitation.finish();api.begin();gardenBegun=true;}
     sampled=api.sample(Math.min(GARDEN_DURATION,cue.gardenElapsedMs));
@@ -98,7 +98,7 @@ export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTime
  };
 }
 
-export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{},onComplete=()=>{},onDialogue=()=>{}}){
+export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{},onComplete=()=>{},onDialogue=()=>{},voiceEnergy=()=>0}){
  const doc=host.ownerDocument,panel=doc.createElement('div');panel.id='intro-arrival';panel.hidden=true;
  panel.innerHTML=`<div class="arrival-loading" role="status"><p class="arrival-kicker">LA CROISÉE DES ÂMES</p><h2>Le salon s’ouvre…</h2><p class="arrival-detail">La prochaine rencontre se prépare.</p><button type="button" hidden>Réessayer</button></div>
  <div class="arrival-angel" role="img" aria-label="Démonstration du mode ange" hidden><span class="arrival-angel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20c3-6 5-10 9-12 3-1 6-2 9-5-.2 5-3 9-8 11l4-1c-2 3-5 4-9 4l2 1-7 2Z"/></svg></span><span>Mode ange</span><span class="arrival-angel-check" aria-hidden="true">✓</span></div>
@@ -121,7 +121,7 @@ export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{}
   if(!on&&shown){onDialogue(null,'');bubble.hidden=true;shown='';}
   if(on){const w=host.clientWidth,h=host.clientHeight,key=w+'x'+h+':'+salon;if(key!==bubbleSize){bubbleSize=key;const width=salon?Math.min(w-28,740):Math.min(w-28,w<560?330:h<350?Math.min(300,w*.42):420);bubble.style.width=width+'px';bubble.style.left=(w-width)/2+'px';bubble.style.top=salon?'8px':'14px';bubble.style.setProperty('--tail-x','35%');}}
  }
- const player=createArrivalPlayer({frame,win,onProblem,
+ const player=createArrivalPlayer({frame,win,onProblem,voiceEnergy,
   onState({phase,detail:problem}){
    panel.hidden=phase==='idle'||phase==='complete'&&!promo;
    loading.hidden=phase!=='loading'&&phase!=='error';retry.hidden=phase!=='error';
