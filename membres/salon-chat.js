@@ -1,7 +1,7 @@
 import {createShotSequence} from './salon-shots.js';
-import {createDialogue} from './salon-dialogue.js?v=eleven70';
+import {createDialogue} from './salon-dialogue.js?v=eleven70&rev=rencontres1';
 import {createDictee} from './salon-dictee.js?v=salon41';
-import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=eleven69';
+import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=eleven69&rev=rencontres1';
 import {characterReply,limit} from '../atlas-chat-client.js';
 import {searchName,guestAppearance} from './salon-encounter.js?v=call58';
 
