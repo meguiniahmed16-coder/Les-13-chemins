@@ -7,7 +7,7 @@ const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
 // Music is already mastered to -28 LUFS. These gains lower the approved
 // working foley/ambience by the same 4 dB requested after the first MP4.
 export const INTRO_SOUND_GAINS=Object.freeze({foley:gain(3),ambience:gain(-2)});
-export const INTRO_SOUND_TIMING=Object.freeze({dojoStartMs:201700,gardenStartMs:326200,transitionMs:1800});
+export const INTRO_SOUND_TIMING=Object.freeze({dojoStartMs:32000,gardenStartMs:48000,transitionMs:1800});
 
 export function introSoundEnvelope({sceneId='',elapsedMs=0,timeMs=0,promotion=false}={}){
  const time=number(timeMs),elapsed=number(elapsedMs),garden=sceneId==='arrival';
@@ -17,8 +17,8 @@ export function introSoundEnvelope({sceneId='',elapsedMs=0,timeMs=0,promotion=fa
  // shot is music-free, including its final invitation to enter the garden.
  // The selected music returns only once the actual garden arrival is ready.
  const beforeDojo=1-smooth((time-(INTRO_SOUND_TIMING.dojoStartMs-INTRO_SOUND_TIMING.transitionMs))/INTRO_SOUND_TIMING.transitionMs);
- const end=promotion?20500:13000;
- const fade=promotion?5500:4000;
+ const end=20000;
+ const fade=2800;
  const ending=garden?1-smooth((elapsed-(end-fade))/fade):1;
  const outside=garden?smooth(elapsed/INTRO_SOUND_TIMING.transitionMs):0;
  return {music:dojo?0:(garden?outside*ending:opening*beforeDojo),room:(1-outside)*ending,garden:outside*ending};
@@ -65,12 +65,12 @@ export function createIntroSoundCues({maxGapMs=250}={}){
   }
   if(frame.sceneId==='dojo-enregistrer'&&cross(2200))cues.push({clip:'selection',kind:'save'});
   if(frame.sceneId==='salon-invitation'){
-   if(cross(2500)||cross(8200)||cross(10500))cues.push({clip:'selection',kind:'invitation-choice'});
-   if(cross(3600)||cross(11200))cues.push({clip:'cloth'+(cloth++%3+1),kind:'invitation-appearance',level:gain(-3)});
+   if(cross(1500)||cross(4920)||cross(6300))cues.push({clip:'selection',kind:'invitation-choice'});
+   if(cross(2160)||cross(6720))cues.push({clip:'cloth'+(cloth++%3+1),kind:'invitation-appearance',level:gain(-3)});
   }
   if(frame.sceneId==='arrival'){
-   if(cross(5000))cues.push({clip:'wings',kind:'wings'});
-   if(cross(5500))cues.push({clip:'selection',kind:'angel-mode'});
+   if(cross(3000))cues.push({clip:'selection',kind:'angel-mode'},{clip:'wings',kind:'wings',level:1.5});
+   for(let t=6500;t<19500;t+=850)if(cross(t))cues.push({clip:'wings',kind:'wing-beat',level:.48,duration:.62});
   }
   return cues;
  }
@@ -104,8 +104,8 @@ export function createIntroSound({
   // Both output paths enforce the dojo silence, including metadata events
   // and resume callbacks. Muting does not disturb the shared music clock.
   music.muted=envelope===0;
-  if(musicGain)setGain(musicGain.gain,envelope);else music.volume=envelope;
-  const time=number(frame.timeMs);music.playbackRate=time<INTRO_SOUND_TIMING.dojoStartMs?149200/INTRO_SOUND_TIMING.dojoStartMs:1;music.preservesPitch=true;const at=Math.max(0,(time<INTRO_SOUND_TIMING.dojoStartMs?time*149200/INTRO_SOUND_TIMING.dojoStartMs:time-52500)/1000);
+  if(musicGain)setGain(musicGain.gain,envelope*(frame.sceneId==='arrival'?2.5:1));else music.volume=Math.min(1,envelope);
+  const time=number(frame.timeMs);const garden=frame.sceneId==='arrival';music.playbackRate=garden?1.12:1;music.preservesPitch=true;const at=garden?Math.min(263.8,241+number(frame.elapsedMs)/1000*1.12):Math.min(31.9,time/1000);
   // Keep the same element and clock while the dojo music is muted.
   // Seeking only corrects genuine drift or an explicit jump.
   if(Number.isFinite(music.currentTime)&&Math.abs(music.currentTime-at)>.65){try{music.currentTime=at;}catch{}}
@@ -178,7 +178,7 @@ export function createIntroSound({
   if(!wanted()||!context||context.state!=='running'||!buffers.has('foley'))return false;
   const clip=assets.clips?.[cue.clip];if(!clip)return false;
   const buffer=buffers.get('foley'),lead=Math.max(0,number(clip.contactOffset)-.010),offset=number(clip.offset)+lead;
-  const duration=Math.min(number(clip.duration)-lead,buffer.duration-offset);
+  const duration=Math.min(Math.min(number(clip.duration),cue.duration??Infinity)-lead,buffer.duration-offset);
   if(offset<0||duration<=.008)return false;
   try{
    const source=context.createBufferSource(),level=context.createGain(),at=context.currentTime;
