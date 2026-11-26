@@ -75,3 +75,12 @@ test('Un appui unique sur le téléphone commence l’appel lorsque le service e
   assert.match(panel,/else void loadPhone\(true\)/);
   assert.match(panel,/phoneToggle\.onclick/);
 });
+
+
+test('Le téléphone auteur ouvre les connexions même sans invité ni clé Cartesia',()=>{
+ assert.match(nav,/phoneNode\.hidden=standaloneAhmed\?false:ownerRoom\?false/);
+ assert.match(nav,/if\(!companion&&!ownerRoom\)/);
+ assert.match(panel,/if\(!current&&show\)\$\('\.voice-conversation-settings'\)\.open=true/);
+ assert.match(panel,/phoneStart\.disabled=!person\|\|!phoneReady/);
+ assert.match(panel,/if\(publicCall\)\{\s*phonePanel\.querySelector\('\.voice-conversation-settings'\)\.hidden=true/);
+});
