@@ -811,7 +811,7 @@ function showVoiceSelection(list){
  if(selectionPaused)automatic(false);
 }
 const cinematicVoices=createIntroElevenLabs({
- audioTap:typeof socialExport!=='undefined'?socialExport?.tap:undefined,clipCache:typeof socialExport!=='undefined'&&socialExport?createSocialVoiceCache():undefined,
+ audioTap:typeof socialExport!=='undefined'?socialExport?.tap:undefined,clipCache:typeof createSocialVoiceCache==='function'?createSocialVoiceCache():undefined,
  onNeedsSelection:showVoiceSelection,
  onState:({energy=0,playing=false}={})=>{
   cinematicVoiceEnergy=energy;
@@ -1264,7 +1264,7 @@ async function startSocialExport(){
   alias=$('pseudo').value.trim().slice(0,40)||alias;
   const cues=lines.flatMap(line=>[...(line.speaker&&line.text?[{id:line.speaker,text:line.text.replaceAll('{pseudo}',alias)}]:[]),...(line.secondary?[{id:line.secondary.speaker,text:line.secondary.text}]:[])]);
   cues.push(...INTRO_INVITATION_DIALOGUE.map((text,i)=>({id:i===1?'f':'m',text})),{id:'f',text:'C’est parti !'});
-  await Promise.all([prepareSeats().then(()=>prepareFilm()),prepareDojoPerformance(),introSound.ready,cinematicVoices.prepareClips(cues,(n,total)=>socialNote('Préparation des voix Cartesia · '+n+' / '+total))]);
+  await Promise.all([prepareSeats().then(()=>prepareFilm()),prepareDojoPerformance(),introSound.ready,introSound.musicReady(),cinematicVoices.prepareClips(cues,(n,total)=>socialNote('Préparation des voix Cartesia · '+n+' / '+total))]);
   if(!['foley','room','garden'].every(name=>introSound.snapshot().buffers.includes(name)))throw Error('La bande-son n’a pas pu être chargée intégralement.');
   $('welcome').hidden=true;$('loading').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;
   await showScene(0);socialExport.start();introSound.resume();
