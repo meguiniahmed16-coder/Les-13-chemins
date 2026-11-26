@@ -87,12 +87,19 @@ export function introInvitationFrame(elapsedMs=0,{width=1280,height=720}={}){
  const viewport={width:Math.max(1,Number(width)||1),height:Math.max(1,Number(height)||1)};
  const layout=introInvitationLayout(viewport),welcome=pulse(cue.elapsedMs,cue.guestIndex?12400:4800,cue.guestIndex?14900:6800);
  const attention=smooth((cue.elapsedMs-(cue.guestIndex?11200:3600))/1000)*cue.guestOpacity;
- const expression=(side,look,hand=0)=>({look,gesture:{left:side<0?hand:.035,right:side>0?hand:.035,reach:27,height:-12,forward:16,palm:.23,pitch:0,yaw:0,nod:.022*welcome*Math.sin(time*2.5),tilt:0}});
+ // Independent conversational beats: the active speaker uses one hand,
+ // the other person acknowledges later with the head, never matching arms.
+ const who=cue.dialogueIndex===1?'f':'m',ms=cue.elapsedMs;
+ const maleStroke=who==='m'&&cue.dialogueVisible?(cue.dialogueIndex===0?.36*pulse(ms,850,2300)+.27*pulse(ms,3900,5300):.34*pulse(ms,14900,16500)):0;
+ const femaleStroke=who==='f'&&cue.dialogueVisible?.34*pulse(ms,8600,10200)+.22*pulse(ms,11400,12800):0;
+ const maleNod=who==='f'?.045*pulse(ms,10700,11600):0;
+ const femaleNod=who==='m'?.048*(pulse(ms,2650,3400)+pulse(ms,17100,18100)):0;
+ const expression=(side,look,hand=0,nod=0)=>({look,gesture:{left:side<0?hand:0,right:side>0?hand:0,reach:22,height:-25,forward:22,palm:.18,pitch:.018*hand,yaw:side*.025*hand,nod,tilt:side*.012*nod}});
  return {elapsedMs:cue.elapsedMs,time,cue,viewport,layout,
   actors:{
-   m:{...INTRO_INVITATION_POSITIONS.m,opacity:1,expression:expression(1,.12+.15*attention,.10+.22*welcome)},
-   f:{...INTRO_INVITATION_POSITIONS.f,opacity:1,expression:expression(-1,-.15+.36*attention,.06+.10*welcome)},
-   guest:{...INTRO_INVITATION_POSITIONS.guest,opacity:cue.guestOpacity,index:cue.guestIndex,expression:expression(-1,-.25,.08+.34*welcome)}
+   m:{...INTRO_INVITATION_POSITIONS.m,opacity:1,expression:expression(1,.12+.15*attention,maleStroke,maleNod)},
+   f:{...INTRO_INVITATION_POSITIONS.f,opacity:1,expression:expression(-1,-.15+.36*attention,femaleStroke,femaleNod)},
+   guest:{...INTRO_INVITATION_POSITIONS.guest,opacity:cue.guestOpacity,index:cue.guestIndex,expression:expression(-1,-.25,.10*welcome,.035*pulse(ms,cue.guestIndex?13700:6100,cue.guestIndex?14500:6900))}
   },
   camera:frameCamera(time,cue,viewport,layout)
  };
