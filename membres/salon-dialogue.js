@@ -1,20 +1,14 @@
 import {conversationAudio,recordedPhrase,reactionAfter} from './conversation-reactions.js';
 import {scoreLine,articulation} from './salon-performance.js';
-import {frenchVoice,createLocalVoices} from './salon-voice.js?v=salon41';
+import {voiceRequest} from './salon-conversation.js?v=eleven70';
+import {createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
 
 // One clock drives articulation, word emphasis, conversational gestures and camera cuts.
-export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus=()=>{},now=()=>performance.now()/1000,synth=globalThis.speechSynthesis}){
-  const local=createLocalVoices(voiceStatus,wake);
+export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus=()=>{},now=()=>performance.now()/1000,allowRemote=()=>true,requestVoice=voiceRequest,remoteFactory=createRemoteSpeech}){
+  const remote=remoteFactory({onEnergy:()=>wake(),onStatus:voiceStatus});
   const studio=conversationAudio();let reaction=null,lastReaction=-Infinity;
-  let active=null,next=null,utterance=null,voiced=false,micOpen=false,lastWord=-1;
-  // Browsers may populate the installed voice list after the first request.
-  synth?.getVoices?.();
-  function stopNative(){
-    if(!utterance)return;
-    const previous=utterance;utterance=null;
-    previous.onstart=previous.onboundary=previous.onend=previous.onerror=null;synth.cancel();
-  }
-  function stopVoice(){stopNative();local?.stop();}
+  let active=null,next=null,voiced=false,micOpen=false,lastWord=-1,readingAbort=null;
+  function stopVoice(){readingAbort?.abort();readingAbort=null;remote.stop();}
   function finish(){
     const ended=active;stopVoice();studio.stop();if(ended)rest(ended.who);active=null;lastWord=-1;
     if(ended&&now()-lastReaction>4.2){
@@ -28,71 +22,38 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     }
     if(next&&!reaction?.clip){const record=next;next=null;begin(record);}wake();
   }
-  function silent(current){
-    current.started=false;current.waitUntil=0;current.origin=now()-(current.score.words[Math.max(0,lastWord)]?.start||0);
-    voiceStatus('Les voix sont indisponibles. Tu peux continuer à lire les bulles.');wake();
-  }
-  function readLocal(current){
-    current.triedLocal=true;
-    local.speak({line:current.score,firstWord:Math.max(0,lastWord),gender:current.gender,rate:current.rate,
-      end:()=>{if(active===current)finish();},
-      error:()=>{if(active===current){if(synth&&!current.triedNative)readNative(current);else silent(current);}}
-    });
-  }
-  function nativeFailure(current){
-    if(active!==current)return;
-    stopNative();current.waitUntil=0;current.started=false;
-    if(local?.available&&!current.triedLocal)readLocal(current);else silent(current);
-  }
-  function readNative(current){
-    current.triedNative=true;
-    const line=current.score,offset=line.words[Math.max(0,lastWord)]?.index||0;
-    if(!globalThis.SpeechSynthesisUtterance){nativeFailure(current);return;}
-    const voice=new SpeechSynthesisUtterance(line.text.slice(offset));
-    voice.lang='fr-FR';voice.rate=current.rate;
-    const selected=frenchVoice(synth,current.gender,true,true)||frenchVoice(synth,current.gender,false);
-    if(selected)voice.voice=selected;
-    utterance=voice;current.waitUntil=now()+4;
-    voice.onstart=()=>{
-      if(utterance!==voice)return;
-      current.started=true;current.waitUntil=0;current.voiceStart=now();
-      current.origin=now()-(line.words[Math.max(0,lastWord)]?.start||0);voiceStatus('');wake();
-    };
-    voice.onboundary=e=>{
-      if(utterance!==voice||e.name==='sentence')return;
-      const index=offset+e.charIndex;
-      const w=line.words.find(w=>w.index<=index&&index<w.index+w.length);
-      if(w){current.origin=now()-w.start;current.started=true;current.waitUntil=0;current.voiceStart??=now();}
-    };
-    voice.onend=()=>{if(utterance===voice){utterance=null;finish();}};
-    voice.onerror=()=>{if(utterance===voice){utterance=null;nativeFailure(current);}};
-    try{synth.speak(voice);}catch{utterance=null;nativeFailure(current);}
-  }
-  function readAloud(){
-    if(!voiced||!active)return;
-    const current=active;
-    if(current.external)return;
-    current.triedNative=false;current.triedLocal=false;
-    if(current.clip&&!current.recordFailed){
-      current.waitRecording=true;
-      studio.play(current.clip).then(ok=>{if(active!==current||!voiced)return;current.waitRecording=false;
-        if(ok){current.origin=now();current.recording=true;}else{current.recordFailed=true;readAloud();}wake();});return;
+  async function readAloud(){
+    if(!voiced||!active||active.external||!allowRemote())return;
+    const current=active,kind=current.gender;
+    if(!['homme','femme'].includes(kind)){
+      voiceStatus('La voix ElevenLabs du personnage n’est pas définie.');return;
     }
-    const installed=frenchVoice(synth,current.gender,true,true);
-    if(local?.available&&!installed)readLocal(current);
-    else if(synth)readNative(current);
-    else silent(current);
+    const abort=new AbortController();readingAbort=abort;current.waitRecording=true;
+    try{
+      const clip=await requestVoice('speech',{body:{text:current.text,gender:kind,strict:true},signal:abort.signal});
+      if(active!==current||abort.signal.aborted||!voiced)return;
+      if(clip?.voiceProvider!=='elevenlabs')throw Error('La voix reçue ne provient pas d’ElevenLabs.');
+      current.external=remote;current.waitRecording=false;current.started=true;current.origin=now();
+      voiceStatus('');wake();
+      await remote.play(clip,{signal:abort.signal});
+      if(active===current&&!abort.signal.aborted)finish();
+    }catch(error){
+      if(active!==current||abort.signal.aborted)return;
+      current.waitRecording=false;current.external=null;voiced=false;
+      voiceStatus('ElevenLabs : '+(error?.message||'synthèse indisponible.')+' Les bulles restent accessibles.');
+      wake();
+    }finally{if(readingAbort===abort)readingAbort=null;}
   }
   function begin(record){
     active={...record,gender:gender(record.who),score:scoreLine(record.text,record.rate),origin:now(),waitUntil:0,started:false};
-    active.clip=!record.external&&active.gender==='femme'?recordedPhrase(record.text):null;lastWord=-1;start(record.who,record.text);readAloud();wake();
+    active.clip=!voiced&&!record.external&&active.gender==='femme'?recordedPhrase(record.text):null;lastWord=-1;start(record.who,record.text);readAloud();wake();
   }
   function clear(){reaction=null;studio.stop();next=null;stopVoice();const previous=active;active=null;if(previous){previous.external?.stop?.();rest(previous.who);}lastWord=-1;}
   return {
     clear,
-    dispose(){clear();micOpen=false;local?.disable();},
+    dispose(){clear();micOpen=false;remote.dispose();},
     get busy(){return active!==null||reaction!==null;},
-    get supportsVoice(){return Boolean(local||synth&&globalThis.SpeechSynthesisUtterance);},
+    get supportsVoice(){return Boolean(allowRemote());},
     play(who,text,rate,queue=false){
       const record={who,text,rate};
       if((micOpen&&voiced)||(queue&&(active||reaction?.clip))){next=record;return;}
@@ -112,15 +73,11 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
       }
     },
     voice(enabled){
-      const at=local?.position()?.time;voiced=enabled;studio.stop();if(active){active.waitRecording=false;active.recording=false;}stopVoice();voiceStatus('');
-      if(enabled){
-        studio.prepare();        local?.unlock(true);
-        if(!frenchVoice(synth,gender('guest'),true,true))local?.prepare();
-      }else local?.disable();
-      if(active){
-        if(at!=null)active.origin=now()-at;
-        active.waitUntil=0;active.started=false;
-        if(enabled)readAloud();
+      voiced=Boolean(enabled&&allowRemote());studio.stop();stopVoice();voiceStatus('');
+      if(voiced&&!remote.unlock()){voiced=false;voiceStatus('Le son ElevenLabs n’est pas disponible sur ce navigateur.');}
+      if(active){active.waitRecording=false;active.started=false;
+        if(active.external===remote)active.external=null;
+        if(voiced)void readAloud();
       }
       wake();
     },
@@ -142,7 +99,6 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
         pose.jaw*=energy;pose.round*=energy;pose.spread*=energy;
         return {...pose,who:active.who,line:active.score,reaction:null};
       }
-      const audio=local?.position();
       if(active.recording||active.clip&&!voiced){
         const clip=active.clip,elapsed=Math.max(0,t-active.origin),duration=clip[1]-clip[0];
         if(elapsed>=duration){finish();return pause;}
@@ -150,18 +106,14 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
         if(pose.word!==lastWord){lastWord=pose.word;word(active.who,active.score.words[lastWord]);}
         return {...pose,who:active.who,line:active.score,reaction:mood,recordingTime:clip[0]+elapsed};
       }
-      if(active.waitUntil){
-        if(t<active.waitUntil)return null;
-        nativeFailure(active);return null;
-      }
-      const elapsed=audio?.time??Math.max(0,t-active.origin);
-      const reading=audio||active.started&&synth?.speaking&&t-active.voiceStart<Math.max(30,active.score.duration*4);
+      const elapsed=Math.max(0,t-active.origin);
+      const reading=false;
       if(elapsed>=active.score.duration&&!reading){finish();return null;}
       const pose=articulation(active.score,elapsed);
       if(pose.word!==lastWord){
         lastWord=pose.word;word(active.who,active.score.words[lastWord]);
       }
-      if(audio){pose.jaw*=audio.energy;pose.round*=audio.energy;pose.spread*=audio.energy;}
+      pose.jaw=0;pose.round=0;pose.spread=0;
       return {...pose,who:active.who,line:active.score,reaction:mood};
     }
   };
