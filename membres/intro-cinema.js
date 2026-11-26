@@ -948,7 +948,7 @@ const cinematicVoices=createIntroElevenLabs({
  },
  onError:message=>{
   const alert=$('intro-voice-alert');
-  if(alert){alert.textContent=String(message||'La synthèse ElevenLabs est indisponible.');alert.hidden=false;}
+  if(alert){alert.textContent=String(message||'La synthèse vocale est indisponible.');alert.hidden=false;}
  }
 });
 $('intro-voice-confirm').onclick=()=>{
@@ -974,7 +974,7 @@ function prepareCinematicVoices(){
  void cinematicVoices.prepare().catch(error=>{
   if(error?.code==='VOICE_SELECTION_REQUIRED')return;
   const alert=$('intro-voice-alert');
-  if(alert){alert.textContent=error?.message||'Les voix ElevenLabs sont indisponibles.';alert.hidden=false;}
+  if(alert){alert.textContent=error?.message||'Les voix sont indisponibles.';alert.hidden=false;}
  });
 }
 function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;}
