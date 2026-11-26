@@ -32,9 +32,18 @@ test('one male and one female account voice are selected without gender switchin
  assert.deepEqual(selectIntroVoices(voices),{m:'voice-ahmed',f:'voice-marianne'});
  assert.equal(chooseElevenVoice(voices,'homme').id,'voice-ahmed');
  assert.equal(chooseElevenVoice(voices,'femme').id,'voice-marianne');
- assert.throws(()=>selectIntroVoices([{id:'voice-a',name:'Unknown',gender:''}]),/voix française/);
+ assert.throws(()=>selectIntroVoices([{id:'voice-a',name:'Unknown',gender:''}]),/ne peut pas déterminer leur genre/);
 });
 
+test('untagged multilingual voices can be selected once, without adding another ElevenLabs key',()=>{
+ const untagged=[{id:'voice-uno',name:'Voix 01',gender:''},{id:'voice-dos',name:'Voix 02',gender:''}];
+ assert.throws(()=>selectIntroVoices(untagged),/Choisis ci-dessous/);
+ assert.deepEqual(selectIntroVoices(untagged,{m:'voice-uno',f:'voice-dos'}),{m:'voice-uno',f:'voice-dos'});
+ assert.deepEqual(selectIntroVoices([
+  {id:'french-man',name:'Mathis',gender:'',description:'French male narration'},
+  {id:'french-woman',name:'Louise',gender:'',description:'French female conversation'}
+ ]),{m:'french-man',f:'french-woman'});
+});
 test('cinematic requests real ElevenLabs with voiceId and strict provider for both speakers',async()=>{
  const h=fixture();assert.equal(h.controller.unlock(),true);
  await h.controller.prepare();
