@@ -1,4 +1,4 @@
-import {mountSalonGuide} from './salon-guide.js';
+import {mountSalonGuide} from './salon-guide.js?v=rencontres1';
 import {connectSalonEngine} from './salon-hud-native.js?v=hud54';
 // Le Salon : un seul système de navigation, discret et ancré au décor.
 // Les vrais contrôles sont déplacés dans les tiroirs ; aucun double système.
@@ -150,7 +150,7 @@ export function createSalonNavigation(root){
    for(const area of panelNode.querySelectorAll('[data-rail-room]'))area.hidden=area.dataset.railRoom!==id;
    if(id==='encounter'){
      if(picker.hidden)legacyInvite.click();
-     else picker.querySelector('.guest-search')?.focus({preventScroll:true});
+     else picker.querySelector('.guest-search')?.scrollIntoView({block:'nearest'});
    }
    updateButtons();sync();engineBridge?.sync();
  }
