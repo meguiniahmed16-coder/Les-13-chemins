@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
-import {VOICE_LIMITS,VOICE_DAILY_LIMITS} from './voice-conversation.mjs';
+import {VOICE_LIMITS,VOICE_DAILY_LIMITS,explainElevenSpeechError} from './voice-conversation.mjs';
 import {digest} from './identity.mjs';
 import {voiceCredential} from './voice-settings.mjs';
 
@@ -286,4 +286,40 @@ test('En mode ElevenLabs strict, un refus TTS 401 n’entraîne aucune dépense 
  assert.match((await response.json()).error,/Text to Speech/);
  assert.equal(calls.filter(url=>url.includes('/text-to-speech/')).length,1);
  assert.ok(!calls.some(url=>url.includes('api.openai.com')));
+});
+
+test('Les véritables causes de refus ElevenLabs restent distinctes, sans accuser les réglages par défaut',async t=>{
+ const {api}=await setup(t),codes=[
+  ['missing_permissions',401,503,/Text to Speech/],
+  ['invalid_api_key',401,503,/invalide/],
+  ['voice_not_found',404,400,/voix sélectionnée/],
+  ['model_access_denied',403,503,/modèle/],
+  ['quota_exceeded',429,429,/quota/]
+ ];
+ let current=codes[0];
+ const calls=[];
+ t.mock.method(globalThis,'fetch',async url=>{
+  calls.push(String(url));
+  if(new URL(url).pathname==='/v2/voices')return Response.json({voices:[voice],has_more:false});
+  if(String(url).includes('/text-to-speech/'))return Response.json({detail:{status:current[0],message:'Internal provider diagnostic must not leak'}},{status:current[1]});
+  throw Error('Aucun autre fournisseur ne doit être appelé.');
+ });
+ for(const entry of codes){
+  current=entry;
+  const response=await api('speech',{method:'POST',body:{text:'Bonjour.',voiceId:voice.voice_id,gender:'femme',strict:true}});
+  assert.equal(response.status,entry[2],entry[0]);
+  const data=await response.json();
+  assert.match(data.error,entry[3],entry[0]);
+  assert.match(data.error,new RegExp('code ElevenLabs : '+entry[0]));
+  assert.doesNotMatch(data.error,/Internal provider diagnostic/);
+ }
+ assert.ok(!calls.some(url=>url.includes('api.openai.com')));
+});
+
+test('Un 401 sans corps lisible ne prouve pas un changement de permissions',()=>{
+ const result=explainElevenSpeechError(401,'');
+ assert.equal(result.status,503);
+ assert.match(result.message,/réglages du compte ne sont pas nécessairement en cause/);
+ const sanitised=explainElevenSpeechError(401,'invalid_api_key secret sent to client');
+ assert.doesNotMatch(sanitised.message,/secret sent/);
 });
