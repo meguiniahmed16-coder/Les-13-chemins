@@ -33,6 +33,6 @@ test('Le rail des catégories respecte la typographie, le toucher et la transpar
 test('Le Salon charge les fichiers actualisés plutôt qu’une ancienne copie mobile',()=>{
   assert.match(studio,/salon-rail52\.css\?v=hud56/);
   assert.match(studio,/salon\.html\?v=call58/);
-  assert.match(member,/salon-v27\.js\?v=eleven69/);
-  assert.match(page,/member\.js\?v=eleven69/);
+  assert.match(member,/salon-v27\.js\?v=eleven70/);
+  assert.match(page,/member\.js\?v=eleven70/);
 });
