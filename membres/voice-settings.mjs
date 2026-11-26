@@ -1,6 +1,6 @@
 // Dedicated namespace and authenticated data keep voice credentials separate
 // from the existing Google/Facebook connection vault.
-const providers=new Map([['openai','OPENAI_API_KEY'],['elevenlabs','ELEVENLABS_API_KEY'],['azure','AZURE_SPEECH_KEY']]);
+const providers=new Map([['openai','OPENAI_API_KEY'],['elevenlabs','ELEVENLABS_API_KEY'],['azure','AZURE_SPEECH_KEY'],['cartesia','CARTESIA_API_KEY']]);
 const utf8=new TextEncoder();
 const encode=bytes=>btoa(String.fromCharCode(...bytes));
 const decode=value=>Uint8Array.from(atob(value),character=>character.charCodeAt(0));
