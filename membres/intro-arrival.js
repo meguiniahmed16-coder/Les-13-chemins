@@ -1,4 +1,4 @@
-import {INTRO_INVITATION_DURATION,INTRO_INVITATION_DIALOGUE,introInvitationCue} from './intro-invitation.js';
+import {INTRO_INVITATION_DURATION as INVITATION_SOURCE_DURATION,INTRO_INVITATION_PLAY_DURATION as INTRO_INVITATION_DURATION,INTRO_INVITATION_DIALOGUE,introInvitationCue} from './intro-invitation.js';
 import {mountIntroInvitation} from './intro-invitation-ui.js';
 import {INTRO_FINALE_DURATION,ANGEL_ACTIVATE_MS} from './v27/intro-finale.js';
 export const GARDEN_DURATION=INTRO_FINALE_DURATION;
@@ -19,11 +19,11 @@ export function arrivalFrame(elapsed,{promo=false}={}){
  return {elapsed:Math.min(ARRIVAL_DURATION,at),
   phase:inSalon?'salon':promo&&at>=ARRIVAL_DURATION?'card':'garden',
   invitationElapsedMs:Math.min(at,INTRO_INVITATION_DURATION),gardenElapsedMs:gardenAt,
-  invitation:inSalon?introInvitationCue(at):null,
+  invitation:inSalon?introInvitationCue(at*INVITATION_SOURCE_DURATION/INTRO_INVITATION_DURATION):null,
   dialogue:!inSalon&&gardenAt>=5000&&gardenAt<6500,
   angel:!inSalon&&gardenAt>=1500&&gardenAt<6500,pressed:!inSalon&&gardenAt>=ANGEL_ACTIVATE_MS,
   card:promo&&at>=ARRIVAL_DURATION,
-  done:at>=ARRIVAL_DURATION+(promo?0:0)
+  done:at>=ARRIVAL_DURATION+(promo?7500:0)
  };
 }
 
@@ -83,9 +83,9 @@ export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTime
   const cue=arrivalFrame(elapsed,{promo});
   try{
    let sampled;
-   if(cue.phase==='salon')sampled=invitation.sample(cue.invitationElapsedMs,{speaker:cue.invitation.dialogueIndex===1?'f':'m',energy:paused||!cue.invitation.dialogueVisible?0:voiceEnergy()});
+   if(cue.phase==='salon')sampled=invitation.sample(cue.invitation.elapsedMs,{speaker:cue.invitation.dialogueIndex===1?'f':'m',energy:paused||!cue.invitation.dialogueVisible?0:voiceEnergy()});
    else{
-    if(!gardenBegun){invitation.sample(INTRO_INVITATION_DURATION);invitation.finish();api.begin();gardenBegun=true;}
+    if(!gardenBegun){invitation.sample(INVITATION_SOURCE_DURATION);invitation.finish();api.begin();gardenBegun=true;}
     sampled=api.sample(Math.min(GARDEN_DURATION,cue.gardenElapsedMs),{speaker:'f',energy:paused||!cue.dialogue?0:voiceEnergy()});
    }
    onFrame(cue,sampled);
