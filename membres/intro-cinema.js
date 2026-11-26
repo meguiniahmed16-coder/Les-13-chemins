@@ -9,7 +9,7 @@ import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
 import {createIntroSound} from './intro-sound.js';
 import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven72';
-import {unzipSync,strFromU8,zipSync,strToU8} from 'three/examples/jsm/libs/fflate.module.js';
+import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const salonEntryMode=new URLSearchParams(location.search).get('salon')==='1';
@@ -1526,31 +1526,6 @@ $('report-export').onclick=()=>{
  const data={created:new Date().toISOString(),experience:'La Croisée des Âmes',step,stage,viewport:{width:innerWidth,height:innerHeight},entries:problems};
  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download='rapport-croisee-des-ames-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
-};
-// The audio archive contains only clips already received during this playback.
-const voiceExportButton=$('intro-voice-export');
-if(voiceExportButton)voiceExportButton.onclick=async()=>{
- const message=$('intro-voice-export-status');
- if(!authorized)return;
- const clips=cinematicVoices.recordedClips();
- if(!clips.length){message.textContent='Aucune réplique chargée. Commence la cinématique avant de télécharger les voix.';return;}
- voiceExportButton.disabled=true;
- try{
-  const files={},manifest=[];
-  for(const [index,clip] of clips.entries()){
-   const extension=/wav|wave/.test(clip.audio.type)?'wav':'mp3';
-   const speaker=clip.speaker==='m'?'Ahmed-Marie':'Marianne';
-   const filename=String(index+1).padStart(2,'0')+'-'+speaker+'.'+extension;
-   files[filename]=new Uint8Array(await clip.audio.arrayBuffer());
-   manifest.push({file:filename,speaker,text:clip.text,provider:clip.provider});
-  }
-  files['dialogues.json']=strToU8(JSON.stringify({clips:manifest},null,2));
-  const url=URL.createObjectURL(new Blob([zipSync(files,{level:0})],{type:'application/zip'}));
-  const link=document.createElement('a');link.href=url;link.download='Voix-La-Croisee-des-Ames.zip';document.body.append(link);link.click();link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
-  message.textContent=clips.length+' répliques exportées, sans nouvelle synthèse.';
- }catch(error){message.textContent='Le téléchargement a échoué : '+(error.message||'réessaie.');}
- finally{voiceExportButton.disabled=false;}
 };
 function resize(){const w=canvasHost.clientWidth,h=canvasHost.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(canvasHost);resize();
