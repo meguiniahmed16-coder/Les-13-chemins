@@ -314,3 +314,12 @@ test('salon entry retains a full-height 3D stage when the cinematic header is hi
  assert.match(markup,/html\.salon-entry-mode #app>header\{display:none\}/);
  assert.match(markup,/#app\{height:100vh;height:100dvh;display:grid/);
 });
+
+
+test('Le nom d’auteur de la cinématique est exactement Ahmed Marie, sans bandeau ajouté sur le film',()=>{
+ assert.match(lines.find(line=>line.id==='origine-auteur').text,/Ahmed Marie/);
+ assert.doesNotMatch(source,/Ahmed Meguini|Ahmed Mari\b/);
+ assert.doesNotMatch(html,/film-universe-title/);
+ assert.doesNotMatch(source,/ctx\.fillText\(title,w\/2/);
+ const invitation=readFileSync(new URL('./intro-invitation.js',import.meta.url),'utf8');assert.match(invitation,/Ahmed Marie/);assert.doesNotMatch(invitation,/Ahmed Meguini|Ahmed Mari\b/);
+});
