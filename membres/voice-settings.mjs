@@ -1,6 +1,6 @@
 // Dedicated namespace and authenticated data keep voice credentials separate
 // from the existing Google/Facebook connection vault.
-const providers=new Map([['openai','OPENAI_API_KEY'],['elevenlabs','ELEVENLABS_API_KEY']]);
+const providers=new Map([['openai','OPENAI_API_KEY'],['elevenlabs','ELEVENLABS_API_KEY'],['azure','AZURE_SPEECH_KEY']]);
 const utf8=new TextEncoder();
 const encode=bytes=>btoa(String.fromCharCode(...bytes));
 const decode=value=>Uint8Array.from(atob(value),character=>character.charCodeAt(0));
@@ -19,7 +19,7 @@ export async function voiceCredential(env,provider){
   const row=await env.DB.prepare('SELECT value FROM member_admin_settings WHERE key=?').bind(name).first();
   // Saved credentials take priority. A damaged saved value fails closed instead
   // of silently reactivating an older environment credential.
-  if(!row)return env[providers.get(provider)]||'';
+  if(!row){if(provider==='azure')return env.AZURE_SPEECH_KEY&&env.AZURE_SPEECH_REGION?env.AZURE_SPEECH_REGION+':'+env.AZURE_SPEECH_KEY:'';return env[providers.get(provider)]||'';}
   try{
     const entry=JSON.parse(row.value);
     if(entry.version!==1||typeof entry.iv!=='string'||typeof entry.data!=='string'||entry.iv.length>32||entry.data.length>2048)throw Error();

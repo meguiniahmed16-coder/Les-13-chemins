@@ -26,7 +26,7 @@ export function chooseElevenVoice(records,gender,exclude=[]){
  return candidates.find(v=>frenchWords.test(String(v.description||'')+' '+String(v.name||'')))||candidates[0]||null;
 }
 export function selectIntroVoices(list,preferred=null){
- if(!Array.isArray(list))throw Error('La liste des voix ElevenLabs est indisponible.');
+ if(!Array.isArray(list))throw Error('La liste des voix est indisponible.');
  const valid=list.filter(v=>v&&typeof v.id==='string'&&/^[-A-Za-z0-9_]{1,80}$/.test(v.id));
  if(preferred&&valid.some(v=>v.id===preferred.m)&&valid.some(v=>v.id===preferred.f)&&preferred.m!==preferred.f){
   const man=valid.find(v=>v.id===preferred.m),woman=valid.find(v=>v.id===preferred.f);
@@ -34,9 +34,9 @@ export function selectIntroVoices(list,preferred=null){
  }
  const homme=chooseElevenVoice(valid,'homme'),femme=chooseElevenVoice(valid,'femme',homme?[homme.id]:[]);
  if(homme&&femme)return {m:homme.id,f:femme.id};
- if(!valid.length)throw Error('ElevenLabs ne renvoie aucune voix disponible. Le logiciel ne te demande pas de créer de clé ou de voix : vérifie simplement que ton compte possède des voix utilisables.');
- if(valid.length===1)throw Error('ElevenLabs ne renvoie qu’une seule voix disponible sur cette clé. Pour avoir Ahmed et Marianne avec deux voix différentes, ton compte doit en rendre deux accessibles.');
- const error=Error('Le site voit les voix ElevenLabs, mais ne peut pas déterminer leur genre. Choisis ci-dessous une voix pour Ahmed et une pour Marianne.');
+ if(!valid.length)throw Error('Le service vocal ne renvoie aucune voix disponible. Le logiciel ne te demande pas de créer de clé ou de voix : vérifie simplement que ton compte possède des voix utilisables.');
+ if(valid.length===1)throw Error('Le service vocal ne renvoie qu’une seule voix disponible sur cette clé. Pour avoir Ahmed et Marianne avec deux voix différentes, ton compte doit en rendre deux accessibles.');
+ const error=Error('Le site voit les voix du service, mais ne peut pas déterminer leur genre. Choisis ci-dessous une voix pour Ahmed et une pour Marianne.');
  error.code='VOICE_SELECTION_REQUIRED';
  throw error;
 }

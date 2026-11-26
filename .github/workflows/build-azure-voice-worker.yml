@@ -1,0 +1,31 @@
+name: Build Azure voice Worker
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.head_ref == 'azure-speech-salon-chat'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: node --test membres/voice-conversation.test.mjs membres/voice-proxy.test.mjs membres/intro-elevenlabs.test.mjs membres/salon-conversation.test.mjs
+      - name: Compile repository Worker
+        run: |
+          node membres/build-worker.mjs /tmp/azure-worker.mjs
+          node --check /tmp/azure-worker.mjs
+          sha256sum /tmp/azure-worker.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: azure-voice-worker
+          path: /tmp/azure-worker.mjs
+          retention-days: 3
+      - name: Transfer compiled public source
+        run: |
+          base64 -w 1600 /tmp/azure-worker.mjs | sed 's/^/AZURE_WORKER_CHUNK:/'

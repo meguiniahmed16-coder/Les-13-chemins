@@ -60,7 +60,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
         <details class="voice-conversation-settings"><summary>Relier mes comptes</summary>
           <p>Ces réglages sont réservés à ton compte administrateur. Les clés sont conservées chiffrées sur le serveur et ne sont jamais affichées après l’enregistrement.</p>
           <form data-voice-provider="openai"><label>Clé du compte OpenAI qui possède tes crédits<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier OpenAI</button></form>
-          <form data-voice-provider="elevenlabs"><label>Clé de ton compte ElevenLabs<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier ElevenLabs</button></form>
+          <form data-voice-provider="azure"><label>Région Azure Speech<input type="text" name="region" value="francecentral" autocomplete="off" autocapitalize="none" spellcheck="false" pattern="[a-z][a-z0-9]{2,29}" required></label><label>Clé de la ressource Speech Azure<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="200" required></label><button type="submit">Relier Azure Speech</button></form><p><a href="https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices" target="_blank" rel="noopener noreferrer">Créer une ressource Speech (F0)</a></p>
           <p class="voice-settings-status" role="status"></p>
         </details>
       </section>
@@ -124,7 +124,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     },
     wake:change
   });
-  voiceSwitch.hidden=!playback.supportsVoice;voiceSwitch.title='Écouter les voix ElevenLabs des personnages';
+  voiceSwitch.hidden=!playback.supportsVoice;voiceSwitch.title='Écouter les voix des personnages';
   voiceSwitch.onclick=()=>{
     const enabled=!voiceEnabled();
     if(enabled&&micState!=='idle')dictee.cancel();
@@ -208,7 +208,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       if(ticket!==phoneLoad||person!==current)return;
       phoneToggle.hidden=false;phoneReady=Boolean(available.ready);
       if(show&&!phoneReady)$('.voice-conversation-settings').open=true;
-      phoneStatus.textContent=phoneReady?'Appuie sur Appeler. La voix sera choisie automatiquement pour '+current.name+'.':'Relie ton compte OpenAI dans les réglages pour appeler.';
+      phoneStatus.textContent=phoneReady?'Appuie sur Appeler. La voix sera choisie automatiquement pour '+current.name+'.':'Relie OpenAI et Azure Speech dans les réglages pour appeler.';
       buttons();
     }catch(error){
       if(ticket!==phoneLoad||person!==current||error.name==='AbortError')return;
@@ -313,14 +313,14 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   };
   for(const form of root.querySelectorAll('[data-voice-provider]'))form.onsubmit=async event=>{
     event.preventDefault();voiceSession.stop();
-    const field=form.querySelector('input'),button=form.querySelector('button'),feedback=$('.voice-settings-status');
+    const field=form.querySelector('[name=key]'),button=form.querySelector('button'),feedback=$('.voice-settings-status');
     if(!field.value.trim()||savingVoiceSettings)return;
     const ticket=phoneLoad,current=person;
     savingVoiceSettings=true;
     for(const control of phonePanel.querySelectorAll('[data-voice-provider] input,[data-voice-provider] button'))control.disabled=true;
     feedback.textContent='Vérification du compte…';
     try{
-      await voiceRequest('settings',{body:{provider:form.dataset.voiceProvider,key:field.value.trim()}});
+      await voiceRequest('settings',{body:{provider:form.dataset.voiceProvider,key:form.dataset.voiceProvider==='azure'?form.elements.region.value.trim().toLowerCase()+':'+field.value.trim():field.value.trim()}});
       if(ticket!==phoneLoad||person!==current||phonePanel.hidden)return;
       feedback.textContent='Compte relié. Aucune conversation n’a été générée pendant cette vérification.';
       await loadPhone(true);
