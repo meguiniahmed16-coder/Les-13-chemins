@@ -49,6 +49,7 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 #film-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#142b27}
 #cinema-fade{position:absolute;inset:0;background:white;z-index:10;opacity:0;pointer-events:none}
 
+#intro-voice-alert{position:absolute;z-index:9;left:12px;right:12px;bottom:12px;max-width:620px;margin:auto;padding:11px 15px;border:1px solid #dbb789;border-radius:12px;background:#fff9ebeF;color:#573c25;font:600 12px/1.4 system-ui;box-shadow:0 4px 18px #1d2e2925}#intro-voice-alert[hidden]{display:none!important}
 #dojo-help{position:absolute;z-index:7;bottom:clamp(50px,11vh,100px);right:8px;
  max-width:min(310px,44vw);padding:8px 11px;background:#234834c9;color:#fff8e9;
  border:1px solid #d3c6a3a6;border-radius:14px;font:700 12px/1.35 system-ui;
@@ -57,6 +58,7 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 </style><link rel="stylesheet" href="/membres/intro-dojo-ui.css?v=croisee34"><link rel="stylesheet" href="/membres/intro-arrival.css?v=croisee30"></head>
 <body><div id="app"><header><div><strong>La Croisée des Âmes</strong></div><a href="/admin-blog.html?view=dashboard">Administration</a></header>
 <main id="stage"><canvas id="scene" aria-label="Scène cinématographique 3D et dojo original"></canvas><div id="bubble" hidden aria-live="polite" aria-atomic="true"></div><div id="status" hidden></div><div id="scene-wait" hidden role="status"></div><div id="film-montage" hidden><video id="film-video" playsinline muted preload="auto" disablepictureinpicture aria-label="Le salon, les dés roulant sur le plateau et le jardin avec ses papillons"></video></div><div id="cinema-fade" aria-hidden="true"></div>
+<div id="intro-voice-alert" hidden role="status" aria-live="polite"></div>
 <div id="dojo-help" hidden role="note" aria-label="Mode d’emploi de la nouvelle interface du Salon"></div>
 <div id="joystick" hidden aria-label="Joystick pour se déplacer dans le dojo"><div id="nub"></div></div>
 <div id="garden" hidden><iframe id="garden-frame" title="Le véritable jardin 3D et la maison" allow="camera; fullscreen"></iframe></div>
@@ -66,4 +68,4 @@ dialog{width:min(560px,94vw);max-height:90vh;overflow:auto;border:0;border-radiu
 </main>
 <footer><button type="button" id="report-open">Signaler une erreur</button><button type="button" id="intro-bubbles-toggle" aria-pressed="true" aria-label="Masquer les bulles" title="Masquer les bulles"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h14v12H8l-5 4Z"/><path d="M9 7h12v12h-5l-3 3v-3"/></svg><span>Bulles</span></button><button type="button" id="skip" disabled>Passer l’introduction</button></footer>
 <dialog id="report-dialog"><h2>Rapport de test</h2><label>Type<select id="report-type"><option value="bug">Signaler un problème</option><option value="amelioration">Demander une amélioration</option></select></label><label>Scène<input id="report-scene" readonly></label><label>Observation<textarea id="report-note" placeholder="Décris le problème ou la modification souhaitée."></textarea></label><small id="report-count"></small><div class="actions"><button id="report-add">Ajouter</button><button id="report-export" class="primary">Télécharger le rapport JSON</button><button id="report-close">Fermer</button></div></dialog>
-</div><script type="module" src="/membres/intro-cinema-croisee33.js?v=dojo-voix68"></script></body></html>
+</div><script type="module" src="/membres/intro-cinema-croisee33.js?v=dojo-eleven69"></script></body></html>
