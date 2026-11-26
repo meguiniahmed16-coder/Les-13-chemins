@@ -40,7 +40,7 @@ export function createIntroElevenLabs({
   const chosen=selectIntroVoices(availableVoices,{m,f});
   if(chosen.m!==m||chosen.f!==f)throw Error('Choisis deux voix différentes, compatibles avec Ahmed et Marianne.');
   try{localStorage.setItem(preferenceKey,JSON.stringify(chosen));}catch{}
-  unavailable=null;voices=chosen;ready=Promise.resolve(chosen);
+  unavailable=null;recordings.clear();voices=chosen;ready=Promise.resolve(chosen);
   return chosen;
  }
  function clipKey(id,text){return id+'|'+text;}
