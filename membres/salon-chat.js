@@ -1,7 +1,7 @@
 import {createShotSequence} from './salon-shots.js';
-import {createDialogue} from './salon-dialogue.js?v=eleven70';
+import {createDialogue} from './salon-dialogue.js?v=eleven70&rev=rencontres1';
 import {createDictee} from './salon-dictee.js?v=salon41';
-import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=eleven69';
+import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=eleven69&rev=rencontres1';
 import {characterReply,limit} from '../atlas-chat-client.js';
 import {searchName,guestAppearance} from './salon-encounter.js?v=call58';
 
@@ -379,7 +379,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   toggle.onclick=async()=>{
     if(!picker.hidden){dismiss();return;}
     picker.hidden=false;toggle.setAttribute('aria-expanded','true');search.value='';
-    search.focus({preventScroll:true});pickerState.textContent='Ouverture du répertoire…';
+    pickerState.textContent='Ouverture du répertoire…';
     random.disabled=true;
     try{people=await loadDirectory();if(picker.hidden)return;showChoices();random.disabled=false;}
     catch{pickerState.textContent='Le répertoire est indisponible. Ferme et rouvre les invitations pour réessayer.';}
@@ -425,7 +425,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   async function choose(p){
     if(loading||!p)return;
-    closePhone();phoneToggle.hidden=publicCall;phoneReady=false;
+    closePhone();cancelRequest();playback.clear();phoneToggle.hidden=publicCall;phoneReady=false;
     const ticket=++version;
     // Unlock the ElevenLabs player inside the user's tap; an async
     // 3D avatar download must never cost us the first spoken exchange.
@@ -460,7 +460,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   picker.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();dismiss();}});
   search.oninput=showChoices;
   list.onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id)void choose(people.find(p=>p.id===id));};
-  random.onclick=()=>void choose(people[Math.floor(Math.random()*people.length)]);
+  random.onclick=()=>{const others=people.filter(p=>p.id!==person?.id);const pool=others.length?others:people;void choose(pool[Math.floor(Math.random()*pool.length)]);};
   $('.guest-leave').onclick=()=>{finish();toggle.focus({preventScroll:true});};
   input.oninput=e=>{if(!input.value.trim())dictatedDraft=false;else if(e.inputType==='insertFromDictation')dictatedDraft=true;buttons();};
   $('.guest-compose').onsubmit=e=>{e.preventDefault();void say(input.value.trim(),true);};

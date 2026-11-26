@@ -1,4 +1,4 @@
-import {createVoiceCapture,createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
+import {createVoiceCapture,createRemoteSpeech,createCallInputLease} from './salon-conversation-audio.js?v=call58&rev=rencontres1';
 import {chooseElevenVoice} from './elevenlabs-voices.js?v=eleven69';
 
 const paths=new Set(['status','voices','settings','transcribe','reply','speech']);
@@ -58,7 +58,7 @@ export function createVoiceConversation({
   function unlisten(){page?.removeEventListener('visibilitychange',hidden);windowTarget?.removeEventListener('pagehide',leave);}
   function end(next='idle',message=''){
     const previous=session;session=null;
-    if(previous){clearTimer(previous.timer);cancelTurn(previous);}
+    if(previous){clearTimer(previous.timer);cancelTurn(previous);previous.inputLease?.close();}
     unlisten();setState(next,message||messages[next]);
   }
   function hidden(){if(page?.hidden&&session)end('paused','Micro coupé quand tu quittes cet écran. Touche « Reprendre » pour continuer.');}
@@ -104,7 +104,7 @@ export function createVoiceConversation({
     cancelTurn(run);
     const turn={abort:new AbortController(),capture:null,sent:false};run.turn=turn;
     turn.capture=captureFactory({
-      audioContext:speech.context,
+      audioContext:speech.context,inputLease:run.inputLease,
       onClip:clip=>{void exchange(run,turn,clip);},
       onStatus:message=>{if(valid(run,turn))onStatus(message);},
       onError:error=>{if(valid(run,turn))problem(run,error);}
@@ -141,7 +141,7 @@ export function createVoiceConversation({
     if(!current?.id)return;
     // Unlock audio synchronously during the user's press, before network work.
     if(speech.unlock()===false){setState('paused','Le son est indisponible sur cet appareil.');return;}
-    const run={characterId:String(current.id),voiceId,turn:null,timer:null};session=run;lastVoice=voiceId;
+    const run={characterId:String(current.id),voiceId,turn:null,timer:null,inputLease:captureFactory===createVoiceCapture?createCallInputLease():null};session=run;lastVoice=voiceId;
     setState('starting','Vérification de la conversation…');
     page?.addEventListener('visibilitychange',hidden);windowTarget?.addEventListener('pagehide',leave);
     if(page?.hidden){hidden();return;}

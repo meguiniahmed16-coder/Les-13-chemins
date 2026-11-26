@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {createVoiceCapture, createRemoteSpeech} from './salon-conversation-audio.js';
+import {createVoiceCapture, createRemoteSpeech, createCallInputLease} from './salon-conversation-audio.js';
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
@@ -350,4 +350,10 @@ test('Un décodage illisible donne une erreur explicite sans synthèse de secour
   await assert.rejects(f.speech.play(voiceBlob()), {code: 'VOICE_PLAYBACK_DECODE'});
   assert.equal(f.sources.length, 0);
   assert.equal(f.timers.count, 0);
+});
+
+
+test('Un appel garde un seul accès microphone et le coupe hors parole puis au raccrochage',async()=>{
+ let opened=0,stopped=0;const track={enabled:true,stop(){stopped++;}},stream={getTracks:()=>[track]};const lease=createCallInputLease(async()=>{opened++;return stream;});
+ assert.equal(await lease.acquire({audio:true}),stream);lease.mute();assert.equal(track.enabled,false);assert.equal(stopped,0);assert.equal(await lease.acquire({audio:true}),stream);assert.equal(track.enabled,true);assert.equal(opened,1);lease.close();assert.equal(stopped,1);await assert.rejects(()=>lease.acquire({audio:true}));
 });

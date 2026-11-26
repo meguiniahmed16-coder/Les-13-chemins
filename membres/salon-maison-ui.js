@@ -1,3 +1,4 @@
+import {mountSalonGuide} from './salon-guide.js?v=rencontres1';
 import {connectSalonEngine} from './salon-hud-native.js?v=hud54';
 // Le Salon : un seul système de navigation, discret et ancré au décor.
 // Les vrais contrôles sont déplacés dans les tiroirs ; aucun double système.
@@ -59,7 +60,7 @@ export function createSalonNavigation(root){
  '<button type="button" data-maison-action="close" title="Replier le menu" aria-label="Replier le menu">'+svg('close')+'</button></div></header>'+
  '<div class="maison-rail-scroll">'+
  '<section class="maison-rail-room" data-rail-room="encounter" hidden>'+
- '<div class="maison-mini-actions">'+tool('choose','encounter','Choisir un personnage')+'</div><div class="maison-slot" data-maison-slot="picker"></div><section class="maison-native-category"><h3>Visiter le lieu</h3><div class="maison-native-grid" data-native-zone="encounter"></div></section></section>'+
+ '<div class="maison-slot" data-maison-slot="picker"></div><section class="maison-native-category"><h3>Visiter le lieu</h3><div class="maison-native-grid" data-native-zone="encounter"></div></section></section>'+
  '<section class="maison-rail-room" data-rail-room="dialogue" hidden>'+
  '<p class="maison-companion-label">Invite un personnage.</p>'+
  '<div class="maison-mini-actions">'+tool('call','phone','Appeler')+tool('write','write','Écrire')+tool('history','history','Historique')+tool('speech-on','audio','Voix française')+tool('bubble-on','bubbles','Bulles')+'</div>'+
@@ -149,7 +150,7 @@ export function createSalonNavigation(root){
    for(const area of panelNode.querySelectorAll('[data-rail-room]'))area.hidden=area.dataset.railRoom!==id;
    if(id==='encounter'){
      if(picker.hidden)legacyInvite.click();
-     else picker.querySelector('.guest-search')?.focus({preventScroll:true});
+     else picker.querySelector('.guest-search')?.scrollIntoView({block:'nearest'});
    }
    updateButtons();sync();engineBridge?.sync();
  }
@@ -257,6 +258,7 @@ export function createSalonNavigation(root){
  });
  setMenuExpanded(false);
  sync();updateButtons();
+ mountSalonGuide(root,{standaloneAhmed});
  return {
    open,close,sync,
    expandMenu(open=true){setMenuExpanded(open);},

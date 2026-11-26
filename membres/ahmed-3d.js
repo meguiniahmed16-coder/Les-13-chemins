@@ -1,12 +1,15 @@
 // Ahmed numérique uses the original Ahmed V27 rig and the consented,
 // rate-limited text service. No private voice key is sent to visitors.
+import {createVoiceCapture,createCallInputLease} from './salon-conversation-audio.js?v=rencontres1';
+import {voiceRequest} from './salon-conversation.js?v=rencontres1';
 import {referenceStudio} from './studio-look.js?v=incarnations33';
 const $=id=>document.getElementById(id);
 const host=$('ahmed-3d-room'),call=$('ahmed-call'),hang=$('ahmed-hangup'),status=$('ahmed-call-status');
 const Speech=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
-let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=false;
+let actor=null,mounting=null,mic=null,active=false,epoch=0,awaiting=false,opening=false,ownerSpeech=false,ownerCheck=null,inputLease=null,remoteCapture=null,transcribeAbort=null;
+function checkOwner(){return ownerCheck??=fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)}).then(async r=>ownerSpeech=Boolean(r.ok&&(await r.json()).author)).catch(()=>false);}
 async function startOpening(){
- if(opening)return;opening=true;
+ if(opening)return;opening=true;void checkOwner();
  // The author's Ahmed numérique entry shares the genuine voiced film and dojo,
  // not the unrelated short montage. Non-author visitors retain direct access.
  try{
@@ -24,7 +27,7 @@ async function mount(){
  if(actor)return actor;
  if(mounting)return mounting;
  mounting=(async()=>{
-  await import('./salon-v27.js?v=eleven70');
+  await import('./salon-v27.js?v=eleven70&rev=rencontres1');
   if($('ahmed-3d').hidden)return null;
   const view=document.createElement('chemins-salon');
   view.setAttribute('scene','salon');view.setAttribute('ahmed-numerique','');view.className='ahmed-avatar-v27';
@@ -49,12 +52,13 @@ function stopMic(){
  if(previous){previous.onend=previous.onerror=previous.onresult=null;try{previous.abort();}catch{}}
 }
 function stop(){
- active=false;epoch++;awaiting=false;stopMic();actor?.stopAhmedVoice();
+ active=false;epoch++;awaiting=false;stopMic();transcribeAbort?.abort();transcribeAbort=null;remoteCapture?.stop();remoteCapture=null;inputLease?.close();inputLease=null;actor?.stopAhmedVoice();
  call.hidden=false;hang.hidden=true;
  note('Appel terminé. Le dialogue écrit reste disponible.');
 }
 function listen(){
  if(!active||awaiting||document.hidden)return;
+ if(ownerSpeech){listenOwner();return;}
  if(!Speech){stop();note('Micro indisponible dans ce navigateur. Utilise le dialogue écrit.');return;}
  stopMic();const turn=epoch;let heard=false;
  const rec=new Speech();mic=rec;rec.lang='fr-FR';rec.continuous=false;rec.interimResults=false;
@@ -62,10 +66,7 @@ function listen(){
   if(!active||turn!==epoch)return;
   const spoken=Array.from(event.results).map(item=>item[0]?.transcript||'').join(' ').trim().slice(0,3000);
   if(!spoken)return;
-  heard=true;awaiting=true;mic=null;
-  const field=$('messageInput');field.value=spoken;field.dispatchEvent(new Event('input',{bubbles:true}));
-  if($('sendButton').disabled){stop();note('La session écrite n’est plus disponible.');return;}
-  note('Ahmed prépare sa réponse…');$('composer').requestSubmit();
+  heard=true;mic=null;submitSpoken(spoken);
  };
  rec.onerror=event=>{
   if(!active||turn!==epoch)return;
@@ -81,14 +82,28 @@ function listen(){
  };
  try{rec.start();note('Je t’écoute…');}catch{stop();note('Le micro n’a pas démarré. La conversation écrite reste accessible.');}
 }
+function submitSpoken(spoken){
+ awaiting=true;const field=$('messageInput');field.value=spoken;field.dispatchEvent(new Event('input',{bubbles:true}));
+ if($('sendButton').disabled){stop();note('La session écrite n’est plus disponible.');return;}
+ note('Ahmed prépare sa réponse…');$('composer').requestSubmit();
+}
+function listenOwner(){
+ const turn=epoch;remoteCapture?.stop();inputLease??=createCallInputLease();
+ remoteCapture=createVoiceCapture({inputLease,onStatus:note,onError:error=>{if(active&&turn===epoch){stop();note(error.message);}},
+ onClip:async clip=>{if(!active||turn!==epoch)return;awaiting=true;const abort=new AbortController();transcribeAbort=abort;note('Ahmed a entendu ta question…');
+ try{const result=await voiceRequest('transcribe',{body:clip,signal:abort.signal});if(!active||turn!==epoch)return;const spoken=String(result.text||'').trim();if(spoken)submitSpoken(spoken);else{awaiting=false;listen();}}
+ catch(error){if(active&&turn===epoch){stop();note(error.message);}}finally{if(transcribeAbort===abort)transcribeAbort=null;}
+ }});
+ void remoteCapture.start();
+}
 async function begin(){
  if(active)return;
- if(!Speech){note('La reconnaissance vocale est indisponible dans ce navigateur. Le clavier reste disponible.');$('ahmed-written').open=true;return;}
  actor?.armAhmedVoice();
  active=true;epoch++;awaiting=false;call.hidden=true;hang.hidden=false;
  note('Connexion avec Ahmed…');
- const view=await mount();if(!active)return;
+ const [view]=await Promise.all([mount(),checkOwner()]);if(!active)return;
  if(!view){stop();return;}
+ if(!ownerSpeech&&!Speech){stop();note('La reconnaissance vocale est indisponible dans ce navigateur. Le clavier reste disponible.');$('ahmed-written').open=true;return;}
  view.armAhmedVoice();
  if(!view.narrateAhmed('Salut. Je t’écoute.',()=>listen()))listen();
 }

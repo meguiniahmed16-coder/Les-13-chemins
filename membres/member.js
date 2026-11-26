@@ -113,7 +113,7 @@ function openPanel(event){
 $('tabs').addEventListener('click',openPanel);
 $('photo-link').addEventListener('click',openPanel);
 async function mountRoom(){
-  await import('./salon-v27.js?v=eleven70&rev=cartesia2');
+  await import('./salon-v27.js?v=eleven70&rev=rencontres1');
   if(!member||$('salon').hidden)return;
   let view=$('room').querySelector('chemins-salon');
   if(!view){

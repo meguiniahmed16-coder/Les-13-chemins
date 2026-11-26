@@ -15,7 +15,7 @@ const $=id=>document.getElementById(id);
 const salonEntryMode=new URLSearchParams(location.search).get('salon')==='1';
 const originalIntroKey='croisee-salon-introduction-originale-v34';
 if(salonEntryMode)document.documentElement.classList.add('salon-entry-mode');
-function finishSalonEntry(){
+function finishSalonEntry(shortGuide=false){
  if(!salonEntryMode)return;
  const returnTo=new URLSearchParams(location.search).get('retour');
  const destinations={
@@ -26,7 +26,7 @@ function finishSalonEntry(){
  try{sessionStorage.setItem(chosen[0],'done');}catch{}
  const action=new URLSearchParams(location.search).get('ouvrir');
  const suffix=returnTo==='invite'&&['inviter','appeler'].includes(action)?'&ouvrir='+action:'';
- location.replace(chosen[1]+suffix);
+ const target=new URL(chosen[1]+suffix,location.origin);if(shortGuide)target.searchParams.set('guide','1');location.replace(target.href);
 }
 
 const canvasHost=$('stage'),bubble=$('bubble'),status=$('status');
@@ -34,7 +34,7 @@ const introSound=createIntroSound({onProblem:message=>remember('Son de la ciném
 const dojoDemo=mountDojoDemo(canvasHost);
 const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
 if(promotionMode)document.body.classList.add('promotion');
-const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),onComplete:()=>{introSound.stop();finishSalonEntry();}});
+const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),voiceEnergy:()=>cinematicVoiceEnergy,onDialogue:(id,text)=>{if(id&&text)speakCinematicCue(id,text);else stopCinematicVoice();},onComplete:()=>{stopCinematicVoice();introSound.stop();finishSalonEntry();}});
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -180,6 +180,54 @@ const lines=[
   "gesture": "invite",
   "seated": true,
   "furniture": "chairs"
+ },
+ {
+   "id": "origine-auteur",
+   "speaker": "m",
+   "text": "Tout a commencé par l’aventure d’Ahmed Meguini, l’auteur de ce site et du manuscrit La Tectonique des âmes.",
+   "scene": "white",
+   "shot": "medium",
+   "ms": 11500,
+   "move": "push",
+   "gesture": "reflect",
+   "seated": true,
+   "furniture": "chairs"
+ },
+ {
+   "id": "origine-manuscrit",
+   "speaker": "f",
+   "text": "Plus de cinq cents pages, et le récit continue de s’écrire. Comme ce site, le manuscrit est une œuvre qui se construit jour après jour.",
+   "scene": "white",
+   "shot": "reverse",
+   "ms": 12500,
+   "move": "drift",
+   "gesture": "explain",
+   "seated": true,
+   "furniture": "chairs"
+ },
+ {
+   "id": "origine-rencontres",
+   "speaker": "m",
+   "text": "Ici, nous te proposons de vivre une expérience immersive et de rencontrer, aussi fidèlement que possible, les personnes qu’Ahmed a croisées sur son chemin.",
+   "scene": "white",
+   "shot": "two",
+   "ms": 14000,
+   "move": "dolly",
+   "gesture": "open",
+   "seated": true,
+   "furniture": "chairs"
+ },
+ {
+   "id": "origine-continuite",
+   "speaker": "f",
+   "text": "Plus de quatre cents personnages habitent déjà cet univers. Leurs histoires, leurs liens et leur continuité s’affinent et s’enrichissent au fil du travail sur le texte.",
+   "scene": "white",
+   "shot": "reverse",
+   "ms": 14500,
+   "move": "drift",
+   "gesture": "explain",
+   "seated": true,
+   "furniture": "chairs"
  },
  {
   "id": "ensemble",
@@ -1151,6 +1199,7 @@ function drawFilm(active=true){
   const image=video.readyState>=2?video:poster.complete&&poster.naturalWidth?poster:null;
   if(image){const iw=image.videoWidth||image.naturalWidth,ih=image.videoHeight||image.naturalHeight,s=Math.max(w/iw,h/ih);ctx.drawImage(image,(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s);}
  }
+ if(active){const title=video.currentTime<7?'LA CROISÉE DES ÂMES':'LA TECTONIQUE DES ÂMES';ctx.fillStyle='#162c26';ctx.fillRect(0,h- Math.max(56,h*.19),w,Math.max(56,h*.19));ctx.fillStyle='#f4e9cf';ctx.font='600 '+Math.round(w*.043)+'px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(title,w/2,h-Math.max(56,h*.19)/2,w*.92);}
  tex.needsUpdate=true;
 }
 function stopFilm(){televisionFilm?.playback.stop();filmShot='';$('film-montage').hidden=true;}
@@ -1162,6 +1211,7 @@ function updateFilm(line,elapsed){
  if(filmShot!==line.id||now-lastFilmDraw>=45){drawFilm();lastFilmDraw=now;}
  filmShot=line.id;
  overlay.hidden=line.shot!=='montage'||elapsed<900;
+ const title=overlay.querySelector('.film-universe-title');if(title)title.textContent=seconds<15?'La Tectonique des âmes':'La Croisée des Âmes';
  overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,900,1450)):'1';
 }
 let cutCamera=true;
@@ -1385,7 +1435,7 @@ function automatic(on,hold=false){
  if(!on){introSound.pause();cinematicVoices.pause();}else if(cinematicVoiceEnabled)cinematicVoices.resume();
 }
 $('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
-$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry();}else startGarden(true);};
+$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry(true);}else startGarden(true);};
 
 function holdIntroduction(reason){
  if(pauseReasons.has(reason))return;
