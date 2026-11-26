@@ -37,8 +37,10 @@
 .ahmed-room-progress{height:4px;width:min(210px,85%);background:#e8d6a82b;border-radius:8px;overflow:hidden;margin:5px 0}
 .ahmed-room-progress::after{content:"";display:block;width:42%;height:100%;border-radius:8px;background:linear-gradient(90deg,transparent,#e8d6a8,#fff0bd);animation:ahmed-room-progress 1.65s ease-in-out infinite}
 @keyframes ahmed-room-progress{from{transform:translateX(-110%)}to{transform:translateX(245%)}}
-.ahmed-3d-controls:has(.ahmed-call-live),.ahmed-3d-controls:has(.ahmed-call-error){position:absolute;top:60px;right:10px;left:auto;z-index:5;width:max-content;max-width:min(240px,calc(100% - 20px));height:auto;overflow:visible;clip-path:none;padding:7px 11px!important;min-height:0;border:1px solid #e8d6a83d;border-radius:12px;background:#172b24e8;box-shadow:0 2px 12px #0002;pointer-events:none}
-#ahmed-call-status.ahmed-call-live,#ahmed-call-status.ahmed-call-error{font:12px/1.35 system-ui;text-align:right;min-width:0;max-width:100%;flex-basis:auto;overflow-wrap:anywhere}
+.ahmed-3d-controls:has(.ahmed-call-live){position:absolute;top:5px;left:50%;right:auto;transform:translateX(-50%);z-index:5;width:max-content;max-width:calc(100% - 112px);height:auto;overflow:visible;clip-path:none;padding:2px 6px!important;min-height:0;border:0;border-radius:4px;background:rgba(23,43,36,.10);box-shadow:none;pointer-events:none}
+.ahmed-3d-controls:has(.ahmed-call-error){position:absolute;top:5px;left:8px;right:62px;z-index:5;width:auto;height:auto;overflow:visible;clip-path:none;padding:3px 6px!important;min-height:0;border:0;background:rgba(23,43,36,.32);box-shadow:none;pointer-events:none}
+#ahmed-call-status.ahmed-call-live,#ahmed-call-status.ahmed-call-error{font:500 10px/1.2 system-ui;text-align:center;min-width:0;max-width:100%;flex-basis:auto;overflow-wrap:anywhere;color:#fffdf4;text-shadow:0 1px 3px #000,0 0 4px #0009}
+#ahmed-call-status.ahmed-call-live{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ahmed-call-status.ahmed-call-error{color:#fff0cd}
 @media(prefers-reduced-motion:reduce){.ahmed-room-progress::after{animation:none;width:65%;margin:auto}}
 
