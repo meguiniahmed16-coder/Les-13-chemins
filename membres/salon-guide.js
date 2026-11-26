@@ -17,7 +17,7 @@ export function mountSalonGuide(root,{standaloneAhmed=false}={}){
  const hole=layer.querySelector('.salon-guide-hole'),tip=layer.querySelector('.salon-guide-tip'),next=layer.querySelector('[data-guide=next]');
  let index=0,ended=false,target=null;
  function finish(){if(ended)return;ended=true;root.removeEventListener('click',clicked,true);root.host.removeEventListener('salon-companion-change',companionChanged);win.removeEventListener('resize',place);root.removeEventListener('keydown',keydown);observer.disconnect();layer.remove();style.remove();url.searchParams.delete('guide');try{win.history.replaceState(win.history.state,'',url.href);}catch{}}
- function place(){if(ended)return;target=root.querySelector(steps[index].target);const bounds=stage.getBoundingClientRect(),r=target?.getBoundingClientRect();const visible=r&&r.width>0&&r.height>0;hole.hidden=!visible;if(visible){Object.assign(hole.style,{left:(r.left-bounds.left-5)+'px',top:(r.top-bounds.top-5)+'px',width:(r.width+10)+'px',height:(r.height+10)+'px'});}
+ function place(){if(ended)return;target=root.querySelector(steps[index].target);const bounds=stage.getBoundingClientRect(),r=target?.getBoundingClientRect();const visible=r&&r.width>0&&r.height>0;if(hole.hidden===visible)hole.hidden=!visible;if(visible){Object.assign(hole.style,{left:(r.left-bounds.left-5)+'px',top:(r.top-bounds.top-5)+'px',width:(r.width+10)+'px',height:(r.height+10)+'px'});}
  const y=visible&&r.top-bounds.top>bounds.height*.48?Math.max(8,r.top-bounds.top-tip.offsetHeight-16):Math.max(8,Math.min(bounds.height-tip.offsetHeight-8,visible?r.bottom-bounds.top+18:bounds.height*.55));tip.style.top=y+'px';}
  function render(){if(index>=steps.length){finish();return;}const step=steps[index];tip.querySelector('small').textContent='Parcours initiatique · '+(index+1)+'/'+steps.length;tip.querySelector('h2').textContent=step.title;tip.querySelector('p').textContent=step.copy;next.textContent=index===steps.length-1?'Terminer':'Suivant';place();}
  function advance(){index++;render();}
@@ -26,6 +26,6 @@ export function mountSalonGuide(root,{standaloneAhmed=false}={}){
  function keydown(e){if(e.key==='Escape'){e.stopPropagation();finish();}}
  next.onclick=()=>{if(index<2&&!standaloneAhmed&&target&&!target.closest('[hidden]'))target.click();else advance();};
  layer.querySelector('[data-guide=skip]').onclick=finish;
- const observer=new MutationObserver(place);observer.observe(stage,{subtree:true,attributes:true,attributeFilter:['hidden','aria-expanded']});
+ const observer=new MutationObserver(records=>{if(records.some(r=>!layer.contains(r.target)))place();});observer.observe(stage,{subtree:true,attributes:true,attributeFilter:['hidden','aria-expanded']});
  root.addEventListener('click',clicked,true);root.addEventListener('keydown',keydown);root.host.addEventListener('salon-companion-change',companionChanged);win.addEventListener('resize',place);render();return {finish};
 }
