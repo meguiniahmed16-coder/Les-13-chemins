@@ -41,3 +41,12 @@
 #ahmed-call-status.ahmed-call-live,#ahmed-call-status.ahmed-call-error{font:12px/1.35 system-ui;text-align:right;min-width:0;max-width:100%;flex-basis:auto;overflow-wrap:anywhere}
 #ahmed-call-status.ahmed-call-error{color:#fff0cd}
 @media(prefers-reduced-motion:reduce){.ahmed-room-progress::after{animation:none;width:65%;margin:auto}}
+
+/* Même visuel pendant l’ouverture de la page, la session et le modèle 3D. */
+.ahmed-entry-loading{display:grid;place-items:center;min-height:clamp(230px,50dvh,380px);padding:24px!important;text-align:center;color:#fff8e9!important;background:radial-gradient(ellipse at 50% 32%,#496453 0%,#263f34 42%,#172b24 100%);border-radius:0}
+.ahmed-entry-loading[hidden]{display:none!important}
+.ahmed-entry-loading strong{color:#fff8e9!important;margin:0!important;font:500 clamp(23px,4vw,32px)/1.15 Georgia,serif!important}
+#invitationGate.ahmed-entry-active{max-width:100%;margin:0;padding:0}
+#invitationGate.ahmed-entry-active>:not(#ahmed-entry-loading){display:none!important}
+#ahmed-entry-loading{min-height:65dvh}
+.ahmed-room-loading{z-index:60}
