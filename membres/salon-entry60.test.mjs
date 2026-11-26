@@ -46,7 +46,7 @@ test('Les deux anciens boutons de cinéma sont retirés et l’auteur ouvre le v
  assert.match(cinema,/onComplete:\(\)=>\{introSound\.stop\(\);finishSalonEntry\(\);\}/);
  assert.match(cinema,/croisee-salon-introduction-originale-v34/);
  const intro=src('membres/intro-prive.html');
- assert.match(intro,/dojo-eleven69/);
+ assert.match(intro,/dojo-eleven72/);
  for(const file of ['salon-invite.html','ahmed-marie.html'])
   assert.doesNotMatch(src(file),/data-salon-film/);
 });
