@@ -1,7 +1,6 @@
-import {INTRO_INVITATION_DURATION as INVITATION_SOURCE_DURATION,INTRO_INVITATION_PLAY_DURATION as INTRO_INVITATION_DURATION,INTRO_INVITATION_DIALOGUE,introInvitationCue} from './intro-invitation.js';
+import {INTRO_INVITATION_DURATION,INTRO_INVITATION_DIALOGUE,introInvitationCue} from './intro-invitation.js';
 import {mountIntroInvitation} from './intro-invitation-ui.js';
-import {INTRO_FINALE_DURATION,ANGEL_ACTIVATE_MS} from './v27/intro-finale.js';
-export const GARDEN_DURATION=INTRO_FINALE_DURATION;
+export const GARDEN_DURATION=13000;
 export const ARRIVAL_DURATION=INTRO_INVITATION_DURATION+GARDEN_DURATION;
 export const PROMOTION=Object.freeze({
  title:'La Croisée des Âmes',
@@ -19,9 +18,9 @@ export function arrivalFrame(elapsed,{promo=false}={}){
  return {elapsed:Math.min(ARRIVAL_DURATION,at),
   phase:inSalon?'salon':promo&&at>=ARRIVAL_DURATION?'card':'garden',
   invitationElapsedMs:Math.min(at,INTRO_INVITATION_DURATION),gardenElapsedMs:gardenAt,
-  invitation:inSalon?introInvitationCue(at*INVITATION_SOURCE_DURATION/INTRO_INVITATION_DURATION):null,
-  dialogue:!inSalon&&gardenAt>=5000&&gardenAt<6500,
-  angel:!inSalon&&gardenAt>=1500&&gardenAt<6500,pressed:!inSalon&&gardenAt>=ANGEL_ACTIVATE_MS,
+  invitation:inSalon?introInvitationCue(at):null,
+  dialogue:!inSalon&&gardenAt>=1800&&gardenAt<8100,
+  angel:!inSalon&&gardenAt>=4500&&gardenAt<10800,pressed:!inSalon&&gardenAt>=5500,
   card:promo&&at>=ARRIVAL_DURATION,
   done:at>=ARRIVAL_DURATION+(promo?7500:0)
  };
@@ -30,7 +29,7 @@ export function arrivalFrame(elapsed,{promo=false}={}){
 // The parent owns the clock; opening a report pauses the actors, butterflies,
 // controls and end card together. Loading has an explicit ready/error protocol.
 export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout,
- onState=()=>{},onFrame=()=>{},onProblem=()=>{},voiceEnergy=()=>0,src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33&rev=envol80'}){
+ onState=()=>{},onFrame=()=>{},onProblem=()=>{},voiceEnergy=()=>0,src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33'}){
  let state='idle',api=null,invitation=null,gardenBegun=false,startedAt=0,elapsed=0,paused=false,promo=false,skip=false,timeout=null,generation=0,finished=false;
  const emit=(phase,detail='')=>{state=phase;onState({phase,detail});};
  const cancelTimeout=()=>{if(timeout!==null)clearTimer(timeout);timeout=null;};
@@ -83,10 +82,10 @@ export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTime
   const cue=arrivalFrame(elapsed,{promo});
   try{
    let sampled;
-   if(cue.phase==='salon')sampled=invitation.sample(cue.invitation.elapsedMs,{speaker:cue.invitation.dialogueIndex===1?'f':'m',energy:paused||!cue.invitation.dialogueVisible?0:voiceEnergy()});
+   if(cue.phase==='salon')sampled=invitation.sample(cue.invitationElapsedMs,{speaker:cue.invitation.dialogueIndex===1?'f':'m',energy:paused||!cue.invitation.dialogueVisible?0:voiceEnergy()});
    else{
-    if(!gardenBegun){invitation.sample(INVITATION_SOURCE_DURATION);invitation.finish();api.begin();gardenBegun=true;}
-    sampled=api.sample(Math.min(GARDEN_DURATION,cue.gardenElapsedMs),{speaker:'f',energy:paused||!cue.dialogue?0:voiceEnergy()});
+    if(!gardenBegun){invitation.sample(INTRO_INVITATION_DURATION);invitation.finish();api.begin();gardenBegun=true;}
+    sampled=api.sample(Math.min(GARDEN_DURATION,cue.gardenElapsedMs));
    }
    onFrame(cue,sampled);
    if(cue.done&&!finished){finished=true;if(!promo)api.finish();emit('complete');}
@@ -102,7 +101,7 @@ export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTime
 export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{},onComplete=()=>{},onDialogue=()=>{},voiceEnergy=()=>0}){
  const doc=host.ownerDocument,panel=doc.createElement('div');panel.id='intro-arrival';panel.hidden=true;
  panel.innerHTML=`<div class="arrival-loading" role="status"><p class="arrival-kicker">LA CROISÉE DES ÂMES</p><h2>Le salon s’ouvre…</h2><p class="arrival-detail">La prochaine rencontre se prépare.</p><button type="button" hidden>Réessayer</button></div>
- <div class="arrival-angel" role="button" aria-disabled="true" aria-pressed="false" aria-label="Mode ange" hidden><span class="arrival-angel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20c3-6 5-10 9-12 3-1 6-2 9-5-.2 5-3 9-8 11l4-1c-2 3-5 4-9 4l2 1-7 2Z"/></svg></span><span>Mode ange</span><span class="arrival-angel-check" aria-hidden="true">✓</span></div>
+ <div class="arrival-angel" role="img" aria-label="Démonstration du mode ange" hidden><span class="arrival-angel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20c3-6 5-10 9-12 3-1 6-2 9-5-.2 5-3 9-8 11l4-1c-2 3-5 4-9 4l2 1-7 2Z"/></svg></span><span>Mode ange</span><span class="arrival-angel-check" aria-hidden="true">✓</span></div>
  <p class="arrival-music-credit" hidden></p>
  <section class="promotion-card" aria-label="Rejoindre le projet" hidden><p class="promotion-universe"></p><h1></h1><div class="promotion-rule"></div><h2></h2><p class="promotion-contribution"></p><a class="promotion-site"></a><p class="promotion-contact"></p><p class="promotion-music-credit"></p></section>`;
  host.append(panel);
@@ -118,7 +117,7 @@ export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{}
  card.querySelector('.promotion-music-credit').textContent=PROMOTION.musicCredit;
  let shown='',bubbleSize='',promo=false;
  function dialogue(on,text=PROMOTION.dialogue,salon=false){
-  if(on&&shown!==text){onDialogue((salon&&text===INTRO_INVITATION_DIALOGUE[1]||!salon&&text==='C’est parti !')?'f':'m',text);const b=doc.createElement('b'),p=doc.createElement('p');b.textContent=(salon&&text===INTRO_INVITATION_DIALOGUE[1]||!salon&&text==='C’est parti !')?'Marianne':'Ahmed Marie';p.textContent=text;bubble.replaceChildren(b,p);bubble.classList.remove('above','below','left','right');bubble.classList.add('above');bubble.hidden=false;bubble.style.visibility='visible';shown=text;bubbleSize='';}
+  if(on&&shown!==text){onDialogue(salon&&text===INTRO_INVITATION_DIALOGUE[1]?'f':'m',text);const b=doc.createElement('b'),p=doc.createElement('p');b.textContent=salon&&text===INTRO_INVITATION_DIALOGUE[1]?'Marianne':'Ahmed Marie';p.textContent=text;bubble.replaceChildren(b,p);bubble.classList.remove('above','below','left','right');bubble.classList.add('above');bubble.hidden=false;bubble.style.visibility='visible';shown=text;bubbleSize='';}
   if(!on&&shown){onDialogue(null,'');bubble.hidden=true;shown='';}
   if(on){const w=host.clientWidth,h=host.clientHeight,key=w+'x'+h+':'+salon;if(key!==bubbleSize){bubbleSize=key;const width=salon?Math.min(w-28,740):Math.min(w-28,w<560?330:h<350?Math.min(300,w*.42):420);bubble.style.width=width+'px';bubble.style.left=(w-width)/2+'px';bubble.style.top=salon?'8px':'14px';bubble.style.setProperty('--tail-x','35%');}}
  }
@@ -132,9 +131,9 @@ export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{}
   },
   onFrame(cue){
    invitationDemo.update(cue);
-   if(cue.phase==='salon')dialogue(cue.invitation.dialogueVisible,INTRO_INVITATION_DIALOGUE[cue.invitation.dialogueIndex],true);else dialogue(cue.dialogue,'C’est parti !',false);
-   angel.hidden=!cue.angel;angel.classList.toggle('active',cue.pressed);angel.setAttribute('aria-pressed',String(cue.pressed));card.hidden=!cue.card;
-   musicCredit.hidden=cue.phase==='salon'||cue.gardenElapsedMs<16500||cue.card;panel.classList.toggle('show-card',cue.card);
+   if(cue.phase==='salon')dialogue(cue.invitation.dialogueVisible,INTRO_INVITATION_DIALOGUE[cue.invitation.dialogueIndex],true);else dialogue(cue.dialogue);
+   angel.hidden=!cue.angel;angel.classList.toggle('active',cue.pressed);card.hidden=!cue.card;
+   musicCredit.hidden=cue.phase==='salon'||cue.gardenElapsedMs<10800||cue.card;panel.classList.toggle('show-card',cue.card);
   }
  });
  retry.onclick=()=>player.retry();

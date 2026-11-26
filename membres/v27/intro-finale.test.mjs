@@ -4,9 +4,9 @@ import * as T from 'three';
 import {readFileSync} from 'node:fs';
 import {createIntroFinale,introFinaleFrame,INTRO_FINALE_DURATION} from './intro-finale.js';
 
-test('the real garden demonstration unfolds wings at three seconds and holds the final frame for the promotion',()=>{
- assert.equal(introFinaleFrame(2500).wings,0);assert.equal(introFinaleFrame(4000).wings,.5);assert.equal(introFinaleFrame(5000).wings,1);
- assert.deepEqual(introFinaleFrame(20000),introFinaleFrame(30000));assert.equal(INTRO_FINALE_DURATION,20000);
+test('the real garden demonstration unfolds wings at five seconds and holds the final frame for the promotion',()=>{
+ assert.equal(introFinaleFrame(4500).wings,0);assert.equal(introFinaleFrame(6000).wings,.5);assert.equal(introFinaleFrame(7000).wings,1);
+ assert.deepEqual(introFinaleFrame(13000),introFinaleFrame(20000));assert.equal(INTRO_FINALE_DURATION,13000);
  for(const t of [0,2500,6000,9000,13000])assert.deepEqual(introFinaleFrame(t),introFinaleFrame(t));
 });
 
@@ -38,7 +38,7 @@ test('the production articulated wings can be opened before either character has
 
 test('front and three-quarter framing leaves the fixed introduction bubble above both real-size heads',()=>{
  for(const [width,height] of [[1280,720],[1024,600],[390,700],[320,640],[844,300],[640,240]]){
-  for(let t=0;t<=6500;t+=250){
+  for(let t=0;t<=13000;t+=250){
    const frame=introFinaleFrame(t,{width,height}),cam=new T.PerspectiveCamera(frame.camera.fov,width/height,.07,180);
    cam.position.fromArray(frame.camera.position);cam.lookAt(new T.Vector3().fromArray(frame.camera.target));cam.updateMatrixWorld(true);
    // Source heads sit between 1.55m and 1.86m; include padding beyond the face.
@@ -50,12 +50,4 @@ test('front and three-quarter framing leaves the fixed introduction bubble above
    assert.ok(cam.position.z> -7.3,'The camera stays in front of the existing park arch.');
   }
  }
-});
-
-
-test('Le duo décolle, bat des ailes, accomplit un tour de caméra complet puis s’éloigne',()=>{
- const a=introFinaleFrame(6500),b=introFinaleFrame(9000),c=introFinaleFrame(15500),d=introFinaleFrame(20000);
- assert.ok(b.altitude>3);assert.equal(b.orbitRadians,0);assert.equal(c.orbitRadians,2*Math.PI);
- assert.ok(c.wingPhase>b.wingPhase+6*Math.PI);assert.ok(c.wingPower>.6);assert.ok(d.altitude>10);
- assert.ok(d.actors.m.z<a.actors.m.z-8);assert.ok(d.camera.position[1]>c.camera.position[1]+10);
 });

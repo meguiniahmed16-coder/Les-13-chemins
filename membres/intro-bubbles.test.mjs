@@ -139,7 +139,7 @@ test('each reply keeps its position through actual moving shots on desktop, port
    assert.equal(h.writes.some(([key])=>['left','top','width','visibility'].includes(key)),false,'No bubble relocation, resizing or hiding between frames');
   }
  }
- assert.ok(frames>=9000);
+ assert.ok(frames>10000);
 });
 
 test('manual dojo camera fallback keeps both faces clear under a stationary bubble',()=>{
@@ -157,13 +157,13 @@ test('manual dojo camera fallback keeps both faces clear under a stationary bubb
 });
 
 test('resizing replans once, and changing speaker permits a new bubble position',()=>{
- const line=lines.find(line=>line.id==='origine-rencontres'),h=fixture(390,690,line);
+ const line=lines.find(line=>line.id==='ensemble'),h=fixture(390,690,line);
  h.api.cameraShot(line,0,1/60);h.api.anchorBubble(line,0);const first=h.api.layout;
  h.canvasHost.clientWidth=844;h.canvasHost.clientHeight=285;h.camera.aspect=844/285;
  h.api.cameraShot(line,100,1/60);h.api.anchorBubble(line,100);const resized=h.api.layout;
  assert.notEqual(resized,first);
  h.api.cameraShot(line,200,1/60);h.api.anchorBubble(line,200);assert.equal(h.api.layout,resized);
- h.api.speaker('f');h.api.cameraShot(line,2800,1/60);h.api.anchorBubble(line,2800);
+ h.api.speaker('f');h.api.cameraShot(line,4200,1/60);h.api.anchorBubble(line,4200);
  assert.notEqual(h.api.layout,resized);assert.equal(h.bubble.hidden,false);
 });
 

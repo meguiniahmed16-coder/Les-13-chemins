@@ -1852,17 +1852,17 @@ if(cinemaArrival){
   apply(frame){
    for(const id of ['m','f']){
     const a=actors[id],p=frame.actors[id];
-    a.root.position.set(centerX+p.x,p.y,p.z);a.root.rotation.set(0,p.yaw,0);
-    a.angel.pivot.position.set(0,.97,0);a.angel.pivot.rotation.set(0,0,0);a.angel.lean=frame.altitude>.1?.12:0;
-    a.shadow.position.y=.03-p.y;a.shadow.scale.setScalar(1+Math.min(1,p.y*.08));
+    a.root.position.set(centerX+p.x,0,p.z);a.root.rotation.set(0,p.yaw,0);
+    a.angel.pivot.position.set(0,.97,0);a.angel.pivot.rotation.set(0,0,0);a.angel.lean=0;
+    a.shadow.position.y=.03;a.shadow.scale.set(1,1,1);
     poseWings(a,frame.wings,frame.wingPhase+(id==='f'?-.24:0),frame.wingPower);
     if(a.cinemaAhmed?.active){
-     const speaking=frame.voice?.speaker===id&&frame.voice.energy>.002;
+     const speaking=frame.time>=2&&frame.time<8;
      a.conversationPose=speaking?{gesture:{left:.06,right:.10,reach:20,height:-18,forward:18,palm:.12,nod:.018*Math.sin(frame.time*2)},look:0}:null;
-     a.cinemaAhmed.animate(0,null,0,frame.time);a.cinemaAhmed.talk({jaw:speaking?Math.min(.2,frame.voice.energy*12):0,spread:.20},frame.time);
-    }else if(a.referenceFace){a.referenceFace.follow?.(true);a.referenceFace.talk?.({jaw:frame.voice?.speaker===id?Math.min(.2,frame.voice.energy*12):0,spread:.12});}
+     a.cinemaAhmed.animate(0,null,0,frame.time);a.cinemaAhmed.talk({jaw:speaking?.035*(1+Math.sin(frame.time*12)):0,spread:.20},frame.time);
+    }
    }
-   air.spread=frame.wings;air.time=frame.time;air.alt=frame.altitude;
+   air.spread=frame.wings;air.time=frame.time;
    cam.fov=frame.camera.fov;cam.aspect=frame.viewport.width/frame.viewport.height;
    cam.position.fromArray(frame.camera.position);cam.position.x+=centerX;
    cam.lookAt(centerX+frame.camera.target[0],frame.camera.target[1],frame.camera.target[2]);cam.updateProjectionMatrix();cam.updateMatrixWorld(true);
