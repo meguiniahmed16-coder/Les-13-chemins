@@ -60,7 +60,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
         <details class="voice-conversation-settings"><summary>Relier mes comptes</summary>
           <p>Ces réglages sont réservés à ton compte administrateur. Les clés sont conservées chiffrées sur le serveur et ne sont jamais affichées après l’enregistrement.</p>
           <form data-voice-provider="openai"><label>Clé du compte OpenAI qui possède tes crédits<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier OpenAI</button></form>
-          <form data-voice-provider="azure"><label>Région Azure Speech<input type="text" name="region" value="francecentral" autocomplete="off" autocapitalize="none" spellcheck="false" pattern="[a-z][a-z0-9]{2,29}" required></label><label>Clé de la ressource Speech Azure<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="200" required></label><button type="submit">Relier Azure Speech</button></form><p><a href="https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices" target="_blank" rel="noopener noreferrer">Créer une ressource Speech (F0)</a></p>
+          <form data-voice-provider="cartesia"><label>Clé API Cartesia<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="512" required></label><button type="submit">Relier Cartesia</button></form><p><a href="https://play.cartesia.ai/keys" target="_blank" rel="noopener noreferrer">Créer une clé Cartesia</a></p>
           <p class="voice-settings-status" role="status"></p>
         </details>
       </section>
@@ -208,7 +208,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
       if(ticket!==phoneLoad||person!==current)return;
       phoneToggle.hidden=false;phoneReady=Boolean(available.ready);
       if(show&&!phoneReady)$('.voice-conversation-settings').open=true;
-      phoneStatus.textContent=phoneReady?'Appuie sur Appeler. La voix sera choisie automatiquement pour '+current.name+'.':'Relie OpenAI et Azure Speech dans les réglages pour appeler.';
+      phoneStatus.textContent=phoneReady?'Appuie sur Appeler. La voix sera choisie automatiquement pour '+current.name+'.':'Relie OpenAI et Cartesia dans les réglages pour appeler.';
       buttons();
     }catch(error){
       if(ticket!==phoneLoad||person!==current||error.name==='AbortError')return;

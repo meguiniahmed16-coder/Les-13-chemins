@@ -380,3 +380,31 @@ test('Azure Speech remplace ElevenLabs dans le chat, les appels et la cinématiq
  const invalid=await api('speech',{method:'POST',body:{text:'Bonjour',voiceId:'https://example.invalid'}});
  assert.equal(invalid.status,400);assert.equal(requests.length,before);
 });
+
+test('Cartesia: encrypted setup and French voices for chat, live call, and cinema',async t=>{
+ const {api,env,db}=await setup(t);const key='sk_car_test_credential_only_123456789';
+ const male='12345678-abcd-1234-abcd-123456789abc',female='abcdef12-1234-abcd-1234-abcdef123456';
+ let calls=0;
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  const u=new URL(url);assert.equal(u.origin,'https://api.cartesia.ai');assert.equal(options.headers.Authorization,'Bearer '+key);assert.equal(options.headers['Cartesia-Version'],'2026-08-14');
+  if(u.pathname==='/voices'){
+   assert.equal(u.searchParams.get('language'),'fr-FR');
+   const gender=u.searchParams.get('gender');
+   return Response.json({data:[{id:gender==='masculine'?male:female,gender,name:gender==='masculine'?'Pierre':'Marie',language:'fr',country:'FR',status:'active'}],has_more:false});
+  }
+  assert.equal(u.pathname,'/tts/bytes');const b=JSON.parse(options.body);
+  assert.equal(b.model_id,'sonic-3.6');assert.equal(typeof b.voice,'string');assert.equal(b.language,'fr-FR');assert.equal(b.output_format.container,'wav');calls++;
+  return new Response(audio,{headers:{'content-type':'audio/wav'}});
+ });
+ assert.equal((await api('settings',{method:'POST',body:{provider:'cartesia',key}})).status,200);
+ assert.equal(await voiceCredential(env,'cartesia'),key);
+ assert.ok(!db.prepare("SELECT value FROM member_admin_settings WHERE key='voice:cartesia'").get().value.includes(key));
+ assert.equal((await (await api('status')).json()).providers.voice,'Cartesia');
+ assert.equal((await (await api('voices')).json()).voices.length,2);
+ for(const body of [{text:'Bonjour',gender:'homme',strict:true},{text:'Salut',gender:'femme',voiceId:female,strict:true},{text:'Bienvenue',gender:'homme',voiceId:male,strict:true,purpose:'cinema'}]){
+ const res=await api('speech',{method:'POST',body});assert.equal(res.status,200);assert.equal(res.headers.get('x-voice-provider'),'cartesia');assert.equal(res.headers.get('content-type'),'audio/wav');assert.equal((await res.arrayBuffer()).byteLength,audio.byteLength);
+ }
+ assert.equal(calls,3);
+ assert.equal((await api('speech',{method:'POST',body:{text:'Bonjour',gender:'homme',voiceId:female}})).status,400);
+ assert.equal(calls,3);
+});
