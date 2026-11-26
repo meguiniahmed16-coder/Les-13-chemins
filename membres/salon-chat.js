@@ -1,5 +1,5 @@
 import {createShotSequence} from './salon-shots.js';
-import {createDialogue} from './salon-dialogue.js?v=voix34';
+import {createDialogue} from './salon-dialogue.js?v=eleven70';
 import {createDictee} from './salon-dictee.js?v=salon41';
 import {createVoiceConversation,voiceRequest} from './salon-conversation.js?v=eleven69';
 import {characterReply,limit} from '../atlas-chat-client.js';
@@ -100,6 +100,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   }
   const playback=createDialogue({
     gender,
+    allowRemote:()=>root.host.hasAttribute('salon-auteur')||root.host.hasAttribute('ahmed-numerique'),
     voiceStatus:message=>{voiceStatus.textContent=message;},
     start:showLine,
     word(who,w){
@@ -123,7 +124,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     },
     wake:change
   });
-  voiceSwitch.hidden=!playback.supportsVoice;voiceSwitch.title='Écouter les répliques en français';
+  voiceSwitch.hidden=!playback.supportsVoice;voiceSwitch.title='Écouter les voix ElevenLabs des personnages';
   voiceSwitch.onclick=()=>{
     const enabled=!voiceEnabled();
     if(enabled&&micState!=='idle')dictee.cancel();
@@ -272,7 +273,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
   function startPublicCall(){
     if(!person)return;
     publicCallActive=true;publicCallGeneration++;
-    // Unlock the paired local male/female voice within the user gesture.
+    // Unlock ElevenLabs audio on the user's tap; never invoke Android speech.
     if(playback.supportsVoice&&!voiceEnabled()){
       voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);
     }
@@ -425,7 +426,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     if(loading||!p)return;
     closePhone();phoneToggle.hidden=true;phoneReady=false;
     const ticket=++version;
-    // Unlock the browser voices immediately inside the visitor's tap; an async
+    // Unlock the ElevenLabs player inside the user's tap; an async
     // 3D avatar download must never cost us the first spoken exchange.
     if(playback.supportsVoice&&!voiceEnabled()){
       voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);
@@ -442,7 +443,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
     if(thread.length){for(const line of thread){appendLine('Toi',line.question);appendLine(p.name,line.answer);}turn('guest');const last=thread.at(-1);bubble(own,last.question);bubble(other,last.answer);buttons();}
     try{
       if(!await invite(p))throw Error();if(ticket!==version)return;
-      // An invitation is a real user gesture. Enable both French voices before
+      // An invitation is a real user gesture. Enable ElevenLabs voices before
       // the first question, then wait for the 3D avatar to load before speaking.
       if(playback.supportsVoice&&!voiceEnabled()){
         voiceSwitch.setAttribute('aria-pressed','true');playback.voice(true);
