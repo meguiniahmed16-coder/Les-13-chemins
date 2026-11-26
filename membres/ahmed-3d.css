@@ -23,3 +23,21 @@
 /* Un retour discret, sans ajouter de bouton au salon. */
 .ahmed-3d-controls:has(.ahmed-call-live){position:relative;width:auto;height:auto;overflow:visible;clip-path:none;padding:6px 14px!important;min-height:28px}
 #ahmed-call-status.ahmed-call-live{text-align:center;font-size:12px;min-width:0}
+
+/* Écran d'accueil du salon : progression indéterminée, jusqu'au vrai signal de disponibilité. */
+.ahmed-3d{position:relative}
+.ahmed-room-loading{position:absolute;inset:0;z-index:4;display:grid;place-items:center;text-align:center;padding:24px;color:#fff8e9;background:radial-gradient(ellipse at 50% 32%,#496453 0%,#263f34 42%,#172b24 100%);overflow:hidden}
+.ahmed-room-loading[hidden]{display:none!important}
+.ahmed-room-loading-inner{width:min(100%,330px);display:grid;justify-items:center;gap:13px}
+.ahmed-room-loading-mark{display:grid;place-items:center;width:68px;height:68px;margin-bottom:5px;border:1px solid #e8d6a888;border-radius:50%;box-shadow:0 0 0 9px #e8d6a80a,0 0 48px #e8d6a81a}
+.ahmed-room-loading-mark svg{width:38px;height:38px;fill:none;stroke:#e8d6a8;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.ahmed-room-loading-kicker{font:600 10px/1.2 system-ui;letter-spacing:.2em;text-transform:uppercase;color:#e8d6a8}
+.ahmed-room-loading strong{font:500 clamp(23px,4vw,32px)/1.15 Georgia,serif}
+.ahmed-room-loading-text{font:13px/1.4 system-ui;color:#e9eadf}
+.ahmed-room-progress{height:4px;width:min(210px,85%);background:#e8d6a82b;border-radius:8px;overflow:hidden;margin:5px 0}
+.ahmed-room-progress::after{content:"";display:block;width:42%;height:100%;border-radius:8px;background:linear-gradient(90deg,transparent,#e8d6a8,#fff0bd);animation:ahmed-room-progress 1.65s ease-in-out infinite}
+@keyframes ahmed-room-progress{from{transform:translateX(-110%)}to{transform:translateX(245%)}}
+.ahmed-3d-controls:has(.ahmed-call-live),.ahmed-3d-controls:has(.ahmed-call-error){position:absolute;top:60px;right:10px;left:auto;z-index:5;width:max-content;max-width:min(240px,calc(100% - 20px));height:auto;overflow:visible;clip-path:none;padding:7px 11px!important;min-height:0;border:1px solid #e8d6a83d;border-radius:12px;background:#172b24e8;box-shadow:0 2px 12px #0002;pointer-events:none}
+#ahmed-call-status.ahmed-call-live,#ahmed-call-status.ahmed-call-error{font:12px/1.35 system-ui;text-align:right;min-width:0;max-width:100%;flex-basis:auto;overflow-wrap:anywhere}
+#ahmed-call-status.ahmed-call-error{color:#fff0cd}
+@media(prefers-reduced-motion:reduce){.ahmed-room-progress::after{animation:none;width:65%;margin:auto}}
