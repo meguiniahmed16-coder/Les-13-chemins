@@ -948,51 +948,60 @@ function speakerActor(id){return people.find(p=>p.id===id);}
 // Reference: BEAT (ECCV 2022) and Hensel et al., Scientific Data (2025).
 // The two actors never share an arm oscillator or a mirrored arm envelope.
 function conversationGesture({id,speaking,text='',kind='listen',time=0,listenerTime=0,duration=1,seated=false,seed=0,enabled=true}){
- const clamp=(x)=>Math.max(0,Math.min(1,x));
- const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
- const stroke=(t,start,prep,hold,returnTime)=>{
-  const u=t-start;if(u<=0||u>=prep+hold+returnTime)return 0;
+ const clamp=x=>Math.max(0,Math.min(1,x)),ease=x=>{x=clamp(x);return x*x*(3-2*x);};
+ const stroke=(t,start,prep,hold,release)=>{
+  const u=t-start;if(u<=0||u>=prep+hold+release)return 0;
   if(u<prep)return ease(u/prep);
   if(u<prep+hold)return 1;
-  return 1-ease((u-prep-hold)/returnTime);
+  return 1-ease((u-prep-hold)/release);
  };
  const hash=Array.from(String(seed)+id).reduce((a,c)=>(Math.imul(a,31)+c.charCodeAt(0))>>>0,17);
- const g={left:0,right:0,reach:21,height:-30,forward:17,palm:.14,pitch:0,yaw:0,nod:0,tilt:0};
+ const g={left:0,right:0,reach:21,height:-30,forward:17,palm:.14,pitch:0,yaw:0,nod:0,tilt:0,cinematic:true};
  if(!speaking){
   const t=listenerTime,at=.65+(hash%9)*.17+(id==='f'?.31:0);
   g.nod=.052*stroke(t,at,.23,.08,.38);
   if(duration>5)g.nod+=.035*stroke(t,3.2+(hash%7)*.19,.28,.09,.48);
-  g.tilt=(id==='m'?-.018:.024)*stroke(t,at+.38,.44,.36,.75);
+  g.tilt=(id==='m'?-.032:.043)*stroke(t,at+.38,.44,.36,.75);
+  g.pitch=.023*stroke(t,at+.65,.6,.5,.7);
   return g;
  }
  if(!enabled||time<0)return g;
- const words=text.trim().split(/\s+/).filter(Boolean);
- if(!words.length)return g;
+ const words=text.trim().split(/\s+/).filter(Boolean);if(!words.length)return g;
+ // Each motif defines a different spatial path, palm orientation, and effort:
+ // near chest, palm-up question, outward offering, downward beat, enumeration,
+ // side sweep, quiet reflection, and asymmetrical framing with both hands.
+ const motifs=[
+  [11,-12,16,-.30,.48],[19,-21,29,.75,.55],[31,-25,30,.35,.52],
+  [17,-36,24,-.65,.44],[15,-16,35,.08,.47],[34,-29,17,-.18,.53],
+  [12,-35,11,.18,.34],[25,-18,25,.48,.51]
+ ];
+ const choices={question:[1,0,4,6],explain:[3,4,2,5,0,7],invite:[2,5,1],open:[7,2,5,4],reflect:[6,0,3],complice:[6,1,0],listen:[6],watch:[]};
+ const pool=choices[kind]||choices.explain;if(!pool.length)return g;
  const spoken=Math.max(.75,Math.min(duration,words.length*.39+.38));
- const count=words.length<4?1:Math.min(4,Math.max(1,Math.round(words.length/6)));
- const poses={
-  question:[22,-21,24,.35,.48],explain:[23,-26,22,.12,.39],
-  invite:[25,-23,31,.40,.56],open:[24,-24,24,.28,.47],
-  reflect:[19,-34,16,.04,.27],complice:[20,-30,17,.18,.26],
-  listen:[20,-30,16,.10,.12],watch:[20,-30,16,.10,0]
- };
- const shape=poses[kind]||poses.explain;
+ const count=words.length<4?1:Math.min(5,Math.max(1,Math.round(words.length/5)));
+ const spacing=spoken/count;
+ let strongest=0;
  for(let i=0;i<count;i++){
-  const center=spoken*(i+.46)/count;
-  const start=Math.max(.04,center-.38);
-  const prep=.27+((hash+i*7)%4)*.045,hold=.10+((hash+i*3)%3)*.055,recover=.42+((hash+i*5)%4)*.065;
+  const motifIndex=pool[(hash+i)%pool.length],shape=motifs[motifIndex];
+  const center=spacing*(i+.43),start=Math.max(.02,center-Math.min(.42,spacing*.35));
+  const prep=Math.min(spacing*.33,.25+((hash+i*7)%4)*.045),hold=Math.min(spacing*.16,.09+((hash+i*3)%3)*.055),recover=Math.min(spacing*.43,.40+((hash+i*5)%4)*.065);
   const env=stroke(time,start,prep,hold,recover);
-  const side=(i===0?(id==='m'?1:-1):((hash+i*3)%4===0?-1:1)*(id==='m'?1:-1));
-  const amount=shape[4]*env*(id==='f'?.88:1)*(seated?.85:1)*(i%2?.82:1);
+  if(env<=0)continue;
+  const side=((hash+i)%2===0?1:-1);
+  const amount=shape[4]*env*(id==='f'?.92:1)*(seated?.95:1);
   if(side<0)g.left=Math.max(g.left,amount);else g.right=Math.max(g.right,amount);
-  // Only a rare open gesture has a secondary hand; it starts later, stays lower and is much smaller.
-  if(kind==='open'&&i===1&&words.length>12){
-   const support=shape[4]*.22*stroke(time,start+.28,.40,.08,.54);
-   if(side<0)g.right=Math.max(g.right,support);else g.left=Math.max(g.left,support);
+  const u=clamp((time-start)/(prep+hold+recover));
+  const sweep=Math.sin(Math.PI*u);
+  const target={reach:shape[0]+(motifIndex===5?7*sweep:0),height:shape[1]+(motifIndex===3?-8*sweep:motifIndex===4?5*sweep:0),forward:shape[2]+(motifIndex===2?6*sweep:0),palm:shape[3]};
+  g[side<0?'leftTarget':'rightTarget']=target;
+  if(motifIndex===7){
+   const support=.24*stroke(time,start+.13,prep+.07,hold,recover);
+   if(side<0){g.right=Math.max(g.right,support);g.rightTarget={reach:18,height:-28,forward:19,palm:.18};}
+   else{g.left=Math.max(g.left,support);g.leftTarget={reach:18,height:-28,forward:19,palm:.18};}
   }
-  g.pitch+=.023*env;g.yaw+=side*.025*env;g.nod+=.025*env;
+  if(env>strongest){strongest=env;Object.assign(g,target);}
+  g.pitch+=(motifIndex===0?.045:.018)*env;g.yaw+=side*.045*env;g.nod+=(motifIndex===3?.045:.018)*env;g.tilt+=side*.024*env;
  }
- [g.reach,g.height,g.forward,g.palm]=shape;
  return g;
 }
 let speech=null,lastMotion=0,bubbleLayout=null;
@@ -1016,7 +1025,7 @@ bubbleToggle?.addEventListener('click',()=>{
  syncIntroBubbles();
 });
 if(typeof canvasHost!=='undefined'&&canvasHost?.classList)syncIntroBubbles();
-let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0,selectionPaused=false,voiceGestureStart=null;
+let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0,selectionPaused=false,voiceGestureStart=null,voiceEndedAt=null,voicePending=false;
 function showVoiceSelection(list){
  const panel=$('intro-voice-choice'),male=$('intro-voice-man'),female=$('intro-voice-woman');
  const entries=Array.isArray(list)?list.filter(v=>v?.id&&v?.name):[];
@@ -1040,8 +1049,10 @@ function showVoiceSelection(list){
 }
 const cinematicVoices=createIntroElevenLabs({
  onNeedsSelection:showVoiceSelection,
- onState:({energy=0,playing=false}={})=>{
+ onState:({energy=0,playing=false,loading=false,finished=false}={})=>{
   cinematicVoiceEnergy=energy;
+  voicePending=playing||loading;
+  if(finished&&speech&&stage==='white'&&!lines[step]?.invitation){voiceEndedAt=shotElapsed();if(autoplay&&!shotPaused&&(!lines[step]?.secondary||secondCue))scheduleNext(dialoguePause(lines[step]));}
   if(playing&&energy>.006&&voiceGestureStart===null)voiceGestureStart=shotElapsed();
   if(playing&&$('intro-voice-alert'))$('intro-voice-alert').hidden=true;
  },
@@ -1076,7 +1087,8 @@ function prepareCinematicVoices(){
   if(alert){alert.textContent=error?.message||'Les voix sont indisponibles.';alert.hidden=false;}
  });
 }
-function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;voiceGestureStart=null;}
+function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;voiceGestureStart=null;voiceEndedAt=null;voicePending=false;}
+function dialoguePause(line){return line?.gesture==='reflect'?1050:line?.gesture==='complice'?720:line?.gesture==='question'?850:620;}
 function speakCinematicCue(id,text){
  if(!cinematicVoiceEnabled||document.hidden||!['m','f'].includes(id)||!text)return;
  void cinematicVoices.speak(id,text);
@@ -1096,10 +1108,10 @@ function setCue(id,text,offset=0){
 function updateActing(now){
  const line=lines[step];if(!line||!started||!ready||stage==='garden')return;
  const elapsed=shotElapsed(now),t=elapsed/1000,duration=line.ms/1000;
- if(line.secondary&&!secondCue&&elapsed>=line.secondary.at){secondCue=true;setCue(line.secondary.speaker,line.secondary.text,line.secondary.at);}
+ if(line.secondary&&!secondCue&&((voiceEndedAt!==null&&elapsed>=voiceEndedAt+dialoguePause(line))||(voiceEndedAt===null&&!voicePending&&elapsed>=line.secondary.at))){secondCue=true;setCue(line.secondary.speaker,line.secondary.text,elapsed);}
  if(now-lastMotion<50&&!people.some(p=>p.gait?.footwork))return;lastMotion=now;
  for(const p of people){
-  const speaking=currentSpeaker===p.id,energy=speaking?1:0;
+  const speaking=currentSpeaker===p.id&&voiceEndedAt===null,energy=speaking?1:0;
   const localTime=(stage==='dojo'?elapsed/1000:now/1000)+(p.id==='f'?2.6:0);
   const emphasis=speaking?1:0;
   const blinkPhase=(localTime+1.65)%5.1,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
@@ -1435,7 +1447,7 @@ async function showScene(index){
  if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);if(previous?.scene!=='dojo'){angle=targetAngle=Math.PI;radius=3.7;}}
  else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
  if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
- if(cinematicVoiceEnabled){const upcoming=lines.slice(requested+1).find(item=>['m','f'].includes(item.speaker)&&item.text);if(upcoming)cinematicVoices.prefetch(upcoming.speaker,upcoming.text);}
+ if(cinematicVoiceEnabled){if(line.secondary)cinematicVoices.prefetch(line.secondary.speaker,line.secondary.text.replaceAll('{pseudo}',alias));const upcoming=lines.slice(requested+1).find(item=>['m','f'].includes(item.speaker)&&item.text);if(upcoming)cinematicVoices.prefetch(upcoming.speaker,upcoming.text.replaceAll('{pseudo}',alias));}
  updateFilm(line,0);
  if(!previous||previous.scene!==line.scene||line.move==='fade'){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
@@ -1476,6 +1488,8 @@ function next(){
  if(!started||pending||stage==='garden')return;
  // A throttled animation frame must not consume the only continuation timer.
  if(invitationMotion&&!invitationMotion.complete){scheduleNext(200);return;}
+ const line=lines[step];if(stage==='white'&&line?.speaker&&!line.invitation&&voicePending&&shotElapsed()<line.ms+30000){scheduleNext(200);return;}
+ if(stage==='white'&&line?.secondary&&!secondCue&&shotElapsed()<line.ms+30000){scheduleNext(200);return;}
  if(step>=lines.length-1)startGarden();else void showScene(step+1);
 }
 
