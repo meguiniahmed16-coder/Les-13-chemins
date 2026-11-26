@@ -76,6 +76,7 @@ export function createSalonNavigation(root){
  const panelNode=$('.maison-rail-panel'),mainDock=$('.maison-dock'),menuToggle=$('.maison-menu-toggle'),phoneNode=$('.maison-phone'),currentLabel=$('.maison-nav-current');
  const picker=$('.guest-picker'),legacyInvite=$('.invite-toggle');
  const standaloneAhmed=root.host.hasAttribute('ahmed-numerique');
+ const ownerRoom=root.host.hasAttribute('salon-auteur');
  const voicePanel=$('.voice-conversation'),legacyPhone=$('.conversation-voice-toggle');
  const chat=$('.guest-message'),nativeStudio=$('.options-toggle');
  const panelLabel=$('.maison-rail-title');
@@ -118,11 +119,12 @@ export function createSalonNavigation(root){
  }
  function sync(){
    const hasGuest=Boolean(companion);
-   phoneNode.hidden=standaloneAhmed?false:!hasGuest||legacyPhone.hidden;
+   phoneNode.hidden=standaloneAhmed||ownerRoom?false:!hasGuest||legacyPhone.hidden;
+   phoneNode.disabled=false;
    const status=$('.maison-companion-label');
    if(status)status.textContent=hasGuest?'Avec '+companion:'Invite un personnage pour dialoguer.';
    for(const id of ['call','write','history']){
-     const button=$('[data-tool="'+id+'"]');if(button)button.disabled=!hasGuest||(id==='call'&&legacyPhone.hidden);
+     const button=$('[data-tool="'+id+'"]');if(button)button.disabled=id==='call'&&ownerRoom?false:!hasGuest||(id==='call'&&legacyPhone.hidden);
    }
    slots('history').hidden=!historyOpen||!hasGuest;
    slots('leave').hidden=!hasGuest;
@@ -166,9 +168,9 @@ export function createSalonNavigation(root){
    press(b.dataset.maisonOpen,b);
  };
  function call(){
-   if(!companion){open('encounter',null);return;}
+   if(!companion&&!ownerRoom){open('encounter',null);return;}
    close();
-   if(legacyPhone.hidden)return;
+   if(legacyPhone.hidden&&!ownerRoom)return;
    legacyPhone.click();
  }
  phoneNode.onclick=()=>{
