@@ -26,7 +26,7 @@ export function dojoCastState(line,elapsed=0){
  const id=typeof line==='string'?line:line?.id;
  // Show the full-body gallery once. The following appearance shot returns
  // to Marianne and Ahmed Marie for the face and detail controls.
- const duration=id==='dojo-personnaliser'?12000:0;
+ const duration=id==='dojo-personnaliser'?(Number(line?.ms)||12000):0;
  if(!duration)return {castIndex:-1,castLabel:'',bodyLabel:''};
  const castIndex=Math.min(DOJO_CAST.length-1,Math.floor(Math.max(0,elapsed)/(duration/DOJO_CAST.length))),item=DOJO_CAST[castIndex];
  return {castIndex,castLabel:item.label,bodyLabel:item.bodyLabel};

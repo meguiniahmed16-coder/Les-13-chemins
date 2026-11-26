@@ -44,7 +44,7 @@ test('all dojo shots, including jardin, have zero music throughout while retaini
 
 test('music fades before the dojo, remains silent at both boundaries, then returns in the actual garden',()=>{
  const at=timeMs=>introSoundEnvelope({sceneId:'bienvenue',timeMs}).music;
- assert.equal(at(1200),1);assert.equal(at(100000),1);
+ assert.equal(at(1200),1);assert.equal(at(10000),1);
  const {dojoStartMs,transitionMs}=INTRO_SOUND_TIMING;
  assert.equal(at(dojoStartMs-transitionMs),1);
  assert.equal(at(dojoStartMs-transitionMs/2),.5);
@@ -55,7 +55,7 @@ test('music fades before the dojo, remains silent at both boundaries, then retur
 });
 
 test('normal and promotional garden endings fade before the player stops',()=>{
- for(const [promotion,start,end]of [[false,9000,13000],[true,15000,20500]]){
+ for(const [promotion,start,end]of [[false,17200,20000],[true,22000,27500]]){
   const at=elapsedMs=>introSoundEnvelope({sceneId:'arrival',promotion,elapsedMs,timeMs:242200+elapsedMs});
   assert.equal(at(start).music,1);assert.equal(at((start+end)/2).music,.5);
   assert.equal(at(end).music,0);assert.equal(at(end).room,0);assert.equal(at(end).garden,0);
@@ -158,7 +158,6 @@ test('late asset readiness never replays old movements or body selection cues',a
 test('wings and angel-mode cues align with their visible animation and do not repeat',()=>{
  const cues=createIntroSoundCues();
  const frame=elapsedMs=>({sceneId:'arrival',elapsedMs,playing:true});
- cues.update(frame(4900));assert.equal(cues.update(frame(5000))[0]?.kind,'wings');
- cues.update(frame(5300));assert.equal(cues.update(frame(5500))[0]?.kind,'angel-mode');
- assert.deepEqual(cues.update(frame(5520)),[]);
+ cues.update(frame(2900));assert.deepEqual(cues.update(frame(3000)).map(c=>c.kind),['angel-mode','wings']);
+ assert.deepEqual(cues.update(frame(3020)),[]);cues.update(frame(6400));assert.equal(cues.update(frame(6500))[0]?.kind,'wing-beat');
 });

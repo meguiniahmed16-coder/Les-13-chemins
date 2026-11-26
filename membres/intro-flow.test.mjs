@@ -5,7 +5,7 @@ import {createContext,runInContext} from 'node:vm';
 import * as T from 'three';
 import {introSoundEnvelope} from './intro-sound.js';
 import {arrivalFrame} from './intro-arrival.js';
-import {INTRO_INVITATION_DURATION} from './intro-invitation.js';
+import {INTRO_INVITATION_PLAY_DURATION as INTRO_INVITATION_DURATION} from './intro-invitation.js';
 
 const source=readFileSync(new URL('./intro-cinema.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('./intro-prive.html',import.meta.url),'utf8');
@@ -77,7 +77,7 @@ function harness({dojoLoaded=true}={}){
   dojoWardrobe:{ready:dojoLoaded,cancelled:false,async prepare(){if(!this.cancelled)this.ready=true},restore(){this.cancelled=true;this.ready=false}},
   dojoDemo:{hidden:true,updates:[],update(line,elapsed){this.hidden=line.scene!=='dojo';this.updates.push([line.id,elapsed])},hide(){this.hidden=true}},
   promotionMode:false,arrivalPlayer:{state:'idle',elapsed:0,paused:false,
-   start(options){arrivals.push(options);this.state=options.skip?'complete':'loading';this.paused=options.paused;dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33'},
+   start(options){arrivals.push(options);this.state=options.skip?'complete':'loading';this.paused=options.paused;dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33&rev=envol80'},
    tick(){},pause(){this.paused=true;arrivalCalls.push('pause')},resume(){this.paused=false;arrivalCalls.push('resume')},
   },
   isStagedDojo:line=>line?.demo===true,stageDojoPeople:()=>null,chairs:[],whiteFloor:{visible:true},
@@ -143,7 +143,7 @@ test('one start automatically visits every white-room and dojo line, then opens 
  assert.equal(h.state.stage,'garden');assert.equal(h.state.autoplay,false);assert.equal(h.time.count(),0);
  assert.equal(h.dom.$('garden').hidden,false);assert.equal(h.dom.$('bubble').hidden,true);
  assert.equal(h.dom.$('skip').hidden,true);
- assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33');
+ assert.equal(h.dom.$('garden-frame').src,'/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33&rev=envol80');
  assert.equal(h.arrivals.length,1);assert.equal(h.arrivals[0].skip,false);
 });
 
@@ -178,11 +178,11 @@ test('one user gesture keeps the sound clock while music is silent for every doj
  assert.ok(introSoundEnvelope(h.soundFrame).music>0,'Music returns only in the actual garden arrival');
  assert.equal(h.soundCalls.filter(call=>call.method==='start').length,1,'Garden continues the same playback');
  assert.equal(h.soundCalls.filter(call=>call.method==='stop').length,0);
- h.state.promotionMode=true;h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+17000;h.state.frame();
- assert.equal(h.soundFrame.elapsedMs,17000,'The promotional card retains the untruncated garden clock');
- assert.equal(h.soundFrame.timeMs,elapsed+17000);
+ h.state.promotionMode=true;h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+23000;h.state.frame();
+ assert.equal(h.soundFrame.elapsedMs,23000,'The promotional card retains the untruncated garden clock');
+ assert.equal(h.soundFrame.timeMs,elapsed+23000);
  assert.ok(introSoundEnvelope(h.soundFrame).music>0,'The ending remains musical during the final card fade');
- h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+20500;h.state.frame();
+ h.state.arrivalPlayer.elapsed=INTRO_INVITATION_DURATION+27500;h.state.frame();
  assert.equal(introSoundEnvelope(h.soundFrame).music,0,'The last music fade ends with the promotional card');
 });
 
@@ -321,5 +321,8 @@ test('Le nom d’auteur de la cinématique est exactement Ahmed Marie, sans band
  assert.doesNotMatch(source,/Ahmed Meguini|Ahmed Mari\b/);
  assert.doesNotMatch(html,/film-universe-title/);
  assert.doesNotMatch(source,/ctx\.fillText\(title,w\/2/);
- const invitation=readFileSync(new URL('./intro-invitation.js',import.meta.url),'utf8');assert.match(invitation,/Ahmed Marie/);assert.doesNotMatch(invitation,/Ahmed Meguini|Ahmed Mari\b/);
+ const invitation=readFileSync(new URL('./intro-invitation.js',import.meta.url),'utf8');assert.match(invitation,/personnage du livre/);assert.doesNotMatch(invitation,/Ahmed Meguini|Ahmed Mari\b/);
 });
+
+
+test('La durée nominale de la cinématique est exactement 80 secondes',()=>{assert.equal(lines.reduce((sum,line)=>sum+line.ms,0)+INTRO_INVITATION_DURATION+20000,80000);});

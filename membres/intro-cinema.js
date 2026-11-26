@@ -66,7 +66,7 @@ const lines=[
   "text": "",
   "scene": "white",
   "shot": "discovery",
-  "ms": 6200,
+  "ms": 1800,
   "move": "orbit",
   "gesture": "listen",
   "seated": false,
@@ -75,23 +75,11 @@ const lines=[
  {
   "id": "question-initiale",
   "speaker": "m",
-  "text": "Qu’est-ce qu’une rencontre ? Qu’est-ce que véritablement l’autre ?",
+  "text": "Qu’est-ce qu’une rencontre ?",
   "scene": "white",
   "shot": "approach",
-  "ms": 7800,
+  "ms": 2700,
   "move": "push",
-  "gesture": "question",
-  "seated": false,
-  "furniture": "none"
- },
- {
-  "id": "question",
-  "speaker": "m",
-  "text": "Est-ce simplement quelqu’un qui me ressemble ?",
-  "scene": "white",
-  "shot": "reverse",
-  "ms": 8000,
-  "move": "drift",
   "gesture": "question",
   "seated": false,
   "furniture": "none"
@@ -99,10 +87,10 @@ const lines=[
  {
   "id": "miroir",
   "speaker": "f",
-  "text": "Une rencontre n’est pas un miroir… C’est un espace où l’on se dépose, sans masque, ou presque.",
+  "text": "Un espace où l’on se découvre, sans masque.",
   "scene": "white",
   "shot": "reverse",
-  "ms": 8000,
+  "ms": 3000,
   "move": "drift",
   "gesture": "explain",
   "seated": false,
@@ -114,7 +102,7 @@ const lines=[
   "text": "Prends place.",
   "scene": "white",
   "shot": "arrival",
-  "ms": 11200,
+  "ms": 4600,
   "move": "orbit",
   "gesture": "invite",
   "seated": false,
@@ -122,127 +110,50 @@ const lines=[
   "furniture": "reveal"
  },
  {
-  "id": "bruit",
-  "speaker": "f",
-  "text": "Ici, on laisse dehors le bruit, les rôles, les étiquettes…",
-  "scene": "white",
-  "shot": "two",
-  "ms": 8000,
-  "move": "dolly",
-  "gesture": "explain",
-  "seated": true,
-  "furniture": "chairs"
- },
- {
-  "id": "masques",
+  "id": "origine-auteur",
   "speaker": "m",
-  "text": "Un monde de masques. Un monde d’illusions.",
+  "text": "Ce site est né du voyage d’Ahmed Marie, auteur de La Tectonique des âmes.",
   "scene": "white",
-  "shot": "close",
-  "ms": 10000,
+  "shot": "medium",
+  "ms": 5000,
   "move": "push",
   "gesture": "reflect",
   "seated": true,
   "furniture": "chairs"
  },
  {
-  "id": "verite",
+  "id": "origine-manuscrit",
   "speaker": "f",
-  "text": "Et pourtant… c’est aussi un lieu de vérité, de jeux, de désir, de création…",
+  "text": "Plus de cinq cents pages, un livre et un site toujours en création.",
   "scene": "white",
-  "shot": "close",
-  "ms": 10000,
+  "shot": "reverse",
+  "ms": 4400,
   "move": "drift",
   "gesture": "explain",
   "seated": true,
   "furniture": "chairs"
  },
  {
-  "id": "soi",
+  "id": "origine-rencontres",
   "speaker": "m",
-  "text": "Ici, on peut être tour à tour lecteur, acteur, voyageur… ou simplement soi.",
+  "text": "Rencontre ceux qu’il a croisés, aussi fidèlement que possible.",
   "scene": "white",
-  "shot": "medium",
-  "ms": 10000,
-  "move": "push",
+  "shot": "two",
+  "ms": 3500,
+  "move": "dolly",
   "gesture": "open",
   "seated": true,
   "furniture": "chairs"
  },
  {
-  "id": "libre",
+  "id": "origine-continuite",
   "speaker": "f",
-  "text": "Tu es libre d’explorer, de construire, de rencontrer, d’imaginer…",
+  "text": "Plus de quatre cents personnages, des histoires et des liens qui s’affinent.",
   "scene": "white",
-  "shot": "close",
-  "ms": 8000,
+  "shot": "reverse",
+  "ms": 4000,
   "move": "drift",
-  "gesture": "invite",
-  "seated": true,
-  "furniture": "chairs"
- },
- {
-   "id": "origine-auteur",
-   "speaker": "m",
-   "text": "Tout a commencé par l’aventure d’Ahmed Marie, l’auteur de ce site et du manuscrit La Tectonique des âmes.",
-   "scene": "white",
-   "shot": "medium",
-   "ms": 11500,
-   "move": "push",
-   "gesture": "reflect",
-   "seated": true,
-   "furniture": "chairs"
- },
- {
-   "id": "origine-manuscrit",
-   "speaker": "f",
-   "text": "Plus de cinq cents pages, et le récit continue de s’écrire. Comme ce site, le manuscrit est une œuvre qui se construit jour après jour.",
-   "scene": "white",
-   "shot": "reverse",
-   "ms": 12500,
-   "move": "drift",
-   "gesture": "explain",
-   "seated": true,
-   "furniture": "chairs"
- },
- {
-   "id": "origine-rencontres",
-   "speaker": "m",
-   "text": "Ici, nous te proposons de vivre une expérience immersive et de rencontrer, aussi fidèlement que possible, les personnes qu’Ahmed a croisées sur son chemin.",
-   "scene": "white",
-   "shot": "two",
-   "ms": 14000,
-   "move": "dolly",
-   "gesture": "open",
-   "seated": true,
-   "furniture": "chairs"
- },
- {
-   "id": "origine-continuite",
-   "speaker": "f",
-   "text": "Plus de quatre cents personnages habitent déjà cet univers. Leurs histoires, leurs liens et leur continuité s’affinent et s’enrichissent au fil du travail sur le texte.",
-   "scene": "white",
-   "shot": "reverse",
-   "ms": 14500,
-   "move": "drift",
-   "gesture": "explain",
-   "seated": true,
-   "furniture": "chairs"
- },
- {
-  "id": "ensemble",
-  "speaker": "m",
-  "text": "Alors…",
-  "secondary": {
-   "speaker": "f",
-   "text": "…on commence ?",
-   "at": 4200
-  },
-  "scene": "white",
-  "shot": "two",
-  "ms": 12000,
-  "move": "dolly",
-  "gesture": "complice",
+  "gesture": "explain",
   "seated": true,
   "furniture": "chairs"
  },
@@ -252,7 +163,7 @@ const lines=[
   "text": "",
   "scene": "white",
   "shot": "rear",
-  "ms": 6000,
+  "ms": 1000,
   "move": "orbit",
   "gesture": "watch",
   "seated": true,
@@ -264,7 +175,7 @@ const lines=[
   "text": "",
   "scene": "white",
   "shot": "tv",
-  "ms": 7000,
+  "ms": 1000,
   "move": "push",
   "gesture": "watch",
   "seated": true,
@@ -273,46 +184,22 @@ const lines=[
  {
   "id": "montage",
   "speaker": null,
-  "text": "La Croisée des Âmes, c’est un espace en construction…",
+  "text": "",
   "scene": "white",
   "shot": "montage",
-  "ms": 15000,
+  "ms": 1000,
   "move": "cut",
   "gesture": "watch",
   "seated": true,
   "furniture": "all"
  },
  {
-  "id": "lieu",
-  "speaker": "f",
-  "text": "La Croisée des Âmes, c’est un espace en construction… Un lieu pour lire, jouer, créer, dialoguer, apprendre, et peut-être se transformer.",
-  "scene": "white",
-  "shot": "two",
-  "ms": 12000,
-  "move": "dolly",
-  "gesture": "open",
-  "seated": true,
-  "furniture": "chairs"
- },
- {
-  "id": "bienvenue",
-  "speaker": "m",
-  "text": "Bienvenue.",
-  "scene": "white",
-  "shot": "two",
-  "ms": 10000,
-  "move": "dolly",
-  "gesture": "invite",
-  "seated": true,
-  "furniture": "chairs"
- },
- {
   "id": "dojo-arrivee",
   "speaker": "m",
-  "text": "Voici l’interface du Salon. Appuie sur Menu : les icônes apparaissent. Appuie encore : elles se replient.",
+  "text": "Appuie sur Menu pour retrouver les commandes.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 11000,
+  "ms": 3200,
   "move": "fade",
   "gesture": "invite",
   "seated": false,
@@ -321,34 +208,10 @@ const lines=[
  {
   "id": "dojo-camera",
   "speaker": "f",
-  "text": "L’icône Caméra te permet de tourner autour de nous, de zoomer et de changer de point de vue.",
+  "text": "Explore le Salon avec la caméra et le joystick.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 10000,
-  "move": "drift",
-  "gesture": "explain",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "dojo-deplacement",
-  "speaker": "m",
-  "text": "Avec le joystick, tu peux avancer, reculer et marcher dans la pièce. Regarde, Marianne te montre.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 11000,
-  "move": "drift",
-  "gesture": "invite",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "dojo-demi-tour",
-  "speaker": "m",
-  "text": "Si tu perds ton personnage de vue, touche Recentrer. Tu le retrouves sans devoir tout recommencer.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 9000,
+  "ms": 3000,
   "move": "drift",
   "gesture": "explain",
   "seated": false,
@@ -357,46 +220,10 @@ const lines=[
  {
   "id": "dojo-personnaliser",
   "speaker": "m",
-  "text": "Pour modifier ton personnage, ouvre Menu, puis Avatar. Les icônes permettent de régler le corps, le visage et la silhouette.",
+  "text": "Personnalise ton avatar, son visage et ses vêtements.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 12000,
-  "move": "drift",
-  "gesture": "explain",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "dojo-apparence",
-  "speaker": "f",
-  "text": "Le volet est translucide : tu continues de voir mon visage et les personnages pendant les changements. Une seconde pression le replie.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 10000,
-  "move": "drift",
-  "gesture": "open",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "dojo-vetements",
-  "speaker": "m",
-  "text": "Pour changer de tenue, sélectionne Vêtements. Choisis une chemise, un pantalon ou des chaussures sans quitter le Salon.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 12000,
-  "move": "drift",
-  "gesture": "open",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "dojo-enregistrer",
-  "speaker": "f",
-  "text": "Enregistrer garde tes choix. Invite un personnage, puis touche le petit téléphone pour parler.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 7000,
+  "ms": 3200,
   "move": "drift",
   "gesture": "explain",
   "seated": false,
@@ -405,10 +232,10 @@ const lines=[
  {
   "id": "dojo-construction",
   "speaker": "m",
-  "text": "Avec ce pictogramme, tu ajoutes un personnage du livre. Choisis-le dans le répertoire : il viendra nous rejoindre ici.",
+  "text": "Invite au hasard ou cherche un personnage.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 11000,
+  "ms": 3300,
   "move": "drift",
   "gesture": "open",
   "seated": false,
@@ -417,36 +244,12 @@ const lines=[
  {
   "id": "dojo-appeler",
   "speaker": "f",
-  "text": "Une fois ton invité arrivé, touche le petit téléphone du Salon. Tu lui parles directement, et il te répond à voix haute.",
+  "text": "Touche le téléphone pour lui parler.",
   "scene": "dojo",
   "shot": "dojo",
-  "ms": 13000,
+  "ms": 3300,
   "move": "drift",
   "gesture": "explain",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "dojo-bulles",
-  "speaker": "m",
-  "text": "Les bulles de dialogue sont facultatives. Cette icône les affiche ou les masque. Les voix continuent, même si tu retires les bulles.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 12500,
-  "move": "drift",
-  "gesture": "explain",
-  "seated": false,
-  "demo": true
- },
- {
-  "id": "jardin",
-  "speaker": "m",
-  "text": "Avant le parc et ses papillons, faisons une rencontre dans le salon.",
-  "scene": "dojo",
-  "shot": "dojo",
-  "ms": 6000,
-  "move": "drift",
-  "gesture": "invite",
   "seated": false,
   "demo": true
  }
@@ -861,7 +664,7 @@ function beginInvitation(){
 function angleMix(a,b,t){return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;}
 function updateInvitation(now){
  if(!invitationMotion||invitationMotion.complete)return;
- const elapsed=shotElapsed(now);let complete=true;
+ const elapsed=shotElapsed(now)*2;let complete=true;
  for(const {person,from,yaw,standing,to,walkYaw} of invitationMotion.items){
   const delay=person.id==='m'?0:1250;
   const t=elapsed-delay;
@@ -1118,7 +921,7 @@ function previewPeople(elapsed,line=lines[step]){
   if(isStagedDojo(line)){const pose=dojoPoseAt(line,elapsed)[person.id];head.add(pose.position.clone().sub(root.position));root.position.copy(pose.position);return {id:person.id,root,previewHead:head,sit:0};}
   const item=invitationMotion?.items.find(item=>item.person===person);
   if(item){
-   const t=elapsed-(person.id==='m'?0:1250),walk=T.MathUtils.smoothstep(t,2050,4600),sit=T.MathUtils.smoothstep(t,5350,7650);
+   const t=elapsed*2-(person.id==='m'?0:1250),walk=T.MathUtils.smoothstep(t,2050,4600),sit=T.MathUtils.smoothstep(t,5350,7650);
    root.position.lerpVectors(item.from,item.standing.pos,walk);
    head.add(root.position.clone().sub(person.root.position));
    head.y-=(sit-person.sit)*.55;
@@ -1210,7 +1013,7 @@ function updateFilm(line,elapsed){
  if(filmShot!==line.id||now-lastFilmDraw>=45){drawFilm();lastFilmDraw=now;}
  filmShot=line.id;
  overlay.hidden=line.shot!=='montage'||elapsed<900;
- overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,900,1450)):'1';
+ overlay.style.opacity=line.shot==='montage'?String(T.MathUtils.smoothstep(elapsed,0,250)):'1';
 }
 let cutCamera=true;
 const shotAim=new T.Vector3(),shotEye=new T.Vector3(),smoothAim=new T.Vector3(),smoothEye=new T.Vector3();
@@ -1380,7 +1183,7 @@ async function showScene(index){
  if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);if(previous?.scene!=='dojo'){angle=targetAngle=Math.PI;radius=3.7;}}
  else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
  if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
- if(cinematicVoiceEnabled){const upcoming=lines.slice(requested+1).find(item=>['m','f'].includes(item.speaker)&&item.text);if(upcoming)cinematicVoices.prefetch(upcoming.speaker,upcoming.text);}
+ if(cinematicVoiceEnabled){const upcoming=lines[requested+1];if(upcoming?.speaker&&upcoming.text)cinematicVoices.prefetch(upcoming.speaker,upcoming.text);}
  updateFilm(line,0);
  if(!previous||previous.scene!==line.scene||line.move==='fade'){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
