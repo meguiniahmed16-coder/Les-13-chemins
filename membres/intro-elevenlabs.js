@@ -50,7 +50,7 @@ export function createIntroElevenLabs({
   if(pending.has(key))return pending.get(key);
   const task=(async()=>{
    const selected=await prepare(),gender=id==='f'?'femme':'homme';
-   const clip=await request('speech',{body:{text,gender,voiceId:selected[id],strict:true}});
+   const clip=await request('speech',{body:{text,gender,voiceId:selected[id],strict:true,purpose:'cinema'}});
    if(clip?.voiceProvider!=='elevenlabs')throw Error('ElevenLabs a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
    if(!clip?.size)throw Error('ElevenLabs a renvoyé un enregistrement vide.');
    recordings.set(key,clip);return clip;
