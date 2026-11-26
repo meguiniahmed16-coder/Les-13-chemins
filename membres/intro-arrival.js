@@ -98,7 +98,7 @@ export function createArrivalPlayer({frame,win,now=()=>performance.now(),setTime
  };
 }
 
-export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{},onComplete=()=>{}}){
+export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{},onComplete=()=>{},onDialogue=()=>{}}){
  const doc=host.ownerDocument,panel=doc.createElement('div');panel.id='intro-arrival';panel.hidden=true;
  panel.innerHTML=`<div class="arrival-loading" role="status"><p class="arrival-kicker">LA CROISÉE DES ÂMES</p><h2>Le salon s’ouvre…</h2><p class="arrival-detail">La prochaine rencontre se prépare.</p><button type="button" hidden>Réessayer</button></div>
  <div class="arrival-angel" role="img" aria-label="Démonstration du mode ange" hidden><span class="arrival-angel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20c3-6 5-10 9-12 3-1 6-2 9-5-.2 5-3 9-8 11l4-1c-2 3-5 4-9 4l2 1-7 2Z"/></svg></span><span>Mode ange</span><span class="arrival-angel-check" aria-hidden="true">✓</span></div>
@@ -117,8 +117,8 @@ export function mountIntroArrival({host,frame,bubble,win=window,onProblem=()=>{}
  card.querySelector('.promotion-music-credit').textContent=PROMOTION.musicCredit;
  let shown='',bubbleSize='',promo=false;
  function dialogue(on,text=PROMOTION.dialogue,salon=false){
-  if(on&&shown!==text){const b=doc.createElement('b'),p=doc.createElement('p');b.textContent='Ahmed Marie';p.textContent=text;bubble.replaceChildren(b,p);bubble.classList.remove('above','below','left','right');bubble.classList.add('above');bubble.hidden=false;bubble.style.visibility='visible';shown=text;bubbleSize='';}
-  if(!on&&shown){bubble.hidden=true;shown='';}
+  if(on&&shown!==text){onDialogue(salon&&text===INTRO_INVITATION_DIALOGUE[1]?'f':'m',text);const b=doc.createElement('b'),p=doc.createElement('p');b.textContent=salon&&text===INTRO_INVITATION_DIALOGUE[1]?'Marianne':'Ahmed Marie';p.textContent=text;bubble.replaceChildren(b,p);bubble.classList.remove('above','below','left','right');bubble.classList.add('above');bubble.hidden=false;bubble.style.visibility='visible';shown=text;bubbleSize='';}
+  if(!on&&shown){onDialogue(null,'');bubble.hidden=true;shown='';}
   if(on){const w=host.clientWidth,h=host.clientHeight,key=w+'x'+h+':'+salon;if(key!==bubbleSize){bubbleSize=key;const width=salon?Math.min(w-28,740):Math.min(w-28,w<560?330:h<350?Math.min(300,w*.42):420);bubble.style.width=width+'px';bubble.style.left=(w-width)/2+'px';bubble.style.top=salon?'8px':'14px';bubble.style.setProperty('--tail-x','35%');}}
  }
  const player=createArrivalPlayer({frame,win,onProblem,
