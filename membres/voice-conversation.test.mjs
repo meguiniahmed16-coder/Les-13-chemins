@@ -28,7 +28,7 @@ async function setup(t,{configured=true}={}){
     const statement=db.prepare(sql);
     const bind=(...args)=>({bind,first:async()=>statement.get(...args)||null,all:async()=>({results:statement.all(...args)}),run:async()=>({meta:statement.run(...args)})});return bind();
   }};
-  const env={DB,ADMIN:{fetch:async request=>Response.json({ok:request.headers.get('cookie')===owner})},OAUTH_SETTINGS_KEY:btoa(String.fromCharCode(...new Uint8Array(32).fill(12)))};
+  const env={VOICE_PROVIDER:'elevenlabs',DB,ADMIN:{fetch:async request=>Response.json({ok:request.headers.get('cookie')===owner})},OAUTH_SETTINGS_KEY:btoa(String.fromCharCode(...new Uint8Array(32).fill(12)))};
   if(configured)Object.assign(env,{OPENAI_API_KEY:fakeOpenAI,ELEVENLABS_API_KEY:fakeEleven});
   db.prepare("INSERT INTO members(id,provider,subject,email,pseudo,birth,avatar,created) VALUES('ordinary','email','ordinary@example.invalid','ordinary@example.invalid','Ordinary','1990-01-01','{}',0)").run();
   const token='f'.repeat(64);
@@ -407,4 +407,14 @@ test('Cartesia: encrypted setup and French voices for chat, live call, and cinem
  assert.equal(calls,3);
  assert.equal((await api('speech',{method:'POST',body:{text:'Bonjour',gender:'homme',voiceId:female}})).status,400);
  assert.equal(calls,3);
+});
+
+
+test('Production: sans clé Cartesia, aucune requête ElevenLabs ni Azure même si des clés anciennes existent',async t=>{
+ const {api,env}=await setup(t);delete env.VOICE_PROVIDER;env.AZURE_SPEECH_KEY='obsolete-azure-key-123456789';env.AZURE_SPEECH_REGION='francecentral';noNetwork(t);
+ const status=await (await api('status')).json();assert.equal(status.providers.voice,'Cartesia');assert.deepEqual(status.missing,['Cartesia']);
+ for(const [action,method,body] of [['voices','GET'],['speech','POST',{text:'Bonjour',gender:'homme'}]]){
+ const res=await api(action,{method,body});assert.equal(res.status,503);assert.match((await res.json()).error,/Cartesia/);
+ }
+ assert.equal((await api('settings',{method:'POST',body:{provider:'elevenlabs',key:fakeEleven}})).status,400);
 });

@@ -60,7 +60,7 @@ export function createSalonChat(root,{invite,leave,change,rate,gender,customize}
         <details class="voice-conversation-settings"><summary>Relier mes comptes</summary>
           <p>Ces réglages sont réservés à ton compte administrateur. Les clés sont conservées chiffrées sur le serveur et ne sont jamais affichées après l’enregistrement.</p>
           <form data-voice-provider="openai"><label>Clé du compte OpenAI qui possède tes crédits<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="1024" required></label><button type="submit">Relier OpenAI</button></form>
-          <form data-voice-provider="cartesia"><label>Clé API Cartesia<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="512" required></label><button type="submit">Relier Cartesia</button></form><p><a href="https://play.cartesia.ai/keys" target="_blank" rel="noopener noreferrer">Créer une clé Cartesia</a></p>
+          <form data-voice-provider="cartesia"><label>Clé API Cartesia<input type="password" name="key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="512" required></label><button type="submit">Relier Cartesia</button></form><p><a href="https://play.cartesia.ai/keys" target="_blank" rel="noopener noreferrer">Créer une clé Cartesia</a> · <a href="/membres/voix.html">Ouvrir les réglages vocaux séparément</a></p>
           <p class="voice-settings-status" role="status"></p>
         </details>
       </section>

@@ -129,7 +129,7 @@ export function createVoiceConversation({
           voices=Array.isArray(data.voices)?data.voices:[];
         }catch(error){
           if(loading!==abort||error.name==='AbortError'||[401,403].includes(error.status))throw error;
-          voiceError=error.message||'Impossible de retrouver les voix. Vérifie la connexion ElevenLabs.';
+          voiceError=error.message||'Impossible de retrouver les voix. Vérifie la connexion Cartesia.';
         }
       }
       return {status,voices,voiceError};

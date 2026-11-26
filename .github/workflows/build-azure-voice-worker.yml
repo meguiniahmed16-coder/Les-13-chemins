@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   build:
-    if: github.head_ref == 'azure-speech-salon-chat' || github.head_ref == 'cartesia-speech-salon-chat'
+    if: github.head_ref == 'azure-speech-salon-chat' || github.head_ref == 'cartesia-speech-salon-chat' || github.head_ref == 'cartesia-only-voice'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
