@@ -283,7 +283,7 @@ function decodeAudio(context, bytes) {
 }
 
 /** Decoded audio is the clock for both completion and avatar lip movement. */
-export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
+export function createRemoteSpeech({onEnergy, onStatus, dependencies, audioTap} = {}) {
   const env = runtime(dependencies);
   let context = null, resumePromise = Promise.resolve(), current = null, disposed = false;
 
@@ -329,7 +329,7 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
   function position() {
     const job = current;
     if (!job?.playing || job.settled || !job.buffer || !context) return null;
-    const elapsed = Math.max(0, context.currentTime - job.startedAt);
+    const elapsed = Math.max(0, context.currentTime - job.startedAt)*(job.rate||1);
     const fraction = Math.min(1, elapsed / job.buffer.duration);
     const from = Math.min(job.buffer.length, Math.floor(elapsed * job.buffer.sampleRate));
     const to = Math.min(job.buffer.length, from + Math.max(1, Math.round(job.buffer.sampleRate * 0.02)));
@@ -343,7 +343,7 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
 
   function stop() { if (current) settle(current, abortError()); }
 
-  function play(blob, {signal} = {}) {
+  function play(blob, {signal,maxDurationMs} = {}) {
     stop();
     return new Promise((resolve, reject) => {
       const job = {resolve, reject, signal, settled: false, playing: false};
@@ -376,7 +376,10 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
         job.channels = Array.from({length: buffer.numberOfChannels}, (_, index) => buffer.getChannelData(index));
         job.source = context.createBufferSource();
         job.source.buffer = buffer;
-        job.source.connect(context.destination);
+        job.source.connect(context.destination);audioTap?.(context,job.source);
+        job.rate=Number.isFinite(maxDurationMs)?Math.max(1,buffer.duration/Math.max(.25,(maxDurationMs-120)/1000)):1;
+        if(job.rate>2.1)throw audioError('La réplique est trop longue pour le montage de 80 secondes.','VOICE_PLAYBACK_DURATION');
+        if(job.source.playbackRate)job.source.playbackRate.value=job.rate;
         job.source.onended = () => settle(job);
         job.startedAt = context.currentTime;
         job.playing = true;
@@ -387,7 +390,7 @@ export function createRemoteSpeech({onEnergy, onStatus, dependencies} = {}) {
         }, 20);
         job.endTimer = env.setTimeout(() => {
           settle(job, audioError('La lecture audio a été interrompue. Relance la conversation.', 'VOICE_PLAYBACK_INTERRUPTED'));
-        }, buffer.duration * 1000 + 5_000);
+        }, buffer.duration * 1000/(job.rate||1) + 5_000);
         onStatus?.('Le personnage te répond.');
       }
       prepare().catch(error => {
