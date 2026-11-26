@@ -105,7 +105,14 @@ export function explainElevenSpeechError(httpStatus,reason=''){
  return {status,message:'La synthèse a été refusée par ElevenLabs (HTTP '+String(httpStatus)+
    (code?', code '+code:'')+'). Le motif exact n’est pas encore identifiable ; les réglages du compte ne sont pas nécessairement en cause.'};
 }
-async function rejectElevenSpeech(response,signal){
+async function recordElevenDiagnostic(env,providerStatus,modelId,reason){
+ // Retain only a short safe error code, HTTP status and model. Never record
+ // the key, audio, voice identifier or spoken text.
+ const code=typeof reason==='string'&&/^[a-z][a-z0-9_]{0,70}$/.test(reason)?reason:'unknown';
+ const row=JSON.stringify({at:new Date().toISOString(),http:providerStatus,model:modelId,code});
+ try{await env.DB.prepare("INSERT INTO member_admin_settings(key,value) VALUES('voice:last-elevenlabs-tts',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(row).run();}catch{}
+}
+async function rejectElevenSpeech(response,signal,env,modelId){
  let code='';
  try{
   if(/^application\/(?:[a-z0-9.+-]*\+)?json(?:;|$)/i.test(response.headers.get('content-type')||'')){
@@ -117,6 +124,7 @@ async function rejectElevenSpeech(response,signal){
  }catch{/* Malformed provider errors must never leak credentials or override the HTTP status. */}
  await response.body?.cancel().catch(()=>{});
  aborted(signal);
+ await recordElevenDiagnostic(env,response.status,modelId,code);
  const explanation=explainElevenSpeechError(response.status,code);
  failure(explanation.status,explanation.message);
 }
@@ -259,7 +267,7 @@ export async function voiceConversation(request,env,{member,author},action){
       if(!exactKeys(data,['text','gender'])||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
       spoken=text(data.text);gender=data.gender;
     }else{
-      if(!exactKeys(data,['text','voiceId','gender','strict'])||(data.strict!==undefined&&data.strict!==true))failure(400,'La demande de voix est invalide.');
+      if(!exactKeys(data,['text','voiceId','gender','strict','purpose'])||(data.strict!==undefined&&data.strict!==true)||(data.purpose!==undefined&&data.purpose!=='cinema'))failure(400,'La demande de voix est invalide.');
       spoken=text(data.text);voiceId=data.voiceId;gender=data.gender;
       if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix ElevenLabs valide.');
       if(gender!==undefined&&!['homme','femme'].includes(gender))failure(400,'Le personnage vocal est invalide.');
@@ -275,15 +283,20 @@ export async function voiceConversation(request,env,{member,author},action){
       if(gender&&chosen.gender&&gender!==chosen.gender)failure(400,'Le genre de la voix ElevenLabs ne correspond pas au personnage.');
     }
     await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
+    // Cinematic narration favours the natural multilingual model documented by
+    // ElevenLabs. Short live conversations retain Flash for lower latency.
+    const cinematic=data?.purpose==='cinema';
+    const modelId=cinematic?'eleven_multilingual_v2':'eleven_flash_v2_5';
+    const payload=cinematic?{text:spoken,model_id:modelId}:{text:spoken,model_id:modelId,language_code:'fr'};
     const result=await fetch(eleven+'/v1/text-to-speech/'+encodeURIComponent(voiceId)+'/stream?output_format=mp3_44100_128',{
       method:'POST',headers:{'xi-api-key':env.ELEVENLABS_API_KEY,'content-type':'application/json',accept:'audio/mpeg'},
-      body:JSON.stringify({text:spoken,model_id:'eleven_flash_v2_5',language_code:'fr'}),
-      redirect:'manual',signal
+      body:JSON.stringify(payload),redirect:'manual',signal
     });
     if(result.ok&&result.body&&/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(result.headers.get('content-type')||'')){
-      return new Response(result.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'elevenlabs'}});
+      await recordElevenDiagnostic(env,200,modelId,'ok');
+      return new Response(result.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'elevenlabs','x-voice-model':modelId}});
     }
-    await rejectElevenSpeech(result,signal);
+    await rejectElevenSpeech(result,signal,env,modelId);
   }catch(error){
     if(request.signal.aborted)return json({error:'Conversation interrompue.'},499);
     if(signal?.aborted)return json({error:'Le service vocal a mis trop de temps à répondre. Tu peux réessayer.'},504);
