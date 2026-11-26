@@ -153,9 +153,9 @@ export async function voiceConversation(request,env,{member,author},action){
           return {label,ready:false,reconnect:true};
         }
       }));
-      const missing=connections.filter(connection=>connection.label==='OpenAI'&&!connection.ready).map(connection=>connection.label);
+      const missing=connections.filter(connection=>!connection.ready).map(connection=>connection.label);
       const reconnectNeeded=connections.filter(connection=>connection.reconnect).map(connection=>connection.label);
-      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'OpenAI'}});
+      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'ElevenLabs'}});
     }
     signal=AbortSignal.any([request.signal,AbortSignal.timeout(65000)]);
     if(action==='settings'){
