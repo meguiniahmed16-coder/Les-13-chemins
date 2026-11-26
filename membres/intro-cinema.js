@@ -944,7 +944,57 @@ function moveMarianneArms(person,g){
 }
 function shotElapsed(now=performance.now()){return Math.max(0,(shotPaused?pausedAt:now)-shotStart);}
 function speakerActor(id){return people.find(p=>p.id===id);}
-function actionEnvelope(t,duration){const start=T.MathUtils.smoothstep(t,0,1.1),end=1-T.MathUtils.smoothstep(t,Math.max(1.2,duration-1.4),duration);return start*end;}
+// Authored co-speech gestures: preparation, stroke, hold, recovery.
+// Reference: BEAT (ECCV 2022) and Hensel et al., Scientific Data (2025).
+// The two actors never share an arm oscillator or a mirrored arm envelope.
+function conversationGesture({id,speaking,text='',kind='listen',time=0,listenerTime=0,duration=1,seated=false,seed=0,enabled=true}){
+ const clamp=(x)=>Math.max(0,Math.min(1,x));
+ const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
+ const stroke=(t,start,prep,hold,returnTime)=>{
+  const u=t-start;if(u<=0||u>=prep+hold+returnTime)return 0;
+  if(u<prep)return ease(u/prep);
+  if(u<prep+hold)return 1;
+  return 1-ease((u-prep-hold)/returnTime);
+ };
+ const hash=Array.from(String(seed)+id).reduce((a,c)=>(Math.imul(a,31)+c.charCodeAt(0))>>>0,17);
+ const g={left:0,right:0,reach:21,height:-30,forward:17,palm:.14,pitch:0,yaw:0,nod:0,tilt:0};
+ if(!speaking){
+  const t=listenerTime,at=.65+(hash%9)*.17+(id==='f'?.31:0);
+  g.nod=.052*stroke(t,at,.23,.08,.38);
+  if(duration>5)g.nod+=.035*stroke(t,3.2+(hash%7)*.19,.28,.09,.48);
+  g.tilt=(id==='m'?-.018:.024)*stroke(t,at+.38,.44,.36,.75);
+  return g;
+ }
+ if(!enabled||time<0)return g;
+ const words=text.trim().split(/\s+/).filter(Boolean);
+ if(!words.length)return g;
+ const spoken=Math.max(.75,Math.min(duration,words.length*.39+.38));
+ const count=words.length<4?1:Math.min(4,Math.max(1,Math.round(words.length/6)));
+ const poses={
+  question:[22,-21,24,.35,.48],explain:[23,-26,22,.12,.39],
+  invite:[25,-23,31,.40,.56],open:[24,-24,24,.28,.47],
+  reflect:[19,-34,16,.04,.27],complice:[20,-30,17,.18,.26],
+  listen:[20,-30,16,.10,.12],watch:[20,-30,16,.10,0]
+ };
+ const shape=poses[kind]||poses.explain;
+ for(let i=0;i<count;i++){
+  const center=spoken*(i+.46)/count;
+  const start=Math.max(.04,center-.38);
+  const prep=.27+((hash+i*7)%4)*.045,hold=.10+((hash+i*3)%3)*.055,recover=.42+((hash+i*5)%4)*.065;
+  const env=stroke(time,start,prep,hold,recover);
+  const side=(i===0?(id==='m'?1:-1):((hash+i*3)%4===0?-1:1)*(id==='m'?1:-1));
+  const amount=shape[4]*env*(id==='f'?.88:1)*(seated?.85:1)*(i%2?.82:1);
+  if(side<0)g.left=Math.max(g.left,amount);else g.right=Math.max(g.right,amount);
+  // Only a rare open gesture has a secondary hand; it starts later, stays lower and is much smaller.
+  if(kind==='open'&&i===1&&words.length>12){
+   const support=shape[4]*.22*stroke(time,start+.28,.40,.08,.54);
+   if(side<0)g.right=Math.max(g.right,support);else g.left=Math.max(g.left,support);
+  }
+  g.pitch+=.023*env;g.yaw+=side*.025*env;g.nod+=.025*env;
+ }
+ [g.reach,g.height,g.forward,g.palm]=shape;
+ return g;
+}
 let speech=null,lastMotion=0,bubbleLayout=null;
 const bubblePreferenceKey='salon-bulles-visibles-v1';
 let bubblesEnabled=true;
@@ -966,7 +1016,7 @@ bubbleToggle?.addEventListener('click',()=>{
  syncIntroBubbles();
 });
 if(typeof canvasHost!=='undefined'&&canvasHost?.classList)syncIntroBubbles();
-let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0,selectionPaused=false;
+let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0,selectionPaused=false,voiceGestureStart=null;
 function showVoiceSelection(list){
  const panel=$('intro-voice-choice'),male=$('intro-voice-man'),female=$('intro-voice-woman');
  const entries=Array.isArray(list)?list.filter(v=>v?.id&&v?.name):[];
@@ -992,6 +1042,7 @@ const cinematicVoices=createIntroElevenLabs({
  onNeedsSelection:showVoiceSelection,
  onState:({energy=0,playing=false}={})=>{
   cinematicVoiceEnergy=energy;
+  if(playing&&energy>.006&&voiceGestureStart===null)voiceGestureStart=shotElapsed();
   if(playing&&$('intro-voice-alert'))$('intro-voice-alert').hidden=true;
  },
  onError:message=>{
@@ -1025,7 +1076,7 @@ function prepareCinematicVoices(){
   if(alert){alert.textContent=error?.message||'Les voix sont indisponibles.';alert.hidden=false;}
  });
 }
-function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;}
+function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;voiceGestureStart=null;}
 function speakCinematicCue(id,text){
  if(!cinematicVoiceEnabled||document.hidden||!['m','f'].includes(id)||!text)return;
  void cinematicVoices.speak(id,text);
@@ -1048,9 +1099,9 @@ function updateActing(now){
  if(line.secondary&&!secondCue&&elapsed>=line.secondary.at){secondCue=true;setCue(line.secondary.speaker,line.secondary.text,line.secondary.at);}
  if(now-lastMotion<50&&!people.some(p=>p.gait?.footwork))return;lastMotion=now;
  for(const p of people){
-  const speaking=currentSpeaker===p.id,energy=speaking?1:.20;
+  const speaking=currentSpeaker===p.id,energy=speaking?1:0;
   const localTime=(stage==='dojo'?elapsed/1000:now/1000)+(p.id==='f'?2.6:0);
-  const pulse=.45+.55*Math.sin(localTime*1.75)**2,emphasis=actionEnvelope(t,duration)*pulse;
+  const emphasis=speaking?1:0;
   const blinkPhase=(localTime+1.65)%5.1,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
   const partner=people.find(other=>other!==p);
   const watching=line.gesture==='watch';
@@ -1060,7 +1111,11 @@ function updateActing(now){
   const moving=line.invitation&&invitationMotion&&!invitationMotion.complete&&elapsed>=1350;
   const headYaw=p.dojoPerformance?.headYaw??(lookTarget&&!moving&&stage==='white'?T.MathUtils.clamp(turnDelta(p.root.rotation.y,facingYaw(p.root.position,lookTarget)),-.64,.64):0);
   const gaze=headYaw/.64;
-  const g={time:localTime,energy,emphasis,kind:p.dojoPerformance?.gesture||(speaking?line.gesture:'listen'),gaze,headYaw,blink,gait:p.gait,poseGesture:p.dojoPerformance?.poseGesture};
+  const kind=p.dojoPerformance?.gesture||(speaking?line.gesture:'listen');
+  const cueTime=Math.max(0,(elapsed-(speech?.start||0))/1000);
+  const voiceTime=voiceGestureStart===null?cueTime:Math.max(0,(elapsed-voiceGestureStart)/1000);
+  const poseGesture=p.dojoPerformance?.poseGesture||conversationGesture({id:p.id,speaking,text:speech?.text||'',kind,time:cinematicVoiceEnabled?voiceTime:cueTime,listenerTime:cueTime,duration:Math.max(.75,duration-(speech?.start||0)/1000),seated:p.sit>.5,seed:line.id,enabled:!moving&&(!cinematicVoiceEnabled||voiceGestureStart!==null)});
+  const g={time:localTime,energy,emphasis,kind,gaze,headYaw,blink,gait:p.gait,poseGesture};
   try{p.pose(p.sit,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
   let jaw=0,wide=0;
   if(speaking&&speech&&speech.id===p.id){
