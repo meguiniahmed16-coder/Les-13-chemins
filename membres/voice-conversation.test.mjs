@@ -345,3 +345,38 @@ test('Un 401 sans corps lisible ne prouve pas un changement de permissions',()=>
  const sanitised=explainElevenSpeechError(401,'invalid_api_key secret sent to client');
  assert.doesNotMatch(sanitised.message,/secret sent/);
 });
+
+
+test('Azure Speech remplace ElevenLabs dans le chat, les appels et la cinématique après connexion',async t=>{
+ const {api,env,db}=await setup(t);
+ const key='abcdefghijklmnopqrstuvwxyz012345',credential='francecentral:'+key;
+ const list=[{ShortName:'fr-FR-HenriNeural',LocalName:'Henri',Locale:'fr-FR',Gender:'Male'},{ShortName:'fr-FR-DeniseNeural',LocalName:'Denise',Locale:'fr-FR',Gender:'Female'},{ShortName:'en-US-JennyNeural',Locale:'en-US',Gender:'Female'}];
+ const requests=[];
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  requests.push({url,options});
+  assert.equal(new URL(url).origin,'https://francecentral.tts.speech.microsoft.com');
+  assert.equal(options.headers['Ocp-Apim-Subscription-Key'],key);
+  if(url.endsWith('/voices/list'))return Response.json(list);
+  assert.equal(url,'https://francecentral.tts.speech.microsoft.com/cognitiveservices/v1');
+  assert.equal(options.headers['Content-Type'],'application/ssml+xml');
+  assert.match(options.body,/&lt;Bonjour&gt; &amp; toi/);
+  return new Response(audio,{headers:{'content-type':'audio/mpeg'}});
+ });
+ const linked=await api('settings',{method:'POST',body:{provider:'azure',key:credential}});
+ assert.equal(linked.status,200);assert.equal(await voiceCredential(env,'azure'),credential);
+ const stored=db.prepare("SELECT value FROM member_admin_settings WHERE key='voice:azure'").get().value;
+ assert.ok(!stored.includes(key));
+ const status=await (await api('status')).json();assert.equal(status.providers.voice,'Azure Speech');
+ const {voices}=await (await api('voices')).json();assert.equal(voices.length,2);
+ for(const body of [
+  {text:'<Bonjour> & toi',gender:'homme',strict:true},
+  {text:'<Bonjour> & toi',gender:'femme',voiceId:'fr-FR-DeniseNeural',strict:true},
+  {text:'<Bonjour> & toi',gender:'homme',voiceId:'fr-FR-HenriNeural',strict:true,purpose:'cinema'}
+ ]){
+  const res=await api('speech',{method:'POST',body});assert.equal(res.status,200);assert.equal(res.headers.get('x-voice-provider'),'azure');assert.equal((await res.arrayBuffer()).byteLength,audio.byteLength);
+ }
+ assert.equal(requests.filter(x=>x.options.method==='POST').length,3);
+ const before=requests.length;
+ const invalid=await api('speech',{method:'POST',body:{text:'Bonjour',voiceId:'https://example.invalid'}});
+ assert.equal(invalid.status,400);assert.equal(requests.length,before);
+});
