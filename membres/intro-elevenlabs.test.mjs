@@ -80,7 +80,8 @@ test('both the spoken Salon and the cinematic reuse the very same server credent
  assert.match(cinematic,/request\('speech',\{body:\{text,gender,voiceId:selected\[id\],strict:true\}\}\)/);
  assert.match(salon,/fetch\('\/api\/membres\/voice\/'\+path/);
  assert.match(salon,/voiceId:run\.voiceId,strict:true/);
- assert.match(worker,/await voiceCredential\(env,'elevenlabs'\)/);
+ assert.match(worker,/const useEleven=action==='voices'\|\|action==='speech'/);
+ assert.match(worker,/await voiceCredential\(env,useEleven\?'elevenlabs':'openai'\)/);
  assert.match(vault,/const name='voice:'\+provider/);
  assert.doesNotMatch(cinematic,/ELEVENLABS_API_KEY|xi-api-key|speechSynthesis|createLocalVoices/);
 });
