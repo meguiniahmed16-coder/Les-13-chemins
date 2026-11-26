@@ -30,14 +30,14 @@ test('one silent inline video carries the original salon, board and garden reel 
  assert.match(source,/const video=\$\('film-video'\)/);
  assert.match(source,/video\.readyState>=2\?video:/,'The television draws the same video as the full-screen overlay');
  const lines=JSON.parse(source.slice(source.indexOf('const lines=')+12,source.indexOf(';\nconst dojoStart')));
- assert.equal(lines.find(line=>line.shot==='tv').ms,7000);
+ assert.equal(lines.find(line=>line.shot==='tv').ms,1000);
  assert.equal(filmPosition('tv',7000).seconds,filmPosition('montage',0).seconds);
  assert.equal(filmPosition('montage',999).chapter.title,'Rencontrer');
  assert.equal(filmPosition('montage',1000).chapter.title,'Jouer');
  assert.equal(filmPosition('montage',7999).chapter.title,'Jouer');
  assert.equal(filmPosition('montage',8000).chapter.title,'Explorer');
  const filmTime=lines.filter(line=>['tv','montage'].includes(line.shot)).reduce((sum,line)=>sum+line.ms,0);
- assert.ok(filmTime>=INTRO_FILM.duration*1000,'The complete garden and butterflies must play before the dialogue resumes');
+ assert.equal(filmTime,2000,'The condensed film uses short actual reel excerpts.');
 });
 
 test('the 7-second television shot continues into montage without seeking back or restarting playback',async()=>{
