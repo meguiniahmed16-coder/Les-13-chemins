@@ -80,7 +80,8 @@ test('Les pictogrammes du Salon sont conservés, sans nouvelle vidéo à la plac
  assert.match(icon,/phoneNode\.hidden=standaloneAhmed\?false/);
  assert.match(icon,/salon-ahmed-call/);
  assert.match(ahmed,/view\.addEventListener\('salon-ahmed-call'/);
- assert.match(ahmed,/\/membres\/intro-prive\.html\?salon=1&retour=ahmed/);
+ assert.doesNotMatch(ahmed,/intro-prive\.html|location\.replace\(/);
+ assert.match(ahmed,/function startOpening\(\)\{[\s\S]*?void mount\(\);\s*\}/);
  assert.match(guest,/\/membres\/intro-prive\.html\?salon=1&retour=invite/);
  assert.match(member,/member\.author&&!wantsPreview/);
  assert.match(src('index.html'),/data-salon-action="invite"/);
