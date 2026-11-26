@@ -53,7 +53,7 @@ test('Appel simple : voix selon le genre, sans menu Marianne ni fin manuelle',()
  assert.match(panel,/aria-label="Raccrocher"/);
  assert.match(panel,/voiceSession\.refresh\(\{withVoices:false\}\)/);
  assert.match(panel,/voiceSession\.start\(''\)/);
- assert.match(session,/const speechBody=\{text:answer,gender:current.gender\}/);
+ assert.match(session,/const speechBody=\{text:answer,gender:current.gender,voiceId:run.voiceId,strict:true\}/);
  assert.match(server,/openaiSpeechAuto/);
  assert.match(css,/voice-call-header/);
 });
