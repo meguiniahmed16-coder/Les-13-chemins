@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {chooseElevenVoice,selectIntroVoices} from './elevenlabs-voices.js';
 import {createIntroElevenLabs} from './intro-elevenlabs.js';
 
@@ -68,4 +69,18 @@ test('replaying the same authored line does not request paid synthesis twice in 
  await h.controller.speak('f','Les bulles peuvent être masquées.');
  await h.controller.speak('f','Les bulles peuvent être masquées.');
  assert.equal(h.requests.filter(x=>x.path==='speech').length,1);
+});
+
+test('both the spoken Salon and the cinematic reuse the very same server credential',()=>{
+ const cinematic=readFileSync(new URL('./intro-elevenlabs.js',import.meta.url),'utf8');
+ const salon=readFileSync(new URL('./salon-conversation.js',import.meta.url),'utf8');
+ const worker=readFileSync(new URL('./voice-conversation.mjs',import.meta.url),'utf8');
+ const vault=readFileSync(new URL('./voice-settings.mjs',import.meta.url),'utf8');
+ assert.match(cinematic,/import \{voiceRequest\} from '\.\/salon-conversation\.js/);
+ assert.match(cinematic,/request\('speech',\{body:\{text,gender,voiceId:selected\[id\],strict:true\}\}\)/);
+ assert.match(salon,/fetch\('\/api\/membres\/voice\/'\+path/);
+ assert.match(salon,/voiceId:run\.voiceId,strict:true/);
+ assert.match(worker,/await voiceCredential\(env,'elevenlabs'\)/);
+ assert.match(vault,/const name='voice:'\+provider/);
+ assert.doesNotMatch(cinematic,/ELEVENLABS_API_KEY|xi-api-key|speechSynthesis|createLocalVoices/);
 });
