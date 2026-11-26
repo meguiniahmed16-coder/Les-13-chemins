@@ -2,8 +2,9 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
 export const INTRO_INVITATION_DURATION=20000;
 export const INTRO_INVITATION_DIALOGUE=Object.freeze([
- 'Invite les personnages de La Tectonique des âmes : choisis dans l’index, ou laisse faire le hasard.',
- 'L’index retrouve leurs chapitres, leur place dans l’histoire et les personnages qu’ils rencontrent.'
+ 'Invitons un personnage du texte d’Ahmed Meguini. Le voici !',
+ 'Regarde, on peut changer de personnage. En voici un autre.',
+ 'Touche le petit téléphone pour lui parler de vive voix.'
 ]);
 
 // One clock controls the real salon, its selector and the subsequent garden.
@@ -20,8 +21,8 @@ export function introInvitationCue(elapsedMs=0){
   selectorVisible:elapsed>=1200&&elapsed<18000,
   cardVisible:elapsed>=2500&&elapsed<18000&&phase!=='random',
   exitOpacity:smooth((elapsed-19000)/1000),
-  dialogueIndex:elapsed<9200?0:1,
-  dialogueVisible:elapsed>=500&&elapsed<17500,
+  dialogueIndex:elapsed<8200?0:elapsed<14500?1:2,
+  dialogueVisible:elapsed>=500&&elapsed<19500,
   // The roulette previews real index entries, then resolves to the prepared
   // example, so slower devices never swap in an undressed or partial figure.
   roulette:phase==='random'?Math.floor((elapsed-8200)/160):-1
