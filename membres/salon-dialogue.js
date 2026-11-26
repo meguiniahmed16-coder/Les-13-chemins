@@ -32,7 +32,7 @@ export function createDialogue({start,word,rest,wake,gender=()=>null,voiceStatus
     try{
       const clip=await requestVoice('speech',{body:{text:current.text,gender:kind,strict:true},signal:abort.signal});
       if(active!==current||abort.signal.aborted||!voiced)return;
-      if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure')throw Error('Le fournisseur vocal a renvoyé un son non reconnu.');
+      if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure'&&clip?.voiceProvider!=='cartesia')throw Error('Le fournisseur vocal a renvoyé un son non reconnu.');
       current.external=remote;current.waitRecording=false;current.started=true;current.origin=now();
       voiceStatus('');wake();
       await remote.play(clip,{signal:abort.signal});
