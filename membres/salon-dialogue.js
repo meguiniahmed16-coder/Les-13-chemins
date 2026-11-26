@@ -1,6 +1,6 @@
 import {conversationAudio,recordedPhrase,reactionAfter} from './conversation-reactions.js';
 import {scoreLine,articulation} from './salon-performance.js';
-import {voiceRequest} from './salon-conversation.js?v=eleven70';
+import {voiceRequest} from './salon-conversation.js?v=eleven70&rev=rencontres1';
 import {createRemoteSpeech} from './salon-conversation-audio.js?v=call58';
 
 // One clock drives articulation, word emphasis, conversational gestures and camera cuts.
