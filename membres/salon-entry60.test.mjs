@@ -54,11 +54,12 @@ test('Les deux anciens boutons de cinéma sont retirés et l’auteur ouvre le v
 test('Le dojo original enseigne les nouvelles icônes et utilise des voix masculines et féminines',()=>{
  const intro=src('membres/intro-cinema.js');
  const html=src('membres/intro-prive.html');
- assert.match(intro,/frenchVoice\(cinematicSynth,gender/);
+ assert.match(intro,/createIntroElevenLabs\(\{/);
  assert.match(intro,/speakCinematicCue\(id,p\.textContent\)/);
  assert.match(intro,/dojoHelp\.hidden=!isDojo/);
  assert.match(intro,/Appuie sur Menu/);
  assert.match(html,/id="dojo-help"/);
+ assert.match(html,/id="intro-voice-alert"/);
 });
 test('Le build produit les nouveaux modules et invalide les anciens caches Android',()=>{
  const build=src('build-public.mjs');
