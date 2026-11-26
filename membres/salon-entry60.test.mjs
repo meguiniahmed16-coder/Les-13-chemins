@@ -66,9 +66,9 @@ test('Le build produit les nouveaux modules et invalide les anciens caches Andro
  for(const path of ['membres/salon-cinema.js','membres/ahmed-3d.js','membres/ahmed-3d.css','membres/salon-call58.css']){
   assert.ok(build.includes("'"+path+"'"),path);
  }
- assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=eleven69/);
- assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=eleven69/);
- assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=eleven69/);
+ assert.match(src('membres/salon-v27.js'),/salon-chat\.js\?v=eleven70/);
+ assert.match(src('membres/visite-salon.js'),/salon-v27\.js\?v=eleven70/);
+ assert.match(src('membres/ahmed-3d.js'),/salon-v27\.js\?v=eleven70/);
 });
 
 test('Les pictogrammes du Salon sont conservés, sans nouvelle vidéo à la place de l’originale',()=>{
@@ -86,4 +86,15 @@ test('Les pictogrammes du Salon sont conservés, sans nouvelle vidéo à la plac
  assert.match(src('index.html'),/data-salon-action="invite"/);
  assert.match(src('index.html'),/data-salon-action="call"/);
  assert.doesNotMatch(src('index.html'),/intro-montage-reel23\.mp4/);
+});
+
+test('Le Salon ne charge plus de voix Android : tous les dialogues vocaux passent par ElevenLabs',()=>{
+ const dialogue=src('membres/salon-dialogue.js');
+ const cinema=src('membres/intro-cinema.js');
+ const chat=src('membres/salon-chat.js');
+ assert.doesNotMatch(dialogue,/SpeechSynthesisUtterance|speechSynthesis|createLocalVoices|frenchVoice/);
+ assert.doesNotMatch(cinema,/SpeechSynthesisUtterance|speechSynthesis|createLocalVoices|frenchVoice/);
+ assert.match(dialogue,/voiceProvider!=='elevenlabs'/);
+ assert.match(dialogue,/requestVoice\('speech',\{body:\{text:current.text,gender:kind,strict:true\}/);
+ assert.match(chat,/salon-dialogue\.js\?v=eleven70/);
 });
