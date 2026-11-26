@@ -232,7 +232,7 @@ export async function voiceConversation(request,env,{member,author},action){
     // Legacy explicitly selected ElevenLabs voices remain supported for backward compatibility.
     env={...env,ELEVENLABS_API_KEY:await voiceCredential(env,'elevenlabs')};
     need(env,'ELEVENLABS_API_KEY','ElevenLabs');
-    if(!exactKeys(data,['text','voiceId','gender']))failure(400,'La demande de voix est invalide.');
+    if(!exactKeys(data,['text','voiceId','gender','strict'])||(data.strict!==undefined&&data.strict!==true))failure(400,'La demande de voix est invalide.');
     const spoken=text(data.text),voiceId=data.voiceId;
     if(typeof voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(voiceId))failure(400,'Choisis une voix dans la liste du Salon.');
     if(data.gender!==undefined&&!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
@@ -248,8 +248,16 @@ export async function voiceConversation(request,env,{member,author},action){
     if(result.ok&&result.body&&/^audio\/(?:mpeg|mp3)(?:;|$)/i.test(result.headers.get('content-type')||'')){
       return new Response(result.body,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'elevenlabs'}});
     }
-    // ElevenLabs may allow listing voices while refusing Text to Speech (401
-    // missing_permissions). Do not strand the person in a silent Salon.
+    // A cinematic or explicit ElevenLabs-only call must never silently switch
+    // to OpenAI. This is a permission or quota failure, not a voice selection.
+    if(data.strict===true){
+      await result.body?.cancel().catch(()=>{});
+      if([401,403].includes(result.status))failure(503,'ElevenLabs refuse la synthèse vocale. Vérifie que ta clé autorise Text to Speech dans ElevenLabs.');
+      if([402,429].includes(result.status))failure(429,'Les crédits ElevenLabs ou leur quota sont insuffisants pour cette voix.');
+      failure(503,'ElevenLabs ne peut pas produire cette réplique. Vérifie la voix, le modèle et les autorisations de ton compte.');
+    }
+    // Legacy non-strict callers may still use the previously configured fallback.
+    // The original cinematic and the new Salon calls always request strict mode.
     // The secondary provider is server-only, billed under a separate daily cap.
     await result.body?.cancel().catch(()=>{});
     aborted(signal);
