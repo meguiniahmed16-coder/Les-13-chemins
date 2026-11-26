@@ -7,7 +7,7 @@ const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
 // Music is already mastered to -28 LUFS. These gains lower the approved
 // working foley/ambience by the same 4 dB requested after the first MP4.
 export const INTRO_SOUND_GAINS=Object.freeze({foley:gain(3),ambience:gain(-2)});
-export const INTRO_SOUND_TIMING=Object.freeze({dojoStartMs:149200,gardenStartMs:273700,transitionMs:1800});
+export const INTRO_SOUND_TIMING=Object.freeze({dojoStartMs:201700,gardenStartMs:326200,transitionMs:1800});
 
 export function introSoundEnvelope({sceneId='',elapsedMs=0,timeMs=0,promotion=false}={}){
  const time=number(timeMs),elapsed=number(elapsedMs),garden=sceneId==='arrival';
@@ -105,7 +105,7 @@ export function createIntroSound({
   // and resume callbacks. Muting does not disturb the shared music clock.
   music.muted=envelope===0;
   if(musicGain)setGain(musicGain.gain,envelope);else music.volume=envelope;
-  const at=Math.max(0,number(frame.timeMs)/1000);
+  const time=number(frame.timeMs);const at=Math.max(0,(time<INTRO_SOUND_TIMING.dojoStartMs?time*149200/INTRO_SOUND_TIMING.dojoStartMs:time-52500)/1000);
   // Keep the same element and clock while the dojo music is muted.
   // Seeking only corrects genuine drift or an explicit jump.
   if(Number.isFinite(music.currentTime)&&Math.abs(music.currentTime-at)>.65){try{music.currentTime=at;}catch{}}
