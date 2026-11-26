@@ -309,3 +309,10 @@ test('the dojo assigns distinct local voices and bubble visibility never control
  assert.match(source,/if\(canvasHost\.classList\?\.contains\?\.\('bubbles-off'\)\|\|!speaker/);
  assert.match(html,/#stage\.bubbles-off #bubble\{display:none!important\}/);
 });
+
+test('salon entry retains a full-height 3D stage when the cinematic header is hidden',()=>{
+ const markup=readFileSync(new URL('./intro-prive.html',import.meta.url),'utf8');
+ assert.match(markup,/html\.salon-entry-mode #app\{grid-template-rows:minmax\(0,1fr\) auto\}/);
+ assert.match(markup,/html\.salon-entry-mode #app>header\{display:none\}/);
+ assert.match(markup,/#app\{height:100vh;height:100dvh;display:grid/);
+});
