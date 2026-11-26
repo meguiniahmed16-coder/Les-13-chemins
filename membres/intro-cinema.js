@@ -196,7 +196,7 @@ const lines=[
  {
   "id": "dojo-arrivee",
   "speaker": "m",
-  "text": "Ouvre le menu pour retrouver toutes les commandes.",
+  "text": "Appuie sur Menu pour retrouver les commandes.",
   "scene": "dojo",
   "shot": "dojo",
   "ms": 3200,
