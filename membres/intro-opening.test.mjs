@@ -110,7 +110,10 @@ test('cinematic co-speech: independent listening, unilateral strokes and return 
  }
  const quiet=gesture({...settings,id:'f',speaking:true,time:1,enabled:false});
  assert.equal(quiet.left+quiet.right,0);
- const female=gesture({...settings,id:'f',speaking:true,time:.9});
- const male=gesture({...settings,id:'m',speaking:true,time:.9});
- assert.ok(female.left>=female.right&&male.right>=male.left);
+ const sides=new Set(),targets=new Set();
+ for(const seed of ['question','question-initiale','miroir','verite','soi'])for(let time=0;time<7.8;time+=.05){
+  const g=gesture({...settings,seed,id:'m',speaking:true,time});
+  if(g.left>.15||g.right>.15){sides.add(g.left>g.right?'left':'right');targets.add([g.reach,g.height,g.forward,g.palm].join('/'));}
+ }
+ assert.equal(sides.size,2);assert.ok(targets.size>=3);
 });
