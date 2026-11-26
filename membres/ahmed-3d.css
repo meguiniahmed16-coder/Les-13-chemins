@@ -12,3 +12,7 @@
 .ahmed-written .transcript{height:min(35dvh,280px);min-height:160px;padding:12px 18px}
 .ahmed-written .composer-area{padding:12px}
 @media(max-width:650px){.ahmed-3d-room{height:clamp(315px,56dvh,550px)}.ahmed-3d-controls{padding:9px;gap:7px}#ahmed-call-status{flex-basis:100%;font-size:11px}}
+
+/* Ahmed Numérique seul : aucune commande en dehors du téléphone du salon. */
+.ahmed-3d-controls{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0!important;pointer-events:none}
+#ahmed-hangup{display:none!important}

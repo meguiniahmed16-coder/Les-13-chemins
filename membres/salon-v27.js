@@ -164,7 +164,7 @@ class SalonV27 extends HTMLElement{
     if(key!==this.#cameraKey){this.#cameraKey=key;this.#scene.camera(shot.size,shot.speaker,inset);}
   }
   #speechFrame(){
-    if(!this.#guest)return null;
+    if(!this.#guest&&!this.hasAttribute('ahmed-numerique'))return null;
     const now=performance.now()/1000,dt=Math.min(.1,now-this.#lastTalk);this.#lastTalk=now;
     this.#syncCamera();const line=this.#chat.playback.frame(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     const face=(style,who)=>{
@@ -173,7 +173,7 @@ class SalonV27 extends HTMLElement{
       const reaction=reactionFor(line?.reaction,who);
       return {gesture:pose,reaction,recordingTime:active?line.recordingTime:reaction?.recordingTime,blink:pose.blink,jaw:active?line.jaw:0,spread:active?line.spread:0,round:active?line.round:0};
     };
-    return {member:face(this.#ownStyle,'player'),guest:face(this.#guest.performer,'guest')};
+    return {member:face(this.#ownStyle,'player'),guest:this.#guest?face(this.#guest.performer,'guest'):{jaw:0,round:0,spread:0,blink:0}};
   }
   #dress(slot,look,gender,options){return this.#inspection.dress(slot,look,gender,options);}
   async #applyLook(look){
@@ -244,7 +244,7 @@ class SalonV27 extends HTMLElement{
         const ready=()=>{
           if(signal.aborted||this.#scene)return;
           this.#scene=win.salonV27;this.#scene.setGender(this.#options?.gender);
-          this.#nav?.linkScene(doc,this.#scene);
+          if(!this.hasAttribute('ahmed-numerique'))this.#nav?.linkScene(doc,this.#scene);
           doc.body.classList.toggle('editing-duo',!this.shadowRoot.querySelector('.studio-drawer').hidden);
           const full=doc.getElementById('fullscreen');
           full.onclick=async()=>{const stage=this.shadowRoot.querySelector('.stage');
@@ -258,7 +258,7 @@ class SalonV27 extends HTMLElement{
         win.addEventListener('salon-manual-camera',()=>{this.#chat.manual();this.#syncCamera();},{signal});
         if(doc.body.classList.contains('ready'))ready();
         const failed=()=>{if(doc.getElementById('retry')?.hidden===false&&!this.#scene){frame.style.visibility='';resolve(null);
-          if(!doc.getElementById('compatible-room')){
+          if(!this.hasAttribute('ahmed-numerique')&&!doc.getElementById('compatible-room')){
             const button=doc.createElement('button');button.id='compatible-room';button.textContent='Ouvrir la vue compatible';
             button.onclick=()=>this.#software();doc.getElementById('loading').append(button);
           }}};
@@ -266,7 +266,7 @@ class SalonV27 extends HTMLElement{
       };
       frame.addEventListener('load',settle,{signal});
     });
-    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=call58'+(this.hasAttribute('salon-auteur')?'&resident=marianne':'');
+    frame.style.visibility='hidden';frame.src='/membres/v27/salon.html?v=call58'+(this.hasAttribute('ahmed-numerique')?'&ahmed=solo&rev=ahmedsolo2'+(this.hasAttribute('ahmed-original')?'&portrait=original':''):(this.hasAttribute('salon-auteur')?'&resident=marianne':''));
     this.shadowRoot.querySelector('.scene-viewport').prepend(frame);
   }
   async #software(){
@@ -289,7 +289,15 @@ class SalonV27 extends HTMLElement{
     this.#inspection.clear();this.#inspectionPending.clear();this.#drafts={};this.#drawerView=null;
     return this.#ready.then(async scene=>{
       if(!scene||this.#options?.memberKey!==options.memberKey)return;
-      try{scene.setGender(options.gender);await this.#select(options.gender);
+      try{scene.setGender(options.gender);
+        if(this.hasAttribute('ahmed-numerique')){
+          this.#gender='homme';
+          if(options.originalAhmed){if(!scene.originalLook('m'))throw Error('Le véritable Ahmed Marie n’a pas été chargé.');}
+          else await this.#select('homme');
+          resource('conversation-face').then(channels=>scene.enableDialogue(channels,()=>this.#speechFrame(),()=>this.isConnected)).catch(()=>{});
+          return;
+        }
+        await this.#select(options.gender);
         if(this.hasAttribute('salon-auteur')&&options.gender!=='femme'&&options.salonLooks?.femme){
           let original=false;try{original=localStorage.getItem('salon-v27-look:'+options.memberKey+':femme')==='0';}catch{}
           if(!original)await this.#dress('f',options.salonLooks.femme,'femme');

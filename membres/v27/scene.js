@@ -144,7 +144,9 @@ const seats=roomSeats.map(s=>({
  center:[(s.x-700)/100,(s.z+800)/100],gap:s.gap/100,height:s.height/100
 }));
 const cinemaArrival=new URLSearchParams(location.search).get('arrival')==='cinema';
-const actors={};let role=cinemaArrival?'m':'f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
+const soloAhmed=new URLSearchParams(location.search).get('ahmed')==='solo';
+const originalAhmed=soloAhmed&&new URLSearchParams(location.search).get('portrait')==='original';
+const actors={};let role=cinemaArrival||soloAhmed?'m':'f',where='salon',chosen=null,sitting=null,goal=null,renderedAt=0;
 const authorRoom=new URLSearchParams(location.search).has('resident');
 let visiting=false,visitsMarianne=false;
 const encounter={active:false,loaded:false,loading:null,friends:null,route:null,clock:0,chatView:false};
@@ -170,8 +172,8 @@ function makeActor(id,withDefaultParts=true){
 for(const id of ['f','m'])actors[id]=makeActor(id);
 const visitor=makeActor('m',false);visitor.root.visible=false;visitor.isGuest=true;
 function presence(){
- for(const [id,actor] of Object.entries(actors))actor.root.visible=id===role||(authorRoom&&(!visiting||id==='f'&&!visitsMarianne));
- visitor.root.visible=visiting;
+ for(const [id,actor] of Object.entries(actors))actor.root.visible=soloAhmed?id==='m':id===role||(authorRoom&&(!visiting||id==='f'&&!visitsMarianne));
+ visitor.root.visible=!soloAhmed&&visiting;
 }
 function actorHome(){presence();actors.f.root.position.set(-1.41,0,-2.30);actors.f.root.rotation.y=-.70;actors.m.root.position.set(-.60,0,-1.82);actors.m.root.rotation.y=-1.12;for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.phase=0;a.stamp='';animateBody(a,0,0)}}
 actorHome();
@@ -588,6 +590,7 @@ function canWalk(x,z){
  return clearOfPlants(x,z)&&!(Math.abs(x+3.5)<1.18&&Math.abs(z+5.25)<.46)
 }
 function setRole(id){
+ if(soloAhmed&&id!=='m')return;
  if(where!=='salon'||id===role||talkOpen||encounter.active)return;
  if(shelfView)setShelfView(false);if(sitting)getUp();actors[role].body.visible=true;freeCamera();approachedWindow=false;role=id;presence();goal=null;keys.clear();for(const a of Object.values(actors)){a.sit=0;a.speed=0;a.stamp='';animateBody(a,0,0)}
  keyButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===id)));orbit.follow=false;hint();
@@ -657,6 +660,8 @@ document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('
 const help=$('help');$('helpButton').onclick=()=>help.showModal();$('closeHelp').onclick=()=>help.close();help.addEventListener('click',e=>{if(e.target===help)help.close()});
 function updateCam(dt){
  focusShot=null;
+ if(soloAhmed){const a=actors.m,p=a.root.position,yaw=a.root.rotation.y,dist=view.clientWidth<view.clientHeight?2.35:2.05;cam.clearViewOffset();cam.fov=44;cam.position.set(p.x+Math.sin(yaw)*dist,p.y+1.53,p.z+Math.cos(yaw)*dist);cam.lookAt(p.x,p.y+1.18,p.z);cam.updateProjectionMatrix();cam.updateMatrixWorld(true);return;}
+
  if(arrivalFinale?.active||invitationScene?.active)return;
  if(introDirector?.active){
    const smooth=1-Math.exp(-Math.max(0,dt)*introDirector.speed);
@@ -737,6 +742,7 @@ function updateCam(dt){
 function updateSize(){const r=view.getBoundingClientRect();if(!r.width||!r.height)return;const size=renderer.getSize(new T.Vector2());if(Math.abs(size.x-r.width)<.01&&Math.abs(size.y-r.height)<.01)return;renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();if(invitationScene?.active)invitationScene.sample(invitationScene.elapsedMs);else if(arrivalFinale?.active)arrivalFinale.sample(arrivalFinale.elapsedMs);else updateCam(0);if(document.body.classList.contains('ready'))renderer.render(scene,cam)}
 new ResizeObserver(updateSize).observe(view);
 function move(dt){
+ if(soloAhmed){animateBody(actors.m,0,null,dt);return;}
  if(introAuthorized&&introCurrent==='sofa'){
   introSeatClock=Math.min(1,introSeatClock+dt*.60);
   const settle=introSeatClock*introSeatClock*(3-2*introSeatClock);
@@ -1493,7 +1499,7 @@ function prepareBodyInspection(actor){
  $('rise').hidden=true;return true;
 }
 const member=createMemberBridge({
- T,actors:{...actors,guest:visitor},player:()=>actors[role],partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,cinemaArrival,
+ T,actors:{...actors,guest:visitor},player:()=>actors[role],partner,seats,roomSeats,canvas,cam,orbit,resetView,walkToSeat,feetAt,animateBody,updateCam,cinemaArrival,originalAhmed,
  prepareInspection:prepareBodyInspection,
  unzip:unzipSync,get settled(){return !seatRoute&&player().speed<=.08;},get place(){return where},get role(){return role},setRole,freeCamera,
  focus(view,target=''){freeCamera();orbit.follow=false;const a=target==='m'||target==='f'?actors[target]:target==='guest'&&visiting?visitor:target==='resident'&&authorRoom?actors.f:player(),p=a.root.position;
