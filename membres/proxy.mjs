@@ -153,7 +153,8 @@ export default async function proxy(request){
     const upstream=()=>fetch(target,{method:request.method,headers,body:key?cinematicSpeechBody(body):body,redirect:'manual',signal});
     const response=key?await serveCinemaAudio({key,cue,upstream,authorize:async()=>{
       const check=await fetch(backend+'/api/membres/me?auteur=1',{method:'GET',headers,redirect:'manual',signal});
-      if(!check.ok)return false;return (await check.json()).author===true;
+      if(!check.ok)return false;
+      const {author}=await check.json();return author==='atelier'||author==='edition'||author===true;
     }}):await upstream();
     const out=new Headers({'cache-control':'private, no-store','netlify-cdn-cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'});
     for(const k of ['location','content-type','set-cookie','vary','x-frame-options','x-robots-tag','permissions-policy','content-security-policy','cross-origin-resource-policy','x-voice-provider','x-voice-fallback','x-cinema-audio-cache'])if(response.headers.has(k))out.set(k,response.headers.get(k));

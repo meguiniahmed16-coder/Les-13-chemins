@@ -98,3 +98,20 @@ test('La prononciation de Recentrer est corrigée sans modifier le texte affich�
  assert.equal(cue.text,text);assert.match(cinematicAudioKey(body),/^[a-f0-9]{64}$/);
  const normal=JSON.stringify({...cue,text:'Prends place.'});assert.equal(cinematicSpeechBody(normal),normal);
 });
+
+test('Le proxy reconnaît les deux formes réelles de session auteur sans autoriser un membre ordinaire',async t=>{
+ const body=JSON.stringify({text:'Prends place.',gender:'homme',voiceId:'voice-originale',strict:true,purpose:'cinema'});
+ let author=null,checked=0;
+ t.mock.method(globalThis,'fetch',async url=>{
+  assert.equal(url,'https://treize-chemins-membres.meguiniahmed16.workers.dev/api/membres/me?auteur=1');
+  checked++;return Response.json({author});
+ });
+ for(const value of ['atelier','edition',true,null,false,'membre']){
+  author=value;const reply=await proxy(request('voice/speech',{body}));
+  if(['atelier','edition',true].includes(value)){
+   assert.equal(reply.status,503); // No Netlify Blob context in unit tests.
+   assert.match((await reply.json()).error,/Stockage vocal indisponible/);
+  }else{assert.equal(reply.status,403);assert.equal((await reply.json()).error,'Connexion auteur requise.');}
+ }
+ assert.equal(checked,6);
+});
