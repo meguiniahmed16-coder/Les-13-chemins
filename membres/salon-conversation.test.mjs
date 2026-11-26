@@ -20,7 +20,7 @@ function harness(custom={}){
     const result=custom.request?.(path,options);
     if(result!==undefined)return result;
     if(path==='status')return {ready:true};
-    if(path==='voices')return {voices:[{id:'voice-fr',name:'Voix française',gender:'femme'}]};
+    if(path==='voices')return {voices:[{id:'voice-fr',name:'Voix française',gender:'femme'},{id:'voice-male',name:'Voix masculine',gender:'homme'}]};
     if(path==='transcribe')return {text:'Bonjour Marianne.'};
     if(path==='reply')return {answer:'Bonjour, Ahmed.'};
     if(path==='speech')return new Blob(['audio'],{type:'audio/mpeg'});
@@ -138,7 +138,7 @@ test('La voix distante entraîne les lèvres depuis son horloge et les ferme pen
 });
 
 
-test('La voix automatique envoie le genre sans choisir de voix ElevenLabs',async()=>{
+test('Le Salon choisit automatiquement ElevenLabs avec le bon genre, sans OpenAI de substitution',async()=>{
   const h=harness();h.setCharacter({id:'1',gender:'homme',history:[]});
   const refreshed=await h.controller.refresh({withVoices:false});
   assert.equal(refreshed.status.ready,true);
@@ -148,7 +148,7 @@ test('La voix automatique envoie le genre sans choisir de voix ElevenLabs',async
   h.captures[0].finish();await settle();
   const speech=h.requests.find(r=>r.path==='speech');
   assert.ok(speech);
-  assert.deepEqual(speech.body,{text:'Bonjour, Ahmed.',gender:'homme'});
+  assert.deepEqual(speech.body,{text:'Bonjour, Ahmed.',gender:'homme',voiceId:'voice-male',strict:true});
   assert.equal(h.controller.state,'speaking');
   h.controller.stop();
 });
