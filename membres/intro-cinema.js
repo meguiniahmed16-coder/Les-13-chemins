@@ -34,7 +34,7 @@ const introSound=createIntroSound({onProblem:message=>remember('Son de la ciném
 const dojoDemo=mountDojoDemo(canvasHost);
 const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
 if(promotionMode)document.body.classList.add('promotion');
-const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),onDialogue:(id,text)=>{if(id&&text)speakCinematicCue(id,text);else stopCinematicVoice();},onComplete:()=>{stopCinematicVoice();introSound.stop();finishSalonEntry();}});
+const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),voiceEnergy:()=>cinematicVoiceEnergy,onDialogue:(id,text)=>{if(id&&text)speakCinematicCue(id,text);else stopCinematicVoice();},onComplete:()=>{stopCinematicVoice();introSound.stop();finishSalonEntry();}});
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
