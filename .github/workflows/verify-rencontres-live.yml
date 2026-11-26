@@ -1,0 +1,29 @@
+name: Verify rencontres live
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  live:
+    if: github.head_ref == 'verify-rencontres-live'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Production URLs and markers
+        run: |
+          set -e
+          base=https://tectonique-des-ames.com
+          curl -fsSL --max-time 25 "$base/membre.html?rev=rencontres1" -o /tmp/member.html
+          grep -q 'rev=rencontres1' /tmp/member.html
+          curl -fsSL --max-time 25 "$base/membres/salon-guide.js?rev=rencontres1" -o /tmp/guide.js
+          grep -q 'Parcours initiatique' /tmp/guide.js
+          curl -fsSL --max-time 25 "$base/membres/salon-maison-ui.js?rev=rencontres1" -o /tmp/ui.js
+          grep -q 'mountSalonGuide' /tmp/ui.js
+          curl -fsSL --max-time 25 "$base/membres/salon-conversation-audio.js?rev=rencontres1" -o /tmp/audio.js
+          grep -q 'createCallInputLease' /tmp/audio.js
+          curl -fsSL --max-time 25 "$base/membres/intro-prive.html?rev=rencontres1" -o /tmp/intro.html
+          grep -q 'film-universe-title' /tmp/intro.html
+          curl -fsSL --max-time 25 "$base/membres/intro-cinema-croisee33.js?v=dojo-eleven72&rev=rencontres1" -o /tmp/cinema.js
+          grep -q 'origine-auteur' /tmp/cinema.js
+          grep -q 'origine-continuite' /tmp/cinema.js
+          echo RENCONTRES_LIVE_VERIFIED
