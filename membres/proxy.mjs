@@ -41,32 +41,59 @@ const fixedCinemaLines=new Set([
 const maxCinemaAudio=4*1024*1024;
 const providers=new Set(['cartesia','elevenlabs','azure']);
 const audioTypes=new Set(['audio/wav','audio/x-wav','audio/wave','audio/mpeg','audio/mp3']);
+const correctedCue='Si tu perds ton personnage de vue, touche Recentrer. Tu le retrouves sans devoir tout recommencer.';
+export function cinematicSpeechBody(body){
+ const cue=JSON.parse(body);
+ if(cue.gender==='homme'&&cue.text===correctedCue)return JSON.stringify({...cue,text:cue.text.replace('touche Recentrer.','touche recentré.')});
+ return body;
+}
 export function cinematicAudioKey(body){
  let cue;try{cue=JSON.parse(body);}catch{return null;}
  if(!cue||cue.purpose!=='cinema'||cue.strict!==true||typeof cue.voiceId!=='string'||!/^[-A-Za-z0-9_]{1,80}$/.test(cue.voiceId)||Object.keys(cue).some(k=>!['purpose','strict','voiceId','gender','text'].includes(k))||!fixedCinemaLines.has(cue.gender+'|'+cue.text))return null;
- return createHash('sha256').update(JSON.stringify(['cinema-audio-v1',cue.gender,cue.voiceId,cue.text])).digest('hex');
+ return createHash('sha256').update(JSON.stringify([cue.gender==='homme'&&cue.text===correctedCue?'cinema-audio-v1-recentrer-v2':'cinema-audio-v1',cue.gender,cue.voiceId,cue.text])).digest('hex');
 }
-export async function serveCinemaAudio({key,upstream,authorize,storeFactory=()=>getStore('cinema-audio-v1')}){
- let store=null,entry=null;
- try{store=storeFactory();entry=await store.getWithMetadata(key,{type:'arrayBuffer'});}catch{}
- if(entry?.data?.byteLength>0&&entry.data.byteLength<=maxCinemaAudio&&providers.has(entry.metadata?.provider)&&audioTypes.has(entry.metadata?.type)){
-  // Blob reads must never bypass the original author-only access.
-  let permitted=false;try{permitted=await authorize();}catch{}
-  if(permitted)return new Response(entry.data,{headers:{'content-type':entry.metadata.type,'x-voice-provider':entry.metadata.provider,'x-cinema-audio-cache':'hit'}});
-  return upstream();
- }
- const response=await upstream();
- const provider=response.headers.get('x-voice-provider'),type=(response.headers.get('content-type')||'').split(';')[0].toLowerCase();
- if(!store||!response.ok||!providers.has(provider)||!audioTypes.has(type))return response;
+// Fixed cinematics are paid once and served only after durable storage.
+// A separate claim store prevents parallel requests from paying twice.
+const cinemaStore=()=>getStore({name:'cinema-audio-v1',consistency:'strong'});
+const cinemaClaims=()=>getStore({name:'cinema-audio-preparation-v1',consistency:'strong'});
+const cacheFailure=message=>Response.json({error:message},{status:503,headers:{'cache-control':'private, no-store'}});
+const validRecording=entry=>entry?.data?.byteLength>0&&entry.data.byteLength<=maxCinemaAudio&&providers.has(entry.metadata?.provider)&&audioTypes.has(entry.metadata?.type);
+const recordedResponse=(entry,status)=>new Response(entry.data,{headers:{'content-type':entry.metadata.type,'x-voice-provider':entry.metadata.provider,'x-cinema-audio-cache':status}});
+export async function serveCinemaAudio({key,upstream,authorize,cue=null,storeFactory=cinemaStore,claimFactory=cinemaClaims,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
+ // Both hits and misses retain the same author-only authorization.
+ if(!await authorize())return Response.json({error:'Connexion auteur requise.'},{status:403});
  try{
-  const data=await response.clone().arrayBuffer();
-  if(data.byteLength>0&&data.byteLength<=maxCinemaAudio){
-   await store.set(key,data,{metadata:{provider,type},onlyIfNew:true});
-   const headers=new Headers(response.headers);headers.set('x-cinema-audio-cache','stored');
-   return new Response(data,{status:response.status,headers});
+  const store=storeFactory();
+  const read=()=>store.getWithMetadata(key,{type:'arrayBuffer',consistency:'strong'});
+  let entry=await read();
+  if(validRecording(entry))return recordedResponse(entry,'hit');
+  if(entry)return cacheFailure('Enregistrement vocal invalide. Aucune nouvelle synthèse automatique.');
+  const claims=claimFactory();
+  const claim=await claims.set(key,'preparation',{onlyIfNew:true});
+  if(!claim?.modified){
+   // Another request may already be writing this file; read, never resynthesise.
+   for(let n=0;n<40;n++){await wait(500);entry=await read();if(validRecording(entry))return recordedResponse(entry,'hit');}
+   return cacheFailure('Enregistrement vocal en cours ou interrompu. Aucune nouvelle synthèse automatique.');
   }
- }catch{}
- return response;
+  // Recheck in case another deployment populated the recording.
+  entry=await read();if(validRecording(entry))return recordedResponse(entry,'hit');
+  if(entry)return cacheFailure('Enregistrement vocal invalide.');
+  const response=await upstream();
+  if(!response.ok){await claims.delete(key);return response;}
+  const provider=response.headers.get('x-voice-provider'),type=(response.headers.get('content-type')||'').split(';')[0].toLowerCase();
+  if(!providers.has(provider)||!audioTypes.has(type))return cacheFailure('Le fournisseur n’a pas renvoyé un fichier vocal valide.');
+  const data=await response.arrayBuffer();
+  if(!data.byteLength||data.byteLength>maxCinemaAudio)return cacheFailure('Le fichier vocal est vide ou trop volumineux.');
+  // Do not release the claim after successful synthesis, even if writing fails.
+  // This avoids a second paid generation after a storage error.
+  const metadata={provider,type,...(cue?{speaker:cue.gender==='homme'?'Ahmed Marie':'Marianne',text:cue.text,voiceId:cue.voiceId}: {})};
+  await store.set(key,data,{metadata,onlyIfNew:true});
+  entry=await read();
+  if(!validRecording(entry))return cacheFailure('Le son a été généré mais son enregistrement n’a pas été confirmé. Aucune nouvelle synthèse automatique.');
+  return recordedResponse(entry,'stored');
+ }catch{
+  return cacheFailure('Stockage vocal indisponible. La synthèse répétée est bloquée pour préserver les crédits.');
+ }
 }
 
 const origin='https://tectonique-des-ames.com';
@@ -119,9 +146,12 @@ export default async function proxy(request){
       }
     }
     const signal=AbortSignal.any([request.signal,AbortSignal.timeout(voice?75000:20000)]);
-    const upstream=()=>fetch(target,{method:request.method,headers,body,redirect:'manual',signal});
-    const key=request.method==='POST'&&url.pathname==='/api/membres/voice/speech'?cinematicAudioKey(body):null;
-    const response=key?await serveCinemaAudio({key,upstream,authorize:async()=>{
+    const isSpeech=request.method==='POST'&&url.pathname==='/api/membres/voice/speech';
+    let cue=null;if(isSpeech){try{cue=JSON.parse(body);}catch{}}
+    const key=isSpeech?cinematicAudioKey(body):null;
+    if(cue?.purpose==='cinema'&&!key)return Response.json({error:'Cette réplique ne figure pas dans la cinématique enregistrée.'},{status:400,headers:{'cache-control':'private, no-store'}});
+    const upstream=()=>fetch(target,{method:request.method,headers,body:key?cinematicSpeechBody(body):body,redirect:'manual',signal});
+    const response=key?await serveCinemaAudio({key,cue,upstream,authorize:async()=>{
       const check=await fetch(backend+'/api/membres/me?auteur=1',{method:'GET',headers,redirect:'manual',signal});
       if(!check.ok)return false;return (await check.json()).author===true;
     }}):await upstream();

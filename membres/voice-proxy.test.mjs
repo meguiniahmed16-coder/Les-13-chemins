@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import proxy,{cinematicAudioKey,serveCinemaAudio} from './proxy.mjs';
+import proxy,{cinematicAudioKey,cinematicSpeechBody,serveCinemaAudio} from './proxy.mjs';
 
 const origin='https://tectonique-des-ames.com';
 function request(path,{body,method='POST',type='application/json',signal,headers={}}={}){
@@ -67,20 +67,34 @@ test('Les répliques fixes seulement sont identifiées par texte, personnage et 
  assert.notEqual(key,cinematicAudioKey(JSON.stringify({...cue,voiceId:'autre-voix'})));
  for(const body of [{...cue,purpose:undefined},{...cue,text:'Un dialogue privé.'},{...cue,gender:'femme'},{...cue,strict:false},{...cue,extra:1}])assert.equal(cinematicAudioKey(JSON.stringify(body)),null);
 });
-test('Le son enregistré survit à un nouvel appel et exige toujours une session auteur',async()=>{
- const entries=new Map();let syntheses=0,authorizations=0;
- const storeFactory=()=>({getWithMetadata:async key=>entries.get(key)||null,set:async(key,data,{metadata})=>{entries.set(key,{data,metadata});}});
+function cinemaFixture(){
+ const entries=new Map(),claims=new Set();let syntheses=0,authorizations=0;
+ const storeFactory=()=>({getWithMetadata:async key=>entries.get(key)||null,set:async(key,data,{metadata})=>{if(!entries.has(key))entries.set(key,{data,metadata});return {modified:true};}});
+ const claimFactory=()=>({set:async key=>{if(claims.has(key))return {modified:false};claims.add(key);return {modified:true};},delete:async key=>{claims.delete(key);}});
  const upstream=async()=>{syntheses++;return new Response(new Uint8Array([1,2,3]),{headers:{'content-type':'audio/wav','x-voice-provider':'cartesia'}});};
- const opts={key:'fixed',storeFactory,upstream,authorize:async()=>{authorizations++;return true;}};
- const first=await serveCinemaAudio(opts);assert.equal(first.headers.get('x-cinema-audio-cache'),'stored');
+ const opts={key:'fixed',storeFactory,claimFactory,upstream,wait:async()=>{},authorize:async()=>{authorizations++;return true;}};
+ return {entries,claims,opts,get syntheses(){return syntheses;},get authorizations(){return authorizations;}};
+}
+test('Le son est conservé, vérifié puis distribué sans nouvelle synthèse',async()=>{
+ const h=cinemaFixture();const first=await serveCinemaAudio(h.opts);assert.equal(first.headers.get('x-cinema-audio-cache'),'stored');
  assert.deepEqual([...new Uint8Array(await first.arrayBuffer())],[1,2,3]);
- const next=await serveCinemaAudio({...opts});assert.equal(next.headers.get('x-cinema-audio-cache'),'hit');
- assert.equal(next.headers.get('x-voice-provider'),'cartesia');assert.equal(syntheses,1);assert.equal(authorizations,1);
+ const next=await serveCinemaAudio({...h.opts});assert.equal(next.headers.get('x-cinema-audio-cache'),'hit');assert.equal(h.syntheses,1);assert.equal(h.authorizations,2);
  assert.deepEqual([...new Uint8Array(await next.arrayBuffer())],[1,2,3]);
- const denied=await serveCinemaAudio({...opts,authorize:async()=>false,upstream:async()=>new Response(null,{status:403})});
- assert.equal(denied.status,403);assert.equal(denied.headers.get('x-cinema-audio-cache'),null);
+ const denied=await serveCinemaAudio({...h.opts,authorize:async()=>false});assert.equal(denied.status,403);assert.equal(h.syntheses,1);
 });
-test('Une panne du stockage ne coupe pas la voix habituelle',async()=>{
- const response=await serveCinemaAudio({key:'fixed',storeFactory:()=>{throw Error('storage unavailable');},authorize:async()=>true,upstream:async()=>new Response('sound',{headers:{'content-type':'audio/wav','x-voice-provider':'cartesia'}})});
- assert.equal(await response.text(),'sound');assert.equal(response.headers.get('x-cinema-audio-cache'),null);
+test('Une panne de lecture du stockage ne déclenche jamais une synthèse',async()=>{
+ const h=cinemaFixture();const response=await serveCinemaAudio({...h.opts,storeFactory:()=>{throw Error('storage unavailable');}});
+ assert.equal(response.status,503);assert.equal(h.syntheses,0);
+});
+test('Une synthèse non sauvegardée ne peut pas être facturée à nouveau automatiquement',async()=>{
+ const h=cinemaFixture(),opts={...h.opts,storeFactory:()=>({getWithMetadata:async()=>null,set:async()=>{throw Error('write failure');}})};
+ assert.equal((await serveCinemaAudio(opts)).status,503);
+ assert.equal((await serveCinemaAudio(opts)).status,503);assert.equal(h.syntheses,1);
+});
+test('La prononciation de Recentrer est corrigée sans modifier le texte affiché, et seul ce fichier change de clé',()=>{
+ const text='Si tu perds ton personnage de vue, touche Recentrer. Tu le retrouves sans devoir tout recommencer.';
+ const cue={text,gender:'homme',voiceId:'voice-originale',strict:true,purpose:'cinema'},body=JSON.stringify(cue);
+ assert.equal(JSON.parse(cinematicSpeechBody(body)).text,'Si tu perds ton personnage de vue, touche recentré. Tu le retrouves sans devoir tout recommencer.');
+ assert.equal(cue.text,text);assert.match(cinematicAudioKey(body),/^[a-f0-9]{64}$/);
+ const normal=JSON.stringify({...cue,text:'Prends place.'});assert.equal(cinematicSpeechBody(normal),normal);
 });

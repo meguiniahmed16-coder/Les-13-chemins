@@ -6,7 +6,8 @@ import {planSpeechBubble} from './intro-bubbles.js';
 import {dojoBlocking,dojoDirectedCamera,DOJO_DURATIONS} from './intro-dojo-director.js';
 import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
-import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
+import {mountIntroArrival,arrivalFrame,PROMOTION} from './intro-arrival.js';
+import {INTRO_INVITATION_DIALOGUE} from './intro-invitation.js';
 import {createIntroSound} from './intro-sound.js';
 import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven72';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
@@ -1081,7 +1082,7 @@ function prepareCinematicVoices(){
   if(alert){alert.textContent='Le téléphone refuse la lecture audio. Vérifie le son et relance la cinématique.';alert.hidden=false;}
   return;
  }
- void cinematicVoices.prepare().catch(error=>{
+ void cinematicVoices.prepare().then(()=>cinematicVoices.warmup?.(lines.flatMap(line=>[{id:line.speaker,text:line.text},...(line.secondary?[{id:line.secondary.speaker,text:line.secondary.text}]:[])]).filter(cue=>['m','f'].includes(cue.id)&&cue.text&&!cue.text.includes('{pseudo}')).concat(INTRO_INVITATION_DIALOGUE.map((text,i)=>({id:i===1?'f':'m',text})),[{id:'m',text:PROMOTION.dialogue}]))).catch(error=>{
   if(error?.code==='VOICE_SELECTION_REQUIRED')return;
   const alert=$('intro-voice-alert');
   if(alert){alert.textContent=error?.message||'Les voix sont indisponibles.';alert.hidden=false;}

@@ -1,5 +1,5 @@
 // Original cinematic: use the authenticated ElevenLabs account, never Android TTS.
-// The server keeps its API key. No synthesized speech is cached outside this tab.
+// The server keeps its API key and permanently records the fixed cinematic clips.
 import {voiceRequest} from './salon-conversation.js?v=eleven68&rev=rencontres1';
 import {createRemoteSpeech} from './salon-conversation-audio.js?v=eleven68';
 import {selectIntroVoices} from './elevenlabs-voices.js?v=eleven72';
@@ -26,7 +26,7 @@ export function createIntroElevenLabs({
   if(unavailable)throw Error(unavailable);
   if(!ready)ready=Promise.resolve().then(()=>request('voices')).then(data=>{
    availableVoices=Array.isArray(data?.voices)?data.voices:[];
-   voices=selectIntroVoices(availableVoices,preferred());return voices;
+   voices=selectIntroVoices(availableVoices,preferred());try{localStorage.setItem(preferenceKey,JSON.stringify(voices));}catch{}return voices;
   }).catch(error=>{
    ready=null;
    if(error?.code==='VOICE_SELECTION_REQUIRED')onNeedsSelection(availableVoices);
@@ -44,9 +44,9 @@ export function createIntroElevenLabs({
  }
  function clipKey(id,text){return id+'|'+text;}
  async function getClip(id,text){
-  if(unavailable)throw Error(unavailable);
   const key=clipKey(id,text);
   if(recordings.has(key))return recordings.get(key);
+  if(unavailable)throw Error(unavailable);
   if(pending.has(key))return pending.get(key);
   const task=(async()=>{
    const selected=await prepare(),gender=id==='f'?'femme':'homme';
@@ -63,6 +63,18 @@ export function createIntroElevenLabs({
  function prefetch(id,text){
   if(disposed||!['m','f'].includes(id)||!text)return;
   void getClip(id,text).catch(()=>{}); // The visible cue reports an actionable failure.
+ }
+ let warming=null;
+ function warmup(cues){
+  if(warming)return warming;
+  warming=(async()=>{
+   for(const cue of cues){
+    if(disposed||unavailable)break;
+    if(!['m','f'].includes(cue.id)||!cue.text)continue;
+    try{await getClip(cue.id,cue.text);}catch{}
+   }
+  })();
+  return warming;
  }
  function stop(){
   generation++;active=null;playing=false;energy=0;
@@ -88,6 +100,6 @@ export function createIntroElevenLabs({
  function pause(){if(active){player?.stop();playing=false;energy=0;onState({playing:false,energy:0});}}
  function resume(){if(active&&!playing)void speak(active.id,active.text);}
  function dispose(){stop();disposed=true;player?.dispose();recordings.clear();pending.clear();}
- return {unlock,prepare,assign,prefetch,speak,stop,pause,resume,dispose,
+ return {unlock,prepare,assign,prefetch,warmup,speak,stop,pause,resume,dispose,
   get energy(){return energy;},get playing(){return playing;},get voices(){return voices;}};
 }
