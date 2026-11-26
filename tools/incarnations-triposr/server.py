@@ -7,6 +7,8 @@ import hmac
 import io
 import json
 import os
+import secrets
+from http.cookies import SimpleCookie
 from pathlib import Path
 import subprocess
 import sys
@@ -29,7 +31,7 @@ def main():
     engine = args.engine.resolve()
     if not (engine / "run.py").is_file():
         raise SystemExit("TripoSR officiel absent : run.py introuvable")
-    token = os.environ.get("ATELIER_TRIPOSR_TOKEN")
+    token = os.environ.get("ATELIER_TRIPOSR_TOKEN") or secrets.token_urlsafe(32)
     if not token or len(token) < 24:
         raise SystemExit("ATELIER_TRIPOSR_TOKEN doit contenir au moins 24 caractères")
     atelier = args.atelier.resolve()
@@ -43,7 +45,7 @@ def main():
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
             pass
-        def reply(self, status, data, content_type="application/json"):
+        def reply(self, status, data, content_type="application/json", session=False):
             if isinstance(data, dict):
                 data = json.dumps(data, ensure_ascii=False).encode()
             self.send_response(status)
@@ -51,15 +53,25 @@ def main():
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Frame-Options", "DENY")
+            self.send_header("Referrer-Policy", "no-referrer")
+            if session:
+                self.send_header("Set-Cookie", f"atelier_session={token}; Path=/; HttpOnly; SameSite=Strict")
             self.end_headers()
             self.wfile.write(data)
         def authorised(self):
-            return hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + token)
+            cookies = SimpleCookie()
+            try:
+                cookies.load(self.headers.get("Cookie", ""))
+                session = cookies["atelier_session"].value if "atelier_session" in cookies else ""
+            except Exception:
+                session = ""
+            return hmac.compare_digest(session, token) or hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + token)
         def do_GET(self):
             if self.headers.get('Host') != f'127.0.0.1:{args.port}':
                 return self.reply(403, {'error': 'Origine refusée'})
             if self.path == '/':
-                return self.reply(200, atelier.read_bytes(), 'text/html; charset=utf-8')
+                return self.reply(200, atelier.read_bytes(), 'text/html; charset=utf-8', session=True)
             if not self.authorised():
                 return self.reply(401, {'error': 'Accès refusé'})
             if self.path == '/health':
