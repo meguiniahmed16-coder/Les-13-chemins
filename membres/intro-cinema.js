@@ -8,7 +8,7 @@ import {createDojoWardrobe} from './intro-dojo-wardrobe.js';
 import {mountDojoDemo,dojoDemoReservedRect} from './intro-dojo-ui.js';
 import {mountIntroArrival,arrivalFrame} from './intro-arrival.js';
 import {createIntroSound} from './intro-sound.js';
-import {frenchVoice,createLocalVoices} from './salon-voice.js?v=salon41';
+import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven69';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
@@ -918,55 +918,32 @@ bubbleToggle?.addEventListener('click',()=>{
  syncIntroBubbles();
 });
 if(typeof canvasHost!=='undefined'&&canvasHost?.classList)syncIntroBubbles();
-let cinematicVoiceEnabled=false,cinematicUtterance=null,cinematicLocalVoices=null,cinematicSpeechEpoch=0,usingLocalVoice=false;
-const cinematicSynth=globalThis.speechSynthesis;
+let cinematicVoiceEnabled=false,cinematicVoiceEnergy=0;
+const cinematicVoices=createIntroElevenLabs({
+ onState:({energy=0,playing=false}={})=>{
+  cinematicVoiceEnergy=energy;
+  if(playing&&$('intro-voice-alert'))$('intro-voice-alert').hidden=true;
+ },
+ onError:message=>{
+  const alert=$('intro-voice-alert');
+  if(alert){alert.textContent=String(message||'La synthèse ElevenLabs est indisponible.');alert.hidden=false;}
+ }
+});
 function prepareCinematicVoices(){
- // One user gesture unlocks the existing, local two-speaker voice model.
- // The introduction gives it time to preload before the dojo.
- if(!cinematicLocalVoices&&typeof createLocalVoices==='function')cinematicLocalVoices=createLocalVoices(()=>{},()=>{});
- if(cinematicLocalVoices){cinematicLocalVoices.unlock();cinematicLocalVoices.prepare();}
- cinematicSynth?.getVoices?.();
- // Unlock Android browser speech during the actual Commencer tap; the first
- // voiced shot follows several seconds later and must still be audible.
- if(cinematicSynth&&globalThis.SpeechSynthesisUtterance){try{const wake=new SpeechSynthesisUtterance(' ');wake.lang='fr-FR';wake.volume=0;cinematicSynth.speak(wake);}catch{}}
-}
-function stopCinematicVoice(){
- ++cinematicSpeechEpoch;usingLocalVoice=false;
- cinematicLocalVoices?.stop();
- if(!cinematicUtterance)return;
- cinematicUtterance=null;try{cinematicSynth?.cancel();}catch{}
-}
-function browserCinematicVoice(id,text,token){
- if(token!==cinematicSpeechEpoch||!cinematicSynth||!globalThis.SpeechSynthesisUtterance)return;
- const gender=id==='f'?'femme':'homme';
- const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang='fr-FR';utterance.rate=1.05;utterance.volume=.98;
- const selected=typeof frenchVoice==='function'?frenchVoice(cinematicSynth,gender,true,false):null;
- // When the browser has only one unnamed French voice, voice pitch remains
- // distinctive; the local Pierre/Jessica synthesis is preferred in the dojo.
- const fallback=(cinematicSynth.getVoices?.()||[]).find(v=>/^fr(?:-|_|$)/i.test(v.lang));
- if(selected||fallback)utterance.voice=selected||fallback;
- utterance.pitch=selected?1:(id==='f'?1.23:.78);
- cinematicUtterance=utterance;
- utterance.onend=utterance.onerror=()=>{if(cinematicUtterance===utterance)cinematicUtterance=null;};
- try{cinematicSynth.speak(utterance);}catch{cinematicUtterance=null;}
-}
-function speakCinematicCue(id,text){
- if(!cinematicVoiceEnabled||document.hidden||!id||!text)return;
- const gender=id==='f'?'femme':'homme',token=cinematicSpeechEpoch;
- const matched=typeof frenchVoice==='function'?frenchVoice(cinematicSynth,gender,true,false):null;
- // In the dojo use the two original local Salon voices: Pierre for Ahmed,
- // Jessica for Marianne. No network speech service or private key is required.
- if((stage==='dojo'||!matched)&&cinematicLocalVoices?.prepared){
-  usingLocalVoice=true;
-  cinematicLocalVoices.speak({
-   line:{text,words:[{index:0,length:text.length,start:0}],duration:Math.max(1800,text.length*85)},
-   firstWord:0,gender,rate:1.06,end:()=>{if(token===cinematicSpeechEpoch)usingLocalVoice=false;},
-   error:()=>{if(token!==cinematicSpeechEpoch)return;usingLocalVoice=false;browserCinematicVoice(id,text,token);}
-  });
+ if(!cinematicVoices.unlock()){
+  const alert=$('intro-voice-alert');
+  if(alert){alert.textContent='Le téléphone refuse la lecture audio. Vérifie le son et relance la cinématique.';alert.hidden=false;}
   return;
  }
- browserCinematicVoice(id,text,token);
+ void cinematicVoices.prepare().catch(error=>{
+  const alert=$('intro-voice-alert');
+  if(alert){alert.textContent=error?.message||'Les voix ElevenLabs sont indisponibles.';alert.hidden=false;}
+ });
+}
+function stopCinematicVoice(){cinematicVoices.stop();cinematicVoiceEnergy=0;}
+function speakCinematicCue(id,text){
+ if(!cinematicVoiceEnabled||document.hidden||!['m','f'].includes(id)||!text)return;
+ void cinematicVoices.speak(id,text);
 }
 function stopSpeech(){stopCinematicVoice();speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
 function setCue(id,text,offset=0){
@@ -1003,18 +980,12 @@ function updateActing(now){
   let jaw=0,wide=0;
   if(speaking&&speech&&speech.id===p.id){
    const st=elapsed-speech.start;
-   if(st>=0&&!shotPaused){
-    if(usingLocalVoice){
-      // The jaw follows the actual spoken sound, including words whose
-      // synthesis lasts longer than the initial estimate.
-      const sound=cinematicLocalVoices?.position();
-      jaw=sound?.energy?Math.min(.25,.025+.21*sound.energy):0;
-      wide=sound?.energy?Math.min(.48,.1+.3*sound.energy):0;
-    }else if(st<speech.duration){
-      const char=speech.text[Math.min(speech.text.length-1,Math.floor(st/58))]?.toLowerCase()||' ';
-      const vowel=/[aeiouyàâéèêëîïôùûüœ]/.test(char),closed=/[bmpfvw\s.,;:!?]/.test(char),phase=(Math.sin(st*.022)+1)*.5;
-      jaw=closed?.014:(vowel?.07+.16*phase:.04+.07*phase);wide=vowel?.35:.08;
-    }
+   if(st>=0&&!shotPaused&&cinematicVoiceEnabled){
+    // Real ElevenLabs audio amplitude drives lip movement: no invented
+    // syllables or synthetic Android voice when the provider is unavailable.
+    const level=Math.max(0,Math.min(1,cinematicVoiceEnergy*45));
+    jaw=level>.025?Math.min(.28,.02+.23*level):0;
+    wide=level>.025?Math.min(.48,.06+.36*level):0;
    }
   }
   p.speak?.(jaw,wide,blink);
@@ -1324,6 +1295,7 @@ async function showScene(index){
  if(isDojo){mountRoom(false);chairs.forEach(c=>c.visible=false);if(previous?.scene!=='dojo'){angle=targetAngle=Math.PI;radius=3.7;}}
  else{furnitureAt(line,0);if(line.shot==='tv'||line.shot==='rear')prepareFilm();}
  if(line.speaker)setCue(line.speaker,line.text);else{stopSpeech();bubble.hidden=true;}
+ if(cinematicVoiceEnabled){const upcoming=lines.slice(requested+1).find(item=>['m','f'].includes(item.speaker)&&item.text);if(upcoming)cinematicVoices.prefetch(upcoming.speaker,upcoming.text);}
  updateFilm(line,0);
  if(!previous||previous.scene!==line.scene||line.move==='fade'){
   $('cinema-fade').animate([{opacity:1},{opacity:0}],{duration:780,easing:'ease-in-out'});
@@ -1373,7 +1345,7 @@ function automatic(on,hold=false){
   if(shotPaused){shotStart=now-pausedElapsed;shotPaused=false;}
   const line=lines[step];if(line)scheduleNext(Math.max(250,line.ms-shotElapsed(now)));
  }else if(!hold&&!shotPaused&&step>=0){pausedElapsed=shotElapsed(now);pausedAt=now;shotPaused=true;}
- if(!on){introSound.pause();cinematicLocalVoices?.pause();try{cinematicSynth?.pause();}catch{}}else if(cinematicVoiceEnabled){cinematicLocalVoices?.resume();try{cinematicSynth?.resume();}catch{}}
+ if(!on){introSound.pause();cinematicVoices.pause();}else if(cinematicVoiceEnabled)cinematicVoices.resume();
 }
 $('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
 $('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry();}else startGarden(true);};
@@ -1393,7 +1365,7 @@ $('report-open').onclick=()=>{holdIntroduction('report');$('report-scene').value
 $('report-close').onclick=()=>$('report-dialog').close();
 $('report-dialog').addEventListener('close',()=>releaseIntroduction('report'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)holdIntroduction('hidden');else releaseIntroduction('hidden');});
-window.addEventListener('pagehide',event=>{if(event.persisted)holdIntroduction('page');else{stopCinematicVoice();cinematicLocalVoices?.disable();introSound.dispose();}});
+window.addEventListener('pagehide',event=>{if(event.persisted)holdIntroduction('page');else{stopCinematicVoice();cinematicVoices.dispose();introSound.dispose();}});
 window.addEventListener('pageshow',event=>{if(event.persisted)releaseIntroduction('page');});
 $('report-add').onclick=()=>{const text=$('report-note').value.trim();if(text){remember($('report-type').value,text);$('report-note').value='';$('report-count').textContent=problems.length+' entrées'}};
 $('report-export').onclick=()=>{
