@@ -2,7 +2,7 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=n=>{n=clamp(n,0,1);return n*n*(3-2*n);};
 export const INTRO_INVITATION_DURATION=20000;
 export const INTRO_INVITATION_DIALOGUE=Object.freeze([
- 'Invitons un personnage du texte d’Ahmed Meguini. Le voici !',
+ 'Invitons un personnage du texte d’Ahmed Marie. Le voici !',
  'Regarde, on peut changer de personnage. En voici un autre.',
  'Touche le petit téléphone pour lui parler de vive voix.'
 ]);
