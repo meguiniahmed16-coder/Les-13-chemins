@@ -30,7 +30,7 @@ export function createIntroElevenLabs({
   }).catch(error=>{
    ready=null;
    if(error?.code==='VOICE_SELECTION_REQUIRED')onNeedsSelection(availableVoices);
-   else unavailable=error?.message||'ElevenLabs est indisponible.';
+   else unavailable=error?.message||'Le service vocal est indisponible.';
    throw error;
   });
   return ready;
@@ -51,11 +51,11 @@ export function createIntroElevenLabs({
   const task=(async()=>{
    const selected=await prepare(),gender=id==='f'?'femme':'homme';
    const clip=await request('speech',{body:{text,gender,voiceId:selected[id],strict:true,purpose:'cinema'}});
-   if(clip?.voiceProvider!=='elevenlabs')throw Error('ElevenLabs a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
-   if(!clip?.size)throw Error('ElevenLabs a renvoyé un enregistrement vide.');
+   if(clip?.voiceProvider!=='elevenlabs'&&clip?.voiceProvider!=='azure')throw Error('Le service vocal a refusé cette réplique : aucune voix de substitution ne sera utilisée.');
+   if(!clip?.size)throw Error('Le service vocal a renvoyé un enregistrement vide.');
    recordings.set(key,clip);return clip;
   })().catch(error=>{
-   if([429,503].includes(error?.status))unavailable=error.message||'ElevenLabs est indisponible.';
+   if([429,503].includes(error?.status))unavailable=error.message||'Le service vocal est indisponible.';
    throw error;
   }).finally(()=>pending.delete(key));
   pending.set(key,task);return task;
@@ -78,7 +78,7 @@ export function createIntroElevenLabs({
    playing=true;onState({playing:true,energy:0,loading:false});
    await ensurePlayer().play(clip);
   }catch(error){
-   if(token===generation&&!disposed&&error?.name!=='AbortError')onError(error?.message||'ElevenLabs est indisponible.');
+   if(token===generation&&!disposed&&error?.name!=='AbortError')onError(error?.message||'Le service vocal est indisponible.');
   }finally{
    if(token===generation){playing=false;energy=0;onState({playing:false,energy:0,loading:false});}
   }
