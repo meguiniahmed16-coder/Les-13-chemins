@@ -107,10 +107,10 @@ export function createSocialExport({stage,frame,mainCanvas,onStatus=()=>{},onFil
   paint(0,false);recorder.start(500);running=true;lastReal=performance.now();onStatus('Enregistrement de la cinématique · 0:00 / 1:20');
  }
  function tick(ms,{garden=false,playing=true}={}){
-  if(!recorder||done)return;
+  if(!recorder||done||recorder.state==='inactive')return;
   const now=performance.now();if(!playing){if(running){activeMs+=now-lastReal;recorder.pause();running=false;}return;}
   if(!running){recorder.resume();lastReal=now;running=true;}
-  lastMs=clamp(ms,0,SOCIAL_DURATION);paint(lastMs,garden);const seconds=Math.floor(lastMs/1000);onStatus('Enregistrement · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+' / 1:20');
+  lastMs=clamp(ms,0,SOCIAL_DURATION);try{paint(lastMs,garden);}catch(error){cancel('Capture interrompue : '+error.message);return;}const seconds=Math.floor(lastMs/1000);if(seconds!==tick.lastSecond){tick.lastSecond=seconds;onStatus('Enregistrement · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+' / 1:20');}
  }
  function finish(){if(!recorder||done)return;done=true;if(running)activeMs+=performance.now()-lastReal;try{paint(SOCIAL_DURATION,true);}catch{}if(recorder.state!=='inactive')recorder.stop();}
  function cancel(message='Export interrompu. Les voix préparées sont conservées sur cet appareil.'){aborted=true;done=true;if(recorder&&recorder.state!=='inactive')recorder.stop();else mix?.close().catch(()=>{});onStatus(message);}
