@@ -2,6 +2,7 @@ import {conversationPrompt} from '../double-backend/character-chat.js';
 import {digest,rate} from './identity.mjs';
 import {voiceCredential,saveVoiceCredential,validateVoiceCredential} from './voice-settings.mjs';
 import {chooseElevenVoice} from './elevenlabs-voices.js';
+import {azureConfig,azureVoices,azureSpeech} from './azure-speech.mjs';
 
 // Server-only integration. Credentials and provider URLs never come from the client.
 // Verified 2026-11-25:
@@ -194,7 +195,8 @@ export async function voiceConversation(request,env,{member,author},action){
     if(request.method!==methods[action])failure(405,'Méthode indisponible.');
     aborted(request.signal);
     if(action==='status'){
-      const connections=await Promise.all([['openai','OpenAI'],['elevenlabs','ElevenLabs']].map(async([provider,label])=>{
+      let azure=false;try{azure=configured(await voiceCredential(env,'azure'));}catch{azure=true;}
+      const connections=await Promise.all([['openai','OpenAI'],azure?['azure','Azure Speech']:['elevenlabs','ElevenLabs']].map(async([provider,label])=>{
         try{return {label,ready:configured(await voiceCredential(env,provider))};}
         catch(error){
           // Keep the owner's reconnection form reachable after a damaged vault
@@ -205,15 +207,17 @@ export async function voiceConversation(request,env,{member,author},action){
       }));
       const missing=connections.filter(connection=>!connection.ready).map(connection=>connection.label);
       const reconnectNeeded=connections.filter(connection=>connection.reconnect).map(connection=>connection.label);
-      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'ElevenLabs'}});
+      return json({ready:missing.length===0,missing,...(reconnectNeeded.length?{reconnectNeeded}:{}),limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:azure?'Azure Speech':'ElevenLabs'}});
     }
     signal=AbortSignal.any([request.signal,AbortSignal.timeout(65000)]);
     if(action==='settings'){
       const data=await readJSON(request,4096,signal);
       if(!exactKeys(data,['provider','key']))failure(400,'La demande de connexion est invalide.');
       validateVoiceCredential(data.provider,data.key);
+      if(data.provider==='azure')azureConfig(data.key);
       try{await rate(env.DB,'salon-voice-settings:'+member.id,8);}catch(error){if(error.status===429)failure(429,'Trop de vérifications rapprochées. Réessaie dans quelques minutes.');throw error;}
       await saveVoiceCredential(env,data.provider,data.key,async()=>{
+        if(data.provider==='azure'){await azureVoices(data.key,signal);return;}
         const isOpenAI=data.provider==='openai',label=isOpenAI?'OpenAI':'ElevenLabs';
         const response=await provider(isOpenAI?openai+'/models':eleven+'/v1/user/subscription',{
           headers:isOpenAI?{authorization:'Bearer '+data.key,accept:'application/json'}:{'xi-api-key':data.key,accept:'application/json'}
@@ -224,6 +228,24 @@ export async function voiceConversation(request,env,{member,author},action){
       aborted(signal);return json({ok:true});
     }
     const useEleven=action==='voices'||action==='speech';
+    const azureCredential=useEleven?await voiceCredential(env,'azure'):'';
+    if(useEleven&&configured(azureCredential)){
+      azureConfig(azureCredential);
+      try{await rate(env.DB,'salon-voice:'+member.id,100);}catch(error){if(error.status===429)failure(429,'Trop de demandes vocales rapprochées.');throw error;}
+      if(action==='voices'){await reserve(env,member,'voices');return json({voices:await azureVoices(azureCredential,signal)});}
+      const data=await readJSON(request,maxJSONBytes,signal);
+      if(!exactKeys(data,['text','voiceId','gender','strict','purpose'])||(data.strict!==undefined&&data.strict!==true)||(data.purpose!==undefined&&data.purpose!=='cinema'))failure(400,'La demande de voix est invalide.');
+      const spoken=text(data.text),gender=data.gender;
+      if(gender!==undefined&&!['homme','femme'].includes(gender))failure(400,'Le personnage vocal est invalide.');
+      if(data.voiceId!==undefined&&(typeof data.voiceId!=='string'||!/^fr-FR-[A-Za-z0-9-]{1,65}Neural$/.test(data.voiceId)))failure(400,'Choisis une voix Azure française valide.');
+      if(!data.voiceId&&!gender)failure(400,'Choisis le genre de la voix.');
+      const all=await azureVoices(azureCredential,signal);
+      const chosen=data.voiceId?all.find(v=>v.id===data.voiceId):chooseElevenVoice(all,gender);
+      if(!chosen||(gender&&chosen.gender!==gender))failure(400,'Cette voix Azure ne correspond pas au personnage.');
+      await reserve(env,member,'speech');await reserve(env,member,'speechCharacters',spoken.length);
+      const audio=await azureSpeech(azureCredential,chosen.id,spoken,signal);
+      return new Response(audio,{headers:{...privateHeaders,'content-type':'audio/mpeg','x-voice-provider':'azure','x-voice-model':chosen.id}});
+    }
     const credential=await voiceCredential(env,useEleven?'elevenlabs':'openai');
     env={...env,[useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY']:credential};
     need(env,useEleven?'ELEVENLABS_API_KEY':'OPENAI_API_KEY',useEleven?'ElevenLabs':'OpenAI');
@@ -264,7 +286,7 @@ export async function voiceConversation(request,env,{member,author},action){
     let spoken,voiceId,gender;
     const automatic=!object(data)||!Object.hasOwn(data,'voiceId');
     if(automatic){
-      if(!exactKeys(data,['text','gender'])||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
+      if(!exactKeys(data,['text','gender','strict'])||(data.strict!==undefined&&data.strict!==true)||!['homme','femme'].includes(data.gender))failure(400,'Le personnage vocal est invalide.');
       spoken=text(data.text);gender=data.gender;
     }else{
       if(!exactKeys(data,['text','voiceId','gender','strict','purpose'])||(data.strict!==undefined&&data.strict!==true)||(data.purpose!==undefined&&data.purpose!=='cinema'))failure(400,'La demande de voix est invalide.');
