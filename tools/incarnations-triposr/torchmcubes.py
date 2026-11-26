@@ -8,7 +8,7 @@ from skimage.measure import marching_cubes as _marching_cubes
 
 def marching_cubes(volume, level=0.0):
     data = volume.detach().cpu().numpy().astype(np.float32, copy=False)
-    vertices, faces, _, _ = _marching_cubes(data, level=float(level), gradient_direction="ascent", allow_degenerate=False)
+    vertices, faces, _, _ = _marching_cubes(data, level=float(level), gradient_direction="descent", allow_degenerate=False)
     return (
         torch.from_numpy(np.ascontiguousarray(vertices[:, ::-1], dtype=np.float32)).to(volume.device),
         torch.from_numpy(np.ascontiguousarray(faces, dtype=np.int64)).to(volume.device),
