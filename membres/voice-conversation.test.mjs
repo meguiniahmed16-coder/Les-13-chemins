@@ -52,7 +52,7 @@ test('Toutes les routes vocales exigent la session auteur, et status ne contacte
   }
   const status=await api('status');assert.equal(status.status,200);
   assert.match(status.headers.get('cache-control'),/private, no-store/);
-  assert.deepEqual(await status.json(),{ready:false,missing:['OpenAI'],limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'OpenAI'}});
+  assert.deepEqual(await status.json(),{ready:false,missing:['OpenAI','ElevenLabs'],limits:VOICE_LIMITS,providers:{transcription:'OpenAI',dialogue:'OpenAI',voice:'ElevenLabs'}});
   env.OPENAI_API_KEY=fakeOpenAI;env.ELEVENLABS_API_KEY=fakeEleven;
   assert.deepEqual((await (await api('status')).json()).missing,[]);
   assert.equal((await api('reply',{method:'POST',from:'https://other.invalid',body:reply})).status,403);
@@ -241,8 +241,8 @@ test('La voix masculine et féminine est automatique, sans catalogue ElevenLabs'
   const {api,env}=await setup(t);
   delete env.ELEVENLABS_API_KEY;
   const status=await (await api('status')).json();
-  assert.equal(status.ready,true);
-  assert.deepEqual(status.missing,[]);
+  assert.equal(status.ready,false);
+  assert.deepEqual(status.missing,['ElevenLabs']);
   const calls=[];
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     calls.push({url,options});
