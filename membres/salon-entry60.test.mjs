@@ -118,14 +118,14 @@ test('Ahmed Numérique réutilise le téléphone existant après création dynam
  assert.match(ahmed,/querySelector\('\.maison-phone'\)/);
  assert.match(ahmed,/if\(active\)stop\(\);else void begin\(\)/);
  assert.match(ahmed,/syncAhmedPhone\(\)/);
- assert.match(src('ahmed-marie.html'),/ahmed-3d\.js\?v=eleven70&amp;rev=ahmeddirect8/);
+ assert.match(src('ahmed-marie.html'),/ahmed-3d\.js\?v=eleven70&amp;rev=ahmeddiscret9/);
  assert.match(ahmed,/salon-conversation-audio\.js\?v=rencontres1&rev=ahmedstream5/);
 });
 
 
 test('Ahmed seul : modèle privé exact pour auteur, aucune commande native ou invité dans la scène',()=>{
  const ahmed=src('membres/ahmed-3d.js'),salon=src('membres/salon-v27.js'),scene=src('membres/v27/scene.js'),members=src('membres/v27/scene-members.js'),html=src('membres/v27/salon.html');
- assert.match(ahmed,/const info=await checkOwner\(\);const originalAhmed=true/);
+ assert.match(ahmed,/const \[,info\]=await Promise\.all\(\[import\([\s\S]*?checkOwner\(\)\]\)/);
  assert.match(ahmed,/view.setAttribute\('ahmed-original',''\)/);
  assert.match(salon,/ahmed=solo/);assert.match(salon,/portrait=original/);
  assert.match(salon,/if\(!scene.originalLook\('m'\)\)throw/);
@@ -139,7 +139,7 @@ test('Ahmed seul : modèle privé exact pour auteur, aucune commande native ou i
 
 test('Retour micro réel et circuit oral direct sans contrôle auteur redondant',()=>{
  const ahmed=src('membres/ahmed-3d.js'),page=src('ahmed-marie.html');
- assert.match(ahmed,/voiceSamples>=3/);assert.match(ahmed,/Je réfléchis à ce que tu viens de me dire/);assert.match(ahmed,/dataset\.ahmedSpoken='1'/);
+ assert.match(ahmed,/voiceSamples>=3/);assert.match(ahmed,/Je réfléchis…/);assert.match(ahmed,/dataset\.ahmedSpoken='1'/);
  assert.match(page,/payload.spoken===true/);assert.match(page,/request.spoken\?\{spoken:true\}/);
 });
 
@@ -149,6 +149,9 @@ test('Ahmed numérique montre une attente jusqu’au modèle prêt et le statut 
  assert.match(page,/class="ahmed-room-progress" role="progressbar"/);
  assert.match(js,/actor=view;hideRoomLoading\(\);syncAhmedPhone\(\)/);
  assert.match(js,/opening=false;hideRoomLoading\(\)/);
- assert.match(css,/top:60px;right:10px/);
+ assert.match(css,/top:5px;left:50%/);
  assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.match(css,/background:rgba\(23,43,36,\.10\)/);
+ assert.match(js,/audioContext:captureContext\|\|undefined,endSilenceMs:350/);
+ assert.match(js,/previous\.close\(\)/);
 });
