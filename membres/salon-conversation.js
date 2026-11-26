@@ -91,7 +91,7 @@ export function createVoiceConversation({
       const speechBody={text:answer,gender:current.gender,voiceId:run.voiceId,strict:true};
       const clipReply=await request('speech',{body:speechBody,signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      if(clipReply?.voiceProvider&&clipReply.voiceProvider!=='elevenlabs')throw new Error('ElevenLabs refuse cette voix. Aucun remplacement automatique ne sera utilisé.');
+      if(clipReply?.voiceProvider&&clipReply.voiceProvider!=='elevenlabs'&&clipReply.voiceProvider!=='azure')throw new Error('Le fournisseur refuse cette voix. Aucun remplacement automatique ne sera utilisé.');
       setState('speaking',messages.speaking);onAudio(answer,speech);
       await speech.play(clipReply,{signal:turn.abort.signal});
       if(!valid(run,turn))return;
@@ -150,14 +150,14 @@ export function createVoiceConversation({
     try{
       const available=status?.ready?status:await request('status',{signal:turn.abort.signal});
       if(!valid(run,turn))return;
-      if(!available.ready)throw new Error('Le raccordement OpenAI et ElevenLabs est nécessaire pour parler. Vérifie les connexions dans les réglages du Salon.');
+      if(!available.ready)throw new Error('Le raccordement OpenAI et Azure Speech est nécessaire pour parler. Vérifie les connexions dans les réglages du Salon.');
       if(!voices.length){const data=await request('voices',{signal:turn.abort.signal});voices=Array.isArray(data.voices)?data.voices:[];}
-      if(!voiceId){
+      if(!voiceId||!voices.some(voice=>voice.id===voiceId)){
         const selected=chooseElevenVoice(voices,current.gender);
-        if(!selected)throw new Error('Aucune voix ElevenLabs correspondante pour ce personnage. Ajoute une voix de ce genre dans ton compte ElevenLabs.');
+        if(!selected)throw new Error('Aucune voix française correspondante pour ce personnage.');
         voiceId=selected.id;
       }
-      if(!voices.some(voice=>voice.id===voiceId))throw new Error('Cette voix ElevenLabs n’est plus disponible.');
+      if(!voices.some(voice=>voice.id===voiceId))throw new Error('Cette voix n’est plus disponible.');
       run.voiceId=voiceId;lastVoice=voiceId;
       await listen(run);
     }catch(error){if(valid(run,turn))problem(run,error);}
