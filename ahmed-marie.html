@@ -16,7 +16,7 @@
 .cited-message{border-left:3px solid #92795b;margin:8px 0;padding:8px 12px;background:rgba(255,255,255,.5);color:#44392f;white-space:pre-wrap}.cited-message cite{font-size:12px;font-weight:600}.cited-message p{margin:7px 0 0}
 .message-label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.message-time{font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:#766c5f}
 </style>
-<link rel="stylesheet" href="/blog-content.css"><link rel="stylesheet" href="/membres/ahmed-3d.css?v=ahmedlatence4">
+<link rel="stylesheet" href="/blog-content.css"><link rel="stylesheet" href="/membres/ahmed-3d.css?v=ahmedattente6">
 <style>.author-orientation{padding:40px 0 28px;border-bottom:1px solid var(--line);max-width:790px;margin:auto}.author-orientation h1{font-size:clamp(34px,5vw,52px)}.author-orientation>p:not(.eyebrow){font-size:15px;line-height:1.7}.author-entry-links{display:flex;gap:12px 24px;flex-wrap:wrap;margin-top:18px}.author-entry-links a{display:inline-flex;min-height:44px;align-items:center;font-size:13px;text-underline-offset:4px}.page-foot{flex-wrap:wrap}@media(min-width:900px){.aside{top:var(--site-nav-offset,90px)}}</style></head>
 <body>
 <div class="page">
@@ -39,7 +39,17 @@
 </div>
 <div class="loading" id="loadingPanel" hidden><strong>Retrouver le fil.</strong><span id="loadingText">Je reprends ta conversation sur cet appareil…</span></div>
 <section id="ahmed-3d" class="ahmed-3d" hidden aria-label="Ahmed numérique dans le Salon 3D">
- <div id="ahmed-3d-room" class="ahmed-3d-room" role="img" aria-label="Le personnage original 3D d’Ahmed"></div>
+ <div id="ahmed-3d-room" class="ahmed-3d-room" role="region" aria-label="Le salon 3D d’Ahmed numérique" aria-busy="true">
+  <div id="ahmed-room-loading" class="ahmed-room-loading">
+   <div class="ahmed-room-loading-inner">
+    <div class="ahmed-room-loading-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M7 41V20L24 7l17 13v21M3 23 24 7l21 16M17 41V26a7 7 0 0 1 14 0v15M7 41h34"/><path d="M24 2v5M12 13l-4-4M36 13l4-4"/></svg></div>
+    <span class="ahmed-room-loading-kicker">La Tectonique des âmes</span>
+    <strong>Ahmed numérique</strong>
+    <div class="ahmed-room-progress" role="progressbar" aria-label="Ouverture du salon"></div>
+    <span class="ahmed-room-loading-text" id="ahmed-room-loading-text" role="status">Le salon s’ouvre…</span>
+   </div>
+  </div>
+ </div>
  <div class="ahmed-3d-controls">
   <button id="ahmed-call" class="primary" type="button" hidden>Appeler Ahmed</button>
   <button id="ahmed-hangup" type="button" hidden>Raccrocher</button>
@@ -155,7 +165,7 @@ $('commentForm').addEventListener('submit',async e=>{e.preventDefault();const bu
 try{const supplied=new URLSearchParams(location.hash.slice(1)).get('invitation');if(supplied){invitationToken=supplied;localStorage.setItem('ahmed-marie-invitation',supplied);history.replaceState(null,'',location.pathname);}else invitationToken=localStorage.getItem('ahmed-marie-invitation')||'';}catch{}
 updateControls();openBlog();
 
-</script><script type="module" src="/membres/ahmed-3d.js?v=eleven70&amp;rev=ahmedstream5"></script>
+</script><script type="module" src="/membres/ahmed-3d.js?v=eleven70&amp;rev=ahmedattente6"></script>
 
 </body>
 </html>
