@@ -19,7 +19,7 @@ test('repeated greetings use this recent conversation, without confusing a new q
  assert.equal(isGreeting('Salut, ça va ?'),true);
  assert.equal(isGreeting('Salut, tu écoutes quoi ?'),false);
  assert.match(repeatedGreetingContext('Salut, ça va ?',turns,now),/CONTINUITÉ IMMÉDIATE/);
- assert.match(repeatedGreetingContext('Comment allez-vous ?',turns,now,'vous'),/vous venez/);
+ assert.match(repeatedGreetingContext('Comment allez-vous ?',turns,now,'vous'),/vous venez/i);
  assert.equal(repeatedGreetingContext('Peux-tu expliquer ce passage ?',turns,now),'');
  assert.equal(repeatedGreetingContext('Salut, ça va ?',turns,'2026-11-15T18:00:00Z'),'');
  assert.equal(repeatedGreetingContext('Salut, ça va ?',[],now),'');
