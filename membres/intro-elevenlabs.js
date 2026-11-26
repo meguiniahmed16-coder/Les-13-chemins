@@ -88,6 +88,11 @@ export function createIntroElevenLabs({
  function pause(){if(active){player?.stop();playing=false;energy=0;onState({playing:false,energy:0});}}
  function resume(){if(active&&!playing)void speak(active.id,active.text);}
  function dispose(){stop();disposed=true;player?.dispose();recordings.clear();pending.clear();}
- return {unlock,prepare,assign,prefetch,speak,stop,pause,resume,dispose,
+ // Export the audio already delivered to this cinematic instance, without
+ // requesting any new speech or changing the existing author access.
+ function recordedClips(){
+  return Array.from(recordings,([key,audio])=>({speaker:key.slice(0,1),text:key.slice(2),audio,provider:audio.voiceProvider}));
+ }
+ return {unlock,prepare,assign,prefetch,speak,stop,pause,resume,dispose,recordedClips,
   get energy(){return energy;},get playing(){return playing;},get voices(){return voices;}};
 }
