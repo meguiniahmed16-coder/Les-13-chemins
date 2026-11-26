@@ -1,4 +1,5 @@
 import {introInvitationLayout} from './intro-invitation.js';
+import {salonActionSvg} from './salon-maison-ui.js';
 import {INTRO_INVITATION_PEOPLE,INTRO_INVITATION_EXAMPLES} from './intro-invitation-data.js';
 
 // A directed demonstration, driven by the same clock as the fitted 3D guests.
@@ -11,7 +12,7 @@ export function mountIntroInvitation(host,layer){
   <div class="invitation-modes" aria-hidden="true"><span data-mode="choose">Choisir un personnage</span><span data-mode="random">Au hasard</span></div>
   <div class="invitation-list" aria-hidden="true"></div>
   <article class="invitation-card" hidden><h3></h3><p class="invitation-chapter"></p><p class="invitation-context"><span class="invitation-story"></span><span class="invitation-location"></span></p><p class="invitation-interaction"></p><p class="invitation-links"></p><small class="invitation-reference"></small></article>
-  <p class="invitation-status" aria-live="off"></p>`;
+  <p class="invitation-status" aria-live="off"></p><div class="invitation-call-guide" hidden style="display:flex;align-items:center;gap:8px;padding:8px;background:#274e3b;color:#fff8e7;border-radius:8px"><span style="width:28px;height:28px">${salonActionSvg("phone")}</span>Appeler le personnage</div>`;
  fade.className='invitation-dissolve';fade.hidden=true;fade.setAttribute('aria-hidden','true');
  layer.append(panel,fade);
  panel.querySelector('.invitation-count').textContent=INTRO_INVITATION_PEOPLE.length+' personnages';
@@ -56,6 +57,7 @@ export function mountIntroInvitation(host,layer){
     });list.replaceChildren(...rows);
    }
   }
+  const phone=panel.querySelector('.invitation-call-guide');phone.hidden=cue.elapsedMs<14500;phone.style.display=phone.hidden?'none':'flex';if(!phone.hidden&&phone.dataset.pulse!=='1'){phone.dataset.pulse='1';phone.animate?.([{boxShadow:'0 0 0 0 #f2d596'},{boxShadow:'0 0 0 12px #f2d59600'}],{duration:1100,iterations:4});}
   const next=cue.phase==='random'?'Le hasard choisit…':cue.guestOpacity>0&&cue.guestOpacity<1?example.name+' vous rejoint':cue.guestOpacity>=1?'Une rencontre, dans le salon.':'Tous les personnages du livre, à retrouver dans l’index.';
   if(status.textContent!==next)status.textContent=next;
   return layout;
