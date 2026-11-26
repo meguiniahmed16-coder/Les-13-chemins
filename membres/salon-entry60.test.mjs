@@ -137,6 +137,16 @@ test('Ahmed seul : modèle privé exact pour auteur, aucune commande native ou i
 
 test('Retour micro réel et circuit oral direct sans contrôle auteur redondant',()=>{
  const ahmed=src('membres/ahmed-3d.js'),page=src('ahmed-marie.html');
- assert.match(ahmed,/voiceSamples>=3/);assert.match(ahmed,/Question reçue/);assert.match(ahmed,/dataset\.ahmedSpoken='1'/);
+ assert.match(ahmed,/voiceSamples>=3/);assert.match(ahmed,/Je réfléchis à ce que tu viens de me dire/);assert.match(ahmed,/dataset\.ahmedSpoken='1'/);
  assert.match(page,/payload.spoken===true/);assert.match(page,/request.spoken\?\{spoken:true\}/);
+});
+
+test('Ahmed numérique montre une attente jusqu’au modèle prêt et le statut près du téléphone',()=>{
+ const page=src('ahmed-marie.html'),js=src('membres/ahmed-3d.js'),css=src('membres/ahmed-3d.css');
+ assert.match(page,/id="ahmed-room-loading"/);
+ assert.match(page,/class="ahmed-room-progress" role="progressbar"/);
+ assert.match(js,/actor=view;hideRoomLoading\(\);syncAhmedPhone\(\)/);
+ assert.match(js,/opening=false;hideRoomLoading\(\)/);
+ assert.match(css,/top:60px;right:10px/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
 });
