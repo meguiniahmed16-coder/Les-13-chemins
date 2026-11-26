@@ -81,7 +81,7 @@ export function createIntroSound({
  assets=INTRO_SOUND_ASSETS,
  audioFactory=src=>typeof globalThis.Audio==='function'?new globalThis.Audio(src):null,
  contextFactory=()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context():null;},
- fetcher=(...args)=>globalThis.fetch(...args),onProblem=()=>{}
+ fetcher=(...args)=>globalThis.fetch(...args),onProblem=()=>{},audioTap=()=>{}
 }={}){
  let context=null,music=null,musicGain=null,active=false,stopped=false,disposed=false,paused=true,blocked=false,playPending=false,resumePending=false;
  let frame={sceneId:'',elapsedMs:0,timeMs:0,playing:false},loading=null,generation=0,played=0;
@@ -123,7 +123,7 @@ export function createIntroSound({
   if(!wanted()||!context||context.state!=='running'||loops.has(key)||!buffers.has(key))return;
   try{
    const source=context.createBufferSource(),level=context.createGain();source.buffer=buffers.get(key);source.loop=true;
-   level.gain.value=0;source.connect(level);level.connect(context.destination);
+   level.gain.value=0;source.connect(level);level.connect(context.destination);audioTap(context,level);
    const cursor=key==='garden'?number(frame.elapsedMs):number(frame.timeMs);
    source.start(0,Math.max(0,cursor/1000)%source.buffer.duration);loops.set(key,{source,level});
   }catch(error){report('ambience-'+key,error);}
@@ -157,7 +157,7 @@ export function createIntroSound({
     music.addEventListener?.('loadedmetadata',()=>{if(wanted()){musicClock();playMusic();}});
     music.addEventListener?.('error',()=>report('music','La musique n’a pas pu se charger.'));
     if(context?.createMediaElementSource){
-     try{const source=context.createMediaElementSource(music);musicGain=context.createGain();musicGain.gain.value=0;source.connect(musicGain);musicGain.connect(context.destination);music.volume=1;}
+     try{const source=context.createMediaElementSource(music);musicGain=context.createGain();musicGain.gain.value=0;source.connect(musicGain);musicGain.connect(context.destination);audioTap(context,musicGain);music.volume=1;}
      catch(error){musicGain=null;report('music-output',error);}
     }
    }
@@ -182,7 +182,7 @@ export function createIntroSound({
   if(offset<0||duration<=.008)return false;
   try{
    const source=context.createBufferSource(),level=context.createGain(),at=context.currentTime;
-   source.buffer=buffer;source.connect(level);level.connect(context.destination);
+   source.buffer=buffer;source.connect(level);level.connect(context.destination);audioTap(context,level);
    const value=INTRO_SOUND_GAINS.foley*(cue.level??1);
    level.gain.setValueAtTime(0,at);level.gain.linearRampToValueAtTime(value,at+.004);
    level.gain.setValueAtTime(value,at+duration-.004);level.gain.linearRampToValueAtTime(0,at+duration);
