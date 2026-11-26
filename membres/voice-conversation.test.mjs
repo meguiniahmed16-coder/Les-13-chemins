@@ -277,3 +277,19 @@ test('La voix automatique refuse les genres invalides et les paramètres inject�
     assert.equal((await api('speech',{method:'POST',body})).status,400);
   }
 });
+
+test('En mode ElevenLabs strict, un refus TTS 401 n’entraîne aucune dépense OpenAI ni voix artificielle',async t=>{
+ const {api}=await setup(t);
+ const calls=[];
+ t.mock.method(globalThis,'fetch',async url=>{
+  calls.push(String(url));
+  if(new URL(url).pathname==='/v2/voices')return Response.json({voices:[voice]});
+  if(String(url).includes('/text-to-speech/'))return Response.json({detail:{status:'missing_permissions'}},{status:401});
+  throw Error('Aucun fournisseur secondaire ne doit être appelé.');
+ });
+ const response=await api('speech',{method:'POST',body:{text:'Bonjour Marianne.',voiceId:voice.voice_id,gender:'femme',strict:true}});
+ assert.equal(response.status,503);
+ assert.match((await response.json()).error,/Text to Speech/);
+ assert.equal(calls.filter(url=>url.includes('/text-to-speech/')).length,1);
+ assert.ok(!calls.some(url=>url.includes('api.openai.com')));
+});
