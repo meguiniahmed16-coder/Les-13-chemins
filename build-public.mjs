@@ -38,6 +38,7 @@ for (const args of [
   ['build-a410-3d.mjs'],
   ['build-yoyo-hands.mjs'],
   ['--test','membres/intro-opening.test.mjs','membres/intro-seat-contact.test.mjs','membres/intro-flow.test.mjs','membres/intro-startup.test.mjs','membres/intro-arrival.test.mjs','membres/studio-assets.test.mjs','membres/studio-inspection.test.mjs','membres/studio-inspection-geometry.test.mjs','membres/salon-inspection.test.mjs','membres/v27/salon-runtime.test.mjs','membres/v27/intro-finale.test.mjs','membres/intro-bubbles.test.mjs','membres/intro-elevenlabs.test.mjs','membres/intro-dojo-director.test.mjs','membres/intro-dojo-wardrobe.test.mjs','membres/intro-dojo-ui.test.mjs','membres/arrival-personalization.test.mjs','membres/v27/cinema-ahmed.test.mjs','membres/intro-television.test.mjs','membres/intro-dojo-camera.test.mjs','membres/intro-film.test.mjs','membres/intro-sound.test.mjs','membres/intro-invitation-data.test.mjs','membres/v27/intro-invitation-scene.test.mjs'],
+  ['--test','membres/intro-public.test.mjs'],
   ['scripts/build-intro-cinema.mjs'],
   ['--test', 'yoyo.test.mjs'],
   ['build-yoyo.mjs'],

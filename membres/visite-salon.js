@@ -1,9 +1,8 @@
 import {generateAppearance} from './starting-appearance.js?v=incarnations33';
 import {normaliseStudio} from './studio-look.js?v=incarnations33';
-import {attachSalonVideoLoading} from './salon-cinema.js?v=cinema67';
 
 const $=id=>document.getElementById(id);
-const video=$('tour'), stage=$('room'), offer=$('offer');
+const stage=$('room'), offer=$('offer');
 const storageKey='chemins-visite-personnage-v1';
 let phase='intro', initial, timer, deadline, wallEnd, epoch=0, draft;
 let introDone=false;
@@ -27,7 +26,7 @@ async function visit(method='GET'){
 }
 function finish(){
   if(phase==='ended')return;
-  epoch++;phase='ended';clearInterval(timer);video.pause();
+  epoch++;phase='ended';clearInterval(timer);
   if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
   stage.replaceChildren();
   $('intro').hidden=$('live-room').hidden=$('retry').hidden=true;$('status').textContent='';
@@ -54,7 +53,7 @@ async function enter(state){
   if(!['intro','retry'].includes(phase))return;
   if(state.state==='expired'){finish();return;}
   phase='loading';introDone=true;const ticket=++epoch;
-  $('retry').hidden=$('intro').hidden=true;video.pause();
+  $('retry').hidden=$('intro').hidden=true;
   document.body.classList.add('visiting');$('live-room').hidden=false;$('status').textContent='Ton avatar rejoint le salon…';
   if(state.state==='active')setTime(state.remaining);
   await import('./salon-v27.js?v=eleven70&rev=rencontres1');
@@ -78,10 +77,6 @@ async function enter(state){
   const goal=new URLSearchParams(location.search).get('ouvrir');
   if(['inviter','appeler'].includes(goal))view.invitePersonnage();
 }
-async function begin(){
-  introDone=true;
-  try{await enter(await initial);}catch(err){retry(err);}
-}
 function check(){
   initial=visit();
   initial.then(state=>{
@@ -89,16 +84,6 @@ function check(){
     if(introDone)return enter(state);
   }).catch(retry);
 }
-attachSalonVideoLoading(video);
-video.addEventListener('timeupdate',()=>{
-  const t=video.currentTime;
-  const hint=t<3.5?'Pousse le joystick de gauche pour avancer.':t<10?'Touche deux fois le fauteuil pour t’y installer.':'Fais glisser le joystick Caméra pour changer de point de vue.';
-  if($('tour-hint').textContent!==hint)$('tour-hint').textContent=hint;
-});
-video.addEventListener('ended',begin);
-video.addEventListener('error',()=>{$('skip').textContent='Entrer dans le salon';});
-if(matchMedia('(prefers-reduced-motion: reduce)').matches){video.autoplay=false;video.pause();}
-$('skip').onclick=begin;
 $('retry').onclick=()=>{introDone=true;check();};
 let activeView=null;
 window.addEventListener('salon-guest-ready',event=>{activeView=event.detail.view;});
@@ -118,18 +103,11 @@ async function resume(){
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void resume();});
 window.addEventListener('pageshow',e=>{if(e.persisted)void resume();});
-async function beginGuestEntry(){
- // For the author, reuse the full original film instead of showing another
- // unrelated tour. The temporary visitor session starts only after the film.
- let done=false;try{done=sessionStorage.getItem('croisee-invite-introduction-originale-v34')==='done';}catch{}
- if(done||new URLSearchParams(location.search).get('intro')==='terminee'){introDone=true;check();return;}
- try{
-  const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(7000)});
-  if(response.ok&&(await response.json()).author){
-   const goal=new URLSearchParams(location.search).get('ouvrir');
-   location.replace('/membres/intro-prive.html?salon=1&retour=invite'+(['inviter','appeler'].includes(goal)?'&ouvrir='+goal:''));return;
-  }
- }catch{/* Anonymous visitors retain their existing limited tour. */}
- check();
+function beginGuestEntry(){
+ const query=new URLSearchParams(location.search);
+ let done=false;try{done=sessionStorage.getItem('croisee-invite-introduction-originale-v35')==='done';}catch{}
+ if(done||query.get('intro')==='terminee'){introDone=true;check();return;}
+ const goal=query.get('ouvrir');
+ location.replace('/membres/intro-prive.html?salon=1&retour=invite&public=1'+(['inviter','appeler'].includes(goal)?'&ouvrir='+goal:''));
 }
-void beginGuestEntry();
+beginGuestEntry();

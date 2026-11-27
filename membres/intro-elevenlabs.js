@@ -9,7 +9,8 @@ export function createIntroElevenLabs({
  playerFactory=createRemoteSpeech,
  onState=()=>{},
  onError=()=>{},
- onNeedsSelection=()=>{}
+ onNeedsSelection=()=>{},
+ preferenceKey='croisee-cartesia-voix-v1'
 }={}){
  let player=null,ready=null,voices=null,availableVoices=[],generation=0,playing=false,active=null,disposed=false,unavailable=null;
  let energy=0,controller=null;
@@ -18,7 +19,6 @@ export function createIntroElevenLabs({
   return player??=playerFactory({onEnergy:value=>{energy=value;onState({playing,energy});}});
  }
  function unlock(){return ensurePlayer().unlock();}
- const preferenceKey='croisee-cartesia-voix-v1';
  function preferred(){
   try{const value=JSON.parse(localStorage.getItem(preferenceKey)||'null');return value&&typeof value==='object'?value:null;}catch{return null;}
  }

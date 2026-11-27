@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {isGuestCinema,publicCinemaAsset,guestReturn,createPublicCinemaRequest} from './intro-public.js';
+import {cinematicAudioKey,buildPublicCinemaIndex,servePublicCinemaRecording} from './proxy.mjs';
+test('guest mode cannot unlock the author cinema or a different private asset',()=>{
+ assert.equal(isGuestCinema('?salon=1&retour=invite&public=1'),true);
+ for(const q of ['?salon=1','?public=1','?salon=1&retour=ahmed&public=1'])assert.equal(isGuestCinema(q),false);
+ assert.match(publicCinemaAsset('/api/intro-private/ahmedfast/003'),/intro-public\/ahmedfast\/003$/);
+ assert.throws(()=>publicCinemaAsset('/api/intro-private/white/000'));
+ assert.equal(guestReturn('?ouvrir=appeler',true),'/salon-invite.html?intro=terminee&ouvrir=appeler&guide=1');
+});
+test('the home guest path uses the same complete film, not the former tour',()=>{
+ const guest=readFileSync(new URL('./visite-salon.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../salon-invite.html',import.meta.url),'utf8');
+ const cinema=readFileSync(new URL('./intro-cinema.js',import.meta.url),'utf8');
+ assert.match(guest,/retour=invite&public=1/);
+ assert.doesNotMatch(html,/invitation-salon\.mp4/);
+ assert.match(cinema,/if\(publicGuestMode\)\{alias='Voyageur'/);
+ assert.match(cinema,/publicGuest:publicGuestMode/);
+ assert.match(cinema,/me\?auteur=1/);
+ assert.match(guest,/lease=.+await start\(\)/);
+});
+test('public cinematic audio serves exact archived lines only; no synthesis or arbitrary blobs',async()=>{
+ const text='Prends place.',gender='homme',voiceId='voice-test';
+ const key=cinematicAudioKey(JSON.stringify({purpose:'cinema',strict:true,voiceId,gender,text}));
+ const bad='a'.repeat(64),meta={speaker:'Ahmed Marie',text,voiceId,provider:'cartesia',type:'audio/wav'},data=new Uint8Array([1,2,3]).buffer;
+ const entries=new Map([[key,{metadata:meta,data}],[bad,{metadata:{...meta,text:'Donnée privée'},data}]]);
+ const store={list:async()=>({blobs:[...entries.keys()].map(key=>({key}))}),getMetadata:async key=>entries.get(key),getWithMetadata:async key=>entries.get(key)};
+ const opts={storeFactory:()=>store,indexFactory:buildPublicCinemaIndex};
+ const base='https://tectonique-des-ames.com/api/membres/voice/cinema-recordings';
+ const manifest=await (await servePublicCinemaRecording(new Request(base),opts)).json();
+ assert.equal(manifest.recordings[gender+'|'+text],key);
+ assert.equal(Object.keys(manifest.recordings).length,1);
+ assert.equal((await servePublicCinemaRecording(new Request(base+'?key='+bad),opts)).status,404);
+ assert.equal((await servePublicCinemaRecording(new Request(base,{method:'POST'}),opts)).status,405);
+ const publicRequest=createPublicCinemaRequest((url,options)=>servePublicCinemaRecording(new Request('https://tectonique-des-ames.com'+url,options),opts));
+ const clip=await publicRequest('speech',{body:{purpose:'cinema',strict:true,gender,text}});
+ assert.equal(clip.voiceProvider,'cartesia');assert.equal(clip.size,3);
+ await assert.rejects(()=>publicRequest('speech',{body:{purpose:'cinema',strict:true,gender,text:'Donnée privée'}}));
+});

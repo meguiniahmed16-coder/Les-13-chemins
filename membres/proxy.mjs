@@ -96,6 +96,52 @@ export async function serveCinemaAudio({key,upstream,authorize,cue=null,storeFac
  }
 }
 
+// Public, read-only access to the already recorded, authored cinematic lines.
+const publicCinemaVoices=[{id:'cinema-homme',name:'Ahmed',gender:'homme'},{id:'cinema-femme',name:'Marianne',gender:'femme'}];
+const publicCinemaHeaders={'cache-control':'public, max-age=300','netlify-cdn-cache-control':'public, s-maxage=300','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
+function publishedCue(metadata,key){
+ const gender=metadata?.speaker==='Ahmed Marie'?'homme':metadata?.speaker==='Marianne'?'femme':null;
+ if(!gender||!fixedCinemaLines.has(gender+'|'+metadata.text)||!providers.has(metadata.provider)||!audioTypes.has(metadata.type))return null;
+ const expected=cinematicAudioKey(JSON.stringify({purpose:'cinema',strict:true,voiceId:metadata.voiceId,gender,text:metadata.text}));
+ return expected===key?{gender,text:metadata.text,voiceId:metadata.voiceId}:null;
+}
+export async function buildPublicCinemaIndex(store){
+ const {blobs}=await store.list();
+ const validKeys=blobs.filter(b=>/^[a-f0-9]{64}$/.test(b.key)).slice(0,400);
+ const groups={homme:new Map(),femme:new Map()};
+ for(let i=0;i<validKeys.length;i+=16){
+  const batch=await Promise.all(validKeys.slice(i,i+16).map(async({key})=>{const entry=await store.getMetadata(key);return {key,cue:publishedCue(entry?.metadata,key)};}));
+  for(const {key,cue} of batch){if(!cue)continue;const group=groups[cue.gender];if(!group.has(cue.voiceId))group.set(cue.voiceId,new Map());group.get(cue.voiceId).set(cue.gender+'|'+cue.text,key);}
+ }
+ const recordings={};
+ for(const gender of ['homme','femme']){
+  const selected=[...groups[gender].entries()].sort((a,b)=>b[1].size-a[1].size||a[0].localeCompare(b[0]))[0]?.[1];
+  if(selected)Object.assign(recordings,Object.fromEntries(selected));
+ }
+ return {voices:publicCinemaVoices,recordings};
+}
+let publicCinemaIndex=null,publicCinemaIndexUntil=0;
+export async function servePublicCinemaRecording(request,{storeFactory=cinemaStore,indexFactory=null}={}){
+ if(request.method!=='GET')return Response.json({error:'Lecture seule.'},{status:405,headers:{Allow:'GET','cache-control':'no-store'}});
+ const url=new URL(request.url),key=url.searchParams.get('key');
+ try{
+  const store=storeFactory();
+  if(key!==null){
+   if(!/^[a-f0-9]{64}$/.test(key))return new Response(null,{status:404});
+   const metadata=await store.getMetadata(key);
+   if(!publishedCue(metadata?.metadata,key))return new Response(null,{status:404});
+   const entry=await store.getWithMetadata(key,{type:'arrayBuffer'});
+   if(!validRecording(entry)||!publishedCue(entry.metadata,key))return new Response(null,{status:404});
+   return new Response(entry.data,{headers:{...publicCinemaHeaders,'content-type':entry.metadata.type,'x-voice-provider':entry.metadata.provider}});
+  }
+  if(indexFactory)return Response.json(await indexFactory(store),{headers:publicCinemaHeaders});
+  if(!publicCinemaIndex||Date.now()>=publicCinemaIndexUntil){
+   publicCinemaIndexUntil=Date.now()+300000;publicCinemaIndex=buildPublicCinemaIndex(store).catch(error=>{publicCinemaIndex=null;throw error;});
+  }
+  return Response.json(await publicCinemaIndex,{headers:publicCinemaHeaders});
+ }catch{return Response.json({error:'Les voix enregistrées sont momentanément indisponibles.'},{status:503,headers:{'cache-control':'no-store'}});}
+}
+
 const origin='https://tectonique-des-ames.com';
 const backend='https://treize-chemins-membres.meguiniahmed16.workers.dev';
 async function voiceBody(request,max){
@@ -121,6 +167,7 @@ async function voiceBody(request,max){
 export default async function proxy(request){
   const url=new URL(request.url);
   if(url.origin!==origin||!['GET','POST'].includes(request.method))return new Response(null,{status:403});
+  if(url.pathname==='/api/membres/voice/cinema-recordings')return servePublicCinemaRecording(request);
   if(request.method==='POST'&&request.headers.get('origin')!==origin)return new Response(null,{status:403});
   if(url.pathname.endsWith('/stripe'))return new Response(null,{status:404});
   const cookies=(request.headers.get('cookie')||'').split(';').map(s=>s.trim()).filter(s=>/^__Host-(?:chemins-(?:oauth|membre)|am_site_admin|editor-admin)=/.test(s));
