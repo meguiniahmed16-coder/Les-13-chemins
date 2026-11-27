@@ -1,0 +1,50 @@
+{
+  "version": "V31 Mobile",
+  "original_sha256": "da8218e370aa720244c8245d017caf63e765d6e8de58fb7be9e55aada97848d7",
+  "assets": {
+    "Ahmed-tete.glb": {
+      "bytes": 2421620,
+      "sha256": "6d23ef939bd7caf68659e60db00a364725f93de0f7f1391ad2b56a61c076a390"
+    },
+    "Ahmed.glb": {
+      "bytes": 3327396,
+      "sha256": "57211398cc8334f7f5b80c4ae2d930468ab63908b2e9717284dca8f8e543ab2a"
+    },
+    "Lionel-tete.glb": {
+      "bytes": 3466996,
+      "sha256": "f7c473a51c6930855c464ed52bf43f2bf3c1af26d4d93d0911c14f72e2638dca"
+    },
+    "Lionel.glb": {
+      "bytes": 4343756,
+      "sha256": "7795ceb56d7c245e76eede9b217faf0d56ec9677466e265ac363b7a9e645f773"
+    },
+    "adversaire.glb": {
+      "bytes": 1418032,
+      "sha256": "470664bf0be3141238a267a9124d1c04cbfe78e3b45e0cd51414b779d2c40007"
+    },
+    "ambiance-entrepot.mp3": {
+      "bytes": 384774,
+      "sha256": "9094f10676c6a4d6a1ccbcd23447b8d0423d33060cdef8b374352d4580a5747f"
+    },
+    "ambiance-ville.mp3": {
+      "bytes": 384774,
+      "sha256": "7010cf60edc2a0339e785d5685ae0eed04767adb17e7068416f2bc363b82529f"
+    },
+    "entrepot.glb": {
+      "bytes": 6906820,
+      "sha256": "f179ba513ba2d94cb96f43546318ad66b9c5f7504e3c40b50fa58b22e8d08f71"
+    },
+    "equipement-anime.glb": {
+      "bytes": 1750228,
+      "sha256": "16402dc4e4d172a46f158f0f4f753bb776f9af10641fc7b8a070e65daa43c30a"
+    },
+    "equipement.glb": {
+      "bytes": 764544,
+      "sha256": "a8db1e23dec2dae5ff9bec6ea6ceb1d4accf1c47b1bdcadfd7b06a0a69109908"
+    },
+    "ville.glb": {
+      "bytes": 4334432,
+      "sha256": "6646ca93b5ae54797493af810e2f313582a1e87fe7441f609f7f07ba878401e1"
+    }
+  }
+}
