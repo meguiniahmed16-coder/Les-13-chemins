@@ -341,6 +341,10 @@ for (const name of publicFiles) {
     await copyFile(join(root, name), join(output, name));
   }
 }
+// Sarajevo V31 : extraction et validation intégrales du pack, avant publication.
+const {publishSarajevoV31}=await import('./publish-sarajevo-v31.mjs');
+await run(process.execPath,['--test','sarajevo-v31-bridge.test.cjs'],{cwd:root,maxBuffer:4*1024*1024});
+await publishSarajevoV31(root,output);
 console.log('Build public : ' + (publicFiles.length + 1) + ' fichiers vérifiés dans dist/.');
 const danseChecks=await run(process.execPath,['--test','danse.test.mjs'],{cwd:root,maxBuffer:4*1024*1024});
 if(danseChecks.stdout.trim())console.log(danseChecks.stdout.trim());
