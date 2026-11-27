@@ -76,7 +76,7 @@ function harness({dojoLoaded=true}={}){
   room:{},dojo:dojoLoaded?{visible:false}:null,people:actors,
   dojoWardrobe:{ready:dojoLoaded,cancelled:false,async prepare(){if(!this.cancelled)this.ready=true},restore(){this.cancelled=true;this.ready=false}},
   dojoDemo:{hidden:true,updates:[],update(line,elapsed){this.hidden=line.scene!=='dojo';this.updates.push([line.id,elapsed])},hide(){this.hidden=true}},
-  promotionMode:false,arrivalPlayer:{state:'idle',elapsed:0,paused:false,
+  publicGuestMode:false,promotionMode:false,arrivalPlayer:{state:'idle',elapsed:0,paused:false,
    start(options){arrivals.push(options);this.state=options.skip?'complete':'loading';this.paused=options.paused;dom.$('garden-frame').src='/membres/v27/salon.html?resident=marianne&arrival=cinema&finale=1&v=incarnations33'},
    tick(){},pause(){this.paused=true;arrivalCalls.push('pause')},resume(){this.paused=false;arrivalCalls.push('resume')},
   },
