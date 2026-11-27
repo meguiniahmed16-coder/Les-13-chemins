@@ -2,6 +2,7 @@ import {perform} from './reference-performance.js';
 import {defaultMotion,wardrobeMotion} from './live-body.js';
 import {attachFemaleHead,loadFemaleReference} from './female-reference.js';
 import {attachCinemaAhmed} from './cinema-ahmed.js';
+import {publicCinemaAsset} from '../intro-public.js';
 import {addBoundVisemes} from './reference-groom.js';
 // Clothes and invited characters use the local V27 skeleton sampled in the original salon.
 // The two original dressed figures stay in memory so returning to the duo is instantaneous.
@@ -137,7 +138,8 @@ export function createMemberBridge(scene){
       for(const a of Object.values(actors)){if(!a.parts.length)continue;const motion=defaultMotion(a,weights,rig[a.id].rest);originalMotion.set(a,motion);a.motion=motion;face(a);}
       if(scene.cinemaArrival||scene.originalAhmed){
         globalThis.window?.salonArrival?.progress('ahmed','Retrouvons Ahmed Marie dans La Croisée des Âmes…');
-        const original=await attachCinemaAhmed(actors.m,scene.originalAhmed?{fetcher:(url,options)=>fetch(url.replace('/api/intro-private/','/api/membres/portrait-ahmed/'),options)}:undefined);
+        const publicGuest=scene.cinemaArrival&&new URLSearchParams(globalThis.location?.search||'').get('guestCinema')==='1';
+        const original=await attachCinemaAhmed(actors.m,scene.originalAhmed?{fetcher:(url,options)=>fetch(url.replace('/api/intro-private/','/api/membres/portrait-ahmed/'),options)}:publicGuest?{fetcher:(url,options)=>fetch(publicCinemaAsset(url),options)}:undefined);
         originals.set(actors.m,original.parts);originalMotion.set(actors.m,original.motion);
       }},
     async enableDialogue(channels,read,valid=()=>true){

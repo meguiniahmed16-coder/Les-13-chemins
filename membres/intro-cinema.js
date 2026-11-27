@@ -10,14 +10,18 @@ import {mountIntroArrival,arrivalFrame,PROMOTION} from './intro-arrival.js';
 import {INTRO_INVITATION_DIALOGUE} from './intro-invitation.js';
 import {createIntroSound} from './intro-sound.js';
 import {createIntroElevenLabs} from './intro-elevenlabs.js?v=eleven72';
+import {isGuestCinema,publicCinemaAsset,completeGuestCinema,createPublicCinemaRequest} from './intro-public.js';
 import {unzipSync,strFromU8} from 'three/examples/jsm/libs/fflate.module.js';
 
 const $=id=>document.getElementById(id);
 const salonEntryMode=new URLSearchParams(location.search).get('salon')==='1';
+const publicGuestMode=isGuestCinema(location.search);
+const cinematicAsset=url=>publicGuestMode?publicCinemaAsset(url):url;
 const originalIntroKey='croisee-salon-introduction-originale-v34';
 if(salonEntryMode)document.documentElement.classList.add('salon-entry-mode');
 function finishSalonEntry(shortGuide=false){
  if(!salonEntryMode)return;
+ if(publicGuestMode){completeGuestCinema(window,shortGuide);return;}
  const returnTo=new URLSearchParams(location.search).get('retour');
  const destinations={
   ahmed:['croisee-ahmed-introduction-originale-v34','/ahmed-marie.html?intro=terminee#ahmed-numerique'],
@@ -35,7 +39,7 @@ const introSound=createIntroSound({onProblem:message=>remember('Son de la ciném
 const dojoDemo=mountDojoDemo(canvasHost);
 const promotionMode=new URLSearchParams(location.search).get('mode')==='promotion';
 if(promotionMode)document.body.classList.add('promotion');
-const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,onProblem:message=>remember('Arrivée',message),voiceEnergy:()=>cinematicVoiceEnergy,onDialogue:(id,text)=>{if(id&&text)speakCinematicCue(id,text);else stopCinematicVoice();},onComplete:()=>{stopCinematicVoice();introSound.stop();finishSalonEntry();}});
+const arrivalPlayer=mountIntroArrival({host:canvasHost,frame:$('garden-frame'),bubble,publicGuest:publicGuestMode,onProblem:message=>remember('Arrivée',message),voiceEnergy:()=>cinematicVoiceEnergy,onDialogue:(id,text)=>{if(id&&text)speakCinematicCue(id,text);else stopCinematicVoice();},onComplete:()=>{stopCinematicVoice();introSound.stop();finishSalonEntry();}});
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -506,7 +510,7 @@ async function decodeAhmed(buffer){
   return await loader.parseAsync(withoutOptionalMorphs(buffer),'');
  }
 }
-function setPending(on){pending=on;if(on)introSound.pause();$('skip').disabled=!authorized||stage==='garden';$('scene-wait').hidden=!on;}
+function setPending(on){pending=on;if(on)introSound.pause();$('skip').disabled=!authorized||(stage==='garden'&&!publicGuestMode);$('scene-wait').hidden=!on;}
 const whiteFloor=new T.Group();
 const seamlessFloor=new T.Mesh(new T.PlaneGeometry(180,180),new T.MeshBasicMaterial({color:0xffffff,toneMapped:false}));
 seamlessFloor.rotation.x=-Math.PI/2;seamlessFloor.position.y=-.003;whiteFloor.add(seamlessFloor);
@@ -652,12 +656,12 @@ async function loadAhmed(){
  async function group(g){
   const first=g*3,last=Math.min(chunks.length,first+3),size=Math.min(total-first*unit,3*unit);
   try{
-   const data=new Uint8Array(await binary('/api/intro-private/ahmedfast/'+String(g).padStart(3,'0'),'ahmed',{expected:size,cache:true}));
+   const data=new Uint8Array(await binary(cinematicAsset('/api/intro-private/ahmedfast/'+String(g).padStart(3,'0')),'ahmed',{expected:size,cache:true}));
    for(let i=first;i<last;i++)chunks[i]=data.subarray((i-first)*unit,Math.min(data.length,(i-first+1)*unit));
   }catch(e){
    remember('Téléchargement groupé',e.message||e);
    // An older hosting release can still provide the same verified model through the original fragment URL.
-   for(let i=first;i<last;i++)if(!chunks[i])chunks[i]=new Uint8Array(await binary('/api/intro-private/ahmedv3/'+String(i).padStart(3,'0'),'ahmed',{expected:Math.min(unit,total-i*unit),cache:true}));
+   for(let i=first;i<last;i++)if(!chunks[i])chunks[i]=new Uint8Array(await binary(cinematicAsset('/api/intro-private/ahmedv3/'+String(i).padStart(3,'0')),'ahmed',{expected:Math.min(unit,total-i*unit),cache:true}));
   }
   setProgress('ahmed',.92*chunks.reduce((n,c)=>n+(c?.byteLength||0),0)/total);
  }
@@ -1049,6 +1053,7 @@ function showVoiceSelection(list){
  if(selectionPaused)automatic(false);
 }
 const cinematicVoices=createIntroElevenLabs({
+ ...(publicGuestMode?{request:createPublicCinemaRequest(),preferenceKey:'croisee-cinema-public-voix-v35'}:{}),
  onNeedsSelection:showVoiceSelection,
  onState:({energy=0,playing=false,loading=false,finished=false}={})=>{
   cinematicVoiceEnergy=energy;
@@ -1479,7 +1484,7 @@ async function showScene(index){
 function startGarden(skipFinale=false){
  if(skipFinale)introSound.stop();else introSound.pause();
  ++sceneRequest;autoplay=false;clearTimeout(autoTimer);stopSpeech();stopFilm();dojoDemo.hide();dojoWardrobe?.restore();stage='garden';$('garden').hidden=false;setPending(false);
- $('joystick').hidden=true;$('skip').hidden=true;
+ $('joystick').hidden=true;$('skip').hidden=!publicGuestMode;
  $('welcome').hidden=true;$('loading').hidden=true;$('scene-wait').hidden=true;
  status.textContent='La Croisée des Âmes';
  if(gardenLoaded)return;gardenLoaded=true;
@@ -1503,7 +1508,7 @@ function automatic(on,hold=false){
  if(!on){introSound.pause();cinematicVoices.pause();}else if(cinematicVoiceEnabled)cinematicVoices.resume();
 }
 $('enter').onclick=()=>{if(!authorized||!ready||stage==='garden')return;cinematicVoiceEnabled=true;prepareCinematicVoices();introSound.start();alias=$('pseudo').value.trim().slice(0,40)||alias;$('welcome').hidden=true;started=true;lastLayout='';setPending(false);autoplay=true;void showScene(0)};
-$('skip').onclick=()=>{if(!authorized||stage==='garden')return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry(true);}else startGarden(true);};
+$('skip').onclick=()=>{if(!authorized||(stage==='garden'&&!publicGuestMode))return;alias=$('pseudo').value.trim().slice(0,40)||alias;started=true;if(salonEntryMode){stopCinematicVoice();introSound.stop();finishSalonEntry(true);}else startGarden(true);};
 
 function holdIntroduction(reason){
  if(pauseReasons.has(reason))return;
@@ -1578,6 +1583,7 @@ function frame(){
 }
 
 async function authorize(){
+ if(publicGuestMode){alias='Voyageur';$('pseudo').value=alias;authorized=true;$('access-denied').hidden=true;$('skip').disabled=false;return;}
  const response=await fetch('/api/membres/me?auteur=1',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(17000)});
  if(!response.ok)throw Error('La connexion administrateur est nécessaire.');
  const me=await response.json();if(!me.author)throw Error('Réservé au compte auteur.');
