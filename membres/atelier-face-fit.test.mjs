@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {BODY_FIT,FACE_KEYS,faceMapping,applyMapped,headCorrection,fitHead,deformNeck,speechFrame,alignImportedHead} from './atelier-face-fit.js';
+import {BODY_FIT,FACE_KEYS,faceMapping,applyMapped,headCorrection,fitHead,deformNeck,speechFrame,alignImportedHead,restBodyBoundary} from './atelier-face-fit.js';
 const settings={width:1,height:1,depth:1,headSize:1,headX:0,headY:0,headZ:0,headPitch:0,neckWidth:1,neckHeight:1,neckDepth:1};
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,a+' vs '+b);
 test('head and neck share the same pivot; width of body does not inflate the head',()=>{
@@ -34,4 +34,7 @@ test('reference phonemes distinguish open mouth, closed lips and rounded vowels'
 test('imported head is matched to the reference size and center, not an arbitrary origin',()=>{
  const inside=new T.Group(),source=new T.Mesh(new T.BoxGeometry(2,4,2));source.position.set(5,7,2);inside.add(source);
  const a={headRestBox:new T.Box3(new T.Vector3(-.4,-.3,-.3),new T.Vector3(.4,.5,.3))};alignImportedHead(a,source,inside);inside.updateMatrixWorld(true);const b=new T.Box3().setFromObject(source);near(b.getSize(new T.Vector3()).y,.8);near(b.getCenter(new T.Vector3()).y,.1);near(b.getCenter(new T.Vector3()).x,0);
+});
+ test('neck boundary ignores morph-expanded bounding box (V22 finger shapes regression)',()=>{
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([0,1.3923,.01,.01,1.38,0,0,1.35,0,0,.8,0],3));g.morphAttributes.position=[new T.Float32BufferAttribute([0,0,0,0,0,0,0,0,0,0,.0326,0],3)];g.morphTargetsRelative=true;g.computeBoundingBox();assert.ok(g.boundingBox.max.y>1.41);const {box,boundary}=restBodyBoundary(g.attributes.position);near(box.max.y,1.3923);assert.deepEqual(boundary,[0,1]);
 });
