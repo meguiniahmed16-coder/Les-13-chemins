@@ -5,7 +5,7 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {SalonMotion} from './salon-v27-motion.js';
 import {V22_ASSETS,decodeV22,JOINT_ORDER} from './atelier-v22-source.js';
 import {BODY_FIT,FACE_KEYS,initNeckFit,fitHead,deformNeck,alignImportedHead,faceMapping,applyMapped,speechFrame,transferFaceMorphs} from './atelier-face-fit.js';
-import {EXTRA_NAMES,EXTRA_EDGES,TOTAL_JOINTS,FIT_DEFAULT,initExpandedRig,poseExpandedRig,facialPose,clearDoubleFaceMorphs,prepareKimonoFit} from './atelier-armature-v3.js';
+import {EXTRA_NAMES,EXTRA_EDGES,TOTAL_JOINTS,FIT_DEFAULT,initExpandedRig,poseExpandedRig,facialPose,clearDoubleFaceMorphs,prepareKimonoFit,matchNeckRim} from './atelier-armature-v3.js';
 const $=id=>document.getElementById(id), loader=new GLTFLoader(), canvas=$('canvas');
 const endpoint='/api/intro-private/atelier-v22/';
 const deg=Math.PI/180,clamp=(n,a,b)=>Math.min(b,Math.max(a,Number(n)||0));
@@ -51,7 +51,7 @@ async function loadModel(id){if(actors[id])return actors[id];const conf=V22_ASSE
  const points=new T.BufferGeometry(),arr=new Float32Array(TOTAL_JOINTS*3);points.setAttribute('position',new T.BufferAttribute(arr,3));const dots=new T.Points(points,new T.PointsMaterial({color:0x158b70,size:.034,sizeAttenuation:true,depthTest:false}));dots.visible=false;dots.frustumCulled=false;dots.renderOrder=20;root.add(dots);
  const lines=new T.BufferGeometry(),edges=[[2,3],[3,4],[5,6],[6,7],[0,8],[8,9],[0,11],[11,12],...EXTRA_EDGES];lines.setAttribute('position',new T.BufferAttribute(new Float32Array(edges.length*6),3));const wire=new T.LineSegments(lines,new T.LineBasicMaterial({color:0x167f68,depthTest:false}));wire.visible=false;wire.frustumCulled=false;wire.renderOrder=19;root.add(wire);
  const a={id,root,model,inner,body,garment,portrait,head,neck,bones,bind,inv,solver,meshes,morphs,materials,dots,wire,edges,restScale:inner.scale.clone(),restHead:{position:head.position.clone(),scale:head.scale.clone(),q:head.quaternion.clone()},neckBase:neck.geometry.attributes.position.array.slice(),neckCenter:null,garmentBase:garment.geometry.attributes.position.array.slice(),garmentBox:garment.geometry.boundingBox||new T.Box3().setFromBufferAttribute(garment.geometry.attributes.position),imports:new Map(),headImport:null};
- a.neck.geometry.computeBoundingBox();a.neckCenter=a.neck.geometry.boundingBox.getCenter(new T.Vector3());a.body.geometry.computeBoundingBox();initNeckFit(a);initExpandedRig(a);a.kimonoFit=prepareKimonoFit(a.body,a.garment);actors[id]=a;applyShape(a);applyFace(a);updatePose(a,0);await restoreImports(a);return a;
+ a.neck.geometry.computeBoundingBox();a.neckCenter=a.neck.geometry.boundingBox.getCenter(new T.Vector3());a.body.geometry.computeBoundingBox();matchNeckRim(a);initNeckFit(a);initExpandedRig(a);a.kimonoFit=prepareKimonoFit(a.body,a.garment);actors[id]=a;applyShape(a);applyFace(a);updatePose(a,0);await restoreImports(a);return a;
 }
 function morph(mesh,key,value){const i=mesh.morphTargetDictionary?.[key];if(i!==undefined)mesh.morphTargetInfluences[i]=value;}
 function applyShape(a){const s=state.actors[a.id],b=s.body,g=s.garment;const inner=a.inner;
