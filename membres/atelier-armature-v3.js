@@ -62,6 +62,23 @@ function rigLid(a,mesh,upper,lower,c){
  a.root.updateMatrixWorld(true);replacement.bind(new T.Skeleton([upper,lower]),replacement.matrixWorld.clone());owner.remove(old);
  for(const arr of [a.meshes,a.morphs]){const i=arr.indexOf(old);if(i>=0)arr[i]=replacement;}return replacement;
 }
+// The source scan was cut at y=-.340 in its own head coordinates. Match
+// the actual cut contour rather than expanding a generic cylindrical collar.
+// Hair vertices outside the nearest seam tolerance are not used.
+export function matchNeckRim(a){
+ a.root.updateMatrixWorld(true);
+ const neck=a.neck,geo=neck.geometry,p=geo.attributes.position,base=a.neckBase,b=new T.Box3().setFromBufferAttribute(p),hi=b.max.y,lo=b.min.y,cut=[];
+ a.head.traverse(o=>{if(!o.isMesh||!/^Visage.source/i.test(o.name))return;const v=o.geometry.attributes.position,m=neck.matrixWorld.clone().invert().multiply(o.matrixWorld),q=zero();for(let i=0;i<v.count;i++){if(Math.abs(v.getY(i)+.34)>.00025)continue;q.fromBufferAttribute(v,i).applyMatrix4(m);if(Math.abs(q.y-hi)<.009)cut.push(q.clone());}});
+ if(cut.length<20)return {matched:0};
+ const rings=[];for(let i=0;i<p.count;i++){if(Math.abs(base[i*3+1]-hi)<.0002)rings.push(i);}
+ if(rings.length<8)return {matched:0};
+ const offsets=[],tmp=zero();let matched=0;
+ for(const i of rings){tmp.fromArray(base,i*3);let best=null,dist=.020**2;for(const q of cut){const d=(tmp.x-q.x)**2+(tmp.z-q.z)**2;if(d<dist){dist=d;best=q;}}const delta=best?best.clone().sub(tmp):zero();if(best){delta.y+=.0006;matched++;}offsets.push(delta);}
+ if(matched<rings.length*.6)return {matched:0};
+ // The 13 rings of the source bridge have identical angular sampling.
+ if(p.count%rings.length===0){const n=rings.length;for(let i=0;i<p.count;i++){const j=i*3,t=smooth(lo+(hi-lo)*.40,hi,base[j+1]),d=offsets[i%n];p.setXYZ(i,base[j]+t*d.x,base[j+1]+t*d.y,base[j+2]+t*d.z);}}else return {matched:0};
+ p.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingBox();geo.computeBoundingSphere();a.neckBase=p.array.slice();return {matched,total:rings.length};
+}
 export function initExpandedRig(a){
  const bones=a.bones,root=bones[0].parent,rest=bones.map(b=>b.position.clone()),head=bones[1],torso=bones[14];
  a.root.updateMatrixWorld(true);
@@ -148,7 +165,7 @@ export function clearDoubleFaceMorphs(a){
 // person's body. Keep clearance in the rest pose and smooth the displacement.
 export function prepareKimonoFit(body,garment){
  const p=body.geometry.attributes.position,g=garment.geometry.attributes.position,cell=.045,grid=new Map(),key=(x,y,z)=>x+','+y+','+z;
- for(let i=0;i<p.count;i++){const y=p.getY(i);if(y<.61||y>1.44)continue;const k=key(Math.floor(p.getX(i)/cell),Math.floor(y/cell),Math.floor(p.getZ(i)/cell));if(!grid.has(k))grid.set(k,[]);grid.get(k).push(i);}
+ for(let i=0;i<p.count;i+=3){const y=p.getY(i);if(y<.61||y>1.44)continue;const k=key(Math.floor(p.getX(i)/cell),Math.floor(y/cell),Math.floor(p.getZ(i)/cell));if(!grid.has(k))grid.set(k,[]);if(grid.get(k).length<64)grid.get(k).push(i);}
  const delta=new Float32Array(g.count*3);
  for(let i=0;i<g.count;i++){const x=g.getX(i),y=g.getY(i),z=g.getZ(i);if(y<.69||y>1.42)continue;let best=-1,d=.115**2;const gx=Math.floor(x/cell),gy=Math.floor(y/cell),gz=Math.floor(z/cell);
   for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++)for(let dz=-2;dz<=2;dz++)for(const j of grid.get(key(gx+dx,gy+dy,gz+dz))||[]){const t=(x-p.getX(j))**2+(y-p.getY(j))**2+(z-p.getZ(j))**2;if(t<d){d=t;best=j;}}
