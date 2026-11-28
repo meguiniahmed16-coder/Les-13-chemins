@@ -1,0 +1,26 @@
+name: Contrôler l'armature de l'atelier privé
+on:
+  push:
+    branches: [atelier-armature-makehuman-163]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Installer les dépendances
+        run: npm ci --no-audit --no-fund
+      - name: Contrôler le recalage et les mouvements
+        run: node --test membres/atelier-rig-makehuman.test.mjs membres/atelier-armature-v3.test.mjs membres/atelier-refonte-v4.test.mjs membres/atelier-face-fit.test.mjs
+      - name: Construire uniquement le bundle de l'atelier
+        run: npx --no-install esbuild membres/atelier-cinematique.js --bundle --format=esm --target=es2022 --platform=browser --outfile=/tmp/atelier-rig-preview.js

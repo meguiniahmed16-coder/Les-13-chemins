@@ -8,6 +8,7 @@ import {BODY_FIT,FACE_KEYS,initNeckFit,fitHead,deformNeck,alignImportedHead,face
 import {EXTRA_NAMES,EXTRA_EDGES,TOTAL_JOINTS,initExpandedRig,poseExpandedRig,facialPose,clearDoubleFaceMorphs} from './atelier-armature-v3.js';
 import {loadRefonte,installRefonte} from './atelier-refonte-v4.js';
 import {loadScan,installScan} from './atelier-kimono-source.js';
+import {captureActorRest,diagnosePrivateActor} from './atelier-rig-private-preview.js';
 let scanMode=new URLSearchParams(location.search).get('tenue')!=='ancienne';
 const REFONTE_BODY={headSize:1,headX:0,headY:0,headZ:0,headPitch:0,neckWidth:1,neckHeight:1,neckDepth:1,eyeAdvance:.012};
 const $=id=>document.getElementById(id), loader=new GLTFLoader(), canvas=$('canvas');
@@ -56,7 +57,7 @@ async function loadModel(id){if(actors[id])return actors[id];const conf=V22_ASSE
  const points=new T.BufferGeometry(),arr=new Float32Array(TOTAL_JOINTS*3);points.setAttribute('position',new T.BufferAttribute(arr,3));const dots=new T.Points(points,new T.PointsMaterial({color:0x158b70,size:.034,sizeAttenuation:true,depthTest:false}));dots.visible=false;dots.frustumCulled=false;dots.renderOrder=20;root.add(dots);
  const lines=new T.BufferGeometry(),edges=[[2,3],[3,4],[5,6],[6,7],[0,8],[8,9],[0,11],[11,12],...EXTRA_EDGES];lines.setAttribute('position',new T.BufferAttribute(new Float32Array(edges.length*6),3));const wire=new T.LineSegments(lines,new T.LineBasicMaterial({color:0x167f68,depthTest:false}));wire.visible=false;wire.frustumCulled=false;wire.renderOrder=19;root.add(wire);
  const a={id,root,model,inner,body,garment,portrait,head,neck,bones,bind,inv,solver,meshes,morphs,materials,dots,wire,edges,restScale:inner.scale.clone(),restHead:{position:head.position.clone(),scale:head.scale.clone(),q:head.quaternion.clone()},neckBase:neck.geometry.attributes.position.array.slice(),neckCenter:null,garmentBase:garment.geometry.attributes.position.array.slice(),garmentBox:garment.geometry.boundingBox||new T.Box3().setFromBufferAttribute(garment.geometry.attributes.position),imports:new Map(),headImport:null};
- a.neck.geometry.computeBoundingBox();a.neckCenter=a.neck.geometry.boundingBox.getCenter(new T.Vector3());a.body.geometry.computeBoundingBox();notice('Installation du cou reconstruit…');installRefonte(a,await loadRefonte(id,api));initNeckFit(a);initExpandedRig(a);notice('Chargement du kimono original…');try{installScan(a,await loadScan(id,api));}catch(e){console.error(e);a.scanError=String(e.message||e);}actors[id]=a;applyShape(a);applyFace(a);updatePose(a,0);await restoreImports(a);return a;
+ a.neck.geometry.computeBoundingBox();a.neckCenter=a.neck.geometry.boundingBox.getCenter(new T.Vector3());a.body.geometry.computeBoundingBox();notice('Installation du cou reconstruit…');installRefonte(a,await loadRefonte(id,api));initNeckFit(a);initExpandedRig(a);try{a.registrationRest=captureActorRest(a);}catch(e){a.registrationError=e.message;}notice('Chargement du kimono original…');try{installScan(a,await loadScan(id,api));}catch(e){console.error(e);a.scanError=String(e.message||e);}actors[id]=a;applyShape(a);applyFace(a);updatePose(a,0);await restoreImports(a);return a;
  }catch(e){delete actors[id];root.removeFromParent();throw e;}
 }
 function morph(mesh,key,value){const i=mesh.morphTargetDictionary?.[key];if(i!==undefined)mesh.morphTargetInfluences[i]=value;}
@@ -128,6 +129,16 @@ function openExternal(title,url){$('externalTitle').textContent=title;$('externa
 async function save(){try{state.notes=$('notes').value;const data=jsonCopy(state);localStorage.setItem('atelier-cinematique-recette-v1',JSON.stringify(data));await api('state',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(data)});$('saveStatus').textContent='Séance enregistrée dans l’espace auteur.';}catch(e){$('saveStatus').textContent='Sauvegarde serveur indisponible ; copie locale conservée. '+e.message;}}
 async function restore(){try{setState(await (await api('state')).json());for(const a of Object.values(actors)){for(const item of a.imports.values()){unbindImported(item);item.group.removeFromParent();}a.imports.clear();if(a.headImport){disposeObj(a.headImport);a.headImport=null;}await restoreImports(a);applyShape(a);applyFace(a);updatePose(a,0);}buildPanels();$('saveStatus').textContent='Séance restaurée.';}catch(e){$('saveStatus').textContent=e.message;}}
 function bindUI(){
+ $('diagnoseRig').onclick=async()=>{
+  const a=focusActor();if(!a||busy)return;busy=true;const button=$('diagnoseRig'),report=$('rigDiagnostic');button.disabled=true;
+  report.textContent='Analyse locale de '+(a.id==='f'?'Marianne':'Ahmed')+'…';
+  try{
+   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   const r=await diagnosePrivateActor(a);
+   report.textContent=(a.id==='f'?'Marianne':'Ahmed')+' : '+r.bones+' os · '+r.anchors+' repères · erreur maximale '+r.maxErrorMm.toFixed(1)+' mm · '+r.matched+'/'+r.total+' sommets ('+(r.coverage*100).toFixed(2)+' %). '+(r.ready?'Correspondances complètes ; contrôle visuel et retargeting encore nécessaires.':'Transfert refusé : correspondances incomplètes. Modèle original préservé.');
+  }catch(e){report.textContent='Diagnostic interrompu : '+e.message+'. Modèle original préservé.';}
+  finally{busy=false;button.disabled=false;}
+ };
  for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{document.querySelectorAll('[data-tab],.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('panel-'+b.dataset.tab).classList.add('active');};
  names.forEach((name,i)=>{const o=document.createElement('option');o.value=i;o.textContent=(i+1)+' · '+name;$('joint').append(o);});
  $('who').onchange=()=>selectActor($('who').value);$('focusActor').onchange=()=>{if(!actors[$('focusActor').value])return;focus=$('focusActor').value;selectedImport='';buildPanels();};$('room').onchange=()=>selectRoom($('room').value);$('joint').onchange=()=>{selectedJoint=Number($('joint').value);buildJoint();};$('zeroJoint').onclick=()=>{state.actors[focus].joints[selectedJoint]=[0,0,0,0,0,0];updatePose(focusActor(),phase);buildJoint();};$('zeroAll').onclick=()=>{state.actors[focus].joints={};updatePose(focusActor(),phase);buildJoint();};
