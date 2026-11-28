@@ -111,21 +111,29 @@ export async function prepareV22Pair({people,loader,assetURL,fetcher=fetch,onPro
    const config=V22_ASSETS[actor.id];
    if(!config)throw Error('Personnage V22 inconnu.');
    const packed=new Uint8Array(config.gzipBytes);
-   const count=Math.ceil(config.gzipBytes/4194304);let offset=0;
+   const count=Math.ceil(config.gzipBytes/4194304),jobs=[];let loaded=0;
    for(let part=0;part<count;part++){
     const size=Math.min(4194304,config.gzipBytes-part*4194304);
-    const pieces=Math.ceil(size/2097150);
-    for(let piece=0;piece<pieces;piece++){
+    for(let piece=0;piece<Math.ceil(size/2097150);piece++){
      const expected=Math.min(2097150,size-piece*2097150);
-     const key=config.model+'/'+String(part).padStart(3,'0')+'/'+piece;
-     const response=await fetcher(assetURL(key),{credentials:'same-origin',signal:AbortSignal.timeout(95000)});
-     if(!response.ok)throw Error('Fragment V22 non disponible : '+key);
-     const bytes=new Uint8Array(await response.arrayBuffer());
-     if(bytes.byteLength!==expected)throw Error('Fragment V22 incomplet : '+key);
-     packed.set(bytes,offset);offset+=bytes.length;onProgress(config.model,.85*offset/config.gzipBytes);
+     jobs.push({key:config.model+'/'+String(part).padStart(3,'0')+'/'+piece,expected,offset:part*4194304+piece*2097150});
     }
    }
-   if(offset!==packed.length)throw Error('Modèle V22 incomplet.');
+   // Fetch at most four pieces concurrently; each verified offset is independent.
+   for(let i=0;i<jobs.length;i+=4)await Promise.all(jobs.slice(i,i+4).map(async({key,expected,offset})=>{
+    let failure;
+    for(let attempt=0;attempt<2;attempt++){
+     try{
+      const response=await fetcher(assetURL(key),{credentials:'same-origin',signal:AbortSignal.timeout(65000)});
+      if(!response.ok)throw Error('Fragment V22 non disponible : '+key);
+      const bytes=new Uint8Array(await response.arrayBuffer());
+      if(bytes.byteLength!==expected)throw Error('Fragment V22 incomplet : '+key);
+      packed.set(bytes,offset);loaded+=bytes.length;onProgress(config.model,.85*loaded/config.gzipBytes);return;
+     }catch(e){failure=e;}
+    }
+    throw failure;
+   }));
+   if(loaded!==packed.length)throw Error('Modèle V22 incomplet.');
    const asset=await decodeV22(loader,packed.buffer,config);
    overlays.push([actor,makeV22Overlay(actor,asset,poses[actor.id].rest)]);
    onProgress(config.model,1);
