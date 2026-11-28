@@ -29,3 +29,29 @@ export function referenceArmature(reference,weights,{positions=reference.positio
  for(let i=0;i<groups.length;i++){const all=[...groups[i]].sort((a,b)=>b[1]-a[1]),full=all.reduce((n,x)=>n+x[1],0),top=all.slice(0,4),sum=top.reduce((n,x)=>n+x[1],0);if(!(sum>0))throw Error('Sommet sans influence : '+i);worstDiscarded=Math.max(worstDiscarded,1-sum/full);for(let k=0;k<top.length;k++){indices[i*4+k]=top[k][0];values[i*4+k]=top[k][1]/sum;}}
  return {root,skeleton,order,objects,tails,skinIndex:new T.Uint16BufferAttribute(indices,4),skinWeight:new T.Float32BufferAttribute(values,4),worstDiscarded,originY};
 }
+
+
+// Use the upstream body faces only. Joint marker cubes and garment proxies
+// remain in the source position array for anatomical anchor calculations,
+// but are not part of the rendered surface or the correspondence search.
+export function referenceSkin(reference,weights,surface,options={}){
+ const rig=referenceArmature(reference,weights,options);
+ if(surface.group!=='body'||surface.vertexCount!==reference.vertexCount||surface.sourceBlob!==reference.source.meshBlob||surface.indices.length%3||surface.indices.some(i=>!Number.isInteger(i)||i<0||i>=reference.vertexCount))throw Error('Surface anatomique incompatible');
+ const src=options.positions??reference.positions,used=Array.from(new Set(surface.indices)).sort((a,b)=>a-b),map=new Map(used.map((id,i)=>[id,i]));
+ const position=new Float32Array(used.length*3),joint=new Uint16Array(used.length*4),weight=new Float32Array(used.length*4);
+ for(let i=0;i<used.length;i++){const id=used[i];position.set([src[id*3]*.1,(src[id*3+1]-rig.originY)*.1,src[id*3+2]*.1],i*3);for(let j=0;j<4;j++){joint[i*4+j]=rig.skinIndex.getComponent(id,j);weight[i*4+j]=rig.skinWeight.getComponent(id,j);}}
+ const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(position,3));geo.setAttribute('skinIndex',new T.BufferAttribute(joint,4));geo.setAttribute('skinWeight',new T.BufferAttribute(weight,4));geo.setIndex(new T.BufferAttribute(Uint16Array.from(surface.indices,i=>map.get(i)),1));geo.computeVertexNormals();geo.computeBoundingBox();geo.computeBoundingSphere();
+ const mesh=new T.SkinnedMesh(geo,new T.MeshStandardMaterial({color:0xd7b49e,roughness:.87}));mesh.name='Corps et cou natifs MakeHuman';mesh.frustumCulled=false;rig.root.add(mesh);rig.root.updateMatrixWorld(true);mesh.bind(rig.skeleton,mesh.matrixWorld.clone());
+ return {...rig,mesh,sourceVertexIds:Uint32Array.from(used)};
+}
+
+// The cervical skin has the original mesh connectivity: no independent
+// cylindrical insert. This measures a section without moving its vertices.
+export function skinSection(geometry,height){
+ const p=geometry.attributes.position,index=geometry.index.array,adj=new Map();
+ const key=(a,b)=>a<b?a+':'+b:b+':'+a;
+ const link=(a,b)=>{if(!adj.has(a))adj.set(a,[]);adj.get(a).push(b);};
+ for(let i=0;i<index.length;i+=3){const hits=[];for(let k=0;k<3;k++){const a=index[i+k],b=index[i+(k+1)%3];if((p.getY(a)<height)!==(p.getY(b)<height))hits.push(key(a,b));}if(hits.length===2){link(hits[0],hits[1]);link(hits[1],hits[0]);}}
+ const seen=new Set(),components=[];for(const start of adj.keys()){if(seen.has(start))continue;const queue=[start];seen.add(start);let closed=true;for(let i=0;i<queue.length;i++){const n=adj.get(queue[i]);closed&&=n.length===2;for(const x of n)if(!seen.has(x)){seen.add(x);queue.push(x);}}components.push({edges:queue.length,closed});}
+ return components.sort((a,b)=>b.edges-a.edges);
+}
