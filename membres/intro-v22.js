@@ -51,6 +51,9 @@ export function makeV22Overlay(actor,asset,referenceRest){
  const matrix=new T.Matrix4();let previous=null,lastGesture={};
  body.name='Cinématique · '+(actor.id==='m'?'Ahmed':'Marianne')+' V22';
  body.visible=false;
+ // The supplied GLB already has its authored height (1.075 / 1.04).
+ // Compensate the existing actor root scale rather than scaling twice.
+ body.scale.set(1/actor.root.scale.x,1/actor.root.scale.y,1/actor.root.scale.z);
  // Attach alongside (not inside) the existing wardrobe so visibility switches
  // do not affect the camera, the original seat solver or the cast examples.
  actor.root.add(body);
@@ -71,16 +74,26 @@ export function makeV22Overlay(actor,asset,referenceRest){
    }
   }
   morph(garment,garmentWeights(current.sit,lastGesture));
-  // Keep the neutral hand shape: the authored wrist, elbow and arm motions
-  // already come from the same original driver. No user-operated finger controls.
-  for(const h of hands)for(const [n,k] of Object.entries(h.morphTargetDictionary))if(n.startsWith('Flexion_'))h.morphTargetInfluences[k]=0;
+  // Keep the source V21 finger animation, synchronized with the original
+  // cinematic pose driver. Never flatten the hands to zero flexion.
+  const clip=asset.animations?.find(a=>lastGesture&&current.sit>.5?/V21.*Assise/i.test(a.name):/V21.*Conversation/i.test(a.name));
+  const sample=clip?.tracks.find(t=>/Corps\.morphTargetInfluences$/.test(t.name));
+  const time=clip?.duration>0?((lastGesture.time||0)%clip.duration+clip.duration)%clip.duration:0;
+  const values=sample?.createInterpolant().evaluate(time);
+  const neutral={Pouce:.07,Index:.10,Majeur:.12,Annulaire:.14,Auriculaire:.16};
+  for(const h of hands)for(const [n,k] of Object.entries(h.morphTargetDictionary)){
+   const match=/^Flexion_(Pouce|Index|Majeur|Annulaire|Auriculaire)_([DG])$/.exec(n);
+   if(!match)continue;
+   const effort=clamp(lastGesture.poseGesture?.[match[2]==='D'?'right':'left']||0);
+   h.morphTargetInfluences[k]=clamp(values?.[k]??(neutral[match[1]]+.12*effort));
+  }
   body.updateMatrixWorld(true);
  }
  function speak(jaw,wide,blink){
   for(const o of speechMeshes)morph(o,speechWeights(jaw,wide,blink));
  }
  function dispose(){body.removeFromParent();baseBody.visible=true;body.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const mat of Array.isArray(o.material)?o.material:[o.material]){for(const value of Object.values(mat||{}))if(value?.isTexture)value.dispose();mat?.dispose();}}});}
- return {sync,speak,dispose,body};
+ return {sync,speak,dispose,body,headBone:bones[1],get active(){return body.visible;}};
 }
 // A pair is activated atomically. A partial/corrupt upload must not produce a
 // mixed cast or break the current introduction. The asset gate stays disabled
