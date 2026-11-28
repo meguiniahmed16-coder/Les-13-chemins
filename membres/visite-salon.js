@@ -105,7 +105,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)void resum
 window.addEventListener('pageshow',e=>{if(e.persisted)void resume();});
 function beginGuestEntry(){
  const query=new URLSearchParams(location.search);
- let done=false;try{done=sessionStorage.getItem('croisee-invite-introduction-originale-v35')==='done';}catch{}
+ let done=false;try{done=sessionStorage.getItem('croisee-invite-introduction-originale-v22')==='done';}catch{}
  if(done||query.get('intro')==='terminee'){introDone=true;check();return;}
  const goal=query.get('ouvrir');
  location.replace('/membres/intro-prive.html?salon=1&retour=invite&public=1'+(['inviter','appeler'].includes(goal)?'&ouvrir='+goal:''));
