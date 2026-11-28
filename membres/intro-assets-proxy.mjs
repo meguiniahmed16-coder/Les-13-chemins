@@ -2,7 +2,7 @@ const site='https://tectonique-des-ames.com';
 const target='https://treize-chemins-intro-prive.meguiniahmed16.workers.dev';
 export default async function handler(request){
  const url=new URL(request.url);
- const lab=/^\/api\/intro-private\/atelier-v22\/(state|manifest|model\/(?:ahmed|marianne)\/\d{3}\/[012])$/.exec(url.pathname);
+ const lab=/^\/api\/intro-private\/atelier-v22\/(state|manifest|model\/(?:ahmed|marianne)\/\d{3}\/[012]|refonte\/(?:ahmed|marianne))$/.exec(url.pathname);
  const put=lab?.[1]==='state'&&request.method==='PUT';
  if(url.origin!==site||(!put&&request.method!=='GET')||(!lab&&!/^\/api\/intro-private\/(white|dojo|ahmed|ahmedv3|ahmedfast)\/\d{3}$/.test(url.pathname)))return new Response(null,{status:403});
  if(put&&(request.headers.get('origin')!==site||Number(request.headers.get('content-length')||0)>65536))return new Response(null,{status:403});
