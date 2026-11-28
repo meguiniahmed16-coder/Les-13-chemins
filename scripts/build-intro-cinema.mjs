@@ -20,3 +20,5 @@ await copyFile(resolve(root,'membres/intro-cinema-bundle.js'),resolve(root,'memb
 console.log('Cinématique 3D privée construite : incarnations33 (croisee33).');
 
 await build({entryPoints:[resolve(root,'membres/atelier-cinematique.js')],outfile:resolve(root,'membres/atelier-cinematique-bundle.js'),bundle:true,minify:true,format:'esm',target:'es2022',platform:'browser',sourcemap:false,legalComments:'none',define:{'process.env.NODE_ENV':'"production"'}});
+
+await build({entryPoints:[resolve(root,'membres/atelier-163-viewer.js')],outfile:resolve(root,'membres/atelier-163-viewer-bundle.js'),bundle:true,minify:true,format:'esm',target:'es2022',platform:'browser',sourcemap:false,legalComments:'none',define:{'process.env.NODE_ENV':'"production"'}});
