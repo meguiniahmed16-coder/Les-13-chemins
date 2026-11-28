@@ -27,3 +27,11 @@ test('native cervical surface stays connected and follows the anatomical rig',as
  for(const [i,v] of before){const q=a.mesh.applyBoneTransform(i,new T.Vector3().fromBufferAttribute(p,i));assert.ok([q.x,q.y,q.z].every(Number.isFinite));after.push(q.distanceTo(v));}
  assert.ok(Math.max(...after)>.001);
 });
+
+import {projectSkinWeights,applyTransferredWeights} from './atelier-rig-transfer.js';
+test('transfer interpolates weights on the original triangle, rejects opposite normals and distant skin',()=>{
+ const source=new T.BufferGeometry();source.setAttribute('position',new T.Float32BufferAttribute([0,0,0,1,0,0,0,1,0],3));source.setAttribute('normal',new T.Float32BufferAttribute([0,0,1,0,0,1,0,0,1],3));source.setAttribute('skinIndex',new T.Uint16BufferAttribute([0,0,0,0,1,0,0,0,2,0,0,0],4));source.setAttribute('skinWeight',new T.Float32BufferAttribute([1,0,0,0,1,0,0,0,1,0,0,0],4));source.setIndex([0,1,2]);
+ const target=new T.BufferGeometry();target.setAttribute('position',new T.Float32BufferAttribute([.25,.25,.002,.25,.25,.002,.25,.25,2],3));target.setAttribute('normal',new T.Float32BufferAttribute([0,0,1,0,0,-1,0,0,1],3));
+ const result=projectSkinWeights(source,target);assert.deepEqual([...result.accepted],[1,0,0]);assert.ok(Math.abs(result.weights[0]-.5)<1e-6);assert.ok(Math.abs(result.weights[1]-.25)<1e-6);assert.ok(Math.abs(result.weights[2]-.25)<1e-6);assert.throws(()=>applyTransferredWeights(target,result));
+ const valid=new T.BufferGeometry();valid.setAttribute('position',new T.Float32BufferAttribute([.25,.25,.002],3));valid.setAttribute('normal',new T.Float32BufferAttribute([0,0,1],3));applyTransferredWeights(valid,projectSkinWeights(source,valid));assert.ok(valid.attributes.skinWeight);
+});
