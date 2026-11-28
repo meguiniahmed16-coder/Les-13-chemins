@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dressAhmed,createMarianne} from './intro-wardrobe.js';
-import {prepareV22Pair} from './intro-v22.js';
+import {prepareV22Pair,V22_ASSETS,V22_PUBLIC_ASSETS} from './intro-v22.js';
 import {INTRO_FILM,filmPosition,createFilmPlayback} from './intro-film.js';
 import {planSpeechBubble} from './intro-bubbles.js';
 import {dojoBlocking,dojoDirectedCamera,DOJO_DURATIONS} from './intro-dojo-director.js';
@@ -778,17 +778,14 @@ async function loadPeople(){
  if(!assetAhmed)assetAhmed=await loadAhmed();
  if(!assetMarianne){showBootStage('Assemblage du personnage de Marianne…');assetMarianne=await loadMarianne();}
  const duo=[assetAhmed,assetMarianne];downloadCache.clear();
- // Private first: the complete source anatomy must never be exposed via the guest worker.
- // Both verified models must be available before replacing either actor.
- if(!publicGuestMode&&!duo.every(p=>p.v22)){
+ // Guests receive only the separately masked, dressed copies.
+ if(new URLSearchParams(location.search).get('v22')!=='0'&&!duo.every(p=>p.v22)){
   try{
-   const overlays=await prepareV22Pair({people:duo,loader,assetURL:key=>'/api/intro-private/v22/'+key,
+   const overlays=await prepareV22Pair({people:duo,loader,configs:publicGuestMode?V22_PUBLIC_ASSETS:V22_ASSETS,
+    assetURL:key=>cinematicAsset('/api/intro-private/v22/'+key),
     onProgress:(model,value)=>showBootStage('Nouveaux personnages · '+(model==='ahmed'?'Ahmed':'Marianne')+' '+Math.round(value*100)+' %')});
-   if(!overlays&&new URLSearchParams(location.search).get('v22')==='1')throw Error('Les deux modèles V22 ne sont pas encore disponibles.');
-  }catch(error){
-   remember('Personnages V22',error.message||error);
-   if(new URLSearchParams(location.search).get('v22')==='1')throw error;
-  }
+   if(!overlays)throw Error('Les deux modèles V22 ne sont pas encore disponibles.');
+  }catch(error){remember('Personnages V22',error.message||error);throw error;}
  }
  people=duo;
 }
