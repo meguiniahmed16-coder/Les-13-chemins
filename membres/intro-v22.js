@@ -97,10 +97,23 @@ export async function prepareV22Pair({people,loader,assetURL,fetcher=fetch,onPro
   for(const actor of people){
    const config=V22_ASSETS[actor.id];
    if(!config)throw Error('Personnage V22 inconnu.');
-   const response=await fetcher(assetURL(config.model),{credentials:'same-origin',signal:AbortSignal.timeout(95000)});
-   if(!response.ok)throw Error('Modèle V22 non disponible : '+config.model);
-   const packed=await response.arrayBuffer();onProgress(config.model,.5);
-   const asset=await decodeV22(loader,packed,config);
+   const packed=new Uint8Array(config.gzipBytes);
+   const count=Math.ceil(config.gzipBytes/4194304);let offset=0;
+   for(let part=0;part<count;part++){
+    const size=Math.min(4194304,config.gzipBytes-part*4194304);
+    const pieces=Math.ceil(size/2097150);
+    for(let piece=0;piece<pieces;piece++){
+     const expected=Math.min(2097150,size-piece*2097150);
+     const key=config.model+'/'+String(part).padStart(3,'0')+'/'+piece;
+     const response=await fetcher(assetURL(key),{credentials:'same-origin',signal:AbortSignal.timeout(95000)});
+     if(!response.ok)throw Error('Fragment V22 non disponible : '+key);
+     const bytes=new Uint8Array(await response.arrayBuffer());
+     if(bytes.byteLength!==expected)throw Error('Fragment V22 incomplet : '+key);
+     packed.set(bytes,offset);offset+=bytes.length;onProgress(config.model,.85*offset/config.gzipBytes);
+    }
+   }
+   if(offset!==packed.length)throw Error('Modèle V22 incomplet.');
+   const asset=await decodeV22(loader,packed.buffer,config);
    overlays.push([actor,makeV22Overlay(actor,asset,poses[actor.id].rest)]);
    onProgress(config.model,1);
   }
