@@ -2,11 +2,11 @@ import * as T from 'three';
 
 // Build on the original ordered MakeHuman base, not on a scan with an unrelated topology.
 // The 163 bones and joint anchors are the upstream CC0 data, including helper vertices.
-export function referenceArmature(reference,weights,{positions=reference.positions,topology='makehuman-default-19158',maxInfluences=4}={}){
+export function referenceArmature(reference,weights,{positions=reference.positions,topology='makehuman-default-19158',maxInfluences=4,originY=positions.reduce((lo,v,i)=>i%3===1?Math.min(lo,v):lo,Infinity)}={}){
  if(topology!=='makehuman-default-19158'||reference.vertexCount!==19158||positions.length!==19158*3||Object.keys(reference.rig.bones).length!==163)throw Error('Topologie MakeHuman native requise. Un scan doit être remappé avant de recevoir ces poids.');
  if(maxInfluences!==4)throw Error('Le skinning GLB de cet atelier utilise quatre influences normalisées.');
  const {bones,joints,planes}=reference.rig,scale=.1;
- const originY=positions.reduce((lo,v,i)=>i%3===1?Math.min(lo,v):lo,Infinity);
+ if(!Number.isFinite(originY))throw Error('Origine verticale invalide');
  const p=idx=>new T.Vector3(positions[idx*3]*scale,(positions[idx*3+1]-originY)*scale,positions[idx*3+2]*scale);
  const anchors=new Map();
  for(const [name,ids] of Object.entries(joints)){if(!ids.length||ids.some(i=>!Number.isInteger(i)||i<0||i>=reference.vertexCount))throw Error('Repère anatomique invalide : '+name);const x=new T.Vector3();for(const id of ids)x.add(p(id));x.multiplyScalar(1/ids.length);if(![x.x,x.y,x.z].every(Number.isFinite))throw Error('Repère non fini');anchors.set(name,x);}
