@@ -2,7 +2,7 @@ const site='https://tectonique-des-ames.com';
 const target='https://treize-chemins-intro-prive.meguiniahmed16.workers.dev';
 export default async function handler(request){
  const url=new URL(request.url);
- if(url.origin!==site||request.method!=='GET'||!/^\/api\/intro-private\/(?:(white|dojo|ahmed|ahmedv3|ahmedfast)\/\d{3}|v22\/(?:manifest|(?:ahmed|marianne)\/\d{3}\/[012]))$/.test(url.pathname))return new Response(null,{status:403});
+ if(url.origin!==site||request.method!=='GET'||!/^\/api\/intro-private\/(white|dojo|ahmed|ahmedv3|ahmedfast)\/\d{3}$/.test(url.pathname))return new Response(null,{status:403});
  const cookie=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>/^__Host-am_site_admin=/.test(x)).join('; ');
  if(!cookie)return new Response(null,{status:401});
  try{
