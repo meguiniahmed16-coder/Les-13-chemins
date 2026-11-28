@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {applyRefonteNeck} from './atelier-refonte-v4.js';
 export const FACE_KEYS=['Ouvrir','SourireG','SourireD','Decouvrir','Plisser','PlisDuRire','Cligner','Rond','Pincer','RegardG','RegardD','RegardBas','RegardHaut'];
 export const BODY_FIT={f:{headSize:.94,headZ:-.024,neckWidth:.96,neckHeight:.90,neckDepth:.98},m:{headSize:1,headZ:0,neckWidth:1,neckHeight:1,neckDepth:1}};
 const sat=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -63,6 +64,7 @@ export function deformNeck(a,b){
  if(a.neckRings){
   const {n,rows,lower,upper}=a.neckRings,low=[],high=[],lc=new T.Vector3(),hc=new T.Vector3(),mid=new T.Vector3();
   for(let i=0;i<n;i++){const r=lower[i];a.body.getVertexPosition(r.nearest,pv);base.fromBufferAttribute(rest,r.nearest);const l=r.body.clone().add(pv.clone().sub(base)).applyMatrix4(fromBody);const h=upper[i].clone().applyMatrix4(a.neckDelta);low.push(l);high.push(h);if(i<n-1){lc.add(l);hc.add(h);}}
+  if(a.refonte){applyRefonteNeck(a,b,low,high);return;}
   lc.multiplyScalar(1/(n-1));hc.multiplyScalar(1/(n-1));
   for(let row=0;row<rows;row++){const t=row/(rows-1),e=Math.sin(Math.PI*t);mid.lerpVectors(lc,hc,t);for(let i=0;i<n;i++){const j=row*n+i;v.lerpVectors(low[i],high[i],t);const width=(b.neckWidth??1),depth=(b.neckDepth??1);v.x=mid.x+(v.x-mid.x)*(1+e*(width*.95-1));v.z=mid.z+(v.z-mid.z)*(1+e*(depth*.95-1));position.setXYZ(j,v.x,v.y,v.z);}}
   // A duplicated UV seam must share normals to avoid a vertical hard edge.
