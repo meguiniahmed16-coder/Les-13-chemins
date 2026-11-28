@@ -1,4 +1,4 @@
-import {models as rigModels,spec as rigSpec,CHUNK as rigChunk,digest as rigDigest} from './atelier-163-archive.mjs';
+import {models as rigModels,spec as rigSpec,CHUNK as rigChunk,digest as rigDigest,verified as rigVerified,hashes as rigHashes} from './atelier-163-archive.mjs';
 import {models as rigModels,CHUNK as rigChunk,spec as rigSpec,digest as rigDigest} from './atelier-163-archive.mjs';
 // Private original 3D assets, streamed from existing R2 storage to authenticated author only.
 // No public static asset and no separate login.
@@ -55,13 +55,13 @@ async function serveRig(request,env,id,part){
  const model=rigModels[id];if(!model)return new Response(null,{status:404,headers:noStore});
  if(part==='manifest'){
   if(request.method!=='GET')return new Response(null,{status:405,headers:noStore});
-  const present=await Promise.all(Array.from({length:Math.ceil(model.bytes/rigChunk)},async(_,i)=>{const p=rigSpec(id,i),o=await env.STUDIO.head(p.key);return !!o&&o.size===p.bytes&&!!o.customMetadata?.sha256;}));
+  const present=await Promise.all(Array.from({length:Math.ceil(model.bytes/rigChunk)},async(_,i)=>{const p=rigSpec(id,i),o=await env.STUDIO.head(p.key);return rigVerified(o,id,i);}));
   return Response.json({present,ready:present.every(Boolean)},{headers:noStore});
  }
  const p=rigSpec(id,Number(part));if(!p)return new Response(null,{status:404,headers:noStore});
  if(request.method==='GET'){
   const o=await env.STUDIO.get(p.key);
-  if(!o||o.size!==p.bytes)return new Response(null,{status:404,headers:noStore});
+  if(!rigVerified(o,id,Number(part)))return new Response(null,{status:404,headers:noStore});
   return new Response(o.body,{headers:{...noStore,'content-type':'application/octet-stream','content-length':String(o.size)}});
  }
  if(request.method!=='PUT'||request.headers.get('origin')!==origin||request.headers.get('content-type')!=='application/octet-stream')return new Response(null,{status:403,headers:noStore});
@@ -71,6 +71,8 @@ async function serveRig(request,env,id,part){
  try{for(;;){const {done,value}=await reader.read();if(done)break;if(off+value.byteLength>bytes.length){await reader.cancel();return new Response(null,{status:413,headers:noStore});}bytes.set(value,off);off+=value.byteLength;}}finally{reader.releaseLock();}
  if(off!==p.bytes)return new Response(null,{status:400,headers:noStore});
  const sha256=await rigDigest(bytes);
+ if(sha256!==rigHashes[id][Number(part)])return new Response(null,{status:422,headers:noStore});
+ if(rigVerified(await env.STUDIO.head(p.key),id,Number(part)))return Response.json({ok:true,sha256,alreadyPresent:true},{headers:noStore});
  await env.STUDIO.put(p.key,bytes,{httpMetadata:{contentType:'application/octet-stream'},customMetadata:{sha256}});
  return Response.json({ok:true,sha256},{headers:noStore});
 }
