@@ -5,6 +5,23 @@ export const V22_ASSETS=Object.freeze({
  m:{model:'ahmed',gzipBytes:33045109,gzipSHA:'6e3b8896f4531127b5a49bca6e64af56df97c3c9cf18b9898b10c76257076a43',glbBytes:71501212,glbSHA:'048c22f90b920fdede8a66f5ee2ed5ff162f2157b41d3c4e58e7779e622f6d4e'},
  f:{model:'marianne',gzipBytes:35943147,gzipSHA:'9e388e29f4f6fbb05fa4e262ad40936fbf4d60a0a27980775a85fbaa09facc11',glbBytes:75909292,glbSHA:'a7b46ad8ae0e84278bb4b83b3ad13f7410dd69c44980f9b2406c9fe32402a1db'}
 });
+// Public assets contain only the authored visible skin and clothed geometry.
+export const V22_PUBLIC_ASSETS=Object.freeze({
+ "m": {
+  "model": "ahmed",
+  "gzipBytes": 31638281,
+  "gzipSHA": "e48ec29d0247458cae11fe596a209de4367cbf51dae12448cc6b9a78df1f0cb6",
+  "glbBytes": 67435796,
+  "glbSHA": "c5485368859da4f560ceb5517ec1e1932475a3f7d333b98ce6db4aaa401cc65c"
+ },
+ "f": {
+  "model": "marianne",
+  "gzipBytes": 33460524,
+  "gzipSHA": "b581dde7916e730056faa3378a8360749a9d3d772fcb9fd6acdfcd626aa3f928",
+  "glbBytes": 70169320,
+  "glbSHA": "83dbdd7f9990a7a7ef0a20522bf549ab25b1927f7c8f4df25ec2676183454ad0"
+ }
+});
 export const JOINT_ORDER=['bassin','tete','brasd','avantbrasd','maind','brasg','avantbrasg','maing','cuissed','jambed','piedd','cuisseg','jambeg','piedg','thorax'];
 const normalized=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^v27/,'');
 const clamp=x=>Math.max(0,Math.min(1,Number.isFinite(x)?x:0));
@@ -98,7 +115,7 @@ export function makeV22Overlay(actor,asset,referenceRest){
 // A pair is activated atomically. A partial/corrupt upload must not produce a
 // mixed cast or break the current introduction. The asset gate stays disabled
 // until both models have been uploaded and verified in the hosting service.
-export async function prepareV22Pair({people,loader,assetURL,fetcher=fetch,onProgress=()=>{}}){
+export async function prepareV22Pair({people,loader,assetURL,configs=V22_ASSETS,fetcher=fetch,onProgress=()=>{}}){
  const manifestResponse=await fetcher(assetURL('manifest'),{cache:'no-store',signal:AbortSignal.timeout(15000)});
  if(!manifestResponse.ok)return null;
  const manifest=await manifestResponse.json();
@@ -108,7 +125,7 @@ export async function prepareV22Pair({people,loader,assetURL,fetcher=fetch,onPro
  const poses=await posesResponse.json(),overlays=[];
  try{
   for(const actor of people){
-   const config=V22_ASSETS[actor.id];
+   const config=configs[actor.id];
    if(!config)throw Error('Personnage V22 inconnu.');
    const packed=new Uint8Array(config.gzipBytes);
    const count=Math.ceil(config.gzipBytes/4194304),jobs=[];let loaded=0;
