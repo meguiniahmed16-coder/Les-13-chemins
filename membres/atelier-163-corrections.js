@@ -4,8 +4,8 @@ import * as T from 'three';
 // Never change a bone, original morph target or the full-body index.
 export async function prepareWardrobe(gltf){
  const p=gltf.parser,defs=p.json.meshes;
- const meshAt=index=>{let found=null;gltf.scene.traverse(o=>{if(!o.isMesh)return;const a=p.associations.get(o);if(a?.meshes===index)found=o;});return found;};
- const body=meshAt(0),cloth=meshAt(14),neck=meshAt(13),head=meshAt(12),jaw=meshAt(1);
+ const meshAt=async index=>{const nodeIndex=p.json.nodes.findIndex(n=>n.mesh===index);if(nodeIndex<0)throw Error('Maillage original introuvable : '+index);const node=await p.getDependency('node',nodeIndex);if(node.isMesh)return node;let found=null;node.traverse(o=>{if(!found&&o.isMesh)found=o;});return found;};
+ const [body,cloth,neck,head,jaw]=await Promise.all([0,14,13,12,1].map(meshAt));
  if(!body?.isSkinnedMesh||!cloth?.isSkinnedMesh||!neck?.isSkinnedMesh||!head||!jaw)throw Error('Structure du modèle original inattendue.');
  if(!body.geometry.index||defs[15]?.name!=='Corps V27 · peau visible'||defs[15].primitives[0].attributes.POSITION!==defs[0].primitives[0].attributes.POSITION||defs[16]?.name!=='Sous-couche textile blanche · pantalon')throw Error('Maillages anatomiques de référence incompatibles.');
  const full=body.geometry.index,covered=await p.getDependency('accessor',defs[15].primitives[0].indices);
@@ -17,9 +17,9 @@ export async function prepareWardrobe(gltf){
  if(!source?.geometry?.attributes?.skinIndex||!source.geometry.attributes.skinWeight||source.geometry.attributes.skinIndex.array.some(i=>i>=body.skeleton.bones.length))throw Error('Sous-couche textile incompatible.');
  const lining=new T.SkinnedMesh(source.geometry,source.material);lining.name='Sous-couche textile originale';lining.position.copy(body.position);lining.quaternion.copy(body.quaternion);lining.scale.copy(body.scale);
  body.parent.add(lining);lining.updateMatrixWorld(true);lining.bind(body.skeleton,body.bindMatrix);lining.bindMode=body.bindMode;lining.frustumCulled=false;lining.visible=false;
- const base=cloth.geometry.attributes.position.array.slice(),normal=cloth.geometry.attributes.normal.array.slice();
+ const base=cloth.geometry.attributes.position.array.slice(),normal=cloth.geometry.attributes.normal.array.slice(),direction=new T.Vector3();
  // Positive allowance is in metres and is applied to the rest mesh, not the skeleton.
- function ease(mm=3){const a=cloth.geometry.attributes.position;for(let i=0;i<a.count;i++){const j=i*3;const n=new T.Vector3(normal[j],normal[j+1],normal[j+2]).normalize();const v=mm*.001;a.setXYZ(i,base[j]+v*n.x,base[j+1]+v*n.y,base[j+2]+v*n.z);}a.needsUpdate=true;cloth.geometry.computeBoundingSphere();cloth.geometry.computeBoundingBox();}
+ function ease(mm=3){const a=cloth.geometry.attributes.position;for(let i=0;i<a.count;i++){const j=i*3;const n=direction.fromArray(normal,j).normalize();const v=mm*.001;a.setXYZ(i,base[j]+v*n.x,base[j+1]+v*n.y,base[j+2]+v*n.z);}a.needsUpdate=true;cloth.geometry.computeBoundingSphere();cloth.geometry.computeBoundingBox();}
  function setDressed(dressed){body.geometry.setIndex(dressed?covered:full);body.visible=true;cloth.visible=dressed;lining.visible=dressed;neck.visible=true;}
  return {body,cloth,lining,neck,head,jaw,full,covered,setDressed,ease};
 }
