@@ -77,7 +77,8 @@ export function initExpandedRig(a){
  for(const j of [10,13]){const p=rest[j].clone();p.y=.085;p.z-=.055;positions.push(p);}
  for(const j of [10,13]){const p=rest[j].clone();p.y=.035;p.z+=.063;positions.push(p);}
  const extra=positions.map((p,i)=>bone(root,EXTRA_NAMES[i],p));a.root.updateMatrixWorld(true);
- const restInverses=extra.map(b=>b.matrixWorld.clone().invert());
+ // V22 inverse-bind matrices use the flat rig's LOCAL rest coordinates, not the scaled scene world.
+ const restInverses=positions.map(p=>new T.Matrix4().makeTranslation(-p.x,-p.y,-p.z));
  // Actual hierarchy, retaining bind pose and original skin inverse matrices.
  torso.attach(extra[1]);extra[1].attach(extra[2]);extra[2].attach(head);a.root.updateMatrixWorld(true);
  const bodyMesh=a.body,garment=a.garment;
@@ -108,7 +109,7 @@ function rotateLegacy(a,ids,p,v){if(!v||v.every(x=>x===0))return;const m=pivotTr
 export function poseExpandedRig(a,joints){
  const r=a.expanded;if(!r)return;let d=deltaMatrices(a);const p=r.positions,extra=r.extra;
  const driver=(pos,i,j,t)=>blend(d[i],d[j],t).multiply(new T.Matrix4().makeTranslation(pos.x,pos.y,pos.z));
- let lumbar=driver(p[0],0,14,.48);rotateLegacy(a,[14,1,2,3,4,5,6,7],lumbar.getPosition?lumbar.getPosition(zero()):zero().setFromMatrixPosition(lumbar),joints[15]);setMat(extra[0],pivotTransform(zero().setFromMatrixPosition(lumbar),joints[15]).multiply(lumbar));
+ let lumbar=driver(p[0],0,14,.48);rotateLegacy(a,[14,1,2,3,4,5,6,7],zero().setFromMatrixPosition(lumbar),joints[15]);setMat(extra[0],pivotTransform(zero().setFromMatrixPosition(lumbar),joints[15]).multiply(lumbar));
  d=deltaMatrices(a);
  for(const [k,base,arm] of [[3,2,[2,3,4]],[4,5,[5,6,7]]]){const m=driver(p[k],14,base,.5),pivot=zero().setFromMatrixPosition(m);rotateLegacy(a,arm,pivot,joints[15+k]);setMat(extra[k],pivotTransform(pivot,joints[15+k]).multiply(m));}
  d=deltaMatrices(a);
