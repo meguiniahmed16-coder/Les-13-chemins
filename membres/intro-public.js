@@ -1,9 +1,9 @@
 // Only the guest entry can enter the public cinematic mode. The same authored scene and dressed avatar are used.
-const guestEntryKey='croisee-invite-introduction-originale-v22';
+const guestEntryKey='croisee-invite-introduction-originale-v35';
 const publicAssetOrigin='https://treize-chemins-intro-public.meguiniahmed16.workers.dev';
 export function isGuestCinema(search){const q=new URLSearchParams(search);return q.get('salon')==='1'&&q.get('retour')==='invite'&&q.get('public')==='1';}
 export function publicCinemaAsset(url){
- if(!/^\/api\/intro-private\/(?:(ahmedfast|ahmedv3)\/\d{3}|v22\/(?:manifest|(?:ahmed|marianne)\/\d{3}\/[012]))$/.test(url))throw Error('Ressource de cinématique non publique.');
+ if(!/^\/api\/intro-private\/(ahmedfast|ahmedv3)\/\d{3}$/.test(url))throw Error('Ressource de cinématique non publique.');
  return publicAssetOrigin+url.replace('/api/intro-private/','/api/intro-public/');
 }
 export function guestReturn(search,shortGuide=false){
