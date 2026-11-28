@@ -67,3 +67,28 @@ test('V22 motion follows hierarchical MakeHuman joints without cumulative drift'
  for(const r of baseline){assert.ok(r.b.scale.distanceTo(r.s)<1e-6);if(r.b.name!=='root')assert.ok(r.b.position.distanceTo(r.p)<1e-6);}
  retarget.reset();for(const r of baseline)same(r.b.quaternion,r.q);
 });
+
+import {referenceLandmarks,fitReferenceLandmarks,prepareRegisteredBody} from './atelier-rig-registration.js';
+test('anatomical registration fits real MakeHuman markers without altering the reference',async()=>{
+ const [ref,w,surface]=await Promise.all([read('makehuman-default.json'),read('makehuman-default-weights.json'),read('makehuman-default-surface.json')]);
+ const {points}=referenceLandmarks(ref,V22_TO_MAKEHUMAN);
+ const baseline=ref.positions.slice();
+ const transform=p=>new T.Vector3(p.x*1.10+.03,p.y*.94+.025,p.z*1.08-.015);
+ const desired=new Map([...points].map(([k,p])=>[k,transform(p)]));
+ const fit=fitReferenceLandmarks(ref,desired);
+ assert.ok(fit.maxError<1e-5);assert.ok(fit.minJacobian>.9);assert.equal(fit.originY,0);
+ const rig=referenceSkin(ref,w,surface,{positions:fit.positions,originY:fit.originY});
+ for(const [k,p] of desired)assert.ok(rig.objects.get(k).getWorldPosition(new T.Vector3()).distanceTo(p)<1e-5);
+ assert.deepEqual(ref.positions,baseline);
+ const reversed=new Map([...desired].map(([k,p])=>[k,new T.Vector3(-p.x,p.y,p.z)]));
+ assert.throws(()=>fitReferenceLandmarks(ref,reversed),/Latéralité/);
+ const collapse=new Map([...desired].map(([k,p])=>[k,new T.Vector3(p.x,p.y,0)]));
+ assert.throws(()=>fitReferenceLandmarks(ref,collapse),/replié|écrasé/);
+ // A deliberately distant target cannot receive weights or overwrite its source.
+ const distant=new T.BufferGeometry();
+ distant.setAttribute('position',new T.Float32BufferAttribute([10,10,10],3));
+ distant.setAttribute('normal',new T.Float32BufferAttribute([0,0,1],3));
+ const result=prepareRegisteredBody(ref,w,surface,desired,distant);
+ assert.equal(result.ready,false);assert.equal(result.geometry,null);assert.equal(result.transfer.matched,0);
+ assert.equal(distant.attributes.skinWeight,undefined);
+});
