@@ -40,7 +40,19 @@ export function initNeckFit(a){
  // Use finite rest coordinates only; never use the morph-expanded bounds.
  const {box,boundary}=restBodyBoundary(pos);a.bodyRestBox=box;
  const records=[];for(let i=0;i<base.length;i+=3){const v=new T.Vector3().fromArray(base,i);if(v.y>b.max.y-.004)top.push(v);p.copy(v).applyMatrix4(a.neckRestToBody);let nearest=-1,dist=Infinity;for(const k of boundary){const d=(p.x-pos.getX(k))**2+(p.y-pos.getY(k))**2+(p.z-pos.getZ(k))**2;if(d<dist){dist=d;nearest=k;}}records.push({source:v,body:p.clone(),nearest,t:smooth((v.y-b.min.y)/Math.max(.0001,b.max.y-b.min.y))});}
- a.neckRecords=records;a.neckAnchor=top.length?top.reduce((v,w)=>v.add(w),new T.Vector3()).multiplyScalar(1/top.length):b.getCenter(new T.Vector3());a.neckAnchor.y=b.max.y;a.neckDelta=new T.Matrix4();
+ a.neckRecords=records;
+ // Both V22 bridges are 13 ordered rings of 193 samples (duplicated seam
+ // endpoint). Retain the original upper contour: the source head was cut
+ // to this contour already. Interpolate matching samples, not unrelated
+ // closest vertices at every height.
+ a.neckRings=null;
+ const n=193,rows=base.length/(3*n);
+ if(Number.isInteger(rows)&&rows>=3&&Math.abs(base[1]-b.min.y)<.0001&&Math.abs(base[(rows-1)*n*3+1]-b.max.y)<.0001){
+  const lower=[],upper=[];
+  for(let i=0;i<n;i++){const bottom=records[i],p=bottom.body.clone();let nearest=-1,dist=Infinity;for(const k of boundary){const d=(p.x-pos.getX(k))**2+(p.y-pos.getY(k))**2+(p.z-pos.getZ(k))**2;if(d<dist){dist=d;nearest=k;}}lower.push({body:p,nearest});upper.push(records[(rows-1)*n+i].source.clone());}
+  a.neckRings={n,rows,lower,upper};
+ }
+ a.neckAnchor=top.length?top.reduce((v,w)=>v.add(w),new T.Vector3()).multiplyScalar(1/top.length):b.getCenter(new T.Vector3());a.neckAnchor.y=b.max.y;a.neckDelta=new T.Matrix4();
 }
 export function fitHead(a,b){
  a.neckDelta.copy(headCorrection(a,b));const m=a.neckDelta.clone().multiply(a.restHeadMatrix);m.decompose(a.head.position,a.head.quaternion,a.head.scale);a.head.updateMatrix();
@@ -48,6 +60,16 @@ export function fitHead(a,b){
 export function deformNeck(a,b){
  const geo=a.neck.geometry,position=geo.attributes.position;const fromBody=a.neck.matrixWorld.clone().invert().multiply(a.body.matrixWorld);
  const rest=a.body.geometry.attributes.position,cache=new Map(),lo=new T.Vector3(),hi=new T.Vector3(),v=new T.Vector3(),diff=new T.Vector3(),pv=new T.Vector3(),base=new T.Vector3(),center=a.neckRestBox.getCenter(new T.Vector3());
+ if(a.neckRings){
+  const {n,rows,lower,upper}=a.neckRings,low=[],high=[],lc=new T.Vector3(),hc=new T.Vector3(),mid=new T.Vector3();
+  for(let i=0;i<n;i++){const r=lower[i];a.body.getVertexPosition(r.nearest,pv);base.fromBufferAttribute(rest,r.nearest);const l=r.body.clone().add(pv.clone().sub(base)).applyMatrix4(fromBody);const h=upper[i].clone().applyMatrix4(a.neckDelta);low.push(l);high.push(h);if(i<n-1){lc.add(l);hc.add(h);}}
+  lc.multiplyScalar(1/(n-1));hc.multiplyScalar(1/(n-1));
+  for(let row=0;row<rows;row++){const t=row/(rows-1),e=Math.sin(Math.PI*t);mid.lerpVectors(lc,hc,t);for(let i=0;i<n;i++){const j=row*n+i;v.lerpVectors(low[i],high[i],t);const width=(b.neckWidth??1),depth=(b.neckDepth??1);v.x=mid.x+(v.x-mid.x)*(1+e*(width*.95-1));v.z=mid.z+(v.z-mid.z)*(1+e*(depth*.95-1));position.setXYZ(j,v.x,v.y,v.z);}}
+  // A duplicated UV seam must share normals to avoid a vertical hard edge.
+  position.needsUpdate=true;geo.computeVertexNormals();const normals=geo.attributes.normal;
+  for(let row=0;row<rows;row++){const i=row*n,j=i+n-1;v.fromBufferAttribute(normals,i).add(pv.fromBufferAttribute(normals,j)).normalize();normals.setXYZ(i,v.x,v.y,v.z);normals.setXYZ(j,v.x,v.y,v.z);}
+  normals.needsUpdate=true;geo.computeBoundingBox();geo.computeBoundingSphere();return;
+ }
  for(let i=0;i<a.neckRecords.length;i++){const r=a.neckRecords[i];if(!cache.has(r.nearest)){a.body.getVertexPosition(r.nearest,pv);base.fromBufferAttribute(rest,r.nearest);cache.set(r.nearest,pv.clone().sub(base));}diff.copy(cache.get(r.nearest));lo.copy(r.body).add(diff).applyMatrix4(fromBody);hi.copy(r.source).applyMatrix4(a.neckDelta);v.lerpVectors(lo,hi,r.t);
   const envelope=Math.sin(Math.PI*r.t);v.x+=(r.source.x-center.x)*(b.neckWidth-1)*envelope;v.z+=(r.source.z-center.z)*((b.neckDepth??1)-1)*envelope;position.setXYZ(i,v.x,v.y,v.z);
  }

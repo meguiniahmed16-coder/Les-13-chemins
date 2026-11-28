@@ -105,15 +105,14 @@ export function initExpandedRig(a){
  if(!lowerTeeth||!upperTeeth)throw Error('Arcades dentaires séparées introuvables');
  const jawParts=[lowerTeeth,tongue].filter(Boolean);for(const o of jawParts)jaw.attach(o);
  const eyeList=[],lidList=[],faceBones=[jaw];
- const whites=new T.MeshStandardMaterial({color:0xece7df,roughness:.38,metalness:0});
  for(const side of ['D','G']){
   const eye=find(a.head,new RegExp('Globe.et.iris.'+side+'$','i')),lid=find(a.head,new RegExp('Paupi.res.'+side+'$','i'));if(!eye||!lid)throw Error('Composant oculaire introuvable '+side);
   const b=bounds(eye),s=b.getSize(zero()),c=b.getCenter(zero());c.z=b.max.z-s.x*.44;
   const eb=bone(a.head,'Œil '+side,c);a.root.updateMatrixWorld(true);eb.attach(eye);
-  // A complete high-resolution sclera behind the textured iris shell.
-  const sclera=new T.Mesh(new T.SphereGeometry(1,40,28),whites);sclera.name='Sclère '+side;sclera.scale.set(s.x*.51,s.y*.53,s.x*.43);sclera.position.z=-.002;eb.add(sclera);a.meshes.push(sclera);
+  // Keep the original textured ocular surface. The synthetic full sphere
+  // occluded the iris, especially from the front. Never overlay another globe.
   const up=bone(a.head,'Paupière supérieure '+side,c),down=bone(a.head,'Paupière inférieure '+side,c);a.root.updateMatrixWorld(true);
-  const lidMesh=rigLid(a,lid,up,down,c);eyeList.push({bone:eb,rest:c.clone(),mesh:eye,sclera});lidList.push({upper:up,lower:down,rest:c.clone(),mesh:lidMesh});
+  const lidMesh=rigLid(a,lid,up,down,c);eyeList.push({bone:eb,rest:c.clone(),mesh:eye});lidList.push({upper:up,lower:down,rest:c.clone(),mesh:lidMesh});
  }
  faceBones.push(...eyeList.map(x=>x.bone),...lidList.flatMap(x=>[x.upper,x.lower]));
  a.expanded={root,positions,extra,rest,all:[...bones,...extra,...faceBones],jaw,jawParts,eyeList,lidList};
@@ -148,7 +147,7 @@ export function facialPose(a,values,settings,joints){
  values.Ouvrir=open;
  const jaw=r.jaw;jaw.position.set(...src.pivot);jaw.position.add(point(manualJaw[3]||0,manualJaw[4]||0,manualJaw[5]||0));jaw.rotation.set(open*src.angle,clamp(manualJaw[1],-8,8)*rad,clamp(manualJaw[2],-8,8)*rad);jaw.updateMatrix();
  for(let i=0;i<2;i++){
-  const e=r.eyeList[i],l=r.lidList[i],v=joints[25+i]||[],advance=settings.eyeAdvance??.026;
+  const e=r.eyeList[i],l=r.lidList[i],v=joints[25+i]||[],advance=clamp(settings.eyeAdvance??.012,-.015,.025);
   e.bone.position.copy(e.rest).add(point(v[3]||0,v[4]||0,advance+(v[5]||0)));e.bone.rotation.set(((values.RegardBas||0)-(values.RegardHaut||0))*.24+(v[0]||0)*rad,((values.RegardG||0)-(values.RegardD||0))*.28+(v[1]||0)*rad,(v[2]||0)*rad);e.bone.updateMatrix();
   const u=joints[27+2*i]||[],b=joints[28+2*i]||[],blink=clamp(values.Cligner||0),squint=clamp(values.Plisser||0);
   l.upper.position.copy(l.rest).add(point(u[3]||0,u[4]||0,u[5]||0));l.lower.position.copy(l.rest).add(point(b[3]||0,b[4]||0,b[5]||0));
