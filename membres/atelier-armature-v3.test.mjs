@@ -32,7 +32,7 @@ test('lower dental arch follows the actual jaw hinge; upper arch stays fixed and
  facialPose(a,values,{eyeAdvance:.026},{});lower.morphTargetInfluences[0]=values.Ouvrir;clearDoubleFaceMorphs(a);a.root.updateMatrixWorld(true);
  near(a.expanded.jaw.rotation.x,JAW.f.angle*.78);assert.equal(lower.parent,a.expanded.jaw);assert.equal(lower.morphTargetInfluences[0],0);assert.ok(lower.localToWorld(v(0,-.19,.17)).distanceTo(before)>.001);near(upper.localToWorld(v(0,-.14,.17)).distanceTo(u),0);
  for(const l of a.expanded.lidList){assert.equal(l.mesh.isSkinnedMesh,true);assert.deepEqual(l.mesh.skeleton.bones,[l.upper,l.lower]);}
- const eye=a.expanded.eyeList[0];near(eye.bone.position.z-eye.rest.z,.026);assert.equal(eye.sclera.parent,eye.bone);
+ const eye=a.expanded.eyeList[0];near(eye.bone.position.z-eye.rest.z,.025);assert.equal(eye.mesh.parent,eye.bone);assert.equal(eye.bone.children.length,1,'No synthetic sphere may cover the original iris');
  facialPose(a,{Cligner:1},{eyeAdvance:.026},{});assert.ok(a.expanded.lidList[0].upper.rotation.x>0);assert.ok(a.expanded.lidList[0].lower.rotation.x<0);
 });
 test('local cloth fit reduces excess gap but preserves rest clearance',()=>{
