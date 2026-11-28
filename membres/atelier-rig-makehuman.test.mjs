@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';
-import {referenceArmature} from './atelier-rig-makehuman.js';
+import {referenceArmature,referenceSkin,skinSection} from './atelier-rig-makehuman.js';
 const read=async name=>JSON.parse(await readFile(new URL('./rig-reference/'+name,import.meta.url),'utf8'));
 test('assemble the 163 actual MakeHuman bones and native vertex weights',async()=>{
  const [ref,weights]=await Promise.all([read('makehuman-default.json'),read('makehuman-default-weights.json')]);
@@ -13,4 +13,17 @@ test('assemble the 163 actual MakeHuman bones and native vertex weights',async()
  for(let i=0;i<a.skeleton.bones.length;i++){const bone=a.skeleton.bones[i];assert.ok(bone.matrixWorld.elements.every(Number.isFinite));const identity=bone.matrixWorld.clone().multiply(a.skeleton.boneInverses[i]);assert.ok(identity.elements.every((v,j)=>Math.abs(v-(j%5===0?1:0))<1e-5));}
  const tip=a.objects.get('finger2-3.L'),before=tip.getWorldPosition(new T.Vector3());a.objects.get('finger2-1.L').rotateX(.35);a.root.updateMatrixWorld(true);assert.ok(tip.getWorldPosition(new T.Vector3()).distanceTo(before)>1e-5);
  assert.throws(()=>referenceArmature(ref,weights,{positions:new Float32Array(100998*3),topology:'scan-importe'}));
+});
+
+test('native cervical surface stays connected and follows the anatomical rig',async()=>{
+ const [ref,w,surface]=await Promise.all([read('makehuman-default.json'),read('makehuman-default-weights.json'),read('makehuman-default-surface.json')]);
+ const a=referenceSkin(ref,w,surface);const geo=a.mesh.geometry;
+ assert.equal(geo.index.count,26756*3);assert.equal(geo.attributes.position.count,13380);assert.equal(a.mesh.skeleton,a.skeleton);
+ for(const y of [1.42,1.44,1.46]){const cut=skinSection(geo,y);assert.ok(cut.length>0);assert.ok(cut.every(c=>c.closed));}
+ const before=[],after=[],p=geo.attributes.position;
+ for(let i=0;i<p.count;i++){if(p.getY(i)>1.45&&p.getY(i)<1.47){const v=new T.Vector3().fromBufferAttribute(p,i);before.push([i,a.mesh.applyBoneTransform(i,v.clone())]);}}
+ assert.ok(before.length>30);
+ a.objects.get('neck02').rotateX(.18);a.objects.get('neck03').rotateZ(.10);a.root.updateMatrixWorld(true);
+ for(const [i,v] of before){const q=a.mesh.applyBoneTransform(i,new T.Vector3().fromBufferAttribute(p,i));assert.ok([q.x,q.y,q.z].every(Number.isFinite));after.push(q.distanceTo(v));}
+ assert.ok(Math.max(...after)>.001);
 });
