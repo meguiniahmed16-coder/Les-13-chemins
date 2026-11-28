@@ -8,6 +8,9 @@ test('guest mode cannot unlock the author cinema or a different private asset',(
  for(const q of ['?salon=1','?public=1','?salon=1&retour=ahmed&public=1'])assert.equal(isGuestCinema(q),false);
  assert.match(publicCinemaAsset('/api/intro-private/ahmedfast/003'),/intro-public\/ahmedfast\/003$/);
  assert.throws(()=>publicCinemaAsset('/api/intro-private/white/000'));
+ assert.match(publicCinemaAsset('/api/intro-private/v22/manifest'),/intro-public\/v22\/manifest$/);
+ assert.match(publicCinemaAsset('/api/intro-private/v22/marianne/007/2'),/intro-public\/v22\/marianne\/007\/2$/);
+ for(const path of ['v22/ahmed/000/3','v22/white/000/0','v22/ahmed/../private','v22/ahmed/000/0?private=1'])assert.throws(()=>publicCinemaAsset('/api/intro-private/'+path));
  assert.equal(guestReturn('?ouvrir=appeler',true),'/salon-invite.html?intro=terminee&ouvrir=appeler&guide=1');
 });
 test('the home guest path uses the same complete film, not the former tour',()=>{
