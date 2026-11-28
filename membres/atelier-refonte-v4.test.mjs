@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {installRefonte,applyRefonteNeck} from './atelier-refonte-v4.js';
+import {installRefonte,applyRefonteNeck,applySkinNormals} from './atelier-refonte-v4.js';
 const near=(a,b,e=1e-6)=>assert.ok(Math.abs(a-b)<e,a+' vs '+b);
 function fixture(){
  const n=193,rows=33,position=[],normal=[],color=[];
@@ -18,4 +18,12 @@ test('reconstruction uses the measured short mesh and original head with an inde
  a.neckDelta.makeTranslation(0,-.01,.003);for(const p of high)p.applyMatrix4(a.neckDelta);applyRefonteNeck(a,{neckWidth:1,neckDepth:1},low,high);const p=a.neck.geometry.attributes.position;
  for(let i=0;i<r.n;i++){near(p.getY(i),low[i].y);near(p.getY((r.rows-1)*r.n+i),high[i].y);near(p.getZ((r.rows-1)*r.n+i),high[i].z);}
  for(let row=0;row<r.rows;row++){near(p.getX(row*r.n),p.getX(row*r.n+r.n-1));near(p.getY(row*r.n),p.getY(row*r.n+r.n-1));near(p.getZ(row*r.n),p.getZ(row*r.n+r.n-1));}
+});
+
+test('shared seam normals patch the real head and body meshes without changing other vertices',()=>{
+ const mesh=n=>new T.Mesh(new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute(new Float32Array(n*3),3)).setAttribute('normal',new T.Float32BufferAttribute(Array.from({length:n*3},(_,i)=>i%3===1?1:0),3)));
+ const body=mesh(3),head=new T.Group(),skin=mesh(4);skin.name='Visage_source';head.add(skin);
+ applySkinNormals({body,head},[{count:3,indices:new Uint32Array([1]),normals:new Float32Array([0,0,1])},{count:4,indices:new Uint32Array([2]),normals:new Float32Array([1,0,0])}]);
+ near(body.geometry.attributes.normal.getZ(1),1);near(body.geometry.attributes.normal.getY(0),1);near(skin.geometry.attributes.normal.getX(2),1);
+ assert.throws(()=>applySkinNormals({body,head},[{count:5,indices:new Uint32Array([0]),normals:new Float32Array([1,0,0])}]));
 });
