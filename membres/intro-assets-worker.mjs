@@ -23,6 +23,10 @@ async function serveAtelier(request,env,match){
   return Response.json({ok:true},{headers:noStore});
  }
  if(request.method!=='GET')return new Response(null,{status:405,headers:noStore});
+ if(match[1].startsWith('kimono-source/')){
+  const model=match[8],sizes={marianne:213710,ahmed:217452};if(!sizes[model])return new Response(null,{status:404,headers:noStore});
+  const o=await env.STUDIO.get('kimono-source/'+model+'.bin.gz');if(!o||o.size!==sizes[model])return new Response(null,{status:503,headers:noStore});return new Response(o.body,{headers:{...noStore,'content-type':'application/octet-stream','content-length':String(o.size)}});
+ }
  if(match[1].startsWith('refonte-v6/')){
   const model=match[7],sizes={marianne:494447,ahmed:545710};if(!sizes[model])return new Response(null,{status:404,headers:noStore});
   const o=await env.STUDIO.get('atelier-v6-prive/'+model+'.bin.gz');if(!o||o.size!==sizes[model])return new Response(null,{status:503,headers:noStore});return new Response(o.body,{headers:{...noStore,'content-type':'application/octet-stream','content-length':String(o.size)}});
@@ -47,7 +51,7 @@ async function serveAtelier(request,env,match){
 const noStore={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 export default {async fetch(request,env){
  const u=new URL(request.url);
- const lab=/^\/api\/intro-private\/atelier-v22\/(state|manifest|model\/(ahmed|marianne)\/(\d{3})\/([012])|refonte\/(ahmed|marianne)|refonte-v5\/(ahmed|marianne)|refonte-v6\/(ahmed|marianne))$/.exec(u.pathname);
+ const lab=/^\/api\/intro-private\/atelier-v22\/(state|manifest|model\/(ahmed|marianne)\/(\d{3})\/([012])|refonte\/(ahmed|marianne)|refonte-v5\/(ahmed|marianne)|refonte-v6\/(ahmed|marianne)|kimono-source\/(ahmed|marianne))$/.exec(u.pathname);
  if(request.method!=='GET'&&!(lab?.[1]==='state'&&request.method==='PUT'))return new Response(null,{status:405});
  const match=u.pathname.match(/^\/api\/intro-private\/(white|dojo|ahmed|ahmedv3|ahmedfast)\/(\d{3})$/);
  if(!match&&!lab)return new Response(null,{status:404});
