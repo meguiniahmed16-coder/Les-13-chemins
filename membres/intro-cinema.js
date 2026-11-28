@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dressAhmed,createMarianne} from './intro-wardrobe.js';
+import {prepareV22Pair} from './intro-v22.js';
 import {INTRO_FILM,filmPosition,createFilmPlayback} from './intro-film.js';
 import {planSpeechBubble} from './intro-bubbles.js';
 import {dojoBlocking,dojoDirectedCamera,DOJO_DURATIONS} from './intro-dojo-director.js';
@@ -776,7 +777,20 @@ async function loadPeople(){
  // Do not inflate two large 3D models at the same time on a phone. Retain each successful stage for retry.
  if(!assetAhmed)assetAhmed=await loadAhmed();
  if(!assetMarianne){showBootStage('Assemblage du personnage de Marianne…');assetMarianne=await loadMarianne();}
- people=[assetAhmed,assetMarianne];downloadCache.clear();
+ const duo=[assetAhmed,assetMarianne];downloadCache.clear();
+ // Private first: the complete source anatomy must never be exposed via the guest worker.
+ // Both verified models must be available before replacing either actor.
+ if(!publicGuestMode&&!duo.every(p=>p.v22)){
+  try{
+   const overlays=await prepareV22Pair({people:duo,loader,assetURL:key=>'/api/intro-private/v22/'+key,
+    onProgress:(model,value)=>showBootStage('Nouveaux personnages · '+(model==='ahmed'?'Ahmed':'Marianne')+' '+Math.round(value*100)+' %')});
+   if(!overlays&&new URLSearchParams(location.search).get('v22')==='1')throw Error('Les deux modèles V22 ne sont pas encore disponibles.');
+  }catch(error){
+   remember('Personnages V22',error.message||error);
+   if(new URLSearchParams(location.search).get('v22')==='1')throw error;
+  }
+ }
+ people=duo;
 }
 
 let seatsReady=false;
@@ -1099,7 +1113,7 @@ function speakCinematicCue(id,text){
  if(!cinematicVoiceEnabled||document.hidden||!['m','f'].includes(id)||!text)return;
  void cinematicVoices.speak(id,text);
 }
-function stopSpeech(){stopCinematicVoice();speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people)p.speak?.(0,0,0);}
+function stopSpeech(){stopCinematicVoice();speech=null;currentSpeaker=null;bubbleLayout=null;bubble.hidden=true;bubble.style.visibility='hidden';bubble.classList.remove('narration');bubble.replaceChildren();for(const p of people){p.speak?.(0,0,0);p.v22?.speak(0,0,0);}}
 function setCue(id,text,offset=0){
  stopSpeech();if(!id||!text){bubble.hidden=true;return;}
  const actor=speakerActor(id);currentSpeaker=id;
@@ -1134,7 +1148,7 @@ function updateActing(now){
   const voiceTime=voiceGestureStart===null?cueTime:Math.max(0,(elapsed-voiceGestureStart)/1000);
   const poseGesture=p.dojoPerformance?.poseGesture||conversationGesture({id:p.id,speaking,text:speech?.text||'',kind,time:cinematicVoiceEnabled?voiceTime:cueTime,listenerTime:cueTime,duration:Math.max(.75,duration-(speech?.start||0)/1000),seated:p.sit>.5,seed:line.id,enabled:!moving&&(!cinematicVoiceEnabled||voiceGestureStart!==null)});
   const g={time:localTime,energy,emphasis,kind,gaze,headYaw,blink,gait:p.gait,poseGesture};
-  try{p.pose(p.sit,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
+  try{p.pose(p.sit,g);p.v22?.sync(p,g);}catch(e){if(!p.motionWarning){remember('Animation des gestes',e.message||e);p.motionWarning=true;}}
   let jaw=0,wide=0;
   if(speaking&&speech&&speech.id===p.id){
    const st=elapsed-speech.start;
@@ -1146,13 +1160,14 @@ function updateActing(now){
     wide=level>.025?Math.min(.48,.06+.36*level):0;
    }
   }
-  p.speak?.(jaw,wide,blink);
+  p.speak?.(jaw,wide,blink);p.v22?.speak(jaw,wide,blink);
  }
 }
 const headPoint=new T.Vector3();
 function actorHead(person,out=new T.Vector3()){
  if(person?.previewHead?.isObject3D)return person.previewHead.getWorldPosition(out);
  if(person?.previewHead)return out.copy(person.previewHead);
+ if(person?.v22?.active&&person.v22.headBone){person.v22.headBone.getWorldPosition(out);out.y+=.135;return out;}
  if(person?.headBone){person.headBone.getWorldPosition(out);out.y+=.135;return out;}
  if(person?.head?.group){person.head.group.updateWorldMatrix(true,false);return person.head.group.localToWorld(out.set(0,.145,.035));}
  if(person){out.set(0,person.sit?1.12:1.53,0);return person.root.localToWorld(out);}
@@ -1576,7 +1591,7 @@ function frame(){
  const line=lines[step],elapsed=shotElapsed(now);
  if(stage==='white')furnitureAt(line,elapsed);
  const wardrobe=isStagedDojo(line)?stageDojoPeople(line,elapsed):null;
- if(!shotPaused)updateActing(now);else for(const p of people)p.speak?.(0,0,0);
+ if(!shotPaused)updateActing(now);else for(const p of people){p.v22?.sync(p);p.speak?.(0,0,0);p.v22?.speak(0,0,0);}
  updateFilm(line,elapsed);cameraShot(line,elapsed,dt);dojoDemo.update(line,elapsed,{wardrobe});anchorBubble(line,elapsed);
  introSound.update({sceneId:line.id,elapsedMs:elapsed,timeMs:soundOffsets[step]+Math.min(elapsed,line.ms),playing:started&&!shotPaused&&!pending&&!document.hidden&&!$('report-dialog').open,actors:people.map(person=>({id:person.id,gait:person.gait})),wardrobe});
  renderer.render(scene,camera);
