@@ -27,3 +27,5 @@ test('shared seam normals patch the real head and body meshes without changing o
  near(body.geometry.attributes.normal.getZ(1),1);near(body.geometry.attributes.normal.getY(0),1);near(skin.geometry.attributes.normal.getX(2),1);
  assert.throws(()=>applySkinNormals({body,head},[{count:5,indices:new Uint32Array([0]),normals:new Float32Array([1,0,0])}]));
 });
+
+test('source skin positions and normals are patched on the same vertex',()=>{const body=new T.Mesh(new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute([0,0,0,1,0,0,0,1,0],3)).setAttribute('normal',new T.Float32BufferAttribute([0,0,1,0,0,1,0,0,1],3)));const head=new T.Group();applySkinNormals({body,head},[{count:3,indices:new Uint32Array([1]),normals:new Float32Array([0,1,0]),positions:new Float32Array([0,.01,.02])}]);near(body.geometry.attributes.position.getX(1),1);near(body.geometry.attributes.position.getY(1),.01);near(body.geometry.attributes.position.getZ(1),.02);near(body.geometry.attributes.position.getY(0),0);});
