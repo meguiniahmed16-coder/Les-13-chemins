@@ -22,14 +22,23 @@ export function headCorrection(a,settings){
  const target=anchor.clone().add(d);
  return new T.Matrix4().makeTranslation(target.x,target.y,target.z).multiply(new T.Matrix4().compose(new T.Vector3(),rot,scale)).multiply(new T.Matrix4().makeTranslation(-anchor.x,-anchor.y,-anchor.z));
 }
+export function restBodyBoundary(pos){
+ if(!pos||!pos.count)throw Error('Le maillage du corps ne contient aucun sommet.');
+ const box=new T.Box3().makeEmpty(),v=new T.Vector3();
+ for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i);if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z))box.expandByPoint(v);}
+ if(box.isEmpty())throw Error('Coordonnées du corps invalides.');
+ const boundary=[];for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i);if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z)&&v.y>=box.max.y-.019)boundary.push(i);}
+ return {box,boundary};
+}
 export function initNeckFit(a){
  a.root.updateMatrixWorld(true);a.head.updateMatrix();a.restHeadMatrix=a.head.matrix.clone();a.headRestBox=localBounds(a.head,a.head);
  a.neck.geometry.computeBoundingBox();a.neckRestBox=a.neck.geometry.boundingBox.clone();
  const b=a.neckRestBox,base=a.neckBase,top=[],p=new T.Vector3(),pos=a.body.geometry.attributes.position;
  const bodyInverse=a.body.matrixWorld.clone().invert();a.neckRestToBody=bodyInverse.multiply(a.neck.matrixWorld);
- const maxY=a.body.geometry.boundingBox?.max.y??Math.max(...Array.from({length:pos.count},(_,i)=>pos.getY(i)));
- const boundary=[];for(let i=0;i<pos.count;i++)if(pos.getY(i)>maxY-.019)boundary.push(i);
- if(!boundary.length)throw Error('Bord du corps introuvable.');
+ // BufferGeometry.computeBoundingBox includes the extrema of every morph.
+ // Finger morphs can push the reported top beyond all neutral neck vertices.
+ // Use finite rest coordinates only; never use the morph-expanded bounds.
+ const {box,boundary}=restBodyBoundary(pos);a.bodyRestBox=box;
  const records=[];for(let i=0;i<base.length;i+=3){const v=new T.Vector3().fromArray(base,i);if(v.y>b.max.y-.004)top.push(v);p.copy(v).applyMatrix4(a.neckRestToBody);let nearest=-1,dist=Infinity;for(const k of boundary){const d=(p.x-pos.getX(k))**2+(p.y-pos.getY(k))**2+(p.z-pos.getZ(k))**2;if(d<dist){dist=d;nearest=k;}}records.push({source:v,body:p.clone(),nearest,t:smooth((v.y-b.min.y)/Math.max(.0001,b.max.y-b.min.y))});}
  a.neckRecords=records;a.neckAnchor=top.length?top.reduce((v,w)=>v.add(w),new T.Vector3()).multiplyScalar(1/top.length):b.getCenter(new T.Vector3());a.neckAnchor.y=b.max.y;a.neckDelta=new T.Matrix4();
 }
