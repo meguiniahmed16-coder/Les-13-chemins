@@ -3,15 +3,24 @@ const target='https://treize-chemins-intro-prive.meguiniahmed16.workers.dev';
 export default async function handler(request){
  const url=new URL(request.url);
  const lab=/^\/api\/intro-private\/atelier-v22\/(state|manifest|model\/(?:ahmed|marianne)\/\d{3}\/[012]|refonte(?:-v[56])?\/(?:ahmed|marianne)|kimono-source\/(?:ahmed|marianne))$/.exec(url.pathname);
+ const rig=/^\/api\/intro-private\/atelier-163\/([mf])\/(manifest|\d{3})$/.exec(url.pathname);
+ const rigPut=!!rig&&rig[2]!=='manifest'&&request.method==='PUT';
  const put=lab?.[1]==='state'&&request.method==='PUT';
- if(url.origin!==site||(!put&&request.method!=='GET')||(!lab&&!/^\/api\/intro-private\/(white|dojo|ahmed|ahmedv3|ahmedfast)\/\d{3}$/.test(url.pathname)))return new Response(null,{status:403});
+ if(url.origin!==site||(!put&&!rigPut&&request.method!=='GET')||(!lab&&!rig&&!/^\/api\/intro-private\/(white|dojo|ahmed|ahmedv3|ahmedfast)\/\d{3}$/.test(url.pathname)))return new Response(null,{status:403});
  if(put&&(request.headers.get('origin')!==site||Number(request.headers.get('content-length')||0)>65536))return new Response(null,{status:403});
+ if(rigPut&&(request.headers.get('origin')!==site||request.headers.get('content-type')!=='application/octet-stream'||Number(request.headers.get('content-length')||0)>2097152))return new Response(null,{status:403});
  const cookie=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>/^__Host-am_site_admin=/.test(x)).join('; ');
  if(!cookie)return new Response(null,{status:401});
  try{
-  const body=put?await request.text():undefined;
+  let body=put?await request.text():undefined;
+  if(rigPut){
+   const reader=request.body?.getReader();if(!reader)return new Response(null,{status:400});
+   const buffer=new Uint8Array(2097152);let used=0;
+   try{for(;;){const {done,value}=await reader.read();if(done)break;if(used+value.byteLength>buffer.length){await reader.cancel();return new Response(null,{status:413});}buffer.set(value,used);used+=value.byteLength;}}finally{reader.releaseLock();}
+   body=buffer.subarray(0,used);
+  }
   if(put&&new TextEncoder().encode(body).length>65536)return new Response(null,{status:413});
-  const response=await fetch(target+url.pathname,{method:request.method,body,headers:{cookie,origin:site,...(put?{'content-type':'application/json'}:{})},redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(55000)});
+  const response=await fetch(target+url.pathname,{method:request.method,body,headers:{cookie,origin:site,...(put?{'content-type':'application/json'}:rigPut?{'content-type':'application/octet-stream'}:{})},redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(55000)});
   const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
   if(response.headers.has('content-type'))headers['content-type']=response.headers.get('content-type');
   if(response.headers.has('content-length'))headers['content-length']=response.headers.get('content-length');
